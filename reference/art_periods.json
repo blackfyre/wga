@@ -1,0 +1,226 @@
+[
+	{
+		"id": "kw1a9ajozio3cyt",
+		"name": "Early Christian",
+		"start": 100,
+		"end": 500,
+		"description": "Artists used Roman media and style while giving new Christian meaning to pagan symbols."
+	},
+	{
+		"id": "azke4a1hg6vw0vx",
+		"name": "Migration",
+		"start": 300,
+		"end": 900,
+		"description": "Germanic tribes settle in the collapsed Roman empire and bring their style of decorative weapons, tools, and jewelry."
+	},
+	{
+		"id": "e0i3vrzt2xk2oh8",
+		"name": "Byzantine",
+		"start": 313,
+		"end": 1453,
+		"description": "Artists depicted flat, emotionless mythological and religious themes as seen in their art."
+	},
+	{
+		"id": "7wvbbql1lwxj7ui",
+		"name": "Insular",
+		"start": 600,
+		"end": 900,
+		"description": "Celtic Medieval art from the British Isles is called Insular Art and is known for stylized figures and abstract geometric patterns."
+	},
+	{
+		"id": "re1yqvnbtysr2v8",
+		"name": "Romanesque",
+		"start": 963,
+		"end": 1120,
+		"description": "The prosperous time led to optimistic, stylized, religious art that told Biblical stories to people."
+	},
+	{
+		"id": "l0aoyne54l0rg4l",
+		"name": "Gothic",
+		"start": 1120,
+		"end": 1400,
+		"description": "Byzantine, Romanesque, and Islamic roots led to elaborate art with straighter lines but natural, classical proportions, attempting to bring heaven to earth."
+	},
+	{
+		"id": "jvsznu4zl9c56xe",
+		"name": "Early Renaissance",
+		"start": 1401,
+		"end": 1490,
+		"description": "Contrasting to the Medieval art, Early Renaissance art was much more realistic and more individualistic. Artists had knowledge of a wide range of subjects and painted a variety of subject matter- not just religious scenes with the newly explained linear perspective."
+	},
+	{
+		"id": "ggg73jq2v2afz14",
+		"name": "High Renaissance",
+		"start": 1491,
+		"end": 1527,
+		"description": "Continued knowledge of a wide variety of subjects, including science, helped artists depict accurately foreshortened humans with emotion and expression. Artists focused on ideals of beauty and achieving perfect composition."
+	},
+	{
+		"id": "caomiksp0slq3zr",
+		"name": "Northern Renaissance",
+		"start": 1430,
+		"end": 1580,
+		"description": "This art, influenced by the Protestant ideas, was more humble than other Renaissance art, but still very realistic. Genre paintings, which showed everyday life, and printmaking became popular."
+	},
+	{
+		"id": "c6pb6k07zjai609",
+		"name": "The Venetian School",
+		"start": 1470,
+		"end": 1580,
+		"description": "This art was similar to High Renaissance art, but more colorful and joyous."
+	},
+	{
+		"id": "ev0731bnqbxch4l",
+		"name": "Mannerism / Late Renaissance",
+		"start": 1520,
+		"end": 1600,
+		"description": "This was a movement at the end of the Renaissance period when artists represented their emotions and imagination with visual dissonance and instability.  This art usually included distorted and twisted figures and used unnatural colors and light sources."
+	},
+	{
+		"id": "4jbpts7qysy2oro",
+		"name": "Baroque",
+		"start": 1600,
+		"end": 1750,
+		"description": "An art period with highly ornate embellished depictions of important events including royalty or religious stories. Artists focused on using deep colors, lots of details, asymmetry, movement, drama, symbols and high contrast of light and dark. This period is often associated with the Catholic Counter-Reformation since it pushed back against the plainness of Protestant art."
+	},
+	{
+		"id": "xpkdo4z350kb7u7",
+		"name": "Rococo / Late Baroque",
+		"start": 1702,
+		"end": 1780,
+		"description": "This art movement within the Baroque period was even more extravagant than regular Baroque. Artists used a theatrical level of drama with elaborate details and focused on the lifestyle of the aristocrats."
+	},
+	{
+		"id": "qdqnfr687c8kieq",
+		"name": "Neoclassicism / Neoclassical",
+		"start": 1750,
+		"end": 1800,
+		"description": "This art movement was a reaction to the Baroque period. Artists focused on the classical ideals of beauty and perfection. They used a more restrained style with a focus on symmetry and balance. This movement was also a reaction to the French Revolution and the Enlightenment."
+	},
+	{
+		"id": "gb18khqpf1seboh",
+		"name": "Romanticism",
+		"start": 1800,
+		"end": 1850,
+		"description": "An art period where artists honored nature, individualism, intuition, and emotion. The movement was an idyllic and dramatic reaction to the artists' dislike of the Neo-Classical movement, the Industrial Revolution, and the Age of Enlightenment."
+	},
+	{
+		"id": "8f3xir3a4iq7h98",
+		"name": "Realism",
+		"start": 1850,
+		"end": 1940,
+		"description": "This art movement was a reaction to the Romanticism movement. Artists focused on depicting the world as it was, not as it should be. They focused on the everyday life of the common people and the effects of the Industrial Revolution."
+	},
+	{
+		"id": "au8vfg249lnjvxb",
+		"name": "Arts and Crafts movement",
+		"start": 1860,
+		"end": 1920,
+		"description": "This anti-industrial movement, borrowed elements from the Medieval and Romantic periods, as it stood for social reform, believing the arts could affect society. It focused on utility and quality of design and was predominantly seen in furniture and architecture."
+	},
+	{
+		"id": "gbu87rc1wvgxaud",
+		"name": "American Regionalism",
+		"start": 1930,
+		"end": 1940,
+		"description": "An art movement within (or an extension of) the Realistic period where artists portrayed the rural American Midwest and Deep South with conservative, humble, familiar (and somewhat idyllic) scenes of life. Brought about during the Great Depression, it portrayed large urban areas as the source of America's depression-era problems.  It was also a reaction against the current rising of Modern art and appealed to most Americans, who didn't understand Modern Art"
+	},
+	{
+		"id": "xvoiqs3z60vqqtd",
+		"name": "Modernism",
+		"start": 1850,
+		"end": 1960,
+		"description": "An art period based on a belief in progress and idealism. It assumed principles could be used to explain reality. Modernist artists focus on techniques and processes instead of a limited group of subjects. Unlike previous art periods, which had mostly unifying characteristics, this art period includes many diverse art movements."
+	},
+	{
+		"id": "3s9ubtzmmukygar",
+		"name": "Impressionism",
+		"start": 1872,
+		"end": 1892,
+		"description": "Impressionism is an art movement and style of painting that focuses on capturing the feeling or experience of an ordinary subject on the spot (not later in an art studio). The art included bold colors to depict light, visible brush strokes, and, when viewed up close, an out-of-focus appearance."
+	},
+	{
+		"id": "kiya9lxkrc3qi3b",
+		"name": "Post-Impressionism",
+		"start": 1886,
+		"end": 1905,
+		"description": "Post Impressionism is an art movement in reaction against Impressionism and the Impressionists' determination to depict light and color naturally. Post Impressionist artists explored abstractionism and focused on creating art that was a window to the artist's mind and soul (where traditionally, art had been a window into the world). They used a lot of patterns and put emphasis on symbolism. Within Post-Impressionism was a wide variety of art. The geometric end of the spectrum led to Cubism and the Expressive end led to Abstract Expressionism."
+	},
+	{
+		"id": "iqdtdlsftcj455b",
+		"name": "Symbolism ",
+		"start": 1886,
+		"end": 1910,
+		"description": "Symbolism is an art movement that focused on the use of symbols to represent ideas or emotions. It was a reaction against the Industrial Revolution and the rise of capitalism. It was also a reaction against the Impressionists' focus on the natural world and the Post-Impressionists' focus on the artist's mind and soul. Symbolists focused on the spiritual world and the subconscious."
+	},
+	{
+		"id": "ckgdhm5fsiiar1u",
+		"name": "Art Nouveau",
+		"start": 1890,
+		"end": 1910,
+		"description": "Art Nouveau was an art movement influenced by Japanese art and Arts and Crafts. It was very ornate and frequently featured exotic plants. It was called Tiffany style in the US."
+	},
+	{
+		"id": "4jcppqsqkqtozo3",
+		"name": "Expressionism",
+		"start": 1905,
+		"end": 1933,
+		"description": "Expressionism is an art movement that focused on the artist's emotions and feelings. It was a reaction against the Impressionists' focus on the natural world and the Post-Impressionists' focus on the artist's mind and soul. Expressionists focused on the spiritual world and the subconscious."
+	},
+	{
+		"id": "vrv2xb9g877c5f5",
+		"name": "Fauvism",
+		"start": 1904,
+		"end": 1910,
+		"description": "Fauvism was an art movement named Les Fauves, which in French means “the wild beasts,” because of their extremely distorted figures and unnaturally vivid colors. The fauvists were very interested in scientific color theory and the context of color. Their art was sometimes abstract."
+	},
+	{
+		"id": "trodx9ese7592iz",
+		"name": "Cubism",
+		"start": 1907,
+		"end": 1922,
+		"description": "Cubism was an art movement that viewed the subject from multiple angles and portrays it using geometric shapes, resulting in abstract art."
+	},
+	{
+		"id": "fdqqzdbqj3uwkus",
+		"name": "Dadaism",
+		"start": 1916,
+		"end": 1924,
+		"description": "Dada was an art movement where artists focused on making satirical or unpleasant art in an effort to shock the complacent middle class into asking themselves hard questions about materialism, war, and society. It was largely in reaction to the horrors of WWI and was associated with anti-capitalism and the far left."
+	},
+	{
+		"id": "a8x87t20jzeur13",
+		"name": "Surrealism",
+		"start": 1924,
+		"end": 1966,
+		"description": "Surrealism was an art movement that grew out of the Dada movement where artists, influenced by Sigmund Freud and Karl Marx, aimed to channel their unconscious mind to reveal pure imagination without the restraints of reason, morals, or aesthetics. The art from this movement is often strange and illogical but includes precisely painted everyday objects."
+	},
+	{
+		"id": "xys1i3vkr9n9xlo",
+		"name": "Abstract Expressionism",
+		"start": 1943,
+		"end": 1965,
+		"description": "Abstract expressionism is an art movement where artists adopted the Surrealist idea that art should come from the unconscious mind. Starting in New York, it was influenced by leftist politics and fit America's mood of anxiety and distress.\r\nThe art and artists from this movement fit into two categories. The Action Painters used large gestures to spontaneously create very large abstract paintings. The Color Field Painting group used bold areas of a single color to investigate religion and myth. \r\nWith the rise of Abstract Expressionism, New York became the art center of the world, where it had been Paris, France in years past."
+	},
+	{
+		"id": "evsx1uugx6fsidu",
+		"name": "Pop Art",
+		"start": 1955,
+		"end": 1979,
+		"description": "Pop Art was an art movement that focused on the mass media and popular culture. It was a reaction against Abstract Expressionism and the idea that art should come from the unconscious mind. Pop artists used everyday objects and images from the mass media to create art. They often used bright colors and bold lines."
+	},
+	{
+		"id": "km25l52ha8obhp0",
+		"name": "Op Art",
+		"start": 1960,
+		"end": 1970,
+		"description": "Op Art was an art movement that used optical illusions to create art. It was a reaction against Abstract Expressionism and the idea that art should come from the unconscious mind. Op artists used everyday objects and images from the mass media to create art. They often used bright colors and bold lines."
+	},
+	{
+		"id": "fdnqsu7syoqo1rz",
+		"name": "Conceptual Art",
+		"start": 1960,
+		"end": 1970,
+		"description": "Conceptual art is an art movement that focuses on the idea behind the art rather than the art itself. It was a reaction against Abstract Expressionism and the idea that art should come from the unconscious mind. Conceptual artists used everyday objects and images from the mass media to create art. They often used bright colors and bold lines."
+	}
+]
