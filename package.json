@@ -2,15 +2,26 @@
 	"name": "wga-ts",
 	"version": "0.0.1",
 	"private": true,
+	"author": {
+		"name": "Galicz Miklós",
+		"email": "miklos.galicz@gmail.com"
+	},
+	"contributors": [
+		{
+			"name": "Krén Emil",
+			"email": "emilekren@gmail.com"
+		}
+	],
 	"scripts": {
-		"dev": "vite dev",
 		"build": "vite build",
-		"preview": "vite preview",
+		"serve": "./wga serve",
 		"test": "playwright test",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"lint": "prettier --plugin-search-dir . --check . && eslint .",
-		"format": "prettier --plugin-search-dir . --write ."
+		"format": "prettier --plugin-search-dir . --write .",
+		"version": "auto-changelog -p && git add HISTORY.md",
+		"prepare": "husky install"
 	},
 	"devDependencies": {
 		"@playwright/test": "1.25.0",
@@ -20,9 +31,12 @@
 		"@types/node": "^18.11.9",
 		"@typescript-eslint/eslint-plugin": "^5.27.0",
 		"@typescript-eslint/parser": "^5.27.0",
+		"auto-changelog": "^2.4.0",
 		"eslint": "^8.16.0",
 		"eslint-config-prettier": "^8.3.0",
 		"eslint-plugin-svelte3": "^4.0.0",
+		"husky": "^8.0.2",
+		"lint-staged": "^13.0.3",
 		"prettier": "^2.6.2",
 		"prettier-plugin-svelte": "^2.7.0",
 		"svelte": "^3.44.0",
@@ -38,5 +52,16 @@
 		"carbon-icons-svelte": "^11.4.0",
 		"pocketbase": "^0.8.0",
 		"svelte-markdown": "^0.2.3"
+	},
+	"license": "MIT",
+	"auto-changelog": {
+		"output": "HISTORY.md",
+		"template": "keepachangelog",
+		"unreleased": true,
+		"commitLimit": false
+	},
+	"lint-staged": {
+		"*.ts": "lint",
+		"*.md": "prettier --list-different"
 	}
 }

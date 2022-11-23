@@ -1,38 +1,49 @@
-# create-svelte
+# The Web Gallery of Art
 
-Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/master/packages/create-svelte).
+This project is a an attempt to preserve the knowledge gathered by Emil Krén at https://www.wga.hu/ in a more modern format.
 
-## Creating a project
+## Why?
 
-If you're seeing this, you've probably already done this step. Congrats!
+The original site is a great resource, but it is not easy to use. The site is not responsive, and the images are not optimized for mobile devices. The site is also not easy to navigate, and the search function is not very useful.
 
-```bash
-# create a new project in the current directory
-npm create svelte@latest
+## How?
 
-# create a new project in my-app
-npm create svelte@latest my-app
-```
+The site ib built with [SvelteKit](https://kit.svelte.dev/) and [IBM Carbon Design System](https://carbondesignsystem.com/). The backend is built on [PocketBase](https://pocketbase.io/).
 
-## Developing
+## How to contribute?
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+If you want to contribute, you can do so by forking the repository and making a pull request.
 
-```bash
-npm run dev
+## How to run locally?
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
+### Prerequisites
 
-## Building
+- [Go 1.19+](https://golang.org/dl/)(optional, pre-built binary already included)
+- [Node Version Manager](https://github.com/nvm-sh/nvm)
+  - [Node.js v18](https://nodejs.org/en/download/)
+  - [PNPM](https://pnpm.io/installation)
 
-To create a production version of your app:
+### Steps
 
 ```bash
-npm run build
+# Clone the repository
+git clone git@github.com:blackfyre/wga.git
+
+# Change directory
+cd wga
+
+# Set node version
+nvm use
+
+# Install dependencies
+pnpm install
+
+# Build Frontend
+pnpm build
+
+# Run Backend
+pnpm serve
+
 ```
 
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
+The site should now be running on http://localhost:8090
