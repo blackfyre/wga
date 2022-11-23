@@ -58,7 +58,6 @@
 	"license": "MIT",
 	"auto-changelog": {
 		"output": "HISTORY.md",
-		"template": "keepachangelog",
 		"unreleased": true,
 		"commitLimit": false
 	},
