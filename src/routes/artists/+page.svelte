@@ -27,7 +27,7 @@
 
 	let pageSize = 30;
 	let page = 1;
-	let filteredRowIds = [];
+	let filteredRowIds: string[] = [];
 </script>
 
 <svelte:head>
