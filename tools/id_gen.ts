@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import * as crypto from 'crypto';
 
 type ArtistMetaInfo = {
 	year_of_birth?: number | null;
@@ -10,31 +11,53 @@ type ArtistMetaInfo = {
 	active_at_location?: string | null;
 	exact_year_of_birth?: boolean;
 	exact_year_of_death?: boolean;
+	exact_year_active_start?: boolean;
+	exact_year_active_end?: boolean;
 };
 
 type ArtistReferenceRecord = {
-	id?: string;
-	slug?: string;
+	id: string;
+	slug: string;
+	name: string;
+	wga_id: string;
+	profession: string;
+	school: string;
+	meta: ArtistMetaInfo | null;
+	source: ArtistRecordRaw;
+	possibleInfluece: ArtPeriod[];
+};
+
+type ArtistRecordRaw = {
 	ARTIST: string;
 	'BIRTH DATA': string;
 	PROFESSION: string;
 	SCHOOL: string;
 	URL: string;
-	wga_id?: string;
-	meta?: ArtistMetaInfo | null;
+};
+
+type ArtPeriod = {
+	id: string;
+	name: string;
+	start: number;
+	end: number;
+	description: string;
 };
 
 const idTracker: string[] = [];
+let ArtPeriods: ArtPeriod[] = [];
 const ArtistLifePatters = {
-	KnownBirthYearLocationKnownDeathYearLocation: /^\(b\.?\s(\d{4}),\s(.*),\sd\.?\s(\d{4}),\s(.*)\)$/,
+	KnownBirthYearLocationKnownDeathYearLocation:
+		/^\(b\.?\s(\d{4})(?:\.|,)\s(.*),\s?(?:d\.?)?\s?(\d{4}),\s(.*)\)$/,
 	CircaBornYearKnownLocationKnownDeathYearLocation:
-		/^\(b\.?\sca\.?\s(\d{4}),\s(.*),\sd\.?\s(\d{4}),\s(.*)\)$/,
+		/^\(b\.?\sca\.?\s(\d{4}),\s(.*),\s*?d\.?\s(\d{4}),\s(.*)\)$/,
 	CircaBornYearKnownLocationKnownDeathYearLocation2:
 		/^\(b\.?\s(\d{4})s,\s(.*),\sd\.?\s(\d{4}),\s(.*)\)$/,
+	CircaBornYearKnownLocationKnownDeathYearLocation3:
+		/^\(b\.?\s(\d{4})\/(\d{2}),\s(.*),\sd\.?\s(\d{4}),\s(.*)\)$/,
 	KnownBornYearLocationCircaDeathKnownLocation:
 		/^\(b\.?\s(\d{4}),\s(.*),\sd\.?\s(?:ca\.?|after)\s?(\d{4}),\s(.*)\)$/,
 	CircaBirthYearKnownLocationCircaDeathKnownLocation:
-		/^\(b\.?\sca\.?\s(\d{4}),\s(.*),\sd\.?\sca\.?\s(\d{4}),\s(.*)\)$/,
+		/^\(b\.?\sca\.?\s(\d{4}),\s(.*),\sd\.?\s(?:ca\.?|after)\s*?(\d{4}),\s(.*)\)$/,
 	CircaBirthYearKnownLocationKnownDeathYearUnknownLocation:
 		/^\(b\.?\sca\.?\s(\d{4}),\s(.*),\sd\.?\s(\d{4})\)$/,
 	KnownToBeActiveInASingleLocation: /^\(active\s(\d{4})-(\d{2,4})\si?n?\s?(.*)\)$/,
@@ -45,7 +68,8 @@ const ArtistLifePatters = {
 	KnownActiveYearLocationStartCircaDeathDeathYearKnownLocation:
 		/^\(active\s?(\d{4}),\s?(.*),\s?d\.?\s?ca\.?\s?(\d{4}),\s?(.*)\)$/,
 	KnownBirthYearLocationCircaDeathYearUnknownLocation:
-		/^\(b\.?\s(\d{4}),\s(.*),\sd\.?\s(?:ca\.?|after)\s?(\d{4})\)$/
+		/^\(b\.?\s(\d{4}),\s(.*),\sd\.?\s(?:ca\.?|after)\s?(\d{4})\)$/,
+	ActiveYearRangeKnownLocation: /^\(active\s?ca?\.?\s?(\d{4})-(\d{4})\s?in\s?(.*)\)$/
 };
 
 /**
@@ -73,7 +97,7 @@ export const slugify = (...args: (string | number)[]): string => {
  * @returns The average of the array.
  */
 export const ArrayAverage = (arr: number[]): number => {
-	return arr.reduce((p, c) => p + c, 0) / arr.length;
+	return Math.trunc(arr.reduce((p, c) => p + c, 0) / arr.length);
 };
 
 /**
@@ -99,23 +123,25 @@ export const ExtrapolateSecondYear = (firstYear: number, secondYear: number): nu
 };
 
 /**
- * Generate a random string of a given length.
- * @param {number} length - The length of the string you want to generate.
- * @returns A random string of characters.
+ * It takes a string and a number, and returns a string
+ * @param {string} input - The string to hash.
+ * @param {number} length - The length of the hash to generate.
+ * @returns A hash of the input string.
  */
-export function makeid(length: number) {
-	var result = '';
-	var characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
-	var charactersLength = characters.length;
-	for (var i = 0; i < length; i++) {
-		result += characters.charAt(Math.floor(Math.random() * charactersLength));
-	}
-	return result;
+export function generateHash(input: string, length: number): string {
+	const hash = crypto.createHash('md5').update(input).digest('hex');
+	return hash.slice(0, length).toLowerCase();
 }
 
 /* Regex for the old ID */
 const regex = /https:\/\/www\.wga\.hu\/bio\/[a-z]\/(.*)\/biograph\.html/;
 
+/**
+ * It takes a string of text that describes an artist's life, and returns an object that contains the
+ * artist's birth year, birth location, death year, death location, and active years and locations
+ * @param {string} birthData - The string that contains the artist's birth data.
+ * @returns ArtistMetaInfo
+ */
 const generateMetaInfo = (birthData: string): ArtistMetaInfo | null => {
 	let match = birthData.match(ArtistLifePatters.KnownBirthYearLocationKnownDeathYearLocation);
 	if (match) {
@@ -266,7 +292,55 @@ const generateMetaInfo = (birthData: string): ArtistMetaInfo | null => {
 		};
 	}
 
+	match = birthData.match(ArtistLifePatters.CircaBornYearKnownLocationKnownDeathYearLocation3);
+	if (match) {
+		const birthRangeStart = Number(match[1]);
+		const birthRangeEnd = Number(match[2]);
+		return {
+			year_of_birth: ArrayAverage([
+				birthRangeStart,
+				birthRangeEnd < 100 ? ExtrapolateSecondYear(birthRangeStart, birthRangeEnd) : birthRangeEnd
+			]),
+			place_of_birth: match[3],
+			year_of_death: Number(match[4]),
+			place_of_death: match[5],
+			exact_year_of_birth: false,
+			exact_year_of_death: true
+		};
+	}
+
+	match = birthData.match(ArtistLifePatters.ActiveYearRangeKnownLocation);
+	if (match) {
+		return {
+			year_active_start: Number(match[1]),
+			year_active_end: Number(match[2]),
+			active_at_location: match[3],
+			exact_year_active_start: false,
+			exact_year_active_end: false
+		};
+	}
+
 	return null;
+};
+
+const LookUpArtPeriod = (year: number | null | undefined) => {
+	const collector: ArtPeriod[] = [];
+
+	if (!year || year === null) {
+		return collector;
+	}
+
+	if (ArtPeriods.length === 0) {
+		ArtPeriods = JSON.parse(fs.readFileSync('./reference/art_periods.json', 'utf8'));
+	}
+
+	ArtPeriods.forEach((period: ArtPeriod) => {
+		if (year >= period.start && year <= period.end) {
+			collector.push(period);
+		}
+	});
+
+	return collector;
 };
 
 /**
@@ -274,51 +348,57 @@ const generateMetaInfo = (birthData: string): ArtistMetaInfo | null => {
  * doesn't have an id, and then writes the updated JSON file back to the file system
  */
 export const expandBioData = async () => {
-	const artists: ArtistReferenceRecord[] = JSON.parse(
-		fs.readFileSync('./reference/artists_with_bio.json', 'utf8')
+	const artists: ArtistRecordRaw[] = JSON.parse(
+		fs.readFileSync('./reference/artists_with_bio_stage_0.json', 'utf8')
 	);
 
 	let missingMetaInfo = 0;
+	const collector: ArtistReferenceRecord[] = [];
 
 	console.log(`Found ${artists.length} artists in the file.`);
 
 	artists.map((artist) => {
-		if (!artist.id) {
-			/* PocketBase uses a 15 char random string as ID */
-			//generate a 15 character random string with lowercase letters and numbers as id
-			let id = makeid(15);
+		const NewArtist = {
+			name: artist.ARTIST,
+			source: artist
+		} as ArtistReferenceRecord;
+		/* PocketBase uses a 15 char random string as ID */
+		//generate a 15 character random string with lowercase letters and numbers as id
+		let id = generateHash(artist.URL, 15);
 
-			/* Make sure the id is unique */
-			while (idTracker.includes(id)) {
-				id = makeid(15);
-			}
-
-			artist.id = id;
+		/* Make sure the id is unique */
+		while (idTracker.includes(id)) {
+			id = generateHash(JSON.stringify(artist), 15);
 		}
 
-		if (!artist.slug) {
-			artist.slug = slugify(artist.ARTIST);
-		}
+		NewArtist.id = id;
+
+		NewArtist.slug = slugify(NewArtist.name);
 
 		/* Get the wga_id from the artist.URL and the regex */
 		const match = artist.URL.match(regex);
-		if (match && !artist.wga_id) {
-			artist.wga_id = match[1];
+		if (match) {
+			NewArtist.wga_id = match[1];
 		}
 
-		/* Get the meta info from the artist.BIRTH DATA */
-		if (artist['BIRTH DATA']) {
-			artist.meta = generateMetaInfo(artist['BIRTH DATA']);
-			/* Check if the birth data matches any of the patterns */
-		}
+		NewArtist.meta = generateMetaInfo(artist['BIRTH DATA']);
 
-		if (!artist.meta) {
-			console.table(artist);
+		if (!NewArtist.meta) {
+			console.warn(NewArtist);
 			missingMetaInfo++;
 		}
+
+		NewArtist.possibleInfluece = [
+			/* @ts-ignore */
+			...LookUpArtPeriod(NewArtist?.meta?.year_of_birth | NewArtist?.meta?.year_active_start),
+			/* @ts-ignore */
+			...LookUpArtPeriod(NewArtist?.meta?.year_of_death | NewArtist?.meta?.year_active_end)
+		];
+
+		collector.push(NewArtist);
 	});
 
-	fs.writeFileSync('./reference/artists_with_bio.json', JSON.stringify(artists, null, 2));
+	fs.writeFileSync('./reference/artists_with_bio_stage_1.json', JSON.stringify(collector, null, 2));
 
 	console.log(`Found ${missingMetaInfo} of ${artists.length} artists with missing meta info.`);
 	console.log('Done!');
