@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as crypto from 'crypto';
+import { NodeHtmlMarkdown } from 'node-html-markdown';
 
 type ArtistMetaInfo = {
 	year_of_birth?: number | null;
@@ -25,6 +26,7 @@ type ArtistReferenceRecord = {
 	meta: ArtistMetaInfo | null;
 	source: ArtistRecordRaw;
 	possibleInfluece: ArtPeriod[];
+	bio: string | null;
 };
 
 type ArtistRecordRaw = {
@@ -133,6 +135,36 @@ export function generateHash(input: string, length: number): string {
 	const hash = crypto.createHash('md5').update(input).digest('hex');
 	return hash.slice(0, length).toLowerCase();
 }
+
+const extractBio = (bio: string): string => {
+	//get everything between <!-- Comment Start --> and <!-- Comment End -->
+	const regex = /<!-- Comment Start -->([\s\S]*?)<!-- Comment End -->/g;
+	const match = regex.exec(bio);
+
+	if (match) {
+		return match[1];
+	}
+	return '';
+};
+
+export const scrapeBio = async (url: string | null): Promise<string> => {
+	if (!url) {
+		return '';
+	}
+	console.log(`Scraping bio for ${url}`);
+	let collector = '';
+
+	try {
+		const response = await fetch(url);
+		const content = await response.text();
+
+		collector = extractBio(content);
+	} catch (err) {
+		console.error(err);
+	}
+
+	return collector;
+};
 
 /* Regex for the old ID */
 const regex = /https:\/\/www\.wga\.hu\/bio\/[a-z]\/(.*)\/biograph\.html/;
@@ -354,6 +386,8 @@ const LookUpArtPeriod = (year: number | null | undefined) => {
 	return collector;
 };
 
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 /**
  * It reads in a JSON file of artists, generates a random 15 character string for each artist that
  * doesn't have an id, and then writes the updated JSON file back to the file system
@@ -368,7 +402,9 @@ export const expandBioData = async () => {
 
 	console.log(`Found ${artists.length} artists in the file.`);
 
-	artists.map((artist) => {
+	const nhm = new NodeHtmlMarkdown();
+
+	for await (const artist of artists) {
 		const NewArtist = {
 			name: artist.ARTIST,
 			source: artist
@@ -394,11 +430,6 @@ export const expandBioData = async () => {
 
 		NewArtist.meta = generateMetaInfo(artist['BIRTH DATA']);
 
-		if (!NewArtist.meta) {
-			console.warn(NewArtist);
-			missingMetaInfo++;
-		}
-
 		NewArtist.possibleInfluece = [
 			/* @ts-ignore TS complains about values being undefined while it's actually handled */
 			...LookUpArtPeriod(NewArtist?.meta?.year_of_birth | NewArtist?.meta?.year_active_start),
@@ -406,8 +437,18 @@ export const expandBioData = async () => {
 			...LookUpArtPeriod(NewArtist?.meta?.year_of_death | NewArtist?.meta?.year_active_end)
 		];
 
+		// fetch bio from a table cell at artist.URL
+		NewArtist.bio = nhm.translate(await scrapeBio(artist.URL));
+
+		if (!NewArtist.meta) {
+			console.warn(NewArtist);
+			missingMetaInfo++;
+		}
+
 		collector.push(NewArtist);
-	});
+
+		await delay(1000 + Math.floor(Math.random() * 500) - 250);
+	}
 
 	fs.writeFileSync('./reference/artists_with_bio_stage_1.json', JSON.stringify(collector, null, 2));
 
