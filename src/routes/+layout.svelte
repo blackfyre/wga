@@ -1,7 +1,8 @@
 <script lang="ts">
 	export const ssr = false;
-	export const trailingSlash = 'always';
+	export const trailingSlash = 'never';
 	export const prerender = true;
+	export const csr = false;
 	import 'carbon-components-svelte/css/g80.css';
 	// let theme = 'white'; // "white" | "g10" | "g80" | "g90" | "g100"
 	// $: document.documentElement.setAttribute('theme', theme);

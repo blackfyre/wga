@@ -69,7 +69,8 @@ const ArtistLifePatters = {
 		/^\(active\s?(\d{4}),\s?(.*),\s?d\.?\s?ca\.?\s?(\d{4}),\s?(.*)\)$/,
 	KnownBirthYearLocationCircaDeathYearUnknownLocation:
 		/^\(b\.?\s(\d{4}),\s(.*),\sd\.?\s(?:ca\.?|after)\s?(\d{4})\)$/,
-	ActiveYearRangeKnownLocation: /^\(active\s?ca?\.?\s?(\d{4})-(\d{4})\s?in\s?(.*)\)$/
+	ActiveYearRangeKnownLocation: /^\(active\s?ca?\.?\s?(\d{4})-(\d{4})\s?in\s?(.*)\)$/,
+	ActiveYearUnkownLocationCircaDeathUnknownLocation: /^\(active\s?(\d{4})-c\.\s?(\d{4})\)$/
 };
 
 /**
@@ -113,7 +114,7 @@ export const ArrayAverage = (arr: number[]): number => {
  */
 export const ExtrapolateSecondYear = (firstYear: number, secondYear: number): number => {
 	let firstPart = parseInt(firstYear.toString().slice(0, 2));
-	let secondPart = parseInt(firstYear.toString().slice(2, 4));
+	const secondPart = parseInt(firstYear.toString().slice(2, 4));
 
 	if (secondPart > secondYear) {
 		firstPart++;
@@ -320,6 +321,16 @@ const generateMetaInfo = (birthData: string): ArtistMetaInfo | null => {
 		};
 	}
 
+	match = birthData.match(ArtistLifePatters.ActiveYearUnkownLocationCircaDeathUnknownLocation);
+	if (match) {
+		return {
+			year_active_start: Number(match[1]),
+			year_of_death: Number(match[2]),
+			exact_year_active_start: true,
+			exact_year_of_death: false
+		};
+	}
+
 	return null;
 };
 
@@ -389,9 +400,9 @@ export const expandBioData = async () => {
 		}
 
 		NewArtist.possibleInfluece = [
-			/* @ts-ignore */
+			/* @ts-ignore TS complains about values being undefined while it's actually handled */
 			...LookUpArtPeriod(NewArtist?.meta?.year_of_birth | NewArtist?.meta?.year_active_start),
-			/* @ts-ignore */
+			/* @ts-ignore TS complains about values being undefined while it's actually handled */
 			...LookUpArtPeriod(NewArtist?.meta?.year_of_death | NewArtist?.meta?.year_active_end)
 		];
 
