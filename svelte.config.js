@@ -1,13 +1,17 @@
 import adapter from '@sveltejs/adapter-static';
 import preprocess from 'svelte-preprocess';
+import { optimizeImports } from 'carbon-preprocess-svelte';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
 	// Consult https://github.com/sveltejs/svelte-preprocess
 	// for more information about preprocessors
-	preprocess: preprocess({
-		preserve: ['ld+json']
-	}),
+	preprocess: [
+		preprocess({
+			preserve: ['ld+json']
+		}),
+		optimizeImports()
+	],
 	kit: {
 		adapter: adapter({
 			// default options are shown. On some platforms
