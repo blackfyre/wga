@@ -24,6 +24,8 @@
 		"prepare": "husky install"
 	},
 	"devDependencies": {
+		"@commitlint/cli": "^17.3.0",
+		"@commitlint/config-conventional": "^17.3.0",
 		"@playwright/test": "1.25.0",
 		"@sveltejs/adapter-auto": "next",
 		"@sveltejs/adapter-static": "1.0.0-next.48",
