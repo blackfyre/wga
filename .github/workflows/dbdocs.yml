@@ -23,5 +23,5 @@ jobs:
 
       - name: Update dbdocs project
         env:
-          DBDOCS_TOKEN: ${{DB_DOCS_TOKEN}}
+          DBDOCS_TOKEN: ${{ secrets.DB_DOCS_TOKEN }}
         run: dbdocs build ./database.dbml
