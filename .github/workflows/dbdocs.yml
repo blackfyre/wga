@@ -1,0 +1,27 @@
+name: DB Docs CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    name: 'Build DB Docs'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v2
+
+      - name: Install dbdocs
+        run: sudo npm install -g dbdocs
+
+      - name: Check dbdocs
+        run: dbdocs
+
+      - name: Update dbdocs project
+        env:
+          DBDOCS_TOKEN: ${{DB_DOCS_TOKEN}}
+        run: dbdocs build ./database.dbml

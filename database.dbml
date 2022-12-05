@@ -1,0 +1,11 @@
+table art_periods {
+    id varchar(15) [pk]
+}
+
+table data_correction_requests {
+  id varchar(15) [pk]
+  from_name varchar [not null, Note: 'The name of the person requesting the correction']
+  from_email varchar [not null, Note: 'The email address of the requesting user']
+  descrition text [Note: 'The descrition of the correction request']
+  from_url varchar [not null, Note: 'The url of the page where the request was submitted']
+}

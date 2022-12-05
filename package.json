@@ -22,7 +22,8 @@
 		"lint": "prettier --plugin-search-dir . --check . && eslint . --fix",
 		"format": "prettier --plugin-search-dir . --write .",
 		"version": "auto-changelog -p && git add HISTORY.md",
-		"prepare": "husky install"
+		"prepare": "husky install",
+		"dbdocs": "dbdocs"
 	},
 	"devDependencies": {
 		"@commitlint/cli": "^17.3.0",
@@ -36,6 +37,7 @@
 		"@typescript-eslint/parser": "^5.44.0",
 		"auto-changelog": "^2.4.0",
 		"carbon-preprocess-svelte": "^0.9.1",
+		"dbdocs": "^0.7.3",
 		"eslint": "^8.28.0",
 		"eslint-config-prettier": "^8.5.0",
 		"eslint-plugin-svelte3": "^4.0.0",
