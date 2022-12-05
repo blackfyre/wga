@@ -1,11 +1,73 @@
+Project WGA {
+  note: '''
+  # The Web Gallery of Art (WGA) is a database of European paintings in public collections.
+  '''
+}
+
+
+
+table artists {
+  id varchar(15) [pk]
+  name varchar [not null, Note: 'The name of the artist']
+  birth_year int [Note: 'The year of birth of the artist']
+  death_year int [Note: 'The year of death of the artist']
+  description text [Note: 'The description of the artist, in markdown format']
+
+
+  Note: '''
+  # Artists
+
+  This table stores the artists of the artworks in the database.
+  '''
+}
+
+table artworks {
+  id varchar(15) [pk]
+  title varchar [not null, Note: 'The title of the artwork']
+
+  Note: '''
+  # Artworks
+
+  This table stores the artworks in the database.
+  '''
+}
+
 table art_periods {
     id varchar(15) [pk]
+    name varchar [not null, Note: 'Name of the art period']
+    start_year int [not null, Note: 'Start year of the art period']
+    end_year int [not null, Note: 'End year of the art period']
+    descrition text [Note: 'Description of the art period, in markdown format']
+
+    Note: '''
+    # Art periods
+
+    This table contains the art periods used as a reference in the database.
+    '''
 }
 
 table data_correction_requests {
   id varchar(15) [pk]
   from_name varchar [not null, Note: 'The name of the person requesting the correction']
   from_email varchar [not null, Note: 'The email address of the requesting user']
-  descrition text [Note: 'The descrition of the correction request']
+  descrition text [Note: 'The descrition of the correction request, in markdown format']
   from_url varchar [not null, Note: 'The url of the page where the request was submitted']
+
+  Note: '''
+  # Data correction requests
+
+  This table stores the data correction requests submitted by users.
+  '''
+}
+
+table glossary {
+  id varchar(15) [pk]
+  term varchar [not null, Note: 'The term to be defined']
+  descrition text [Note: 'The descrition of the term, in markdown format']
+
+  Note: '''
+  # Glossary
+
+  This table stores the terms and their definitions used in the database.
+  '''
 }
