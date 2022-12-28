@@ -31,7 +31,7 @@
 		"@playwright/test": "1.25.0",
 		"@sveltejs/adapter-auto": "next",
 		"@sveltejs/adapter-static": "1.0.0-next.48",
-		"@sveltejs/kit": "next",
+		"@sveltejs/kit": "^1.0.0-next.588",
 		"@types/node": "^18.11.9",
 		"@typescript-eslint/eslint-plugin": "^5.44.0",
 		"@typescript-eslint/parser": "^5.44.0",
@@ -51,15 +51,14 @@
 		"svelte-preprocess": "^4.10.7",
 		"tslib": "^2.4.1",
 		"typescript": "^4.9.3",
-		"vite": "^3.2.4"
-	},
-	"type": "module",
-	"dependencies": {
+		"vite": "^4.0.0",
 		"carbon-components-svelte": "^0.70.12",
 		"carbon-icons-svelte": "^11.4.0",
-		"pocketbase": "^0.8.0",
+		"pocketbase": "^0.9.1",
 		"svelte-markdown": "^0.2.3"
 	},
+	"type": "module",
+	"dependencies": {},
 	"license": "MIT",
 	"auto-changelog": {
 		"output": "HISTORY.md",
