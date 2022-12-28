@@ -2,7 +2,6 @@ import adapter from '@sveltejs/adapter-static';
 import preprocess from 'svelte-preprocess';
 import { optimizeImports } from 'carbon-preprocess-svelte';
 
-/** @type {import('@sveltejs/kit').Config} */
 const config = {
 	// Consult https://github.com/sveltejs/svelte-preprocess
 	// for more information about preprocessors
@@ -18,7 +17,7 @@ const config = {
 			// these options are set automatically — see below
 			pages: 'pb_public',
 			assets: 'pb_public',
-			fallback: 'index.html',
+			fallback: null,
 			precompress: true,
 			strict: true
 		})
