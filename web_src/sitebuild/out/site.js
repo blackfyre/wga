@@ -1,5 +1,6 @@
 htmx.onLoad(function (content) {
     initNavbar();
+    initViewer();
 });
 
 function initNavbar () {
@@ -20,4 +21,32 @@ function initNavbar () {
 
         });
     });
+}
+
+function initViewer () {
+    const elements = document.querySelectorAll('[data-viewer]');
+    console.log(elements);
+    if (elements.length > 0) {
+        elements.forEach(element => {
+            new Viewer(element, {
+                toolbar: {
+                    zoomIn: 1,
+                    zoomOut: 1,
+                    oneToOne: 1,
+                    reset: 1,
+                    prev: 1,
+                    play: {
+                        show: 1,
+                        size: 'large',
+                    },
+                    next: 1,
+                    rotateLeft: 1,
+                    rotateRight: 1,
+                    flipHorizontal: 0,
+                    flipVertical: 0,
+                },
+            })
+        })
+    }
+
 }
