@@ -4,15 +4,15 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Hello Bulma!</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Web Gallery of Art</title>
+    <link rel="stylesheet" href="./style.css">
 </head>
 
 <body>
     <nav class="navbar has-shadow" role="navigation" aria-label="main navigation">
         <div class="navbar-brand">
             <a class="navbar-item" id="nav-logo" href="/">
-                <img src="assets/header.png" width="318" height="45" alt="Web Gallery of Art">
+                <img src="./assets/header.png" width="318" height="45" alt="Web Gallery of Art">
             </a>
 
             <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false"
@@ -25,14 +25,14 @@
 
         <div id="navbarBasicExample" class="navbar-menu">
             <div class="navbar-start">
-                <a class="navbar-item">
+                <a class="navbar-item is-active" href="/">
                     Home
                 </a>
 
                 <a class="navbar-item">
                     Artists
                 </a>
-                <a class="navbar-item">
+                <a class="navbar-item" href="./search.html">
                     Search
                 </a>
                 <a class="navbar-item">
@@ -182,7 +182,7 @@
         </div>
     </footer>
     <script src="https://unpkg.com/htmx.org@1.9.6"></script>
-    <script src="site.js"></script>
+    <script src="./site.js"></script>
 </body>
 
 </html>
