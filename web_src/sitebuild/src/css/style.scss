@@ -1,7 +1,7 @@
 @charset "utf-8";
 
 // Import a Google Font
-@import url('https://fonts.googleapis.com/css?family=Lexend:400,700');
+@import url("https://fonts.googleapis.com/css?family=Lexend:400,700");
 
 // Custom variables
 $wgaDarkBlue: hsl(210, 98%, 20%);
@@ -34,19 +34,26 @@ $family-sans-serif: "Lexend", "Arial", sans-serif;
 @import "../../node_modules/bulma/bulma.sass";
 
 #nav-logo {
-    margin-left: 0;
-    padding-left: 0;
-    margin-top: 0;
-    padding-top: 0;
-    margin-bottom: 0;
-    padding-bottom: 0;
+  margin-left: 0;
+  padding-left: 0;
+  margin-top: 0;
+  padding-top: 0;
+  margin-bottom: 0;
+  padding-bottom: 0;
 }
 
 .has-sticky-header {
-    th {
-  background: white;
-  position: sticky;
-  top: 0; /* Don't forget this, required for the stickiness */
-  box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4);
+  th {
+    background: white;
+    position: sticky;
+    top: 0; /* Don't forget this, required for the stickiness */
+    box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4);
+  }
 }
+
+@media (max-width: $tablet) {
+  .columns.is-reversed-mobile {
+    flex-direction: column-reverse;
+    display: flex;
+  }
 }

@@ -7891,3 +7891,8 @@ a.has-text-danger-dark:hover, a.has-text-danger-dark:focus {
   top: 0;
   /* Don't forget this, required for the stickiness */
   box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4); }
+
+@media (max-width: 769px) {
+  .columns.is-reversed-mobile {
+    flex-direction: column-reverse;
+    display: flex; } }
