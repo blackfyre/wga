@@ -1,0 +1,19 @@
+{
+  "name": "wga-sitebuild",
+  "version": "1.0.0",
+  "description": "",
+  "main": "site.js",
+  "scripts": {
+    "css:build": "node-sass --omit-source-map-url src/css/style.scss out/style.css",
+    "css:watch": "npm run css:build -- --watch",
+    "start": "concurrently \"npm run css:watch\" \"live-server ./out\""
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "bulma": "^0.9.4",
+    "concurrently": "^8.2.1",
+    "live-server": "^1.2.2",
+    "node-sass": "^9.0.0"
+  }
+}
