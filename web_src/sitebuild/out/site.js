@@ -27,7 +27,6 @@ function initNavbar () {
 
 function initViewer () {
     const elements = document.querySelectorAll('[data-viewer]');
-    console.log(elements);
     if (elements.length > 0) {
         elements.forEach(element => {
             new Viewer(element, {
@@ -55,7 +54,6 @@ function initViewer () {
 
 function initJumpToTop () {
     const jumpToTop = document.querySelector('.jump.back-to-top');
-    console.log(jumpToTop);
     if (jumpToTop) {
         jumpToTop.addEventListener('click', () => {
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -63,7 +61,7 @@ function initJumpToTop () {
     }
 }
 
-function removeNotification (element) {
+function removeNotification () {
     document.addEventListener('DOMContentLoaded', () => {
         (document.querySelectorAll('.notification .delete') || []).forEach(($delete) => {
             const $notification = $delete.parentNode;
@@ -73,4 +71,39 @@ function removeNotification (element) {
             });
         });
     });
+}
+
+function DualModeListeners () {
+    const dualModeToggles = document.getElementsByClassName('toggle-dual');
+    const body = document.querySelector('body');
+    const dualModeSection = document.getElementById('dual');
+
+    if (dualModeToggles.length > 0) {
+        for (let i = 0; i < dualModeToggles.length; i++) {
+
+            //remove click event from all dual mode toggles
+            dualModeToggles[i].removeEventListener('click', (e) => { });
+
+            dualModeToggles[i].addEventListener('click', (e) => {
+                e.preventDefault();
+
+            })
+        }
+    }
+}
+
+function ToggleDualMode () {
+    const html = document.querySelector('html');
+    const body = document.querySelector('body');
+    const dualModeSection = document.getElementById('dual');
+
+    if (body.classList.contains('has-active-backdrop')) {
+        html.classList.remove('is-clipped');
+        body.classList.remove('has-active-backdrop');
+        dualModeSection.classList.remove('is-active');
+    } else {
+        html.classList.add('is-clipped');
+        body.classList.add('has-active-backdrop');
+        dualModeSection.classList.add('is-active');
+    }
 }
