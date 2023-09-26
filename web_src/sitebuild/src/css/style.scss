@@ -4,11 +4,7 @@
 @import url("https://fonts.googleapis.com/css?family=Lexend:400,700");
 
 // Custom variables
-$wgaDarkBlue: hsl(210, 98%, 20%);
-$wgaTorquise: hsl(180, 34%, 43%);
-$wgaOrangeHighlight: hsl(24, 100%, 50%);
-$wgaLightestBlue: hsl(216, 100%, 97%);
-$white: hsl(0, 0%, 100%);
+@import "_variables.scss";
 
 // Bulma overrides
 $radius-large: 0;
@@ -32,6 +28,7 @@ $navbar-item-active-background-color: $wgaOrangeHighlight;
 $family-sans-serif: "Lexend", "Arial", sans-serif;
 
 @import "../../node_modules/bulma/bulma.sass";
+@import "../../node_modules/@creativebulma/bulma-divider/src/sass/index.sass";
 
 #nav-logo {
   margin-left: 0;
@@ -44,7 +41,6 @@ $family-sans-serif: "Lexend", "Arial", sans-serif;
 
 .has-sticky-header {
   th {
-    background: white;
     position: sticky;
     top: 0; /* Don't forget this, required for the stickiness */
     box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4);
