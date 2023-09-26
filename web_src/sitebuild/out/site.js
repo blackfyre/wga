@@ -1,6 +1,7 @@
 htmx.onLoad(function (content) {
     initNavbar();
     initViewer();
+    initJumpToTop();
 });
 
 function initNavbar () {
@@ -49,4 +50,14 @@ function initViewer () {
         })
     }
 
+}
+
+function initJumpToTop () {
+    const jumpToTop = document.querySelector('.jump.back-to-top');
+    console.log(jumpToTop);
+    if (jumpToTop) {
+        jumpToTop.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        })
+    }
 }
