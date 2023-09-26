@@ -2,6 +2,7 @@ htmx.onLoad(function (content) {
     initNavbar();
     initViewer();
     initJumpToTop();
+    removeNotification();
 });
 
 function initNavbar () {
@@ -60,4 +61,16 @@ function initJumpToTop () {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         })
     }
+}
+
+function removeNotification (element) {
+    document.addEventListener('DOMContentLoaded', () => {
+        (document.querySelectorAll('.notification .delete') || []).forEach(($delete) => {
+            const $notification = $delete.parentNode;
+
+            $delete.addEventListener('click', () => {
+                $notification.parentNode.removeChild($notification);
+            });
+        });
+    });
 }
