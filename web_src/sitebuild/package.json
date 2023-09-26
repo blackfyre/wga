@@ -4,8 +4,9 @@
   "description": "",
   "main": "site.js",
   "scripts": {
-    "css:build": "node-sass --omit-source-map-url src/css/style.scss out/style.css",
-    "css:watch": "npm run css:build -- --watch",
+    "css:dev": "node-sass --output-style compressed --source-map-embed src/css/style.scss out/style.css ",
+    "css:build": "node-sass --output-style compressed src/css/style.scss out/style.css ",
+    "css:watch": "npm run css:dev -- --watch",
     "start": "concurrently \"npm run css:watch\" \"live-server ./out\""
   },
   "author": "",
@@ -15,5 +16,8 @@
     "concurrently": "^8.2.1",
     "live-server": "^1.2.2",
     "node-sass": "^9.0.0"
+  },
+  "dependencies": {
+    "@creativebulma/bulma-divider": "^1.1.0"
   }
 }
