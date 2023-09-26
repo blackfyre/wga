@@ -30,6 +30,12 @@ $family-sans-serif: "Lexend", "Arial", sans-serif;
 @import "../../node_modules/bulma/bulma.sass";
 @import "../../node_modules/@creativebulma/bulma-divider/src/sass/index.sass";
 
+// Font Awesome
+$fa-font-path: "/assets/fonts/";
+@import "./fontawesome/fontawesome.scss";
+@import "./fontawesome/solid.scss";
+@import "./fontawesome/brands.scss";
+
 #nav-logo {
   margin-left: 0;
   padding-left: 0;
@@ -44,6 +50,26 @@ $family-sans-serif: "Lexend", "Arial", sans-serif;
     position: sticky;
     top: 0; /* Don't forget this, required for the stickiness */
     box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4);
+  }
+}
+
+.hero.is-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.jump.back-to-top {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 1;
+  cursor: pointer;
+}
+
+.is-art-card {
+  figure {
+    cursor: pointer;
   }
 }
 
