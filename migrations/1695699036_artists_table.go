@@ -45,6 +45,11 @@ type Artist struct {
 	} `json:"meta"`
 	PossibleInfluences any    `json:"possibleInfluences"`
 	Bio                string `json:"bio"`
+	School             string `json:"school"`
+}
+
+func Ptr[T any](v T) *T {
+	return &v
 }
 
 func init() {
@@ -77,6 +82,45 @@ func init() {
 				Type:    schema.FieldTypeEditor,
 				Options: &schema.EditorOptions{},
 			},
+			&schema.SchemaField{
+				Id:      "artist_yob",
+				Name:    "year_of_birth",
+				Type:    schema.FieldTypeNumber,
+				Options: &schema.NumberOptions{},
+			},
+			&schema.SchemaField{
+				Id:      "artist_yod",
+				Name:    "year_of_death",
+				Type:    schema.FieldTypeNumber,
+				Options: &schema.NumberOptions{},
+			},
+			&schema.SchemaField{
+				Id:      "artist_place_of_birth",
+				Name:    "place_of_birth",
+				Type:    schema.FieldTypeText,
+				Options: &schema.TextOptions{},
+			},
+			&schema.SchemaField{
+				Id:      "artist_place_of_death",
+				Name:    "place_of_death",
+				Type:    schema.FieldTypeText,
+				Options: &schema.TextOptions{},
+			},
+			&schema.SchemaField{
+				Id:      "artist_profession",
+				Name:    "profession",
+				Type:    schema.FieldTypeText,
+				Options: &schema.TextOptions{},
+			},
+			&schema.SchemaField{
+				Id:   "artist_school",
+				Name: "school",
+				Type: schema.FieldTypeRelation,
+				Options: &schema.RelationOptions{
+					CollectionId: "schools",
+					MinSelect:    Ptr(1),
+				},
+			},
 		)
 
 		err := dao.SaveCollection(collection)
@@ -107,10 +151,16 @@ func init() {
 
 		for _, i := range c {
 			q := db.Insert("artists", dbx.Params{
-				"id":   i.Id,
-				"name": i.Name,
-				"bio":  i.Bio,
-				"slug": i.Slug,
+				"id":             i.Id,
+				"name":           i.Name,
+				"bio":            i.Bio,
+				"slug":           i.Slug,
+				"year_of_birth":  i.Meta.YearOfBirth,
+				"year_of_death":  i.Meta.YearOfDeath,
+				"place_of_birth": i.Meta.PlaceOfBirth,
+				"place_of_death": i.Meta.PlaceOfDeath,
+				"profession":     i.Source.Profession,
+				"school":         i.School,
 			})
 
 			_, err = q.Execute()
