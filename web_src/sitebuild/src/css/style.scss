@@ -31,7 +31,7 @@ $family-sans-serif: "Lexend", "Arial", sans-serif;
 @import "../../node_modules/@creativebulma/bulma-divider/src/sass/index.sass";
 
 // Font Awesome
-$fa-font-path: "/assets/fonts/";
+$fa-font-path: "/assets/fonts";
 @import "./fontawesome/fontawesome.scss";
 @import "./fontawesome/solid.scss";
 @import "./fontawesome/brands.scss";
