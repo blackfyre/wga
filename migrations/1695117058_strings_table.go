@@ -5,6 +5,7 @@ import (
 	"github.com/pocketbase/pocketbase/daos"
 	m "github.com/pocketbase/pocketbase/migrations"
 	"github.com/pocketbase/pocketbase/models"
+	"github.com/pocketbase/pocketbase/models/schema"
 )
 
 func init() {
@@ -16,33 +17,41 @@ func init() {
 		collection.Name = "strings"
 		collection.Type = models.CollectionTypeBase
 		collection.System = false
-		collection.Schema = models.Schema{
-			"field_name": models.SchemaField{
-				Type: "string",
+		collection.MarkAsNew()
+		collection.Schema = schema.NewSchema(
+			&schema.SchemaField{
+				Id:          "strings_name",
+				Name:        "field_name",
+				Type:        schema.FieldTypeText,
+				Options:     &schema.TextOptions{},
+				Presentable: true,
 			},
-			"content": models.SchemaField{
-				Type: "string",
+			&schema.SchemaField{
+				Id:      "strings_content",
+				Name:    "content",
+				Type:    schema.FieldTypeText,
+				Options: &schema.TextOptions{},
 			},
-		}
+		)
 
 		return dao.SaveCollection(collection)
 
 		// add up queries...
-		columns := map[string]string{
-			"id":         "text",
-			"created":    "text",
-			"updated":    "text",
-			"field_name": "text",
-			"content":    "text",
-		}
+		// columns := map[string]string{
+		// 	"id":         "text",
+		// 	"created":    "text",
+		// 	"updated":    "text",
+		// 	"field_name": "text",
+		// 	"content":    "text",
+		// }
 
-		q := db.CreateTable("strings", columns)
-		_, err := q.Execute()
+		// q := db.CreateTable("strings", columns)
+		// _, err := q.Execute()
 
-		return err
+		// return err
 	}, func(db dbx.Builder) error {
 
-		q := db.DropTable("guestbook")
+		q := db.DropTable("strings")
 		_, err := q.Execute()
 
 		return err
