@@ -1,12 +1,20 @@
 package migrations
 
 import (
+	"encoding/json"
+	"os"
+
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/daos"
 	m "github.com/pocketbase/pocketbase/migrations"
 	"github.com/pocketbase/pocketbase/models"
 	"github.com/pocketbase/pocketbase/models/schema"
 )
+
+type PublicString struct {
+	Name    string `json:"name"`
+	Content string `json:"content"`
+}
 
 func init() {
 	m.Register(func(db dbx.Builder) error {
@@ -17,11 +25,12 @@ func init() {
 		collection.Name = "strings"
 		collection.Type = models.CollectionTypeBase
 		collection.System = false
+		collection.Id = "strings"
 		collection.MarkAsNew()
 		collection.Schema = schema.NewSchema(
 			&schema.SchemaField{
 				Id:          "strings_name",
-				Name:        "field_name",
+				Name:        "name",
 				Type:        schema.FieldTypeText,
 				Options:     &schema.TextOptions{},
 				Presentable: true,
@@ -29,12 +38,46 @@ func init() {
 			&schema.SchemaField{
 				Id:      "strings_content",
 				Name:    "content",
-				Type:    schema.FieldTypeText,
-				Options: &schema.TextOptions{},
+				Type:    schema.FieldTypeEditor,
+				Options: &schema.EditorOptions{},
 			},
 		)
 
-		return dao.SaveCollection(collection)
+		err := dao.SaveCollection(collection)
+
+		if err != nil {
+			return err
+		}
+
+		data, err := os.ReadFile("reference/strings.json")
+
+		if err != nil {
+			return err
+		}
+
+		var c []PublicString
+
+		err = json.Unmarshal(data, &c)
+
+		if err != nil {
+			return err
+		}
+
+		for _, i := range c {
+			q := db.Insert("strings", dbx.Params{
+				"name":    i.Name,
+				"content": i.Content,
+			})
+
+			_, err = q.Execute()
+
+			if err != nil {
+				return err
+			}
+
+		}
+
+		return nil
 
 		// add up queries...
 		// columns := map[string]string{
