@@ -9,6 +9,7 @@ import (
 	m "github.com/pocketbase/pocketbase/migrations"
 	"github.com/pocketbase/pocketbase/models"
 	"github.com/pocketbase/pocketbase/models/schema"
+	"github.com/pocketbase/pocketbase/tools/types"
 )
 
 type Artist struct {
@@ -59,6 +60,7 @@ func init() {
 		collection := &models.Collection{}
 
 		collection.Name = "artists"
+		collection.Id = "artists"
 		collection.Type = models.CollectionTypeBase
 		collection.System = false
 		collection.MarkAsNew()
@@ -121,7 +123,19 @@ func init() {
 					MinSelect:    Ptr(1),
 				},
 			},
+			&schema.SchemaField{
+				Id:   "artist_aka",
+				Name: "also_known_as",
+				Type: schema.FieldTypeRelation,
+				Options: &schema.RelationOptions{
+					CollectionId: "artists",
+				},
+			},
 		)
+
+		collection.Indexes = types.JsonArray[string]{
+			"CREATE UNIQUE INDEX `pbx_artist_slug` ON `artists` (`slug`)",
+		}
 
 		err := dao.SaveCollection(collection)
 
