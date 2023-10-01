@@ -4,5 +4,5 @@ tasks:
   reboot:
     cmds:
       - rm -rf pb_data
-      - go run main.go migrate up
+      # - go run main.go migrate up
       - go run main.go serve
