@@ -5,23 +5,28 @@ name: Go
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 # workflow tasks
 jobs:
-  generate:
-    name: Generate cross-platform builds
+  xgo:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout the repository
-        uses: actions/checkout@v2
-      - name: Generate build files
-        uses: thatisuday/go-cross-build@v1
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build
+        uses: crazy-max/ghaction-xgo@v3
         with:
-            platforms: 'linux/amd64, windows/amd64'
-            package: ''
-            name: 'wga'
-            compress: 'false'
-            dest: 'dist'
+          xgo_version: latest
+          go_version: 1.21
+          dest: build
+          prefix: wga
+          targets: windows/amd64,linux/amd64
+          v: true
+          x: false
+          race: false
+          ldflags: -s -w
+          buildmode: default
+          trimpath: true
