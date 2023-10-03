@@ -2,8 +2,8 @@ package migrations
 
 import (
 	"encoding/json"
-	"os"
 
+	"blackfyre.ninja/wga/assets"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/daos"
 	m "github.com/pocketbase/pocketbase/migrations"
@@ -55,7 +55,7 @@ func init() {
 		// create a up query for each Glossary
 		// execute the up query
 
-		data, err := os.ReadFile("reference/glossary_stage_1.json")
+		data, err := assets.InternalFiles.ReadFile("reference/glossary_stage_1.json")
 
 		if err != nil {
 			return err

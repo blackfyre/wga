@@ -2,8 +2,8 @@ package migrations
 
 import (
 	"encoding/json"
-	"os"
 
+	"blackfyre.ninja/wga/assets"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/daos"
 	m "github.com/pocketbase/pocketbase/migrations"
@@ -43,7 +43,7 @@ func init() {
 			return err
 		}
 
-		data, err := os.ReadFile("reference/schools.json")
+		data, err := assets.InternalFiles.ReadFile("reference/schools.json")
 
 		if err != nil {
 			return err
