@@ -1,0 +1,43 @@
+{{define "layout"}}
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{block "title" .}}Web Gallery of Art{{end}}</title>
+    <link rel="stylesheet" href="./assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/viewerjs/1.11.6/viewer.min.css"
+        integrity="sha512-za6IYQz7tR0pzniM/EAkgjV1gf1kWMlVJHBHavKIvsNoUMKWU99ZHzvL6lIobjiE2yKDAKMDSSmcMAxoiWgoWA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+
+<body>
+
+    {{template "partial:top-nav" .}}
+
+    {{block "body" .}}
+
+    {{end}}
+
+    {{template "partial:footer" .}}
+
+    <div class="jump back-to-top">
+        <span class="icon is-medium">
+            <i class="fas fa-arrow-up fa-2x"></i>
+        </span>
+    </div>
+    <!-- <section id="dual" class="">
+        <div id="dual-left" hx-get="/htmx/left_default.html" hx-trigger="revealed"></div>
+        <div id="dual-right" hx-get="/htmx/right_default.html" hx-trigger="revealed"></div>
+        <button class="delete is-large" hx-on="click: ToggleDualMode()"></button>
+    </section> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/viewerjs/1.11.6/viewer.min.js"
+        integrity="sha512-EC3CQ+2OkM+ZKsM1dbFAB6OGEPKRxi6EDRnZW9ys8LghQRAq6cXPUgXCCujmDrXdodGXX9bqaaCRtwj4h4wgSQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+    <script src="./site.js"></script>
+</body>
+
+</html>
+{{end}}

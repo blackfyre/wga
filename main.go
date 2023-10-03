@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+
 	"blackfyre.ninja/wga/handlers"
 	"blackfyre.ninja/wga/hooks"
 	_ "blackfyre.ninja/wga/migrations"
@@ -10,11 +12,10 @@ import (
 func main() {
 	app := pocketbase.New()
 
-	handlers.RegisterHome(app)
-	handlers.RegisterArtist(app)
+	handlers.RegisterHandlers(app)
 	hooks.RegisterHooks(app)
 
-	// if err := app.Start(); err != nil {
-	// 	log.Fatal(err)
-	// }
+	if err := app.Start(); err != nil {
+		log.Fatal(err)
+	}
 }

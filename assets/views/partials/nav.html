@@ -1,0 +1,69 @@
+{{define "partial:top-nav"}}
+<nav class="navbar" role="navigation" aria-label="main navigation">
+    <div class="navbar-brand">
+        <a class="navbar-item" id="nav-logo" href="/">
+            <img src="./assets/images/logo.png" width="318" height="45" alt="Web Gallery of Art" title="Go to Home">
+        </a>
+
+        <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+        </a>
+    </div>
+
+    <div id="navbarBasicExample" class="navbar-menu">
+        <div class="navbar-start">
+            <a class="navbar-item is-active" href="/">
+                Home
+            </a>
+
+            <a class="navbar-item">
+                Artists
+            </a>
+            <a class="navbar-item" href="./search.html">
+                Search
+            </a>
+            <a class="navbar-item">
+                Tours
+            </a>
+            <a class="navbar-item is-hidden-touch" hx-on="click: ToggleDualMode()">
+                Dual mode
+            </a>
+            <div class="navbar-item has-dropdown is-hoverable">
+                <a class="navbar-link">
+                    More
+                </a>
+
+                <div class="navbar-dropdown">
+                    <a class="navbar-item">
+                        Glossary
+                    </a>
+                    <a class="navbar-item">
+                        Music
+                    </a>
+                    <a class="navbar-item">
+                        Database
+                    </a>
+                    <a class="navbar-item">
+                        Sources
+                    </a>
+                    <a class="navbar-item">
+                        Guestbook
+                    </a>
+                    <a class="navbar-item">
+                        About Us
+                    </a>
+                    <a class="navbar-item">
+                        Contact Us
+                    </a>
+                    <hr class="navbar-divider">
+                    <a class="navbar-item">
+                        Report an issue
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+{{end}}

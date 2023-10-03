@@ -2,8 +2,8 @@ package migrations
 
 import (
 	"encoding/json"
-	"os"
 
+	"blackfyre.ninja/wga/assets"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/daos"
 	m "github.com/pocketbase/pocketbase/migrations"
@@ -131,6 +131,12 @@ func init() {
 					CollectionId: "artists",
 				},
 			},
+			&schema.SchemaField{
+				Id:      "artist_published",
+				Name:    "published",
+				Type:    schema.FieldTypeBool,
+				Options: &schema.BoolOptions{},
+			},
 		)
 
 		collection.Indexes = types.JsonArray[string]{
@@ -149,7 +155,7 @@ func init() {
 		// create a up query for each Glossary
 		// execute the up query
 
-		data, err := os.ReadFile("reference/artists_with_bio_stage_2.json")
+		data, err := assets.InternalFiles.ReadFile("reference/artists_with_bio_stage_2.json")
 
 		if err != nil {
 			return err
@@ -175,6 +181,7 @@ func init() {
 				"place_of_death": i.Meta.PlaceOfDeath,
 				"profession":     i.Source.Profession,
 				"school":         i.School,
+				"published":      true,
 			})
 
 			_, err = q.Execute()
