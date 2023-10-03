@@ -1,8 +1,9 @@
 name: basebuild
 
 on:
-  pull_request:
   push:
+    tags:
+      - v*
 
 jobs:
   goreleaser:
