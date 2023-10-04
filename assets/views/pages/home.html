@@ -10,15 +10,19 @@ Web Gallery of Art
         </div>
     </div>
     <div class="container">
-        <div class="box">
-            <div class="content">
-                <h3 class="title">Sitebuild demo pages</h3>
-                <ul>
-                    <li><a href="./a.html">Artist index</a></li>
-                    <li><a href="./search.html">Search page</a></li>
-                    <li><a href="./carl-frederik-aagaard.html">AAGAARD, Carl Frederik</a></li>
-                    <li><a href="./carl-frederik-aagaard-alt2.html">AAGAARD, Carl Frederik, alternative 1</a></li>
-                </ul>
+        <div class="box level">
+            <div class="level-item has-text-centered">
+                <div>
+                    <p class="heading">Artists</p>
+                    <p class="title">{{ .ArtistCount }}</p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered">
+                <div>
+                    <p><i class="fa-solid fa-palette"></i></p>
+                    <p class="heading">Artworks</p>
+                    <p class="title">123</p>
+                </div>
             </div>
         </div>
     </div>

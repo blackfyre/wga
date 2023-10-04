@@ -16,6 +16,10 @@ type Content struct {
 	Content   string `db:"content" json:"content"`
 }
 
+type counter struct {
+	C int `db:"c" json:"c"`
+}
+
 func registerHome(app *pocketbase.PocketBase) {
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 		// this is safe to be used by multiple goroutines
@@ -24,6 +28,7 @@ func registerHome(app *pocketbase.PocketBase) {
 		e.Router.GET("/", func(c echo.Context) error {
 
 			result := Content{}
+			artistCount := counter{}
 
 			err := app.Dao().DB().NewQuery("SELECT name, content FROM strings WHERE name = {:field}").Bind(dbx.Params{
 				"field": "welcome",
@@ -34,8 +39,15 @@ func registerHome(app *pocketbase.PocketBase) {
 				fmt.Println(err)
 			}
 
+			err = app.Dao().DB().NewQuery("SELECT COUNT(*) as c FROM artists WHERE published IS true").One(&artistCount)
+
+			if err != nil {
+				fmt.Println(err)
+			}
+
 			html, err := renderPage("home", map[string]any{
-				"Content": result.Content,
+				"Content":     result.Content,
+				"ArtistCount": artistCount.C,
 			})
 
 			if err != nil {
