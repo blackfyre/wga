@@ -24,6 +24,7 @@ func init() {
 		collection := &models.Collection{}
 
 		collection.Name = tName
+		collection.Id = tName
 		collection.Type = models.CollectionTypeBase
 		collection.System = false
 		collection.MarkAsNew()

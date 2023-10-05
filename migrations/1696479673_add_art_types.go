@@ -11,23 +11,19 @@ import (
 	"github.com/pocketbase/pocketbase/models/schema"
 )
 
-type ArtPeriod struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Start       int    `json:"start"`
-	End         int    `json:"end"`
-	Description string `json:"description"`
+type ArtType struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
 func init() {
-	tName := "art_periods"
+	tName := "art_types"
 	m.Register(func(db dbx.Builder) error {
 		dao := daos.New(db)
 
 		collection := &models.Collection{}
 
 		collection.Name = tName
-		collection.Id = tName
 		collection.Type = models.CollectionTypeBase
 		collection.System = false
 		collection.MarkAsNew()
@@ -39,24 +35,6 @@ func init() {
 				Options:     &schema.TextOptions{},
 				Presentable: true,
 			},
-			&schema.SchemaField{
-				Id:      tName + "_start",
-				Name:    "start",
-				Type:    schema.FieldTypeNumber,
-				Options: &schema.NumberOptions{},
-			},
-			&schema.SchemaField{
-				Id:      tName + "_end",
-				Name:    "end",
-				Type:    schema.FieldTypeNumber,
-				Options: &schema.NumberOptions{},
-			},
-			&schema.SchemaField{
-				Id:      tName + "_description",
-				Name:    "description",
-				Type:    schema.FieldTypeText,
-				Options: &schema.TextOptions{},
-			},
 		)
 
 		err := dao.SaveCollection(collection)
@@ -65,13 +43,13 @@ func init() {
 			return err
 		}
 
-		data, err := assets.InternalFiles.ReadFile("reference/art_periods.json")
+		data, err := assets.InternalFiles.ReadFile("reference/types.json")
 
 		if err != nil {
 			return err
 		}
 
-		var c []ArtPeriod
+		var c []ArtType
 
 		err = json.Unmarshal(data, &c)
 
@@ -81,11 +59,8 @@ func init() {
 
 		for _, g := range c {
 			q := db.Insert(tName, dbx.Params{
-				"id":          g.ID,
-				"start":       g.Start,
-				"end":         g.End,
-				"name":        g.Name,
-				"description": g.Description,
+				"id":   g.ID,
+				"name": g.Name,
 			})
 
 			_, err = q.Execute()
