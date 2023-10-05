@@ -29,6 +29,7 @@ func registerHome(app *pocketbase.PocketBase) {
 
 			result := Content{}
 			artistCount := counter{}
+			artworkCount := counter{}
 
 			err := app.Dao().DB().NewQuery("SELECT name, content FROM strings WHERE name = {:field}").Bind(dbx.Params{
 				"field": "welcome",
@@ -45,9 +46,16 @@ func registerHome(app *pocketbase.PocketBase) {
 				fmt.Println(err)
 			}
 
+			err = app.Dao().DB().NewQuery("SELECT COUNT(*) as c FROM artworks WHERE published IS true").One(&artworkCount)
+
+			if err != nil {
+				fmt.Println(err)
+			}
+
 			html, err := renderPage("home", map[string]any{
-				"Content":     result.Content,
-				"ArtistCount": artistCount.C,
+				"Content":      result.Content,
+				"ArtistCount":  artistCount.C,
+				"ArtworkCount": artworkCount.C,
 			})
 
 			if err != nil {
