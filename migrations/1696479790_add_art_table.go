@@ -38,6 +38,7 @@ type ArtworkStage1 struct {
 	Meta      ArtworkStage1Meta `json:"meta"`
 	Comment   string            `json:"comment"`
 	Technique string            `json:"technique"`
+	Image     string            `json:"image"`
 }
 
 type ArtworkStage1Meta struct {
@@ -58,7 +59,7 @@ func readArtworkStage1Files() ([]ArtworkStage1, error) {
 	for _, file := range fileList {
 
 		//if file name contains `artworks_stage_1_` then add to files
-		if strings.Contains(file.Name(), "artworks_stage_1_") {
+		if strings.Contains(file.Name(), "artworks_stage_2_") {
 			files = append(files, filepath.Join("reference", file.Name()))
 		}
 	}
@@ -89,6 +90,7 @@ func init() {
 		collection := &models.Collection{}
 
 		collection.Name = tName
+		collection.Id = tName
 		collection.Type = models.CollectionTypeBase
 		collection.System = false
 		collection.MarkAsNew()
@@ -99,6 +101,7 @@ func init() {
 				Type:        schema.FieldTypeText,
 				Options:     &schema.TextOptions{},
 				Presentable: true,
+				Required:    true,
 			},
 			&schema.SchemaField{
 				Id:   tName + "_author",
@@ -144,6 +147,17 @@ func init() {
 				Name: "published",
 				Type: schema.FieldTypeBool,
 			},
+			&schema.SchemaField{
+				Id:   tName + "_image",
+				Name: "image",
+				Type: schema.FieldTypeFile,
+				Options: &schema.FileOptions{
+					MimeTypes: []string{
+						"image/jpeg", "image/png",
+					},
+				},
+				Required: true,
+			},
 		)
 
 		err := dao.SaveCollection(collection)
@@ -168,6 +182,7 @@ func init() {
 				"school":    g.SchoolId,
 				"comment":   g.Comment,
 				"published": true,
+				"image":     g.Image,
 			})
 
 			_, err = q.Execute()
