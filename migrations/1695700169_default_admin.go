@@ -1,6 +1,10 @@
 package migrations
 
 import (
+	"log"
+	"os"
+
+	"github.com/joho/godotenv"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/daos"
 	m "github.com/pocketbase/pocketbase/migrations"
@@ -8,20 +12,37 @@ import (
 )
 
 func init() {
+
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("Error loading .env file")
+	}
+
+	email := os.Getenv("WGA_ADMIN_EMAIL")
+	password := os.Getenv("WGA_ADMIN_PASSWORD")
+
 	m.Register(func(db dbx.Builder) error {
-		dao := daos.New(db)
 
-		admin := &models.Admin{}
-		admin.Email = "root@wga.hu"
-		admin.SetPassword("Testing1234567890")
+		if email != "" && password != "" {
+			dao := daos.New(db)
 
-		return dao.SaveAdmin(admin)
+			admin := &models.Admin{}
+			admin.Email = email
+			admin.SetPassword(password)
+
+			return dao.SaveAdmin(admin)
+		}
+
+		return nil
+
 	}, func(db dbx.Builder) error {
-		dao := daos.New(db)
+		if email != "" {
+			dao := daos.New(db)
 
-		admin, _ := dao.FindAdminByEmail("test@example.com")
-		if admin != nil {
-			return dao.DeleteAdmin(admin)
+			admin, _ := dao.FindAdminByEmail(email)
+			if admin != nil {
+				return dao.DeleteAdmin(admin)
+			}
 		}
 
 		// already deleted
