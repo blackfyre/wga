@@ -17,6 +17,31 @@ The project is built using the following technologies:
 
 ## Getting Started
 
+### Prerequisites
+
+To run the application you'll have to have a `.env` file next to your executable with the following contents:
+
+```bash
+WGA_ADMIN_EMAIL=
+WGA_ADMIN_PASSWORD=
+
+WGA_S3_ENDPOINT=
+WGA_S3_BUCKET=
+WGA_S3_REGION=
+WGA_S3_ACCESS_KEY=
+WGA_S3_ACCESS_SECRET=
+```
+
+| Variable | Description |
+| --- | --- |
+| `WGA_ADMIN_EMAIL` | The email address of the admin user |
+| `WGA_ADMIN_PASSWORD` | The password of the admin user |
+| `WGA_S3_ENDPOINT` | The endpoint of the S3 bucket |
+| `WGA_S3_BUCKET` | The name of the S3 bucket |
+| `WGA_S3_REGION` | The region of the S3 bucket |
+| `WGA_S3_ACCESS_KEY` | The access key of the S3 bucket |
+| `WGA_S3_ACCESS_SECRET` | The access secret of the S3 bucket |
+
 ### Running the application
 
 To run the application simply download the release for your platform and run it with:
