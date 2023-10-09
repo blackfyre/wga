@@ -2,16 +2,28 @@ package main
 
 import (
 	"log"
+	"os"
+	"strings"
 
 	"blackfyre.ninja/wga/handlers"
 	"blackfyre.ninja/wga/hooks"
 	_ "blackfyre.ninja/wga/migrations"
+	"github.com/joho/godotenv"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/plugins/migratecmd"
 )
 
 func main() {
-	app := pocketbase.New()
+
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("Error loading .env file")
+	}
+
+	app := pocketbase.NewWithConfig(pocketbase.Config{
+		DefaultDebug:   strings.HasPrefix(os.Args[0], os.TempDir()),
+		DefaultDataDir: "./wga_data",
+	})
 
 	handlers.RegisterHandlers(app)
 	hooks.RegisterHooks(app)
