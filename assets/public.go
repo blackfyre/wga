@@ -4,5 +4,5 @@ import (
 	"embed"
 )
 
-//go:embed "public/css/*" "public/js/*" "public/images/*" "public/fonts/*" "public/404.html"
+//go:embed "public/*"
 var PublicFiles embed.FS
