@@ -3,14 +3,13 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/jellydator/ttlcache/v3"
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 )
 
-func registerArtist(app *pocketbase.PocketBase, cache *ttlcache.Cache[string, string]) {
+func registerArtist(app *pocketbase.PocketBase) {
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 
