@@ -5,6 +5,8 @@ htmx.onLoad(function (content) {
     removeNotification();
 });
 
+htmx.config.globalViewTransitions = true;
+
 function initNavbar () {
     // Get all "navbar-burger" elements
     const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
