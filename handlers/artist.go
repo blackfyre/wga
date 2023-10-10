@@ -14,14 +14,23 @@ func registerArtist(app *pocketbase.PocketBase) {
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 
 		e.Router.GET("artists/:name", func(c echo.Context) error {
-			// name := c.PathParam("name")
+			slug := c.PathParam("name")
 
-			html, err := renderPage("artist", map[string]any{})
+			html := ""
+			err := error(nil)
+
+			if isHtmxRequest(c) {
+				html, err = renderBlock("artist:content", map[string]any{})
+			} else {
+				html, err = renderPage("artist", map[string]any{})
+			}
 
 			if err != nil {
 				// or redirect to a dedicated 404 HTML page
 				return apis.NewNotFoundError("", err)
 			}
+
+			c.Response().Header().Set("HX-Push-Url", "/artists/"+slug)
 
 			return c.HTML(http.StatusOK, html)
 		})
