@@ -127,14 +127,17 @@ func registerHome(app *pocketbase.PocketBase, cache *ttlcache.Cache[string, stri
 
 			html := ""
 
+			data := map[string]any{
+				"Content":      welcomeText,
+				"ArtistCount":  artistCount,
+				"ArtworkCount": artworkCount,
+			}
+
 			if isHtmx {
+				html, err = renderBlock("home:content", data)
 
 			} else {
-				html, err = renderPage("home", map[string]any{
-					"Content":      welcomeText,
-					"ArtistCount":  artistCount,
-					"ArtworkCount": artworkCount,
-				})
+				html, err = renderPage("home", data)
 			}
 
 			if err != nil {

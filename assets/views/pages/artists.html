@@ -1,0 +1,31 @@
+{{define "title"}}
+Artists
+{{end}}
+
+{{define "body"}}
+<section class="section" id="mc-area">
+    {{block "home:content" .}}
+    <div class="container block">
+        <div class="box content">
+            {{safeHTML .Content}}
+        </div>
+    </div>
+    <div class="container">
+        <div class="box level">
+            <div class="level-item has-text-centered">
+                <div>
+                    <p class="title">{{ .ArtistCount }}</p>
+                    <p class="heading">Artists</p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered">
+                <div>
+                    <p class="title">{{ .ArtworkCount }}</p>
+                    <p class="heading">Artworks</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {{end}}
+</section>
+{{end}}
