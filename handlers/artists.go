@@ -16,12 +16,25 @@ func registerArtists(app *pocketbase.PocketBase) {
 		e.Router.GET("/artists", func(c echo.Context) error {
 			// name := c.PathParam("name")
 
-			html, err := renderPage("artists", map[string]any{})
+			data := map[string]any{
+				"Content": "",
+			}
+
+			html := ""
+			err := error(nil)
+
+			if isHtmxRequest(c) {
+				html, err = renderBlock("artists:content", data)
+			} else {
+				html, err = renderPage("artists", data)
+			}
 
 			if err != nil {
 				// or redirect to a dedicated 404 HTML page
 				return apis.NewNotFoundError("", err)
 			}
+
+			c.Response().Header().Set("HX-Push-Url", "/artists")
 
 			return c.HTML(http.StatusOK, html)
 		})

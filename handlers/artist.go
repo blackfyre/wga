@@ -13,7 +13,7 @@ func registerArtist(app *pocketbase.PocketBase) {
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 
-		e.Router.GET("/:name", func(c echo.Context) error {
+		e.Router.GET("artists/:name", func(c echo.Context) error {
 			// name := c.PathParam("name")
 
 			html, err := renderPage("artist", map[string]any{})

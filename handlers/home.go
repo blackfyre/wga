@@ -152,6 +152,8 @@ func registerHome(app *pocketbase.PocketBase) {
 				return apis.NewNotFoundError("", err)
 			}
 
+			c.Response().Header().Set("HX-Push-Url", "/")
+
 			return c.HTML(http.StatusOK, html)
 		})
 
