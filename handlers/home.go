@@ -130,16 +130,29 @@ func registerHome(app *pocketbase.PocketBase) {
 				fmt.Println(err)
 			}
 
-			html, err := renderPage("home", map[string]any{
+			isHtmx := isHtmxRequest(c)
+
+			html := ""
+
+			data := map[string]any{
 				"Content":      welcomeText,
 				"ArtistCount":  artistCount,
 				"ArtworkCount": artworkCount,
-			})
+			}
+
+			if isHtmx {
+				html, err = renderBlock("home:content", data)
+
+			} else {
+				html, err = renderPage("home", data)
+			}
 
 			if err != nil {
 				// or redirect to a dedicated 404 HTML page
 				return apis.NewNotFoundError("", err)
 			}
+
+			c.Response().Header().Set("HX-Push-Url", "/")
 
 			return c.HTML(http.StatusOK, html)
 		})

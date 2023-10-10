@@ -3,7 +3,9 @@ Web Gallery of Art
 {{end}}
 
 {{define "body"}}
+{{block "home:content" .}}
 <section class="section">
+
     <div class="container block">
         <div class="box content">
             {{safeHTML .Content}}
@@ -25,5 +27,7 @@ Web Gallery of Art
             </div>
         </div>
     </div>
+
 </section>
+{{end}}
 {{end}}
