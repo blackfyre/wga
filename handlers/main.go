@@ -4,26 +4,18 @@ import (
 	"bytes"
 	"html/template"
 	"log"
-	"time"
 
 	"blackfyre.ninja/wga/assets"
 	"blackfyre.ninja/wga/utils"
-	"github.com/jellydator/ttlcache/v3"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 )
 
 func RegisterHandlers(app *pocketbase.PocketBase) {
 
-	cache := ttlcache.New[string, string](
-		ttlcache.WithTTL[string, string](30 * time.Minute),
-	)
-
-	go cache.Start() // starts automatic expired item deletion
-
-	registerArtist(app, cache)
+	registerArtist(app)
 	registerStatic(app)
-	registerHome(app, cache)
+	registerHome(app)
 }
 
 func renderPage(t string, data map[string]any) (string, error) {
