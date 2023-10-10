@@ -26,17 +26,23 @@ func init() {
 
 		for _, i := range c {
 			q := db.Insert("artists", dbx.Params{
-				"id":             i.Id,
-				"name":           i.Name,
-				"bio":            i.Bio,
-				"slug":           i.Slug,
-				"year_of_birth":  i.Meta.YearOfBirth,
-				"year_of_death":  i.Meta.YearOfDeath,
-				"place_of_birth": i.Meta.PlaceOfBirth,
-				"place_of_death": i.Meta.PlaceOfDeath,
-				"profession":     i.Source.Profession,
-				"school":         i.School,
-				"published":      true,
+				"id":                      i.Id,
+				"name":                    i.Name,
+				"bio":                     i.Bio,
+				"slug":                    i.Slug,
+				"year_of_birth":           i.Meta.YearOfBirth,
+				"year_of_death":           i.Meta.YearOfDeath,
+				"place_of_birth":          i.Meta.PlaceOfBirth,
+				"place_of_death":          i.Meta.PlaceOfDeath,
+				"profession":              i.Source.Profession,
+				"school":                  i.School,
+				"published":               true,
+				"place_of_activity_start": i.Meta.PlaceOfActivityStart,
+				"place_of_activity_end":   i.Meta.PlaceOfActivityEnd,
+				"exact_year_of_birth":     i.Meta.ExactYearOfBirth,
+				"exact_year_of_death":     i.Meta.ExactYearOfDeath,
+				"exact_active_start":      i.Meta.ExactActiveStart,
+				"exact_active_end":        i.Meta.ExactActiveEnd,
 			})
 
 			_, err = q.Execute()
