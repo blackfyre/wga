@@ -3,12 +3,88 @@ Page 1
 {{end}}
 
 {{define "body"}}
-<section class="section" id="mc-area">
-    {{block "artist:content" .}}
-    <div class="container block">
-        <div class="box content">
+{{block "artist:content" .}}
+<section class="hero is-primary is-sticky">
+    <div class="hero-body">
+        <div class="container">
+            <p class="title">
+                {{ .Name }}
+            </p>
+            <p class="subtitle">
+                (b. 1833, Odense, d. 1895, København)
+            </p>
         </div>
     </div>
-    {{end}}
 </section>
+<section class="section">
+    <div class="container">
+        <div class="divider">Biography</div>
+    </div>
+    <div class="container block">
+        <div class="box">
+            <div class="content">
+                {{ safeHTML .Bio}}
+            </div>
+        </div>
+    </div>
+    <div class="container block">
+
+        <div>
+            <div class="divider">Works</div>
+        </div>
+
+        <div class="columns is-multiline" data-viewer>
+            {{range .Works}}
+            <div class="column is-one-third-tablet is-one-quarter-desktop">
+                <article class="card is-art-card">
+                    <div class="card-image">
+                        <figure class="image is-4by3">
+                            <picture>
+                                <source media="(max-width: 768px)" srcset="{{.Thumb}}">
+                                <source media="(min-width: 769px)" srcset="{{.Thumb}}">
+                                <source media="(min-width: 1024px)" srcset="{{.Thumb}}">
+                                <img src="{{.Image}}" alt="{{ .Title}}">
+                            </picture>
+                        </figure>
+                    </div>
+                    <div class="card-content">
+                        <div class="content">
+                            <h1 class="title">{{ .Title}}</h1>
+                            <p class="subtitle"></p>
+                            <div class="line-clamp-3">
+                                {{safeHTML .Comment}}
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </div>
+            {{ else }}
+
+            {{end}}
+
+            <!-- <div class="column">
+                <article class="card is-art-card">
+                    <div class="card-image">
+                        <figure class="image is-4by3">
+                            <img src="https://www.wga.hu/art/a/aagaard/deerlake.jpg" alt="Placeholder image">
+                        </figure>
+                    </div>
+                    <div class="card-content">
+                        <div class="content">
+                            <h1 class="title">Deer beside a Lake</h1>
+                            <p class="subtitle">1888, Oil on canvas, 53 x 82 cm, Private collection</p>
+                            <p>This painting is unusual in 19th century art in combining landscape with still-life.
+                                In the acutely observed flowers the
+                                artist has demonstrated his skills as an observer of nature, but in the more distant
+                                landscape. The two figures,
+                                possibly lovers, are framed by the forward garland but are almost incidental to the
+                                composition.</p>
+                        </div>
+                    </div>
+                </article>
+            </div> -->
+        </div>
+    </div>
+</section>
+{{end}}
 {{end}}

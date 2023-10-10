@@ -3,8 +3,9 @@ Artists
 {{end}}
 
 {{define "body"}}
-<section class="section" id="mc-area">
-    {{block "artists:content" .}}
+{{block "artists:content" .}}
+<section class="section">
+
     <div class="container">
         <div class="box table-container">
 
@@ -89,6 +90,7 @@ Artists
             </nav>
         </div>
     </div>
-    {{end}}
+
 </section>
+{{end}}
 {{end}}
