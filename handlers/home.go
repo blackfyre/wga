@@ -123,11 +123,19 @@ func registerHome(app *pocketbase.PocketBase, cache *ttlcache.Cache[string, stri
 				fmt.Println(err)
 			}
 
-			html, err := renderPage("home", map[string]any{
-				"Content":      welcomeText,
-				"ArtistCount":  artistCount,
-				"ArtworkCount": artworkCount,
-			})
+			isHtmx := isHtmxRequest(c)
+
+			html := ""
+
+			if isHtmx {
+
+			} else {
+				html, err = renderPage("home", map[string]any{
+					"Content":      welcomeText,
+					"ArtistCount":  artistCount,
+					"ArtworkCount": artworkCount,
+				})
+			}
 
 			if err != nil {
 				// or redirect to a dedicated 404 HTML page

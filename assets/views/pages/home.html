@@ -3,7 +3,8 @@ Web Gallery of Art
 {{end}}
 
 {{define "body"}}
-<section class="section">
+<section class="section" id="mc-area">
+    {{block "home:content" .}}
     <div class="container block">
         <div class="box content">
             {{safeHTML .Content}}
@@ -25,5 +26,6 @@ Web Gallery of Art
             </div>
         </div>
     </div>
+    {{end}}
 </section>
 {{end}}
