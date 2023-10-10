@@ -3,7 +3,6 @@ module blackfyre.ninja/wga
 go 1.21.0
 
 require (
-	github.com/jellydator/ttlcache/v3 v3.1.0
 	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v5 v5.0.0-20230722203903-ec5b858dab61
 	github.com/pocketbase/dbx v1.10.1
