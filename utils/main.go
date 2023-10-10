@@ -224,3 +224,9 @@ func toInt64(i any) (int64, error) {
 
 	return 0, fmt.Errorf("unable to convert type %T to int", i)
 }
+
+func SetBoolWithFallback(value *bool, fallback bool) {
+	if value == nil {
+		*value = fallback
+	}
+}

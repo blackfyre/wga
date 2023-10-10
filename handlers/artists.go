@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
@@ -49,9 +51,31 @@ func registerArtists(app *pocketbase.PocketBase) {
 			preRendered := []map[string]string{}
 
 			for _, m := range records {
+
+				// TODO: handle aka
+
+				school := m.GetStringSlice("school")
+
+				schoolCollector := []string{}
+
+				for _, s := range school {
+					r, err := app.Dao().FindRecordById("schools", s)
+
+					if err != nil {
+						log.Print("school not found")
+						continue
+					}
+
+					schoolCollector = append(schoolCollector, r.GetString("name"))
+
+				}
+
 				row := map[string]string{
-					"Name": m.GetString("name"),
-					"Url":  artistUrl(m.GetString("slug")),
+					"Name":       m.GetString("name"),
+					"Url":        artistUrl(m.GetString("slug")),
+					"Profession": m.GetString("profession"),
+					"BornDied":   normalizedBirthDeathActivity(m),
+					"Schools":    strings.Join(schoolCollector, ", "),
 				}
 
 				preRendered = append(preRendered, row)

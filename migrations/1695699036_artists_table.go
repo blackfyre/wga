@@ -22,36 +22,44 @@ type Artist struct {
 		School     string `json:"school"`
 		URL        string `json:"url"`
 	} `json:"source"`
-	Slug            string `json:"slug"`
-	RelativePath    string `json:"relativePath"`
-	WgaRelativePath string `json:"wgaRelativePath"`
-	WgaID           string `json:"wgaId"`
-	Meta            struct {
-		YearOfBirth          int    `json:"year_of_birth"`
-		PlaceOfBirth         string `json:"place_of_birth"`
-		YearOfDeath          int    `json:"year_of_death"`
-		PlaceOfDeath         string `json:"place_of_death"`
-		YearActiveStart      any    `json:"year_active_start"`
-		YearActiveEnd        any    `json:"year_active_end"`
-		ExactYearOfBirth     bool   `json:"exact_year_of_birth"`
-		ExactYearOfDeath     bool   `json:"exact_year_of_death"`
-		PlaceOfActivityStart string `json:"place_of_activity_start"`
-		PlaceOfActivityEnd   string `json:"place_of_activity_end"`
-		Normalized           string `json:"normalized"`
-		ExactActiveStart     any    `json:"exact_active_start"`
-		ExactActiveEnd       any    `json:"exact_active_end"`
-		KnownPlaceOfBirth    bool   `json:"known_place_of_birth"`
-		KnownPlaceOfDeath    bool   `json:"known_place_of_death"`
-		Parsed               bool   `json:"parsed"`
-	} `json:"meta"`
-	PossibleInfluences any    `json:"possibleInfluences"`
-	Bio                string `json:"bio"`
-	School             string `json:"school"`
+	Slug               string     `json:"slug"`
+	RelativePath       string     `json:"relativePath"`
+	WgaRelativePath    string     `json:"wgaRelativePath"`
+	WgaID              string     `json:"wgaId"`
+	Meta               ArtistMeta `json:"meta"`
+	PossibleInfluences any        `json:"possibleInfluences"`
+	Bio                string     `json:"bio"`
+	School             string     `json:"school"`
+}
+
+type ArtistMeta struct {
+	YearOfBirth          int    `json:"year_of_birth"`
+	PlaceOfBirth         string `json:"place_of_birth"`
+	YearOfDeath          int    `json:"year_of_death"`
+	PlaceOfDeath         string `json:"place_of_death"`
+	YearActiveStart      int    `json:"year_active_start"`
+	YearActiveEnd        int    `json:"year_active_end"`
+	ExactYearOfBirth     string `json:"exact_year_of_birth"`
+	ExactYearOfDeath     string `json:"exact_year_of_death"`
+	PlaceOfActivityStart string `json:"place_of_activity_start"`
+	PlaceOfActivityEnd   string `json:"place_of_activity_end"`
+	Normalized           string `json:"normalized"`
+	ExactActiveStart     string `json:"exact_active_start"`
+	ExactActiveEnd       string `json:"exact_active_end"`
+	KnownPlaceOfBirth    string `json:"known_place_of_birth"`
+	KnownPlaceOfDeath    string `json:"known_place_of_death"`
+	Parsed               bool   `json:"parsed"`
 }
 
 func Ptr[T any](v T) *T {
 	return &v
 }
+
+const (
+	Yes           string = "yes"
+	No            string = "no"
+	NotApplicable string = "n/a"
+)
 
 func init() {
 	m.Register(func(db dbx.Builder) error {
@@ -107,6 +115,60 @@ func init() {
 				Name:    "place_of_death",
 				Type:    schema.FieldTypeText,
 				Options: &schema.TextOptions{},
+			},
+			&schema.SchemaField{
+				Id:      "artist_place_of_activity_start",
+				Name:    "place_of_activity_start",
+				Type:    schema.FieldTypeText,
+				Options: &schema.TextOptions{},
+			},
+			&schema.SchemaField{
+				Id:      "artist_place_of_activity_end",
+				Name:    "place_of_activity_end",
+				Type:    schema.FieldTypeText,
+				Options: &schema.TextOptions{},
+			},
+			&schema.SchemaField{
+				Id:       "artist_exact_year_of_birth",
+				Name:     "exact_year_of_birth",
+				Type:     schema.FieldTypeSelect,
+				Options:  &schema.SelectOptions{Values: []string{Yes, No, NotApplicable}, MaxSelect: 1},
+				Required: true,
+			},
+			&schema.SchemaField{
+				Id:       "artist_exact_year_of_death",
+				Name:     "exact_year_of_death",
+				Type:     schema.FieldTypeSelect,
+				Options:  &schema.SelectOptions{Values: []string{Yes, No, NotApplicable}, MaxSelect: 1},
+				Required: true,
+			},
+			&schema.SchemaField{
+				Id:       "artist_exact_active_start",
+				Name:     "exact_active_start",
+				Type:     schema.FieldTypeSelect,
+				Options:  &schema.SelectOptions{Values: []string{Yes, No, NotApplicable}, MaxSelect: 1},
+				Required: true,
+			},
+			&schema.SchemaField{
+				Id:       "artist_exact_active_end",
+				Name:     "exact_active_end",
+				Type:     schema.FieldTypeSelect,
+				Options:  &schema.SelectOptions{Values: []string{Yes, No, NotApplicable}, MaxSelect: 1},
+				Required: true,
+			},
+			&schema.SchemaField{
+				Id:       "artist_known_place_of_birth",
+				Name:     "known_place_of_birth",
+				Type:     schema.FieldTypeSelect,
+				Options:  &schema.SelectOptions{Values: []string{Yes, No, NotApplicable}, MaxSelect: 1},
+				Required: true,
+			},
+			&schema.SchemaField{
+				Id:       "artist_known_place_of_death",
+				Name:     "known_place_of_death",
+				Type:     schema.FieldTypeSelect,
+				Options:  &schema.SelectOptions{Values: []string{Yes, No, NotApplicable}, MaxSelect: 1},
+				Required: true,
 			},
 			&schema.SchemaField{
 				Id:      "artist_profession",
@@ -171,17 +233,23 @@ func init() {
 
 		for _, i := range c {
 			q := db.Insert("artists", dbx.Params{
-				"id":             i.Id,
-				"name":           i.Name,
-				"bio":            i.Bio,
-				"slug":           i.Slug,
-				"year_of_birth":  i.Meta.YearOfBirth,
-				"year_of_death":  i.Meta.YearOfDeath,
-				"place_of_birth": i.Meta.PlaceOfBirth,
-				"place_of_death": i.Meta.PlaceOfDeath,
-				"profession":     i.Source.Profession,
-				"school":         i.School,
-				"published":      true,
+				"id":                      i.Id,
+				"name":                    i.Name,
+				"bio":                     i.Bio,
+				"slug":                    i.Slug,
+				"year_of_birth":           i.Meta.YearOfBirth,
+				"year_of_death":           i.Meta.YearOfDeath,
+				"place_of_birth":          i.Meta.PlaceOfBirth,
+				"place_of_death":          i.Meta.PlaceOfDeath,
+				"profession":              i.Source.Profession,
+				"school":                  i.School,
+				"published":               true,
+				"place_of_activity_start": i.Meta.PlaceOfActivityStart,
+				"place_of_activity_end":   i.Meta.PlaceOfActivityEnd,
+				"exact_year_of_birth":     i.Meta.ExactYearOfBirth,
+				"exact_year_of_death":     i.Meta.ExactYearOfDeath,
+				"exact_active_start":      i.Meta.ExactActiveStart,
+				"exact_active_end":        i.Meta.ExactActiveEnd,
 			})
 
 			_, err = q.Execute()

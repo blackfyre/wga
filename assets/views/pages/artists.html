@@ -18,11 +18,12 @@ Artists
                             BORN-DIED
                         </th>
                         <th>
-                            PERIOD
+                            School(s)
                         </th>
                         <th>
-                            SCHOOL
+                            Profession
                         </th>
+
                     </tr>
                 </thead>
                 <tbody>
@@ -30,9 +31,9 @@ Artists
                     {{range .Content}}
                     <tr>
                         <td><a href="{{.Url}}" hx-get="{{.Url}}" hx-target="#mc-area"><b>{{.Name}}</b></a></td>
-                        <td>(1833-1895)</td>
-                        <td>Realism</td>
-                        <td>Danish painter (Copenhagen)</td>
+                        <td>{{.BornDied}}</td>
+                        <td>{{.Schools}}</td>
+                        <td>{{.Profession}}</td>
                     </tr>
                     {{else}}
                     <tr>
