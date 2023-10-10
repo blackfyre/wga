@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/jellydator/ttlcache/v3"
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
@@ -21,12 +20,12 @@ type counter struct {
 	C int `db:"c" json:"c"`
 }
 
-func getWelcomContent(app *pocketbase.PocketBase, cache *ttlcache.Cache[string, string]) (string, error) {
+func getWelcomContent(app *pocketbase.PocketBase) (string, error) {
 
-	found := cache.Has("strings:welcome")
+	found := app.Cache().Has("strings:welcome")
 
 	if found {
-		return cache.Get("strings:welcome").Value(), nil
+		return app.Cache().Get("strings:welcome").(string), nil
 	}
 
 	record, err := app.Dao().FindFirstRecordByData("strings", "name", "welcome")
@@ -38,20 +37,20 @@ func getWelcomContent(app *pocketbase.PocketBase, cache *ttlcache.Cache[string, 
 
 	result := record.Get("content")
 
-	cache.Set("strings:welcome", result.(string), ttlcache.DefaultTTL)
+	app.Cache().Set("strings:welcome", result.(string))
 
 	return result.(string), nil
 
 }
 
-func getArtistCount(app *pocketbase.PocketBase, cache *ttlcache.Cache[string, string]) (string, error) {
+func getArtistCount(app *pocketbase.PocketBase) (string, error) {
 
 	key := "count:artists"
 
-	found := cache.Has(key)
+	found := app.Cache().Has(key)
 
 	if found {
-		return cache.Get(key).Value(), nil
+		return app.Cache().Get(key).(string), nil
 	}
 
 	c := counter{}
@@ -65,20 +64,20 @@ func getArtistCount(app *pocketbase.PocketBase, cache *ttlcache.Cache[string, st
 
 	result := fmt.Sprintf("%d", c.C)
 
-	cache.Set(key, result, ttlcache.DefaultTTL)
+	app.Cache().Set(key, result)
 
 	return result, nil
 
 }
 
-func getArtworkCount(app *pocketbase.PocketBase, cache *ttlcache.Cache[string, string]) (string, error) {
+func getArtworkCount(app *pocketbase.PocketBase) (string, error) {
 
 	key := "count:artworks"
 
-	found := cache.Has(key)
+	found := app.Cache().Has(key)
 
 	if found {
-		return cache.Get(key).Value(), nil
+		return app.Cache().Get(key).(string), nil
 	}
 
 	c := counter{}
@@ -92,32 +91,40 @@ func getArtworkCount(app *pocketbase.PocketBase, cache *ttlcache.Cache[string, s
 
 	result := fmt.Sprintf("%d", c.C)
 
-	cache.Set(key, result, ttlcache.DefaultTTL)
+	app.Cache().Set(key, result)
 
 	return result, nil
 
 }
 
-func registerHome(app *pocketbase.PocketBase, cache *ttlcache.Cache[string, string]) {
+func registerHome(app *pocketbase.PocketBase) {
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 		// this is safe to be used by multiple goroutines
 		// (it acts as store for the parsed templates)
 
 		e.Router.GET("/", func(c echo.Context) error {
 
-			welcomeText, err := getWelcomContent(app, cache)
+			fs, err := app.NewFilesystem()
+
+			if err != nil {
+				return err
+			}
+
+			defer fs.Close()
+
+			welcomeText, err := getWelcomContent(app)
 
 			if err != nil {
 				fmt.Println(err)
 			}
 
-			artistCount, err := getArtistCount(app, cache)
+			artistCount, err := getArtistCount(app)
 
 			if err != nil {
 				fmt.Println(err)
 			}
 
-			artworkCount, err := getArtworkCount(app, cache)
+			artworkCount, err := getArtworkCount(app)
 
 			if err != nil {
 				fmt.Println(err)
