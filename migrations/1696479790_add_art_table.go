@@ -2,8 +2,6 @@ package migrations
 
 import (
 	"encoding/json"
-	"path/filepath"
-	"runtime"
 	"strings"
 
 	"blackfyre.ninja/wga/assets"
@@ -47,7 +45,6 @@ type ArtworkStage1Meta struct {
 }
 
 func readArtworkStage1Files() ([]ArtworkStage1, error) {
-	var isWindows = runtime.GOOS == "windows"
 	var artworks []ArtworkStage1
 
 	fileList, err := assets.InternalFiles.ReadDir("reference")
@@ -62,11 +59,7 @@ func readArtworkStage1Files() ([]ArtworkStage1, error) {
 
 		//if file name contains `artworks_stage_1_` then add to files
 		if strings.Contains(file.Name(), "artworks_stage_2_") {
-			if isWindows {
-				files = append(files, "reference/"+file.Name())
-			} else {
-				files = append(files, filepath.Join("reference", file.Name()))
-			}
+			files = append(files, "reference/"+file.Name())
 		}
 	}
 
