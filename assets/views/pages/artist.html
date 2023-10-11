@@ -1,5 +1,5 @@
 {{define "title"}}
-Page 1
+{{ .Name }} - Web Gallery of Art
 {{end}}
 
 {{define "body"}}
@@ -19,8 +19,6 @@ Page 1
                     ({{.BioExcerpt}})
                 </div>
             </div>
-
-
         </div>
     </div>
     <div class="container">
@@ -44,13 +42,14 @@ Page 1
             <div class="column is-one-third-tablet is-one-quarter-desktop">
                 <article class="card is-art-card">
                     <div class="card-image">
-                        <figure class="image is-4by3">
+                        <figure class="image is-4by3 hidden-caption">
                             <picture>
                                 <source media="(max-width: 768px)" srcset="{{.Thumb}}">
                                 <source media="(min-width: 769px)" srcset="{{.Thumb}}">
                                 <source media="(min-width: 1024px)" srcset="{{.Thumb}}">
                                 <img src="{{.Image}}" alt="{{ .Title}}">
                             </picture>
+                            <figcaption>{{.Title}} - {{ .Technique }}</figcaption>
                         </figure>
                     </div>
                     <div class="card-content">
