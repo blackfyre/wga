@@ -150,6 +150,18 @@ html.is-clipped {
   }
 }
 
+@media (max-width: $tablet) {
+  .bottom-level {
+    flex-direction: column;
+    align-items: flex-start;
+
+    > div {
+      margin-right: 0;
+      margin-bottom: 1rem;
+    }
+  }
+}
+
 figure.hidden-caption {
   figcaption {
     display: none;
