@@ -149,3 +149,9 @@ html.is-clipped {
     margin-right: 1rem;
   }
 }
+
+figure.hidden-caption {
+  figcaption {
+    display: none;
+  }
+}
