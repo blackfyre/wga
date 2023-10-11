@@ -47,7 +47,7 @@ type ArtworkStage1Meta struct {
 }
 
 func readArtworkStage1Files() ([]ArtworkStage1, error) {
-	var osIsWindows = runtime.GOOS == "windows"
+	var isWindows = runtime.GOOS == "windows"
 	var artworks []ArtworkStage1
 
 	fileList, err := assets.InternalFiles.ReadDir("reference")
@@ -62,11 +62,8 @@ func readArtworkStage1Files() ([]ArtworkStage1, error) {
 
 		//if file name contains `artworks_stage_1_` then add to files
 		if strings.Contains(file.Name(), "artworks_stage_2_") {
-			if osIsWindows {
-				var strSlice []string
-				strSlice = append(strSlice, "reference")
-				strSlice = append(strSlice, file.Name())
-				files = append(files, strings.Join(strSlice, "/"))
+			if isWindows {
+				files = append(files, "reference/"+file.Name())
 			} else {
 				files = append(files, filepath.Join("reference", file.Name()))
 			}
