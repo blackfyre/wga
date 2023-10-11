@@ -7,7 +7,8 @@
     "css:dev": "node-sass --output-style compressed --source-map-embed src/css/style.scss out/style.css ",
     "css:build": "node-sass --output-style compressed src/css/style.scss out/style.css ",
     "css:watch": "npm run css:dev -- --watch",
-    "start": "concurrently \"npm run css:watch\" \"live-server ./out\""
+    "start": "concurrently \"npm run css:watch\" \"live-server ./out\"",
+    "build-copy": "npm run css:build && cp -r ./out/style.css ../../assets/public/css/style.css"
   },
   "author": "",
   "license": "MIT",
