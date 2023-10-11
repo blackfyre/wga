@@ -150,12 +150,16 @@ html.is-clipped {
   }
 }
 
-@media (max-width: $tablet) {
+@media (max-width: $widescreen) {
   .bottom-level {
     flex-direction: column;
     align-items: flex-start;
 
     > div {
+      &:first-child {
+        margin-bottom: 0rem;
+      }
+
       margin-right: 0;
       margin-bottom: 1rem;
     }
