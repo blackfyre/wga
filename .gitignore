@@ -5,3 +5,5 @@ wga_data
 
 dist/
 tmp/
+
+assets/public/css/style.css
