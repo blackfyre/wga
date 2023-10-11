@@ -1,5 +1,5 @@
 {{define "title"}}
-Artists
+Artists - Web Gallery of Art
 {{end}}
 
 {{define "body"}}
@@ -7,87 +7,85 @@ Artists
 <section class="section">
 
     <div class="container">
-        <div class="box table-container">
-
-            <table class="table is-hoverable has-sticky-header">
-                <thead>
-                    <tr>
-                        <th>
-                            ARTIST
-                        </th>
-                        <th>
-                            BORN-DIED
-                        </th>
-                        <th>
-                            School(s)
-                        </th>
-                        <th>
-                            Profession
-                        </th>
-
-                    </tr>
-                </thead>
-                <tbody>
-
-                    {{range .Content}}
-                    <tr>
-                        <td><a href="{{.Url}}" hx-get="{{.Url}}" hx-target="#mc-area"><b>{{.Name}}</b></a></td>
-                        <td>{{.BornDied}}</td>
-                        <td>{{.Schools}}</td>
-                        <td>{{.Profession}}</td>
-                    </tr>
-                    {{else}}
-                    <tr>
-                        <td colspan="4">meh</td>
-                    </tr>
-                    {{end}}
-
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <th>
-                            ARTIST
-                        </th>
-                        <th>
-                            BORN-DIED
-                        </th>
-                        <th>
-                            PERIOD
-                        </th>
-                        <th>
-                            SCHOOL
-                        </th>
-                    </tr>
-                </tfoot>
-            </table>
-
-            <nav class="pagination" role="navigation" aria-label="pagination">
-                <a class="pagination-previous">Previous</a>
-                <a class="pagination-next">Next page</a>
-                <ul class="pagination-list">
-                    <li>
-                        <a class="pagination-link" aria-label="Goto page 1">1</a>
-                    </li>
-                    <li>
-                        <span class="pagination-ellipsis">&hellip;</span>
-                    </li>
-                    <li>
-                        <a class="pagination-link" aria-label="Goto page 45">45</a>
-                    </li>
-                    <li>
-                        <a class="pagination-link is-current" aria-label="Page 46" aria-current="page">46</a>
-                    </li>
-                    <li>
-                        <a class="pagination-link" aria-label="Goto page 47">47</a>
-                    </li>
-                    <li>
-                        <span class="pagination-ellipsis">&hellip;</span>
-                    </li>
-                    <li>
-                        <a class="pagination-link" aria-label="Goto page 86">86</a>
-                    </li>
-                </ul>
+        <div class="box">
+            <nav class="level">
+                <div class="level-left">
+                    <div class="level-item">
+                        <p class="subtitle is-5">
+                            <strong>{{.Count}}</strong> artists
+                        </p>
+                    </div>
+                    <div class="level-item">
+                        <div class="field has-addons">
+                            <p class="control">
+                                <input class="input" type="search" name="q" placeholder="Find an artist"
+                                    hx-get="/artists" hx-trigger="keyup changed delay:500ms, search"
+                                    hx-target="#search-results">
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </nav>
+            <div id="search-results">
+                {{block "artists:search-results" .}}
+                <div class="table-container">
+                    <table class="table is-hoverable is-fullwidth">
+                        <thead>
+                            <tr>
+                                <th>
+                                    ARTIST
+                                </th>
+                                <th>
+                                    BORN-DIED
+                                </th>
+                                <th>
+                                    School(s)
+                                </th>
+                                <th>
+                                    Profession
+                                </th>
+
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            {{range .Content}}
+                            <tr>
+                                <td><a href="{{.Url}}" hx-get="{{.Url}}" hx-target="#mc-area"><b>{{.Name}}</b></a></td>
+                                <td>{{.BornDied}}</td>
+                                <td>{{.Schools}}</td>
+                                <td>{{.Profession}}</td>
+                            </tr>
+                            {{else}}
+                            <tr>
+                                <td colspan="4">meh</td>
+                            </tr>
+                            {{end}}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <th>
+                                    ARTIST
+                                </th>
+                                <th>
+                                    BORN-DIED
+                                </th>
+                                <th>
+                                    PERIOD
+                                </th>
+                                <th>
+                                    SCHOOL
+                                </th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <nav class="pagination" role="navigation" aria-label="pagination">
+                    {{.Pagination}}
+                </nav>
+                {{end}}
+            </div>
         </div>
     </div>
 
