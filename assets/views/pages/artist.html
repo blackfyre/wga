@@ -16,7 +16,7 @@ Page 1
                     </h1>
                 </div>
                 <div>
-                    (b. 1833, Odense, d. 1895, København)
+                    ({{.BioExcerpt}})
                 </div>
             </div>
 
@@ -56,12 +56,19 @@ Page 1
                     <div class="card-content">
                         <div class="content">
                             <h1 class="title">{{ .Title}}</h1>
-                            <p class="subtitle"></p>
+                            <p class="subtitle">{{ .Technique }}</p>
                             <div class="line-clamp-3">
                                 {{safeHTML .Comment}}
                             </div>
                         </div>
                     </div>
+                    <footer class="card-footer">
+                        <p class="card-footer-item">
+                            <span>
+                                <a href="/artwork/{{$.Slug}}/{{.Id}}">Learn More</a>
+                            </span>
+                        </p>
+                    </footer>
                 </article>
             </div>
             {{ else }}
