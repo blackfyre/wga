@@ -1,0 +1,33 @@
+{{define "title"}}
+Guestbook
+{{end}}
+
+{{define "body"}}
+{{block "guestbook:content" .}}
+<section class="section">
+
+    <div class="container block">
+        <div class="box content">
+            {{safeHTML .Content}}
+        </div>
+    </div>
+    <div class="container">
+        <div class="box level">
+            <div class="level-item has-text-centered">
+                <div>
+                    <p class="title">{{ .ArtistCount }}</p>
+                    <p class="heading">Artists</p>
+                </div>
+            </div>
+            <div class="level-item has-text-centered">
+                <div>
+                    <p class="title">{{ .ArtworkCount }}</p>
+                    <p class="heading">Artworks</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</section>
+{{end}}
+{{end}}
