@@ -6,7 +6,9 @@ import (
 	"strconv"
 	"strings"
 
+	"blackfyre.ninja/wga/utils"
 	"github.com/labstack/echo/v5"
+	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
@@ -20,6 +22,8 @@ func registerArtists(app *pocketbase.PocketBase) {
 
 			limit := 30
 			page := 1
+			searchExpression := ""
+			searchExpressionPresent := false
 
 			if c.QueryParam("page") != "" {
 				err := error(nil)
@@ -30,23 +34,57 @@ func registerArtists(app *pocketbase.PocketBase) {
 				}
 			}
 
+			if c.QueryParam("q") != "" {
+				searchExpression = c.QueryParam("q")
+			}
+
+			if c.QueryParams().Has("q") {
+				searchExpressionPresent = true
+			}
+
 			offset := (page - 1) * limit
 
 			data := map[string]any{
 				"Content": "",
 			}
 
+			filter := "published = true"
+
+			if searchExpression != "" {
+				filter = filter + " && name ~ {:searchExpression}"
+			}
+
 			records, err := app.Dao().FindRecordsByFilter(
 				"artists",
-				"published = true",
+				filter,
 				"+name",
 				limit,
 				offset,
+				dbx.Params{
+					"searchExpression": searchExpression,
+				},
 			)
 
 			if err != nil {
 				return apis.NewBadRequestError("Invalid page", err)
 			}
+
+			totalRecords, err := app.Dao().FindRecordsByFilter(
+				"artists",
+				filter,
+				"+name",
+				0,
+				0,
+				dbx.Params{
+					"searchExpression": searchExpression,
+				},
+			)
+
+			if err != nil {
+				return apis.NewBadRequestError("Invalid page", err)
+			}
+
+			recordsCount := len(totalRecords)
 
 			preRendered := []map[string]string{}
 
@@ -82,11 +120,22 @@ func registerArtists(app *pocketbase.PocketBase) {
 			}
 
 			data["Content"] = preRendered
+			data["Count"] = recordsCount
+
+			pagination := utils.NewPagination(recordsCount, limit, page, "/artists?q="+searchExpression)
+
+			data["Pagination"] = pagination.Render()
 
 			html := ""
 
 			if isHtmxRequest(c) {
-				html, err = renderBlock("artists:content", data)
+				blockToRender := "artists:content"
+
+				if searchExpression != "" || searchExpressionPresent {
+					blockToRender = "artists:search-results"
+				}
+
+				html, err = renderBlock(blockToRender, data)
 			} else {
 				html, err = renderPage("artists", data)
 			}
@@ -96,7 +145,9 @@ func registerArtists(app *pocketbase.PocketBase) {
 				return apis.NewNotFoundError("", err)
 			}
 
-			c.Response().Header().Set("HX-Push-Url", "/artists")
+			currentUrl := c.Request().URL.String()
+
+			c.Response().Header().Set("HX-Push-Url", currentUrl)
 
 			return c.HTML(http.StatusOK, html)
 		})
