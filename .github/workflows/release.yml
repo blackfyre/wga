@@ -16,10 +16,21 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: ">=14.17.0"
+
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
           go-version: ">=1.21.1"
+
+      - name: Build CSS
+        working-directory: ./web_src/sitebuild
+        run: |
+          npm ci
+          npm run build-copy
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v3
