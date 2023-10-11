@@ -4,3 +4,4 @@ wga_data
 .env
 
 dist/
+tmp/

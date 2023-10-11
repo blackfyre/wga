@@ -2,6 +2,7 @@ package migrations
 
 import (
 	"encoding/json"
+	"strings"
 
 	"blackfyre.ninja/wga/assets"
 	"github.com/pocketbase/dbx"
@@ -48,11 +49,15 @@ func init() {
 			_, err = q.Execute()
 
 			if err != nil {
-				// if error contains "UNIQUE constraint failed: artists.slug" then ignore
+				errString := err.Error()
+
+				// if errString contains "UNIQUE constraint failed: artists.slug" then ignore
 				// otherwise return error
-				if err.Error() != "UNIQUE constraint failed: artists.slug" {
+
+				if !strings.Contains(errString, "UNIQUE constraint failed: artists.slug") {
 					return err
 				}
+
 			}
 
 		}
