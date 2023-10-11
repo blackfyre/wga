@@ -37,12 +37,14 @@ func normalizedBioExcerpt(r *models.Record) string {
 
 		prefix := "b."
 
+		c = append(c, prefix)
+		y := strconv.Itoa(yob)
+
 		if eyob == No {
-			prefix = "bc."
+			y = "~" + y
 		}
 
-		c = append(c, prefix)
-		c = append(c, strconv.Itoa(yob))
+		c = append(c, y)
 
 		if kpob == No {
 			pob = pob + "?"
@@ -60,12 +62,14 @@ func normalizedBioExcerpt(r *models.Record) string {
 
 		prefix := "d."
 
+		c = append(c, prefix)
+		y := strconv.Itoa(yod)
+
 		if eyod == No {
-			prefix = "dc."
+			y = "~" + y
 		}
 
-		c = append(c, prefix)
-		c = append(c, strconv.Itoa(yod))
+		c = append(c, y)
 
 		if kpod == No {
 			pod = pod + "?"
