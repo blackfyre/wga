@@ -21,6 +21,7 @@ jobs:
         with:
           node-version: ">=14.17.0"
           cache: "npm"
+          cache-dependency-path: ./web_src/sitebuild/package-lock.json
 
       - name: Set up Go
         uses: actions/setup-go@v3
