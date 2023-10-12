@@ -5,26 +5,49 @@ Guestbook
 {{define "body"}}
 {{block "guestbook:content" .}}
 <section class="section">
-
     <div class="container block">
-        <div class="box content">
-            {{safeHTML .Content}}
-        </div>
-    </div>
-    <div class="container">
-        <div class="box level">
-            <div class="level-item has-text-centered">
-                <div>
-                    <p class="title">{{ .ArtistCount }}</p>
-                    <p class="heading">Artists</p>
-                </div>
+        <div class="box">
+            <div class="content">
+                {{safeHTML .FirstContent}}
             </div>
-            <div class="level-item has-text-centered">
-                <div>
-                    <p class="title">{{ .ArtworkCount }}</p>
-                    <p class="heading">Artworks</p>
-                </div>
+            <div class="content">
+                Calendar
             </div>
+            <div class="content has-text-centered">
+                {{safeHTML .SecondContent}}
+            </div>
+            <div class="tabs">
+                <ul></ul>
+            </div>
+
+            <table class="table is-fullwidth">
+                <tbody>
+
+                    {{range .MainContent}}
+                    <tr>
+                        <td style="border-width: 0;">{{.Message}}</td>
+                    </tr>
+                    <tr>
+                        <td style="border-width: 0;">
+                            <div class="level-right">
+                                <strong><i>{{.Name}}</i></strong>
+                            </div>
+                            <div class="level-right">
+                                {{.Location}}
+                            </div>
+                            <div class="level-right">
+                                {{.Updated}}
+                            </div>
+                        </td>
+                    </tr>
+                    {{else}}
+                    <tr>
+                        <td style="border-width: 0;" colspan="1">meh</td>
+                    </tr>
+                    {{end}}
+
+                </tbody>
+            </table>
         </div>
     </div>
 
