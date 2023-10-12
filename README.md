@@ -30,17 +30,20 @@ WGA_S3_BUCKET=
 WGA_S3_REGION=
 WGA_S3_ACCESS_KEY=
 WGA_S3_ACCESS_SECRET=
+
+PROTOCOL=http
 ```
 
-| Variable | Description |
-| --- | --- |
-| `WGA_ADMIN_EMAIL` | The email address of the admin user |
-| `WGA_ADMIN_PASSWORD` | The password of the admin user |
-| `WGA_S3_ENDPOINT` | The endpoint of the S3 bucket |
-| `WGA_S3_BUCKET` | The name of the S3 bucket |
-| `WGA_S3_REGION` | The region of the S3 bucket |
-| `WGA_S3_ACCESS_KEY` | The access key of the S3 bucket |
-| `WGA_S3_ACCESS_SECRET` | The access secret of the S3 bucket |
+| Variable               | Description                                                                  |
+| ---------------------- | ---------------------------------------------------------------------------- |
+| `WGA_ADMIN_EMAIL`      | The email address of the admin user                                          |
+| `WGA_ADMIN_PASSWORD`   | The password of the admin user                                               |
+| `WGA_S3_ENDPOINT`      | The endpoint of the S3 bucket                                                |
+| `WGA_S3_BUCKET`        | The name of the S3 bucket                                                    |
+| `WGA_S3_REGION`        | The region of the S3 bucket                                                  |
+| `WGA_S3_ACCESS_KEY`    | The access key of the S3 bucket                                              |
+| `WGA_S3_ACCESS_SECRET` | The access secret of the S3 bucket                                           |
+| `WGA_PROTOCOL`         | The protocol to use for the application, valid values are `http` and `https` |
 
 ### Running the application
 
