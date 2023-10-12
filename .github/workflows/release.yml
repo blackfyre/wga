@@ -50,8 +50,8 @@ jobs:
       - name: executing remote ssh commands using ssh key
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.KEY }}
-          port: ${{ secrets.PORT }}
+          host: ${{ secrets.DEPLOY_TARGET_HOST }}
+          username: ${{ secrets.DEPLOY_TARGET_USER }}
+          key: ${{ secrets.DEPLOY_TARGET_KEY }}
+          port: ${{ secrets.DEPLOY_TARGET_PORT }}
           script: ./update-wga.sh ${{github.ref_name}} delete_wga_data
