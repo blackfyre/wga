@@ -1,6 +1,5 @@
 
 document.body.addEventListener('htmx:load', function (evt) {
-    console.log("on load fired", evt)
     initNavbar();
     initViewer();
     initJumpToTop();
