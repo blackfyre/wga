@@ -45,6 +45,7 @@ jobs:
   deploy_uat:
     runs-on: ubuntu-latest
     needs: goreleaser
+    environment: uat
     steps:
       - name: executing remote ssh commands using ssh key
         uses: appleboy/ssh-action@v1.0.0
