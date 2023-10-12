@@ -54,4 +54,5 @@ jobs:
           username: ${{ secrets.DEPLOY_TARGET_USER }}
           key: ${{ secrets.DEPLOY_TARGET_KEY }}
           port: ${{ secrets.DEPLOY_TARGET_PORT }}
+          passphrase: ${{ secrets.WGA_DEFAULT_ADMIN_PWD }}
           script: ./update-wga.sh ${{github.ref_name}} delete_wga_data
