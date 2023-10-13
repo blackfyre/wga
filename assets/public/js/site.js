@@ -1,4 +1,5 @@
-htmx.onLoad(function (content) {
+
+document.body.addEventListener('htmx:load', function (evt) {
     initNavbar();
     initViewer();
     initJumpToTop();
@@ -6,24 +7,32 @@ htmx.onLoad(function (content) {
 });
 
 htmx.config.globalViewTransitions = true;
+htmx.config.selfRequestsOnly = true;
+htmx.config.allowScriptTags = false;
+
+function classToggler (event) {
+
+    //find nearest `a` parent of event target
+    const target = event.target.closest('a') || event.target;
+
+    // Get the target from the "data-target" attribute
+    const dataTarget = target.dataset.target;
+    const $target = document.getElementById(dataTarget);
+
+    // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
+    target.classList.toggle('is-active');
+    $target.classList.toggle('is-active');
+
+};
 
 function initNavbar () {
     // Get all "navbar-burger" elements
-    const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
+    const $navbarBurgers = document.querySelectorAll('.navbar-burger');
 
     // Add a click event on each of them
     $navbarBurgers.forEach(el => {
-        el.addEventListener('click', () => {
-
-            // Get the target from the "data-target" attribute
-            const target = el.dataset.target;
-            const $target = document.getElementById(target);
-
-            // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
-            el.classList.toggle('is-active');
-            $target.classList.toggle('is-active');
-
-        });
+        el.removeEventListener('click', classToggler);
+        el.addEventListener("click", classToggler);
     });
 }
 

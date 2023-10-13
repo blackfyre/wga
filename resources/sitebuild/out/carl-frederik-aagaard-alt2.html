@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Web Gallery of Art</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/viewerjs/1.11.6/viewer.min.css"
+        integrity="sha512-za6IYQz7tR0pzniM/EAkgjV1gf1kWMlVJHBHavKIvsNoUMKWU99ZHzvL6lIobjiE2yKDAKMDSSmcMAxoiWgoWA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="./style.css">
+</head>
+
+<body>
+    <nav class="navbar" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand">
+            <a class="navbar-item" id="nav-logo" href="/">
+                <img src="./assets/header.png" width="318" height="45" alt="Web Gallery of Art">
+            </a>
+
+            <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false"
+                data-target="navbarBasicExample">
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+            </a>
+        </div>
+
+        <div id="navbarBasicExample" class="navbar-menu">
+            <div class="navbar-start">
+                <a class="navbar-item is-active" href="/">
+                    Home
+                </a>
+
+                <a class="navbar-item">
+                    Artists
+                </a>
+                <a class="navbar-item" href="./search.html">
+                    Search
+                </a>
+                <a class="navbar-item">
+                    Tours
+                </a>
+
+                <div class="navbar-item has-dropdown is-hoverable">
+                    <a class="navbar-link">
+                        More
+                    </a>
+
+                    <div class="navbar-dropdown">
+                        <a class="navbar-item">
+                            Glossary
+                        </a>
+                        <a class="navbar-item">
+                            Music
+                        </a>
+                        <a class="navbar-item">
+                            Database
+                        </a>
+                        <a class="navbar-item">
+                            Sources
+                        </a>
+                        <a class="navbar-item">
+                            Guestbook
+                        </a>
+                        <a class="navbar-item">
+                            About Us
+                        </a>
+                        <a class="navbar-item">
+                            Contact Us
+                        </a>
+                        <hr class="navbar-divider">
+                        <a class="navbar-item">
+                            Report an issue
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <section class="hero is-primary is-sticky">
+        <div class="hero-body">
+            <div class="container">
+                <p class="title">
+                    AAGAARD, Carl Frederik
+                </p>
+                <p class="subtitle">
+                    (b. 1833, Odense, d. 1895, København)
+                </p>
+            </div>
+        </div>
+    </section>
+    <section class="section">
+        <div class="container block">
+            <article class="message is-warning">
+                <div class="message-body">
+                    This site is a sitebuild experiment based on the Bulma CSS framework
+                </div>
+            </article>
+        </div>
+        <div class="container">
+            <div class="divider">Biography</div>
+        </div>
+        <div class="container block">
+            <div class="box">
+                <h1 class="title"></h1>
+                <h2 class="subtitle"></h2>
+                <div class="content">
+                    <p>
+                        Danish painter. He left his small town for Denmark's capital to study drawing at the
+                        Danish
+                        Royal Academy; Copenhagen
+                        was the centre of a spectacular resurgence of the arts. The art of the first half of the
+                        19th century in Copenhagen was
+                        perhaps the greatest achievement of Denmark's Golden Age. The sculptor Bertel
+                        Thorvaldsen
+                        and the painter Eckersberg led
+                        an artistic renaissance during the Golden Age that produced, with the establishment of
+                        an
+                        academy in Charlottenborg in
+                        1754, the artists Christen Købke, Jens Juel, Constantin Hansen, Martinus Rørbye, Johan
+                        Lundbye, Wilhelm Bendz, and
+                        Emanuel Larsen to name a few. The Royal Collections, what was later to become the
+                        National
+                        Collection after the peaceful
+                        transition to a constitutional monarchy, actively supported these new artists, buying
+                        these
+                        'modern' pictures the moment
+                        they were exhibited.</p>
+                    <p>
+
+                        In the face of such disasters as the overwhelming defeat of their famed navy by the
+                        British
+                        in 1801, the English
+                        bombardment of Copenhagen in 1807 that destroyed hundreds of buildings inthe small city
+                        and
+                        damaged over a thousand, and
+                        the declaration of national bankruptcy in 1813 and subsequent loss of Norway, Danish
+                        culture
+                        flourished with a willful
+                        energy and a unique character. Aagaard began his career towards the end of this great
+                        period
+                        in Denmark but was
+                        instructed by the country's great artists while at the Academy.
+                    </p>
+                    <p>
+                        In addition to studying drawing, Aagaard assisted his older brother, a glass engraver at
+                        his
+                        professional studio.
+                        Aagaard next apprenticed in the studio of Hilker, a painter. Aagaard collaborated with
+                        Hilker on work at the University
+                        and other public monuments. It was his final teacher though, the landscape painter Peter
+                        Kristian Skoovgaard, that was
+                        to be the most influential. In 1857 Aagaard exhibited for the first time to great
+                        success.
+                        He continued to exhibit and
+                        trips to Switzerland and Italy helped to perfect his style.
+                    </p>
+                    <p>
+                        In 1892 he was honoured with the title 'Professor'. He died in Copenhagen in 1895.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="container block">
+
+            <div>
+                <div class="divider">Works</div>
+            </div>
+
+            <div class="columns" data-viewer>
+                <div class="column">
+                    <article class="card is-art-card">
+                        <div class="card-image">
+                            <figure class="image is-4by3">
+                                <img src="https://www.wga.hu/art/a/aagaard/rosegard.jpg" alt="Placeholder image">
+                            </figure>
+                        </div>
+                        <div class="card-content">
+                            <div class="content">
+                                <h1 class="title">The Rose Garden</h1>
+                                <p class="subtitle">1877, Oil on canvas, 98 x 80 cm, Private collection</p>
+                                <p>The painting is signed and dated 'C F Aagaard 1888' at lower left.</p>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+                <div class="column">
+                    <article class="card is-art-card">
+                        <div class="card-image">
+                            <figure class="image is-4by3">
+                                <img src="https://www.wga.hu/art/a/aagaard/deerlake.jpg" alt="Placeholder image">
+                            </figure>
+                        </div>
+                        <div class="card-content">
+                            <div class="content">
+                                <h1 class="title">Deer beside a Lake</h1>
+                                <p class="subtitle">1888, Oil on canvas, 53 x 82 cm, Private collection</p>
+                                <p>This painting is unusual in 19th century art in combining landscape with still-life.
+                                    In the acutely observed flowers the
+                                    artist has demonstrated his skills as an observer of nature, but in the more distant
+                                    landscape. The two figures,
+                                    possibly lovers, are framed by the forward garland but are almost incidental to the
+                                    composition.</p>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+        <div class="container">
+            <div class="columns">
+                <div class="column has-text-centered">
+                    <p>
+                        Please send your comments, sign our guestbook and send a postcard.
+                        © Web Gallery of Art, created by Emil Krén and Daniel Marx.
+                    </p>
+                </div>
+                <div class="column has-text-centered">
+                    <p>
+                        Donations for maintaining and developing the Gallery are welcome.
+                    </p>
+                </div>
+
+            </div>
+
+        </div>
+    </footer>
+    <div class="jump back-to-top">
+        <span class="icon is-medium">
+            <i class="fas fa-arrow-up fa-2x"></i>
+        </span>
+    </div>
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/viewerjs/1.11.6/viewer.min.js"
+        integrity="sha512-EC3CQ+2OkM+ZKsM1dbFAB6OGEPKRxi6EDRnZW9ys8LghQRAq6cXPUgXCCujmDrXdodGXX9bqaaCRtwj4h4wgSQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="./site.js"></script>
+</body>
+
+</html>

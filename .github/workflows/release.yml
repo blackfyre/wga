@@ -3,7 +3,7 @@ name: basebuild
 on:
   push:
     tags:
-      - v*
+      - "v*.*.*"
 
 jobs:
   goreleaser:
@@ -16,10 +16,23 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: ">=14.17.0"
+          cache: "npm"
+          cache-dependency-path: ./resources/sitebuild/package-lock.json
+
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
           go-version: ">=1.21.1"
+
+      - name: Build CSS
+        working-directory: ./resources/sitebuild
+        run: |
+          npm ci
+          npm run build-copy
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v3
@@ -29,3 +42,17 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  deploy_uat:
+    runs-on: ubuntu-latest
+    needs: goreleaser
+    environment: uat
+    steps:
+      - name: executing remote ssh commands using ssh key
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.DEPLOY_TARGET_HOST }}
+          username: ${{ secrets.DEPLOY_TARGET_USER }}
+          key: ${{ secrets.DEPLOY_TARGET_KEY }}
+          port: ${{ secrets.DEPLOY_TARGET_PORT }}
+          passphrase: ${{ secrets.DEPLOY_TARGET_PASSPHRASE }}
+          script: ./update-wga.sh ${{github.ref_name}} delete_wga_data

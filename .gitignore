@@ -1,7 +1,9 @@
-web_src/sitebuild/node_modules
-web_src/sitebuild/out/style.css
+resources/sitebuild/node_modules
+resources/sitebuild/out/style.css
 wga_data
 .env
 
 dist/
 tmp/
+
+assets/public/css/style.css

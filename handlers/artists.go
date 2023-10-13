@@ -6,7 +6,9 @@ import (
 	"strconv"
 	"strings"
 
+	"blackfyre.ninja/wga/utils"
 	"github.com/labstack/echo/v5"
+	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
@@ -20,6 +22,11 @@ func registerArtists(app *pocketbase.PocketBase) {
 
 			limit := 30
 			page := 1
+			searchExpression := ""
+			searchExpressionPresent := false
+			confirmedHtmxRequest := isHtmxRequest(c)
+			currentUrl := c.Request().URL.String()
+			c.Response().Header().Set("HX-Push-Url", currentUrl)
 
 			if c.QueryParam("page") != "" {
 				err := error(nil)
@@ -30,75 +37,137 @@ func registerArtists(app *pocketbase.PocketBase) {
 				}
 			}
 
+			if c.QueryParam("q") != "" {
+				searchExpression = c.QueryParam("q")
+			}
+
+			if c.QueryParams().Has("q") {
+				searchExpressionPresent = true
+			}
+
 			offset := (page - 1) * limit
 
-			data := map[string]any{
-				"Content": "",
+			cacheKey := "artists:" + strconv.Itoa(offset) + ":" + strconv.Itoa(limit) + ":" + strconv.Itoa(page) + ":" + searchExpression
+
+			if confirmedHtmxRequest {
+				cacheKey = cacheKey + ":htmx"
 			}
 
-			records, err := app.Dao().FindRecordsByFilter(
-				"artists",
-				"published = true",
-				"+name",
-				limit,
-				offset,
-			)
-
-			if err != nil {
-				return apis.NewBadRequestError("Invalid page", err)
+			if searchExpressionPresent {
+				cacheKey = cacheKey + ":search"
 			}
 
-			preRendered := []map[string]string{}
+			if app.Cache().Has(cacheKey) {
+				html := app.Cache().Get(cacheKey).(string)
+				return c.HTML(http.StatusOK, html)
+			} else {
 
-			for _, m := range records {
+				data := map[string]any{
+					"Content": "",
+				}
 
-				// TODO: handle aka
+				filter := "published = true"
 
-				school := m.GetStringSlice("school")
+				if searchExpression != "" {
+					filter = filter + " && name ~ {:searchExpression}"
+				}
 
-				schoolCollector := []string{}
+				records, err := app.Dao().FindRecordsByFilter(
+					"artists",
+					filter,
+					"+name",
+					limit,
+					offset,
+					dbx.Params{
+						"searchExpression": searchExpression,
+					},
+				)
 
-				for _, s := range school {
-					r, err := app.Dao().FindRecordById("schools", s)
+				if err != nil {
+					return apis.NewBadRequestError("Invalid page", err)
+				}
 
-					if err != nil {
-						log.Print("school not found")
-						continue
+				totalRecords, err := app.Dao().FindRecordsByFilter(
+					"artists",
+					filter,
+					"+name",
+					0,
+					0,
+					dbx.Params{
+						"searchExpression": searchExpression,
+					},
+				)
+
+				if err != nil {
+					return apis.NewBadRequestError("Invalid page", err)
+				}
+
+				recordsCount := len(totalRecords)
+
+				preRendered := []map[string]any{}
+
+				for _, m := range records {
+
+					// TODO: handle aka
+
+					school := m.GetStringSlice("school")
+
+					schoolCollector := []string{}
+
+					for _, s := range school {
+						r, err := app.Dao().FindRecordById("schools", s)
+
+						if err != nil {
+							log.Print("school not found")
+							continue
+						}
+
+						schoolCollector = append(schoolCollector, r.GetString("name"))
+
 					}
 
-					schoolCollector = append(schoolCollector, r.GetString("name"))
+					row := map[string]any{
+						"Name":       m.GetString("name"),
+						"Url":        artistUrl(m.GetString("slug")),
+						"Profession": m.GetString("profession"),
+						"BornDied":   normalizedBirthDeathActivity(m),
+						"Schools":    strings.Join(schoolCollector, ", "),
+						"Jsonld":     generateArtistJsonLdContent(m, c),
+					}
 
+					preRendered = append(preRendered, row)
 				}
 
-				row := map[string]string{
-					"Name":       m.GetString("name"),
-					"Url":        artistUrl(m.GetString("slug")),
-					"Profession": m.GetString("profession"),
-					"BornDied":   normalizedBirthDeathActivity(m),
-					"Schools":    strings.Join(schoolCollector, ", "),
+				data["Content"] = preRendered
+				data["Count"] = recordsCount
+
+				pagination := utils.NewPagination(recordsCount, limit, page, "/artists?q="+searchExpression)
+
+				data["Pagination"] = pagination.Render()
+
+				html := ""
+
+				if confirmedHtmxRequest {
+					blockToRender := "artists:content"
+
+					if searchExpression != "" || searchExpressionPresent {
+						blockToRender = "artists:search-results"
+					}
+
+					html, err = renderBlock(blockToRender, data)
+				} else {
+					html, err = renderPage("artists", data)
 				}
 
-				preRendered = append(preRendered, row)
+				if err != nil {
+					// or redirect to a dedicated 404 HTML page
+					return apis.NewNotFoundError("", err)
+				}
+
+				app.Cache().Set(cacheKey, html)
+
+				return c.HTML(http.StatusOK, html)
 			}
-
-			data["Content"] = preRendered
-
-			html := ""
-
-			if isHtmxRequest(c) {
-				html, err = renderBlock("artists:content", data)
-			} else {
-				html, err = renderPage("artists", data)
-			}
-
-			if err != nil {
-				// or redirect to a dedicated 404 HTML page
-				return apis.NewNotFoundError("", err)
-			}
-
-			c.Response().Header().Set("HX-Push-Url", "/artists")
-
-			return c.HTML(http.StatusOK, html)
 		})
 
 		return nil

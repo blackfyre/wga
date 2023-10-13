@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Hello Bulma!</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <nav class="navbar has-shadow" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand">
+            <a class="navbar-item" id="nav-logo" href="/">
+                <img src="assets/header.png" width="318" height="45" alt="Web Gallery of Art">
+            </a>
+
+            <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false"
+                data-target="navbarBasicExample">
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+            </a>
+        </div>
+
+        <div id="navbarBasicExample" class="navbar-menu">
+            <div class="navbar-start">
+                <a class="navbar-item" href="/">
+                    Home
+                </a>
+
+                <a class="navbar-item">
+                    Artists
+                </a>
+                <a class="navbar-item is-active" href="#">
+                    Search
+                </a>
+                <a class="navbar-item">
+                    Tours
+                </a>
+
+                <div class="navbar-item has-dropdown is-hoverable">
+                    <a class="navbar-link">
+                        More
+                    </a>
+
+                    <div class="navbar-dropdown">
+                        <a class="navbar-item">
+                            Glossary
+                        </a>
+                        <a class="navbar-item">
+                            Music
+                        </a>
+                        <a class="navbar-item">
+                            Database
+                        </a>
+                        <a class="navbar-item">
+                            Sources
+                        </a>
+                        <a class="navbar-item">
+                            Guestbook
+                        </a>
+                        <a class="navbar-item">
+                            About Us
+                        </a>
+                        <a class="navbar-item">
+                            Contact Us
+                        </a>
+                        <hr class="navbar-divider">
+                        <a class="navbar-item">
+                            Report an issue
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <section class="section">
+        <div class="container block">
+            <article class="message is-warning">
+                <div class="message-body">
+                    This site is a sitebuild experiment based on the Bulma CSS framework
+                </div>
+            </article>
+        </div>
+
+        <div class="container">
+            <div class="box">
+                <div class="content">
+                    <p>
+                        Using the search engine you can find images corresponding to given conditions. Complementing
+                        these
+                        searches, you can
+                        look for artists satisfying certain conditions and can create various lists of them. The
+                        simplest
+                        lists
+                        can be obtained
+                        by clicking one of the letters below, which results in an alphabetical list of all artists in
+                        the
+                        collection with that
+                        initial.
+                    </p>
+                </div>
+                <div class="content">
+                    <p>Alternatively, you can get various lists corresponding to the conditions set in the boxes below.
+                        You
+                        can sort these
+                        lists by any of the conditions, that is by school (nationality), art historical period,
+                        time-line
+                        (in fifty years steps)
+                        or profession. By default the lists are sorted by the artist name. An example: set
+                        period=Baroque,
+                        time-line=1651-1700,
+                        profession=sculptor, sorted by=school, and get a sorted list of Baroque sculptors active in the
+                        second half of 17th
+                        century.</p>
+                </div>
+
+                <form class="block">
+                    <nav class="level">
+                        <div class="level-item has-text-centered">
+                            <div class="select">
+                                <select>
+                                    <option disabled selected>Select school</option>
+                                    <option>With options</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="level-item has-text-centered">
+                            <div class="select">
+                                <select>
+                                    <option disabled selected>Select period</option>
+                                    <option>With options</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="level-item has-text-centered">
+                            <div class="select">
+                                <select>
+                                    <option disabled selected>Select time-line</option>
+                                    <option>With options</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="level-item has-text-centered">
+                            <div class="select">
+                                <select>
+                                    <option selected disabled>Select profession</option>
+                                    <option>With options</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="level-item has-text-centered">
+                            <div class="select">
+                                <select>
+                                    <option selected disabled>Select sorting</option>
+                                    <option>With options</option>
+                                </select>
+                            </div>
+                        </div>
+                    </nav>
+                    <nav class="level">
+                        <div class="level-item has-text-centered">
+                            <div>
+                                <input class="button" type="submit" value="Search">
+                            </div>
+                        </div>
+                        <div class="level-item has-text-centered">
+                            <div>
+                                <input class="button" type="reset" value="Clear selection">
+                            </div>
+                        </div>
+                    </nav>
+                </form>
+                <div class="content">
+                    <p>We call your attention to Fine Arts in Hungary, the companion-site of our collection. You are
+                        kindly
+                        invited to visit
+                        this virtual museum where works of art, created between the 11th and the mid-20th century by
+                        over
+                        400 Hungarian artists,
+                        are presented with detailed explanations. Guided tours and free postcard service are also
+                        provided.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+        <div class="container">
+            <div class="columns">
+                <div class="column has-text-centered">
+                    <p>
+                        Please send your comments, sign our guestbook and send a postcard.
+                        © Web Gallery of Art, created by Emil Krén and Daniel Marx.
+                    </p>
+                </div>
+                <div class="column has-text-centered">
+                    <p>
+                        Donations for maintaining and developing the Gallery are welcome.
+                    </p>
+                </div>
+
+            </div>
+
+        </div>
+    </footer>
+    <div class="jump back-to-top">
+        <span class="icon is-medium">
+            <i class="fas fa-arrow-up fa-2x"></i>
+        </span>
+    </div>
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+    <script src="site.js"></script>
+</body>
+
+</html>
