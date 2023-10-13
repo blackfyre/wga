@@ -19,6 +19,7 @@ import (
 func RegisterHandlers(app *pocketbase.PocketBase) {
 	registerArtist(app)
 	registerArtists(app)
+	registerPostcardHandlers(app)
 	registerStatic(app)
 	registerHome(app)
 }
