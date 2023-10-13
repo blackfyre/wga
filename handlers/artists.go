@@ -104,7 +104,7 @@ func registerArtists(app *pocketbase.PocketBase) {
 
 				recordsCount := len(totalRecords)
 
-				preRendered := []map[string]string{}
+				preRendered := []map[string]any{}
 
 				for _, m := range records {
 
@@ -126,12 +126,13 @@ func registerArtists(app *pocketbase.PocketBase) {
 
 					}
 
-					row := map[string]string{
+					row := map[string]any{
 						"Name":       m.GetString("name"),
 						"Url":        artistUrl(m.GetString("slug")),
 						"Profession": m.GetString("profession"),
 						"BornDied":   normalizedBirthDeathActivity(m),
 						"Schools":    strings.Join(schoolCollector, ", "),
+						"Jsonld":     generateArtistJsonLdContent(m, c),
 					}
 
 					preRendered = append(preRendered, row)
