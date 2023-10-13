@@ -47,7 +47,7 @@
                                 <source media="(max-width: 768px)" srcset="{{.Thumb}}">
                                 <source media="(min-width: 769px)" srcset="{{.Thumb}}">
                                 <source media="(min-width: 1024px)" srcset="{{.Thumb}}">
-                                <img src="{{.Image}}" alt="{{ .Title}}">
+                                <img src="{{.Image}}" alt="{{ .Title}}" loading="lazy">
                             </picture>
                             <figcaption>{{.Title}} - {{ .Technique }}</figcaption>
                         </figure>
