@@ -64,10 +64,13 @@
                     <footer class="card-footer">
                         <p class="card-footer-item">
                             <span>
-                                <a href="/artwork/{{$.Slug}}/{{.Id}}">Learn More</a>
+                                <a href="/artists/{{$.Slug}}/{{.Id}}">Learn More</a>
                             </span>
                         </p>
                     </footer>
+                    <script type="application/ld+json">
+                    {{marshalJSON .Jsonld}}
+                    </script>
                 </article>
             </div>
             {{ else }}
