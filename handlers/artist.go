@@ -86,6 +86,43 @@ func normalizedBioExcerpt(r *models.Record) string {
 	return strings.Join(s, ", ")
 }
 
+func generateArtistJsonLdContent(r *models.Record, c echo.Context) map[string]any {
+
+	fullUrl := os.Getenv("WGA_PROTOCOL") + "://" + c.Request().Host + "/artists/" + r.GetString("slug")
+
+	d := map[string]any{
+		"@context":      "https://schema.org",
+		"@type":         "Person",
+		"name":          r.GetString("name"),
+		"url":           fullUrl,
+		"hasOccupation": r.GetString("profession"),
+	}
+
+	if r.GetInt("year_of_birth") > 0 {
+		d["birthDate"] = r.GetString("year_of_birth")
+	}
+
+	if r.GetInt("year_of_death") > 0 {
+		d["deathDate"] = r.GetString("year_of_death")
+	}
+
+	if r.GetString("place_of_birth") != "" {
+		d["birthPlace"] = map[string]string{
+			"@type": "Place",
+			"name":  r.GetString("place_of_birth"),
+		}
+	}
+
+	if r.GetString("place_of_death") != "" {
+		d["deathPlace"] = map[string]string{
+			"@type": "Place",
+			"name":  r.GetString("place_of_death"),
+		}
+	}
+
+	return d
+}
+
 func registerArtist(app *pocketbase.PocketBase) {
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
@@ -138,35 +175,7 @@ func registerArtist(app *pocketbase.PocketBase) {
 					"YearOfDeath":  artist[0].GetString("year_of_death"),
 					"PlaceOfBirth": artist[0].GetString("place_of_birth"),
 					"PlaceOfDeath": artist[0].GetString("place_of_death"),
-					"Jsonld": map[string]any{
-						"@context":      "https://schema.org",
-						"@type":         "Person",
-						"name":          artist[0].GetString("name"),
-						"url":           fullUrl,
-						"hasOccupation": artist[0].GetString("profession"),
-					},
-				}
-
-				if artist[0].GetInt("year_of_birth") > 0 {
-					data["Jsonld"].(map[string]any)["birthDate"] = artist[0].GetString("year_of_birth")
-				}
-
-				if artist[0].GetInt("year_of_death") > 0 {
-					data["Jsonld"].(map[string]any)["deathDate"] = artist[0].GetString("year_of_death")
-				}
-
-				if artist[0].GetString("place_of_birth") != "" {
-					data["Jsonld"].(map[string]any)["birthPlace"] = map[string]string{
-						"@type": "Place",
-						"name":  artist[0].GetString("place_of_birth"),
-					}
-				}
-
-				if artist[0].GetString("place_of_death") != "" {
-					data["Jsonld"].(map[string]any)["deathPlace"] = map[string]string{
-						"@type": "Place",
-						"name":  artist[0].GetString("place_of_death"),
-					}
+					"Jsonld":       generateArtistJsonLdContent(artist[0], c),
 				}
 
 				for _, w := range works {
