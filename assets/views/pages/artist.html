@@ -62,11 +62,8 @@
                         </div>
                     </div>
                     <footer class="card-footer">
-                        <p class="card-footer-item">
-                            <span>
-                                <a href="/artists/{{$.Slug}}/{{.Id}}">Learn More</a>
-                            </span>
-                        </p>
+                        <a class="card-footer-item" href="/artists/{{$.Slug}}/{{.Id}}">Learn More</a>
+                        <a href="#" class="card-footer-item">Send Postcard</a>
                     </footer>
                     <script type="application/ld+json">
                     {{marshalJSON .Jsonld}}
