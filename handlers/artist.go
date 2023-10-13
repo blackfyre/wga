@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"blackfyre.ninja/wga/utils"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
@@ -123,6 +124,19 @@ func generateArtistJsonLdContent(r *models.Record, c echo.Context) map[string]an
 	return d
 }
 
+func generateVisualArtworkJsonLdContent(r *models.Record, c echo.Context) map[string]any {
+
+	d := map[string]any{
+		"@context":    "https://schema.org",
+		"@type":       "VisualArtwork",
+		"name":        r.GetString("name"),
+		"description": utils.StrippedHTML(r.GetString("comment")),
+		"artform":     r.GetString("technique"),
+	}
+
+	return d
+}
+
 func registerArtist(app *pocketbase.PocketBase) {
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
@@ -166,7 +180,7 @@ func registerArtist(app *pocketbase.PocketBase) {
 				data := map[string]any{
 					"Name":         artist[0].GetString("name"),
 					"Bio":          artist[0].GetString("bio"),
-					"Works":        []map[string]string{},
+					"Works":        []map[string]any{},
 					"Slug":         slug,
 					"BioExcerpt":   normalizedBioExcerpt(artist[0]),
 					"CurrentUrl":   fullUrl,
@@ -179,13 +193,23 @@ func registerArtist(app *pocketbase.PocketBase) {
 				}
 
 				for _, w := range works {
-					data["Works"] = append(data["Works"].([]map[string]string), map[string]string{
+
+					jsonLd := generateVisualArtworkJsonLdContent(w, c)
+
+					jsonLd["image"] = generateFileUrl(app, "artworks", w.GetString("id"), w.GetString("image"))
+					jsonLd["url"] = fullUrl + "/" + w.GetString("id")
+					jsonLd["creator"] = generateArtistJsonLdContent(artist[0], c)
+					jsonLd["creator"].(map[string]any)["sameAs"] = fullUrl
+					jsonLd["thumbnailUrl"] = generateThumbUrl(app, "artworks", w.GetString("id"), w.GetString("image"), "320x240")
+
+					data["Works"] = append(data["Works"].([]map[string]any), map[string]any{
 						"Id":        w.GetId(),
 						"Title":     w.GetString("title"),
 						"Comment":   w.GetString("comment"),
 						"Technique": w.GetString("technique"),
-						"Image":     generateFileUrl(app, "artworks", w.GetString("id"), w.GetString("image")),
-						"Thumb":     generateThumbUrl(app, "artworks", w.GetString("id"), w.GetString("image"), "320x240"),
+						"Image":     jsonLd["image"].(string),
+						"Thumb":     jsonLd["thumbnailUrl"].(string),
+						"Jsonld":    jsonLd,
 					})
 				}
 
