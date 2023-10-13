@@ -2,7 +2,6 @@ package migrations
 
 import (
 	"encoding/json"
-	"path/filepath"
 	"strings"
 
 	"blackfyre.ninja/wga/assets"
@@ -60,7 +59,7 @@ func readArtworkStage1Files() ([]ArtworkStage1, error) {
 
 		//if file name contains `artworks_stage_1_` then add to files
 		if strings.Contains(file.Name(), "artworks_stage_2_") {
-			files = append(files, filepath.Join("reference", file.Name()))
+			files = append(files, "reference/"+file.Name())
 		}
 	}
 

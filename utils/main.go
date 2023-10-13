@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"math"
@@ -11,6 +12,7 @@ import (
 	"time"
 	"unicode"
 
+	strip "github.com/grokify/html-strip-tags-go"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 )
@@ -31,11 +33,12 @@ var TemplateFuncs = template.FuncMap{
 	"approxDuration": approxDuration,
 
 	// String functions
-	"uppercase": strings.ToUpper,
-	"lowercase": strings.ToLower,
-	"pluralize": pluralize,
-	"slugify":   slugify,
-	"safeHTML":  safeHTML,
+	"uppercase":    strings.ToUpper,
+	"lowercase":    strings.ToLower,
+	"pluralize":    pluralize,
+	"slugify":      slugify,
+	"safeHTML":     safeHTML,
+	"strippedHTML": StrippedHTML,
 
 	// Slice functions
 	"join": strings.Join,
@@ -52,6 +55,22 @@ var TemplateFuncs = template.FuncMap{
 	// URL functions
 	"urlSetParam": urlSetParam,
 	"urlDelParam": urlDelParam,
+
+	// JSON functions
+	"marshalJSON": marshalJSON,
+}
+
+func marshalJSON(v any) (template.JS, error) {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return "", err
+	}
+
+	return template.JS(b), nil
+}
+
+func StrippedHTML(s string) string {
+	return strip.StripTags(s)
 }
 
 func formatTime(format string, t time.Time) string {
