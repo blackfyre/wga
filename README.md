@@ -31,7 +31,14 @@ WGA_S3_REGION=
 WGA_S3_ACCESS_KEY=
 WGA_S3_ACCESS_SECRET=
 
-PROTOCOL=http
+WGA_PROTOCOL=http
+
+WGA_SMTP_HOST=
+WGA_SMTP_PORT=
+WGA_SMTP_USERNAME=
+WGA_SMTP_PASSWORD=
+WGA_SENDER_ADDRESS=
+WGA_SENDER_NAME=
 ```
 
 | Variable               | Description                                                                  |
@@ -44,6 +51,12 @@ PROTOCOL=http
 | `WGA_S3_ACCESS_KEY`    | The access key of the S3 bucket                                              |
 | `WGA_S3_ACCESS_SECRET` | The access secret of the S3 bucket                                           |
 | `WGA_PROTOCOL`         | The protocol to use for the application, valid values are `http` and `https` |
+| `WGA_SMTP_HOST`        | The address of the SMTP host                                                 |
+| `WGA_SMTP_PORT`        | The SMTP service port on the host adress                                     |
+| `WGA_SMTP_USERNAME`    | The username for the SMTP service                                            |
+| `WGA_SMTP_PASSWORD`    | The password for the SMTP service                                            |
+| `WGA_SENDER_ADDRESS`   | The sending email address                                                    |
+| `WGA_SENDER_NAME`      | The name of the email sender                                                 |
 
 ### Running the application
 
