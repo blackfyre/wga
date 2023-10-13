@@ -63,7 +63,8 @@
                     </div>
                     <footer class="card-footer">
                         <a class="card-footer-item" href="/artists/{{$.Slug}}/{{.Id}}">Learn More</a>
-                        <a href="#" class="card-footer-item">Send Postcard</a>
+                        <a href="#" hx-get="/postcard/send?awid={{.Id}}" hx-target="#d" class="card-footer-item">Send
+                            Postcard</a>
                     </footer>
                     <script type="application/ld+json">
                     {{marshalJSON .Jsonld}}
