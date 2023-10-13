@@ -84,6 +84,11 @@ Artists - Web Gallery of Art
                 <nav class="pagination" role="navigation" aria-label="pagination">
                     {{.Pagination}}
                 </nav>
+                {{range .Content}}
+                <script type="application/ld+json">
+                    {{marshalJSON .Jsonld}}
+                </script>
+                {{end}}
                 {{end}}
             </div>
         </div>
