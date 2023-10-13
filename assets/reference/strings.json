@@ -10,5 +10,13 @@
     {
         "name": "scripts:footer",
         "content": ""
+    },
+    {
+        "name": "thankYou",
+        "content": "<p>Thank you for visiting the Web Gallery of Art!</p><p>We would like it very much if you  <a href='https://www.wga.hu/addguest.html'>added</a> your entry to our guestbook.</p>"
+    },
+    {
+        "name": "guestbookPlayMusicLink",
+        "content": "<p class='is-vcentered'><a href='https://www.wga.hu/guestbook.html'>Play period music</a> in the background while reading the guestbook!</p>"
     }
 ]
