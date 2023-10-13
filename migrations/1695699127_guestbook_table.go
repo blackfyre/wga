@@ -1,12 +1,22 @@
 package migrations
 
 import (
+	"encoding/json"
+
+	"blackfyre.ninja/wga/assets"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/daos"
 	m "github.com/pocketbase/pocketbase/migrations"
 	"github.com/pocketbase/pocketbase/models"
 	"github.com/pocketbase/pocketbase/models/schema"
 )
+
+type GuestbookRecord struct {
+	Message          string `json:"message"`
+	Name        	 string `json:"name"`
+	Email       	 string `json:"email"`
+	Location         string `json:"location"`
+}
 
 func init() {
 	m.Register(func(db dbx.Builder) error {
@@ -47,7 +57,43 @@ func init() {
 			},
 		)
 
-		return dao.SaveCollection(collection)
+		err := dao.SaveCollection(collection)
+
+		if err != nil {
+			return err
+		}
+
+		data, err := assets.InternalFiles.ReadFile("reference/guestbook.json")
+
+		if err != nil {
+			return err
+		}
+
+		var c []GuestbookRecord
+
+		err = json.Unmarshal(data, &c)
+
+		if err != nil {
+			return err
+		}
+
+		for _, g := range c {
+			q := db.Insert("guestbook", dbx.Params{
+				"message":      g.Message,
+				"name":         g.Name,
+				"email":        g.Email,
+				"location": 	g.Location,
+			})
+
+			_, err = q.Execute()
+
+			if err != nil {
+				return err
+			}
+
+		}
+
+		return nil
 	}, func(db dbx.Builder) error {
 		// add down queries...
 
