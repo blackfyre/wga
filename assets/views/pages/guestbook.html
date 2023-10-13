@@ -10,11 +10,47 @@ Guestbook
             <div class="content">
                 {{safeHTML .FirstContent}}
             </div>
-            <div class="content">
-                {{range .CalendarYears}}
-                {{.}}
-                {{end}}
+            <div class="columns is-centered">
+                <div class="column is-one-third">
+                    <table class="table is-bordered is-fullwidth">
+                        <tbody>
+                            {{range .CalendarYears}}
+                            <tr>
+                                {{if len . | gt 4}}
+                                    <td class="has-text-centered is-vcentered" colspan={{formatInt (decrBy 5 (len .))}} style="padding: 0">Previous entries</td>
+                                    {{range .}}
+                                        <td class="has-text-centered is-vcentered" style="padding: 0">
+                                            <button hx-get="/guestbook?q={{.}}"
+                                                hx-trigger="click"
+                                                hx-target="#search-results"
+                                                class="button is-ghost is-small"
+                                                style="border: 1px solid transparent; box-shadow: none;"
+                                            >
+                                                {{.}}
+                                            </button>
+                                        </td>
+                                    {{end}}
+                                {{else}}
+                                    {{range .}}
+                                        <td class="has-text-centered is-vcentered" style="padding: 0">
+                                            <button hx-get="/guestbook?q={{.}}"
+                                                hx-trigger="click"
+                                                hx-target="#search-results"
+                                                class="button is-ghost is-small"
+                                                style="border: 1px solid transparent; box-shadow: none;"
+                                            >
+                                                {{.}}
+                                            </button>
+                                        </td>
+                                    {{end}}
+                                {{end}}
+                            </tr>
+                            {{end}}
+                        </tbody>
+                    </table>
+                </div>
             </div>
+
             <div class="content has-text-centered">
                 {{safeHTML .SecondContent}}
             </div>
@@ -23,7 +59,8 @@ Guestbook
             </div>
 
             <table class="table is-fullwidth">
-                <tbody>
+                <tbody id="search-results">
+                {{block "guestbook:search-results" .}}
 
                     {{range .MainContent}}
                     <tr>
@@ -44,10 +81,11 @@ Guestbook
                     </tr>
                     {{else}}
                     <tr>
-                        <td style="border-width: 0;" colspan="1">meh</td>
+                        <td style="border-width: 0;" colspan="1">No record</td>
                     </tr>
                     {{end}}
 
+                {{end}}
                 </tbody>
             </table>
         </div>
