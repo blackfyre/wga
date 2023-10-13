@@ -10,8 +10,11 @@ Guestbook
             <div class="content">
                 {{safeHTML .FirstContent}}
             </div>
+            swsdwqe
             <div class="content">
-                Calendar
+                {{range .CalendarYears}}
+                {{.}}
+                {{end}}
             </div>
             <div class="content has-text-centered">
                 {{safeHTML .SecondContent}}

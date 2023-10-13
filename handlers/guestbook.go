@@ -104,6 +104,7 @@ func registerGuestbook(app *pocketbase.PocketBase) {
 				"FirstContent":  guestBookTextFirst,
 				"SecondContent":  guestBookTextSecond,
 				"MainContent": guestBookContent,
+				"CalendarYears": []string{"2021", "2022", "2023", "2024", "2025"},
 			}
 
 			if isHtmx {
