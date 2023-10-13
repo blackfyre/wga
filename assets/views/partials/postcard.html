@@ -1,6 +1,80 @@
-{{block "postcard:editor"}}
-<section>
-    <div></div>
-    <div></div>
+{{block "postcard:editor" .}}
+<section class="postcard-editor">
+    <span class="icon is-clickable">
+        <i class="fas fa-times" hx-on="click: document.getElementById('d').close();"></i>
+    </span>
+    <div class="columns">
+        <div class="column is-half">
+
+            <div class="card">
+                <div class="card-image">
+                    <figure class="image">
+                        <img src="https://placekitten.com/1200/1300" alt="Placeholder image">
+                    </figure>
+                </div>
+                <div class="card-content">
+
+                </div>
+            </div>
+
+        </div>
+
+
+        <div class="column">
+
+            <form hx-post="/postcards">
+                <div class="field">
+                    <label class="label">Name</label>
+                    <div class="control">
+                        <input class="input" type="text" name="sender_name" placeholder="My name">
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label">Email</label>
+                    <div class="control">
+                        <input class="input" type="email" name="sender_email" placeholder="My email address">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Recipients</label>
+                    <div class="control">
+                        <textarea class="textarea" name="recipients" placeholder="A list of recipients"
+                            rows="2"></textarea>
+                    </div>
+                    <p class="help">A comma separated list of email adresses, each will recieve a dedicated email.</p>
+                </div>
+
+                <div class="field">
+                    <label class="label">Message</label>
+                    <div class="control">
+                        <trix-editor input="message"></trix-editor>
+                        <input type="hidden" id="message" name="message">
+                    </div>
+                </div>
+
+                <div class="fied">
+                    <label class="checkbox">
+                        <input type="checkbox">
+                        Notify me the first time someone views this postcard
+                    </label>
+                </div>
+
+                <div class="field is-grouped">
+                    <p class="control">
+                        <button class="button is-link" type="submit">
+                            Send postcard
+                        </button>
+                    </p>
+                    <p class="control">
+                        <button type="button" class="button" hx-on="click: document.getElementById('d').close();">
+                            Cancel
+                        </button>
+                    </p>
+                </div>
+            </form>
+
+        </div>
+    </div>
 </section>
 {{end}}

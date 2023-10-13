@@ -4,7 +4,27 @@ document.body.addEventListener('htmx:load', function (evt) {
     initViewer();
     initJumpToTop();
     removeNotification();
+    // InitEditor();
 });
+
+document.addEventListener("trix-before-initialize", () => {
+    Trix.config.toolbar.getDefaultHTML = () => {
+        return `
+    <div class="trix-button-row">
+      <span class="trix-button-group trix-button-group--text-tools" data-trix-button-group="text-tools">
+        <button type="button" class="trix-button trix-button--icon trix-button--icon-bold" data-trix-attribute="bold" data-trix-key="b" title="Bold" tabindex="-1">Bold</button>
+        <button type="button" class="trix-button trix-button--icon trix-button--icon-italic" data-trix-attribute="italic" data-trix-key="i" title="Italic" tabindex="-1">Italic</button>
+        <button type="button" class="trix-button trix-button--icon trix-button--icon-strike" data-trix-attribute="strike" title="Strike" tabindex="-1">Strike</button>
+      </span>
+
+      <span class="trix-button-group trix-button-group--block-tools" data-trix-button-group="block-tools">
+        <button type="button" class="trix-button trix-button--icon trix-button--icon-heading-1" data-trix-attribute="heading1" title="Heading 1" tabindex="-1">Heading 1</button>
+        <button type="button" class="trix-button trix-button--icon trix-button--icon-quote" data-trix-attribute="quote" title="Quote" tabindex="-1">Quote</button>
+      </span>
+
+    </div>`
+    }  // Change Trix.config if you need
+})
 
 htmx.config.globalViewTransitions = true;
 htmx.config.selfRequestsOnly = true;
@@ -117,4 +137,54 @@ function ToggleDualMode () {
         body.classList.add('has-active-backdrop');
         dualModeSection.classList.add('is-active');
     }
+}
+
+function InitEditor () {
+    const els = document.querySelectorAll('.editables');
+
+    console.log(els);
+
+    els.forEach(el => {
+        const target = el.dataset.targetName;
+        const targetEl = document.querySelector(`[name="${target}"]`);
+
+        pell.init({
+            // <HTMLElement>, required
+            element: el,
+
+            // <Function>, required
+            // Use the output html, triggered by element's `oninput` event
+            onChange: html => {
+                targetEl.value = html;
+            },
+
+            // <string>, optional, default = 'div'
+            // Instructs the editor which element to inject via the return key
+            defaultParagraphSeparator: 'p',
+
+            // <boolean>, optional, default = false
+            // Outputs <span style="font-weight: bold;"></span> instead of <b></b>
+            styleWithCSS: false,
+
+            // <Array[string | Object]>, string if overwriting, object if customizing/creating
+            // action.name<string> (only required if overwriting)
+            // action.icon<string> (optional if overwriting, required if custom action)
+            // action.title<string> (optional)
+            // action.result<Function> (required)
+            // Specify the actions you specifically want (in order)
+            actions: [
+                'bold',
+                'underline'
+            ],
+
+            // classes<Array[string]> (optional)
+            // Choose your custom class names
+            classes: {
+                actionbar: 'pell-actionbar',
+                button: 'pell-button',
+                content: 'pell-content',
+                selected: 'pell-button-selected'
+            }
+        })
+    });
 }
