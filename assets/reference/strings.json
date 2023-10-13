@@ -18,5 +18,13 @@
     {
         "name": "guestbookPlayMusicLink",
         "content": "<p class='is-vcentered'><a href='https://www.wga.hu/guestbook.html'>Play period music</a> in the background while reading the guestbook!</p>"
+    },
+    {
+        "name": "guestbook",
+        "content": "Guestbook"
+    },
+    {
+        "name": "latestEntries",
+        "content": "See the latest entries"
     }
 ]
