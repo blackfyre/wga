@@ -4,9 +4,13 @@ Guestbook
 
 {{define "body"}}
 {{block "guestbook:content" .}}
-<section class="section">
+<section id="search-results" class="section">
     <div class="container block">
         <div class="box">
+            <H1 class="has-text-centered">
+                <i>Guestbook</i>{{if .SearchExpressionPresent | eq true}}<i>,&nbsp;</i><i>{{.SearchExpression}}</i>{{end}}
+            </H1>
+            {{if .SearchExpressionPresent | eq false}}
             <div class="content">
                 {{safeHTML .FirstContent}}
             </div>
@@ -50,6 +54,16 @@ Guestbook
                     </table>
                 </div>
             </div>
+            {{else}}
+            <button hx-get="/guestbook"
+                    hx-trigger="click"
+                    hx-target="#search-results"
+                    class="button is-link is-normal is-light"
+                    style="border: 1px solid transparent; box-shadow: none;"
+                >
+                    {{.LatestEntries}}
+            </button>
+            {{end}}
 
             <div class="content has-text-centered">
                 {{safeHTML .SecondContent}}
@@ -59,7 +73,7 @@ Guestbook
             </div>
 
             <table class="table is-fullwidth">
-                <tbody id="search-results">
+                <tbody>
                 {{block "guestbook:search-results" .}}
 
                     {{range .MainContent}}

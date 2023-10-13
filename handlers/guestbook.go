@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -13,7 +14,197 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
-func getGuestbookTextContent(app *pocketbase.PocketBase, content string) (string, error) {
+type SearchSettings struct {
+	searchExpression        string
+	searchExpressionPresent bool
+	filter                  string
+}
+
+type Data struct {
+	Title         string
+	FirstContent  string
+	SecondContent string
+	MainContent   []map[string]string
+	LatestEntries string
+}
+
+type PreparedData struct {
+	Title                   string
+	FirstContent            string
+	SecondContent           string
+	MainContent             []map[string]string
+	LatestEntries           string
+	CalendarYears           [][]string
+	SearchExpressionPresent bool
+	SearchExpression        string
+}
+
+func registerGuestbook(app *pocketbase.PocketBase) {
+
+	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
+
+		e.Router.GET("/guestbook", func(c echo.Context) error {
+			confirmedHtmxRequest := isHtmxRequest(c)
+			currentUrl := c.Request().URL.String()
+			c.Response().Header().Set("HX-Push-Url", currentUrl)
+
+			searchSettings := gbProcessRequest(c)
+
+			cacheKey := gbSetCacheSettings(confirmedHtmxRequest, searchSettings)
+			shouldReturn, returnValue := gbIsCached(app, cacheKey, c)
+			if shouldReturn {
+				return returnValue
+			}
+
+			data, err := gbGetData(app, searchSettings)
+
+			if err != nil {
+				// or redirect to a dedicated 404 HTML page
+				return apis.NewNotFoundError("", err)
+			}
+
+			html, err := gbRender(confirmedHtmxRequest, data)
+
+			if err != nil {
+				// or redirect to a dedicated 404 HTML page
+				return apis.NewNotFoundError("", err)
+			}
+
+			c.Response().Header().Set("HX-Push-Url", "/guestbook")
+
+			return c.HTML(http.StatusOK, html)
+		})
+
+		return nil
+
+	})
+}
+
+func gbProcessRequest(c echo.Context) SearchSettings {
+	searchExpression := ""
+	searchExpressionPresent := false
+	filter := "id != null"
+
+	if c.QueryParam("q") != "" {
+		searchExpression = c.QueryParam("q")
+	}
+
+	if c.QueryParams().Has("q") {
+		searchExpressionPresent = true
+	}
+
+	if searchExpression != "" {
+		filter = filter + " && created ~ {:searchExpression}"
+	}
+
+	searchSettings := SearchSettings{
+		searchExpression:        searchExpression,
+		searchExpressionPresent: searchExpressionPresent,
+		filter:                  filter,
+	}
+
+	return searchSettings
+}
+
+func gbSetCacheSettings(confirmedHtmxRequest bool, searchSettings SearchSettings) string {
+	cacheKey := "guestbook:" + ":" + searchSettings.searchExpression
+
+	if confirmedHtmxRequest {
+		cacheKey = cacheKey + ":htmx"
+	}
+
+	if searchSettings.searchExpressionPresent {
+		cacheKey = cacheKey + ":search"
+	}
+	return cacheKey
+}
+
+func gbIsCached(app *pocketbase.PocketBase, cacheKey string, c echo.Context) (bool, error) {
+	if app.Cache().Has(cacheKey) {
+		html := app.Cache().Get(cacheKey).(string)
+		return true, c.HTML(http.StatusOK, html)
+	}
+	return false, nil
+}
+
+func gbGetData(app *pocketbase.PocketBase, searchSettings SearchSettings) (PreparedData, error) {
+	guestBookTitle, err := gbGetGuestbookTextContent(app, "guestbook")
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	guestBookTextFirst, err := gbGetGuestbookTextContent(app, "thankYou")
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	guestBookTextSecond, err := gbGetGuestbookTextContent(app, "guestbookPlayMusicLink")
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	guestBookContent, err := gbGetGuestbookContent(app, searchSettings.filter, searchSettings.searchExpression)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	latestEntries, err := gbGetGuestbookTextContent(app, "latestEntries")
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	rawData := Data{
+		Title:         guestBookTitle,
+		FirstContent:  guestBookTextFirst,
+		SecondContent: guestBookTextSecond,
+		MainContent:   guestBookContent,
+		LatestEntries: latestEntries,
+	}
+
+	data := gbPrepareDataForRender(rawData, searchSettings)
+
+	return data, err
+}
+
+func gbPrepareDataForRender(data Data, searchSettings SearchSettings) PreparedData {
+	years := gbGetYears()
+
+	preparedData := PreparedData{
+		Title:                   data.Title,
+		FirstContent:            data.FirstContent,
+		SecondContent:           data.SecondContent,
+		MainContent:             data.MainContent,
+		CalendarYears:           years,
+		SearchExpressionPresent: searchSettings.searchExpressionPresent,
+		SearchExpression:        searchSettings.searchExpression,
+		LatestEntries:           data.LatestEntries,
+	}
+	return preparedData
+}
+
+func gbRender(confirmedHtmxRequest bool, data PreparedData) (string, error) {
+	dataMap, shouldReturn, html, err := gbGeneralizer(data)
+	if shouldReturn {
+		return html, err
+	}
+
+	if confirmedHtmxRequest {
+		blockToRender := "guestbook:content"
+
+		html, err := renderBlock(blockToRender, dataMap)
+		return html, err
+	} else {
+		html, err := renderPage("guestbook", dataMap)
+		return html, err
+	}
+}
+
+func gbGetGuestbookTextContent(app *pocketbase.PocketBase, content string) (string, error) {
 	strContent := fmt.Sprintf("strings:%s", content)
 
 	found := app.Cache().Has(strContent)
@@ -36,7 +227,7 @@ func getGuestbookTextContent(app *pocketbase.PocketBase, content string) (string
 	return result.(string), nil
 }
 
-func getGuestbookContent(app *pocketbase.PocketBase, filter string, searchExpression string) ([]map[string]string, error) {
+func gbGetGuestbookContent(app *pocketbase.PocketBase, filter string, searchExpression string) ([]map[string]string, error) {
 	records, err := app.Dao().FindRecordsByFilter(
 		"guestbook",
 		filter,
@@ -55,7 +246,7 @@ func getGuestbookContent(app *pocketbase.PocketBase, filter string, searchExpres
 	preRendered := []map[string]string{}
 
 	for _, m := range records {
-		
+
 		createDateString := m.GetString("created")
 		createTime, err := time.Parse("2006-01-02 15:04:05.000Z", createDateString)
 		if err != nil {
@@ -65,10 +256,10 @@ func getGuestbookContent(app *pocketbase.PocketBase, filter string, searchExpres
 		formattedDateString := createTime.Format("January 2, 2006")
 
 		row := map[string]string{
-			"Message":    m.GetString("message"),
-			"Name":       m.GetString("name"),
-			"Location":	  m.GetString("location"),
-			"Updated":    formattedDateString,
+			"Message":  m.GetString("message"),
+			"Name":     m.GetString("name"),
+			"Location": m.GetString("location"),
+			"Updated":  formattedDateString,
 		}
 
 		preRendered = append(preRendered, row)
@@ -77,105 +268,10 @@ func getGuestbookContent(app *pocketbase.PocketBase, filter string, searchExpres
 	return preRendered, err
 }
 
-func registerGuestbook(app *pocketbase.PocketBase) {
-
-	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
-
-		e.Router.GET("/guestbook", func(c echo.Context) error {
-			searchExpression := ""
-			searchExpressionPresent := false
-			confirmedHtmxRequest := isHtmxRequest(c)
-			currentUrl := c.Request().URL.String()
-			c.Response().Header().Set("HX-Push-Url", currentUrl)
-
-			if c.QueryParam("q") != "" {
-				searchExpression = c.QueryParam("q")
-			}
-
-			if c.QueryParams().Has("q") {
-				searchExpressionPresent = true
-			}
-
-			cacheKey := "guestbook:" + ":" + searchExpression
-
-			if confirmedHtmxRequest {
-				cacheKey = cacheKey + ":htmx"
-			}
-
-			if searchExpressionPresent {
-				cacheKey = cacheKey + ":search"
-			}
-
-			if app.Cache().Has(cacheKey) {
-				html := app.Cache().Get(cacheKey).(string)
-				return c.HTML(http.StatusOK, html)
-			} else {
-
-				filter := "id != null"
-
-				if searchExpression != "" {
-					filter = filter + " && created ~ {:searchExpression}"
-				}
-
-				guestBookTextFirst, err := getGuestbookTextContent(app, "thankYou")
-
-				if err != nil {
-					fmt.Println(err)
-				}
-
-				guestBookTextSecond, err := getGuestbookTextContent(app, "guestbookPlayMusicLink")
-
-				if err != nil {
-					fmt.Println(err)
-				}
-
-				guestBookContent, err := getGuestbookContent(app, filter, searchExpression)
-
-				if err != nil {
-					fmt.Println(err)
-				}
-
-				isHtmx := isHtmxRequest(c)
-
-				html := ""
-
-				years := getYears()
-
-				data := map[string]any{
-					"FirstContent":  guestBookTextFirst,
-					"SecondContent":  guestBookTextSecond,
-					"MainContent": guestBookContent,
-					"CalendarYears": years,
-				}
-
-				if isHtmx {
-					html, err = renderBlock("guestbook:search-results", data)
-
-				} else {
-					html, err = renderPage("guestbook", data)
-				}
-
-				if err != nil {
-					// or redirect to a dedicated 404 HTML page
-					return apis.NewNotFoundError("", err)
-				}
-
-				c.Response().Header().Set("HX-Push-Url", "/guestbook")
-
-				return c.HTML(http.StatusOK, html)
-			}
-		})
-
-		return nil
-
-	})
-}
-
-func getYears() [][]string {
+func gbGetYears() [][]string {
 	years := []string{}
 	thisYear := time.Now().Year()
 
-	
 	for i := 1997; i <= thisYear; i++ {
 		years = append(years, fmt.Sprintf("%d", i))
 	}
@@ -195,4 +291,17 @@ func getYears() [][]string {
 		groupedYears[i], groupedYears[j] = groupedYears[j], groupedYears[i]
 	}
 	return groupedYears
+}
+
+func gbGeneralizer(data PreparedData) (map[string]interface{}, bool, string, error) {
+	dataMap := make(map[string]interface{})
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return nil, true, "", err
+	}
+	err = json.Unmarshal(jsonData, &dataMap)
+	if err != nil {
+		return nil, true, "", err
+	}
+	return dataMap, false, "", nil
 }
