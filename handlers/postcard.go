@@ -31,13 +31,15 @@ func registerPostcardHandlers(app *pocketbase.PocketBase) {
 			// if found, render the send postcard page with the artwork data
 			// if error, return 500
 
-			_, err := app.Dao().FindRecordById("artworks", awid)
+			r, err := app.Dao().FindRecordById("artworks", awid)
 
 			if err != nil {
 				return apis.NewNotFoundError("", err)
 			}
 
-			html, err := renderBlock("postcard:editor", map[string]any{})
+			html, err := renderBlock("postcard:editor", map[string]any{
+				"Image": generateFileUrl(app, "artworks", r.GetString("id"), r.GetString("image")),
+			})
 
 			if err != nil {
 				return apis.NewBadRequestError("", err)
