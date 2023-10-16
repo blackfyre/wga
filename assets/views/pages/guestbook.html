@@ -4,11 +4,11 @@ Guestbook
 
 {{define "body"}}
 {{block "guestbook:content" .}}
-<section id="search-results" class="section">
+<main class="section">
     <div class="container block">
         <div class="box">
             <H1 class="has-text-centered">
-                <i>Guestbook</i>{{if .SearchExpressionPresent | eq true}}<i>,&nbsp;</i><i>{{.SearchExpression}}</i>{{end}}
+                <i>{{.Title}}</i>{{if .SearchExpressionPresent | eq true}}<i>,&nbsp;</i><i>{{.SearchExpression}}</i>{{end}}
             </H1>
             {{if .SearchExpressionPresent | eq false}}
             <div class="content">
@@ -21,30 +21,16 @@ Guestbook
                             {{range .CalendarYears}}
                             <tr>
                                 {{if len . | gt 4}}
-                                    <td class="has-text-centered is-vcentered" colspan={{formatInt (decrBy 5 (len .))}} style="padding: 0">Previous entries</td>
+                                    <td class="has-text-centered is-vcentered" colspan={{formatInt (decrBy 5 (len .))}} style="padding: 0.2em 0.3em">Previous entries</td>
                                     {{range .}}
-                                        <td class="has-text-centered is-vcentered" style="padding: 0">
-                                            <button hx-get="/guestbook?q={{.}}"
-                                                hx-trigger="click"
-                                                hx-target="#search-results"
-                                                class="button is-ghost is-small"
-                                                style="border: 1px solid transparent; box-shadow: none;"
-                                            >
-                                                {{.}}
-                                            </button>
+                                        <td class="has-text-centered is-vcentered" style="padding: 0.2em 0.3em">
+                                            <a href="/guestbook?q={{.}}" hx-get="/guestbook?q={{.}}" hx-target="#mc-area" class="is-size-6">{{.}}</a>
                                         </td>
                                     {{end}}
                                 {{else}}
                                     {{range .}}
-                                        <td class="has-text-centered is-vcentered" style="padding: 0">
-                                            <button hx-get="/guestbook?q={{.}}"
-                                                hx-trigger="click"
-                                                hx-target="#search-results"
-                                                class="button is-ghost is-small"
-                                                style="border: 1px solid transparent; box-shadow: none;"
-                                            >
-                                                {{.}}
-                                            </button>
+                                        <td class="has-text-centered is-vcentered" style="padding: 0.2em 0.3em">
+                                            <a href="/guestbook?q={{.}}" hx-get="/guestbook?q={{.}}" hx-target="#mc-area" class="is-size-6">{{.}}</a>
                                         </td>
                                     {{end}}
                                 {{end}}
@@ -57,7 +43,7 @@ Guestbook
             {{else}}
             <button hx-get="/guestbook"
                     hx-trigger="click"
-                    hx-target="#search-results"
+                    hx-target="#mc-area"
                     class="button is-link is-normal is-light"
                     style="border: 1px solid transparent; box-shadow: none;"
                 >
@@ -105,6 +91,6 @@ Guestbook
         </div>
     </div>
 
-</section>
+</main>
 {{end}}
 {{end}}
