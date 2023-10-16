@@ -20,7 +20,7 @@ type SearchSettings struct {
 	filter                  string
 }
 
-type Data struct {
+type GbData struct {
 	Title         string
 	FirstContent  string
 	SecondContent string
@@ -28,7 +28,7 @@ type Data struct {
 	LatestEntries string
 }
 
-type PreparedData struct {
+type GbPreparedData struct {
 	Title                   string
 	FirstContent            string
 	SecondContent           string
@@ -69,8 +69,6 @@ func registerGuestbook(app *pocketbase.PocketBase) {
 				// or redirect to a dedicated 404 HTML page
 				return apis.NewNotFoundError("", err)
 			}
-
-			c.Response().Header().Set("HX-Push-Url", "/guestbook")
 
 			return c.HTML(http.StatusOK, html)
 		})
@@ -127,7 +125,7 @@ func gbIsCached(app *pocketbase.PocketBase, cacheKey string, c echo.Context) (bo
 	return false, nil
 }
 
-func gbGetData(app *pocketbase.PocketBase, searchSettings SearchSettings) (PreparedData, error) {
+func gbGetData(app *pocketbase.PocketBase, searchSettings SearchSettings) (GbPreparedData, error) {
 	guestBookTitle, err := gbGetGuestbookTextContent(app, "guestbook")
 
 	if err != nil {
@@ -158,7 +156,7 @@ func gbGetData(app *pocketbase.PocketBase, searchSettings SearchSettings) (Prepa
 		fmt.Println(err)
 	}
 
-	rawData := Data{
+	rawData := GbData{
 		Title:         guestBookTitle,
 		FirstContent:  guestBookTextFirst,
 		SecondContent: guestBookTextSecond,
@@ -171,10 +169,10 @@ func gbGetData(app *pocketbase.PocketBase, searchSettings SearchSettings) (Prepa
 	return data, err
 }
 
-func gbPrepareDataForRender(data Data, searchSettings SearchSettings) PreparedData {
+func gbPrepareDataForRender(data GbData, searchSettings SearchSettings) GbPreparedData {
 	years := gbGetYears()
 
-	preparedData := PreparedData{
+	preparedData := GbPreparedData{
 		Title:                   data.Title,
 		FirstContent:            data.FirstContent,
 		SecondContent:           data.SecondContent,
@@ -184,10 +182,11 @@ func gbPrepareDataForRender(data Data, searchSettings SearchSettings) PreparedDa
 		SearchExpression:        searchSettings.searchExpression,
 		LatestEntries:           data.LatestEntries,
 	}
+
 	return preparedData
 }
 
-func gbRender(confirmedHtmxRequest bool, data PreparedData) (string, error) {
+func gbRender(confirmedHtmxRequest bool, data GbPreparedData) (string, error) {
 	dataMap, shouldReturn, html, err := gbGeneralizer(data)
 	if shouldReturn {
 		return html, err
@@ -231,7 +230,7 @@ func gbGetGuestbookContent(app *pocketbase.PocketBase, filter string, searchExpr
 	records, err := app.Dao().FindRecordsByFilter(
 		"guestbook",
 		filter,
-		"-updated",
+		"-created",
 		0,
 		0,
 		dbx.Params{
@@ -293,7 +292,7 @@ func gbGetYears() [][]string {
 	return groupedYears
 }
 
-func gbGeneralizer(data PreparedData) (map[string]interface{}, bool, string, error) {
+func gbGeneralizer(data GbPreparedData) (map[string]interface{}, bool, string, error) {
 	dataMap := make(map[string]interface{})
 	jsonData, err := json.Marshal(data)
 	if err != nil {
