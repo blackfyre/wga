@@ -11,13 +11,17 @@ bulmaToast.setDefaults({
     closeOnClick: true,
 })
 
+
+InitEventListeners();
+
+wga.els.dialog = document.getElementById("d");
+initNavbar();
+initViewer();
+initJumpToTop();
+
 document.body.addEventListener('htmx:load', function (evt) {
 
-    wga.els.dialog = document.getElementById("d");
-    initNavbar();
-    initViewer();
-    initJumpToTop();
-    InitEventListeners();
+
 });
 
 document.addEventListener("trix-before-initialize", () => {
@@ -156,8 +160,10 @@ function InitEventListeners () {
     document.body.addEventListener("postcard:dialog:success", function (evt) {
         wga.els.dialog.close();
 
+        console.log(evt);
+
         bulmaToast.toast({
-            message: evt.details.message,
+            message: evt.detail.message,
             type: 'is-success',
             dismissible: true,
             animate: { in: 'fadeIn', out: 'fadeOut' },
