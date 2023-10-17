@@ -169,4 +169,15 @@ function InitEventListeners () {
             animate: { in: 'fadeIn', out: 'fadeOut' },
         })
     })
+
+    document.body.addEventListener("postcard:dialog:error", function (evt) {
+        console.log(evt);
+
+        bulmaToast.toast({
+            message: evt.detail.message,
+            type: 'is-danger',
+            dismissible: true,
+            animate: { in: 'fadeIn', out: 'fadeOut' },
+        })
+    })
 }
