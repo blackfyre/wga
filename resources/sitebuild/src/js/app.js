@@ -148,7 +148,7 @@ function ToggleDualMode () {
  * @returns {void}
  */
 function InitEventListeners () {
-    document.body.addEventListener("postcard:dialog:success", function (evt) {
+    document.body.addEventListener("notification:success", function (evt) {
         wga.els.dialog.close();
 
         console.log(evt);
@@ -161,7 +161,7 @@ function InitEventListeners () {
         })
     })
 
-    document.body.addEventListener("postcard:dialog:error", function (evt) {
+    document.body.addEventListener("notification:error", function (evt) {
         console.log(evt);
 
         bulmaToast.toast({

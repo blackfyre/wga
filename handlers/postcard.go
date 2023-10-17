@@ -138,7 +138,7 @@ func registerPostcardHandlers(app *pocketbase.PocketBase) {
 
 			collection, err := app.Dao().FindCollectionByNameOrId("postcards")
 			if err != nil {
-				headerData["postcard:dialog:error"] = map[string]any{
+				headerData["notification:error"] = map[string]any{
 					"message": "Failed to find postcard collection",
 				}
 			} else {
@@ -157,11 +157,11 @@ func registerPostcardHandlers(app *pocketbase.PocketBase) {
 				})
 
 				if err := form.Submit(); err != nil {
-					headerData["postcard:dialog:error"] = map[string]any{
+					headerData["notification:error"] = map[string]any{
 						"message": "Failed to create postcard record",
 					}
 				} else {
-					headerData["postcard:dialog:success"] = map[string]any{
+					headerData["notification:success"] = map[string]any{
 						"message": "Postcard sent successfully!",
 					}
 				}
