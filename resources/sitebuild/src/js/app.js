@@ -194,19 +194,4 @@ function InitEventListeners () {
     </div>`
         }  // Change Trix.config if you need
     })
-
-    document.addEventListener("trigger:recaptcha", (evt) => {
-        grecaptcha.ready(function () {
-            grecaptcha.render("recaptcha-container", {
-                "sitekey": evt.detail.sitekey,
-            });
-        });
-    })
-}
-
-window.rvalidator = (evt) => {
-    console.log(evt)
-    const event = new Event('verified');
-    const elem = document.querySelector("#my-form");
-    elem.dispatchEvent(event);
 }

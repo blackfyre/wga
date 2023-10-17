@@ -5,10 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 
 	"blackfyre.ninja/wga/assets"
-	"github.com/chanioxaris/go-recaptcha"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v5"
 	"github.com/microcosm-cc/bluemonday"
@@ -56,31 +54,16 @@ func registerPostcardHandlers(app *pocketbase.PocketBase) {
 			}
 
 			html, err := assets.RenderBlock("postcard:editor", map[string]any{
-				"Image":            generateFileUrl(app, "artworks", awid, r.GetString("image")),
-				"ImageId":          awid,
-				"Title":            r.GetString("title"),
-				"Comment":          r.GetString("comment"),
-				"Technique":        r.GetString("technique"),
-				"ReCaptchaSiteKey": os.Getenv("WGA_RECAPTCHA_SITE_KEY"),
+				"Image":     generateFileUrl(app, "artworks", awid, r.GetString("image")),
+				"ImageId":   awid,
+				"Title":     r.GetString("title"),
+				"Comment":   r.GetString("comment"),
+				"Technique": r.GetString("technique"),
 			})
 
 			if err != nil {
 				return apis.NewBadRequestError("", err)
 			}
-
-			headerData := map[string]any{
-				"trigger:recaptcha": map[string]any{
-					"sitekey": os.Getenv("WGA_RECAPTCHA_SITE_KEY"),
-				},
-			}
-
-			hd, err := json.Marshal(headerData)
-
-			if err != nil {
-				return err
-			}
-
-			c.Response().Header().Set("HX-Trigger", string(hd))
 
 			return c.HTML(http.StatusOK, html)
 
@@ -144,15 +127,6 @@ func registerPostcardHandlers(app *pocketbase.PocketBase) {
 
 			if err := c.Bind(&postData); err != nil {
 				return apis.NewBadRequestError("Failed to read request data", err)
-			}
-
-			rec, err := recaptcha.New(os.Getenv("WGA_RECAPTCHA_SECRET_KEY"))
-			if err != nil {
-				panic(err)
-			}
-
-			if err = rec.Verify(postData.RecaptchaToken); err != nil {
-				panic(err)
 			}
 
 			collection, err := app.Dao().FindCollectionByNameOrId("postcards")
