@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"blackfyre.ninja/wga/assets"
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
@@ -40,7 +41,7 @@ func registerPostcardHandlers(app *pocketbase.PocketBase) {
 				return apis.NewNotFoundError("", err)
 			}
 
-			html, err := renderBlock("postcard:editor", map[string]any{
+			html, err := assets.RenderBlock("postcard:editor", map[string]any{
 				"Image":     generateFileUrl(app, "artworks", awid, r.GetString("image")),
 				"ImageId":   awid,
 				"Title":     r.GetString("title"),

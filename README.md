@@ -32,6 +32,7 @@ WGA_S3_ACCESS_KEY=
 WGA_S3_ACCESS_SECRET=
 
 WGA_PROTOCOL=http
+WGA_HOSTNAME=localhost:8090
 
 WGA_SMTP_HOST=
 WGA_SMTP_PORT=
@@ -51,6 +52,7 @@ WGA_SENDER_NAME=
 | `WGA_S3_ACCESS_KEY`    | The access key of the S3 bucket                                              |
 | `WGA_S3_ACCESS_SECRET` | The access secret of the S3 bucket                                           |
 | `WGA_PROTOCOL`         | The protocol to use for the application, valid values are `http` and `https` |
+| `WGA_HOSTNAME`         | The domain pointing to the application                                       |
 | `WGA_SMTP_HOST`        | The address of the SMTP host                                                 |
 | `WGA_SMTP_PORT`        | The SMTP service port on the host adress                                     |
 | `WGA_SMTP_USERNAME`    | The username for the SMTP service                                            |

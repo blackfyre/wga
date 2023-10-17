@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"blackfyre.ninja/wga/assets"
 	"blackfyre.ninja/wga/utils"
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/dbx"
@@ -154,9 +155,9 @@ func registerArtists(app *pocketbase.PocketBase) {
 						blockToRender = "artists:search-results"
 					}
 
-					html, err = renderBlock(blockToRender, data)
+					html, err = assets.RenderBlock(blockToRender, data)
 				} else {
-					html, err = renderPage("artists", data)
+					html, err = assets.RenderPage("artists", data)
 				}
 
 				if err != nil {

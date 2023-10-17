@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"blackfyre.ninja/wga/assets"
+	"blackfyre.ninja/wga/utils"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/tools/cron"
 	"github.com/pocketbase/pocketbase/tools/mailer"
@@ -39,6 +41,18 @@ func sendPostcards(app *pocketbase.PocketBase, scheduler *cron.Cron) {
 			}
 
 			for _, rec := range recipients {
+
+				html, err := assets.RenderEmail("postcard:notification", map[string]any{
+					"SenderName": r.GetString("sender_name"),
+					"PickUpUrl":  utils.AssetUrl("/postcards/" + r.GetString("id")),
+					"Title":      "",
+					"LogoUrl":    utils.AssetUrl("/assets/images/logo.png"),
+				})
+
+				if err != nil {
+					panic(err)
+				}
+
 				message := &mailer.Message{
 					From: mail.Address{
 						Name:    os.Getenv("WGA_SENDER_NAME"),
@@ -46,7 +60,7 @@ func sendPostcards(app *pocketbase.PocketBase, scheduler *cron.Cron) {
 					},
 					To:      []mail.Address{rec},
 					Subject: "You got a postcard from " + r.GetString("sender_name") + "!",
-					Text:    "Your WGA Postcard",
+					HTML:    html,
 				}
 
 				if err := mailCleint.Send(message); err != nil {
