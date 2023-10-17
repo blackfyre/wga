@@ -29,8 +29,7 @@
 
         <div class="column">
             <div class="box">
-                <form hx-post="/postcards" enctype="multipart/form-data" hx-target="#d" hx-trigger="verified"
-                    id="postcard_create">
+                <form hx-post="/postcards" enctype="multipart/form-data" hx-target="#d" id="postcard_create">
                     <input type="hidden" name="image_id" value="{{.ImageId}}">
                     <div class="field">
                         <label class="label">Name</label>
@@ -70,6 +69,14 @@
                             Notify me the first time someone views this postcard
                         </label>
                     </div>
+
+                    <label class="hpt" for="name"></label>
+                    <input class="hpt" autocomplete="off" type="text" id="name" name="name"
+                        placeholder="Your name here">
+                    <label class="hpt" for="email"></label>
+                    <input class="hpt" autocomplete="off" type="email" id="email" name="email"
+                        placeholder="Your e-mail here">
+
 
                     <div class="field is-grouped">
                         <p class="control">
