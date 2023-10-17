@@ -7,6 +7,7 @@ import (
 
 	"blackfyre.ninja/wga/assets"
 	"github.com/labstack/echo/v5"
+	"github.com/microcosm-cc/bluemonday"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
@@ -15,6 +16,9 @@ import (
 )
 
 func registerPostcardHandlers(app *pocketbase.PocketBase) {
+
+	p := bluemonday.NewPolicy()
+
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 
 		e.Router.GET("postcard/send", func(c echo.Context) error {
@@ -131,7 +135,7 @@ func registerPostcardHandlers(app *pocketbase.PocketBase) {
 					"sender_name":   postData.SenderName,
 					"sender_email":  postData.SenderEmail,
 					"recipients":    postData.Recipients,
-					"message":       postData.Message,
+					"message":       p.Sanitize(postData.Message),
 					"image_id":      postData.ImageId,
 					"notify_sender": postData.NotificationRequired,
 				})
