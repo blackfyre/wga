@@ -3,9 +3,13 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
 
 	"blackfyre.ninja/wga/assets"
+	"github.com/chanioxaris/go-recaptcha"
+	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v5"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/pocketbase/pocketbase"
@@ -18,6 +22,11 @@ import (
 func registerPostcardHandlers(app *pocketbase.PocketBase) {
 
 	p := bluemonday.NewPolicy()
+
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("Error loading .env file")
+	}
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 
@@ -47,22 +56,38 @@ func registerPostcardHandlers(app *pocketbase.PocketBase) {
 			}
 
 			html, err := assets.RenderBlock("postcard:editor", map[string]any{
-				"Image":     generateFileUrl(app, "artworks", awid, r.GetString("image")),
-				"ImageId":   awid,
-				"Title":     r.GetString("title"),
-				"Comment":   r.GetString("comment"),
-				"Technique": r.GetString("technique"),
+				"Image":            generateFileUrl(app, "artworks", awid, r.GetString("image")),
+				"ImageId":          awid,
+				"Title":            r.GetString("title"),
+				"Comment":          r.GetString("comment"),
+				"Technique":        r.GetString("technique"),
+				"ReCaptchaSiteKey": os.Getenv("WGA_RECAPTCHA_SITE_KEY"),
 			})
 
 			if err != nil {
 				return apis.NewBadRequestError("", err)
 			}
 
+			headerData := map[string]any{
+				"trigger:recaptcha": map[string]any{
+					"sitekey": os.Getenv("WGA_RECAPTCHA_SITE_KEY"),
+				},
+			}
+
+			hd, err := json.Marshal(headerData)
+
+			if err != nil {
+				return err
+			}
+
+			c.Response().Header().Set("HX-Trigger", string(hd))
+
 			return c.HTML(http.StatusOK, html)
 
 		})
 
 		e.Router.GET("postcards", func(c echo.Context) error {
+
 			postCardId := c.QueryParamDefault("p", "nope")
 
 			if postCardId == "nope" {
@@ -114,10 +139,20 @@ func registerPostcardHandlers(app *pocketbase.PocketBase) {
 				Message              string `json:"message" form:"message" query:"message" validate:"required"`
 				ImageId              string `json:"image_id" form:"image_id" query:"image_id" validate:"required"`
 				NotificationRequired bool   `json:"notification_required" form:"notify_sender" query:"notification_required"`
+				RecaptchaToken       string `json:"recaptcha_token" form:"g-recaptcha-response" query:"recaptcha_token" validate:"required"`
 			}{}
 
 			if err := c.Bind(&postData); err != nil {
 				return apis.NewBadRequestError("Failed to read request data", err)
+			}
+
+			rec, err := recaptcha.New(os.Getenv("WGA_RECAPTCHA_SECRET_KEY"))
+			if err != nil {
+				panic(err)
+			}
+
+			if err = rec.Verify(postData.RecaptchaToken); err != nil {
+				panic(err)
 			}
 
 			collection, err := app.Dao().FindCollectionByNameOrId("postcards")

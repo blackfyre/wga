@@ -29,7 +29,8 @@
 
         <div class="column">
             <div class="box">
-                <form hx-post="/postcards" enctype="multipart/form-data" hx-target="#d">
+                <form hx-post="/postcards" enctype="multipart/form-data" hx-target="#d" hx-trigger="verified"
+                    id="postcard_create">
                     <input type="hidden" name="image_id" value="{{.ImageId}}">
                     <div class="field">
                         <label class="label">Name</label>
@@ -72,7 +73,8 @@
 
                     <div class="field is-grouped">
                         <p class="control">
-                            <button class="button is-link" type="submit">
+                            <button class="button is-link g-recaptcha" type="button"
+                                data-sitekey="{{.ReCaptchaSiteKey}}" data-action='submit' data-callback="rvalidator">
                                 Send postcard
                             </button>
                         </p>

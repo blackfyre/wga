@@ -20,6 +20,7 @@
     <link rel="stylesheet" type="text/css" href="https://unpkg.com/trix@2.0.0/dist/trix.css">
     <script type="text/javascript" src="https://unpkg.com/trix@2.0.0/dist/trix.umd.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.0.0/animate.min.css" />
+    <script src="https://www.google.com/recaptcha/api.js"></script>
     {{block "head" .}}
     {{end}}
 </head>
@@ -47,6 +48,7 @@
         <button class="delete is-large" hx-on="click: ToggleDualMode()"></button>
     </section> -->
     <dialog id="d"></dialog>
+    <div id="recaptcha-container"></div>
     <script src="/assets/js/vendor/viewer.min.js"></script>
     <script src="/assets/js/vendor/htmx.min.js"></script>
     <script src="/assets/js/app.js"></script>
