@@ -1,0 +1,19 @@
+<mjml>
+  <mj-body>
+    <mj-section>
+      <mj-column>
+        <mj-image width="100px" src="http://127.0.0.1:8090/assets/images/logo.png"></mj-image>
+
+        <mj-divider border-color="#013365"></mj-divider>
+
+        <mj-text font-size="20px" color="#013365" font-family="helvetica">Postcard from {{.SenderName}}</mj-text>
+        <mj-text color="#013365" font-family="helvetica">A postcard is waiting for you to pick up at the Web Gallery of
+          Art!</mj-text>
+
+        <mj-button font-family="Helvetica" background-color="#013365" color="white" href="{{.PickUpUrl}}">
+          Pickup my Postcard!
+        </mj-button>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
