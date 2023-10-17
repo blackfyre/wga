@@ -11,36 +11,45 @@ bulmaToast.setDefaults({
     closeOnClick: true,
 })
 
-
-InitEventListeners();
-
 wga.els.dialog = document.getElementById("d");
-initNavbar();
-initViewer();
-initJumpToTop();
 
 htmx.config.globalViewTransitions = true;
 htmx.config.selfRequestsOnly = true;
 htmx.config.allowScriptTags = false;
 
-function classToggler (event) {
+initNavbar();
+initJumpToTop();
+InitEventListeners();
 
-    //find nearest `a` parent of event target
-    const target = event.target.closest('a') || event.target;
-
-    // Get the target from the "data-target" attribute
-    const dataTarget = target.dataset.target;
-    const $target = document.getElementById(dataTarget);
-
-    // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
-    target.classList.toggle('is-active');
-    $target.classList.toggle('is-active');
-
-};
-
+/**
+ * Initializes the navbar burger elements and adds a click event listener to each of them.
+ * @function
+ * @returns {void}
+ */
 function initNavbar () {
     // Get all "navbar-burger" elements
     const $navbarBurgers = document.querySelectorAll('.navbar-burger');
+
+    /**
+     * Toggles the "is-active" class on the target element and its corresponding button.
+     * @function
+     * @param {Event} event - The event object.
+     * @returns {void}
+     */
+    function classToggler (event) {
+
+        //find nearest `a` parent of event target
+        const target = event.target.closest('a') || event.target;
+
+        // Get the target from the "data-target" attribute
+        const dataTarget = target.dataset.target;
+        const $target = document.getElementById(dataTarget);
+
+        // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
+        target.classList.toggle('is-active');
+        $target.classList.toggle('is-active');
+
+    };
 
     // Add a click event on each of them
     $navbarBurgers.forEach(el => {
@@ -49,6 +58,11 @@ function initNavbar () {
     });
 }
 
+/**
+ * Initializes the Viewer plugin on all elements with the `data-viewer` attribute.
+ * @function
+ * @returns {void}
+ */
 function initViewer () {
     const elements = document.querySelectorAll('[data-viewer]');
     if (elements.length > 0) {
@@ -76,6 +90,12 @@ function initViewer () {
 
 }
 
+/**
+ * Initializes the "Jump to Top" functionality.
+ * @function
+ * @name initJumpToTop
+ * @returns {void}
+ */
 function initJumpToTop () {
     const jumpToTop = document.querySelector('.jump.back-to-top');
     if (jumpToTop) {
@@ -85,17 +105,6 @@ function initJumpToTop () {
     }
 }
 
-function removeNotification () {
-    document.addEventListener('DOMContentLoaded', () => {
-        (document.querySelectorAll('.notification .delete') || []).forEach(($delete) => {
-            const $notification = $delete.parentNode;
-
-            $delete.addEventListener('click', () => {
-                $notification.parentNode.removeChild($notification);
-            });
-        });
-    });
-}
 
 function DualModeListeners () {
     const dualModeToggles = document.getElementsByClassName('toggle-dual');
@@ -132,6 +141,12 @@ function ToggleDualMode () {
     }
 }
 
+/**
+ * Initializes event listeners for the postcard dialog success and error events, as well as the htmx:load event and the trix-before-initialize event.
+ * @function
+ * @name InitEventListeners
+ * @returns {void}
+ */
 function InitEventListeners () {
     document.body.addEventListener("postcard:dialog:success", function (evt) {
         wga.els.dialog.close();
@@ -158,8 +173,7 @@ function InitEventListeners () {
     })
 
     document.body.addEventListener('htmx:load', function (evt) {
-
-
+        initViewer();
     });
 
     document.addEventListener("trix-before-initialize", () => {
