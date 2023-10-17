@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/labstack/echo/v5"
@@ -102,6 +103,18 @@ func registerPostcardHandlers(app *pocketbase.PocketBase) {
 			if err := form.Submit(); err != nil {
 				return err
 			}
+
+			headerData, err := json.Marshal(map[string]any{
+				"postcard:dialog:success": map[string]any{
+					"message": "Postcard sent successfully!",
+				},
+			})
+
+			if err != nil {
+				return err
+			}
+
+			c.Response().Header().Set("HX-Trigger", string(headerData))
 
 			return nil
 		})

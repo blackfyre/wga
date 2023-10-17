@@ -56,6 +56,7 @@ func init() {
 				Options: &schema.RelationOptions{
 					CollectionId: "artworks",
 					MinSelect:    Ptr(1),
+					MaxSelect:    Ptr(1),
 				},
 			},
 			&schema.SchemaField{
@@ -69,7 +70,8 @@ func init() {
 				Name: "status",
 				Type: schema.FieldTypeSelect,
 				Options: &schema.SelectOptions{
-					Values: []string{"queued", "sent", "received"},
+					Values:    []string{"queued", "sent", "received"},
+					MaxSelect: 1,
 				},
 				Presentable: true,
 			},
