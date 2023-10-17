@@ -34,14 +34,15 @@
                     <div class="field">
                         <label class="label">Name</label>
                         <div class="control">
-                            <input class="input" type="text" name="sender_name" placeholder="My name" required>
+                            <input class="input" type="text" name="sender_name" placeholder="My name" required
+                                autocomplete="name">
                         </div>
                     </div>
                     <div class="field">
                         <label class="label">Email</label>
                         <div class="control">
                             <input class="input" type="email" name="sender_email" placeholder="My email address"
-                                required>
+                                autocomplete="email" required>
                         </div>
                     </div>
 
@@ -70,11 +71,11 @@
                         </label>
                     </div>
 
-                    <label class="hpt" for="name"></label>
-                    <input class="hpt" autocomplete="off" type="text" id="name" name="name"
+                    <label aria-hidden="true" class="hpt" for="name"></label>
+                    <input aria-hidden="true" class="hpt" autocomplete="off" type="text" id="name" name="name"
                         placeholder="Your name here">
-                    <label class="hpt" for="email"></label>
-                    <input class="hpt" autocomplete="off" type="email" id="email" name="email"
+                    <label aria-hidden="true" class="hpt" for="email"></label>
+                    <input aria-hidden="true" class="hpt" autocomplete="off" type="email" id="email" name="email"
                         placeholder="Your e-mail here">
 
 
