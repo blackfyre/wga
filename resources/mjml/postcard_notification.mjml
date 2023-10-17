@@ -8,7 +8,7 @@
   <mj-body>
     <mj-section>
       <mj-column>
-        <mj-image align="left" container-background-color="#013365" src="http://127.0.0.1:8090/assets/images/logo.png" alt="Web Gallery of Art Logo"></mj-image>
+        <mj-image align="left" container-background-color="#013365" src="http://127.0.0.1:8090/assets/images/logo.png" alt="Web Gallery of Art Logo" width="318px" padding="0"></mj-image>
 
         <mj-text font-size="20px" color="#013365">Postcard for you!</mj-text>
         <mj-text color="#013365">Hello There!</mj-text>

@@ -8,3 +8,7 @@ tmp/
 
 assets/public/css/style.css
 */mjml/*.html
+
+assets/public/js/*.js
+assets/public/js/*.map
+assets/public/js/*.txt

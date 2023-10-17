@@ -3,6 +3,7 @@
     <span class="icon is-clickable close-dialog is-large" hx-on="click: document.getElementById('d').close();">
         <i class="fas fa-times fa-2x"></i>
     </span>
+    <h1 class="title">Write a postcard</h1>
     <div class="columns">
         <div class="column is-half">
 
@@ -27,59 +28,62 @@
 
 
         <div class="column">
-
-            <form hx-post="/postcards" enctype="multipart/form-data" hx-target="#d">
-                <input type="hidden" name="image_id" value="{{.ImageId}}">
-                <div class="field">
-                    <label class="label">Name</label>
-                    <div class="control">
-                        <input class="input" type="text" name="sender_name" placeholder="My name" required>
+            <div class="box">
+                <form hx-post="/postcards" enctype="multipart/form-data" hx-target="#d">
+                    <input type="hidden" name="image_id" value="{{.ImageId}}">
+                    <div class="field">
+                        <label class="label">Name</label>
+                        <div class="control">
+                            <input class="input" type="text" name="sender_name" placeholder="My name" required>
+                        </div>
                     </div>
-                </div>
-                <div class="field">
-                    <label class="label">Email</label>
-                    <div class="control">
-                        <input class="input" type="email" name="sender_email" placeholder="My email address" required>
+                    <div class="field">
+                        <label class="label">Email</label>
+                        <div class="control">
+                            <input class="input" type="email" name="sender_email" placeholder="My email address"
+                                required>
+                        </div>
                     </div>
-                </div>
 
-                <div class="field">
-                    <label class="label">Recipients</label>
-                    <div class="control">
-                        <textarea class="textarea" name="recipients" placeholder="A list of recipients" rows="2"
-                            required></textarea>
+                    <div class="field">
+                        <label class="label">Recipients</label>
+                        <div class="control">
+                            <textarea class="textarea" name="recipients" placeholder="A list of recipients" rows="2"
+                                required></textarea>
+                        </div>
+                        <p class="help">A comma separated list of email adresses, each will recieve a dedicated email.
+                        </p>
                     </div>
-                    <p class="help">A comma separated list of email adresses, each will recieve a dedicated email.</p>
-                </div>
 
-                <div class="field">
-                    <label class="label">Message</label>
-                    <div class="control">
-                        <trix-editor input="message"></trix-editor>
-                        <input type="hidden" id="message" name="message">
+                    <div class="field">
+                        <label class="label">Message</label>
+                        <div class="control">
+                            <trix-editor input="message"></trix-editor>
+                            <input type="hidden" id="message" name="message">
+                        </div>
                     </div>
-                </div>
 
-                <div class="field">
-                    <label class="checkbox">
-                        <input type="checkbox" name="notify_sender" value="true">
-                        Notify me the first time someone views this postcard
-                    </label>
-                </div>
+                    <div class="field">
+                        <label class="checkbox">
+                            <input type="checkbox" name="notify_sender" value="true">
+                            Notify me the first time someone views this postcard
+                        </label>
+                    </div>
 
-                <div class="field is-grouped">
-                    <p class="control">
-                        <button class="button is-link" type="submit">
-                            Send postcard
-                        </button>
-                    </p>
-                    <p class="control">
-                        <button type="button" class="button" hx-on="click: document.getElementById('d').close();">
-                            Cancel
-                        </button>
-                    </p>
-                </div>
-            </form>
+                    <div class="field is-grouped">
+                        <p class="control">
+                            <button class="button is-link" type="submit">
+                                Send postcard
+                            </button>
+                        </p>
+                        <p class="control">
+                            <button type="button" class="button" hx-on="click: document.getElementById('d').close();">
+                                Cancel
+                            </button>
+                        </p>
+                    </div>
+                </form>
+            </div>
 
         </div>
     </div>

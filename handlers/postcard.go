@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"blackfyre.ninja/wga/assets"
@@ -57,11 +58,44 @@ func registerPostcardHandlers(app *pocketbase.PocketBase) {
 
 		})
 
-		e.Router.GET("postcards/:id", func(c echo.Context) error {
-			return nil
+		e.Router.GET("postcards", func(c echo.Context) error {
+			postCardId := c.QueryParamDefault("p", "nope")
+
+			if postCardId == "nope" {
+				return apis.NewBadRequestError("Invalid postcard id", nil)
+			}
+
+			r, err := app.Dao().FindRecordById("postcards", postCardId)
+
+			if err != nil {
+				return apis.NewNotFoundError("", err)
+			}
+
+			if errs := app.Dao().ExpandRecord(r, []string{"image_id"}, nil); len(errs) > 0 {
+				return fmt.Errorf("failed to expand: %v", errs)
+			}
+
+			aw := r.ExpandedOne("image_id")
+
+			html, err := assets.RenderPage("postcard", map[string]any{
+				"SenderName":  r.GetString("sender_name"),
+				"Message":     r.GetString("message"),
+				"AwImage":     generateFileUrl(app, "artworks", aw.GetString("id"), aw.GetString("image")),
+				"AwTitle":     aw.GetString("title"),
+				"AwComment":   aw.GetString("comment"),
+				"AwTechnique": aw.GetString("technique"),
+			})
+
+			if err != nil {
+				return apis.NewBadRequestError("", err)
+			}
+
+			return c.HTML(http.StatusOK, html)
 		})
 
 		e.Router.POST("postcards", func(c echo.Context) error {
+
+			headerData := map[string]any{}
 
 			// get the postcard data from the request body
 			// validate the postcard data
@@ -84,38 +118,42 @@ func registerPostcardHandlers(app *pocketbase.PocketBase) {
 
 			collection, err := app.Dao().FindCollectionByNameOrId("postcards")
 			if err != nil {
-				return err
+				headerData["postcard:dialog:error"] = map[string]any{
+					"message": "Failed to find postcard collection",
+				}
+			} else {
+				record := models.NewRecord(collection)
+
+				form := forms.NewRecordUpsert(app, record)
+
+				form.LoadData(map[string]any{
+					"status":        "queued",
+					"sender_name":   postData.SenderName,
+					"sender_email":  postData.SenderEmail,
+					"recipients":    postData.Recipients,
+					"message":       postData.Message,
+					"image_id":      postData.ImageId,
+					"notify_sender": postData.NotificationRequired,
+				})
+
+				if err := form.Submit(); err != nil {
+					headerData["postcard:dialog:error"] = map[string]any{
+						"message": "Failed to create postcard record",
+					}
+				} else {
+					headerData["postcard:dialog:success"] = map[string]any{
+						"message": "Postcard sent successfully!",
+					}
+				}
 			}
 
-			record := models.NewRecord(collection)
-
-			form := forms.NewRecordUpsert(app, record)
-
-			form.LoadData(map[string]any{
-				"status":        "queued",
-				"sender_name":   postData.SenderName,
-				"sender_email":  postData.SenderEmail,
-				"recipients":    postData.Recipients,
-				"message":       postData.Message,
-				"image_id":      postData.ImageId,
-				"notify_sender": postData.NotificationRequired,
-			})
-
-			if err := form.Submit(); err != nil {
-				return err
-			}
-
-			headerData, err := json.Marshal(map[string]any{
-				"postcard:dialog:success": map[string]any{
-					"message": "Postcard sent successfully!",
-				},
-			})
+			hd, err := json.Marshal(headerData)
 
 			if err != nil {
 				return err
 			}
 
-			c.Response().Header().Set("HX-Trigger", string(headerData))
+			c.Response().Header().Set("HX-Trigger", string(hd))
 
 			return nil
 		})
