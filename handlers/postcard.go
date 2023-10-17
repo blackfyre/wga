@@ -123,9 +123,16 @@ func registerPostcardHandlers(app *pocketbase.PocketBase) {
 				ImageId              string `json:"image_id" form:"image_id" query:"image_id" validate:"required"`
 				NotificationRequired bool   `json:"notification_required" form:"notify_sender" query:"notification_required"`
 				RecaptchaToken       string `json:"recaptcha_token" form:"g-recaptcha-response" query:"recaptcha_token" validate:"required"`
+				HoneyPotName         string `json:"honey_pot_name" form:"name" query:"honey_pot_name"`
+				HoneyPotEmail        string `json:"honey_pot_email" form:"email" query:"honey_pot_email"`
 			}{}
 
 			if err := c.Bind(&postData); err != nil {
+				return apis.NewBadRequestError("Failed to read request data", err)
+			}
+
+			if postData.HoneyPotEmail != "" || postData.HoneyPotName != "" {
+				// this is a bot
 				return apis.NewBadRequestError("Failed to read request data", err)
 			}
 
