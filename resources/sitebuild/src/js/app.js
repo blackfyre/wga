@@ -19,30 +19,6 @@ initNavbar();
 initViewer();
 initJumpToTop();
 
-document.body.addEventListener('htmx:load', function (evt) {
-
-
-});
-
-document.addEventListener("trix-before-initialize", () => {
-    Trix.config.toolbar.getDefaultHTML = () => {
-        return `
-    <div class="trix-button-row">
-      <span class="trix-button-group trix-button-group--text-tools" data-trix-button-group="text-tools">
-        <button type="button" class="trix-button trix-button--icon trix-button--icon-bold" data-trix-attribute="bold" data-trix-key="b" title="Bold" tabindex="-1">Bold</button>
-        <button type="button" class="trix-button trix-button--icon trix-button--icon-italic" data-trix-attribute="italic" data-trix-key="i" title="Italic" tabindex="-1">Italic</button>
-        <button type="button" class="trix-button trix-button--icon trix-button--icon-strike" data-trix-attribute="strike" title="Strike" tabindex="-1">Strike</button>
-      </span>
-
-      <span class="trix-button-group trix-button-group--block-tools" data-trix-button-group="block-tools">
-        <button type="button" class="trix-button trix-button--icon trix-button--icon-heading-1" data-trix-attribute="heading1" title="Heading 1" tabindex="-1">Heading 1</button>
-        <button type="button" class="trix-button trix-button--icon trix-button--icon-quote" data-trix-attribute="quote" title="Quote" tabindex="-1">Quote</button>
-      </span>
-
-    </div>`
-    }  // Change Trix.config if you need
-})
-
 htmx.config.globalViewTransitions = true;
 htmx.config.selfRequestsOnly = true;
 htmx.config.allowScriptTags = false;
@@ -179,5 +155,29 @@ function InitEventListeners () {
             dismissible: true,
             animate: { in: 'fadeIn', out: 'fadeOut' },
         })
+    })
+
+    document.body.addEventListener('htmx:load', function (evt) {
+
+
+    });
+
+    document.addEventListener("trix-before-initialize", () => {
+        Trix.config.toolbar.getDefaultHTML = () => {
+            return `
+    <div class="trix-button-row">
+      <span class="trix-button-group trix-button-group--text-tools" data-trix-button-group="text-tools">
+        <button type="button" class="trix-button trix-button--icon trix-button--icon-bold" data-trix-attribute="bold" data-trix-key="b" title="Bold" tabindex="-1">Bold</button>
+        <button type="button" class="trix-button trix-button--icon trix-button--icon-italic" data-trix-attribute="italic" data-trix-key="i" title="Italic" tabindex="-1">Italic</button>
+        <button type="button" class="trix-button trix-button--icon trix-button--icon-strike" data-trix-attribute="strike" title="Strike" tabindex="-1">Strike</button>
+      </span>
+
+      <span class="trix-button-group trix-button-group--block-tools" data-trix-button-group="block-tools">
+        <button type="button" class="trix-button trix-button--icon trix-button--icon-heading-1" data-trix-attribute="heading1" title="Heading 1" tabindex="-1">Heading 1</button>
+        <button type="button" class="trix-button trix-button--icon trix-button--icon-quote" data-trix-attribute="quote" title="Quote" tabindex="-1">Quote</button>
+      </span>
+
+    </div>`
+        }  // Change Trix.config if you need
     })
 }
