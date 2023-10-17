@@ -44,7 +44,7 @@ func sendPostcards(app *pocketbase.PocketBase, scheduler *cron.Cron) {
 
 				html, err := assets.RenderEmail("postcard:notification", map[string]any{
 					"SenderName": r.GetString("sender_name"),
-					"PickUpUrl":  utils.AssetUrl("/postcards/" + r.GetString("id")),
+					"PickUpUrl":  utils.AssetUrl("/postcards?p=" + r.GetString("id")),
 					"Title":      "",
 					"LogoUrl":    utils.AssetUrl("/assets/images/logo.png"),
 				})
