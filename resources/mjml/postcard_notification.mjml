@@ -1,0 +1,26 @@
+<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-all font-family="Helvetica" />
+    </mj-attributes>
+    <mj-title>{{.Title}}</mj-title>
+  </mj-head>
+  <mj-body>
+    <mj-section>
+      <mj-column>
+        <mj-image align="left" container-background-color="#013365" src="http://127.0.0.1:8090/assets/images/logo.png" alt="Web Gallery of Art Logo" width="318px" padding="0"></mj-image>
+
+        <mj-text font-size="20px" color="#013365">Postcard for you!</mj-text>
+        <mj-text color="#013365">Hello There!</mj-text>
+        <mj-text color="#013365">{{.SenderName}} has left postcard for you to pick up at the Web Gallery of
+          Art!</mj-text>
+
+        <mj-button background-color="#013365" color="white" href="{{.PickUpUrl}}">
+          Pickup my Postcard!
+        </mj-button>
+        
+        <mj-text>The postcard will be indefinitely available to you with the link.</mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

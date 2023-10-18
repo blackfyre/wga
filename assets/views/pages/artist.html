@@ -4,8 +4,8 @@
 
 {{define "body"}}
 {{block "artist:content" .}}
-<section class="section">
-    <div class="container">
+<main class="section">
+    <article class="container">
         <!-- Main container -->
         <div class="level">
             <!-- Left side -->
@@ -20,7 +20,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </article>
     <div class="container">
         <div class="divider">Biography</div>
     </div>
@@ -37,48 +37,47 @@
             <div class="divider">Works</div>
         </div>
 
-        <div class="columns is-multiline" data-viewer>
+        <div class="columns is-multiline works-listing" data-viewer>
             {{range .Works}}
             <div class="column is-one-third-tablet is-one-quarter-desktop">
-                <article class="card is-art-card">
+                <section class="card is-art-card">
                     <div class="card-image">
                         <figure class="image is-4by3 hidden-caption">
                             <picture>
                                 <source media="(max-width: 768px)" srcset="{{.Thumb}}">
                                 <source media="(min-width: 769px)" srcset="{{.Thumb}}">
                                 <source media="(min-width: 1024px)" srcset="{{.Thumb}}">
-                                <img src="{{.Image}}" alt="{{ .Title}}">
+                                <img src="{{.Image}}" alt="{{ .Title}}" loading="lazy">
                             </picture>
                             <figcaption>{{.Title}} - {{ .Technique }}</figcaption>
                         </figure>
                     </div>
                     <div class="card-content">
-                        <div class="content">
-                            <h1 class="title">{{ .Title}}</h1>
+                        <div>
+                            <h3 class="title is-size-3">{{ .Title}}</h3>
                             <p class="subtitle">{{ .Technique }}</p>
-                            <div class="line-clamp-3">
+                            <div class="line-clamp-3 content">
                                 {{safeHTML .Comment}}
                             </div>
                         </div>
                     </div>
                     <footer class="card-footer">
-                        <p class="card-footer-item">
-                            <span>
-                                <a href="/artists/{{$.Slug}}/{{.Id}}">Learn More</a>
-                            </span>
-                        </p>
+                        <a class="card-footer-item" href="/artists/{{$.Slug}}/{{.Id}}">Learn More</a>
+                        <a href="#" hx-on="click: document.getElementById('d').showModal();"
+                            hx-get="/postcard/send?awid={{.Id}}" hx-target="#d" class="card-footer-item">Send
+                            Postcard</a>
                     </footer>
                     <script type="application/ld+json">
                     {{marshalJSON .Jsonld}}
                     </script>
-                </article>
+                </section>
             </div>
             {{ else }}
 
             {{end}}
         </div>
     </div>
-</section>
+</main>
 <script type="application/ld+json">
 {{marshalJSON .Jsonld}}
 </script>
