@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"blackfyre.ninja/wga/crontab"
 	"blackfyre.ninja/wga/handlers"
 	"blackfyre.ninja/wga/hooks"
 	_ "blackfyre.ninja/wga/migrations"
@@ -27,6 +28,7 @@ func main() {
 
 	handlers.RegisterHandlers(app)
 	hooks.RegisterHooks(app)
+	crontab.RegisterCronJobs(app)
 
 	migratecmd.MustRegister(app, app.RootCmd, migratecmd.Config{
 		// enable auto creation of migration files when making collection changes in the Admin UI
