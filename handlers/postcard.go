@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"blackfyre.ninja/wga/assets"
 	"github.com/joho/godotenv"
@@ -16,6 +16,28 @@ import (
 	"github.com/pocketbase/pocketbase/forms"
 	"github.com/pocketbase/pocketbase/models"
 )
+
+func renderPostcardEditor(awid string, app *pocketbase.PocketBase, c echo.Context) (string, error) {
+	r, err := app.Dao().FindRecordById("artworks", awid)
+
+	if err != nil {
+		return "", apis.NewNotFoundError("", err)
+	}
+
+	html, err := assets.RenderBlock("postcard:editor", map[string]any{
+		"Image":     generateFileUrl(app, "artworks", awid, r.GetString("image")),
+		"ImageId":   awid,
+		"Title":     r.GetString("title"),
+		"Comment":   r.GetString("comment"),
+		"Technique": r.GetString("technique"),
+	})
+
+	if err != nil {
+		return "", apis.NewBadRequestError("", err)
+	}
+
+	return html, nil
+}
 
 func registerPostcardHandlers(app *pocketbase.PocketBase) {
 
@@ -42,27 +64,10 @@ func registerPostcardHandlers(app *pocketbase.PocketBase) {
 				return apis.NewBadRequestError("awid is empty", nil)
 			}
 
-			// find the artwork with the given awid
-			// if not found, return 404
-			// if found, render the send postcard page with the artwork data
-			// if error, return 500
-
-			r, err := app.Dao().FindRecordById("artworks", awid)
+			html, err := renderPostcardEditor(awid, app, c)
 
 			if err != nil {
-				return apis.NewNotFoundError("", err)
-			}
-
-			html, err := assets.RenderBlock("postcard:editor", map[string]any{
-				"Image":     generateFileUrl(app, "artworks", awid, r.GetString("image")),
-				"ImageId":   awid,
-				"Title":     r.GetString("title"),
-				"Comment":   r.GetString("comment"),
-				"Technique": r.GetString("technique"),
-			})
-
-			if err != nil {
-				return apis.NewBadRequestError("", err)
+				return err
 			}
 
 			return c.HTML(http.StatusOK, html)
@@ -107,73 +112,70 @@ func registerPostcardHandlers(app *pocketbase.PocketBase) {
 
 		e.Router.POST("postcards", func(c echo.Context) error {
 
-			headerData := map[string]any{}
-
-			// get the postcard data from the request body
-			// validate the postcard data
-			// if validation fails, return 400
-			// if validation succeeds, create a new postcard record
-			// if error, return 500
-
 			postData := struct {
-				SenderName           string `json:"sender_name" form:"sender_name" query:"sender_name" validate:"required"`
-				SenderEmail          string `json:"sender_email" form:"sender_email" query:"sender_email" validate:"required,email"`
-				Recipients           string `json:"recipients" form:"recipients" query:"recipients" validate:"required"`
-				Message              string `json:"message" form:"message" query:"message" validate:"required"`
-				ImageId              string `json:"image_id" form:"image_id" query:"image_id" validate:"required"`
-				NotificationRequired bool   `json:"notification_required" form:"notify_sender" query:"notification_required"`
-				RecaptchaToken       string `json:"recaptcha_token" form:"g-recaptcha-response" query:"recaptcha_token" validate:"required"`
-				HoneyPotName         string `json:"honey_pot_name" form:"name" query:"honey_pot_name"`
-				HoneyPotEmail        string `json:"honey_pot_email" form:"email" query:"honey_pot_email"`
+				SenderName           string   `json:"sender_name" form:"sender_name" query:"sender_name" validate:"required"`
+				SenderEmail          string   `json:"sender_email" form:"sender_email" query:"sender_email" validate:"required,email"`
+				Recipients           []string `json:"recipients" form:"recipients[]" query:"recipients" validate:"required"`
+				Message              string   `json:"message" form:"message" query:"message" validate:"required"`
+				ImageId              string   `json:"image_id" form:"image_id" query:"image_id" validate:"required"`
+				NotificationRequired bool     `json:"notification_required" form:"notify_sender" query:"notification_required"`
+				RecaptchaToken       string   `json:"recaptcha_token" form:"g-recaptcha-response" query:"recaptcha_token" validate:"required"`
+				HoneyPotName         string   `json:"honey_pot_name" form:"name" query:"honey_pot_name"`
+				HoneyPotEmail        string   `json:"honey_pot_email" form:"email" query:"honey_pot_email"`
 			}{}
 
 			if err := c.Bind(&postData); err != nil {
-				return apis.NewBadRequestError("Failed to read request data", err)
+				sendToastMessage("Failed to find postcard collection", "is-danger", true, c)
+				return apis.NewBadRequestError("Failed to parse form data", err)
 			}
 
 			if postData.HoneyPotEmail != "" || postData.HoneyPotName != "" {
-				// this is a bot
-				return apis.NewBadRequestError("Failed to read request data", err)
+				// this is probably a bot
+				//TODO: use the new generic logger in pb to log this event
+				sendToastMessage("Failed to find postcard collection", "is-danger", true, c)
+				return nil
 			}
 
 			collection, err := app.Dao().FindCollectionByNameOrId("postcards")
 			if err != nil {
-				headerData["notification:error"] = map[string]any{
-					"message": "Failed to find postcard collection",
+				sendToastMessage("Failed to find postcard collection", "is-danger", true, c)
+				return apis.NewNotFoundError("Failed to find postcard collection", err)
+			}
+
+			record := models.NewRecord(collection)
+
+			form := forms.NewRecordUpsert(app, record)
+
+			form.LoadData(map[string]any{
+				"status":        "queued",
+				"sender_name":   postData.SenderName,
+				"sender_email":  postData.SenderEmail,
+				"recipients":    strings.Join(postData.Recipients, ","),
+				"message":       p.Sanitize(postData.Message),
+				"image_id":      postData.ImageId,
+				"notify_sender": postData.NotificationRequired,
+			})
+
+			if err := form.Submit(); err != nil {
+
+				html, err := renderPostcardEditor(postData.ImageId, app, c)
+
+				if err != nil {
+					return err
 				}
-			} else {
-				record := models.NewRecord(collection)
 
-				form := forms.NewRecordUpsert(app, record)
-
-				form.LoadData(map[string]any{
-					"status":        "queued",
-					"sender_name":   postData.SenderName,
-					"sender_email":  postData.SenderEmail,
-					"recipients":    postData.Recipients,
-					"message":       p.Sanitize(postData.Message),
-					"image_id":      postData.ImageId,
-					"notify_sender": postData.NotificationRequired,
+				setHxTrigger(c, map[string]any{
+					"message":     "Failed to create postcard record",
+					"closeDialog": false,
 				})
 
-				if err := form.Submit(); err != nil {
-					headerData["notification:error"] = map[string]any{
-						"message": "Failed to create postcard record",
-					}
-				} else {
-					headerData["notification:success"] = map[string]any{
-						"message": "Postcard sent successfully!",
-					}
-				}
+				sendToastMessage("Failed to store the postcard", "is-danger", false, c)
+
+				return c.HTML(http.StatusOK, html)
+
 			}
 
-			hd, err := json.Marshal(headerData)
-
-			if err != nil {
-				return err
-			}
-
-			c.Response().Header().Set("HX-Trigger", string(hd))
+			sendToastMessage("Thank you! Your postcard has been queued for sending!", "is-success", true, c)
 
 			return nil
 		})

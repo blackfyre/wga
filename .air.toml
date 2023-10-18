@@ -6,7 +6,7 @@ tmp_dir = "tmp"
 args_bin = []
 bin = "./tmp/main"
 cmd = "go build -o ./tmp/main ."
-delay = 500
+delay = 600
 exclude_dir = [
   "tmp",
   "vendor",

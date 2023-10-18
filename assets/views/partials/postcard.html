@@ -49,8 +49,12 @@
                     <div class="field">
                         <label class="label">Recipients</label>
                         <div class="control">
-                            <textarea class="textarea" name="recipients" placeholder="A list of recipients" rows="2"
-                                required></textarea>
+                            <input class="input" type="email" name="recipients[]" placeholder="Email addresses"
+                                autocomplete="email" required>
+                        </div>
+                        <div class="control">
+                            <input class="input" type="email" name="recipients[]" placeholder="Email addresses"
+                                autocomplete="email" required>
                         </div>
                         <p class="help">A comma separated list of email adresses, each will recieve a dedicated email.
                         </p>
