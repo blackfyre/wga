@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	"blackfyre.ninja/wga/assets"
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
@@ -141,10 +142,10 @@ func registerHome(app *pocketbase.PocketBase) {
 			}
 
 			if isHtmx {
-				html, err = renderBlock("home:content", data)
+				html, err = assets.RenderBlock("home:content", data)
 
 			} else {
-				html, err = renderPage("home", data)
+				html, err = assets.RenderPage("home", data)
 			}
 
 			if err != nil {

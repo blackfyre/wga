@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{block "title" .}}Web Gallery of Art{{end}}</title>
     <link rel="stylesheet" href="/assets/css/style.css">
-    <link rel="stylesheet" href="/assets/css/viewer.min.css" />
+    <link rel="stylesheet" href="/assets/css/vendor/viewer.min.css" />
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon-16x16.png">
@@ -17,6 +17,9 @@
     <meta name="msapplication-TileColor" content="#013365">
     <meta name="msapplication-config" content="/assets/browserconfig.xml">
     <meta name="theme-color" content="#013365">
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/trix@2.0.0/dist/trix.css">
+    <script type="text/javascript" src="https://unpkg.com/trix@2.0.0/dist/trix.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.0.0/animate.min.css" />
     {{block "head" .}}
     {{end}}
 </head>
@@ -25,11 +28,11 @@
 
     {{template "partial:top-nav" .}}
 
-    <div id="mc-area">
+    <main id="mc-area">
         {{block "body" .}}
 
         {{end}}
-    </div>
+    </main>
 
     {{template "partial:footer" .}}
 
@@ -43,9 +46,11 @@
         <div id="dual-right" hx-get="/htmx/right_default.html" hx-trigger="revealed"></div>
         <button class="delete is-large" hx-on="click: ToggleDualMode()"></button>
     </section> -->
-    <script src="/assets/js/viewer.min.js"></script>
-    <script src="/assets/js/htmx.min.js"></script>
-    <script src="/assets/js/site.js"></script>
+    <dialog id="d"></dialog>
+    <div id="recaptcha-container"></div>
+    <script src="/assets/js/vendor/viewer.min.js"></script>
+    <script src="/assets/js/vendor/htmx.min.js"></script>
+    <script src="/assets/js/app.js"></script>
     {{block "scripts" .}}
     {{end}}
 </body>

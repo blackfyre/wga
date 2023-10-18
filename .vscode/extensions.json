@@ -1,0 +1,9 @@
+{
+    "recommendations": [
+        "mjmlio.vscode-mjml",
+        "sibiraj-s.vscode-scss-formatter",
+        "esbenp.prettier-vscode",
+        "alexcvzz.vscode-sqlite",
+        "mrmlnc.vscode-scss"
+    ]
+}
