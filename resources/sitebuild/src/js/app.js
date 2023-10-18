@@ -191,7 +191,8 @@ function initCloner () {
     // find all the elements with data-cloner-target attribute
     const cloners = document.querySelectorAll('[data-cloner-target]');
 
-    // loop through each cloner
+    // remove not seen items from wga.existingCloners
+    wga.existingCloners = wga.existingCloners.filter(el => document.body.contains(el));
 
     cloners.forEach(cloner => {
         // get the target element
@@ -200,8 +201,6 @@ function initCloner () {
         // get the target's innetHTML as the template
         const template = target.innerHTML;
 
-        console.log(cloner.dataset.clonerTarget, target, template);
-
         // if target not in wga.existingCloners
 
         if (!wga.existingCloners.includes(cloner.dataset.clonerTarget)) {
@@ -209,8 +208,8 @@ function initCloner () {
             wga.existingCloners.push(target);
 
             cloner.addEventListener('click', () => {
-                //append template to target
-                target.innerHTML += template;
+                // append the template to the target
+                target.insertAdjacentHTML('beforeend', template);
 
                 // find all the elements with data-cloner-remove-me attribute
                 const removeMe = target.querySelectorAll('[data-cloner-remove-me]');
