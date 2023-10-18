@@ -6,9 +6,11 @@ const wga = {
 };
 
 bulmaToast.setDefaults({
-    duration: 2000,
-    position: 'top-left',
+    duration: 5000,
+    position: 'top-right',
     closeOnClick: true,
+    dismissible: true,
+    animate: { in: 'fadeIn', out: 'fadeOut' },
 })
 
 wga.els.dialog = document.getElementById("d");
@@ -148,27 +150,14 @@ function ToggleDualMode () {
  * @returns {void}
  */
 function InitEventListeners () {
-    document.body.addEventListener("notification:success", function (evt) {
-        wga.els.dialog.close();
-
-        console.log(evt);
-
-        bulmaToast.toast({
-            message: evt.detail.message,
-            type: 'is-success',
-            dismissible: true,
-            animate: { in: 'fadeIn', out: 'fadeOut' },
-        })
-    })
-
-    document.body.addEventListener("notification:error", function (evt) {
-        console.log(evt);
+    document.body.addEventListener("notification:toast", function (evt) {
+        if (evt.detail.closeDialog) {
+            wga.els.dialog.close();
+        }
 
         bulmaToast.toast({
             message: evt.detail.message,
-            type: 'is-danger',
-            dismissible: true,
-            animate: { in: 'fadeIn', out: 'fadeOut' },
+            type: evt.detail.type,
         })
     })
 
