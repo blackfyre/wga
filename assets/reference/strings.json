@@ -13,7 +13,7 @@
     },
     {
         "name": "thankYou",
-        "content": "<p>Thank you for visiting the Web Gallery of Art!</p><p>We would like it very much if you <a href='/addGuestbookEntry' hx-get='/addGuestbookEntry' hx-target='#mc-area'>added</a> your entry to our guestbook.</p>"
+        "content": "<p>Thank you for visiting the Web Gallery of Art!</p><p>We would like it very much if you <a href='/addGuestbookMessage' hx-get='/addGuestbookMessage' hx-target='#mc-area'>added</a> your entry to our guestbook.</p>"
     },
     {
         "name": "guestbookPlayMusicLink",

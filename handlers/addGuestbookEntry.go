@@ -9,59 +9,63 @@ import (
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/forms"
+	"github.com/pocketbase/pocketbase/models"
 )
 
-type Data struct {
-	Title         string
-	FirstContent  string
-	SecondContent string
-	MainContent   []map[string]string
-	LatestEntries string
+type GuestBookMessage struct {
+	Name         string `json:"name" form:"name"`
+	Email        string `json:"email" form:"email"`
+	Location     string `json:"location" form:"location"`
+	Message      string `json:"message" form:"message"`
 }
 
-type PreparedData struct {
-	Title                   string
-	FirstContent            string
-	SecondContent           string
-	MainContent             []map[string]string
-	LatestEntries           string
-	CalendarYears           [][]string
-	SearchExpressionPresent bool
-	SearchExpression        string
-}
-
-func registerAddGuestbookEntry(app *pocketbase.PocketBase) {
+func registerAddGuestbookMessage(app *pocketbase.PocketBase) {
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 
-		e.Router.GET("/addGuestbookEntry", func(c echo.Context) error {
+		e.Router.GET("/addGuestbookMessage", func(c echo.Context) error {
 			confirmedHtmxRequest := isHtmxRequest(c)
 			currentUrl := c.Request().URL.String()
 			c.Response().Header().Set("HX-Push-Url", currentUrl)
 
-			cacheKey := gbAddEntrySetCacheSettings(confirmedHtmxRequest)
-			shouldReturn, returnValue := gbAddEntryIsCached(app, cacheKey, c)
+			cacheKey := gbAddMessageSetCacheSettings(confirmedHtmxRequest)
+			shouldReturn, returnValue := gbAddMessageIsCached(app, cacheKey, c)
 			if shouldReturn {
 				return returnValue
 			}
 
-			data, err := gbAddEntryGetData(app)
+			html, err := gbAddMessageRender(confirmedHtmxRequest)
 
 			if err != nil {
 				// or redirect to a dedicated 404 HTML page
 				return apis.NewNotFoundError("", err)
 			}
-
-			html, err := gbAddEntryRender(confirmedHtmxRequest, data)
-
-			if err != nil {
-				// or redirect to a dedicated 404 HTML page
-				return apis.NewNotFoundError("", err)
-			}
-
-			c.Response().Header().Set("HX-Push-Url", "/addGuestbookEntry")
 
 			return c.HTML(http.StatusOK, html)
+		})
+
+		e.Router.POST("/addGuestbookMessage", func(c echo.Context) error {
+			data := apis.RequestInfo(c).Data
+
+			guestBookMessage := GuestBookMessage{
+				Name:       c.FormValue("name"),
+				Email:      c.FormValue("email"),
+				Location:   c.FormValue("location"),
+				Message:    c.FormValue("message"),
+			}
+
+			if err := c.Bind(&data); err != nil {
+				return apis.NewBadRequestError("Failed to read request data", err)
+			}
+
+			err := addGuestbookMessageToDB(app, guestBookMessage)
+
+			if err != nil {
+				return apis.NewBadRequestError("Failed to add message to database", err)
+			}
+			
+			return c.NoContent(204)
 		})
 
 		return nil
@@ -69,13 +73,13 @@ func registerAddGuestbookEntry(app *pocketbase.PocketBase) {
 	})
 }
 
-func gbAddEntrySetCacheSettings(confirmedHtmxRequest bool) string {
-	cacheKey := "addGuestbookEntry"
+func gbAddMessageSetCacheSettings(confirmedHtmxRequest bool) string {
+	cacheKey := "addGuestbookMessage"
 
 	return cacheKey
 }
 
-func gbAddEntryIsCached(app *pocketbase.PocketBase, cacheKey string, c echo.Context) (bool, error) {
+func gbAddMessageIsCached(app *pocketbase.PocketBase, cacheKey string, c echo.Context) (bool, error) {
 	if app.Cache().Has(cacheKey) {
 		html := app.Cache().Get(cacheKey).(string)
 		return true, c.HTML(http.StatusOK, html)
@@ -83,85 +87,53 @@ func gbAddEntryIsCached(app *pocketbase.PocketBase, cacheKey string, c echo.Cont
 	return false, nil
 }
 
-func gbAddEntryGetData(app *pocketbase.PocketBase) (PreparedData, error) {
-	guestBookTitle, err := gbGetGuestbookTextContent(app, "guestbook")
-
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	guestBookTextFirst, err := gbGetGuestbookTextContent(app, "thankYou")
-
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	guestBookTextSecond, err := gbGetGuestbookTextContent(app, "guestbookPlayMusicLink")
-
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	latestEntries, err := gbGetGuestbookTextContent(app, "latestEntries")
-
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	rawData := Data{
-		Title:         guestBookTitle,
-		FirstContent:  guestBookTextFirst,
-		SecondContent: guestBookTextSecond,
-		LatestEntries: latestEntries,
-	}
-
-	data := gbAddEntryPrepareDataForRender(rawData)
-
-	return data, err
-}
-
-func gbAddEntryPrepareDataForRender(data Data) PreparedData {
-	years := gbGetYears()
-
-	preparedData := PreparedData{
-		Title:                   data.Title,
-		FirstContent:            data.FirstContent,
-		SecondContent:           data.SecondContent,
-		MainContent:             data.MainContent,
-		CalendarYears:           years,
-		LatestEntries:           data.LatestEntries,
-	}
-	return preparedData
-}
-
-func gbAddEntryRender(confirmedHtmxRequest bool, data PreparedData) (string, error) {
-	dataMap, shouldReturn, html, err := gbAddEntryGeneralizer(data)
-	if shouldReturn {
-		return html, err
-	}
-
+func gbAddMessageRender(confirmedHtmxRequest bool) (string, error) {
+	dataMap := make(map[string]any)
 	if confirmedHtmxRequest {
-		blockToRender := "addGuestbookEntry:content"
+		blockToRender := "addGuestbookMessage:content"
 
 		html, err := renderBlock(blockToRender, dataMap)
 		return html, err
 	} else {
-		html, err := renderPage("addGuestbookEntry", dataMap)
+		html, err := renderPage("addGuestbookMessage", dataMap)
 		return html, err
 	}
 }
 
-func gbAddEntryGeneralizer(data PreparedData) (map[string]interface{}, bool, string, error) {
-	dataMap := make(map[string]interface{})
-	jsonData, err := json.Marshal(data)
+func addGuestbookMessageToDB(app *pocketbase.PocketBase, content GuestBookMessage) (error) {
+	collection, err := app.Dao().FindCollectionByNameOrId("guestbook")
 	if err != nil {
-		return nil, true, "", err
+		fmt.Println(err)
 	}
-	err = json.Unmarshal(jsonData, &dataMap)
+
+	record := models.NewRecord(collection)
+	form := forms.NewRecordUpsert(app, record)
+
+
+	messageMap, err := addGuestbookMessageGeneralizer(content)
 	if err != nil {
-		return nil, true, "", err
+		fmt.Println(err)
 	}
-	return dataMap, false, "", nil
+
+	form.LoadData(messageMap)
+
+	if err := form.Submit()
+	err != nil {
+		fmt.Println(err)
+	}
+
+	return err
 }
 
-
+func addGuestbookMessageGeneralizer(data GuestBookMessage) (map[string]any, error) {
+	messageMap := make(map[string]any)
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		fmt.Println(err)
+	}
+	err = json.Unmarshal(jsonData, &messageMap)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return messageMap, err
+}
