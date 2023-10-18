@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"blackfyre.ninja/wga/assets"
 	"blackfyre.ninja/wga/utils"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v5"
@@ -214,9 +215,9 @@ func registerArtist(app *pocketbase.PocketBase) {
 				}
 
 				if isHtmxRequest(c) {
-					html, err = renderBlock("artist:content", data)
+					html, err = assets.RenderBlock("artist:content", data)
 				} else {
-					html, err = renderPage("artist", data)
+					html, err = assets.RenderPage("artist", data)
 				}
 
 				if err != nil {

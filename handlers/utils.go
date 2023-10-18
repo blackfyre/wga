@@ -1,9 +1,12 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
 	"strings"
 
+	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/models"
 )
@@ -35,4 +38,32 @@ func generateThumbUrl(app *pocketbase.PocketBase, collection string, collectionI
 	endPoint = strings.Replace(endPoint, "https://", "https://"+app.Settings().S3.Bucket+".", 1)
 
 	return endPoint + "/" + collection + "/" + collectionId + "/thumb_" + fileName + "/" + thumbSize + "_" + fileName
+}
+
+func setHxTrigger(c echo.Context, data map[string]any) {
+	hd, err := json.Marshal(data)
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	c.Response().Header().Set("HX-Trigger", string(hd))
+}
+
+func sendToastMessage(message string, t string, closeDialog bool, c echo.Context) {
+	payload := struct {
+		Message     string `json:"message"`
+		Type        string `json:"type"`
+		CloseDialog bool   `json:"closeDialog"`
+	}{
+		Message:     message,
+		Type:        t,
+		CloseDialog: closeDialog,
+	}
+
+	m := map[string]any{
+		"notification:toast": payload,
+	}
+
+	setHxTrigger(c, m)
 }

@@ -32,6 +32,7 @@ WGA_S3_ACCESS_KEY=
 WGA_S3_ACCESS_SECRET=
 
 WGA_PROTOCOL=http
+WGA_HOSTNAME=localhost:8090
 
 WGA_SMTP_HOST=
 WGA_SMTP_PORT=
@@ -39,24 +40,30 @@ WGA_SMTP_USERNAME=
 WGA_SMTP_PASSWORD=
 WGA_SENDER_ADDRESS=
 WGA_SENDER_NAME=
+
+WGA_RECAPTCHA_SITE_KEY=
+WGA_RECAPTCHA_SECRET_KEY=
 ```
 
-| Variable               | Description                                                                  |
-| ---------------------- | ---------------------------------------------------------------------------- |
-| `WGA_ADMIN_EMAIL`      | The email address of the admin user                                          |
-| `WGA_ADMIN_PASSWORD`   | The password of the admin user                                               |
-| `WGA_S3_ENDPOINT`      | The endpoint of the S3 bucket                                                |
-| `WGA_S3_BUCKET`        | The name of the S3 bucket                                                    |
-| `WGA_S3_REGION`        | The region of the S3 bucket                                                  |
-| `WGA_S3_ACCESS_KEY`    | The access key of the S3 bucket                                              |
-| `WGA_S3_ACCESS_SECRET` | The access secret of the S3 bucket                                           |
-| `WGA_PROTOCOL`         | The protocol to use for the application, valid values are `http` and `https` |
-| `WGA_SMTP_HOST`        | The address of the SMTP host                                                 |
-| `WGA_SMTP_PORT`        | The SMTP service port on the host adress                                     |
-| `WGA_SMTP_USERNAME`    | The username for the SMTP service                                            |
-| `WGA_SMTP_PASSWORD`    | The password for the SMTP service                                            |
-| `WGA_SENDER_ADDRESS`   | The sending email address                                                    |
-| `WGA_SENDER_NAME`      | The name of the email sender                                                 |
+| Variable                   | Description                                                                  |
+| -------------------------- | ---------------------------------------------------------------------------- |
+| `WGA_ADMIN_EMAIL`          | The email address of the admin user                                          |
+| `WGA_ADMIN_PASSWORD`       | The password of the admin user                                               |
+| `WGA_S3_ENDPOINT`          | The endpoint of the S3 bucket                                                |
+| `WGA_S3_BUCKET`            | The name of the S3 bucket                                                    |
+| `WGA_S3_REGION`            | The region of the S3 bucket                                                  |
+| `WGA_S3_ACCESS_KEY`        | The access key of the S3 bucket                                              |
+| `WGA_S3_ACCESS_SECRET`     | The access secret of the S3 bucket                                           |
+| `WGA_PROTOCOL`             | The protocol to use for the application, valid values are `http` and `https` |
+| `WGA_HOSTNAME`             | The domain pointing to the application                                       |
+| `WGA_SMTP_HOST`            | The address of the SMTP host                                                 |
+| `WGA_SMTP_PORT`            | The SMTP service port on the host adress                                     |
+| `WGA_SMTP_USERNAME`        | The username for the SMTP service                                            |
+| `WGA_SMTP_PASSWORD`        | The password for the SMTP service                                            |
+| `WGA_SENDER_ADDRESS`       | The sending email address                                                    |
+| `WGA_SENDER_NAME`          | The name of the email sender                                                 |
+| `WGA_RECAPTCHA_SITE_KEY`   | The site key for the recaptcha service                                       |
+| `WGA_RECAPTCHA_SECRET_KEY` | The secret key for the recaptcha service                                     |
 
 ### Running the application
 
