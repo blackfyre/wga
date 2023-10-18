@@ -48,16 +48,26 @@
 
                     <div class="field">
                         <label class="label">Recipients</label>
-                        <div class="control">
-                            <input class="input" type="email" name="recipients[]" placeholder="Email addresses"
-                                autocomplete="email" required>
+                    </div>
+
+                    <div id="recipients-array">
+                        <div class="field has-addons">
+
+                            <div class="control is-expanded">
+                                <input class="input is-fullwidth" type="email" name="recipients[]"
+                                    placeholder="Email addresses" autocomplete="email" required>
+                            </div>
+                            <div class="control">
+                                <button type="button" class="button is-warning" title="Remove recipient"
+                                    data-cloner-remove-me>-</button>
+                            </div>
+
                         </div>
-                        <div class="control">
-                            <input class="input" type="email" name="recipients[]" placeholder="Email addresses"
-                                autocomplete="email" required>
-                        </div>
-                        <p class="help">A comma separated list of email adresses, each will recieve a dedicated email.
-                        </p>
+                    </div>
+
+                    <div class="field">
+                        <button type="button" class="button is-primary" data-cloner-target="#recipients-array">Add
+                            recipient</button>
                     </div>
 
                     <div class="field">

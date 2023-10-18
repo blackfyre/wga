@@ -2,7 +2,8 @@
 import * as bulmaToast from 'bulma-toast'
 
 const wga = {
-    els: {}
+    els: {},
+    existingCloners: []
 };
 
 bulmaToast.setDefaults({
@@ -163,6 +164,7 @@ function InitEventListeners () {
 
     document.body.addEventListener('htmx:load', function (evt) {
         initViewer();
+        initCloner();
     });
 
     document.addEventListener("trix-before-initialize", () => {
@@ -184,3 +186,57 @@ function InitEventListeners () {
         }  // Change Trix.config if you need
     })
 }
+
+function initCloner () {
+    // find all the elements with data-cloner-target attribute
+    const cloners = document.querySelectorAll('[data-cloner-target]');
+
+    // loop through each cloner
+
+    cloners.forEach(cloner => {
+        // get the target element
+        const target = document.querySelector(cloner.dataset.clonerTarget);
+
+        // get the target's innetHTML as the template
+        const template = target.innerHTML;
+
+        console.log(cloner.dataset.clonerTarget, target, template);
+
+        // if target not in wga.existingCloners
+
+        if (!wga.existingCloners.includes(cloner.dataset.clonerTarget)) {
+            // add target to wga.existingCloners
+            wga.existingCloners.push(target);
+
+            cloner.addEventListener('click', () => {
+                //append template to target
+                target.innerHTML += template;
+
+                // find all the elements with data-cloner-remove-me attribute
+                const removeMe = target.querySelectorAll('[data-cloner-remove-me]');
+
+                // loop through each removeMe
+
+                removeMe.forEach(el => {
+
+                    const removeMe = () => {
+                        // find the closest .field element
+                        const field = el.closest('.field');
+
+                        // remove the field
+                        field.remove();
+                    }
+
+                    el.removeEventListener('click', removeMe);
+
+                    // add click event listener
+                    el.addEventListener('click', removeMe)
+                })
+            })
+        }
+    });
+}
+
+window.wga = {
+    initCloner: initCloner,
+};
