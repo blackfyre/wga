@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"blackfyre.ninja/wga/assets"
@@ -44,12 +45,12 @@ type GbPreparedData struct {
 }
 
 type GuestBookMessage struct {
-	Name         	 	 string   `json:"name" form:"name" query:"name" validate:"required"`
-	Email          		 string   `json:"email" form:"email" query:"email" validate:"required"`
-	Location     		 string   `json:"location" form:"location" query:"location" validate:"required"`
-	Message      		 string   `json:"message" form:"message" query:"message" validate:"required"`
-	HoneyPotName         string   `json:"honey_pot_name" query:"honey_pot_name"`
-	HoneyPotEmail        string   `json:"honey_pot_email" query:"honey_pot_email"`
+	Name          string `json:"name" form:"name" query:"name" validate:"required"`
+	Email         string `json:"email" form:"email" query:"email" validate:"required"`
+	Location      string `json:"location" form:"location" query:"location" validate:"required"`
+	Message       string `json:"message" form:"message" query:"message" validate:"required"`
+	HoneyPotName  string `json:"honey_pot_name" query:"honey_pot_name"`
+	HoneyPotEmail string `json:"honey_pot_email" query:"honey_pot_email"`
 }
 
 type GuestBookMessagePrepared struct {
@@ -58,7 +59,6 @@ type GuestBookMessagePrepared struct {
 	Location string
 	Created  string
 }
-
 
 func registerGuestbookHandlers(app *pocketbase.PocketBase) {
 
@@ -99,12 +99,12 @@ func registerGuestbookHandlers(app *pocketbase.PocketBase) {
 			}
 
 			guestBookMessage := GuestBookMessage{
-				Name:       	  c.FormValue("sender_name"),
-				Email:      	  c.FormValue("sender_email"),
-				Location:   	  c.FormValue("location"),
-				Message:    	  c.FormValue("message"),
-				HoneyPotName: 	  c.FormValue("name"),
-				HoneyPotEmail: 	  c.FormValue("email"),
+				Name:          c.FormValue("sender_name"),
+				Email:         c.FormValue("sender_email"),
+				Location:      c.FormValue("location"),
+				Message:       c.FormValue("message"),
+				HoneyPotName:  c.FormValue("name"),
+				HoneyPotEmail: c.FormValue("email"),
 			}
 
 			if guestBookMessage.HoneyPotEmail != "" || guestBookMessage.HoneyPotName != "" {
@@ -167,13 +167,13 @@ func setUrl(c echo.Context, url string) {
 	if url != "" {
 		c.Response().Header().Set("HX-Push-Url", url)
 	} else {
-	currentUrl := c.Request().URL.String()
-	c.Response().Header().Set("HX-Push-Url", currentUrl)
+		currentUrl := c.Request().URL.String()
+		c.Response().Header().Set("HX-Push-Url", currentUrl)
 	}
 }
 
 func gbProcessRequest(c echo.Context) SearchSettings {
-	searchExpression := ""
+	searchExpression := strconv.Itoa(time.Now().Year())
 	searchExpressionPresent := false
 	filter := "id != null"
 
@@ -350,7 +350,7 @@ func gbGetGuestbookContent(app *pocketbase.PocketBase, filter string, searchExpr
 
 		row := GuestBookMessagePrepared{
 			Message:  m.GetString("message"),
-			Name:    m.GetString("name"),
+			Name:     m.GetString("name"),
 			Location: m.GetString("location"),
 			Created:  formattedDateString,
 		}
@@ -412,7 +412,7 @@ func gbAddMessageRender(confirmedHtmxRequest bool) (string, error) {
 	}
 }
 
-func addGuestbookMessageToDB(app *pocketbase.PocketBase, content GuestBookMessage) (error) {
+func addGuestbookMessageToDB(app *pocketbase.PocketBase, content GuestBookMessage) error {
 	collection, err := app.Dao().FindCollectionByNameOrId("guestbook")
 	if err != nil {
 		fmt.Println(err)
@@ -428,8 +428,7 @@ func addGuestbookMessageToDB(app *pocketbase.PocketBase, content GuestBookMessag
 
 	form.LoadData(messageMap)
 
-	if err := form.Submit()
-	err != nil {
+	if err := form.Submit(); err != nil {
 		fmt.Println(err)
 	}
 
