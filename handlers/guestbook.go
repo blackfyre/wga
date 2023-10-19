@@ -7,11 +7,15 @@ import (
 	"net/http"
 	"time"
 
+	"blackfyre.ninja/wga/assets"
+
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/forms"
+	"github.com/pocketbase/pocketbase/models"
 )
 
 type SearchSettings struct {
@@ -24,7 +28,7 @@ type GbData struct {
 	Title         string
 	FirstContent  string
 	SecondContent string
-	MainContent   []map[string]string
+	MainContent   []GuestBookMessagePrepared
 	LatestEntries string
 }
 
@@ -32,38 +36,56 @@ type GbPreparedData struct {
 	Title                   string
 	FirstContent            string
 	SecondContent           string
-	MainContent             []map[string]string
+	MainContent             []GuestBookMessagePrepared
 	LatestEntries           string
 	CalendarYears           [][]string
 	SearchExpressionPresent bool
 	SearchExpression        string
 }
 
-func registerGuestbook(app *pocketbase.PocketBase) {
+type GuestBookMessage struct {
+	Name         	 	 string   `json:"name" form:"name" query:"name" validate:"required"`
+	Email          		 string   `json:"email" form:"email" query:"email" validate:"required"`
+	Location     		 string   `json:"location" form:"location" query:"location" validate:"required"`
+	Message      		 string   `json:"message" form:"message" query:"message" validate:"required"`
+	HoneyPotName         string   `json:"honey_pot_name" query:"honey_pot_name"`
+	HoneyPotEmail        string   `json:"honey_pot_email" query:"honey_pot_email"`
+}
+
+type GuestBookMessagePrepared struct {
+	Message  string
+	Name     string
+	Location string
+	Created  string
+}
+
+
+func registerGuestbookHandlers(app *pocketbase.PocketBase) {
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 
 		e.Router.GET("/guestbook", func(c echo.Context) error {
-			confirmedHtmxRequest := isHtmxRequest(c)
-			currentUrl := c.Request().URL.String()
-			c.Response().Header().Set("HX-Push-Url", currentUrl)
-
-			searchSettings := gbProcessRequest(c)
-
-			cacheKey := gbSetCacheSettings(confirmedHtmxRequest, searchSettings)
-			shouldReturn, returnValue := gbIsCached(app, cacheKey, c)
+			url := ""
+			html, shouldReturn, err := loadGuestbook(c, app, url)
 			if shouldReturn {
-				return returnValue
+				return err
 			}
 
-			data, err := gbGetData(app, searchSettings)
+			return c.HTML(http.StatusOK, html)
+		})
 
-			if err != nil {
-				// or redirect to a dedicated 404 HTML page
-				return apis.NewNotFoundError("", err)
+		e.Router.GET("/guestbook/addMessage", func(c echo.Context) error {
+			confirmedHtmxRequest := isHtmxRequest(c)
+			url := ""
+			cacheKey := gbAddMessageSetCacheSettings(confirmedHtmxRequest)
+			shouldReturn, err := gbAddMessageIsCached(app, cacheKey, c)
+			if shouldReturn {
+				return err
 			}
 
-			html, err := gbRender(confirmedHtmxRequest, data)
+			setUrl(c, url)
+
+			html, err := gbAddMessageRender(confirmedHtmxRequest)
 
 			if err != nil {
 				// or redirect to a dedicated 404 HTML page
@@ -73,9 +95,86 @@ func registerGuestbook(app *pocketbase.PocketBase) {
 			return c.HTML(http.StatusOK, html)
 		})
 
+		e.Router.POST("/guestbook/addMessage", func(c echo.Context) error {
+			data := apis.RequestInfo(c).Data
+
+			if err := c.Bind(&data); err != nil {
+				sendToastMessage("Failed to create message, please try again later.", "is-danger", true, c)
+				return apis.NewBadRequestError("Failed to parse form data", err)
+			}
+
+			guestBookMessage := GuestBookMessage{
+				Name:       	  c.FormValue("sender_name"),
+				Email:      	  c.FormValue("sender_email"),
+				Location:   	  c.FormValue("location"),
+				Message:    	  c.FormValue("message"),
+				HoneyPotName: 	  c.FormValue("name"),
+				HoneyPotEmail: 	  c.FormValue("email"),
+			}
+
+			if guestBookMessage.HoneyPotEmail != "" || guestBookMessage.HoneyPotName != "" {
+				// this is probably a bot
+				//TODO: use the new generic logger in pb to log this event
+				sendToastMessage("Failed to create message, please try again later.", "is-danger", true, c)
+				return c.NoContent(204)
+			}
+
+			err := addGuestbookMessageToDB(app, guestBookMessage)
+
+			if err != nil {
+				return apis.NewBadRequestError("Failed to add message to database", err)
+			}
+
+			sendToastMessage("Message added successfully", "is-success", true, c)
+
+			html, shouldReturn, err := loadGuestbook(c, app, "/guestbook")
+			if shouldReturn {
+				return err
+			}
+
+			return c.HTML(http.StatusOK, html)
+		})
+
 		return nil
 
 	})
+}
+
+func loadGuestbook(c echo.Context, app *pocketbase.PocketBase, url string) (string, bool, error) {
+	confirmedHtmxRequest := isHtmxRequest(c)
+	searchSettings := gbProcessRequest(c)
+
+	cacheKey := gbSetCacheSettings(confirmedHtmxRequest, searchSettings)
+	shouldReturn, err := gbIsCached(app, cacheKey, c)
+	if shouldReturn {
+		return "", true, err
+	}
+
+	setUrl(c, url)
+
+	data, err := gbGetData(app, searchSettings)
+
+	if err != nil {
+
+		return "", true, apis.NewNotFoundError("", err)
+	}
+
+	html, err := gbRender(confirmedHtmxRequest, data)
+
+	if err != nil {
+
+		return "", true, apis.NewNotFoundError("", err)
+	}
+	return html, false, nil
+}
+
+func setUrl(c echo.Context, url string) {
+	if url != "" {
+		c.Response().Header().Set("HX-Push-Url", url)
+	} else {
+	currentUrl := c.Request().URL.String()
+	c.Response().Header().Set("HX-Push-Url", currentUrl)
+	}
 }
 
 func gbProcessRequest(c echo.Context) SearchSettings {
@@ -195,10 +294,10 @@ func gbRender(confirmedHtmxRequest bool, data GbPreparedData) (string, error) {
 	if confirmedHtmxRequest {
 		blockToRender := "guestbook:content"
 
-		html, err := renderBlock(blockToRender, dataMap)
+		html, err := assets.RenderBlock(blockToRender, dataMap)
 		return html, err
 	} else {
-		html, err := renderPage("guestbook", dataMap)
+		html, err := assets.RenderPage("guestbook", dataMap)
 		return html, err
 	}
 }
@@ -226,7 +325,7 @@ func gbGetGuestbookTextContent(app *pocketbase.PocketBase, content string) (stri
 	return result.(string), nil
 }
 
-func gbGetGuestbookContent(app *pocketbase.PocketBase, filter string, searchExpression string) ([]map[string]string, error) {
+func gbGetGuestbookContent(app *pocketbase.PocketBase, filter string, searchExpression string) ([]GuestBookMessagePrepared, error) {
 	records, err := app.Dao().FindRecordsByFilter(
 		"guestbook",
 		filter,
@@ -242,7 +341,7 @@ func gbGetGuestbookContent(app *pocketbase.PocketBase, filter string, searchExpr
 		return nil, apis.NewBadRequestError("Invalid something", err)
 	}
 
-	preRendered := []map[string]string{}
+	preRendered := []GuestBookMessagePrepared{}
 
 	for _, m := range records {
 
@@ -254,11 +353,11 @@ func gbGetGuestbookContent(app *pocketbase.PocketBase, filter string, searchExpr
 		}
 		formattedDateString := createTime.Format("January 2, 2006")
 
-		row := map[string]string{
-			"Message":  m.GetString("message"),
-			"Name":     m.GetString("name"),
-			"Location": m.GetString("location"),
-			"Updated":  formattedDateString,
+		row := GuestBookMessagePrepared{
+			Message:  m.GetString("message"),
+			Name:    m.GetString("name"),
+			Location: m.GetString("location"),
+			Created:  formattedDateString,
 		}
 
 		preRendered = append(preRendered, row)
@@ -303,4 +402,68 @@ func gbGeneralizer(data GbPreparedData) (map[string]interface{}, bool, string, e
 		return nil, true, "", err
 	}
 	return dataMap, false, "", nil
+}
+
+func gbAddMessageSetCacheSettings(confirmedHtmxRequest bool) string {
+	cacheKey := "addGuestbookMessage"
+
+	return cacheKey
+}
+
+func gbAddMessageIsCached(app *pocketbase.PocketBase, cacheKey string, c echo.Context) (bool, error) {
+	if app.Cache().Has(cacheKey) {
+		html := app.Cache().Get(cacheKey).(string)
+		return true, c.HTML(http.StatusOK, html)
+	}
+	return false, nil
+}
+
+func gbAddMessageRender(confirmedHtmxRequest bool) (string, error) {
+	dataMap := make(map[string]any)
+
+	// TODO: delete unnecessary dataMap
+	html, err := assets.RenderPage("guestbook/addMessage", dataMap)
+
+	if err != nil {
+		return "", apis.NewBadRequestError("", err)
+	}
+
+	return html, err
+}
+
+func addGuestbookMessageToDB(app *pocketbase.PocketBase, content GuestBookMessage) (error) {
+	collection, err := app.Dao().FindCollectionByNameOrId("guestbook")
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	record := models.NewRecord(collection)
+	form := forms.NewRecordUpsert(app, record)
+
+	messageMap, err := addGuestbookMessageGeneralizer(content)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	form.LoadData(messageMap)
+
+	if err := form.Submit()
+	err != nil {
+		fmt.Println(err)
+	}
+
+	return err
+}
+
+func addGuestbookMessageGeneralizer(data GuestBookMessage) (map[string]any, error) {
+	messageMap := make(map[string]any)
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		fmt.Println(err)
+	}
+	err = json.Unmarshal(jsonData, &messageMap)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return messageMap, err
 }
