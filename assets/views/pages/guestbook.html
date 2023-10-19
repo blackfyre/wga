@@ -5,7 +5,7 @@ Guestbook
 {{define "body"}}
 {{block "guestbook:content" .}}
 
-<main class="container block box my-6 p-0 guestbook lol">
+<main class="container block box my-6 p-0">
     <section class="section">
         <h1 class="has-text-centered title is-5">
             <i>{{.Title}}</i>{{if .SearchExpressionPresent | eq true}}<i>,&nbsp;</i><i>{{.SearchExpression}}</i>{{end}}
