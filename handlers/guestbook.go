@@ -77,11 +77,6 @@ func registerGuestbookHandlers(app *pocketbase.PocketBase) {
 		e.Router.GET("/guestbook/addMessage", func(c echo.Context) error {
 			confirmedHtmxRequest := isHtmxRequest(c)
 			url := ""
-			cacheKey := gbAddMessageSetCacheSettings(confirmedHtmxRequest)
-			shouldReturn, err := gbAddMessageIsCached(app, cacheKey, c)
-			if shouldReturn {
-				return err
-			}
 
 			setUrl(c, url)
 
@@ -402,20 +397,6 @@ func gbGeneralizer(data GbPreparedData) (map[string]interface{}, bool, string, e
 		return nil, true, "", err
 	}
 	return dataMap, false, "", nil
-}
-
-func gbAddMessageSetCacheSettings(confirmedHtmxRequest bool) string {
-	cacheKey := "addMessage"
-
-	return cacheKey
-}
-
-func gbAddMessageIsCached(app *pocketbase.PocketBase, cacheKey string, c echo.Context) (bool, error) {
-	if app.Cache().Has(cacheKey) {
-		html := app.Cache().Get(cacheKey).(string)
-		return true, c.HTML(http.StatusOK, html)
-	}
-	return false, nil
 }
 
 func gbAddMessageRender(confirmedHtmxRequest bool) (string, error) {
