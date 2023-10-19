@@ -10,6 +10,7 @@ import (
 // The cache is used to store frequently accessed data for faster access.
 // The cache is automatically cleaned up every 30 minutes.
 func RegisterHandlers(app *pocketbase.PocketBase) {
+	registerGuestbookHandlers(app)
 	registerArtist(app)
 	registerArtists(app)
 	registerPostcardHandlers(app)
