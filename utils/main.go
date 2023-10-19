@@ -45,7 +45,9 @@ var TemplateFuncs = template.FuncMap{
 
 	// Number functions
 	"incr":        incr,
+	"incrBy":      incrBy,
 	"decr":        decr,
+	"decrBy":      decrBy,
 	"formatInt":   formatInt,
 	"formatFloat": formatFloat,
 
@@ -164,6 +166,16 @@ func incr(i any) (int64, error) {
 	return n, nil
 }
 
+func incrBy(i any, incr int) (int64, error) {
+	n, err := toInt64(i)
+	if err != nil {
+		return 0, err
+	}
+
+	n += int64(incr)
+	return n, nil
+}
+
 func decr(i any) (int64, error) {
 	n, err := toInt64(i)
 	if err != nil {
@@ -171,6 +183,16 @@ func decr(i any) (int64, error) {
 	}
 
 	n--
+	return n, nil
+}
+
+func decrBy(i any, decr int) (int64, error) {
+	n, err := toInt64(i)
+	if err != nil {
+		return 0, err
+	}
+
+	n -= int64(decr)
 	return n, nil
 }
 
