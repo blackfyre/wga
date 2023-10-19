@@ -237,5 +237,10 @@ function initCloner () {
 }
 
 window.wga = {
-    initCloner: initCloner,
+    openDialog () {
+        wga.els.dialog.showModal();
+    },
+    closeDialog () {
+        wga.els.dialog.close();
+    }
 };

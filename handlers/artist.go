@@ -22,6 +22,8 @@ const (
 	NotApplicable string = "n/a"
 )
 
+// normalizedBioExcerpt returns a normalized biography excerpt for the given record.
+// It includes the person's year and place of birth and death (if available).
 func normalizedBioExcerpt(r *models.Record) string {
 	s := []string{}
 
@@ -88,6 +90,10 @@ func normalizedBioExcerpt(r *models.Record) string {
 	return strings.Join(s, ", ")
 }
 
+// generateArtistJsonLdContent generates a JSON-LD content for an artist record.
+// It takes a pointer to a models.Record and an echo.Context as input and returns a map[string]any.
+// The returned map contains the JSON-LD content for the artist record, including the artist's name, URL, profession,
+// birth and death dates, and birth and death places (if available).
 func generateArtistJsonLdContent(r *models.Record, c echo.Context) map[string]any {
 
 	fullUrl := os.Getenv("WGA_PROTOCOL") + "://" + c.Request().Host + "/artists/" + r.GetString("slug")
@@ -125,6 +131,8 @@ func generateArtistJsonLdContent(r *models.Record, c echo.Context) map[string]an
 	return d
 }
 
+// generateVisualArtworkJsonLdContent generates a map containing JSON-LD content for a visual artwork record.
+// It takes a models.Record pointer and an echo.Context as input and returns a map[string]any.
 func generateVisualArtworkJsonLdContent(r *models.Record, c echo.Context) map[string]any {
 
 	d := map[string]any{
@@ -138,6 +146,11 @@ func generateVisualArtworkJsonLdContent(r *models.Record, c echo.Context) map[st
 	return d
 }
 
+// registerArtist registers the artist routes to the PocketBase app.
+// It adds two routes to the app router:
+// 1. GET /artists/:name - returns the artist page with the given name
+// 2. GET /artists/:name/:awid - returns the artwork page with the given name and artwork id
+// It also caches the HTML response for each route to improve performance.
 func registerArtist(app *pocketbase.PocketBase) {
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {

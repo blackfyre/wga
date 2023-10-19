@@ -182,4 +182,12 @@ figure.hidden-caption {
   z-index: -1;
 }
 
+.is-feedback {
+  position: fixed;
+  top: 75%;
+  right: 0;
+  transform: rotate(-90deg) translate(0, 93%);
+}
+
 @import "_dialog.scss";
+@import "_trix.scss";
