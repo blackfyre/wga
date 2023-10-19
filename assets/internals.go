@@ -36,6 +36,7 @@ func RenderBlock(block string, data map[string]any) (string, error) {
 
 	patterns := []string{
 		"views/pages/*.html",
+		"views/pages/*/*.html",
 		"views/partials/*.html",
 	}
 

@@ -12,11 +12,12 @@ import (
 )
 
 type GuestbookRecord struct {
-	Message  string `json:"message"`
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Location string `json:"location"`
-	Created  string `json:"created"`
+	Message          string `json:"message"`
+	Name        	 string `json:"name"`
+	Email       	 string `json:"email"`
+	Location         string `json:"location"`
+	Created          string `json:"created"`
+	Updated          string `json:"updated"`
 }
 
 func init() {
@@ -78,11 +79,12 @@ func init() {
 
 			for _, g := range c {
 				q := db.Insert("guestbook", dbx.Params{
-					"message":  g.Message,
-					"name":     g.Name,
-					"email":    g.Email,
-					"location": g.Location,
-					"created":  g.Created,
+					"message":      g.Message,
+					"name":         g.Name,
+					"email":        g.Email,
+					"location": 	g.Location,
+					"created":      g.Created,
+					"updated":      g.Updated,
 				})
 
 				_, err = q.Execute()
