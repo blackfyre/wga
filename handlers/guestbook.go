@@ -74,7 +74,7 @@ func registerGuestbookHandlers(app *pocketbase.PocketBase) {
 			return c.HTML(http.StatusOK, html)
 		})
 
-		e.Router.GET("/guestbook/addMessage", func(c echo.Context) error {
+		e.Router.GET("/addMessage", func(c echo.Context) error {
 			confirmedHtmxRequest := isHtmxRequest(c)
 			url := ""
 			cacheKey := gbAddMessageSetCacheSettings(confirmedHtmxRequest)
@@ -95,7 +95,7 @@ func registerGuestbookHandlers(app *pocketbase.PocketBase) {
 			return c.HTML(http.StatusOK, html)
 		})
 
-		e.Router.POST("/guestbook/addMessage", func(c echo.Context) error {
+		e.Router.POST("/addMessage", func(c echo.Context) error {
 			data := apis.RequestInfo(c).Data
 
 			if err := c.Bind(&data); err != nil {
@@ -405,7 +405,7 @@ func gbGeneralizer(data GbPreparedData) (map[string]interface{}, bool, string, e
 }
 
 func gbAddMessageSetCacheSettings(confirmedHtmxRequest bool) string {
-	cacheKey := "addGuestbookMessage"
+	cacheKey := "addMessage"
 
 	return cacheKey
 }
@@ -422,13 +422,13 @@ func gbAddMessageRender(confirmedHtmxRequest bool) (string, error) {
 	dataMap := make(map[string]any)
 
 	// TODO: delete unnecessary dataMap
-	html, err := assets.RenderPage("guestbook/addMessage", dataMap)
-
-	if err != nil {
-		return "", apis.NewBadRequestError("", err)
+	if confirmedHtmxRequest {
+		html, err := assets.RenderBlock("addMessage:content", dataMap)
+		return html, err
+	} else {
+		html, err := assets.RenderPage("addMessage", dataMap)
+		return html, err
 	}
-
-	return html, err
 }
 
 func addGuestbookMessageToDB(app *pocketbase.PocketBase, content GuestBookMessage) (error) {
