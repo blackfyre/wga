@@ -270,7 +270,7 @@ func registerArtist(app *pocketbase.PocketBase) {
 					return apis.NewNotFoundError("", err)
 				}
 
-				data := map[string]any{}
+				data := newTemplateData(c)
 
 				data["ArtistName"] = artist[0].GetString("name")
 				data["ArtistUrl"] = "/artists/" + slug
