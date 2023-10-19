@@ -128,7 +128,7 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 			}{}
 
 			if err := c.Bind(&postData); err != nil {
-				sendToastMessage("Failed to find postcard collection", "is-danger", true, c)
+				sendToastMessage("Failed to parse form", "is-danger", true, c)
 				return apis.NewBadRequestError("Failed to parse form data", err)
 			}
 
