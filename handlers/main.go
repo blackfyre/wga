@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"github.com/labstack/echo/v5"
+	"github.com/microcosm-cc/bluemonday"
 	"github.com/pocketbase/pocketbase"
 )
 
@@ -10,9 +11,13 @@ import (
 // The cache is used to store frequently accessed data for faster access.
 // The cache is automatically cleaned up every 30 minutes.
 func RegisterHandlers(app *pocketbase.PocketBase) {
+
+	p := bluemonday.NewPolicy()
+
+	registerFeedbackHandlers(app, p)
 	registerArtist(app)
 	registerArtists(app)
-	registerPostcardHandlers(app)
+	registerPostcardHandlers(app, p)
 	registerStatic(app)
 	registerHome(app)
 }

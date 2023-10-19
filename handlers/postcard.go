@@ -17,6 +17,9 @@ import (
 	"github.com/pocketbase/pocketbase/models"
 )
 
+// renderPostcardEditor renders the postcard editor HTML for a given artwork ID.
+// It takes the artwork ID, a PocketBase app instance, and an Echo context as input.
+// It returns the rendered HTML and an error if any occurred.
 func renderPostcardEditor(awid string, app *pocketbase.PocketBase, c echo.Context) (string, error) {
 	r, err := app.Dao().FindRecordById("artworks", awid)
 
@@ -39,9 +42,7 @@ func renderPostcardEditor(awid string, app *pocketbase.PocketBase, c echo.Contex
 	return html, nil
 }
 
-func registerPostcardHandlers(app *pocketbase.PocketBase) {
-
-	p := bluemonday.NewPolicy()
+func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) {
 
 	err := godotenv.Load()
 	if err != nil {
