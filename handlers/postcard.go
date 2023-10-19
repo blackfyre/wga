@@ -167,11 +167,6 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 					return err
 				}
 
-				setHxTrigger(c, map[string]any{
-					"message":     "Failed to create postcard record",
-					"closeDialog": false,
-				})
-
 				sendToastMessage("Failed to store the postcard", "is-danger", false, c)
 
 				return c.HTML(http.StatusOK, html)
