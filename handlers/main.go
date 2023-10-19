@@ -15,6 +15,7 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 	p := bluemonday.NewPolicy()
 
 	registerFeedbackHandlers(app, p)
+	registerGuestbookHandlers(app)
 	registerArtist(app)
 	registerArtists(app)
 	registerPostcardHandlers(app, p)
