@@ -4,7 +4,7 @@
 
 {{define "body"}}
 {{block "artist:content" .}}
-<main class="section">
+<section class="section">
     <article class="container">
         <!-- Main container -->
         <div class="level">
@@ -62,7 +62,8 @@
                         </div>
                     </div>
                     <footer class="card-footer">
-                        <a class="card-footer-item" href="/artists/{{$.Slug}}/{{.Id}}">Learn More</a>
+                        <a class="card-footer-item" href="/artists/{{$.Slug}}/{{.Id}}"
+                            hx-get="/artists/{{$.Slug}}/{{.Id}}" hx-target="#mc-area">Learn More</a>
                         <a href="#" hx-on="click: document.getElementById('d').showModal();"
                             hx-get="/postcard/send?awid={{.Id}}" hx-target="#d" class="card-footer-item">Send
                             Postcard</a>
@@ -77,7 +78,7 @@
             {{end}}
         </div>
     </div>
-</main>
+</section>
 <script type="application/ld+json">
 {{marshalJSON .Jsonld}}
 </script>

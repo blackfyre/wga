@@ -233,6 +233,82 @@ func registerArtist(app *pocketbase.PocketBase) {
 			return c.HTML(http.StatusOK, html)
 		})
 
+		e.Router.GET("artists/:name/:awid", func(c echo.Context) error {
+
+			slug := c.PathParam("name")
+			awid := c.PathParam("awid")
+			cacheKey := "artist:" + slug + awid
+
+			if isHtmxRequest(c) {
+				cacheKey = cacheKey + "-htmx"
+			}
+
+			html := ""
+
+			found := app.Cache().Has(cacheKey)
+			// found := false
+
+			if found {
+				html = app.Cache().Get(cacheKey).(string)
+			} else {
+
+				err := godotenv.Load()
+
+				if err != nil {
+					return apis.NewBadRequestError("Error loading .env file", err)
+				}
+
+				artist, err := app.Dao().FindRecordsByFilter("artists", "slug = '"+slug+"'", "+name", 1, 0)
+
+				if err != nil {
+					return apis.NewNotFoundError("", err)
+				}
+
+				aw, err := app.Dao().FindRecordById("artworks", awid)
+
+				if err != nil {
+					return apis.NewNotFoundError("", err)
+				}
+
+				data := map[string]any{}
+
+				data["ArtistName"] = artist[0].GetString("name")
+				data["ArtistUrl"] = "/artists/" + slug
+				data["AwId"] = awid
+				data["AwImage"] = generateFileUrl(app, "artworks", aw.GetString("id"), aw.GetString("image"))
+				data["AwTitle"] = aw.GetString("title")
+				data["AwComment"] = aw.GetString("comment")
+				data["AwTechnique"] = aw.GetString("technique")
+
+				fullUrl := os.Getenv("WGA_PROTOCOL") + "://" + c.Request().Host + c.Request().URL.String()
+				jsonLd := generateVisualArtworkJsonLdContent(aw, c)
+
+				jsonLd["image"] = generateFileUrl(app, "artworks", aw.GetString("id"), aw.GetString("image"))
+				jsonLd["url"] = fullUrl
+				jsonLd["creator"] = generateArtistJsonLdContent(artist[0], c)
+				jsonLd["creator"].(map[string]any)["sameAs"] = os.Getenv("WGA_PROTOCOL") + "://" + c.Request().Host + "/artists/" + slug
+				jsonLd["thumbnailUrl"] = generateThumbUrl(app, "artworks", aw.GetString("id"), aw.GetString("image"), "320x240")
+
+				data["Jsonld"] = jsonLd
+
+				if isHtmxRequest(c) {
+					html, err = assets.RenderBlock("artwork:content", data)
+				} else {
+					html, err = assets.RenderPage("artwork", data)
+				}
+
+				if err != nil {
+					// or redirect to a dedicated 404 HTML page
+					return apis.NewNotFoundError("", err)
+				}
+
+				app.Cache().Set(cacheKey, html)
+			}
+
+			c.Response().Header().Set("HX-Push-Url", "/artists/"+slug+"/"+awid)
+
+			return c.HTML(http.StatusOK, html)
+		})
 		return nil
 	})
 }
