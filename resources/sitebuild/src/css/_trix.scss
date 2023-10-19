@@ -1,0 +1,15 @@
+.trix-button-group {
+    background-color: $white;
+}
+
+trix-editor {
+    background-color: $white;
+
+    &:empty:not(:focus)::before {
+        color: lightgray;
+    }
+}
+
+input::placeholder {
+    color: lightgray;
+}

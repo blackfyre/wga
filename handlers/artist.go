@@ -22,6 +22,8 @@ const (
 	NotApplicable string = "n/a"
 )
 
+// normalizedBioExcerpt returns a normalized biography excerpt for the given record.
+// It includes the person's year and place of birth and death (if available).
 func normalizedBioExcerpt(r *models.Record) string {
 	s := []string{}
 
@@ -88,6 +90,10 @@ func normalizedBioExcerpt(r *models.Record) string {
 	return strings.Join(s, ", ")
 }
 
+// generateArtistJsonLdContent generates a JSON-LD content for an artist record.
+// It takes a pointer to a models.Record and an echo.Context as input and returns a map[string]any.
+// The returned map contains the JSON-LD content for the artist record, including the artist's name, URL, profession,
+// birth and death dates, and birth and death places (if available).
 func generateArtistJsonLdContent(r *models.Record, c echo.Context) map[string]any {
 
 	fullUrl := os.Getenv("WGA_PROTOCOL") + "://" + c.Request().Host + "/artists/" + r.GetString("slug")
@@ -125,6 +131,8 @@ func generateArtistJsonLdContent(r *models.Record, c echo.Context) map[string]an
 	return d
 }
 
+// generateVisualArtworkJsonLdContent generates a map containing JSON-LD content for a visual artwork record.
+// It takes a models.Record pointer and an echo.Context as input and returns a map[string]any.
 func generateVisualArtworkJsonLdContent(r *models.Record, c echo.Context) map[string]any {
 
 	d := map[string]any{
@@ -138,6 +146,11 @@ func generateVisualArtworkJsonLdContent(r *models.Record, c echo.Context) map[st
 	return d
 }
 
+// registerArtist registers the artist routes to the PocketBase app.
+// It adds two routes to the app router:
+// 1. GET /artists/:name - returns the artist page with the given name
+// 2. GET /artists/:name/:awid - returns the artwork page with the given name and artwork id
+// It also caches the HTML response for each route to improve performance.
 func registerArtist(app *pocketbase.PocketBase) {
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
@@ -178,20 +191,20 @@ func registerArtist(app *pocketbase.PocketBase) {
 					return apis.NewNotFoundError("", err)
 				}
 
-				data := map[string]any{
-					"Name":         artist[0].GetString("name"),
-					"Bio":          artist[0].GetString("bio"),
-					"Works":        []map[string]any{},
-					"Slug":         slug,
-					"BioExcerpt":   normalizedBioExcerpt(artist[0]),
-					"CurrentUrl":   fullUrl,
-					"Profession":   artist[0].GetString("profession"),
-					"YearOfBirth":  artist[0].GetString("year_of_birth"),
-					"YearOfDeath":  artist[0].GetString("year_of_death"),
-					"PlaceOfBirth": artist[0].GetString("place_of_birth"),
-					"PlaceOfDeath": artist[0].GetString("place_of_death"),
-					"Jsonld":       generateArtistJsonLdContent(artist[0], c),
-				}
+				data := newTemplateData(c)
+
+				data["Name"] = artist[0].GetString("name")
+				data["Bio"] = artist[0].GetString("bio")
+				data["Works"] = []map[string]any{}
+				data["Slug"] = slug
+				data["BioExcerpt"] = normalizedBioExcerpt(artist[0])
+				data["CurrentUrl"] = fullUrl
+				data["Profession"] = artist[0].GetString("profession")
+				data["YearOfBirth"] = artist[0].GetString("year_of_birth")
+				data["YearOfDeath"] = artist[0].GetString("year_of_death")
+				data["PlaceOfBirth"] = artist[0].GetString("place_of_birth")
+				data["PlaceOfDeath"] = artist[0].GetString("place_of_death")
+				data["Jsonld"] = generateArtistJsonLdContent(artist[0], c)
 
 				for _, w := range works {
 
@@ -270,7 +283,7 @@ func registerArtist(app *pocketbase.PocketBase) {
 					return apis.NewNotFoundError("", err)
 				}
 
-				data := map[string]any{}
+				data := newTemplateData(c)
 
 				data["ArtistName"] = artist[0].GetString("name")
 				data["ArtistUrl"] = "/artists/" + slug
