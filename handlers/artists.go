@@ -63,10 +63,6 @@ func registerArtists(app *pocketbase.PocketBase) {
 				return c.HTML(http.StatusOK, html)
 			} else {
 
-				data := map[string]any{
-					"Content": "",
-				}
-
 				filter := "published = true"
 
 				if searchExpression != "" {
@@ -138,6 +134,8 @@ func registerArtists(app *pocketbase.PocketBase) {
 
 					preRendered = append(preRendered, row)
 				}
+
+				data := newTemplateData(c)
 
 				data["Content"] = preRendered
 				data["Count"] = recordsCount

@@ -3,7 +3,8 @@ import * as bulmaToast from 'bulma-toast'
 
 const wga = {
     els: {},
-    existingCloners: []
+    existingCloners: [],
+    dialogDefaultContent: '',
 };
 
 bulmaToast.setDefaults({
@@ -15,6 +16,7 @@ bulmaToast.setDefaults({
 })
 
 wga.els.dialog = document.getElementById("d");
+wga.els.dialogDefaultContent = wga.els.dialog.innerHTML;
 
 htmx.config.globalViewTransitions = true;
 htmx.config.selfRequestsOnly = true;
@@ -237,5 +239,11 @@ function initCloner () {
 }
 
 window.wga = {
-    initCloner: initCloner,
+    openDialog () {
+        wga.els.dialog.showModal();
+    },
+    closeDialog () {
+        wga.els.dialog.close();
+        wga.els.dialog.innerHTML = wga.els.dialogDefaultContent;
+    }
 };

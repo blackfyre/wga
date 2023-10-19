@@ -1,0 +1,49 @@
+{{block "feedback:editor" .}}
+<section class="container">
+    <h1 class="title">Are we doing good?</h1>
+
+    <form hx-post="/feedback" enctype="multipart/form-data" hx-target="#d" id="postcard_create">
+        <div class="field">
+            <label class="label">Name</label>
+            <div class="control">
+                <input class="input" type="text" name="fp_name" placeholder="My name" required autocomplete="name">
+            </div>
+        </div>
+        <div class="field">
+            <label class="label">Email</label>
+            <div class="control">
+                <input class="input" type="email" name="fp_email" placeholder="My email address" autocomplete="email"
+                    required>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="label">Message</label>
+            <div class="control">
+                <trix-editor input="message" placeholder="Any areas we can improve on?"></trix-editor>
+                <input type="hidden" id="message" name="message">
+            </div>
+        </div>
+
+        <label aria-hidden="true" class="hpt" for="name"></label>
+        <input aria-hidden="true" class="hpt" autocomplete="off" type="text" id="name" name="name"
+            placeholder="Your name here">
+        <label aria-hidden="true" class="hpt" for="email"></label>
+        <input aria-hidden="true" class="hpt" autocomplete="off" type="email" id="email" name="email"
+            placeholder="Your e-mail here">
+
+
+        <div class="field is-grouped">
+            <p class="control">
+                <button class="button is-link" type="submit"> Send feedback
+                </button>
+            </p>
+            <p class="control">
+                <button type="button" class="button" hx-on="click: wga.closeDialog();">
+                    Cancel
+                </button>
+            </p>
+        </div>
+    </form>
+</section>
+{{end}}
