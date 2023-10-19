@@ -67,3 +67,9 @@ func sendToastMessage(message string, t string, closeDialog bool, c echo.Context
 
 	setHxTrigger(c, m)
 }
+
+func newTemplateData(c echo.Context) map[string]any {
+	return map[string]any{
+		"currentUrl": c.Request().URL.String(),
+	}
+}
