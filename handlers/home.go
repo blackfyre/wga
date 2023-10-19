@@ -135,11 +135,11 @@ func registerHome(app *pocketbase.PocketBase) {
 
 			html := ""
 
-			data := map[string]any{
-				"Content":      welcomeText,
-				"ArtistCount":  artistCount,
-				"ArtworkCount": artworkCount,
-			}
+			data := newTemplateData(c)
+
+			data["Content"] = welcomeText
+			data["ArtistCount"] = artistCount
+			data["ArtworkCount"] = artworkCount
 
 			if isHtmx {
 				html, err = assets.RenderBlock("home:content", data)

@@ -17,6 +17,9 @@ import (
 	"github.com/pocketbase/pocketbase/models"
 )
 
+// renderPostcardEditor renders the postcard editor HTML for a given artwork ID.
+// It takes the artwork ID, a PocketBase app instance, and an Echo context as input.
+// It returns the rendered HTML and an error if any occurred.
 func renderPostcardEditor(awid string, app *pocketbase.PocketBase, c echo.Context) (string, error) {
 	r, err := app.Dao().FindRecordById("artworks", awid)
 
@@ -39,9 +42,7 @@ func renderPostcardEditor(awid string, app *pocketbase.PocketBase, c echo.Contex
 	return html, nil
 }
 
-func registerPostcardHandlers(app *pocketbase.PocketBase) {
-
-	p := bluemonday.NewPolicy()
+func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) {
 
 	err := godotenv.Load()
 	if err != nil {
@@ -94,14 +95,16 @@ func registerPostcardHandlers(app *pocketbase.PocketBase) {
 
 			aw := r.ExpandedOne("image_id")
 
-			html, err := assets.RenderPage("postcard", map[string]any{
-				"SenderName":  r.GetString("sender_name"),
-				"Message":     r.GetString("message"),
-				"AwImage":     generateFileUrl(app, "artworks", aw.GetString("id"), aw.GetString("image")),
-				"AwTitle":     aw.GetString("title"),
-				"AwComment":   aw.GetString("comment"),
-				"AwTechnique": aw.GetString("technique"),
-			})
+			data := newTemplateData(c)
+
+			data["SenderName"] = r.GetString("sender_name")
+			data["Message"] = r.GetString("message")
+			data["AwImage"] = generateFileUrl(app, "artworks", aw.GetString("id"), aw.GetString("image"))
+			data["AwTitle"] = aw.GetString("title")
+			data["AwComment"] = aw.GetString("comment")
+			data["AwTechnique"] = aw.GetString("technique")
+
+			html, err := assets.RenderPage("postcard", data)
 
 			if err != nil {
 				return apis.NewBadRequestError("", err)
@@ -125,7 +128,7 @@ func registerPostcardHandlers(app *pocketbase.PocketBase) {
 			}{}
 
 			if err := c.Bind(&postData); err != nil {
-				sendToastMessage("Failed to find postcard collection", "is-danger", true, c)
+				sendToastMessage("Failed to parse form", "is-danger", true, c)
 				return apis.NewBadRequestError("Failed to parse form data", err)
 			}
 
@@ -163,11 +166,6 @@ func registerPostcardHandlers(app *pocketbase.PocketBase) {
 				if err != nil {
 					return err
 				}
-
-				setHxTrigger(c, map[string]any{
-					"message":     "Failed to create postcard record",
-					"closeDialog": false,
-				})
 
 				sendToastMessage("Failed to store the postcard", "is-danger", false, c)
 

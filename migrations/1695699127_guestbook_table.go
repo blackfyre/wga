@@ -72,29 +72,37 @@ func init() {
 			var c []GuestbookRecord
 
 			err = json.Unmarshal(data, &c)
-	
+
 			if err != nil {
 				return err
 			}
-	
+
 			for _, g := range c {
 				q := db.Insert("guestbook", dbx.Params{
+<<<<<<< HEAD
 					"message":      g.Message,
 					"name":         g.Name,
 					"email":        g.Email,
 					"location": 	g.Location,
 					"created":      g.Created,
 					"updated":      g.Updated,
+=======
+					"message":  g.Message,
+					"name":     g.Name,
+					"email":    g.Email,
+					"location": g.Location,
+					"created":  g.Created,
+>>>>>>> origin
 				})
-	
+
 				_, err = q.Execute()
-	
+
 				if err != nil {
 					return err
 				}
-	
+
 			}
-	
+
 			return nil
 		}
 	}, func(db dbx.Builder) error {
