@@ -94,14 +94,16 @@ func registerPostcardHandlers(app *pocketbase.PocketBase) {
 
 			aw := r.ExpandedOne("image_id")
 
-			html, err := assets.RenderPage("postcard", map[string]any{
-				"SenderName":  r.GetString("sender_name"),
-				"Message":     r.GetString("message"),
-				"AwImage":     generateFileUrl(app, "artworks", aw.GetString("id"), aw.GetString("image")),
-				"AwTitle":     aw.GetString("title"),
-				"AwComment":   aw.GetString("comment"),
-				"AwTechnique": aw.GetString("technique"),
-			})
+			data := newTemplateData(c)
+
+			data["SenderName"] = r.GetString("sender_name")
+			data["Message"] = r.GetString("message")
+			data["AwImage"] = generateFileUrl(app, "artworks", aw.GetString("id"), aw.GetString("image"))
+			data["AwTitle"] = aw.GetString("title")
+			data["AwComment"] = aw.GetString("comment")
+			data["AwTechnique"] = aw.GetString("technique")
+
+			html, err := assets.RenderPage("postcard", data)
 
 			if err != nil {
 				return apis.NewBadRequestError("", err)

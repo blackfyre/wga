@@ -178,20 +178,20 @@ func registerArtist(app *pocketbase.PocketBase) {
 					return apis.NewNotFoundError("", err)
 				}
 
-				data := map[string]any{
-					"Name":         artist[0].GetString("name"),
-					"Bio":          artist[0].GetString("bio"),
-					"Works":        []map[string]any{},
-					"Slug":         slug,
-					"BioExcerpt":   normalizedBioExcerpt(artist[0]),
-					"CurrentUrl":   fullUrl,
-					"Profession":   artist[0].GetString("profession"),
-					"YearOfBirth":  artist[0].GetString("year_of_birth"),
-					"YearOfDeath":  artist[0].GetString("year_of_death"),
-					"PlaceOfBirth": artist[0].GetString("place_of_birth"),
-					"PlaceOfDeath": artist[0].GetString("place_of_death"),
-					"Jsonld":       generateArtistJsonLdContent(artist[0], c),
-				}
+				data := newTemplateData(c)
+
+				data["Name"] = artist[0].GetString("name")
+				data["Bio"] = artist[0].GetString("bio")
+				data["Works"] = []map[string]any{}
+				data["Slug"] = slug
+				data["BioExcerpt"] = normalizedBioExcerpt(artist[0])
+				data["CurrentUrl"] = fullUrl
+				data["Profession"] = artist[0].GetString("profession")
+				data["YearOfBirth"] = artist[0].GetString("year_of_birth")
+				data["YearOfDeath"] = artist[0].GetString("year_of_death")
+				data["PlaceOfBirth"] = artist[0].GetString("place_of_birth")
+				data["PlaceOfDeath"] = artist[0].GetString("place_of_death")
+				data["Jsonld"] = generateArtistJsonLdContent(artist[0], c)
 
 				for _, w := range works {
 
