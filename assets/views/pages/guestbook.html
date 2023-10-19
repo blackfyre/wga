@@ -4,31 +4,32 @@ Guestbook
 
 {{define "body"}}
 {{block "guestbook:content" .}}
-<main class="container block box my-6 p-0">
+
+<main class="container block box my-6 p-0 guestbook lol">
     <section class="section">
-        <H1 class="has-text-centered title is-5">
+        <h1 class="has-text-centered title is-5">
             <i>{{.Title}}</i>{{if .SearchExpressionPresent | eq true}}<i>,&nbsp;</i><i>{{.SearchExpression}}</i>{{end}}
-        </H1>
+        </h1>
         {{if .SearchExpressionPresent | eq false}}
         <div class="content">
             {{safeHTML .FirstContent}}
         </div>
         <div class="columns is-centered">
             <div class="column is-one-third">
-                <table class="table is-bordered is-fullwidth">
+                <table class="table is-bordered is-fullwidth guestbook-table">
                     <tbody>
                         {{range .CalendarYears}}
                         <tr>
                             {{if len . | gt 4}}
-                                <td class="has-text-centered is-vcentered" colspan={{formatInt (decrBy 5 (len .))}} style="padding: 0.2em 0.3em">Previous entries</td>
+                                <td class="has-text-centered is-vcentered" colspan={{formatInt (decrBy 5 (len .))}}>Previous entries</td>
                                 {{range .}}
-                                    <td class="has-text-centered is-vcentered" style="padding: 0.2em 0.3em">
+                                    <td class="has-text-centered is-vcentered">
                                         <a href="/guestbook?q={{.}}" hx-get="/guestbook?q={{.}}" hx-target="#mc-area" class="is-size-6">{{.}}</a>
                                     </td>
                                 {{end}}
                             {{else}}
                                 {{range .}}
-                                    <td class="has-text-centered is-vcentered" style="padding: 0.2em 0.3em">
+                                    <td class="has-text-centered is-vcentered">
                                         <a href="/guestbook?q={{.}}" hx-get="/guestbook?q={{.}}" hx-target="#mc-area" class="is-size-6">{{.}}</a>
                                     </td>
                                 {{end}}
@@ -43,8 +44,7 @@ Guestbook
         <button hx-get="/guestbook"
                 hx-trigger="click"
                 hx-target="#mc-area"
-                class="button is-link is-normal is-light"
-                style="border: 1px solid transparent; box-shadow: none;"
+                class="button is-link is-normal is-light guestbook-latestEntriesBtn"
             >
                 {{.LatestEntries}}
         </button>
@@ -57,16 +57,16 @@ Guestbook
             <ul></ul>
         </div>
 
-        <table class="table is-fullwidth">
+        <table class="table is-fullwidth guestbook-table">
             <tbody>
             {{block "guestbook:search-results" .}}
 
                 {{range .MainContent}}
                 <tr>
-                    <td style="border-width: 0;">{{.Message}}</td>
+                    <td>{{.Message}}</td>
                 </tr>
                 <tr>
-                    <td style="border-width: 0;">
+                    <td>
                         <div class="level-right">
                             <strong><i>{{.Name}}</i></strong>
                         </div>
@@ -80,7 +80,7 @@ Guestbook
                 </tr>
                 {{else}}
                 <tr>
-                    <td style="border-width: 0;" colspan="1">No record</td>
+                    <td colspan="1">No record</td>
                 </tr>
                 {{end}}
 
