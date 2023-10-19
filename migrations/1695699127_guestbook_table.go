@@ -16,8 +16,8 @@ type GuestbookRecord struct {
 	Name        	 string `json:"name"`
 	Email       	 string `json:"email"`
 	Location         string `json:"location"`
-	Created		  	 string `json:"created"`
-	Updated			 string `json:"updated"`
+	Created          string `json:"created"`
+	Updated          string `json:"updated"`
 }
 
 func init() {
@@ -83,8 +83,8 @@ func init() {
 					"name":         g.Name,
 					"email":        g.Email,
 					"location": 	g.Location,
-					"created":	    g.Created,
-					"updated":		g.Updated,
+					"created":      g.Created,
+					"updated":      g.Updated,
 				})
 	
 				_, err = q.Execute()
