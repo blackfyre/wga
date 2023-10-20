@@ -1,0 +1,34 @@
+{{block "music" .}}
+
+{{end}}
+
+{{define "title"}}
+Music player
+{{end}}
+
+{{define "body"}}
+{{block "music:content" .}}
+<main class="container block box my-6 p-0">
+    <section class="section is-vcentered">
+        <h1 class="has-text-centered title is-5">
+            Playing a piece by {{.Composer}}     
+        </h1>
+        <p class="has-text-centered block">
+            Title: {{.Title}} <br>
+            from {{.Date}}
+        </p>
+        <div class="level columns block is-mobil">
+            <audio class="level-item is-mobil" controls preload="auto">
+                {{/* <source src="{{.Source}}" type="audio/mpeg"> */}}
+                <source src="/assets/music/gregorian_chants.mp3" type="audio/mpeg">
+                Your browser does not support the audio element.
+            </audio>
+        </div>
+    </section>
+    <section class="section has-text-centered">
+        <a href="javascript:window.history.back()">Back to music selection</a><br>
+        <a href="javascript:window.close()">Close window</a>
+    </section>
+</main>
+{{end}}
+{{end}}

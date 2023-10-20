@@ -19,13 +19,25 @@ var InternalFiles embed.FS
 func RenderPage(t string, data map[string]any) (string, error) {
 
 	patterns := []string{
-		"views/layout.html",
+		"views/layouts/layout.html",
 		"views/partials/*.html",
 	}
 
 	patterns = append(patterns, "views/pages/"+t+".html")
 
 	return renderHtml(patterns, "layout", data)
+}
+
+func RenderPageWithLayout(t string, layout string, data map[string]any) (string, error) {
+
+	patterns := []string{
+		"views/layouts/*.html",
+		"views/partials/*.html",
+	}
+
+	patterns = append(patterns, "views/pages/"+t+".html")
+
+	return renderHtml(patterns, layout, data)
 }
 
 // renderBlock renders a given block of HTML using the provided data and returns the resulting HTML string.
