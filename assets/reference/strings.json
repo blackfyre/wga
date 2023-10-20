@@ -17,7 +17,7 @@
     },
     {
         "name": "guestbookPlayMusicLink",
-        "content": "<p class='is-vcentered'><a hx-on='click: w=window.open (`/music`, `newWin`,`scrollbars=yes,status=no,dependent=no,screenX=0,screenY=0,width=300,height=300`);w.opener=this;w.focus();return false'>Play period music</a> in the background while reading the guestbook!</p>"
+        "content": "<p class='is-vcentered'><a hx-on='click: w=window.open (`/musics`, `newWin`,`scrollbars=yes,status=no,dependent=no,screenX=0,screenY=0,width=420,height=300`);w.opener=this;w.focus();return false'>Play period music</a> in the background while reading the guestbook!</p>"
     },
     {
         "name": "guestbook",

@@ -11,8 +11,8 @@ import (
 	"github.com/pocketbase/pocketbase/models"
 )
 
-func artistUrl(slug string) string {
-	return "/artists/" + slug
+func slugUrl(path string, slug string) string {
+	return path + slug
 }
 
 func normalizedBirthDeathActivity(record *models.Record) string {
