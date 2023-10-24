@@ -63,7 +63,7 @@ func registerMusicHandlers(app *pocketbase.PocketBase) {
 				"Title":    "Gregorian Chants",
 				"Composer": "Anonymus",
 				"Date":     "1123",
-				"Source":   "/assets/music/gregorian_chants.mp3",
+				"Source":   "anonymous_conductus.mp3",
 			}
 
 			if isHtmxRequest(c) {
@@ -101,7 +101,7 @@ func getMock() ([]map[string]interface{}, []string) {
 						{
 							"name": "Gregorian Chants",
 							"time": "3 minutes",
-							"url":  "/musics/gregorian_chants",
+							"source":  "anonymous_conductus.mp3",
 						},
 						{
 							"name": "Viderunt omnes, organum",

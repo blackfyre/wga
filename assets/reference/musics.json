@@ -1,0 +1,1587 @@
+[
+  {
+    "century": "12",
+    "composers": [
+      {
+        "composer": "ANONYMOUS",
+        "date": "12th century",
+        "language": "French",
+        "songs": [
+          {
+            "name": "Lux hodie, conductus",
+            "url": "anonymous_conductus",
+            "source": ["anonymous_conductus.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "GUIRAUD DE BORNELH",
+        "date": "c. 1138-c. 1199",
+        "language": "French",
+        "songs": [
+          {
+            "name": "Reis Glorios",
+            "url": "bornelh_reis_glorios",
+            "source": ["bornelh_reis_glorios.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "HILDEGARD VON BINGEN",
+        "date": "1098-1179",
+        "language": "German",
+        "songs": [
+          {
+            "name": "Ave generosa",
+            "url": "hildegard_ave_generosa",
+            "source": ["hildegard_bingen_ave_generosa.mp3"]
+          },
+          {
+            "name": "O frondens virga",
+            "url": "hildegard_frondens_virga",
+            "source": ["hildegard_bingen_frondens_virga.mp3"]
+          },
+          {
+            "name": "O Spiritui Sancto",
+            "url": "hildegard_spiritui_sancto",
+            "source": ["hildegard_bingen_spiritui_sancto.mp3"]
+          },
+          {
+            "name": "O pastor animarum",
+            "url": "hildegard_pastor_animarum",
+            "source": ["hildegard_bingen_o_pastor.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "RICHARD COEUR DE LION",
+        "date": "1157-1199",
+        "language": "English",
+        "songs": [
+          {
+            "name": "Under the Greenwood Tree",
+            "url": "richard_ja_nuis",
+            "source": ["richard_ja_nuis.mp3"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "century": "13",
+    "composers": [
+      {
+        "composer": "ALFONSO EL SABIO",
+        "date": "1221-1278",
+        "language": "Spanish",
+        "songs": [
+          {
+            "name": "Cantiga",
+            "url": "alfonso_sabio_cantiga",
+            "source": ["alfonso_sabio_cantiga.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "AMBROSIAN CHANT",
+        "date": "13th century",
+        "songs": [
+          {
+            "name": "Kyrie",
+            "url": "ambrosian_kyrie",
+            "source": ["ambrosian_kyrie.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "ANONYMOUS (13th century)",
+        "date": "13th century",
+        "songs": [
+          {
+            "name": "Ego sum resurrectio: In paradisum",
+            "url": "anonymous_ego_sum",
+            "source": ["anonymous_ego_sum.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "ANONYMOUS",
+        "date": "13th century",
+        "language": "English",
+        "songs": [
+          {
+            "name": "Folktunes",
+            "url": "anonymous_folktunes",
+            "source": ["anonymous_folktunes.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "ANONYMOUS (13th century), French",
+        "date": "13th century",
+        "language": "French",
+        "songs": [
+          {
+            "name": "Dances",
+            "url": "anonymous_dances",
+            "source": ["anonymous_dances.mp3"]
+          },
+          {
+            "name": "Judea et Jerusalem, organum",
+            "url": "anonymous_judea",
+            "source": ["anonymous_organum.mp3"]
+          },
+          {
+            "name": "La quinte estampie royal",
+            "url": "anonymous_quinte_estampie_royal",
+            "source": ["anonymous_quinte_estampie_royal.mp3"]
+          },
+          {
+            "name": "La tierche estampie royal",
+            "url": "anonymous_tierche_estampie_royal",
+            "source": ["anonymous_tierche_estampie_royal.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "ANONYMOUS",
+        "date": "13th century",
+        "language": "Spanish",
+        "songs": [
+          {
+            "name": "Cantiga de amigo",
+            "url": "anonymous_cantiga_de_amigo",
+            "source": ["anonymous_cantiga_de_amigo.mp3"]
+          },
+          {
+            "name": "Av'e Eva",
+            "url": "anonymous_ave_eva",
+            "source": ["anonymous_cantigas.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "MEISTER RUMELANT, Minnesinger at the Danehof Court",
+        "date": "c. 1275",
+        "songs": [
+          {
+            "name": "Der sich so ho gesetzet hat",
+            "url": "meister_rumelant_der_sich",
+            "source": ["meister_rumelant_der_sich.mp3"]
+          },
+          {
+            "name": "Got in vier elementen sich erscheynet",
+            "url": "meister_rumelant_got_vier_elementen",
+            "source": ["meister_rumelant_got_vier_elementen.mp3"]
+          },
+          {
+            "name": "Die tenschen morder",
+            "url": "meister_rumelant_tenschen_morder",
+            "source": ["meister_rumelant_tenschen_morder.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "WALTHER VON DER VOGELWEIDE",
+        "date": "c. 1170-c. 1230",
+        "language": "German",
+        "songs": [
+          {
+            "name": "Unter Den Linden",
+            "url": "vogelweide_unter_den_linden",
+            "source": ["vogelweide_unter_den_linden.mp3"]
+          },
+          {
+            "name": "Palästinalied",
+            "url": "vogelweide_palastinalied",
+            "source": ["vogelweide_palastinalied.mp3"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "century": "14",
+    "composers": [
+      {
+        "composer": "ANONYMOUS",
+        "songs": [
+          {
+            "name": "Gregorian sequence",
+            "url": "gregorian_sequence",
+            "source": ["gregorian_sequence.mp3"]
+          },
+          {
+            "name": "Gregorian chants",
+            "url": "gregorian_chants",
+            "source": ["gregorian_chants.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "ANONYMOUS",
+        "date": "14th century",
+        "language": "Italian",
+        "songs": [
+          {
+            "name": "Chominciamento di Gioia: Saltarello",
+            "url": "anonymous_saltarello",
+            "source": ["anonymous_saltarello.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "MACHAUT, Guillaume de",
+        "date": "c. 1302-1377",
+        "language": "French",
+        "songs": [
+          {
+            "name": "4 ballades",
+            "url": "machaut_4ballades",
+            "source": ["machaut_4ballades.mp3"]
+          },
+          {
+            "name": "Chansons",
+            "url": "machaut_chansons",
+            "source": ["machaut_chansons.mp3"]
+          },
+          {
+            "name": "Puis qu'en oubli",
+            "url": "machaut_puis",
+            "source": ["machaut_puis.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "WOLKENSTEIN, Oswald von",
+        "date": "c. 1377-1445",
+        "language": "German",
+        "songs": [
+          {
+            "name": "Frölisch Geschrai",
+            "url": "wolkenstein_frolisch_geschrai",
+            "source": ["wolkenstein_frolisch_geschrai.mp3"]
+          },
+          {
+            "name": "Her Wiert Uns Dürstet",
+            "url": "wolkenstein_her_wiert",
+            "source": ["wolkenstein_her_wiert.mp3"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "century": "15",
+    "composers": [
+      {
+        "composer": "AGRICOLA, Alexander",
+        "date": "c. 1445-1506",
+        "language": "Franco-Flemish",
+        "songs": [
+          {
+            "name": "Ay je rien fet",
+            "url": "agricola_ay_je",
+            "source": ["agricola_ay_je.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "ANONYMOUS",
+        "date": "15th century",
+        "songs": [
+          {
+            "name": "Sephardic song: A la nana",
+            "url": "anonymous_sephardic_song",
+            "source": ["anonymous_sephardic_song.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "ANONYMOUS",
+        "date": "15th century",
+        "language": "Bohemian",
+        "songs": [
+          {
+            "name": "Bohemian dances",
+            "url": "anonymous_bohemian_dances",
+            "source": ["anonymous_bohemian_dances.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "ANONYMOUS",
+        "date": "early 15th century",
+        "language": "Italian",
+        "songs": [
+          {
+            "name": "Codex Faenza: J'ay grant désespoir de ma vie",
+            "url": "anonymous_codex_faenza",
+            "source": ["anonymous_codex_faenza.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "DUFAY, Guillaume",
+        "date": "c. 1400-1474",
+        "language": "French",
+        "songs": [
+          {
+            "name": "Hymns for Lent",
+            "url": "dufay_lent",
+            "source": ["dufay_lent1.mp3", "dufay_lent2.mp3"]
+          },
+          {
+            "name": "6 Rondos",
+            "url": "dufay_6rondos",
+            "source": ["dufay_6rondos.mp3"]
+          },
+          {
+            "name": "Ce jour de l'an",
+            "url": "dufay_ce_jour",
+            "source": ["dufay_ce_jour.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "GIOVANNI AMBROGIO",
+        "date": "15th century",
+        "language": "Italian",
+        "songs": [
+          {
+            "name": "Voltate",
+            "url": "giovanni_voltate",
+            "source": ["giovanni_ambrogio_voltate.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "GUGLIELMO EBREO DA PESARO",
+        "date": "c. 1425-c. 1475",
+        "songs": [
+          {
+            "name": "Gratioso",
+            "url": "guglielmo_gratioso",
+            "source": ["guglielmo_gratioso.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "JOSQUIN DESPREZ",
+        "date": "c. 1440-1521",
+        "language": "Franco-Flemish",
+        "songs": [
+          {
+            "name": "In principio erat verbum, motet",
+            "url": "josquin_motet",
+            "source": ["josquin_motet1.mp3"]
+          },
+          {
+            "name": "Benedicta es coelorum Regina, motet",
+            "url": "josquin_motet2",
+            "source": ["josquin_motet2.mp3"]
+          },
+          {
+            "name": "Ave Maria",
+            "url": "josquin_ave_maria",
+            "source": ["josquin_ave_maria.mp3"]
+          },
+          {
+            "name": "Absalon, fili mi",
+            "url": "josquin_absalon",
+            "source": ["josquin_absalon.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "MIKOLAJ Z RADOMIA",
+        "date": "early 15th century",
+        "language": "Polish",
+        "songs": [
+          {
+            "name": "Ballade",
+            "url": "mikolaj_ballade",
+            "source": ["mikolaj_ballade.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "OCKEGHEM, Johannes",
+        "date": "c. 1425-1497",
+        "language": "Franco-Flemish",
+        "songs": [
+          {
+            "name": "Kyrie from Missa L'homme armé",
+            "url": "ockeghem_homme_arme",
+            "source": ["ockeghem_homme_arme.mp3"]
+          },
+          {
+            "name": "Sanctus from Missa Prolationum",
+            "url": "ockeghem_sanctus",
+            "source": ["ockeghem_sanctus.mp3"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "century": "16",
+    "composers": [
+      {
+        "composer": "ANONYMOUS",
+        "date": "early 16th century",
+        "language": "Spanish",
+        "songs": [
+          {
+            "name": "Cancionero Musical de Palacio",
+            "url": "anonymous_cancionero",
+            "source": ["anonymous_cancionero.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "BASSANO, Giovanni",
+        "date": "16th century",
+        "language": "Italian",
+        "songs": [
+          {
+            "name": "Ricercata",
+            "url": "bassano_ricercata",
+            "source": ["bassano_ricercata.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "BENDUSI, Francesco",
+        "date": "d. ca. 1553",
+        "language": "Italian",
+        "songs": [
+          {
+            "name": "Ricercata",
+            "url": "bendusi_passe_mezze",
+            "source": ["bendusi_passe_mezze.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "BYRD, William",
+        "date": "1543-1623",
+        "language": "English",
+        "songs": [
+          {
+            "name": "Agnus Dei",
+            "url": "byrd_agnus_dei",
+            "source": ["byrd_agnus_dei.mp3"]
+          },
+          {
+            "name": "Iustorum Animae",
+            "url": "byrd_iustorum",
+            "source": ["byrd_iustorum.mp3"]
+          },
+          {
+            "name": "Pavan",
+            "url": "byrd_pavan",
+            "source": ["byrd_pavan.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "CAVALIERI, Emilio del",
+        "date": "c. 1550-1602",
+        "language": "Italian",
+        "songs": [
+          {
+            "name": "Ahi caso acerbo",
+            "url": "cavalieri_ahi_caso",
+            "source": ["cavalieri_ahi_caso.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "DALL'AQUILA, Marco",
+        "date": "c. 1480-c. 1538",
+        "language": "Italian",
+        "songs": [
+          {
+            "name": "La traditora",
+            "url": "dall_aquila_traditora",
+            "source": ["dall_aquila_traditora.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "DE LA HELE, Georges",
+        "date": "1547-1587",
+        "language": "French",
+        "songs": [
+          {
+            "name": "Missa 'Nigra sum': Sanctus and Agnus dei",
+            "url": "delahele_nigra",
+            "source": ["delahele_nigra.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "DOWLAND, John",
+        "date": "1562-1626",
+        "language": "English",
+        "songs": [
+          {
+            "name": "Farewell",
+            "url": "dowland_farewell",
+            "source": ["dowland_farewell.mp3"]
+          },
+          {
+            "name": "Flow my tears",
+            "url": "dowland_flow",
+            "source": ["dowland_flow.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "FRANCESCO CANOVA da Milano",
+        "date": "1497-1543",
+        "language": "Italian",
+        "songs": [
+          {
+            "name": "Fanatasia Sexta",
+            "url": "francesco_canova_fantasia_sexta",
+            "source": ["francesco_canova_fantasia_sexta"]
+          },
+          {
+            "name": "Tre fantasie",
+            "url": "milano_lute",
+            "source": ["milano_lute"]
+          }
+        ]
+      },
+      {
+        "composer": "FRANCISCUS BOSSINENSIS",
+        "date": "active c. 1510",
+        "language": "Bosnian",
+        "songs": [
+          {
+            "name": "Haime",
+            "url": "bossinensis_haime",
+            "source": ["bossinensis_haime"]
+          }
+        ]
+      },
+      {
+        "composer": "GABRIELI, Giovanni",
+        "date": "c. 1554-c. 1612",
+        "language": "Italian",
+        "songs": [
+          {
+            "name": "Canzon a Duodecimi Toni",
+            "url": "gabrieli_canzon",
+            "source": ["gabrieli_canzon.mp3"]
+          },
+          {
+            "name": "Sonata pian'e forte",
+            "url": "gabrieli_sonata",
+            "source": ["gabrieli_sonata.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "GALLUS, Jacobus",
+        "date": "1550-1591",
+        "language": "Austrian",
+        "songs": [
+          {
+            "name": "Currit parrus lepulus, motet",
+            "url": "gallus_motet1",
+            "source": ["gallus_motet1.mp3"]
+          },
+          {
+            "name": "Quam galina, motet",
+            "url": "gallus_motet2",
+            "source": ["gallus_motet2.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "GESUALDO, Don Carlo",
+        "date": "c. 1560-1613",
+        "language": "Italian",
+        "songs": [
+          {
+            "name": "Motet",
+            "url": "gesualdo_motet",
+            "source": ["gesualdo_motet.mp3"]
+          },
+          {
+            "name": "Peccantem me quotidie",
+            "url": "gesualdo_peccantem",
+            "source": ["gesualdo_peccantem.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "GOUDIMEL, Claude",
+        "date": "c. 1514-1572",
+        "language": "French",
+        "songs": [
+          {
+            "name": "Psalm CXXVIII: Bienhereux est quiconque",
+            "url": "goudimel_bienheureux",
+            "source": ["goudimel_bienheureux.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "JANNEQUIN, Clément",
+        "date": "c. 1485-1558",
+        "language": "French",
+        "songs": [
+          {
+            "name": "Le chant des oiseaux (The Birds)",
+            "url": "jannequin_birds",
+            "source": ["jannequin_birds.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "LASSUS, Orlande de",
+        "date": "1532-1594",
+        "language": "Franco-Flemish",
+        "songs": [
+          {
+            "name": "Serenade",
+            "url": "lassus_serenade",
+            "source": ["lassus_serenade.mp3"]
+          },
+          {
+            "name": "Kyrie eleison",
+            "url": "lassus_kyrie",
+            "source": ["lassus_kyrie.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "MASSAINO, Tiburtio",
+        "date": "c. 1550-c. 1609",
+        "language": "Italian",
+        "songs": [
+          {
+            "name": "Canzon XXXIII",
+            "url": "massaino_canzon",
+            "source": ["massaino_canzon.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "PALESTRINA, Giovanni Pierluigi da",
+        "date": "1525-1594",
+        "language": "Italian",
+        "songs": [
+          {
+            "name": "Missa Brevis",
+            "url": "palestrina_missa_brevis",
+            "source": [
+              "palestrina_missa_brevis_1_kyrie.mp3",
+              "palestrina_missa_brevis_2_gloria.mp3",
+              "palestrina_missa_brevis_3_credo.mp3",
+              "palestrina_missa_brevis_5_benedictus.mp3",
+              "palestrina_missa_brevis_6_agnus.mp3"
+            ]
+          },
+          {
+            "name": "Missa Brevis (Tu es Petrus)",
+            "url": "palestrina_missa_brevis_petrus",
+            "source": [
+              "palestrina_missa_brevis_petrus_1_kyrie.mp3",
+              "palestrina_missa_brevis_petrus_2_gloria.mp3",
+              "palestrina_missa_brevis_petrus_3_credo.mp3",
+              "palestrina_missa_brevis_petrus_4_sanctus.mp3",
+              "palestrina_missa_brevis_petrus_6_agnus.mp3"
+            ]
+          },
+          {
+            "name": "Pater Noster",
+            "url": "palestrina_pater_noster",
+            "source": ["palestrina_pater_noster.mp3"]
+          },
+          {
+            "name": "Kyrie (from Missa Papae Marcelli)",
+            "url": "palestrina_kyrie",
+            "source": ["palestrina_kyrie.mp3"]
+          },
+          {
+            "name": "Super flumina Babylonis",
+            "url": "palestrina_super_flumina",
+            "source": ["palestrina_super_flumina.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "PRAETORIUS, Michael",
+        "date": "1571-1621",
+        "language": "German",
+        "songs": [
+          {
+            "name": "Motet",
+            "url": "praetorius_motet",
+            "source": ["praetorius_motet.mp3"]
+          },
+          {
+            "name": "Ballet des Baccanales",
+            "url": "praetorius_ballet",
+            "source": ["praetorius_ballet.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "TALLIS, Thomas",
+        "date": "c. 1505-1585",
+        "language": "English",
+        "songs": [
+          {
+            "name": "The Lamentations of Jeremiah",
+            "url": "tallis_lamentations",
+            "source": ["tallis_jeremiah.mp3"]
+          },
+          {
+            "name": "Mass (Puer natus est)",
+            "url": "tallis_mass",
+            "source": [
+              "tallis_mass1.mp3",
+              "tallis_mass2.mp3",
+              "tallis_mass3.mp3"
+            ]
+          },
+          {
+            "name": "Salvator Mundi",
+            "url": "tallis_salvator",
+            "source": ["tallis_salvator.mp3"]
+          },
+          {
+            "name": "If Ye Love Me",
+            "url": "tallis_if_ye",
+            "source": ["tallis_if_ye.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "VERDELOT, Philippe",
+        "date": "c. 1482-c. 1535",
+        "language": "French",
+        "songs": [
+          {
+            "name": "Madonna per voi ardo, madrigal",
+            "url": "verdelot_madrigal",
+            "source": ["verdelot_madrigal.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "VIADANA, Lodovico Grossi da",
+        "date": "c. 1560-1627",
+        "language": "Italian",
+        "songs": [
+          {
+            "name": "Exsultate justi, motet",
+            "url": "viadana_exsultate",
+            "source": ["viadana_exsultate.mp3"]
+          },
+          {
+            "name": "La Bergamasca",
+            "url": "viadana_bergamasca",
+            "source": ["viadana_bergamasca.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "VICTORIA, Tomás Luis de, Spanish",
+        "date": "c. 1548-1611",
+        "language": "Spanish",
+        "songs": [
+          {
+            "name": "O Domine Jesu, motet",
+            "url": "victoria_domine_jesu",
+            "source": ["victoria_motet.mp3"]
+          },
+          {
+            "name": "Gloria",
+            "url": "victoria_gloria",
+            "source": ["victoria_gloria.mp3"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "century": "17",
+    "composers": [
+      {
+        "composer": "ALDROVANDINI, Giuseppe",
+        "date": "1671-1707",
+        "language": "Italian",
+        "songs": [
+          {
+            "name": "Sonata in D Major for two trumpets, strings and basso continuo",
+            "url": "aldrovandini_sonata",
+            "source": ["aldrovandini_sonata.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "ALLEGRI, Gregorio",
+        "date": "1582-1652",
+        "language": "Italian",
+        "songs": [
+          {
+            "name": "Miserere",
+            "url": "allegri_miserere",
+            "source": ["allegri_miserere.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "BANCHIERI, Adriano (1568-1634), Italian",
+        "date": "1568-1634",
+        "language": "Italian",
+        "songs": [
+          {
+            "name": "La zia Bernadina",
+            "url": "banchieri_la_zia",
+            "source": ["banchieri_la_zia.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "BENEVOLO, Orazio",
+        "date": "1605-1672",
+        "language": "Italian",
+        "songs": [
+          {
+            "name": "Agnus Dei",
+            "url": "benevolo_agnus_dei",
+            "source": ["benevolo_agnus_dei.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "BIBER, Heinrich Ignaz Franz von",
+        "date": "1644-1704",
+        "language": "Austrian",
+        "songs": [
+          {
+            "name": "The Battle, suite",
+            "url": "biber_battle",
+            "source": ["biber_battle.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "BLOW, John",
+        "date": "1649-1708",
+        "language": "English",
+        "songs": [
+          {
+            "name": "Protect me my Lord, motet",
+            "url": "blow_motet",
+            "source": ["blow_motet.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "BUXTEHUDE, Dietrich (1637-1707), German",
+        "date": "1637-1707",
+        "language": "German",
+        "songs": [
+          {
+            "name": "Nun komm der Heiden Heiland",
+            "url": "buxtehude_nun_komm",
+            "source": ["buxtehude_nun_komm.mp3"]
+          },
+          {
+            "name": "Prelude, Fugue and Chaconne, BuxWV 137",
+            "url": "buxtehude_prelude",
+            "source": ["buxtehude_prelude.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "CAMPION, Thomas",
+        "date": "1567-1620",
+        "language": "English",
+        "songs": [
+          {
+            "name": "I care not for these Ladies",
+            "url": "campion_i_care_not",
+            "source": ["campion_i_care_not.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "CESTI, Antonio",
+        "date": "1623-1669",
+        "language": "Italian",
+        "songs": [
+          {
+            "name": "Lamento della Madre Ebrea",
+            "url": "cesti_lamento",
+            "source": ["cesti_lamento.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "CHARPENTIER, Marc-Antoine",
+        "date": "1634-1704",
+        "language": "French",
+        "songs": [
+          {
+            "name": "Marche en Rondeau",
+            "url": "charpentier_marche",
+            "source": ["charpentier_marche.mp3"]
+          },
+          {
+            "name": "Kyrie",
+            "url": "charpentier_kyrie",
+            "source": ["charpentier_kyrie.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "CESTI, Antonio",
+        "date": "1623-1669",
+        "language": "Italian",
+        "songs": [
+          {
+            "name": "Lamento della Madre Ebrea",
+            "url": "cesti_lamento",
+            "source": ["cesti_lamento.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "CHARPENTIER, Marc-Antoine",
+        "date": "1634-1704",
+        "language": "French",
+        "songs": [
+          {
+            "name": "Marche en Rondeau",
+            "url": "charpentier_marche",
+            "source": ["charpentier_marche.mp3"]
+          },
+          {
+            "name": "Kyrie",
+            "url": "charpentier_kyrie",
+            "source": ["charpentier_kyrie.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "CORELLI, Arcangelo (1653-1713), Italian",
+        "date": "1653-1713",
+        "language": "Italian",
+        "songs": [
+          {
+            "name": "Concerto grosso in g minor op. 6 No. 8 (Christmas Concerto)",
+            "url": "corelli_concerto",
+            "source": [
+              "corelli_christmas1.mp3",
+              "corelli_christmas2.mp3",
+              "corelli_christmas3.mp3",
+              "corelli_christmas4.mp3",
+              "corelli_christmas4.mp3",
+              "corelli_christmas4.mp3"
+            ]
+          },
+          {
+            "name": "Pastorale from Christmas Concerto",
+            "url": "corelli_pastorale",
+            "source": ["corelli_pastorale.mp3"]
+          },
+          {
+            "name": "Sonata in D minor (La Follia) op. 5 No. 12",
+            "url": "corelli_follia",
+            "source": ["corelli_follia.mp3"]
+          },
+          {
+            "name": "Allemanda from Trio sonata",
+            "url": "corelli_allemanda",
+            "source": ["corelli_allemanda.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "COUPERIN, François",
+        "date": "1668-1733",
+        "language": "French",
+        "songs": [
+          {
+            "name": "Les Nations - La Française",
+            "url": "couperin_nations",
+            "source": ["couperin_nations.mp3"]
+          },
+          {
+            "name": "Pieces de clavicen (excerpts)",
+            "url": "couperin_pieces",
+            "source": [
+              "couperin_carillon.mp3",
+              "couperin_les_abeilles.mp3",
+              "couperin_amazone.mp3"
+            ]
+          },
+          {
+            "name": "Les abeilles (The Bees) - We kindly inform you that the location of some pages has changed due to significant upgrades in 2019-2020 involving the increase in both the number of images and artists featured in the collection. It resulted in the rearrangement of some parts of the database. We apologize for any inconvenience.",
+            "url": "couperin_les_abeilles"
+          }
+        ]
+      },
+      {
+        "composer": "COUPERIN, Louis",
+        "date": "1626-1661",
+        "language": "French",
+        "songs": [
+          {
+            "name": "Menuet de Poitou et son Double",
+            "url": "couperin_louis_menuet",
+            "source": ["couperin_louis_menuet.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "DUMONT, Henri",
+        "date": "1610-1648",
+        "language": "French",
+        "songs": [
+          {
+            "name": "Motet",
+            "url": "dumont_magnificat",
+            "source": ["dumont_magnificat.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "FRESCOBALDI, Girolamo (1583-1643), Italian",
+        "date": "1583-1643",
+        "language": "Italian",
+        "songs": [
+          {
+            "name": "Ricercar",
+            "url": "frescobaldi_ricercar",
+            "source": ["frescobaldi_ricercar.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "GASPARINI, Francesco",
+        "date": "1668-1727",
+        "language": "Italian",
+        "songs": [
+          {
+            "name": "The Meddlesome Cupid, aria",
+            "url": "gasparini_cupid",
+            "source": ["gasparini_cupid.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "GIBBONS, Orlando",
+        "date": "1583-1625",
+        "language": "English",
+        "songs": [
+          {
+            "name": "Te Deum",
+            "url": "gibbons_tedeum",
+            "source": ["gibbons_tedeum.mp3"]
+          },
+          {
+            "name": "A Mask: The Fairest Nymph",
+            "url": "gibbons_mask",
+            "source": ["gibbons_mask.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "HUME, Tobias",
+        "date": "c. 1569-1645",
+        "language": "English",
+        "songs": [
+          {
+            "name": "The Spirit of Gambo",
+            "url": "hume_spirit",
+            "source": ["hume_spirit.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "KUHNAU, Johann",
+        "date": "1660-1722",
+        "language": "German",
+        "songs": [
+          {
+            "name": "The Fight between David and Goliath (No. 1 of the 6 Stories from the Bible illustrated in music)",
+            "url": "kuhnau_goliath",
+            "source": ["kuhnau_goliath.mp3"]
+          },
+          {
+            "name": "Saul Cured by David through Music (No. 2 of the 6 Stories from the Bible illustrated in music)",
+            "url": "kuhnau_goliath",
+            "source": ["kuhnau_goliath.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "LULLY, Jean-Baptiste",
+        "date": "1632-1687",
+        "language": "French",
+        "songs": [
+          {
+            "name": "Le bourgeois gentilhomme, suite",
+            "url": "lully_bourgeois",
+            "source": ["lully_bourgeois.mp3"]
+          },
+          {
+            "name": "Air, Bellérophon",
+            "url": "lully_bellerophon",
+            "source": ["lully_bellerophon.mp3"]
+          },
+          {
+            "name": "Air, Ballet d'Alcidiane et Polexandre",
+            "url": "lully_ballet",
+            "source": ["lully_ballet.mp3"]
+          },
+          {
+            "name": "Phaéton, gavotte",
+            "url": "lully_phaeton",
+            "source": ["lully_phaeton.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "MARAIS, Marin (1656-1728), French",
+        "date": "1656-1728",
+        "language": "French",
+        "songs": [
+          {
+            "name": "La sonnerie de Sainte Genevieve du Mont",
+            "url": "marais_sonnerie",
+            "source": ["marais_sonnerie.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "MARINI, Biagio",
+        "date": "1597-1665",
+        "language": "Italian",
+        "songs": [
+          {
+            "name": "Sonata sopra 'La Monica'",
+            "url": "marini_sonata",
+            "source": ["marini_sonata.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "MONTEVERDI, Claudio",
+        "date": "1567-1643",
+        "language": "Italian",
+        "songs": [
+          {
+            "name": "The Charming Angioletta, madrigal",
+            "url": "monteverdi_madrigal",
+            "source": ["monteverdi_madrigal.mp3"]
+          },
+          {
+            "name": "Il ritorno d'Ulisse, Act I, Duet of Odysseus and Pallas Athene",
+            "url": "monteverdi_ulisse",
+            "source": ["monteverdi_ulisse.mp3"]
+          },
+          {
+            "name": "Lament of Ariadne",
+            "url": "monteverdi_arianna_lament",
+            "source": ["monteverdi_arianna_lament.mp3"]
+          },
+          {
+            "name": "Nigra sum from Vespers",
+            "url": "monteverdi_nigra_sum",
+            "source": ["monteverdi_nigra_sum.mp3"]
+          },
+          {
+            "name": "Possente spirto, L'Orfeo",
+            "url": "monteverdi_possente",
+            "source": ["monteverdi_possente.mp3"]
+          },
+          {
+            "name": "Christe, Adoramus Te",
+            "url": "monteverdi_christe",
+            "source": ["monteverdi_christe.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "MUFFAT, Georg",
+        "date": "1653-1704",
+        "language": "French",
+        "songs": [
+          {
+            "name": "Concerto grosso No. 9, VI Borea",
+            "url": "muffat_concerto_grosso",
+            "source": ["muffat_concerto_grosso.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "PACHELBEL, Johann",
+        "date": "1653-1706",
+        "language": "German",
+        "songs": [
+          {
+            "name": "Canon and Gigue in D major",
+            "url": "pachelbel_canon",
+            "source": ["pachelbel_canon.mp3"]
+          },
+          {
+            "name": "Magnificat Fugue",
+            "url": "pachelbel_fuge_magnificat",
+            "source": ["pachelbel_fuge_magnificat.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "PURCELL, Henry",
+        "date": "1659-1695",
+        "language": "English",
+        "songs": [
+          {
+            "name": "Dido and Aeneas, Dido's Farewell",
+            "url": "purcell_dido",
+            "source": ["purcell_dido.mp3"]
+          },
+          {
+            "name": "When I Am laid in earth (Dido's lament)",
+            "url": "purcell_dido_lament",
+            "source": ["purcell_dido_lament.mp3"]
+          },
+          {
+            "name": "Fantanzia upon One Note",
+            "url": "purcell_fantazia",
+            "source": ["purcell_fantazia.mp3"]
+          },
+          {
+            "name": "I will sing unto the Lord",
+            "url": "purcell_i_will_sing",
+            "source": ["purcell_i_will_sing.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "SCARLATTI, Alessandro",
+        "date": "1660-1725",
+        "language": "Italian",
+        "songs": [
+          {
+            "name": "La Giuditta, oratorio, Part I (excerpts)",
+            "url": "scarlatti_giuditta",
+            "source": ["scarlatti_giuditta.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "SCHÜTZ, Heinrich",
+        "date": "1585-1672",
+        "language": "German",
+        "songs": [
+          {
+            "name": "Deutsche Magnificat",
+            "url": "schutz_magnificat",
+            "source": ["schutz_magnificat.mp3"]
+          },
+          {
+            "name": "Die sieben Worte am Kreuz SWV 478",
+            "url": "schutz_7worte",
+            "source": ["schutz_7worte.mp3"]
+          },
+          {
+            "name": "Erhore mich, wenn ich rufe",
+            "url": "schutz_erhore_mich",
+            "source": ["schutz_erhore_mich.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "STRADELLA, Alessandro",
+        "date": "1644-1682",
+        "language": "Italian",
+        "songs": [
+          {
+            "name": "Sinfonia avanti il Barcheggio",
+            "url": "stradella_sinfonia",
+            "source": ["stradella_sinfonia.mp3"]
+          },
+          {
+            "name": "Canzona - Aria",
+            "url": "stradella_canzona",
+            "source": ["stradella_canzona.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "SWEELINCK, Jan Pieterszoon",
+        "date": "1562-1621",
+        "language": "Netherlandish",
+        "songs": [
+          {
+            "name": "Echo Fantasia",
+            "url": "sweelinck_echo_fantasia",
+            "source": ["sweelinck_echo_fantasia.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "TOMKINS, Thomas",
+        "date": "1572-1656",
+        "language": "English",
+        "songs": [
+          {
+            "name": "When David Heard",
+            "url": "tomkins_when_david",
+            "source": ["tomkins_when_david.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "TORELLI, Giuseppe",
+        "date": "1658-1709",
+        "songs": [
+          {
+            "name": "Sonata a cinque in D Major No. 7",
+            "url": "torelli_sonata",
+            "source": ["torelli_sonata.mp3"]
+          },
+          {
+            "name": "Concerto Estienne Roger",
+            "url": "torelli_concerto",
+            "source": [
+              "torelli_concerto_1_allegro.mp3",
+              "torelli_concerto_2_adagio",
+              "torelli_concerto_3_presto"
+            ]
+          }
+        ]
+      },
+      {
+        "composer": "WEELKES, Thomas",
+        "date": "1575-1623",
+        "language": "English",
+        "songs": [
+          {
+            "name": "Madrigal (Springtime Song)",
+            "url": "weelkes_madrigal",
+            "source": ["weelkes_madrigal.mp3"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "century": "18",
+    "composers": [
+      {
+        "composer": "ALBINONI, Tommaso",
+        "date": "1671-1750",
+        "language": "Italian",
+        "songs": [
+          {
+            "name": "Adagio in G minor",
+            "url": "albinoni_adagio",
+            "source": ["albinoni_adagio.mp3"]
+          },
+          {
+            "name": "Concerto in D major",
+            "url": "albinoni_concerto",
+            "source": ["albinoni_concerto.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "ARNE, Thomas",
+        "date": "1710-1778",
+        "language": "English",
+        "songs": [
+          {
+            "name": "Concerto for cembalo in C major",
+            "url": "arne_concerto",
+            "source": ["arne_concerto.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "BACH, Johann Sebastian",
+        "date": "1685-1750",
+        "language": "German",
+        "songs": [
+          {
+            "name": "Cantata BWV 51 (Jauchzet Gott in allen Landen)",
+            "url": "bach_bwv_051",
+            "source": [
+              "bach_bwv_051_1.mp3",
+              "bach_bwv_051_2.mp3",
+              "bach_bwv_051_3.mp3",
+              "bach_bwv_051_4.mp3"
+            ]
+          },
+          {
+            "name": "Cantata BWV 54 (Widerstehe doch der Sünde)",
+            "url": "bach_bwv_054",
+            "source": [
+              "bach_bwv_054_1.mp3",
+              "bach_bwv_054_2.mp3",
+              "bach_bwv_054_3.mp3"
+            ]
+          },
+          {
+            "name": "Cantata BWV 82 (Ich habe genung)",
+            "url": "bach_bwv_082",
+            "source": [
+              "bach_bwv_082-1.mp3",
+              "bach_bwv_082-2.mp3",
+              "bach_bwv_082-3.mp3",
+              "bach_bwv_082-4.mp3",
+              "bach_bwv_082-5.mp3"
+            ]
+          },
+          {
+            "name": "Cantata BWV 140 (Zion hört die Waechter singen)",
+            "url": "bach_bwv_140",
+            "source": ["bach_bwv_140.mp3"]
+          },
+          {
+            "name": "Cantata BWV 147 (Jesus bleibet meine Freude)",
+            "url": "bach_bwv_147",
+            "source": ["bach_bwv_147.mp3"]
+          },
+          {
+            "name": "Cantata BWV 212 (Bauernkantate)",
+            "url": "bach_bwv_212",
+            "source": ["bach_bwv_212.mp3"]
+          },
+          {
+            "name": "Magnificat in D major, BWV 243",
+            "url": "bach_bwv_243",
+            "source": ["bach_bwv_243.mp3"]
+          },
+          {
+            "name": "St. Matthew Passion BWV 244 - Chorus (Kommt ihr Tochter) and Choral (Herzliebster Jesu, was hast du verbrochen)",
+            "url": "bach_bwv_244",
+            "source": [
+              "bach_bwv_244_1.mp3",
+              "bach_bwv_244_2.mp3",
+              "bach_bwv_244_3.mp3"
+            ]
+          },
+          {
+            "name": "Easter Oratorio, BWV 249",
+            "url": "bach_bwv_249",
+            "source": ["bach_bwv_249.mp3"]
+          },
+          {
+            "name": "Toccata and Fugue in D minor, BWV 565",
+            "url": "bach_bwv_565",
+            "source": ["bach_bwv_565.mp3"]
+          },
+          {
+            "name": "Komm, heiliger Geist, choral, BWV 652",
+            "url": "bach_bwv_652",
+            "source": ["bach_bwv_652.mp3"]
+          },
+          {
+            "name": "Sonata in A Major for flute and cembalo obligato, BWV 1032",
+            "url": "bach_bwv_1032",
+            "source": ["bach_bwv_1032.mp3"]
+          },
+          {
+            "name": "Brandenburg Concert No. 3 in G Major, BWV 1048",
+            "url": "bach_bwv_1048",
+            "source": ["bach_bwv_1048.mp3"]
+          },
+          {
+            "name": "Musikalisches Opfer, BWV 1079, No. 1, Ricercare",
+            "url": "bach_bwv_1079",
+            "source": ["bach_bwv_1079-1_musikalisches.mp3"]
+          },
+          {
+            "name": "Air on a G String, Ouverture No. 3 in D major BWV 1068",
+            "url": "bach_bwv_1068",
+            "source": ["bach_bwv_1068_air.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "BACH, Carl Philipp Emmanuel",
+        "date": "1714-1788",
+        "language": "German",
+        "songs": [
+          {
+            "name": "Sonata in A major Wq 89, II. Arioso",
+            "url": "bach_cpe_sonata",
+            "source": ["bach_cpe_sonata.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "BOCCHERINI, Luigi",
+        "date": "1743-1805",
+        "language": "Italian",
+        "songs": [
+          {
+            "name": "Symphony in D minor (The House of the Devil)",
+            "url": "boccherini_symphony",
+            "source": ["boccherini_symphony.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "BONONCINI, Giovanni",
+        "date": "1670-1747",
+        "language": "Italian",
+        "songs": [
+          {
+            "name": "Sinfonia decima a 7",
+            "url": "bononcini_sinfonia",
+            "source": ["bononcini_sinfonia.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "CALDARA, Antonio",
+        "date": "1670-1736",
+        "language": "Italian",
+        "songs": [
+          {
+            "name": "Aria from a cantata",
+            "url": "caldara_aria.mp3",
+            "source": ["caldara_aria.mp3.mp3"]
+          }
+        ]
+      },
+      {
+        "composer": "GLUCK, Christoph Willibald",
+        "date": "1714-1787",
+        "language": "German",
+        "songs": [
+          {
+            "name": "Orfeo, Act I, Orpheus' aria in G Major",
+            "url": "gluck_orfeo",
+            "source": ["gluck_orfeo.mp3"]
+          },
+          {
+            "name": "Orfeo ed Euridice, Dance of the Blessed Spirits",
+            "url": "gluck_orfeo_blessed",
+            "source": ["gluck_orfeo_blessed.mp3"]
+          },
+          {
+            "name": "Paride ed Elena, Paris' aria",
+            "url": "gluck_paris",
+            "source": ["gluck_paris.mp3"]
+          }
+        ]
+      }
+    ]
+  }
+]
