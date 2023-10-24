@@ -34,8 +34,12 @@ Musics
                         <ul>
                             {{range .songs}}
                                 <li>
-                                    <a href="{{.url}}" hx-get="{{.url}}" hx-target="#mc-area">{{.name}}</a>
-                                    ({{.time}})
+                                    {{if .source}}
+                                        <a href="/musics/{{removeExt .source}}" hx-get="/musics/{{removeExt .source}}" hx-target="#mc-area">{{.name}}</a>
+                                        ({{.time}})
+                                    {{else}}
+                                        <a href=""></a>
+                                    {{end}}
                                 </li>
                             {{end}}
                         </ul>

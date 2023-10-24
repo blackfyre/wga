@@ -39,6 +39,7 @@ var TemplateFuncs = template.FuncMap{
 	"slugify":      slugify,
 	"safeHTML":     safeHTML,
 	"strippedHTML": StrippedHTML,
+	"removeExt":    RemoveExtension,
 
 	// Slice functions
 	"join": strings.Join,
@@ -270,4 +271,8 @@ func SetBoolWithFallback(value *bool, fallback bool) {
 	if value == nil {
 		*value = fallback
 	}
+}
+
+func RemoveExtension(s string) string {
+	return s[:len(s)-4]
 }
