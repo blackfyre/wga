@@ -73,12 +73,6 @@ To run the application simply download the release for your platform and run it 
 ./wga serve
 ```
 
-or if you are on windows:
-
-```bash
-wga.exe serve
-```
-
 The application will start on port 8090 by default. You can access it by going to <http://localhost:8090>
 
 ### Build from source
@@ -87,7 +81,7 @@ The application will start on port 8090 by default. You can access it by going t
 
 To build the application you will need to have the following installed:
 
-- [Go](https://go.dev/) 1.18+
+- [Go](https://go.dev/) 1.21+
 - [NodeJS](https://nodejs.org/en/) 14+
 - [NPM](https://www.npmjs.com/) 6+
 - [Goreleaser](https://goreleaser.com/)
