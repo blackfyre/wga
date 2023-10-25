@@ -6,7 +6,10 @@ import (
 
 type Postcard struct {
 	models.BaseModel
-	Name string `db:"name" json:"name"`
+	SenderName  string `db:"sender_name" json:"sender_name"`
+	SenderEmail string `db:"sender_email" json:"sender_email"`
+	Recipients  string `db:"recipients" json:"recipients"`
+	Message     string `db:"message" json:"message"`
 }
 
 var _ models.Model = (*Postcard)(nil)
