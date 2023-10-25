@@ -14,3 +14,4 @@ assets/public/js/*.map
 assets/public/js/*.txt
 
 guestbook.json
+contributors.json
