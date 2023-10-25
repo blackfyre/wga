@@ -1,0 +1,21 @@
+name: Janitor
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 1 * * *"
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: clean workflow runs
+        uses: boredland/action-purge-workflow-runs@main
+        with:
+          days-old: 30
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Remove old artifacts
+        uses: c-hive/gha-remove-artifacts@v1
+        with:
+          age: "30 days"
+          skip-tags: true
+          skip-recent: 5
