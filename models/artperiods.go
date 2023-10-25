@@ -6,10 +6,10 @@ import (
 
 type ArtPeriod struct {
 	models.BaseModel
-	Name        string `db:"art_periods_name" json:"name"`
-	Start       int    `db:"art_periods_start" json:"start"`
-	End         int    `db:"art_periods_end" json:"end"`
-	Description string `db:"art_periods_description" json:"description"`
+	Name        string `db:"name" json:"name"`
+	Start       int    `db:"start" json:"start"`
+	End         int    `db:"end" json:"end"`
+	Description string `db:"description" json:"description"`
 }
 
 var _ models.Model = (*ArtPeriod)(nil)

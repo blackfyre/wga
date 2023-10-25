@@ -4,14 +4,14 @@ import (
 	"github.com/pocketbase/pocketbase/models"
 )
 
-type Glossary struct {
+type GlossaryItem struct {
 	models.BaseModel
 	Expression string `db:"expression" json:"expression"`
 	Definition string `db:"definition" json:"definition"`
 }
 
-var _ models.Model = (*Glossary)(nil)
+var _ models.Model = (*GlossaryItem)(nil)
 
-func (m *Glossary) TableName() string {
+func (m *GlossaryItem) TableName() string {
 	return "glossary" // the name of your collection
 }
