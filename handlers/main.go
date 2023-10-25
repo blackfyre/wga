@@ -19,6 +19,7 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 	registerArtist(app)
 	registerArtists(app)
 	registerPostcardHandlers(app, p)
+	registerContributors(app)
 	registerStatic(app)
 	registerHome(app)
 }
