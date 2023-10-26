@@ -5,11 +5,31 @@ Artwork search - Web Gallery of Art
 {{define "body"}}
 {{block "search:content" .}}
 <section class="section">
-    <article class="container">
-        <div class="box">
-            <p>Lookinf for something?</p>
+    <h1 class="title is-size-1">Artwork search</h1>
+    <div class="columns">
+        <div class="column is-one-quarter">
+            <div class="box">
+                <form action="/search">
+                    <div class="field">
+                        <label class="label">Artforms</label>
+                        <div class="control">
+                            <div class="select">
+                                <select>
+                                    <option>Select artform</option>
+                                    {{range $k, $v := .ArtFormOptions}}
+                                    <option value="{{$k}}">{{$v}}</option>
+                                    {{end}}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
-    </article>
+        <div class="column">
+            Second column
+        </div>
+    </div>
 </section>
 {{end}}
 {{end}}
