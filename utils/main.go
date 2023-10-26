@@ -13,7 +13,7 @@ import (
 	"unicode"
 
 	strip "github.com/grokify/html-strip-tags-go"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v5"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 )

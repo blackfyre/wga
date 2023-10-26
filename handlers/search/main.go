@@ -20,14 +20,11 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 	td["ArtFormOptions"], _ = getArtFormOptions(app)
 	td["ArtTypeOptions"], _ = getArtTypesOptions(app)
 
-	html := ""
-	err := error(nil)
-
-	if htmx {
-		html, err = assets.RenderBlock("search:content", td)
-	} else {
-		html, err = assets.RenderPage("search", td)
-	}
+	html, err := assets.Render(assets.Renderable{
+		IsHtmx: htmx,
+		Block:  "search:content",
+		Data:   td,
+	})
 
 	if err != nil {
 		return apis.NewNotFoundError("", err)
