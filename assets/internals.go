@@ -3,6 +3,7 @@ package assets
 import (
 	"bytes"
 	"embed"
+	"errors"
 	"html/template"
 	"log"
 	"strings"
@@ -16,6 +17,7 @@ var InternalFiles embed.FS
 
 type Renderable struct {
 	IsHtmx bool
+	Page   string
 	Block  string
 	Data   map[string]any
 }
@@ -100,7 +102,17 @@ func Render(r Renderable) (string, error) {
 		return RenderBlock(r.Block, r.Data)
 	}
 
-	page := strings.Split(r.Block, ":")[0]
+	page := ""
+
+	if r.Page != "" {
+		page = r.Page
+	} else {
+		page = strings.Split(r.Block, ":")[0]
+	}
+
+	if page == "" {
+		return "", errors.New("Renderable " + page + " not found")
+	}
 
 	return RenderPage(page, r.Data)
 }

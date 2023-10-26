@@ -142,12 +142,11 @@ func registerHome(app *pocketbase.PocketBase) {
 			data["ArtistCount"] = artistCount
 			data["ArtworkCount"] = artworkCount
 
-			if isHtmx {
-				html, err = assets.RenderBlock("home:content", data)
-
-			} else {
-				html, err = assets.RenderPage("home", data)
-			}
+			html, err = assets.Render(assets.Renderable{
+				IsHtmx: isHtmx,
+				Block:  "home:content",
+				Data:   data,
+			})
 
 			if err != nil {
 				// or redirect to a dedicated 404 HTML page
