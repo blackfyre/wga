@@ -228,11 +228,11 @@ func registerArtist(app *pocketbase.PocketBase) {
 					})
 				}
 
-				if htmx {
-					html, err = assets.RenderBlock("artist:content", data)
-				} else {
-					html, err = assets.RenderPage("artist", data)
-				}
+				html, err = assets.Render(assets.Renderable{
+					IsHtmx: htmx,
+					Block:  "artist:content",
+					Data:   data,
+				})
 
 				if err != nil {
 					// or redirect to a dedicated 404 HTML page
@@ -307,11 +307,11 @@ func registerArtist(app *pocketbase.PocketBase) {
 
 				data["Jsonld"] = jsonLd
 
-				if htmx {
-					html, err = assets.RenderBlock("artwork:content", data)
-				} else {
-					html, err = assets.RenderPage("artwork", data)
-				}
+				html, err = assets.Render(assets.Renderable{
+					IsHtmx: htmx,
+					Block:  "artwork:content",
+					Data:   data,
+				})
 
 				if err != nil {
 					// or redirect to a dedicated 404 HTML page

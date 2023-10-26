@@ -134,11 +134,11 @@ func registerContributors(app *pocketbase.PocketBase) {
 					"Contributors": contributors,
 				}
 
-				if htmx {
-					html, err = assets.RenderBlock("contributors:content", data)
-				} else {
-					html, err = assets.RenderPage("contributors", data)
-				}
+				html, err = assets.Render(assets.Renderable{
+					IsHtmx: htmx,
+					Block:  "contributors:content",
+					Data:   data,
+				})
 
 				if err != nil {
 					return apis.NewApiError(500, err.Error(), err)
