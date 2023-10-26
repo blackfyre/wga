@@ -158,8 +158,9 @@ func registerArtist(app *pocketbase.PocketBase) {
 		e.Router.GET("artists/:name", func(c echo.Context) error {
 			slug := c.PathParam("name")
 			cacheKey := "artist:" + slug
+			htmx := utils.IsHtmxRequest(c)
 
-			if isHtmxRequest(c) {
+			if htmx {
 				cacheKey = cacheKey + "-htmx"
 			}
 
@@ -227,7 +228,7 @@ func registerArtist(app *pocketbase.PocketBase) {
 					})
 				}
 
-				if isHtmxRequest(c) {
+				if htmx {
 					html, err = assets.RenderBlock("artist:content", data)
 				} else {
 					html, err = assets.RenderPage("artist", data)
@@ -248,11 +249,13 @@ func registerArtist(app *pocketbase.PocketBase) {
 
 		e.Router.GET("artists/:name/:awid", func(c echo.Context) error {
 
+			htmx := utils.IsHtmxRequest(c)
+
 			slug := c.PathParam("name")
 			awid := c.PathParam("awid")
 			cacheKey := "artist:" + slug + awid
 
-			if isHtmxRequest(c) {
+			if htmx {
 				cacheKey = cacheKey + "-htmx"
 			}
 
@@ -304,7 +307,7 @@ func registerArtist(app *pocketbase.PocketBase) {
 
 				data["Jsonld"] = jsonLd
 
-				if isHtmxRequest(c) {
+				if htmx {
 					html, err = assets.RenderBlock("artwork:content", data)
 				} else {
 					html, err = assets.RenderPage("artwork", data)

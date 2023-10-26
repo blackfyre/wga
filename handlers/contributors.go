@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"blackfyre.ninja/wga/assets"
+	"blackfyre.ninja/wga/utils"
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
@@ -108,8 +109,9 @@ func registerContributors(app *pocketbase.PocketBase) {
 		e.Router.GET("/contributors", func(c echo.Context) error {
 
 			cacheKey := "contributors"
+			htmx := utils.IsHtmxRequest(c)
 
-			if isHtmxRequest(c) {
+			if htmx {
 				cacheKey = cacheKey + "-htmx"
 			}
 
@@ -132,7 +134,7 @@ func registerContributors(app *pocketbase.PocketBase) {
 					"Contributors": contributors,
 				}
 
-				if isHtmxRequest(c) {
+				if htmx {
 					html, err = assets.RenderBlock("contributors:content", data)
 				} else {
 					html, err = assets.RenderPage("contributors", data)

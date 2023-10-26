@@ -13,6 +13,7 @@ import (
 	"unicode"
 
 	strip "github.com/grokify/html-strip-tags-go"
+	"github.com/labstack/echo"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 )
@@ -270,4 +271,9 @@ func SetBoolWithFallback(value *bool, fallback bool) {
 	if value == nil {
 		*value = fallback
 	}
+}
+
+// IsHtmxRequest checks if the request is an htmx request by checking the value of the "HX-Request" header.
+func IsHtmxRequest(c echo.Context) bool {
+	return c.Request().Header.Get("HX-Request") == "true"
 }

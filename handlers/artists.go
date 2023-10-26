@@ -25,7 +25,7 @@ func registerArtists(app *pocketbase.PocketBase) {
 			page := 1
 			searchExpression := ""
 			searchExpressionPresent := false
-			confirmedHtmxRequest := isHtmxRequest(c)
+			confirmedHtmxRequest := utils.IsHtmxRequest(c)
 			currentUrl := c.Request().URL.String()
 			c.Response().Header().Set("HX-Push-Url", currentUrl)
 

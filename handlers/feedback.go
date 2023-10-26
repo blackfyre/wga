@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"blackfyre.ninja/wga/assets"
+	"blackfyre.ninja/wga/utils"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v5"
 	"github.com/microcosm-cc/bluemonday"
@@ -31,7 +32,7 @@ func registerFeedbackHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 		e.Router.GET("feedback", func(c echo.Context) error {
-			if !isHtmxRequest(c) {
+			if !utils.IsHtmxRequest(c) {
 				return apis.NewBadRequestError("Unexpected request", nil)
 			}
 
@@ -46,7 +47,7 @@ func registerFeedbackHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 
 		e.Router.POST("feedback", func(c echo.Context) error {
 
-			if !isHtmxRequest(c) {
+			if !utils.IsHtmxRequest(c) {
 				return apis.NewBadRequestError("Unexpected request", nil)
 			}
 
