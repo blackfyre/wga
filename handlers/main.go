@@ -21,6 +21,7 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 	registerPostcardHandlers(app, p)
 	registerContributors(app)
 	registerStatic(app)
+	registerSearchHandlers(app)
 	registerHome(app)
 }
 

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"blackfyre.ninja/wga/assets"
+	"blackfyre.ninja/wga/utils"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/daos"
 	m "github.com/pocketbase/pocketbase/migrations"
@@ -36,6 +37,12 @@ func init() {
 				Options:     &schema.TextOptions{},
 				Presentable: true,
 			},
+			&schema.SchemaField{
+				Id:      "schools_slug",
+				Name:    "slug",
+				Type:    schema.FieldTypeText,
+				Options: &schema.TextOptions{},
+			},
 		)
 
 		err := dao.SaveCollection(collection)
@@ -62,6 +69,7 @@ func init() {
 			q := db.Insert(tName, dbx.Params{
 				"id":   g.ID,
 				"name": g.Name,
+				"slug": utils.Slugify(g.Name),
 			})
 
 			_, err = q.Execute()

@@ -36,7 +36,7 @@ var TemplateFuncs = template.FuncMap{
 	"uppercase":    strings.ToUpper,
 	"lowercase":    strings.ToLower,
 	"pluralize":    pluralize,
-	"slugify":      slugify,
+	"slugify":      Slugify,
 	"safeHTML":     safeHTML,
 	"strippedHTML": StrippedHTML,
 
@@ -133,7 +133,7 @@ func pluralize(count any, singular string, plural string) (string, error) {
 	return plural, nil
 }
 
-func slugify(s string) string {
+func Slugify(s string) string {
 	var buf bytes.Buffer
 
 	for _, r := range s {
