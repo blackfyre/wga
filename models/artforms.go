@@ -9,6 +9,7 @@ import (
 type ArtForm struct {
 	models.BaseModel
 	Name string `db:"name" json:"name"`
+	Slug string `db:"slug" json:"slug"`
 }
 
 var _ models.Model = (*ArtForm)(nil)

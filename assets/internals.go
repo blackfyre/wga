@@ -5,6 +5,7 @@ import (
 	"embed"
 	"html/template"
 	"log"
+	"strings"
 
 	"blackfyre.ninja/wga/utils"
 	"github.com/pocketbase/pocketbase/apis"
@@ -12,6 +13,12 @@ import (
 
 //go:embed "reference/*" "views/*"
 var InternalFiles embed.FS
+
+type Renderable struct {
+	IsHtmx bool
+	Block  string
+	Data   map[string]any
+}
 
 // renderPage renders the given template with the provided data and returns the resulting HTML string.
 // The template is parsed from the views directory using the provided template name and the layout.html file.
@@ -82,4 +89,18 @@ func renderHtml(patterns []string, name string, data map[string]any) (string, er
 	}
 
 	return html.String(), nil
+}
+
+// Render renders a Renderable object and returns the resulting HTML string.
+// If the Renderable object is marked as htmx, it renders the block using RenderBlock.
+// Otherwise, it renders the page using RenderPage.
+func Render(r Renderable) (string, error) {
+
+	if r.IsHtmx {
+		return RenderBlock(r.Block, r.Data)
+	}
+
+	page := strings.Split(r.Block, ":")[0]
+
+	return RenderPage(page, r.Data)
 }

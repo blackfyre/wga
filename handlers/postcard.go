@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"blackfyre.ninja/wga/assets"
+	"blackfyre.ninja/wga/utils"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v5"
 	"github.com/microcosm-cc/bluemonday"
@@ -53,7 +54,7 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 
 		e.Router.GET("postcard/send", func(c echo.Context) error {
 
-			if !isHtmxRequest(c) {
+			if !utils.IsHtmxRequest(c) {
 				return apis.NewBadRequestError("Unexpected request", nil)
 			}
 

@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"blackfyre.ninja/wga/assets"
+	"blackfyre.ninja/wga/utils"
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
@@ -131,7 +132,7 @@ func registerHome(app *pocketbase.PocketBase) {
 				fmt.Println(err)
 			}
 
-			isHtmx := isHtmxRequest(c)
+			isHtmx := utils.IsHtmxRequest(c)
 
 			html := ""
 
