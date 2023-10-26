@@ -145,18 +145,19 @@ func registerArtists(app *pocketbase.PocketBase) {
 				data["Pagination"] = pagination.Render()
 
 				html := ""
+				blockToRender := "artists:content"
 
 				if confirmedHtmxRequest {
-					blockToRender := "artists:content"
-
 					if searchExpression != "" || searchExpressionPresent {
 						blockToRender = "artists:search-results"
 					}
-
-					html, err = assets.RenderBlock(blockToRender, data)
-				} else {
-					html, err = assets.RenderPage("artists", data)
 				}
+
+				html, err = assets.Render(assets.Renderable{
+					IsHtmx: confirmedHtmxRequest,
+					Block:  blockToRender,
+					Data:   data,
+				})
 
 				if err != nil {
 					// or redirect to a dedicated 404 HTML page
