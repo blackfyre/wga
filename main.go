@@ -12,10 +12,12 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/plugins/migratecmd"
+	// "blackfyre.ninja/wga/utils"
 )
 
 func main() {
 
+	// utils.ParseMusicListToUrls("./assets/reference/musics.json")
 	err := godotenv.Load()
 	if err != nil {
 		log.Println("Error loading .env file")
