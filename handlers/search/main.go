@@ -78,7 +78,7 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 			return apis.NewBadRequestError("Invalid page", err)
 		}
 
-		// this could be replaced with a sql query, but this is more convinient
+		// this could be replaced with a dedicated sql query, but this is more convinient
 		totalRecords, err := app.Dao().FindRecordsByFilter(
 			"artworks",
 			filterString,

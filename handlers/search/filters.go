@@ -60,36 +60,48 @@ func buildFilters(app *pocketbase.PocketBase, c echo.Context) *filters {
 	if f.School == "na" {
 		f.School = ""
 	} else {
-		r, err := models.GetSchoolBySlug(app.Dao(), f.School)
-
-		if err != nil {
-			f.School = ""
+		if app.Cache().Has("search:schools:" + f.School) {
+			f.School = app.Cache().Get("search:schools:" + f.School).(string)
 		} else {
-			f.School = r.GetId()
+			r, err := models.GetSchoolBySlug(app.Dao(), f.School)
+
+			if err != nil {
+				f.School = ""
+			} else {
+				f.School = r.GetId()
+			}
 		}
 	}
 
 	if f.ArtForm == "na" {
 		f.ArtForm = ""
 	} else {
-		r, err := models.GetArtFormBySlug(app.Dao(), f.ArtForm)
-
-		if err != nil {
-			f.ArtForm = ""
+		if app.Cache().Has("search:forms:" + f.ArtForm) {
+			f.ArtForm = app.Cache().Get("search:forms:" + f.ArtForm).(string)
 		} else {
-			f.ArtForm = r.GetId()
+			r, err := models.GetArtFormBySlug(app.Dao(), f.ArtForm)
+
+			if err != nil {
+				f.ArtForm = ""
+			} else {
+				f.ArtForm = r.GetId()
+			}
 		}
 	}
 
 	if f.ArtType == "na" {
 		f.ArtType = ""
 	} else {
-		r, err := models.GetArtTypeBySlug(app.Dao(), f.ArtType)
-
-		if err != nil {
-			f.ArtType = ""
+		if app.Cache().Has("search:types:" + f.ArtType) {
+			f.ArtType = app.Cache().Get("search:types:" + f.ArtType).(string)
 		} else {
-			f.ArtType = r.GetId()
+			r, err := models.GetArtTypeBySlug(app.Dao(), f.ArtType)
+
+			if err != nil {
+				f.ArtType = ""
+			} else {
+				f.ArtType = r.GetId()
+			}
 		}
 	}
 
