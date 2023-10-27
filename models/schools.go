@@ -1,6 +1,8 @@
 package models
 
 import (
+	"strings"
+
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/daos"
 	"github.com/pocketbase/pocketbase/models"
@@ -26,4 +28,14 @@ func GetSchools(dao *daos.Dao) ([]*School, error) {
 	var c []*School
 	err := SchoolQuery(dao).OrderBy("name asc").All(&c)
 	return c, err
+}
+
+func GetSchoolBySlug(dao *daos.Dao, slug string) (*School, error) {
+	var c School
+	err := SchoolQuery(dao).AndWhere(dbx.NewExp("LOWER(slug)={:slug}", dbx.Params{
+		"slug": strings.ToLower(slug),
+	})).
+		Limit(1).
+		One(&c)
+	return &c, err
 }

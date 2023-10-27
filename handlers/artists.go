@@ -8,6 +8,7 @@ import (
 
 	"blackfyre.ninja/wga/assets"
 	"blackfyre.ninja/wga/utils"
+	"blackfyre.ninja/wga/utils/jsonld"
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
@@ -129,7 +130,7 @@ func registerArtists(app *pocketbase.PocketBase) {
 						"Profession": m.GetString("profession"),
 						"BornDied":   normalizedBirthDeathActivity(m),
 						"Schools":    strings.Join(schoolCollector, ", "),
-						"Jsonld":     generateArtistJsonLdContent(m, c),
+						"Jsonld":     jsonld.GenerateArtistJsonLdContent(m, c),
 					}
 
 					preRendered = append(preRendered, row)
