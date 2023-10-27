@@ -42,3 +42,20 @@ func getArtFormOptions(app *pocketbase.PocketBase) (map[string]string, error) {
 
 	return options, nil
 }
+
+func getArtSchoolOptions(app *pocketbase.PocketBase) (map[string]string, error) {
+
+	c, err := models.GetSchools(app.Dao())
+
+	if err != nil {
+		return nil, err
+	}
+
+	options := make(map[string]string)
+
+	for _, v := range c {
+		options[v.Slug] = v.Name
+	}
+
+	return options, nil
+}

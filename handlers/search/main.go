@@ -13,12 +13,17 @@ import (
 
 func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) error {
 	htmx := utils.IsHtmxRequest(c)
+	currentUrl := c.Request().URL.String()
+	c.Response().Header().Set("HX-Push-Url", currentUrl)
 	// filters := buildFilters(c)
 
-	td := map[string]any{}
+	td := map[string]any{
+		"Artworks": []any{},
+	}
 
 	td["ArtFormOptions"], _ = getArtFormOptions(app)
 	td["ArtTypeOptions"], _ = getArtTypesOptions(app)
+	td["ArtSchoolOptions"], _ = getArtSchoolOptions(app)
 
 	html, err := assets.Render(assets.Renderable{
 		IsHtmx: htmx,
