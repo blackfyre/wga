@@ -2,8 +2,9 @@
 
 a[href]:not(:where(
   [href^="#"],
+  [href^="?"],
   [href^="/"]:not([href^="//"]),
   [onclick]
 )):after {
-    content: "↗️";
+  content: "↗️";
 }

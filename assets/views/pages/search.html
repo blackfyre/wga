@@ -55,6 +55,7 @@ Artwork search - Web Gallery of Art
                             <input class="input" type="search" name="q" placeholder="Artwork title">
                         </p>
                     </div>
+                    <div class="field"><button type="submit" class="button is-primary">Search</button></div>
                 </form>
             </div>
         </div>
@@ -105,6 +106,9 @@ Artwork search - Web Gallery of Art
                 {{end}}
             </div>
             {{end}}
+            <nav class="pagination" role="navigation" aria-label="pagination">
+                {{.Pagination}}
+            </nav>
         </div>
     </div>
 </section>
