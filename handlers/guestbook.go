@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"blackfyre.ninja/wga/assets"
+	"blackfyre.ninja/wga/utils"
 
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/dbx"
@@ -75,7 +76,7 @@ func registerGuestbookHandlers(app *pocketbase.PocketBase) {
 		})
 
 		e.Router.GET("/guestbook/addMessage", func(c echo.Context) error {
-			confirmedHtmxRequest := isHtmxRequest(c)
+			confirmedHtmxRequest := utils.IsHtmxRequest(c)
 			url := ""
 
 			setUrl(c, url)
@@ -136,7 +137,7 @@ func registerGuestbookHandlers(app *pocketbase.PocketBase) {
 }
 
 func loadGuestbook(c echo.Context, app *pocketbase.PocketBase, url string) (string, bool, error) {
-	confirmedHtmxRequest := isHtmxRequest(c)
+	confirmedHtmxRequest := utils.IsHtmxRequest(c)
 	searchSettings := gbProcessRequest(c)
 
 	cacheKey := gbSetCacheSettings(confirmedHtmxRequest, searchSettings)

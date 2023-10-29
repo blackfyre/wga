@@ -1,0 +1,20 @@
+{{define "title"}}
+{{ .Title }} - Web Gallery of Art
+{{end}}
+
+{{define "body"}}
+{{block "staticpage:content" .}}
+<section class="section">
+    <article class="container">
+        <div class="box">
+            <h1 class="title is-size-1">
+                {{ .Title }}
+            </h1>
+            <div class="content">
+                {{safeHTML .Content}}
+            </div>
+        </div>
+    </article>
+</section>
+{{end}}
+{{end}}

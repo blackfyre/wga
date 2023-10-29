@@ -3,15 +3,51 @@ package assets
 import (
 	"bytes"
 	"embed"
+	"errors"
 	"html/template"
 	"log"
+	"os"
+	"strings"
 
 	"blackfyre.ninja/wga/utils"
+	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 )
 
 //go:embed "reference/*" "views/*"
 var InternalFiles embed.FS
+
+type Renderable struct {
+	IsHtmx bool
+	Page   string
+	Block  string
+	Data   map[string]any
+}
+
+func NewRenderData(app *pocketbase.PocketBase) map[string]any {
+
+	//read file ./analytics.txt and append it to the data map
+
+	data := map[string]any{}
+
+	if !app.Cache().Has("renderable:analytics") {
+
+		analytics, err := os.ReadFile("./analytics.txt")
+
+		if err != nil {
+			log.Println("Error reading analytics.txt")
+			log.Println(err)
+		}
+
+		app.Cache().Set("renderable:analytics", string(analytics))
+
+		data["Analytics"] = string(analytics)
+	} else {
+		data["Analytics"] = app.Cache().Get("renderable:analytics")
+	}
+
+	return data
+}
 
 // renderPage renders the given template with the provided data and returns the resulting HTML string.
 // The template is parsed from the views directory using the provided template name and the layout.html file.
@@ -94,4 +130,28 @@ func renderHtml(patterns []string, name string, data map[string]any) (string, er
 	}
 
 	return html.String(), nil
+}
+
+// Render renders a Renderable object and returns the resulting HTML string.
+// If the Renderable object is marked as htmx, it renders the block using RenderBlock.
+// Otherwise, it renders the page using RenderPage.
+func Render(r Renderable) (string, error) {
+
+	if r.IsHtmx {
+		return RenderBlock(r.Block, r.Data)
+	}
+
+	page := ""
+
+	if r.Page != "" {
+		page = r.Page
+	} else {
+		page = strings.Split(r.Block, ":")[0]
+	}
+
+	if page == "" {
+		return "", errors.New("Renderable " + page + " not found")
+	}
+
+	return RenderPage(page, r.Data)
 }

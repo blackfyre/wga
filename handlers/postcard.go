@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"blackfyre.ninja/wga/assets"
+	"blackfyre.ninja/wga/utils"
+	"blackfyre.ninja/wga/utils/url"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v5"
 	"github.com/microcosm-cc/bluemonday"
@@ -28,7 +30,7 @@ func renderPostcardEditor(awid string, app *pocketbase.PocketBase, c echo.Contex
 	}
 
 	html, err := assets.RenderBlock("postcard:editor", map[string]any{
-		"Image":     generateFileUrl(app, "artworks", awid, r.GetString("image")),
+		"Image":     url.GenerateFileUrl(app, "artworks", awid, r.GetString("image")),
 		"ImageId":   awid,
 		"Title":     r.GetString("title"),
 		"Comment":   r.GetString("comment"),
@@ -53,7 +55,7 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 
 		e.Router.GET("postcard/send", func(c echo.Context) error {
 
-			if !isHtmxRequest(c) {
+			if !utils.IsHtmxRequest(c) {
 				return apis.NewBadRequestError("Unexpected request", nil)
 			}
 
@@ -95,11 +97,11 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 
 			aw := r.ExpandedOne("image_id")
 
-			data := newTemplateData(c)
+			data := assets.NewRenderData(app)
 
 			data["SenderName"] = r.GetString("sender_name")
 			data["Message"] = r.GetString("message")
-			data["AwImage"] = generateFileUrl(app, "artworks", aw.GetString("id"), aw.GetString("image"))
+			data["AwImage"] = url.GenerateFileUrl(app, "artworks", aw.GetString("id"), aw.GetString("image"))
 			data["AwTitle"] = aw.GetString("title")
 			data["AwComment"] = aw.GetString("comment")
 			data["AwTechnique"] = aw.GetString("technique")

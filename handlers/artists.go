@@ -7,7 +7,9 @@ import (
 	"strings"
 
 	"blackfyre.ninja/wga/assets"
+	wgamodels "blackfyre.ninja/wga/models"
 	"blackfyre.ninja/wga/utils"
+	"blackfyre.ninja/wga/utils/jsonld"
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
@@ -25,7 +27,7 @@ func registerArtists(app *pocketbase.PocketBase) {
 			page := 1
 			searchExpression := ""
 			searchExpressionPresent := false
-			confirmedHtmxRequest := isHtmxRequest(c)
+			confirmedHtmxRequest := utils.IsHtmxRequest(c)
 			currentUrl := c.Request().URL.String()
 			c.Response().Header().Set("HX-Push-Url", currentUrl)
 
@@ -129,13 +131,24 @@ func registerArtists(app *pocketbase.PocketBase) {
 						"Profession": m.GetString("profession"),
 						"BornDied":   normalizedBirthDeathActivity(m),
 						"Schools":    strings.Join(schoolCollector, ", "),
-						"Jsonld":     generateArtistJsonLdContent(m, c),
+						"Jsonld": jsonld.GenerateArtistJsonLdContent(&wgamodels.Artist{
+							Name:         m.GetString("name"),
+							Slug:         m.GetString("slug"),
+							Bio:          m.GetString("bio"),
+							YearOfBirth:  m.GetInt("year_of_birth"),
+							YearOfDeath:  m.GetInt("year_of_death"),
+							PlaceOfBirth: m.GetString("place_of_birth"),
+							PlaceOfDeath: m.GetString("place_of_death"),
+							Published:    m.GetBool("published"),
+							School:       m.GetString("school"),
+							Profession:   m.GetString("profession"),
+						}, c),
 					}
 
 					preRendered = append(preRendered, row)
 				}
 
-				data := newTemplateData(c)
+				data := assets.NewRenderData(app)
 
 				data["Content"] = preRendered
 				data["Count"] = recordsCount
@@ -145,18 +158,19 @@ func registerArtists(app *pocketbase.PocketBase) {
 				data["Pagination"] = pagination.Render()
 
 				html := ""
+				blockToRender := "artists:content"
 
 				if confirmedHtmxRequest {
-					blockToRender := "artists:content"
-
 					if searchExpression != "" || searchExpressionPresent {
 						blockToRender = "artists:search-results"
 					}
-
-					html, err = assets.RenderBlock(blockToRender, data)
-				} else {
-					html, err = assets.RenderPage("artists", data)
 				}
+
+				html, err = assets.Render(assets.Renderable{
+					IsHtmx: confirmedHtmxRequest,
+					Block:  blockToRender,
+					Data:   data,
+				})
 
 				if err != nil {
 					// or redirect to a dedicated 404 HTML page
