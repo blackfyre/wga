@@ -3,6 +3,7 @@ package jsonld
 import (
 	"os"
 
+	wgamodels "blackfyre.ninja/wga/models"
 	"blackfyre.ninja/wga/utils"
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase/models"
@@ -12,37 +13,37 @@ import (
 // It takes a pointer to a models.Record and an echo.Context as input and returns a map[string]any.
 // The returned map contains the JSON-LD content for the artist record, including the artist's name, URL, profession,
 // birth and death dates, and birth and death places (if available).
-func GenerateArtistJsonLdContent(r *models.Record, c echo.Context) map[string]any {
+func GenerateArtistJsonLdContent(r *wgamodels.Artist, c echo.Context) map[string]any {
 
-	fullUrl := os.Getenv("WGA_PROTOCOL") + "://" + c.Request().Host + "/artists/" + r.GetString("slug")
+	fullUrl := os.Getenv("WGA_PROTOCOL") + "://" + c.Request().Host + "/artists/" + r.Slug
 
 	d := map[string]any{
 		"@context":      "https://schema.org",
 		"@type":         "Person",
-		"name":          r.GetString("name"),
+		"name":          r.Name,
 		"url":           fullUrl,
-		"hasOccupation": r.GetString("profession"),
+		"hasOccupation": r.Profession,
 	}
 
-	if r.GetInt("year_of_birth") > 0 {
-		d["birthDate"] = r.GetString("year_of_birth")
+	if r.YearOfBirth > 0 {
+		d["birthDate"] = r.YearOfBirth
 	}
 
-	if r.GetInt("year_of_death") > 0 {
-		d["deathDate"] = r.GetString("year_of_death")
+	if r.YearOfDeath > 0 {
+		d["deathDate"] = r.YearOfDeath
 	}
 
-	if r.GetString("place_of_birth") != "" {
+	if r.PlaceOfBirth != "" {
 		d["birthPlace"] = map[string]string{
 			"@type": "Place",
-			"name":  r.GetString("place_of_birth"),
+			"name":  r.PlaceOfBirth,
 		}
 	}
 
-	if r.GetString("place_of_death") != "" {
+	if r.PlaceOfDeath != "" {
 		d["deathPlace"] = map[string]string{
 			"@type": "Place",
-			"name":  r.GetString("place_of_death"),
+			"name":  r.PlaceOfDeath,
 		}
 	}
 

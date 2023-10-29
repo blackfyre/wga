@@ -1,6 +1,8 @@
 package search
 
 import (
+	"fmt"
+
 	"blackfyre.ninja/wga/models"
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/dbx"
@@ -45,6 +47,8 @@ func (f *filters) BuildFilter() (string, dbx.Params) {
 		filterString = filterString + " && art_type = {:art_type}"
 		params["art_type"] = f.ArtType
 	}
+
+	fmt.Println(filterString, params)
 
 	return filterString, params
 }
