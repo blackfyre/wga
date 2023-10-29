@@ -3,65 +3,77 @@
     "century": "12",
     "composers": [
       {
-        "composer": "ANONYMOUS",
+        "name": "ANONYMOUS",
         "date": "12th century",
         "language": "French",
         "songs": [
           {
-            "name": "Lux hodie, conductus",
-            "url": "anonymous_conductus",
-            "source": ["anonymous_conductus.mp3"]
+            "title": "Lux hodie, conductus",
+            "url": "/music1/12_cent/anonymous_conductus.html",
+            "source": [
+              "https://www.wga.hu/music1/12_cent/anonymous_conductus.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "GUIRAUD DE BORNELH",
+        "name": "GUIRAUD DE BORNELH",
         "date": "c. 1138-c. 1199",
         "language": "French",
         "songs": [
           {
-            "name": "Reis Glorios",
-            "url": "bornelh_reis_glorios",
-            "source": ["bornelh_reis_glorios.mp3"]
+            "title": "Reis Glorios",
+            "url": "/music1/12_cent/bornelh_reis_glorios.html",
+            "source": [
+              "https://www.wga.hu/music1/12_cent/bornelh_reis_glorios.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "HILDEGARD VON BINGEN",
+        "name": "HILDEGARD VON BINGEN",
         "date": "1098-1179",
         "language": "German",
         "songs": [
           {
-            "name": "Ave generosa",
-            "url": "hildegard_ave_generosa",
-            "source": ["hildegard_bingen_ave_generosa.mp3"]
+            "title": "Ave generosa",
+            "url": "/music1/12_cent/hildegard_bingen_ave_generosa.html",
+            "source": [
+              "https://www.wga.hu/music1/12_cent/hildegard_bingen_ave_generosa.mp3"
+            ]
           },
           {
-            "name": "O frondens virga",
-            "url": "hildegard_frondens_virga",
-            "source": ["hildegard_bingen_frondens_virga.mp3"]
+            "title": "O frondens virga",
+            "url": "/music1/12_cent/hildegard_bingen_frondens_virga.html",
+            "source": [
+              "https://www.wga.hu/music1/12_cent/hildegard_bingen_frondens_virga.mp3"
+            ]
           },
           {
-            "name": "O Spiritui Sancto",
-            "url": "hildegard_spiritui_sancto",
-            "source": ["hildegard_bingen_spiritui_sancto.mp3"]
+            "title": "O Spiritui Sancto",
+            "url": "/music1/12_cent/hildegard_bingen_spiritui_sancto.html",
+            "source": [
+              "https://www.wga.hu/music1/12_cent/hildegard_bingen_spiritui_sancto.mp3"
+            ]
           },
           {
-            "name": "O pastor animarum",
-            "url": "hildegard_pastor_animarum",
-            "source": ["hildegard_bingen_o_pastor.mp3"]
+            "title": "O pastor animarum",
+            "url": "/music1/12_cent/hildegard_bingen_o_pastor.html",
+            "source": [
+              "https://www.wga.hu/music1/12_cent/hildegard_bingen_o_pastor.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "RICHARD COEUR DE LION",
+        "name": "RICHARD COEUR DE LION",
         "date": "1157-1199",
         "language": "English",
         "songs": [
           {
-            "name": "Under the Greenwood Tree",
-            "url": "richard_ja_nuis",
-            "source": ["richard_ja_nuis.mp3"]
+            "title": "Under the Greenwood Tree",
+            "url": "/music1/12_cent/richard_ja_nuis.html",
+            "source": ["https://www.wga.hu/music1/12_cent/richard_ja_nuis.mp3"]
           }
         ]
       }
@@ -71,130 +83,156 @@
     "century": "13",
     "composers": [
       {
-        "composer": "ALFONSO EL SABIO",
+        "name": "ALFONSO EL SABIO",
         "date": "1221-1278",
         "language": "Spanish",
         "songs": [
           {
-            "name": "Cantiga",
-            "url": "alfonso_sabio_cantiga",
-            "source": ["alfonso_sabio_cantiga.mp3"]
+            "title": "Cantiga",
+            "url": "/music1/13_cent/alfonso_sabio_cantiga.html",
+            "source": [
+              "https://www.wga.hu/music1/13_cent/alfonso_sabio_cantiga.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "AMBROSIAN CHANT",
+        "name": "AMBROSIAN CHANT",
         "date": "13th century",
         "songs": [
           {
-            "name": "Kyrie",
-            "url": "ambrosian_kyrie",
-            "source": ["ambrosian_kyrie.mp3"]
+            "title": "Kyrie",
+            "url": "/music1/13_cent/ambrosian_kyrie.html",
+            "source": ["https://www.wga.hu/music1/13_cent/ambrosian_kyrie.mp3"]
           }
         ]
       },
       {
-        "composer": "ANONYMOUS (13th century)",
+        "name": "ANONYMOUS (13th century)",
         "date": "13th century",
         "songs": [
           {
-            "name": "Ego sum resurrectio: In paradisum",
-            "url": "anonymous_ego_sum",
-            "source": ["anonymous_ego_sum.mp3"]
+            "title": "Ego sum resurrectio: In paradisum",
+            "url": "/music1/13_cent/anonymous_ego_sum.html",
+            "source": [
+              "https://www.wga.hu/music1/13_cent/anonymous_ego_sum.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "ANONYMOUS",
+        "name": "ANONYMOUS",
         "date": "13th century",
         "language": "English",
         "songs": [
           {
-            "name": "Folktunes",
-            "url": "anonymous_folktunes",
-            "source": ["anonymous_folktunes.mp3"]
+            "title": "Folktunes",
+            "url": "/music1/13_cent/anonymous_folktunes.html",
+            "source": [
+              "https://www.wga.hu/music1/13_cent/anonymous_folktunes.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "ANONYMOUS (13th century), French",
+        "name": "ANONYMOUS (13th century), French",
         "date": "13th century",
         "language": "French",
         "songs": [
           {
-            "name": "Dances",
-            "url": "anonymous_dances",
-            "source": ["anonymous_dances.mp3"]
+            "title": "Dances",
+            "url": "/music1/13_cent/anonymous_dances.html",
+            "source": ["https://www.wga.hu/music1/13_cent/anonymous_dances.mp3"]
           },
           {
-            "name": "Judea et Jerusalem, organum",
-            "url": "anonymous_judea",
-            "source": ["anonymous_organum.mp3"]
+            "title": "Judea et Jerusalem, organum",
+            "url": "/music1/13_cent/anonymous_organum.html",
+            "source": [
+              "https://www.wga.hu/music1/13_cent/anonymous_organum.mp3"
+            ]
           },
           {
-            "name": "La quinte estampie royal",
-            "url": "anonymous_quinte_estampie_royal",
-            "source": ["anonymous_quinte_estampie_royal.mp3"]
+            "title": "La quinte estampie royal",
+            "url": "/music1/13_cent/anonymous_quinte_estampie_royal.html",
+            "source": [
+              "https://www.wga.hu/music1/13_cent/anonymous_quinte_estampie_royal.mp3"
+            ]
           },
           {
-            "name": "La tierche estampie royal",
-            "url": "anonymous_tierche_estampie_royal",
-            "source": ["anonymous_tierche_estampie_royal.mp3"]
+            "title": "La tierche estampie royal",
+            "url": "/music1/13_cent/anonymous_tierche_estampie_royal.html",
+            "source": [
+              "https://www.wga.hu/music1/13_cent/anonymous_tierche_estampie_royal.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "ANONYMOUS",
+        "name": "ANONYMOUS",
         "date": "13th century",
         "language": "Spanish",
         "songs": [
           {
-            "name": "Cantiga de amigo",
-            "url": "anonymous_cantiga_de_amigo",
-            "source": ["anonymous_cantiga_de_amigo.mp3"]
+            "title": "Cantiga de amigo",
+            "url": "/music1/13_cent/anonymous_cantiga_de_amigo.html",
+            "source": [
+              "https://www.wga.hu/music1/13_cent/anonymous_cantiga_de_amigo.mp3"
+            ]
           },
           {
-            "name": "Av'e Eva",
-            "url": "anonymous_ave_eva",
-            "source": ["anonymous_cantigas.mp3"]
+            "title": "Av'e Eva",
+            "url": "/music1/13_cent/anonymous_cantigas.html",
+            "source": [
+              "https://www.wga.hu/music1/13_cent/anonymous_cantigas.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "MEISTER RUMELANT, Minnesinger at the Danehof Court",
+        "name": "MEISTER RUMELANT, Minnesinger at the Danehof Court",
         "date": "c. 1275",
         "songs": [
           {
-            "name": "Der sich so ho gesetzet hat",
-            "url": "meister_rumelant_der_sich",
-            "source": ["meister_rumelant_der_sich.mp3"]
+            "title": "Der sich so ho gesetzet hat",
+            "url": "/music1/13_cent/meister_rumelant_der_sich.html",
+            "source": [
+              "https://www.wga.hu/music1/13_cent/meister_rumelant_der_sich.mp3"
+            ]
           },
           {
-            "name": "Got in vier elementen sich erscheynet",
-            "url": "meister_rumelant_got_vier_elementen",
-            "source": ["meister_rumelant_got_vier_elementen.mp3"]
+            "title": "Got in vier elementen sich erscheynet",
+            "url": "/music1/13_cent/meister_rumelant_got_vier_elementen.html",
+            "source": [
+              "https://www.wga.hu/music1/13_cent/meister_rumelant_got_vier_elementen.mp3"
+            ]
           },
           {
-            "name": "Die tenschen morder",
-            "url": "meister_rumelant_tenschen_morder",
-            "source": ["meister_rumelant_tenschen_morder.mp3"]
+            "title": "Die tenschen morder",
+            "url": "/music1/13_cent/meister_rumelant_tenschen_morder.html",
+            "source": [
+              "https://www.wga.hu/music1/13_cent/meister_rumelant_tenschen_morder.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "WALTHER VON DER VOGELWEIDE",
+        "name": "WALTHER VON DER VOGELWEIDE",
         "date": "c. 1170-c. 1230",
         "language": "German",
         "songs": [
           {
-            "name": "Unter Den Linden",
-            "url": "vogelweide_unter_den_linden",
-            "source": ["vogelweide_unter_den_linden.mp3"]
+            "title": "Unter Den Linden",
+            "url": "/music1/13_cent/vogelweide_unter_den_linden.html",
+            "source": [
+              "https://www.wga.hu/music1/13_cent/vogelweide_unter_den_linden.mp3"
+            ]
           },
           {
-            "name": "Palästinalied",
-            "url": "vogelweide_palastinalied",
-            "source": ["vogelweide_palastinalied.mp3"]
+            "title": "Palästinalied",
+            "url": "/music1/13_cent/vogelweide_palastinalied.html",
+            "source": [
+              "https://www.wga.hu/music1/13_cent/vogelweide_palastinalied.mp3"
+            ]
           }
         ]
       }
@@ -204,68 +242,78 @@
     "century": "14",
     "composers": [
       {
-        "composer": "ANONYMOUS",
+        "name": "ANONYMOUS",
         "songs": [
           {
-            "name": "Gregorian sequence",
-            "url": "gregorian_sequence",
-            "source": ["gregorian_sequence.mp3"]
+            "title": "Gregorian sequence",
+            "url": "/music1/14_cent/gregorian_sequence.html",
+            "source": [
+              "https://www.wga.hu/music1/14_cent/gregorian_sequence.mp3"
+            ]
           },
           {
-            "name": "Gregorian chants",
-            "url": "gregorian_chants",
-            "source": ["gregorian_chants.mp3"]
+            "title": "Gregorian chants",
+            "url": "/music1/14_cent/gregorian_chants.html",
+            "source": ["https://www.wga.hu/music1/14_cent/gregorian_chants.mp3"]
           }
         ]
       },
       {
-        "composer": "ANONYMOUS",
+        "name": "ANONYMOUS",
         "date": "14th century",
         "language": "Italian",
         "songs": [
           {
-            "name": "Chominciamento di Gioia: Saltarello",
-            "url": "anonymous_saltarello",
-            "source": ["anonymous_saltarello.mp3"]
+            "title": "Chominciamento di Gioia: Saltarello",
+            "url": "/music1/14_cent/anonymous_saltarello.html",
+            "source": [
+              "https://www.wga.hu/music1/14_cent/anonymous_saltarello.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "MACHAUT, Guillaume de",
+        "name": "MACHAUT, Guillaume de",
         "date": "c. 1302-1377",
         "language": "French",
         "songs": [
           {
-            "name": "4 ballades",
-            "url": "machaut_4ballades",
-            "source": ["machaut_4ballades.mp3"]
+            "title": "4 ballades",
+            "url": "/music1/14_cent/machaut_4ballades.html",
+            "source": [
+              "https://www.wga.hu/music1/14_cent/machaut_4ballades.mp3"
+            ]
           },
           {
-            "name": "Chansons",
-            "url": "machaut_chansons",
-            "source": ["machaut_chansons.mp3"]
+            "title": "Chansons",
+            "url": "/music1/14_cent/machaut_chansons.html",
+            "source": ["https://www.wga.hu/music1/14_cent/machaut_chansons.mp3"]
           },
           {
-            "name": "Puis qu'en oubli",
-            "url": "machaut_puis",
-            "source": ["machaut_puis.mp3"]
+            "title": "Puis qu'en oubli",
+            "url": "/music1/14_cent/machaut_puis.html",
+            "source": ["https://www.wga.hu/music1/14_cent/machaut_puis.mp3"]
           }
         ]
       },
       {
-        "composer": "WOLKENSTEIN, Oswald von",
+        "name": "WOLKENSTEIN, Oswald von",
         "date": "c. 1377-1445",
         "language": "German",
         "songs": [
           {
-            "name": "Frölisch Geschrai",
-            "url": "wolkenstein_frolisch_geschrai",
-            "source": ["wolkenstein_frolisch_geschrai.mp3"]
+            "title": "Frölisch Geschrai",
+            "url": "/music1/14_cent/wolkenstein_frolisch_geschrai.html",
+            "source": [
+              "https://www.wga.hu/music1/14_cent/wolkenstein_frolisch_geschrai.mp3"
+            ]
           },
           {
-            "name": "Her Wiert Uns Dürstet",
-            "url": "wolkenstein_her_wiert",
-            "source": ["wolkenstein_her_wiert.mp3"]
+            "title": "Her Wiert Uns Dürstet",
+            "url": "/music1/14_cent/wolkenstein_her_wiert.html",
+            "source": [
+              "https://www.wga.hu/music1/14_cent/wolkenstein_her_wiert.mp3"
+            ]
           }
         ]
       }
@@ -275,150 +323,167 @@
     "century": "15",
     "composers": [
       {
-        "composer": "AGRICOLA, Alexander",
+        "name": "AGRICOLA, Alexander",
         "date": "c. 1445-1506",
         "language": "Franco-Flemish",
         "songs": [
           {
-            "name": "Ay je rien fet",
-            "url": "agricola_ay_je",
-            "source": ["agricola_ay_je.mp3"]
+            "title": "Ay je rien fet",
+            "url": "/music1/15_cent/agricola_ay_je.html",
+            "source": ["https://www.wga.hu/music1/15_cent/agricola_ay_je.mp3"]
           }
         ]
       },
       {
-        "composer": "ANONYMOUS",
+        "name": "ANONYMOUS",
         "date": "15th century",
         "songs": [
           {
-            "name": "Sephardic song: A la nana",
-            "url": "anonymous_sephardic_song",
-            "source": ["anonymous_sephardic_song.mp3"]
+            "title": "Sephardic song: A la nana",
+            "url": "/music1/15_cent/anonymous_sephardic_song.html",
+            "source": [
+              "https://www.wga.hu/music1/15_cent/anonymous_sephardic_song.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "ANONYMOUS",
+        "name": "ANONYMOUS",
         "date": "15th century",
         "language": "Bohemian",
         "songs": [
           {
-            "name": "Bohemian dances",
-            "url": "anonymous_bohemian_dances",
-            "source": ["anonymous_bohemian_dances.mp3"]
+            "title": "Bohemian dances",
+            "url": "/music1/15_cent/anonymous_bohemian_dances.html",
+            "source": [
+              "https://www.wga.hu/music1/15_cent/anonymous_bohemian_dances.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "ANONYMOUS",
+        "name": "ANONYMOUS",
         "date": "early 15th century",
         "language": "Italian",
         "songs": [
           {
-            "name": "Codex Faenza: J'ay grant désespoir de ma vie",
-            "url": "anonymous_codex_faenza",
-            "source": ["anonymous_codex_faenza.mp3"]
+            "title": "Codex Faenza: J'ay grant désespoir de ma vie",
+            "url": "/music1/15_cent/anonymous_codex_faenza.html",
+            "source": [
+              "https://www.wga.hu/music1/15_cent/anonymous_codex_faenza.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "DUFAY, Guillaume",
+        "name": "DUFAY, Guillaume",
         "date": "c. 1400-1474",
         "language": "French",
         "songs": [
           {
-            "name": "Hymns for Lent",
-            "url": "dufay_lent",
-            "source": ["dufay_lent1.mp3", "dufay_lent2.mp3"]
+            "title": "Hymns for Lent",
+            "url": "/music1/15_cent/dufay_lent.html",
+            "source": [
+              "https://www.wga.hu/music1/15_cent/dufay_lent1.mp3",
+              "https://www.wga.hu/music1/15_cent/dufay_lent2.mp3"
+            ]
           },
           {
-            "name": "6 Rondos",
-            "url": "dufay_6rondos",
-            "source": ["dufay_6rondos.mp3"]
+            "title": "6 Rondos",
+            "url": "/music1/15_cent/dufay_6rondos.html",
+            "source": ["https://www.wga.hu/music1/15_cent/dufay_6rondos.mp3"]
           },
           {
-            "name": "Ce jour de l'an",
-            "url": "dufay_ce_jour",
-            "source": ["dufay_ce_jour.mp3"]
+            "title": "Ce jour de l'an",
+            "url": "/music1/15_cent/dufay_ce_jour.html",
+            "source": ["https://www.wga.hu/music1/15_cent/dufay_ce_jour.mp3"]
           }
         ]
       },
       {
-        "composer": "GIOVANNI AMBROGIO",
+        "name": "GIOVANNI AMBROGIO",
         "date": "15th century",
         "language": "Italian",
         "songs": [
           {
-            "name": "Voltate",
-            "url": "giovanni_voltate",
-            "source": ["giovanni_ambrogio_voltate.mp3"]
+            "title": "Voltate",
+            "url": "/music1/15_cent/giovanni_ambrogio_voltate.html",
+            "source": [
+              "https://www.wga.hu/music1/15_cent/giovanni_ambrogio_voltate.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "GUGLIELMO EBREO DA PESARO",
+        "name": "GUGLIELMO EBREO DA PESARO",
         "date": "c. 1425-c. 1475",
         "songs": [
           {
-            "name": "Gratioso",
-            "url": "guglielmo_gratioso",
-            "source": ["guglielmo_gratioso.mp3"]
+            "title": "Gratioso",
+            "url": "/music1/15_cent/guglielmo_gratioso.html",
+            "source": [
+              "https://www.wga.hu/music1/15_cent/guglielmo_gratioso.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "JOSQUIN DESPREZ",
+        "name": "JOSQUIN DESPREZ",
         "date": "c. 1440-1521",
         "language": "Franco-Flemish",
         "songs": [
           {
-            "name": "In principio erat verbum, motet",
-            "url": "josquin_motet",
-            "source": ["josquin_motet1.mp3"]
+            "title": "In principio erat verbum, motet",
+            "url": "/music1/15_cent/josquin_motet1.html",
+            "source": ["https://www.wga.hu/music1/15_cent/josquin_motet_1.mp3"]
           },
           {
-            "name": "Benedicta es coelorum Regina, motet",
-            "url": "josquin_motet2",
-            "source": ["josquin_motet2.mp3"]
+            "title": "Benedicta es coelorum Regina, motet",
+            "url": "/music1/15_cent/josquin_motet2.html",
+            "source": ["https://www.wga.hu/music1/15_cent/josquin_motet_2.mp3"]
           },
           {
-            "name": "Ave Maria",
-            "url": "josquin_ave_maria",
-            "source": ["josquin_ave_maria.mp3"]
+            "title": "Ave Maria",
+            "url": "/music1/15_cent/josquin_ave_maria.html",
+            "source": [
+              "https://www.wga.hu/music1/15_cent/josquin_ave_maria.mp3"
+            ]
           },
           {
-            "name": "Absalon, fili mi",
-            "url": "josquin_absalon",
-            "source": ["josquin_absalon.mp3"]
+            "title": "Absalon, fili mi",
+            "url": "/music1/15_cent/josquin_absalon.html",
+            "source": ["https://www.wga.hu/music1/15_cent/josquin_absalon.mp3"]
           }
         ]
       },
       {
-        "composer": "MIKOLAJ Z RADOMIA",
+        "name": "MIKOLAJ Z RADOMIA",
         "date": "early 15th century",
         "language": "Polish",
         "songs": [
           {
-            "name": "Ballade",
-            "url": "mikolaj_ballade",
-            "source": ["mikolaj_ballade.mp3"]
+            "title": "Ballade",
+            "url": "/music1/15_cent/mikolaj_ballade.html",
+            "source": ["https://www.wga.hu/music1/15_cent/mikolaj_ballade.mp3"]
           }
         ]
       },
       {
-        "composer": "OCKEGHEM, Johannes",
+        "name": "OCKEGHEM, Johannes",
         "date": "c. 1425-1497",
         "language": "Franco-Flemish",
         "songs": [
           {
-            "name": "Kyrie from Missa L'homme armé",
-            "url": "ockeghem_homme_arme",
-            "source": ["ockeghem_homme_arme.mp3"]
+            "title": "Kyrie from Missa L'homme armé",
+            "url": "/music1/15_cent/ockeghem_homme_arme.html",
+            "source": [
+              "https://www.wga.hu/music1/15_cent/ockeghem_homme_arme.mp3"
+            ]
           },
           {
-            "name": "Sanctus from Missa Prolationum",
-            "url": "ockeghem_sanctus",
-            "source": ["ockeghem_sanctus.mp3"]
+            "title": "Sanctus from Missa Prolationum",
+            "url": "/music1/15_cent/ockeghem_sanctus.html",
+            "source": ["https://www.wga.hu/music1/15_cent/ockeghem_sanctus.mp3"]
           }
         ]
       }
@@ -428,384 +493,430 @@
     "century": "16",
     "composers": [
       {
-        "composer": "ANONYMOUS",
+        "name": "ANONYMOUS",
         "date": "early 16th century",
         "language": "Spanish",
         "songs": [
           {
-            "name": "Cancionero Musical de Palacio",
-            "url": "anonymous_cancionero",
-            "source": ["anonymous_cancionero.mp3"]
+            "title": "Cancionero Musical de Palacio",
+            "url": "/music1/16_cent/anonymous_cancionero.html",
+            "source": [
+              "https://www.wga.hu/music1/16_cent/anonymous_cancionero.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "BASSANO, Giovanni",
+        "name": "BASSANO, Giovanni",
         "date": "16th century",
         "language": "Italian",
         "songs": [
           {
-            "name": "Ricercata",
-            "url": "bassano_ricercata",
-            "source": ["bassano_ricercata.mp3"]
+            "title": "Ricercata",
+            "url": "/music1/16_cent/bassano_ricercata.html",
+            "source": [
+              "https://www.wga.hu/music1/16_cent/bassano_ricercata.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "BENDUSI, Francesco",
+        "name": "BENDUSI, Francesco",
         "date": "d. ca. 1553",
         "language": "Italian",
         "songs": [
           {
-            "name": "Ricercata",
-            "url": "bendusi_passe_mezze",
-            "source": ["bendusi_passe_mezze.mp3"]
+            "title": "Ricercata",
+            "url": "/music1/16_cent/bendusi_passe_mezze.html",
+            "source": [
+              "https://www.wga.hu/music1/16_cent/bendusi_passe_mezze.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "BYRD, William",
+        "name": "BYRD, William",
         "date": "1543-1623",
         "language": "English",
         "songs": [
           {
-            "name": "Agnus Dei",
-            "url": "byrd_agnus_dei",
-            "source": ["byrd_agnus_dei.mp3"]
+            "title": "Agnus Dei",
+            "url": "/music1/16_cent/byrd_agnus_dei.html",
+            "source": ["https://www.wga.hu/music1/16_cent/byrd_agnus_dei.mp3"]
           },
           {
-            "name": "Iustorum Animae",
-            "url": "byrd_iustorum",
-            "source": ["byrd_iustorum.mp3"]
+            "title": "Iustorum Animae",
+            "url": "/music1/16_cent/byrd_iustorum.html",
+            "source": ["https://www.wga.hu/music1/16_cent/byrd_iustorum.mp3"]
           },
           {
-            "name": "Pavan",
-            "url": "byrd_pavan",
-            "source": ["byrd_pavan.mp3"]
+            "title": "Pavan",
+            "url": "/music1/16_cent/byrd_pavan.html",
+            "source": ["https://www.wga.hu/music1/16_cent/byrd_pavan.mp3"]
           }
         ]
       },
       {
-        "composer": "CAVALIERI, Emilio del",
+        "name": "CAVALIERI, Emilio del",
         "date": "c. 1550-1602",
         "language": "Italian",
         "songs": [
           {
-            "name": "Ahi caso acerbo",
-            "url": "cavalieri_ahi_caso",
-            "source": ["cavalieri_ahi_caso.mp3"]
+            "title": "Ahi caso acerbo",
+            "url": "/music1/16_cent/cavalieri_ahi_caso.html",
+            "source": [
+              "https://www.wga.hu/music1/16_cent/cavalieri_ahi_caso.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "DALL'AQUILA, Marco",
+        "name": "DALL'AQUILA, Marco",
         "date": "c. 1480-c. 1538",
         "language": "Italian",
         "songs": [
           {
-            "name": "La traditora",
-            "url": "dall_aquila_traditora",
-            "source": ["dall_aquila_traditora.mp3"]
+            "title": "La traditora",
+            "url": "/music1/16_cent/dall_aquila_traditora.html",
+            "source": [
+              "https://www.wga.hu/music1/16_cent/dall_aquila_traditora.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "DE LA HELE, Georges",
+        "name": "DE LA HELE, Georges",
         "date": "1547-1587",
         "language": "French",
         "songs": [
           {
-            "name": "Missa 'Nigra sum': Sanctus and Agnus dei",
-            "url": "delahele_nigra",
-            "source": ["delahele_nigra.mp3"]
+            "title": "Missa 'Nigra sum': Sanctus and Agnus dei",
+            "url": "/music1/16_cent/delahele_nigra.html",
+            "source": ["https://www.wga.hu/music1/16_cent/delahele_nigra.mp3"]
           }
         ]
       },
       {
-        "composer": "DOWLAND, John",
+        "name": "DOWLAND, John",
         "date": "1562-1626",
         "language": "English",
         "songs": [
           {
-            "name": "Farewell",
-            "url": "dowland_farewell",
-            "source": ["dowland_farewell.mp3"]
+            "title": "Farewell",
+            "url": "/music1/16_cent/dowland_farewell.html",
+            "source": ["https://www.wga.hu/music1/16_cent/dowland_farewell.mp3"]
           },
           {
-            "name": "Flow my tears",
-            "url": "dowland_flow",
-            "source": ["dowland_flow.mp3"]
+            "title": "Flow my tears",
+            "url": "/music1/16_cent/dowland_flow.html",
+            "source": ["https://www.wga.hu/music1/16_cent/dowland_flow.mp3"]
           }
         ]
       },
       {
-        "composer": "FRANCESCO CANOVA da Milano",
+        "name": "FRANCESCO CANOVA da Milano",
         "date": "1497-1543",
         "language": "Italian",
         "songs": [
           {
-            "name": "Fanatasia Sexta",
-            "url": "francesco_canova_fantasia_sexta",
-            "source": ["francesco_canova_fantasia_sexta"]
+            "title": "Fanatasia Sexta",
+            "url": "/music1/16_cent/francesco_canova_fantasia_sexta.html",
+            "source": [
+              "https://www.wga.hu/music1/16_cent/francesco_canova_fantasia_sexta.mp3"
+            ]
           },
           {
-            "name": "Tre fantasie",
-            "url": "milano_lute",
-            "source": ["milano_lute"]
+            "title": "Tre fantasie",
+            "url": "/music1/16_cent/milano_lute.html",
+            "source": ["https://www.wga.hu/music1/16_cent/milano_lute.mp3"]
           }
         ]
       },
       {
-        "composer": "FRANCISCUS BOSSINENSIS",
+        "name": "FRANCISCUS BOSSINENSIS",
         "date": "active c. 1510",
         "language": "Bosnian",
         "songs": [
           {
-            "name": "Haime",
-            "url": "bossinensis_haime",
-            "source": ["bossinensis_haime"]
+            "title": "Haime",
+            "url": "/music1/16_cent/bossinensis_haime.html",
+            "source": [
+              "https://www.wga.hu/music1/16_cent/bossinensis_haime.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "GABRIELI, Giovanni",
+        "name": "GABRIELI, Giovanni",
         "date": "c. 1554-c. 1612",
         "language": "Italian",
         "songs": [
           {
-            "name": "Canzon a Duodecimi Toni",
-            "url": "gabrieli_canzon",
-            "source": ["gabrieli_canzon.mp3"]
+            "title": "Canzon a Duodecimi Toni",
+            "url": "/music1/16_cent/gabrieli_canzon.html",
+            "source": ["https://www.wga.hu/music1/16_cent/gabrieli_canzon.mp3"]
           },
           {
-            "name": "Sonata pian'e forte",
-            "url": "gabrieli_sonata",
-            "source": ["gabrieli_sonata.mp3"]
+            "title": "Sonata pian'e forte",
+            "url": "/music1/16_cent/gabrieli_sonata.html",
+            "source": ["https://www.wga.hu/music1/16_cent/gabrieli_sonata.mp3"]
           }
         ]
       },
       {
-        "composer": "GALLUS, Jacobus",
+        "name": "GALLUS, Jacobus",
         "date": "1550-1591",
         "language": "Austrian",
         "songs": [
           {
-            "name": "Currit parrus lepulus, motet",
-            "url": "gallus_motet1",
-            "source": ["gallus_motet1.mp3"]
+            "title": "Currit parrus lepulus, motet",
+            "url": "/music1/16_cent/gallus_motet1.html",
+            "source": ["https://www.wga.hu/music1/16_cent/gallus_motet1.mp3"]
           },
           {
-            "name": "Quam galina, motet",
-            "url": "gallus_motet2",
-            "source": ["gallus_motet2.mp3"]
+            "title": "Quam galina, motet",
+            "url": "/music1/16_cent/gallus_motet2.html",
+            "source": ["https://www.wga.hu/music1/16_cent/gallus_motet2.mp3"]
           }
         ]
       },
       {
-        "composer": "GESUALDO, Don Carlo",
+        "name": "GESUALDO, Don Carlo",
         "date": "c. 1560-1613",
         "language": "Italian",
         "songs": [
           {
-            "name": "Motet",
-            "url": "gesualdo_motet",
-            "source": ["gesualdo_motet.mp3"]
+            "title": "Motet",
+            "url": "/music1/16_cent/gesualdo_motet.html",
+            "source": ["https://www.wga.hu/music1/16_cent/gesualdo_motet.mp3"]
           },
           {
-            "name": "Peccantem me quotidie",
-            "url": "gesualdo_peccantem",
-            "source": ["gesualdo_peccantem.mp3"]
+            "title": "Peccantem me quotidie",
+            "url": "/music1/16_cent/gesualdo_peccantem.html",
+            "source": [
+              "https://www.wga.hu/music1/16_cent/gesualdo_peccantem.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "GOUDIMEL, Claude",
+        "name": "GOUDIMEL, Claude",
         "date": "c. 1514-1572",
         "language": "French",
         "songs": [
           {
-            "name": "Psalm CXXVIII: Bienhereux est quiconque",
-            "url": "goudimel_bienheureux",
-            "source": ["goudimel_bienheureux.mp3"]
+            "title": "Psalm CXXVIII: Bienhereux est quiconque",
+            "url": "/music1/16_cent/goudimel_bienheureux.html",
+            "source": [
+              "https://www.wga.hu/music1/16_cent/goudimel_bienheureux.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "JANNEQUIN, Clément",
+        "name": "JANNEQUIN, Clément",
         "date": "c. 1485-1558",
         "language": "French",
         "songs": [
           {
-            "name": "Le chant des oiseaux (The Birds)",
-            "url": "jannequin_birds",
-            "source": ["jannequin_birds.mp3"]
+            "title": "Le chant des oiseaux (The Birds)",
+            "url": "/music1/16_cent/jannequin_birds.html",
+            "source": ["https://www.wga.hu/music1/16_cent/jannequin_birds.mp3"]
           }
         ]
       },
       {
-        "composer": "LASSUS, Orlande de",
+        "name": "LASSUS, Orlande de",
         "date": "1532-1594",
         "language": "Franco-Flemish",
         "songs": [
           {
-            "name": "Serenade",
-            "url": "lassus_serenade",
-            "source": ["lassus_serenade.mp3"]
+            "title": "Serenade",
+            "url": "/music1/16_cent/lassus_serenade.html",
+            "source": ["https://www.wga.hu/music1/16_cent/lassus_serenade.mp3"]
           },
           {
-            "name": "Kyrie eleison",
-            "url": "lassus_kyrie",
-            "source": ["lassus_kyrie.mp3"]
+            "title": "Kyrie eleison",
+            "url": "/music1/16_cent/lassus_kyrie.html",
+            "source": ["https://www.wga.hu/music1/16_cent/lassus_kyrie.mp3"]
           }
         ]
       },
       {
-        "composer": "MASSAINO, Tiburtio",
+        "name": "MASSAINO, Tiburtio",
         "date": "c. 1550-c. 1609",
         "language": "Italian",
         "songs": [
           {
-            "name": "Canzon XXXIII",
-            "url": "massaino_canzon",
-            "source": ["massaino_canzon.mp3"]
+            "title": "Canzon XXXIII",
+            "url": "/music1/16_cent/massaino_canzon.html",
+            "source": ["https://www.wga.hu/music1/16_cent/massaino_canzon.mp3"]
           }
         ]
       },
       {
-        "composer": "PALESTRINA, Giovanni Pierluigi da",
+        "name": "PALESTRINA, Giovanni Pierluigi da",
         "date": "1525-1594",
         "language": "Italian",
         "songs": [
           {
-            "name": "Missa Brevis",
-            "url": "palestrina_missa_brevis",
+            "title": "Missa Brevis",
+            "url": "/music1/16_cent/palestrina_missa_brevis.html",
             "source": [
-              "palestrina_missa_brevis_1_kyrie.mp3",
-              "palestrina_missa_brevis_2_gloria.mp3",
-              "palestrina_missa_brevis_3_credo.mp3",
-              "palestrina_missa_brevis_5_benedictus.mp3",
-              "palestrina_missa_brevis_6_agnus.mp3"
+              "https://www.wga.hu/music1/16_cent/palestrina_missa_brevis_1_kyrie.mp3",
+              "https://www.wga.hu/music1/16_cent/palestrina_missa_brevis_2_gloria.mp3",
+              "https://www.wga.hu/music1/16_cent/palestrina_missa_brevis_3_credo.mp3",
+              "https://www.wga.hu/music1/16_cent/palestrina_missa_brevis_4_sanctus.mp3",
+              "https://www.wga.hu/music1/16_cent/palestrina_missa_brevis_5_benedictus.mp3",
+              "https://www.wga.hu/music1/16_cent/palestrina_missa_brevis_6_agnus.mp3"
             ]
           },
           {
-            "name": "Missa Brevis (Tu es Petrus)",
-            "url": "palestrina_missa_brevis_petrus",
+            "title": "Missa Brevis (Tu es Petrus)",
+            "url": "/music1/16_cent/palestrina_missa_brevis_petrus.html",
             "source": [
-              "palestrina_missa_brevis_petrus_1_kyrie.mp3",
-              "palestrina_missa_brevis_petrus_2_gloria.mp3",
-              "palestrina_missa_brevis_petrus_3_credo.mp3",
-              "palestrina_missa_brevis_petrus_4_sanctus.mp3",
-              "palestrina_missa_brevis_petrus_6_agnus.mp3"
+              "https://www.wga.hu/music1/16_cent/palestrina_missa_brevis_petrus_1_kyrie.mp3",
+              "https://www.wga.hu/music1/16_cent/palestrina_missa_brevis_petrus_2_gloria.mp3",
+              "https://www.wga.hu/music1/16_cent/palestrina_missa_brevis_petrus_3_credo.mp3",
+              "https://www.wga.hu/music1/16_cent/palestrina_missa_brevis_petrus_4_sanctus.mp3",
+              "https://www.wga.hu/music1/16_cent/palestrina_missa_brevis_petrus_5_benedictus.mp3",
+              "https://www.wga.hu/music1/16_cent/palestrina_missa_brevis_petrus_6_agnus.mp3"
             ]
           },
           {
-            "name": "Pater Noster",
-            "url": "palestrina_pater_noster",
-            "source": ["palestrina_pater_noster.mp3"]
+            "title": "Pater Noster",
+            "url": "/music1/16_cent/palestrina_pater_noster.html",
+            "source": [
+              "https://www.wga.hu/music1/16_cent/palestrina_pater_noster.mp3"
+            ]
           },
           {
-            "name": "Kyrie (from Missa Papae Marcelli)",
-            "url": "palestrina_kyrie",
-            "source": ["palestrina_kyrie.mp3"]
+            "title": "Kyrie (from Missa Papae Marcelli)",
+            "url": "/music1/16_cent/palestrina_kyrie.html",
+            "source": ["https://www.wga.hu/music1/16_cent/palestrina_kyrie.mp3"]
           },
           {
-            "name": "Super flumina Babylonis",
-            "url": "palestrina_super_flumina",
-            "source": ["palestrina_super_flumina.mp3"]
+            "title": "Super flumina Babylonis",
+            "url": "/music1/16_cent/palestrina_super_flumina.html",
+            "source": [
+              "https://www.wga.hu/music1/16_cent/palestrina_super_flumina.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "PRAETORIUS, Michael",
+        "name": "PHALESIUS, Petrus",
+        "date": "c. 1510-1573",
+        "language": "Flemish",
+        "songs": [
+          {
+            "title": "Ungharesca",
+            "url": "/music1/16_cent/phalesius_ungharesca.html",
+            "source": [
+              "https://www.wga.hu/music1/16_cent/phalesius_ungharesca.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "PRAETORIUS, Michael",
         "date": "1571-1621",
         "language": "German",
         "songs": [
           {
-            "name": "Motet",
-            "url": "praetorius_motet",
-            "source": ["praetorius_motet.mp3"]
+            "title": "Motet",
+            "url": "/music1/16_cent/praetorius_motet.html",
+            "source": ["https://www.wga.hu/music1/16_cent/praetorius_motet.mp3"]
           },
           {
-            "name": "Ballet des Baccanales",
-            "url": "praetorius_ballet",
-            "source": ["praetorius_ballet.mp3"]
+            "title": "Ballet des Baccanales",
+            "url": "/music1/16_cent/praetorius_ballet.html",
+            "source": [
+              "https://www.wga.hu/music1/16_cent/praetorius_ballet.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "TALLIS, Thomas",
+        "name": "TALLIS, Thomas",
         "date": "c. 1505-1585",
         "language": "English",
         "songs": [
           {
-            "name": "The Lamentations of Jeremiah",
-            "url": "tallis_lamentations",
-            "source": ["tallis_jeremiah.mp3"]
+            "title": "The Lamentations of Jeremiah",
+            "url": "/music1/16_cent/tallis_jeremiah.html",
+            "source": ["https://www.wga.hu/music1/16_cent/tallis_jeremiah.mp3"]
           },
           {
-            "name": "Mass (Puer natus est)",
-            "url": "tallis_mass",
+            "title": "Mass (Puer natus est)",
+            "url": "/music1/16_cent/tallis_mass.html",
             "source": [
-              "tallis_mass1.mp3",
-              "tallis_mass2.mp3",
-              "tallis_mass3.mp3"
+              "https://www.wga.hu/music1/16_cent/tallis_mass1.mp3",
+              "https://www.wga.hu/music1/16_cent/tallis_mass2.mp3",
+              "https://www.wga.hu/music1/16_cent/tallis_mass3.mp3"
             ]
           },
           {
-            "name": "Salvator Mundi",
-            "url": "tallis_salvator",
-            "source": ["tallis_salvator.mp3"]
+            "title": "Salvator Mundi",
+            "url": "/music1/16_cent/tallis_salvator.html",
+            "source": ["https://www.wga.hu/music1/16_cent/tallis_salvator.mp3"]
           },
           {
-            "name": "If Ye Love Me",
-            "url": "tallis_if_ye",
-            "source": ["tallis_if_ye.mp3"]
+            "title": "If Ye Love Me",
+            "url": "/music1/16_cent/tallis_if_ye.html",
+            "source": ["https://www.wga.hu/music1/16_cent/tallis_if_ye.mp3"]
           }
         ]
       },
       {
-        "composer": "VERDELOT, Philippe",
+        "name": "VERDELOT, Philippe",
         "date": "c. 1482-c. 1535",
         "language": "French",
         "songs": [
           {
-            "name": "Madonna per voi ardo, madrigal",
-            "url": "verdelot_madrigal",
-            "source": ["verdelot_madrigal.mp3"]
+            "title": "Madonna per voi ardo, madrigal",
+            "url": "/music1/16_cent/verdelot_madrigal.html",
+            "source": [
+              "https://www.wga.hu/music1/16_cent/verdelot_madrigal.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "VIADANA, Lodovico Grossi da",
+        "name": "VIADANA, Lodovico Grossi da",
         "date": "c. 1560-1627",
         "language": "Italian",
         "songs": [
           {
-            "name": "Exsultate justi, motet",
-            "url": "viadana_exsultate",
-            "source": ["viadana_exsultate.mp3"]
+            "title": "Exsultate justi, motet",
+            "url": "/music1/16_cent/viadana_exsultate.html",
+            "source": [
+              "https://www.wga.hu/music1/16_cent/viadana_exsultate.mp3"
+            ]
           },
           {
-            "name": "La Bergamasca",
-            "url": "viadana_bergamasca",
-            "source": ["viadana_bergamasca.mp3"]
+            "title": "La Bergamasca",
+            "url": "/music1/16_cent/viadana_bergamasca.html",
+            "source": [
+              "https://www.wga.hu/music1/16_cent/viadana_bergamasca.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "VICTORIA, Tomás Luis de, Spanish",
+        "name": "VICTORIA, Tomás Luis de, Spanish",
         "date": "c. 1548-1611",
         "language": "Spanish",
         "songs": [
           {
-            "name": "O Domine Jesu, motet",
-            "url": "victoria_domine_jesu",
-            "source": ["victoria_motet.mp3"]
+            "title": "O Domine Jesu, motet",
+            "url": "/music1/16_cent/victoria_motet.html",
+            "source": ["https://www.wga.hu/music1/16_cent/victoria_motet.mp3"]
           },
           {
-            "name": "Gloria",
-            "url": "victoria_gloria",
-            "source": ["victoria_gloria.mp3"]
+            "title": "Gloria",
+            "url": "/music1/16_cent/victoria_gloria.html",
+            "source": ["https://www.wga.hu/music1/16_cent/victoria_gloria.mp3"]
           }
         ]
       }
@@ -815,565 +926,622 @@
     "century": "17",
     "composers": [
       {
-        "composer": "ALDROVANDINI, Giuseppe",
+        "name": "ALDROVANDINI, Giuseppe",
         "date": "1671-1707",
         "language": "Italian",
         "songs": [
           {
-            "name": "Sonata in D Major for two trumpets, strings and basso continuo",
-            "url": "aldrovandini_sonata",
-            "source": ["aldrovandini_sonata.mp3"]
+            "title": "Sonata in D Major for two trumpets, strings and basso continuo",
+            "url": "/music1/17_cent/aldrovandini_sonata.html",
+            "source": [
+              "https://www.wga.hu/music1/17_cent/aldrovandini_sonata.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "ALLEGRI, Gregorio",
+        "name": "ALLEGRI, Gregorio",
         "date": "1582-1652",
         "language": "Italian",
         "songs": [
           {
-            "name": "Miserere",
-            "url": "allegri_miserere",
-            "source": ["allegri_miserere.mp3"]
+            "title": "Miserere",
+            "url": "/music1/17_cent/allegri_miserere.html",
+            "source": ["https://www.wga.hu/music1/17_cent/allegri_miserere.mp3"]
           }
         ]
       },
       {
-        "composer": "BANCHIERI, Adriano (1568-1634), Italian",
+        "name": "BANCHIERI, Adriano (1568-1634), Italian",
         "date": "1568-1634",
         "language": "Italian",
         "songs": [
           {
-            "name": "La zia Bernadina",
-            "url": "banchieri_la_zia",
-            "source": ["banchieri_la_zia.mp3"]
+            "title": "La zia Bernadina",
+            "url": "/music1/17_cent/banchieri_la_zia.html",
+            "source": ["https://www.wga.hu/music1/17_cent/banchieri_la_zia.mp3"]
           }
         ]
       },
       {
-        "composer": "BENEVOLO, Orazio",
+        "name": "BENEVOLO, Orazio",
         "date": "1605-1672",
         "language": "Italian",
         "songs": [
           {
-            "name": "Agnus Dei",
-            "url": "benevolo_agnus_dei",
-            "source": ["benevolo_agnus_dei.mp3"]
+            "title": "Agnus Dei",
+            "url": "/music1/17_cent/benevolo_agnus_dei.html",
+            "source": [
+              "https://www.wga.hu/music1/17_cent/benevolo_agnus_dei.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "BIBER, Heinrich Ignaz Franz von",
+        "name": "BIBER, Heinrich Ignaz Franz von",
         "date": "1644-1704",
         "language": "Austrian",
         "songs": [
           {
-            "name": "The Battle, suite",
-            "url": "biber_battle",
-            "source": ["biber_battle.mp3"]
+            "title": "The Battle, suite",
+            "url": "/music1/17_cent/biber_battle.html",
+            "source": ["https://www.wga.hu/music1/17_cent/biber_battle.mp3"]
           }
         ]
       },
       {
-        "composer": "BLOW, John",
+        "name": "BLOW, John",
         "date": "1649-1708",
         "language": "English",
         "songs": [
           {
-            "name": "Protect me my Lord, motet",
-            "url": "blow_motet",
-            "source": ["blow_motet.mp3"]
+            "title": "Protect me my Lord, motet",
+            "url": "/music1/17_cent/blow_motet.html",
+            "source": ["https://www.wga.hu/music1/17_cent/blow_motet.mp3"]
           }
         ]
       },
       {
-        "composer": "BUXTEHUDE, Dietrich (1637-1707), German",
+        "name": "BUXTEHUDE, Dietrich (1637-1707), German",
         "date": "1637-1707",
         "language": "German",
         "songs": [
           {
-            "name": "Nun komm der Heiden Heiland",
-            "url": "buxtehude_nun_komm",
-            "source": ["buxtehude_nun_komm.mp3"]
+            "title": "Nun komm der Heiden Heiland",
+            "url": "/music1/17_cent/buxtehude_nun_komm.html",
+            "source": [
+              "https://www.wga.hu/music1/17_cent/buxtehude_nun_komm.mp3"
+            ]
           },
           {
-            "name": "Prelude, Fugue and Chaconne, BuxWV 137",
-            "url": "buxtehude_prelude",
-            "source": ["buxtehude_prelude.mp3"]
+            "title": "Prelude, Fugue and Chaconne, BuxWV 137",
+            "url": "/music1/17_cent/buxtehude_prelude.html",
+            "source": [
+              "https://www.wga.hu/music1/17_cent/buxtehude_prelude.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "CAMPION, Thomas",
+        "name": "CAMPION, Thomas",
         "date": "1567-1620",
         "language": "English",
         "songs": [
           {
-            "name": "I care not for these Ladies",
-            "url": "campion_i_care_not",
-            "source": ["campion_i_care_not.mp3"]
+            "title": "I care not for these Ladies",
+            "url": "/music1/17_cent/campion_i_care_not.html",
+            "source": [
+              "https://www.wga.hu/music1/17_cent/campion_i_care_not.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "CESTI, Antonio",
+        "name": "CESTI, Antonio",
         "date": "1623-1669",
         "language": "Italian",
         "songs": [
           {
-            "name": "Lamento della Madre Ebrea",
-            "url": "cesti_lamento",
-            "source": ["cesti_lamento.mp3"]
+            "title": "Lamento della Madre Ebrea",
+            "url": "/music1/17_cent/cesti_lamento.html",
+            "source": ["https://www.wga.hu/music1/17_cent/cesti_lamento.mp3"]
           }
         ]
       },
       {
-        "composer": "CHARPENTIER, Marc-Antoine",
+        "name": "CHARPENTIER, Marc-Antoine",
         "date": "1634-1704",
         "language": "French",
         "songs": [
           {
-            "name": "Marche en Rondeau",
-            "url": "charpentier_marche",
-            "source": ["charpentier_marche.mp3"]
+            "title": "Marche en Rondeau",
+            "url": "/music1/17_cent/charpentier_marche.html",
+            "source": [
+              "https://www.wga.hu/music1/17_cent/charpentier_marche.mp3"
+            ]
           },
           {
-            "name": "Kyrie",
-            "url": "charpentier_kyrie",
-            "source": ["charpentier_kyrie.mp3"]
+            "title": "Kyrie",
+            "url": "/music1/17_cent/charpentier_kyrie.html",
+            "source": [
+              "https://www.wga.hu/music1/17_cent/charpentier_kyrie.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "CESTI, Antonio",
+        "name": "CESTI, Antonio",
         "date": "1623-1669",
         "language": "Italian",
         "songs": [
           {
-            "name": "Lamento della Madre Ebrea",
-            "url": "cesti_lamento",
-            "source": ["cesti_lamento.mp3"]
+            "title": "Lamento della Madre Ebrea",
+            "url": "/music1/17_cent/cesti_lamento.html",
+            "source": ["https://www.wga.hu/music1/17_cent/cesti_lamento.mp3"]
           }
         ]
       },
       {
-        "composer": "CHARPENTIER, Marc-Antoine",
+        "name": "CHARPENTIER, Marc-Antoine",
         "date": "1634-1704",
         "language": "French",
         "songs": [
           {
-            "name": "Marche en Rondeau",
-            "url": "charpentier_marche",
-            "source": ["charpentier_marche.mp3"]
+            "title": "Marche en Rondeau",
+            "url": "/music1/17_cent/charpentier_marche.html",
+            "source": [
+              "https://www.wga.hu/music1/17_cent/charpentier_marche.mp3"
+            ]
           },
           {
-            "name": "Kyrie",
-            "url": "charpentier_kyrie",
-            "source": ["charpentier_kyrie.mp3"]
+            "title": "Kyrie",
+            "url": "/music1/17_cent/charpentier_kyrie.html",
+            "source": [
+              "https://www.wga.hu/music1/17_cent/charpentier_kyrie.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "CORELLI, Arcangelo (1653-1713), Italian",
+        "name": "CORELLI, Arcangelo",
         "date": "1653-1713",
         "language": "Italian",
         "songs": [
           {
-            "name": "Concerto grosso in g minor op. 6 No. 8 (Christmas Concerto)",
-            "url": "corelli_concerto",
+            "title": "Concerto grosso in g minor op. 6 No. 8 (Christmas Concerto)",
+            "url": "/music1/17_cent/corelli_christmas.html",
             "source": [
-              "corelli_christmas1.mp3",
-              "corelli_christmas2.mp3",
-              "corelli_christmas3.mp3",
-              "corelli_christmas4.mp3",
-              "corelli_christmas4.mp3",
-              "corelli_christmas4.mp3"
+              "https://www.wga.hu/music1/17_cent/corelli_christmas1.mp3",
+              "https://www.wga.hu/music1/17_cent/corelli_christmas2.mp3",
+              "https://www.wga.hu/music1/17_cent/corelli_christmas3.mp3",
+              "https://www.wga.hu/music1/17_cent/corelli_christmas4.mp3"
             ]
           },
           {
-            "name": "Pastorale from Christmas Concerto",
-            "url": "corelli_pastorale",
-            "source": ["corelli_pastorale.mp3"]
+            "title": "Pastorale from Christmas Concerto",
+            "url": "/music1/17_cent/corelli_pastorale.html",
+            "source": [
+              "https://www.wga.hu/music1/17_cent/corelli_pastorale.mp3"
+            ]
           },
           {
-            "name": "Sonata in D minor (La Follia) op. 5 No. 12",
-            "url": "corelli_follia",
-            "source": ["corelli_follia.mp3"]
+            "title": "Sonata in D minor (La Follia) op. 5 No. 12",
+            "url": "/music1/17_cent/corelli_follia.html",
+            "source": ["https://www.wga.hu/music1/17_cent/corelli_follia.mp3"]
           },
           {
-            "name": "Allemanda from Trio sonata",
-            "url": "corelli_allemanda",
-            "source": ["corelli_allemanda.mp3"]
+            "title": "Allemanda from Trio sonata",
+            "url": "/music1/17_cent/corelli_allemanda.html",
+            "source": [
+              "https://www.wga.hu/music1/17_cent/corelli_allemanda.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "COUPERIN, François",
+        "name": "COUPERIN, François",
         "date": "1668-1733",
         "language": "French",
         "songs": [
           {
-            "name": "Les Nations - La Française",
-            "url": "couperin_nations",
-            "source": ["couperin_nations.mp3"]
+            "title": "Les Nations - La Française",
+            "url": "/music1/17_cent/couperin_nations.html",
+            "source": ["https://www.wga.hu/music1/17_cent/couperin_nations.mp3"]
           },
           {
-            "name": "Pieces de clavicen (excerpts)",
-            "url": "couperin_pieces",
+            "title": "Pieces de clavicen (excerpts)",
+            "url": "/music1/17_cent/couperin_pieces.html",
             "source": [
-              "couperin_carillon.mp3",
-              "couperin_les_abeilles.mp3",
-              "couperin_amazone.mp3"
+              "https://www.wga.hu/music1/17_cent/couperin_carillon.mp3",
+              "https://www.wga.hu/music1/17_cent/couperin_les_abeilles.mp3",
+              "https://www.wga.hu/music1/17_cent/couperin_amazone.mp3"
             ]
           },
           {
-            "name": "Les abeilles (The Bees) - We kindly inform you that the location of some pages has changed due to significant upgrades in 2019-2020 involving the increase in both the number of images and artists featured in the collection. It resulted in the rearrangement of some parts of the database. We apologize for any inconvenience.",
-            "url": "couperin_les_abeilles"
+            "title": "Les abeilles (The Bees) - We kindly inform you that the location of some pages has changed due to significant upgrades in 2019-2020 involving the increase in both the number of images and artists featured in the collection. It resulted in the rearrangement of some parts of the database. We apologize for any inconvenience.",
+            "url": "/music1/17_cent/couperin_les_abeilles.html"
           }
         ]
       },
       {
-        "composer": "COUPERIN, Louis",
+        "name": "COUPERIN, Louis",
         "date": "1626-1661",
         "language": "French",
         "songs": [
           {
-            "name": "Menuet de Poitou et son Double",
-            "url": "couperin_louis_menuet",
-            "source": ["couperin_louis_menuet.mp3"]
-          }
-        ]
-      },
-      {
-        "composer": "DUMONT, Henri",
-        "date": "1610-1648",
-        "language": "French",
-        "songs": [
-          {
-            "name": "Motet",
-            "url": "dumont_magnificat",
-            "source": ["dumont_magnificat.mp3"]
-          }
-        ]
-      },
-      {
-        "composer": "FRESCOBALDI, Girolamo (1583-1643), Italian",
-        "date": "1583-1643",
-        "language": "Italian",
-        "songs": [
-          {
-            "name": "Ricercar",
-            "url": "frescobaldi_ricercar",
-            "source": ["frescobaldi_ricercar.mp3"]
-          }
-        ]
-      },
-      {
-        "composer": "GASPARINI, Francesco",
-        "date": "1668-1727",
-        "language": "Italian",
-        "songs": [
-          {
-            "name": "The Meddlesome Cupid, aria",
-            "url": "gasparini_cupid",
-            "source": ["gasparini_cupid.mp3"]
-          }
-        ]
-      },
-      {
-        "composer": "GIBBONS, Orlando",
-        "date": "1583-1625",
-        "language": "English",
-        "songs": [
-          {
-            "name": "Te Deum",
-            "url": "gibbons_tedeum",
-            "source": ["gibbons_tedeum.mp3"]
-          },
-          {
-            "name": "A Mask: The Fairest Nymph",
-            "url": "gibbons_mask",
-            "source": ["gibbons_mask.mp3"]
-          }
-        ]
-      },
-      {
-        "composer": "HUME, Tobias",
-        "date": "c. 1569-1645",
-        "language": "English",
-        "songs": [
-          {
-            "name": "The Spirit of Gambo",
-            "url": "hume_spirit",
-            "source": ["hume_spirit.mp3"]
-          }
-        ]
-      },
-      {
-        "composer": "KUHNAU, Johann",
-        "date": "1660-1722",
-        "language": "German",
-        "songs": [
-          {
-            "name": "The Fight between David and Goliath (No. 1 of the 6 Stories from the Bible illustrated in music)",
-            "url": "kuhnau_goliath",
-            "source": ["kuhnau_goliath.mp3"]
-          },
-          {
-            "name": "Saul Cured by David through Music (No. 2 of the 6 Stories from the Bible illustrated in music)",
-            "url": "kuhnau_goliath",
-            "source": ["kuhnau_goliath.mp3"]
-          }
-        ]
-      },
-      {
-        "composer": "LULLY, Jean-Baptiste",
-        "date": "1632-1687",
-        "language": "French",
-        "songs": [
-          {
-            "name": "Le bourgeois gentilhomme, suite",
-            "url": "lully_bourgeois",
-            "source": ["lully_bourgeois.mp3"]
-          },
-          {
-            "name": "Air, Bellérophon",
-            "url": "lully_bellerophon",
-            "source": ["lully_bellerophon.mp3"]
-          },
-          {
-            "name": "Air, Ballet d'Alcidiane et Polexandre",
-            "url": "lully_ballet",
-            "source": ["lully_ballet.mp3"]
-          },
-          {
-            "name": "Phaéton, gavotte",
-            "url": "lully_phaeton",
-            "source": ["lully_phaeton.mp3"]
-          }
-        ]
-      },
-      {
-        "composer": "MARAIS, Marin (1656-1728), French",
-        "date": "1656-1728",
-        "language": "French",
-        "songs": [
-          {
-            "name": "La sonnerie de Sainte Genevieve du Mont",
-            "url": "marais_sonnerie",
-            "source": ["marais_sonnerie.mp3"]
-          }
-        ]
-      },
-      {
-        "composer": "MARINI, Biagio",
-        "date": "1597-1665",
-        "language": "Italian",
-        "songs": [
-          {
-            "name": "Sonata sopra 'La Monica'",
-            "url": "marini_sonata",
-            "source": ["marini_sonata.mp3"]
-          }
-        ]
-      },
-      {
-        "composer": "MONTEVERDI, Claudio",
-        "date": "1567-1643",
-        "language": "Italian",
-        "songs": [
-          {
-            "name": "The Charming Angioletta, madrigal",
-            "url": "monteverdi_madrigal",
-            "source": ["monteverdi_madrigal.mp3"]
-          },
-          {
-            "name": "Il ritorno d'Ulisse, Act I, Duet of Odysseus and Pallas Athene",
-            "url": "monteverdi_ulisse",
-            "source": ["monteverdi_ulisse.mp3"]
-          },
-          {
-            "name": "Lament of Ariadne",
-            "url": "monteverdi_arianna_lament",
-            "source": ["monteverdi_arianna_lament.mp3"]
-          },
-          {
-            "name": "Nigra sum from Vespers",
-            "url": "monteverdi_nigra_sum",
-            "source": ["monteverdi_nigra_sum.mp3"]
-          },
-          {
-            "name": "Possente spirto, L'Orfeo",
-            "url": "monteverdi_possente",
-            "source": ["monteverdi_possente.mp3"]
-          },
-          {
-            "name": "Christe, Adoramus Te",
-            "url": "monteverdi_christe",
-            "source": ["monteverdi_christe.mp3"]
-          }
-        ]
-      },
-      {
-        "composer": "MUFFAT, Georg",
-        "date": "1653-1704",
-        "language": "French",
-        "songs": [
-          {
-            "name": "Concerto grosso No. 9, VI Borea",
-            "url": "muffat_concerto_grosso",
-            "source": ["muffat_concerto_grosso.mp3"]
-          }
-        ]
-      },
-      {
-        "composer": "PACHELBEL, Johann",
-        "date": "1653-1706",
-        "language": "German",
-        "songs": [
-          {
-            "name": "Canon and Gigue in D major",
-            "url": "pachelbel_canon",
-            "source": ["pachelbel_canon.mp3"]
-          },
-          {
-            "name": "Magnificat Fugue",
-            "url": "pachelbel_fuge_magnificat",
-            "source": ["pachelbel_fuge_magnificat.mp3"]
-          }
-        ]
-      },
-      {
-        "composer": "PURCELL, Henry",
-        "date": "1659-1695",
-        "language": "English",
-        "songs": [
-          {
-            "name": "Dido and Aeneas, Dido's Farewell",
-            "url": "purcell_dido",
-            "source": ["purcell_dido.mp3"]
-          },
-          {
-            "name": "When I Am laid in earth (Dido's lament)",
-            "url": "purcell_dido_lament",
-            "source": ["purcell_dido_lament.mp3"]
-          },
-          {
-            "name": "Fantanzia upon One Note",
-            "url": "purcell_fantazia",
-            "source": ["purcell_fantazia.mp3"]
-          },
-          {
-            "name": "I will sing unto the Lord",
-            "url": "purcell_i_will_sing",
-            "source": ["purcell_i_will_sing.mp3"]
-          }
-        ]
-      },
-      {
-        "composer": "SCARLATTI, Alessandro",
-        "date": "1660-1725",
-        "language": "Italian",
-        "songs": [
-          {
-            "name": "La Giuditta, oratorio, Part I (excerpts)",
-            "url": "scarlatti_giuditta",
-            "source": ["scarlatti_giuditta.mp3"]
-          }
-        ]
-      },
-      {
-        "composer": "SCHÜTZ, Heinrich",
-        "date": "1585-1672",
-        "language": "German",
-        "songs": [
-          {
-            "name": "Deutsche Magnificat",
-            "url": "schutz_magnificat",
-            "source": ["schutz_magnificat.mp3"]
-          },
-          {
-            "name": "Die sieben Worte am Kreuz SWV 478",
-            "url": "schutz_7worte",
-            "source": ["schutz_7worte.mp3"]
-          },
-          {
-            "name": "Erhore mich, wenn ich rufe",
-            "url": "schutz_erhore_mich",
-            "source": ["schutz_erhore_mich.mp3"]
-          }
-        ]
-      },
-      {
-        "composer": "STRADELLA, Alessandro",
-        "date": "1644-1682",
-        "language": "Italian",
-        "songs": [
-          {
-            "name": "Sinfonia avanti il Barcheggio",
-            "url": "stradella_sinfonia",
-            "source": ["stradella_sinfonia.mp3"]
-          },
-          {
-            "name": "Canzona - Aria",
-            "url": "stradella_canzona",
-            "source": ["stradella_canzona.mp3"]
-          }
-        ]
-      },
-      {
-        "composer": "SWEELINCK, Jan Pieterszoon",
-        "date": "1562-1621",
-        "language": "Netherlandish",
-        "songs": [
-          {
-            "name": "Echo Fantasia",
-            "url": "sweelinck_echo_fantasia",
-            "source": ["sweelinck_echo_fantasia.mp3"]
-          }
-        ]
-      },
-      {
-        "composer": "TOMKINS, Thomas",
-        "date": "1572-1656",
-        "language": "English",
-        "songs": [
-          {
-            "name": "When David Heard",
-            "url": "tomkins_when_david",
-            "source": ["tomkins_when_david.mp3"]
-          }
-        ]
-      },
-      {
-        "composer": "TORELLI, Giuseppe",
-        "date": "1658-1709",
-        "songs": [
-          {
-            "name": "Sonata a cinque in D Major No. 7",
-            "url": "torelli_sonata",
-            "source": ["torelli_sonata.mp3"]
-          },
-          {
-            "name": "Concerto Estienne Roger",
-            "url": "torelli_concerto",
+            "title": "Menuet de Poitou et son Double",
+            "url": "/music1/17_cent/couperin_louis_menuet.html",
             "source": [
-              "torelli_concerto_1_allegro.mp3",
-              "torelli_concerto_2_adagio",
-              "torelli_concerto_3_presto"
+              "https://www.wga.hu/music1/17_cent/couperin_louis_menuet.mp3"
             ]
           }
         ]
       },
       {
-        "composer": "WEELKES, Thomas",
+        "name": "DUMONT, Henri",
+        "date": "1610-1648",
+        "language": "French",
+        "songs": [
+          {
+            "title": "Motet",
+            "url": "/music1/17_cent/dumont_magnificat.html",
+            "source": [
+              "https://www.wga.hu/music1/17_cent/dumont_magnificat.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "FRESCOBALDI, Girolamo",
+        "date": "1583-1643",
+        "language": "Italian",
+        "songs": [
+          {
+            "title": "Ricercar",
+            "url": "/music1/17_cent/frescobaldi_ricercar.html",
+            "source": [
+              "https://www.wga.hu/music1/17_cent/frescobaldi_ricercar.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "GASPARINI, Francesco",
+        "date": "1668-1727",
+        "language": "Italian",
+        "songs": [
+          {
+            "title": "The Meddlesome Cupid, aria",
+            "url": "/music1/17_cent/gasparini_cupid.html",
+            "source": ["https://www.wga.hu/music1/17_cent/gasparini_cupid.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "GIBBONS, Orlando",
+        "date": "1583-1625",
+        "language": "English",
+        "songs": [
+          {
+            "title": "Te Deum",
+            "url": "/music1/17_cent/gibbons_tedeum.html",
+            "source": ["https://www.wga.hu/music1/17_cent/gibbons_tedeum.mp3"]
+          },
+          {
+            "title": "A Mask: The Fairest Nymph",
+            "url": "/music1/17_cent/gibbons_mask.html",
+            "source": ["https://www.wga.hu/music1/17_cent/gibbons_mask.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "HUME, Tobias",
+        "date": "c. 1569-1645",
+        "language": "English",
+        "songs": [
+          {
+            "title": "The Spirit of Gambo",
+            "url": "/music1/17_cent/hume_spirit.html",
+            "source": ["https://www.wga.hu/music1/17_cent/hume_spirit.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "KUHNAU, Johann",
+        "date": "1660-1722",
+        "language": "German",
+        "songs": [
+          {
+            "title": "The Fight between David and Goliath (No. 1 of the 6 Stories from the Bible illustrated in music)",
+            "url": "/music1/17_cent/kuhnau_goliath.html",
+            "source": ["https://www.wga.hu/music1/17_cent/kuhnau_goliath.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "LULLY, Jean-Baptiste",
+        "date": "1632-1687",
+        "language": "French",
+        "songs": [
+          {
+            "title": "Le bourgeois gentilhomme, suite",
+            "url": "/music1/17_cent/lully_bourgeois.html",
+            "source": ["https://www.wga.hu/music1/17_cent/lully_bourgeois.mp3"]
+          },
+          {
+            "title": "Air, Bellérophon",
+            "url": "/music1/17_cent/lully_bellerophon.html",
+            "source": [
+              "https://www.wga.hu/music1/17_cent/lully_bellerophon.mp3"
+            ]
+          },
+          {
+            "title": "Air, Ballet d'Alcidiane et Polexandre",
+            "url": "/music1/17_cent/lully_ballet.html",
+            "source": ["https://www.wga.hu/music1/17_cent/lully_ballet.mp3"]
+          },
+          {
+            "title": "Phaéton, gavotte",
+            "url": "/music1/17_cent/lully_phaeton.html",
+            "source": ["https://www.wga.hu/music1/17_cent/lully_phaeton.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "MARAIS, Marin",
+        "date": "1656-1728",
+        "language": "French",
+        "songs": [
+          {
+            "title": "La sonnerie de Sainte Genevieve du Mont",
+            "url": "/music1/17_cent/marais_sonnerie.html",
+            "source": ["https://www.wga.hu/music1/17_cent/marais_sonnerie.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "MARINI, Biagio",
+        "date": "1597-1665",
+        "language": "Italian",
+        "songs": [
+          {
+            "title": "Sonata sopra 'La Monica'",
+            "url": "/music1/17_cent/marini_sonata.html",
+            "source": ["https://www.wga.hu/music1/17_cent/marini_sonata.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "MONTEVERDI, Claudio",
+        "date": "1567-1643",
+        "language": "Italian",
+        "songs": [
+          {
+            "title": "The Charming Angioletta, madrigal",
+            "url": "/music1/17_cent/monteverdi_madrigal.html",
+            "source": [
+              "https://www.wga.hu/music1/17_cent/monteverdi_madrigal.mp3"
+            ]
+          },
+          {
+            "title": "Il ritorno d'Ulisse, Act I, Duet of Odysseus and Pallas Athene",
+            "url": "/music1/17_cent/monteverdi_ulisse.html",
+            "source": [
+              "https://www.wga.hu/music1/17_cent/monteverdi_ulisse.mp3"
+            ]
+          },
+          {
+            "title": "Lament of Ariadne",
+            "url": "/music1/17_cent/monteverdi_arianna_lament.html",
+            "source": [
+              "https://www.wga.hu/music1/17_cent/monteverdi_arianna_lament.mp3"
+            ]
+          },
+          {
+            "title": "Nigra sum from Vespers",
+            "url": "/music1/17_cent/monteverdi_nigra_sum.html",
+            "source": [
+              "https://www.wga.hu/music1/17_cent/monteverdi_nigra_sum.mp3"
+            ]
+          },
+          {
+            "title": "Possente spirto, L'Orfeo",
+            "url": "/music1/17_cent/monteverdi_possente.html",
+            "source": [
+              "https://www.wga.hu/music1/17_cent/monteverdi_possente.mp3"
+            ]
+          },
+          {
+            "title": "Christe, Adoramus Te",
+            "url": "/music1/17_cent/monteverdi_christe.html",
+            "source": [
+              "https://www.wga.hu/music1/17_cent/monteverdi_christe.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "MUFFAT, Georg",
+        "date": "1653-1704",
+        "language": "French",
+        "songs": [
+          {
+            "title": "Concerto grosso No. 9, VI Borea",
+            "url": "/music1/17_cent/muffat_concerto_grosso.html",
+            "source": [
+              "https://www.wga.hu/music1/17_cent/muffat_concerto_grosso.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "PACHELBEL, Johann",
+        "date": "1653-1706",
+        "language": "German",
+        "songs": [
+          {
+            "title": "Canon and Gigue in D major",
+            "url": "/music1/17_cent/pachelbel_canon.html",
+            "source": ["https://www.wga.hu/music1/17_cent/pachelbel_canon.mp3"]
+          },
+          {
+            "title": "Magnificat Fugue",
+            "url": "/music1/17_cent/pachelbel_fuge_magnificat.html",
+            "source": [
+              "https://www.wga.hu/music1/17_cent/pachelbel_fuge_magnificat.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "PURCELL, Henry",
+        "date": "1659-1695",
+        "language": "English",
+        "songs": [
+          {
+            "title": "Dido and Aeneas, Dido's Farewell",
+            "url": "/music1/17_cent/purcell_dido.html",
+            "source": ["https://www.wga.hu/music1/17_cent/purcell_dido.mp3"]
+          },
+          {
+            "title": "When I Am laid in earth (Dido's lament)",
+            "url": "/music1/17_cent/purcell_dido_lament.html",
+            "source": [
+              "https://www.wga.hu/music1/17_cent/purcell_dido_lament.mp3"
+            ]
+          },
+          {
+            "title": "Fantanzia upon One Note",
+            "url": "/music1/17_cent/purcell_fantazia.html",
+            "source": ["https://www.wga.hu/music1/17_cent/purcell_fantazia.mp3"]
+          },
+          {
+            "title": "I will sing unto the Lord",
+            "url": "/music1/17_cent/purcell_i_will_sing.html",
+            "source": [
+              "https://www.wga.hu/music1/17_cent/purcell_i_will_sing.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "SCARLATTI, Alessandro",
+        "date": "1660-1725",
+        "language": "Italian",
+        "songs": [
+          {
+            "title": "La Giuditta, oratorio, Part I (excerpts)",
+            "url": "/music1/17_cent/scarlatti_giuditta.html",
+            "source": [
+              "https://www.wga.hu/music1/17_cent/scarlatti_giuditta.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "SCHÜTZ, Heinrich",
+        "date": "1585-1672",
+        "language": "German",
+        "songs": [
+          {
+            "title": "Deutsche Magnificat",
+            "url": "/music1/17_cent/schutz_magnificat.html",
+            "source": [
+              "https://www.wga.hu/music1/17_cent/schutz_magnificat.mp3"
+            ]
+          },
+          {
+            "title": "Die sieben Worte am Kreuz SWV 478",
+            "url": "/music1/17_cent/schutz_7worte.html",
+            "source": ["https://www.wga.hu/music1/17_cent/schutz_7worte.mp3"]
+          },
+          {
+            "title": "Erhore mich, wenn ich rufe",
+            "url": "/music1/17_cent/schutz_erhore_mich.html",
+            "source": [
+              "https://www.wga.hu/music1/17_cent/schutz_erhore_mich.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "STRADELLA, Alessandro",
+        "date": "1644-1682",
+        "language": "Italian",
+        "songs": [
+          {
+            "title": "Sinfonia avanti il Barcheggio",
+            "url": "/music1/17_cent/stradella_sinfonia.html",
+            "source": [
+              "https://www.wga.hu/music1/17_cent/stradella_sinfonia.mp3"
+            ]
+          },
+          {
+            "title": "Canzona - Aria",
+            "url": "/music1/17_cent/stradella_canzona.html",
+            "source": [
+              "https://www.wga.hu/music1/17_cent/stradella_canzona.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "SWEELINCK, Jan Pieterszoon",
+        "date": "1562-1621",
+        "language": "Netherlandish",
+        "songs": [
+          {
+            "title": "Echo Fantasia",
+            "url": "/music1/17_cent/sweelinck_echo_fantasia.html",
+            "source": [
+              "https://www.wga.hu/music1/17_cent/sweelinck_echo_fantasia.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "TOMKINS, Thomas",
+        "date": "1572-1656",
+        "language": "English",
+        "songs": [
+          {
+            "title": "When David Heard",
+            "url": "/music1/17_cent/tomkins_when_david.html",
+            "source": [
+              "https://www.wga.hu/music1/17_cent/tomkins_when_david.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "TORELLI, Giuseppe",
+        "date": "1658-1709",
+        "songs": [
+          {
+            "title": "Sonata a cinque in D Major No. 7",
+            "url": "/music1/17_cent/torelli_sonata.html",
+            "source": ["https://www.wga.hu/music1/17_cent/torelli_sonata.mp3"]
+          },
+          {
+            "title": "Concerto Estienne Roger",
+            "url": "/music1/17_cent/torelli_concerto.html",
+            "source": [
+              "https://www.wga.hu/music1/17_cent/torelli_concerto_1_allegro.mp3",
+              "https://www.wga.hu/music1/17_cent/torelli_concerto_2_adagio.mp3",
+              "https://www.wga.hu/music1/17_cent/torelli_concerto_3_presto.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "WEELKES, Thomas",
         "date": "1575-1623",
         "language": "English",
         "songs": [
           {
-            "name": "Madrigal (Springtime Song)",
-            "url": "weelkes_madrigal",
-            "source": ["weelkes_madrigal.mp3"]
+            "title": "Madrigal (Springtime Song)",
+            "url": "/music1/17_cent/weelkes_madrigal.html",
+            "source": ["https://www.wga.hu/music1/17_cent/weelkes_madrigal.mp3"]
           }
         ]
       }
@@ -1383,202 +1551,2161 @@
     "century": "18",
     "composers": [
       {
-        "composer": "ALBINONI, Tommaso",
+        "name": "ALBINONI, Tommaso",
         "date": "1671-1750",
         "language": "Italian",
         "songs": [
           {
-            "name": "Adagio in G minor",
-            "url": "albinoni_adagio",
-            "source": ["albinoni_adagio.mp3"]
+            "title": "Adagio in G minor",
+            "url": "/music1/18_cent/albinoni_adagio.html",
+            "source": ["https://www.wga.hu/music1/18_cent/albinoni_adagio.mp3"]
           },
           {
-            "name": "Concerto in D major",
-            "url": "albinoni_concerto",
-            "source": ["albinoni_concerto.mp3"]
+            "title": "Concerto in D major",
+            "url": "/music1/18_cent/albinoni_concerto.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/albinoni_concerto.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "ARNE, Thomas",
+        "name": "ARNE, Thomas",
         "date": "1710-1778",
         "language": "English",
         "songs": [
           {
-            "name": "Concerto for cembalo in C major",
-            "url": "arne_concerto",
-            "source": ["arne_concerto.mp3"]
+            "title": "Concerto for cembalo in C major",
+            "url": "/music1/18_cent/arne_concerto.html",
+            "source": ["https://www.wga.hu/music1/18_cent/arne_concerto.mp3"]
           }
         ]
       },
       {
-        "composer": "BACH, Johann Sebastian",
+        "name": "BACH, Johann Sebastian",
         "date": "1685-1750",
         "language": "German",
         "songs": [
           {
-            "name": "Cantata BWV 51 (Jauchzet Gott in allen Landen)",
-            "url": "bach_bwv_051",
+            "title": "Cantata BWV 51 (Jauchzet Gott in allen Landen)",
+            "url": "/music1/bach/bach_bwv_051.html",
             "source": [
-              "bach_bwv_051_1.mp3",
-              "bach_bwv_051_2.mp3",
-              "bach_bwv_051_3.mp3",
-              "bach_bwv_051_4.mp3"
+              "https://www.wga.hu/music1/bach/bach_bwv_051_1.mp3",
+              "https://www.wga.hu/music1/bach/bach_bwv_051_2.mp3",
+              "https://www.wga.hu/music1/bach/bach_bwv_051_3.mp3",
+              "https://www.wga.hu/music1/bach/bach_bwv_051_4.mp3"
             ]
           },
           {
-            "name": "Cantata BWV 54 (Widerstehe doch der Sünde)",
-            "url": "bach_bwv_054",
+            "title": "Cantata BWV 54 (Widerstehe doch der Sünde)",
+            "url": "/music1/bach/bach_bwv_054.html",
             "source": [
-              "bach_bwv_054_1.mp3",
-              "bach_bwv_054_2.mp3",
-              "bach_bwv_054_3.mp3"
+              "https://www.wga.hu/music1/bach/bach_bwv_054_1.mp3",
+              "https://www.wga.hu/music1/bach/bach_bwv_054_2.mp3",
+              "https://www.wga.hu/music1/bach/bach_bwv_054_3.mp3"
             ]
           },
           {
-            "name": "Cantata BWV 82 (Ich habe genung)",
-            "url": "bach_bwv_082",
+            "title": "Cantata BWV 82 (Ich habe genung)",
+            "url": "/music1/bach/bach_bwv_082.html",
             "source": [
-              "bach_bwv_082-1.mp3",
-              "bach_bwv_082-2.mp3",
-              "bach_bwv_082-3.mp3",
-              "bach_bwv_082-4.mp3",
-              "bach_bwv_082-5.mp3"
+              "https://www.wga.hu/music1/bach/bach_bwv_082-1.mp3",
+              "https://www.wga.hu/music1/bach/bach_bwv_082-2.mp3",
+              "https://www.wga.hu/music1/bach/bach_bwv_082-3.mp3",
+              "https://www.wga.hu/music1/bach/bach_bwv_082-4.mp3",
+              "https://www.wga.hu/music1/bach/bach_bwv_082-5.mp3"
             ]
           },
           {
-            "name": "Cantata BWV 140 (Zion hört die Waechter singen)",
-            "url": "bach_bwv_140",
-            "source": ["bach_bwv_140.mp3"]
+            "title": "Cantata BWV 140 (Zion hört die Waechter singen)",
+            "url": "/music1/bach/bach_bwv_140.html",
+            "source": ["https://www.wga.hu/music1/bach/bach_bwv_140.mp3"]
           },
           {
-            "name": "Cantata BWV 147 (Jesus bleibet meine Freude)",
-            "url": "bach_bwv_147",
-            "source": ["bach_bwv_147.mp3"]
+            "title": "Cantata BWV 147 (Jesus bleibet meine Freude)",
+            "url": "/music1/bach/bach_bwv_147.html",
+            "source": ["https://www.wga.hu/music1/bach/bach_bwv_147.mp3"]
           },
           {
-            "name": "Cantata BWV 212 (Bauernkantate)",
-            "url": "bach_bwv_212",
-            "source": ["bach_bwv_212.mp3"]
+            "title": "Cantata BWV 212 (Bauernkantate)",
+            "url": "/music1/bach/bach_bwv_212.html",
+            "source": ["https://www.wga.hu/music1/bach/bach_bwv_212.mp3"]
           },
           {
-            "name": "Magnificat in D major, BWV 243",
-            "url": "bach_bwv_243",
-            "source": ["bach_bwv_243.mp3"]
-          },
-          {
-            "name": "St. Matthew Passion BWV 244 - Chorus (Kommt ihr Tochter) and Choral (Herzliebster Jesu, was hast du verbrochen)",
-            "url": "bach_bwv_244",
+            "title": "Magnificat in D major, BWV 243",
+            "url": "/music1/bach/bach_bwv_243_magnificat.html",
             "source": [
-              "bach_bwv_244_1.mp3",
-              "bach_bwv_244_2.mp3",
-              "bach_bwv_244_3.mp3"
+              "https://www.wga.hu/music1/bach/bach_bwv_243_magnificat.mp3"
             ]
           },
           {
-            "name": "Easter Oratorio, BWV 249",
-            "url": "bach_bwv_249",
-            "source": ["bach_bwv_249.mp3"]
+            "title": "St. Matthew Passion BWV 244 - Chorus (Kommt ihr Tochter) and Choral (Herzliebster Jesu, was hast du verbrochen)",
+            "url": "/music1/bach/bach_bwv_244_matthew.html",
+            "source": [
+              "https://www.wga.hu/music1/bach/bach_bwv_244_1.mp3",
+              "https://www.wga.hu/music1/bach/bach_bwv_244_2.mp3",
+              "https://www.wga.hu/music1/bach/bach_bwv_244_3.mp3"
+            ]
           },
           {
-            "name": "Toccata and Fugue in D minor, BWV 565",
-            "url": "bach_bwv_565",
-            "source": ["bach_bwv_565.mp3"]
+            "title": "Easter Oratorio, BWV 249",
+            "url": "/music1/bach/bach_bwv_249.html",
+            "source": ["https://www.wga.hu/music1/bach/bach_bwv_249.mp3"]
           },
           {
-            "name": "Komm, heiliger Geist, choral, BWV 652",
-            "url": "bach_bwv_652",
-            "source": ["bach_bwv_652.mp3"]
+            "title": "Toccata and Fugue in D minor, BWV 565",
+            "url": "/music1/bach/bach_toccata.html",
+            "source": ["https://www.wga.hu/music1/bach/bach_toccata.mp3"]
           },
           {
-            "name": "Sonata in A Major for flute and cembalo obligato, BWV 1032",
-            "url": "bach_bwv_1032",
-            "source": ["bach_bwv_1032.mp3"]
+            "title": "Komm, heiliger Geist, choral, BWV 652",
+            "url": "/music1/bach/bach_bwv_652.html",
+            "source": ["https://www.wga.hu/music1/bach/bach_bwv_652.mp3"]
           },
           {
-            "name": "Brandenburg Concert No. 3 in G Major, BWV 1048",
-            "url": "bach_bwv_1048",
-            "source": ["bach_bwv_1048.mp3"]
+            "title": "Sonata in A Major for flute and cembalo obligato, BWV 1032",
+            "url": "/music1/bach/bach_bwv_1032.html",
+            "source": ["https://www.wga.hu/music1/bach/bach_bwv_1032.mp3"]
           },
           {
-            "name": "Musikalisches Opfer, BWV 1079, No. 1, Ricercare",
-            "url": "bach_bwv_1079",
-            "source": ["bach_bwv_1079-1_musikalisches.mp3"]
+            "title": "Brandenburg Concert No. 3 in G Major, BWV 1048",
+            "url": "/music1/bach/bach_bwv_1048.html",
+            "source": ["https://www.wga.hu/music1/bach/bach_bwv_1048.mp3"]
           },
           {
-            "name": "Air on a G String, Ouverture No. 3 in D major BWV 1068",
-            "url": "bach_bwv_1068",
-            "source": ["bach_bwv_1068_air.mp3"]
+            "title": "Musikalisches Opfer, BWV 1079, No. 1, Ricercare",
+            "url": "/music1/bach/bach_bwv_1079-1_musikalisches.html",
+            "source": [
+              "https://www.wga.hu/music1/bach/bach_bwv_1079-1_musikalisches.mp3"
+            ]
+          },
+          {
+            "title": "Air on a G String, Ouverture No. 3 in D major BWV 1068",
+            "url": "/music1/bach/bach_bwv_1068_air.html",
+            "source": ["https://www.wga.hu/music1/bach/bach_bwv_1068_air.mp3"]
           }
         ]
       },
       {
-        "composer": "BACH, Carl Philipp Emmanuel",
+        "name": "BACH, Carl Philipp Emmanuel",
         "date": "1714-1788",
         "language": "German",
         "songs": [
           {
-            "name": "Sonata in A major Wq 89, II. Arioso",
-            "url": "bach_cpe_sonata",
-            "source": ["bach_cpe_sonata.mp3"]
+            "title": "Sonata in A major Wq 89, II. Arioso",
+            "url": "/music1/18_cent/bach_cpe_sonata.html",
+            "source": ["https://www.wga.hu/music1/18_cent/bach_cpe_sonata.mp3"]
           }
         ]
       },
       {
-        "composer": "BOCCHERINI, Luigi",
+        "name": "BOCCHERINI, Luigi",
         "date": "1743-1805",
         "language": "Italian",
         "songs": [
           {
-            "name": "Symphony in D minor (The House of the Devil)",
-            "url": "boccherini_symphony",
-            "source": ["boccherini_symphony.mp3"]
+            "title": "Symphony in D minor (The House of the Devil)",
+            "url": "/music1/18_cent/boccherini_symphony.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/boccherini_symphony.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "BONONCINI, Giovanni",
+        "name": "BONONCINI, Giovanni",
         "date": "1670-1747",
         "language": "Italian",
         "songs": [
           {
-            "name": "Sinfonia decima a 7",
-            "url": "bononcini_sinfonia",
-            "source": ["bononcini_sinfonia.mp3"]
+            "title": "Sinfonia decima a 7",
+            "url": "/music1/18_cent/bononcini_sinfonia.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/bononcini_sinfonia.mp3"
+            ]
           }
         ]
       },
       {
-        "composer": "CALDARA, Antonio",
+        "name": "CALDARA, Antonio",
         "date": "1670-1736",
         "language": "Italian",
         "songs": [
           {
-            "name": "Aria from a cantata",
-            "url": "caldara_aria.mp3",
-            "source": ["caldara_aria.mp3.mp3"]
+            "title": "Aria from a cantata",
+            "url": "/music1/18_cent/caldara_aria.html",
+            "source": ["https://www.wga.hu/music1/18_cent/caldara_aria.mp3"]
           }
         ]
       },
       {
-        "composer": "GLUCK, Christoph Willibald",
+        "name": "GLUCK, Christoph Willibald",
         "date": "1714-1787",
         "language": "German",
         "songs": [
           {
-            "name": "Orfeo, Act I, Orpheus' aria in G Major",
-            "url": "gluck_orfeo",
-            "source": ["gluck_orfeo.mp3"]
+            "title": "Orfeo, Act I, Orpheus' aria in G Major",
+            "url": "/music1/18_cent/gluck_orfeo.html",
+            "source": ["https://www.wga.hu/music1/18_cent/gluck_orfeo.mp3"]
           },
           {
-            "name": "Orfeo ed Euridice, Dance of the Blessed Spirits",
-            "url": "gluck_orfeo_blessed",
-            "source": ["gluck_orfeo_blessed.mp3"]
+            "title": "Orfeo ed Euridice, Dance of the Blessed Spirits",
+            "url": "/music1/18_cent/gluck_orfeo_blessed.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/gluck_orfeo_blessed.mp3"
+            ]
           },
           {
-            "name": "Paride ed Elena, Paris' aria",
-            "url": "gluck_paris",
-            "source": ["gluck_paris.mp3"]
+            "title": "Paride ed Elena, Paris' aria",
+            "url": "/music1/18_cent/gluck_paris.html",
+            "source": ["https://www.wga.hu/music1/18_cent/gluck_paris.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "HANDEL, George Frideric",
+        "date": "1685-1759",
+        "language": "German",
+        "songs": [
+          {
+            "title": "Fireworks Music",
+            "url": "/music1/18_cent/handel_fireworks.html",
+            "source": ["https://www.wga.hu/music1/18_cent/handel_fireworks.mp3"]
+          },
+          {
+            "title": "Water Music, Suite No. 1",
+            "url": "/music1/18_cent/handel_watermusic.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/handel_watermusic.mp3"
+            ]
+          },
+          {
+            "title": "Concerto for harp, lute and theorbo in B flat major",
+            "url": "/music1/18_cent/handel_theorbo.html",
+            "source": ["https://www.wga.hu/music1/18_cent/handel_theorbo.mp3"]
+          },
+          {
+            "title": "Concert for Organ in F major op. 4 No. 4",
+            "url": "/music1/18_cent/handel_organ.html",
+            "source": ["https://www.wga.hu/music1/18_cent/handel_organ.mp3"]
+          },
+          {
+            "title": "Sonata for Recorder and basso continuo in G major",
+            "url": "/music1/18_cent/handel_recorder_sonata.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/handel_recorder_sonata.mp3"
+            ]
+          },
+          {
+            "title": "Israel in Egypt - Part III Moses Lobgesang (excerpts)",
+            "url": "/music1/18_cent/handel_israel_egypt.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/handel_israel_egypt_1.mp3",
+              "https://www.wga.hu/music1/18_cent/handel_israel_egypt_2.mp3"
+            ]
+          },
+          {
+            "title": "Judas Maccabaeus - See the Conquering Hero Comes!",
+            "url": "/music1/18_cent/handel_judas_maccabaeus.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/handel_judas_maccabaeus.mp3"
+            ]
+          },
+          {
+            "title": "Messiah 'Hallelujah Chorus'",
+            "url": "/music1/18_cent/handel_messiah.html",
+            "source": ["https://www.wga.hu/music1/18_cent/handel_messiah.mp3"]
+          },
+          {
+            "title": "Samson, Part 1 Sinfonia, recitative and chorus",
+            "url": "/music1/18_cent/handel_samson.html",
+            "source": ["https://www.wga.hu/music1/18_cent/handel_samson.mp3"]
+          },
+          {
+            "title": "Belshazzar (excerpts)",
+            "url": "/music1/18_cent/handel_belshazzar.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/handel_belshazzar_aria.mp3",
+              "https://www.wga.hu/music1/18_cent/handel_belshazzar_choir.mp3",
+              "https://www.wga.hu/music1/18_cent/handel_belshazzar_martial.mp3"
+            ]
+          },
+          {
+            "title": "Solomon - Chorus: Your harps and cymbals",
+            "url": "/music1/18_cent/handel_solomon_harp.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/handel_solomon_harp.mp3"
+            ]
+          },
+          {
+            "title": "Solomon - The Arrival of the Queen of Sheba",
+            "url": "/music1/18_cent/handel_solomon_sheba.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/handel_solomon_sheba.mp3"
+            ]
+          },
+          {
+            "title": "Rinaldo, Act II, Almerina's aria",
+            "url": "/music1/18_cent/handel_rinaldo_ii.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/handel_rinaldo_ii.mp3"
+            ]
+          },
+          {
+            "title": "Rinaldo, Act III, Rinaldo's aria",
+            "url": "/music1/18_cent/handel_rinaldo_iii.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/handel_rinaldo_iii.mp3"
+            ]
+          },
+          {
+            "title": "Serse, Ombra mai fu, Largo",
+            "url": "/music1/18_cent/handel_serse_largo.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/handel_serse_largo.mp3"
+            ]
+          },
+          {
+            "title": "Atalanta, Act 3 (excerpts)",
+            "url": "/music1/18_cent/handel_atalanta.html",
+            "source": ["https://www.wga.hu/music1/18_cent/handel_atalanta.mp3"]
+          },
+          {
+            "title": "Acis and Galathea, Sinfonia and chorus",
+            "url": "/music1/18_cent/handel_acis.html",
+            "source": ["https://www.wga.hu/music1/18_cent/handel_acis.mp3"]
+          },
+          {
+            "title": "Coronation Anthem 'Zadok the Priest' HWV 259",
+            "url": "/music1/18_cent/handel_zadok.html",
+            "source": ["https://www.wga.hu/music1/18_cent/handel_zadok.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "HAYDN, Joseph",
+        "date": "1732-1809",
+        "language": "Austrian",
+        "songs": [
+          {
+            "title": "The Seasons, Part 1 Spring, Introduction, aria and chorus",
+            "url": "/music1/18_cent/haydn_spring_1-2.html",
+            "source": ["https://www.wga.hu/music1/18_cent/haydn_spring_1-2.mp3"]
+          },
+          {
+            "title": "The Seasons, Part 2 Summer (excerpts)",
+            "url": "/music1/18_cent/haydn_summer.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/haydn_summer_9-11.mp3",
+              "https://www.wga.hu/music1/18_cent/haydn_summer_16-18_storm.mp3"
+            ]
+          },
+          {
+            "title": "The Seasons, Part 3 Autumn (excerpts)",
+            "url": "/music1/18_cent/haydn_autumn.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/haydn_autumn_19-20_labour.mp3",
+              "https://www.wga.hu/music1/18_cent/haydn_autumn_23-26_hunt.mp3",
+              "https://www.wga.hu/music1/18_cent/haydn_autumn_27-28_wine.mp3"
+            ]
+          },
+          {
+            "title": "The Seasons, Part 4 Winter (excerpts)",
+            "url": "/music1/18_cent/haydn_winter.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/haydn_winter_29-30.mp3",
+              "https://www.wga.hu/music1/18_cent/haydn_winter_33-35_spinner.mp3",
+              "https://www.wga.hu/music1/18_cent/haydn_winter_35-37_romance.mp3"
+            ]
+          },
+          {
+            "title": "The Seasons, Finale, terzet and double chorus",
+            "url": "/music1/18_cent/haydn_seasons_39_finale.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/haydn_seasons_39_finale.mp3"
+            ]
+          },
+          {
+            "title": "The Creation, introduction and aria",
+            "url": "/music1/18_cent/haydn_creation.html",
+            "source": ["https://www.wga.hu/music1/18_cent/haydn_creation.mp3"]
+          },
+          {
+            "title": "Trumpet Concerto in E Flat (3rd mvt)",
+            "url": "/music1/18_cent/haydn_trumpet_concerto.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/haydn_trumpet_concerto.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "HAYDN, Michael",
+        "date": "1737-1806",
+        "language": "Austrian",
+        "songs": [
+          {
+            "title": "St Francis Mass",
+            "url": "/music1/18_cent/haydn_m_mass.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/haydn_m_mass_i.mp3",
+              "https://www.wga.hu/music1/18_cent/haydn_m_mass_ii.mp3",
+              "https://www.wga.hu/music1/18_cent/haydn_m_mass_iii.mp3",
+              "https://www.wga.hu/music1/18_cent/haydn_m_mass_iii.mp3",
+              "https://www.wga.hu/music1/18_cent/haydn_m_mass_v.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "KOZELUCH, Leopold",
+        "date": "1748-1818",
+        "language": "Bohemian",
+        "songs": [
+          {
+            "title": "Harmonie in F major, IV Rondeau. Allegretto",
+            "url": "/music1/18_cent/kozeluch_harmonie.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/kozeluch_harmonie.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "LEBRUN, Ludwig August",
+        "date": "1752-1790",
+        "language": "German",
+        "songs": [
+          {
+            "title": "Concerto in C major for oboe",
+            "url": "/music1/18_cent/lebrun_concerto.html",
+            "source": ["https://www.wga.hu/music1/18_cent/lebrun_concerto.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "LOTTI, Antonio",
+        "date": "1667-1740",
+        "language": "Italian",
+        "songs": [
+          {
+            "title": "Crucifixus",
+            "url": "/music1/18_cent/lotti_crucifixus.html",
+            "source": ["https://www.wga.hu/music1/18_cent/lotti_crucifixus.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "MARCELLO, Alessandro",
+        "date": "1669-1747",
+        "language": "Italian",
+        "songs": [
+          {
+            "title": "Concerto in C major for oboe",
+            "url": "/music1/18_cent/marcello_oboe.html",
+            "source": ["https://www.wga.hu/music1/18_cent/marcello_oboe.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "MÉHUL, Étienne Nicolas",
+        "date": "1763-1817",
+        "language": "French",
+        "songs": [
+          {
+            "title": "Joseph, aria",
+            "url": "/music1/18_cent/mehul_joseph.html",
+            "source": ["https://www.wga.hu/music1/18_cent/mehul_joseph.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "MOZART, Leopold",
+        "date": "1719-1787",
+        "language": "Austrian",
+        "songs": [
+          {
+            "title": "Symphony in G major (Sinfonia da caccia)",
+            "url": "/music1/18_cent/lmozart_caccia.html",
+            "source": ["https://www.wga.hu/music1/18_cent/lmozart_caccia.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "MOZART, Wolfgang Amadeus",
+        "date": "1756-1791",
+        "language": "Austrian",
+        "songs": [
+          {
+            "title": "Motet (Exsultate, jubilate), K 165",
+            "url": "/music1/mozart/mozart_k_165.html",
+            "source": [
+              "https://www.wga.hu/music1/mozart/mozart_k_165_1.mp3",
+              "https://www.wga.hu/music1/mozart/mozart_k_165_2.mp3",
+              "https://www.wga.hu/music1/mozart/mozart_k_165_3.mp3"
+            ]
+          },
+          {
+            "title": "Laudate Dominum No. 5 (from Vesperae de Domenica K 321)",
+            "url": "/music1/mozart/mozart_k_321_5.html",
+            "source": ["https://www.wga.hu/music1/mozart/mozart_k_321_5.mp3"]
+          },
+          {
+            "title": "Magnificat No. 6 (from Vesperae de Domenica K 321)",
+            "url": "/music1/mozart/mozart_k_321_6.html",
+            "source": ["https://www.wga.hu/music1/mozart/mozart_k_321_6.mp3"]
+          },
+          {
+            "title": "Laudate Dominum No. 5 (from Vesperae solennes de confessore K 339)",
+            "url": "/music1/mozart/mozart_k_339_5.html",
+            "source": ["https://www.wga.hu/music1/mozart/mozart_k_339_5.mp3"]
+          },
+          {
+            "title": "Magnificat No. 6 (from Vesperae solennes de confessore K 339)",
+            "url": "/music1/mozart/mozart_k_339_6.html",
+            "source": ["https://www.wga.hu/music1/mozart/mozart_k_339_6.mp3"]
+          },
+          {
+            "title": "Ave, verum corpus K 618, motet",
+            "url": "/music1/mozart/mozart_k_618.html",
+            "source": ["https://www.wga.hu/music1/mozart/mozart_k_618.mp3"]
+          },
+          {
+            "title": "Trio in E Flat Major (Kegelstatt) K 498",
+            "url": "/music1/mozart/mozart_k_498.html",
+            "source": ["https://www.wga.hu/music1/mozart/mozart_k_498.mp3"]
+          },
+          {
+            "title": "Symphony in C Major (Jupiter-Symphony) K 551",
+            "url": "/music1/mozart/mozart_k_551.html",
+            "source": ["https://www.wga.hu/music1/mozart/mozart_k_551.mp3"]
+          },
+          {
+            "title": "A Musical Joke (Village Musicians) K 522",
+            "url": "/music1/mozart/mozart_k_522.html",
+            "source": [
+              "https://www.wga.hu/music1/mozart/mozart_k_522_1.mp3",
+              "https://www.wga.hu/music1/mozart/mozart_k_522_2.mp3",
+              "https://www.wga.hu/music1/mozart/mozart_k_522_3.mp3",
+              "https://www.wga.hu/music1/mozart/mozart_k_522_4.mp3"
+            ]
+          },
+          {
+            "title": "Don Giovanni, Overture",
+            "url": "/music1/mozart/mozart_don_giovanni_overture.html",
+            "source": [
+              "https://www.wga.hu/music1/mozart/mozart_don_giovanni_overture.mp3"
+            ]
+          },
+          {
+            "title": "Don Giovanni, Act I Scene 1, No. 1",
+            "url": "/music1/mozart/mozart_don_giovanni_scene_1.html",
+            "source": [
+              "https://www.wga.hu/music1/mozart/mozart_don_giovanni_scene_1.mp3"
+            ]
+          },
+          {
+            "title": "Die Zauberflöte (The Magic Flute), Act 2, Chorus of the Priests",
+            "url": "/music1/mozart/mozart_magic_flute.html",
+            "source": [
+              "https://www.wga.hu/music1/mozart/mozart_magic_flute.mp3"
+            ]
+          },
+          {
+            "title": "Requiem K 626 (excerpts)",
+            "url": "/music1/mozart/mozart_requiem.html",
+            "source": [
+              "https://www.wga.hu/music1/mozart/mozart_requiem0.mp3",
+              "https://www.wga.hu/music1/mozart/mozart_requiem1.mp3",
+              "https://www.wga.hu/music1/mozart/mozart_requiem2.mp3",
+              "https://www.wga.hu/music1/mozart/mozart_requiem3.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "RAMEAU, Jean-Philippe",
+        "date": "1683-1764",
+        "language": "French",
+        "songs": [
+          {
+            "title": "Castor et Pollux, March",
+            "url": "/music1/18_cent/rameau_castor.html",
+            "source": ["https://www.wga.hu/music1/18_cent/rameau_castor.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "ROUGET DE L'ISLE, Claude-Joseph",
+        "date": "1760-1836",
+        "language": "French",
+        "songs": [
+          {
+            "title": "Marseillaise, French national anthem",
+            "url": "/music1/18_cent/rouget_marseillaise.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/rouget_marseillaise.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "TARTINI, Giuseppe",
+        "date": "1692-1770",
+        "language": "Italian",
+        "songs": [
+          {
+            "title": "Violin Concerto in A major, D95",
+            "url": "/music1/18_cent/tartini_concerto.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/tartini_concerto_1.mp3",
+              "https://www.wga.hu/music1/18_cent/tartini_concerto_2.mp3",
+              "https://www.wga.hu/music1/18_cent/tartini_concerto_3.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "TELEMANN, Georg Philipp",
+        "date": "1681-1767",
+        "language": "German",
+        "songs": [
+          {
+            "title": "Concerto for 3 trumpets, 2 oboes, timpani and strings TWV 54",
+            "url": "/music1/18_cent/telemann_concerto.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/telemann_concerto_1_intrada.mp3",
+              "https://www.wga.hu/music1/18_cent/telemann_concerto_2_allegro.mp3",
+              "https://www.wga.hu/music1/18_cent/telemann_concerto_3_largo.mp3",
+              "https://www.wga.hu/music1/18_cent/telemann_concerto_4_vivace.mp3"
+            ]
+          },
+          {
+            "title": "Tafelmusik in D major for trumpet, oboe and strings TWV 55",
+            "url": "/music1/18_cent/telemann_tafelmusik.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/telemann_tafelmusik_1_ouverture.mp3",
+              "https://www.wga.hu/music1/18_cent/telemann_tafelmusik_2_air.mp3",
+              "https://www.wga.hu/music1/18_cent/telemann_tafelmusik_3_air.mp3",
+              "https://www.wga.hu/music1/18_cent/telemann_tafelmusik_4_air.mp3",
+              "https://www.wga.hu/music1/18_cent/telemann_tafelmusik_5_air.mp3"
+            ]
+          },
+          {
+            "title": "Tafelmusik Conclusion for trumpet, oboe and strings TWV 50",
+            "url": "/music1/18_cent/telemann_tafelmusik_conclusion.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/telemann_tafelmusik_conclusion.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "VERACINI, Francesco Maria",
+        "date": "1690-1768",
+        "language": "Italian",
+        "songs": [
+          {
+            "title": "Suite in F Major",
+            "url": "/music1/18_cent/veracini_suite.html",
+            "source": ["https://www.wga.hu/music1/18_cent/veracini_suite.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "VIVALDI, Antonio",
+        "date": "1678-1741",
+        "language": "Italian",
+        "songs": [
+          {
+            "title": "Concerto for recorder in A minor",
+            "url": "/music1/18_cent/vivaldi_recorder_concerto.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/vivaldi_recorder_concerto.mp3"
+            ]
+          },
+          {
+            "title": "Concerto in G major for two mandolins and orchestra, RV 532",
+            "url": "/music1/18_cent/vivaldi_mandolin_concerto.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/vivaldi_mandolin_concerto.mp3"
+            ]
+          },
+          {
+            "title": "Sonata in D minor RV 62 op. 1 No. 12 (La Follia)",
+            "url": "/music1/18_cent/vivaldi_follia.html",
+            "source": ["https://www.wga.hu/music1/18_cent/vivaldi_follia.mp3"]
+          },
+          {
+            "title": "Concerto in E flat major RV 253 op. 8 No. 5 (Storm at sea)",
+            "url": "/music1/18_cent/vivaldi_rv253_storm.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/vivaldi_rv253_storm1.mp3",
+              "https://www.wga.hu/music1/18_cent/vivaldi_rv253_storm2.mp3",
+              "https://www.wga.hu/music1/18_cent/vivaldi_rv253_storm3.mp3"
+            ]
+          },
+          {
+            "title": "Concerto in E major RV 269 op. 8. No. 1 (Spring)",
+            "url": "/music1/18_cent/vivaldi_rv269_spring.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/vivaldi_rv269_spring.mp3"
+            ]
+          },
+          {
+            "title": "Concerto in G minor RV 315 op. 8. No. 2 (Summer)",
+            "url": "/music1/18_cent/vivaldi_rv315_summer.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/vivaldi_rv315_summer.mp3"
+            ]
+          },
+          {
+            "title": "Concerto in F major RV 293 op. 8 No. 3 (Autumn)",
+            "url": "/music1/18_cent/vivaldi_rv293_autumn.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/vivaldi_rv293_autumn.mp3"
+            ]
+          },
+          {
+            "title": "Concerto in F minor RV 297 op. 8 No. 4 (Winter)",
+            "url": "/music1/18_cent/vivaldi_rv297_winter.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/vivaldi_rv297_winter.mp3"
+            ]
+          },
+          {
+            "title": "Concerto in B flat major RV 362 op. 8 No. 10 (Hunt)",
+            "url": "/music1/18_cent/vivaldi_rv362_hunt.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/vivaldi_rv362_hunt1.mp3",
+              "https://www.wga.hu/music1/18_cent/vivaldi_rv362_hunt2.mp3",
+              "https://www.wga.hu/music1/18_cent/vivaldi_rv362_hunt3.mp3"
+            ]
+          },
+          {
+            "title": "Concerto in C major RV 180 (Il Piacere, The Pleasure)",
+            "url": "/music1/18_cent/vivaldi_rv180_piacere.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/vivaldi_rv180_piacere1.mp3",
+              "https://www.wga.hu/music1/18_cent/vivaldi_rv180_piacere2.mp3",
+              "https://www.wga.hu/music1/18_cent/vivaldi_rv180_piacere3.mp3"
+            ]
+          },
+          {
+            "title": "Beatus vir (Psalm 112) RV 598",
+            "url": "/music1/18_cent/vivaldi_rv598_beatus_vir.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/vivaldi_rv598_beatus_vir.mp3"
+            ]
+          },
+          {
+            "title": "Gloria RV 589",
+            "url": "/music1/18_cent/vivaldi_rv589_gloria.html",
+            "source": [
+              "https://www.wga.hu/music1/18_cent/vivaldi_rv589_gloria.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "WERNER, Gregor Joseph",
+        "date": "1693-1766",
+        "language": "Austrian",
+        "songs": [
+          {
+            "title": "Vesperae de Confessoris - Iste confessor",
+            "url": "/music1/18_cent/werner_vesperae.html",
+            "source": ["https://www.wga.hu/music1/18_cent/werner_vesperae.mp3"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "century": "19",
+    "composers": [
+      {
+        "name": "BEETHOVEN, Ludwig van",
+        "date": "1770-1827",
+        "language": "German",
+        "songs": [
+          {
+            "title": "Choral Fantasie in C minor Op. 80",
+            "url": "/music1/beethoven/beethoven_choral_fantasie.html",
+            "source": [
+              "https://www.wga.hu/music1/beethoven/beethoven_choral_fantasie.mp3"
+            ]
+          },
+          {
+            "title": "Christ on the Mount of Olives, op. 85, Introduction and Jesus' aria",
+            "url": "/music1/beethoven/beethoven_christ.html",
+            "source": [
+              "https://www.wga.hu/music1/beethoven/beethoven_christ.mp3"
+            ]
+          },
+          {
+            "title": "Die Geschöpfe des Prometheus (The Creatures of Prometheus), overture op. 43",
+            "url": "/music1/beethoven/beethoven_prometheus.html",
+            "source": [
+              "https://www.wga.hu/music1/beethoven/beethoven_prometheus.mp3"
+            ]
+          },
+          {
+            "title": "Symphony No. 3 (Eroica) in E Flat major op. 55",
+            "url": "/music1/beethoven/beethoven_symphony3.html",
+            "source": [
+              "https://www.wga.hu/music1/beethoven/beethoven_symphony3_1.mp3",
+              "https://www.wga.hu/music1/beethoven/beethoven_symphony3_2.mp3",
+              "https://www.wga.hu/music1/beethoven/beethoven_symphony3_3.mp3",
+              "https://www.wga.hu/music1/beethoven/beethoven_symphony3_4.mp3"
+            ]
+          },
+          {
+            "title": "Symphony No. 5 in C minor op. 67 (1st mvt)",
+            "url": "/music1/beethoven/beethoven_symphony5_1.html",
+            "source": [
+              "https://www.wga.hu/music1/beethoven/beethoven_symphony5_1.mp3"
+            ]
+          },
+          {
+            "title": "Symphony No. 9 in D minor op. 125 - IV. Presto 'An die Freude' (Ode To Joy)",
+            "url": "/music1/beethoven/beethoven_symphony9_4",
+            "source": [
+              "https://www.wga.hu/music1/beethoven/beethoven_symphony9_4.mp3"
+            ]
+          },
+          {
+            "title": "Piano Sonata No. 8 in C minor op. 13 (Patetique)",
+            "url": "/music1/beethoven/beethoven_patetique_sonata.html",
+            "source": [
+              "https://www.wga.hu/music1/beethoven/beethoven_patetique_sonata_1.mp3",
+              "https://www.wga.hu/music1/beethoven/beethoven_patetique_sonata_2.mp3",
+              "https://www.wga.hu/music1/beethoven/beethoven_patetique_sonata_3.mp3"
+            ]
+          },
+          {
+            "title": "Piano Sonata No. 14 in C sharp minor op. 27 No. 2 (Moonlight)",
+            "url": "/music1/beethoven/beethoven_moonlight_sonata.html",
+            "source": [
+              "https://www.wga.hu/music1/beethoven/beethoven_moonlight_sonata_1.mp3",
+              "https://www.wga.hu/music1/beethoven/beethoven_moonlight_sonata_2.mp3",
+              "https://www.wga.hu/music1/beethoven/beethoven_moonlight_sonata_3.mp3"
+            ]
+          },
+          {
+            "title": "Sonata for violin and piano F Major Op. 24 (Spring)",
+            "url": "/music1/beethoven/beethoven_spring_sonata.html",
+            "source": [
+              "https://www.wga.hu/music1/beethoven/beethoven_spring_sonata_1.mp3",
+              "https://www.wga.hu/music1/beethoven/beethoven_spring_sonata_2.mp3",
+              "https://www.wga.hu/music1/beethoven/beethoven_spring_sonata_3.mp3",
+              "https://www.wga.hu/music1/beethoven/beethoven_spring_sonata_4.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "BELLINI, Vincenzo",
+        "date": "1801-1835",
+        "language": "Italian",
+        "songs": [
+          {
+            "title": "Malinconia, ninfa gentile",
+            "url": "/music1/19_cent/bellini_malinconia.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/bellini_malinconia.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "BERLIOZ, Hector",
+        "date": "1803-1869",
+        "language": "French",
+        "songs": [
+          {
+            "title": "Benvenuto Cellini, overture",
+            "url": "/music1/19_cent/berlioz_cellini.html",
+            "source": ["https://www.wga.hu/music1/19_cent/berlioz_cellini.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "BIZET, Georges",
+        "date": "1838-1875",
+        "language": "French",
+        "songs": [
+          {
+            "title": "Carmen, Prelude",
+            "url": "/music1/19_cent/bizet_carmen_prelude.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/bizet_carmen_prelude.mp3"
+            ]
+          },
+          {
+            "title": "Carmen, Act I, Habanera",
+            "url": "/music1/19_cent/bizet_carmen_habanera.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/bizet_carmen_habanera.mp3"
+            ]
+          },
+          {
+            "title": "Carmen, Act II, Seguidille",
+            "url": "/music1/19_cent/bizet_carmen_seguidille.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/bizet_carmen_seguidille.mp3"
+            ]
+          },
+          {
+            "title": "The Pearl Fishers, duet",
+            "url": "/music1/19_cent/bizet_pearl_duet.html",
+            "source": ["https://www.wga.hu/music1/19_cent/bizet_pearl_duet.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "BORODIN, Alexander",
+        "date": "1833-1887",
+        "language": "Russian",
+        "songs": [
+          {
+            "title": "Prince Igor, Polovetsian Dances",
+            "url": "/music1/19_cent/borodin_polovetsian.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/borodin_polovetsian.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "BRAHMS, Johannes",
+        "date": "1833-1897",
+        "language": "German",
+        "songs": [
+          {
+            "title": "Violin Concerto D major op. 77",
+            "url": "/music1/19_cent/brahms_violin_concerto.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/brahms_violin_concerto_1.mp3",
+              "https://www.wga.hu/music1/19_cent/brahms_violin_concerto_2.mp3",
+              "https://www.wga.hu/music1/19_cent/brahms_violin_concerto_3.mp3"
+            ]
+          },
+          {
+            "title": "Sonata for cello and piano No. 1 E minor op. 38",
+            "url": "/music1/19_cent/brahms_cello_sonata.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/brahms_cello_sonata_1.mp3",
+              "https://www.wga.hu/music1/19_cent/brahms_cello_sonata_2.mp3",
+              "https://www.wga.hu/music1/19_cent/brahms_cello_sonata_3.mp3"
+            ]
+          },
+          {
+            "title": "Waltz op. 39 No. 15 A flat major",
+            "url": "/music1/19_cent/brahms_waltz.html",
+            "source": ["https://www.wga.hu/music1/19_cent/brahms_waltz.mp3"]
+          },
+          {
+            "title": "Hungarian Dance No. 5",
+            "url": "/music1/19_cent/brahms_hungarian_dance_5.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/brahms_hungarian_dance_5.mp3"
+            ]
+          },
+          {
+            "title": "Hungarian Dance No. 6",
+            "url": "/music1/19_cent/brahms_hungarian_dance.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/brahms_hungarian_dance.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "BRUCH, Max",
+        "date": "1838-1920",
+        "language": "German",
+        "songs": [
+          {
+            "title": "Kol Nidrei, op. 49",
+            "url": "/music1/19_cent/bruch_kol_nidrei.html",
+            "source": ["https://www.wga.hu/music1/19_cent/bruch_kol_nidrei.mp3"]
+          },
+          {
+            "title": "Violin Concerto No. 1 (2nd mvt)",
+            "url": "/music1/19_cent/bruch_violin_concerto_2.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/bruch_violin_concerto_2.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "CHABRIER, Alexis Emanuel",
+        "date": "1841-1894",
+        "language": "French",
+        "songs": [
+          {
+            "title": "Espana",
+            "url": "/music1/19_cent/chabrier_espana.html",
+            "source": ["https://www.wga.hu/music1/19_cent/chabrier_espana.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "CHOPIN, Fryderyk",
+        "date": "1810-1849",
+        "language": "Polish",
+        "songs": [
+          {
+            "title": "Piano Concerto No. 1 in E Minor op. 11 (2nd mvt)",
+            "url": "/music1/19_cent/chopin_piano_concerto_1_2.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/chopin_piano_concerto_1_2.mp3"
+            ]
+          },
+          {
+            "title": "Waltz No 7 In C Sharp Minor op. 64, No 2",
+            "url": "/music1/19_cent/chopin_waltz.html",
+            "source": ["https://www.wga.hu/music1/19_cent/chopin_waltz.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "DEBUSSY, Claude",
+        "date": "1862-1918",
+        "language": "French",
+        "songs": [
+          {
+            "title": "Prélude à l'après-midi d'un faune",
+            "url": "/music1/19_cent/debussy_faune.html",
+            "source": ["https://www.wga.hu/music1/19_cent/debussy_faune.mp3"]
+          },
+          {
+            "title": "Clair de Lune",
+            "url": "/music1/19_cent/debussy_clair_de_lune.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/debussy_clair_de_lune.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "DELIBES, Léo",
+        "date": "1836-1891",
+        "language": "French",
+        "songs": [
+          {
+            "title": "Coppelia, Waltz",
+            "url": "/music1/19_cent/delibes_coppelia.html",
+            "source": ["https://www.wga.hu/music1/19_cent/delibes_coppelia.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "DONIZETTI, Gaetano",
+        "date": "1797-1848",
+        "language": "Italian",
+        "songs": [
+          {
+            "title": "Anna Bolena, Act II, Jane Seymour's aria",
+            "url": "/music1/19_cent/donizetti_bolena_seymour.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/donizetti_bolena_seymour.mp3"
+            ]
+          },
+          {
+            "title": "Anna Bolena, Act I, Anna's aria",
+            "url": "/music1/19_cent/donizetti_bolena_anna.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/donizetti_bolena_anna.mp3"
+            ]
+          },
+          {
+            "title": "Lucia di Lammermoor, Act II, Sextet",
+            "url": "/music1/19_cent/donizetti_lammermoor_sextet.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/donizetti_lammermoor_sextet.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "DOPPLER, Franz",
+        "date": "1821-1883",
+        "language": "Hungarian",
+        "songs": [
+          {
+            "title": "Duettino sur des motifs hongrois Op.36",
+            "url": "/music1/19_cent/doppler_duettino.html",
+            "source": ["https://www.wga.hu/music1/19_cent/doppler_duettino.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "DVOØÁK, Antonín",
+        "date": "1841-1904",
+        "language": "Czech",
+        "songs": [
+          {
+            "title": "Symphony No. 9 (From the New World), E minor op. 95, Finale",
+            "url": "/music1/19_cent/dvorak_symphony_no9_finale.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/dvorak_symphony_no9_finale.mp3"
+            ]
+          },
+          {
+            "title": "Slavonic Dance No. 2, E minor op. 46",
+            "url": "/music1/19_cent/dvorak_slavonic_dance_no2.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/dvorak_slavonic_dance_no2.mp3"
+            ]
+          },
+          {
+            "title": "Rusalka, Song to the Moon",
+            "url": "/music1/19_cent/dvorak_rusalka_moon.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/dvorak_rusalka_moon.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "FAURÉ, Gabriel",
+        "date": "1845-1923",
+        "language": "French",
+        "songs": [
+          {
+            "title": "Sicilienne op. 78",
+            "url": "/music1/19_cent/faure_sicilienne.html",
+            "source": ["https://www.wga.hu/music1/19_cent/faure_sicilienne.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "FRANCK, César",
+        "date": "1822-1890",
+        "language": "French/Belgian",
+        "songs": [
+          {
+            "title": "Panis angelicus",
+            "url": "/music1/19_cent/franck_panis.html",
+            "source": ["https://www.wga.hu/music1/19_cent/franck_panis.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "GOLDMARK, Karl",
+        "date": "1830-1915",
+        "language": "Hungarian",
+        "songs": [
+          {
+            "title": "Prometheus Bound, overture op.38",
+            "url": "/music1/19_cent/goldmark_prometheus.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/goldmark_prometheus.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "GOUNOD, Charles",
+        "date": "1818-1893",
+        "language": "French",
+        "songs": [
+          {
+            "title": "Faust, Ballet Music",
+            "url": "/music1/19_cent/gounod_faust_ballet.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/gounod_faust_ballet1.mp3",
+              "https://www.wga.hu/music1/19_cent/gounod_faust_ballet2.mp3",
+              "https://www.wga.hu/music1/19_cent/gounod_faust_ballet3.mp3",
+              "https://www.wga.hu/music1/19_cent/gounod_faust_ballet4.mp3",
+              "https://www.wga.hu/music1/19_cent/gounod_faust_ballet5.mp3",
+              "https://www.wga.hu/music1/19_cent/gounod_faust_ballet6.mp3",
+              "https://www.wga.hu/music1/19_cent/gounod_faust_ballet7.mp3"
+            ]
+          },
+          {
+            "title": "Faust, Act 1, Scene 1",
+            "url": "/music1/19_cent/gounod_faust_scene1.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/gounod_faust_scene1_1.mp3",
+              "https://www.wga.hu/music1/19_cent/gounod_faust_scene1_2.mp3"
+            ]
+          },
+          {
+            "title": "Philémon et Baucis, aria",
+            "url": "/music1/19_cent/gounod_philemon.html",
+            "source": ["https://www.wga.hu/music1/19_cent/gounod_philemon.mp3"]
+          },
+          {
+            "title": "Ave Maria",
+            "url": "/music1/19_cent/gounod_ave_maria.html",
+            "source": ["https://www.wga.hu/music1/19_cent/gounod_ave_maria.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "GRIEG, Edvard",
+        "date": "1843-1907",
+        "language": "Norwegian",
+        "songs": [
+          {
+            "title": "Peer Gynt Suite No 1, Op, 46 ('Morning Mood')",
+            "url": "/music1/19_cent/grieg_peer_gynt.html",
+            "source": ["https://www.wga.hu/music1/19_cent/grieg_peer_gynt.mp3"]
+          },
+          {
+            "title": "Piano Concerto in A minor op. 16 (1st mvt)",
+            "url": "/music1/19_cent/grieg_piano_concerto_1.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/grieg_piano_concerto_1.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "IPPOLITOV-IVANOV, Mikhail",
+        "date": "1859-1935",
+        "language": "Russian",
+        "songs": [
+          {
+            "title": "Procession of the Sardar",
+            "url": "/music1/19_cent/ippolitov-ivanov_sardar.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/ippolitov-ivanov_sardar.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "LISZT, Franz",
+        "date": "1811-1886",
+        "language": "Hungarian",
+        "songs": [
+          {
+            "title": "Dante-sonata",
+            "url": "/music1/19_cent/liszt_dante.html",
+            "source": ["https://www.wga.hu/music1/19_cent/liszt_dante.mp3"]
+          },
+          {
+            "title": "Prometheus, symphonic poem",
+            "url": "/music1/19_cent/liszt_prometheus.html",
+            "source": ["https://www.wga.hu/music1/19_cent/liszt_prometheus.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "LORTZING, Albert",
+        "date": "1801-1851",
+        "language": "German",
+        "songs": [
+          {
+            "title": "Undine, Duet",
+            "url": "/music1/19_cent/lortzing_undine.html",
+            "source": ["https://www.wga.hu/music1/19_cent/lortzing_undine.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "MAHLER, Gustav",
+        "date": "1860-1911",
+        "language": "Austrian",
+        "songs": [
+          {
+            "title": "Symphony No. 5, Adagietto",
+            "url": "/music1/19_cent/mahler_symphony_5_adagietto.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/mahler_symphony_5_adagietto.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "MASSENET, Jules",
+        "date": "1842-1912",
+        "language": "French",
+        "songs": [
+          {
+            "title": "Cleopatra, Cleopatra's aria",
+            "url": "/music1/19_cent/massenet_cleopatra.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/massenet_cleopatra.mp3"
+            ]
+          },
+          {
+            "title": "Hérodiade, Act I, Salome's aria",
+            "url": "/music1/19_cent/massenet_herodias.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/massenet_herodias.mp3"
+            ]
+          },
+          {
+            "title": "Thais, Meditation",
+            "url": "/music1/19_cent/massenet_meditation.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/massenet_meditation.mp3"
+            ]
+          },
+          {
+            "title": "Elegie",
+            "url": "/music1/19_cent/massenet_elegie.html",
+            "source": ["https://www.wga.hu/music1/19_cent/massenet_elegie.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "MENDELSSOHN-BARTHOLDY, Felix",
+        "date": "1809-1847",
+        "language": "German",
+        "songs": [
+          {
+            "title": "The Hebrides Overture ('Fingals Cave')",
+            "url": "/music1/19_cent/mendelssohn_hebrides.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/mendelssohn_hebrides.mp3"
+            ]
+          },
+          {
+            "title": "Violin concerto in E minor op. 64 (2nd mvt)",
+            "url": "/music1/19_cent/mendelssohn_violin_concerto_2.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/mendelssohn_violin_concerto_2.mp3"
+            ]
+          },
+          {
+            "title": "Wedding March from A Midsummer Night's Dream",
+            "url": "/music1/19_cent/mendelssohn_wedding_march.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/mendelssohn_wedding_march.mp3"
+            ]
+          },
+          {
+            "title": "Various songs",
+            "url": "/music1/19_cent/mendelssohn_songs.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/mendelssohn_song_wings.mp3",
+              "https://www.wga.hu/music1/19_cent/mendelssohn_song_gondola.mp3",
+              "https://www.wga.hu/music1/19_cent/mendelssohn_song_minne.mp3",
+              "https://www.wga.hu/music1/19_cent/mendelssohn_song_moon.mp3",
+              "https://www.wga.hu/music1/19_cent/mendelssohn_song_shepherd.mp3"
+            ]
+          },
+          {
+            "title": "Various songs",
+            "url": "/music1/19_cent/mendelssohn_songs1.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/mendelssohn_song_spring1.mp3",
+              "https://www.wga.hu/music1/19_cent/mendelssohn_song_spring2.mp3",
+              "https://www.wga.hu/music1/19_cent/mendelssohn_song_spring3.mp3",
+              "https://www.wga.hu/music1/19_cent/mendelssohn_song_autumn.mp3",
+              "https://www.wga.hu/music1/19_cent/mendelssohn_song_wander.mp3"
+            ]
+          },
+          {
+            "title": "Songs without Words op. 30 No. 5 (Venetian gondola song)",
+            "url": "/music1/19_cent/mendelssohn_gondola.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/mendelssohn_gondola.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "MUSSORGSKY, Modest",
+        "date": "1839-1881",
+        "language": "Russian",
+        "songs": [
+          {
+            "title": "Pictures from an Exhibition, arr. by Maurice Ravel (excerpts)",
+            "url": "/music1/19_cent/mussorgsky_exhibition_excerpts.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/mussorgsky_exhibition_1.mp3",
+              "https://www.wga.hu/music1/19_cent/mussorgsky_exhibition_2.mp3"
+            ]
+          },
+          {
+            "title": "Boris Godunov, Coronation scene",
+            "url": "/music1/19_cent/mussorgsky_godunov_coronation.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/mussorgsky_godunov_coronation.mp3"
+            ]
+          },
+          {
+            "title": "Flea Song",
+            "url": "/music1/19_cent/mussorgsky_flea_song.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/mussorgsky_flea_song.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "NICOLAI, Otto",
+        "date": "1810-1849",
+        "language": "German",
+        "songs": [
+          {
+            "title": "Die lustigen Weiber von Windsor (The Merry Wives of Windsor)",
+            "url": "/music1/19_cent/nicolai_windsor_drinking.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/nicolai_windsor_drinking.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "OFFENBACH, Jacques",
+        "date": "1819-1880",
+        "language": "French",
+        "songs": [
+          {
+            "title": "Les Contes d'Hoffmann, Act IV, Barcarolle",
+            "url": "/music1/19_cent/offenbach_barcarolle.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/offenbach_barcarolle.mp3"
+            ]
+          },
+          {
+            "title": "Orpheus in the Underworld, overture",
+            "url": "/music1/19_cent/offenbach_orpheus.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/offenbach_orpheus.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "RIMSKY-KORSAKOV, Nicolai",
+        "date": "1844-1908",
+        "language": "Russian",
+        "songs": [
+          {
+            "title": "The Flight of the Bumble Bee",
+            "url": "/music1/19_cent/rimsky-korsakov_bumble_bee.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/rimsky-korsakov_bumble_bee.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "ROSSINI, Gioacchino",
+        "date": "1792-1868",
+        "language": "Italian",
+        "songs": [
+          {
+            "title": "Armida, Armida and Rinaldo's duet",
+            "url": "/music1/19_cent/rossini_armida.html",
+            "source": ["https://www.wga.hu/music1/19_cent/rossini_armida.mp3"]
+          },
+          {
+            "title": "Elisabetta, regina d'Inghilterra, Elizabeth's aria",
+            "url": "/music1/19_cent/rossini_elisabetta.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/rossini_elisabetta.mp3"
+            ]
+          },
+          {
+            "title": "Moses, Moses' Prayer",
+            "url": "/music1/19_cent/rossini_moses.html",
+            "source": ["https://www.wga.hu/music1/19_cent/rossini_moses.mp3"]
+          },
+          {
+            "title": "L'Italiana in Algeri, overture",
+            "url": "/music1/19_cent/rossini_algir.html",
+            "source": ["https://www.wga.hu/music1/19_cent/rossini_algir.mp3"]
+          },
+          {
+            "title": "La Danza (from Soirée musicale)",
+            "url": "/music1/19_cent/rossini_la_danza.html",
+            "source": ["https://www.wga.hu/music1/19_cent/rossini_la_danza.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "RUBINSTEIN, Anton",
+        "date": "1829-1894",
+        "language": "Russian",
+        "songs": [
+          {
+            "title": "Melody in F",
+            "url": "/music1/19_cent/rubinstein_melody.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/rubinstein_melody.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "SAINT-SAËNS, Camille",
+        "date": "1835-1921",
+        "language": "French",
+        "songs": [
+          {
+            "title": "Samson et Delila, Delila's aria",
+            "url": "/music1/19_cent/saint-saens_delila.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/saint-saens_delila1.mp3",
+              "https://www.wga.hu/music1/19_cent/saint-saens_delila2.mp3"
+            ]
+          },
+          {
+            "title": "Samson et Delila, Act III, Scene 2, Bacchanal",
+            "url": "/music1/19_cent/saint-saens_bacchanal.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/saint-saens_bacchanal.mp3"
+            ]
+          },
+          {
+            "title": "Hénri VIII, Scene and Henry's aria",
+            "url": "/music1/19_cent/saint-saens_henry8.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/saint-saens_henry8.mp3"
+            ]
+          },
+          {
+            "title": "The Swan from the Carnival of the Animals",
+            "url": "/music1/19_cent/saint-saens_swan.html",
+            "source": ["https://www.wga.hu/music1/19_cent/saint-saens_swan.mp3"]
+          },
+          {
+            "title": "Le rouet d'Omphale (Omphale's Spinning Wheel), symphonic poem op. 31",
+            "url": "/music1/19_cent/saint-saens_omphale.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/saint-saens_omphale.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "SCHUBERT, Franz",
+        "date": "1797-1828",
+        "language": "Austrian",
+        "songs": [
+          {
+            "title": "Notturno for piano trio, D 897",
+            "url": "/music1/schubert/schubert_d897_notturno.html",
+            "source": [
+              "https://www.wga.hu/music1/schubert/schubert_d897_notturno.mp3"
+            ]
+          },
+          {
+            "title": "Deutsche Tänze, D 783 (Op. 33) Nr. 7",
+            "url": "/music1/schubert/schubert_d783_dance.html",
+            "source": [
+              "https://www.wga.hu/music1/schubert/schubert_d783_dance.mp3"
+            ]
+          },
+          {
+            "title": "An den Mond (To the Moon) (Goethe) D 296",
+            "url": "/music1/schubert/schubert_d296_mond.html",
+            "source": [
+              "https://www.wga.hu/music1/schubert/schubert_d296_mond.mp3"
+            ]
+          },
+          {
+            "title": "Blumenlied (Flower Song) D 431",
+            "url": "/music1/schubert/schubert_d431_blumen.html",
+            "source": [
+              "https://www.wga.hu/music1/schubert/schubert_d431_blumen.mp3"
+            ]
+          },
+          {
+            "title": "An die Musik (To the Music), D 547",
+            "url": "/music1/schubert/schubert_d547_musik.html",
+            "source": [
+              "https://www.wga.hu/music1/schubert/schubert_d547_musik.mp3"
+            ]
+          },
+          {
+            "title": "Nacht und Traume (Night and Dreams) D 827",
+            "url": "/music1/schubert/schubert_d827_nacht.html",
+            "source": [
+              "https://www.wga.hu/music1/schubert/schubert_d827_nacht.mp3"
+            ]
+          },
+          {
+            "title": "Die Junge Nonne (The Young Nun) D 828",
+            "url": "/music1/schubert/schubert_d828_nonne.html",
+            "source": [
+              "https://www.wga.hu/music1/schubert/schubert_d828_nonne.mp3"
+            ]
+          },
+          {
+            "title": "Ave Maria D 839",
+            "url": "/music1/schubert/schubert_d839_ave.html",
+            "source": [
+              "https://www.wga.hu/music1/schubert/schubert_d839_ave.mp3"
+            ]
+          },
+          {
+            "title": "Drinking song from the 16th century D 847, quartet",
+            "url": "/music1/schubert/schubert_d847_trink.html",
+            "source": [
+              "https://www.wga.hu/music1/schubert/schubert_d847_trink.mp3"
+            ]
+          },
+          {
+            "title": "Wanderer an den Mond (Wanderer to the Moon), D 870",
+            "url": "/music1/schubert/schubert_d870_wanderer_mond.html",
+            "source": [
+              "https://www.wga.hu/music1/schubert/schubert_d870_wanderer_mond.mp3"
+            ]
+          },
+          {
+            "title": "Im Frühling (In the Spring), D 882",
+            "url": "/music1/schubert/schubert_d882_fruhling.html",
+            "source": [
+              "https://www.wga.hu/music1/schubert/schubert_d882_fruhling.mp3"
+            ]
+          },
+          {
+            "title": "An die Laute (To the Lute) D 905",
+            "url": "/music1/schubert/schubert_d905_laute.html",
+            "source": [
+              "https://www.wga.hu/music1/schubert/schubert_d905_laute.mp3"
+            ]
+          },
+          {
+            "title": "Der Hirt auf dem Felsen (The Shepherd on the Rock) D 965",
+            "url": "/music1/schubert/schubert_d965_hirt.html",
+            "source": [
+              "https://www.wga.hu/music1/schubert/schubert_d965_hirt.mp3"
+            ]
+          },
+          {
+            "title": "Songs, transcripted for piano by Franz Liszt",
+            "url": "/music1/schubert/schubert_liszt.html",
+            "source": [
+              "https://www.wga.hu/music1/schubert/schubert_liszt_wasser.mp3",
+              "https://www.wga.hu/music1/schubert/schubert_liszt_blumen.mp3",
+              "https://www.wga.hu/music1/schubert/schubert_liszt_ruh.mp3",
+              "https://www.wga.hu/music1/schubert/schubert_liszt_ave_maria.mp3",
+              "https://www.wga.hu/music1/schubert/schubert_liszt_wanderer.mp3",
+              "https://www.wga.hu/music1/schubert/schubert_serenade.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "SCHUMANN, Robert",
+        "date": "1810-1856",
+        "language": "German",
+        "songs": [
+          {
+            "title": "Scenes From Childhood, Op 15 (Traumerei)",
+            "url": "/music1/19_cent/schumann_traumerei.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/schumann_traumerei.mp3"
+            ]
+          },
+          {
+            "title": "Symphony No. 1 in B flat, Op. 38 (Spring Symphony) ",
+            "url": "/music1/19_cent/schumann_symphony1.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/schumann_symphony1.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "SMETANA, Bedrich",
+        "date": "1824-1884",
+        "language": "Bohemian",
+        "songs": [
+          {
+            "title": "My Country ('The Moldau River')",
+            "url": "/music1/19_cent/smetana_moldau.html",
+            "source": ["https://www.wga.hu/music1/19_cent/smetana_moldau.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "STRAUSS, Johann, Jr.",
+        "date": "1825-1899",
+        "language": "Austrian",
+        "songs": [
+          {
+            "title": "The Blue Danube",
+            "url": "/music1/19_cent/strauss_jr_blue_danube.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/strauss_jr_blue_danube.mp3"
+            ]
+          },
+          {
+            "title": "Wiener Blut Waltz",
+            "url": "/music1/19_cent/strauss_jr_wiener_blut.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/strauss_jr_wiener_blut.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "STRAUSS, Johann, Sr.",
+        "date": "1804-1849",
+        "language": "Austrian",
+        "songs": [
+          {
+            "title": "Radetzky March",
+            "url": "/music1/19_cent/strauss_sr_radetzky.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/strauss_sr_radetzky.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "TCHAIKOVSKY, Pyotr Ilyich",
+        "date": "1840-1893",
+        "language": "Russian",
+        "songs": [
+          {
+            "title": "Variations on a Rococo Theme",
+            "url": "/music1/19_cent/tchaikovsky_rococo.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/tchaikovsky_rococo.mp3"
+            ]
+          },
+          {
+            "title": "1812 Overture",
+            "url": "/music1/19_cent/tchaikovsky_1812.html",
+            "source": ["https://www.wga.hu/music1/19_cent/tchaikovsky_1812.mp3"]
+          },
+          {
+            "title": "Piano Concerto No. 1 B Flat minor (1st mvt)",
+            "url": "/music1/19_cent/tchaikovsky_piano_concerto.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/tchaikovsky_piano_concerto.mp3"
+            ]
+          },
+          {
+            "title": "The Sleeping Beauty, Waltz",
+            "url": "/music1/19_cent/tchaikovsky_sleeping_waltz.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/tchaikovsky_sleeping_waltz.mp3"
+            ]
+          },
+          {
+            "title": "The Nutcracker, ballet suite, op. 71, Waltz of the Flowers",
+            "url": "/music1/19_cent/tchaikovsky_nutcracker_waltz.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/tchaikovsky_nutcracker_waltz.mp3"
+            ]
+          },
+          {
+            "title": "Swan Lake, Scene",
+            "url": "/music1/19_cent/tchaikovsky_swan_lake.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/tchaikovsky_swan_lake.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "VERDI, Giuseppe",
+        "date": "1813-1901",
+        "language": "Italian",
+        "songs": [
+          {
+            "title": "Don Carlo, Act III, King Philip's aria",
+            "url": "/music1/19_cent/verdi_don_carlo.html",
+            "source": ["https://www.wga.hu/music1/19_cent/verdi_don_carlo.mp3"]
+          },
+          {
+            "title": "Nabucco,Va, pensiero, Chorus of the Hebrew Slaves",
+            "url": "/music1/19_cent/verdi_nabucco_chorus.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/verdi_nabucco_chorus.mp3"
+            ]
+          },
+          {
+            "title": "Sicilian Vespers, overture",
+            "url": "/music1/19_cent/verdi_sicilian_vespers_overture.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/verdi_sicilian_vespers_overture.mp3"
+            ]
+          },
+          {
+            "title": "La Traviata Act I, Libiamo",
+            "url": "/music1/19_cent/verdi_traviata_libiamo.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/verdi_traviata_libiamo.mp3"
+            ]
+          },
+          {
+            "title": "Aida, Act I, Triumphal March",
+            "url": "/music1/19_cent/verdi_aida_march.html",
+            "source": ["https://www.wga.hu/music1/19_cent/verdi_aida_march.mp3"]
+          },
+          {
+            "title": "Requiem, Dies irae (excerpt)",
+            "url": "/music1/19_cent/verdi_requiem.html",
+            "source": ["https://www.wga.hu/music1/19_cent/verdi_requiem.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "WAGNER, Richard",
+        "date": "1813-1883",
+        "language": "German",
+        "songs": [
+          {
+            "title": "Lohengrin Act III, In fernen Land",
+            "url": "/music1/19_cent/wagner_lohengrin.html",
+            "source": ["https://www.wga.hu/music1/19_cent/wagner_lohengrin.mp3"]
+          },
+          {
+            "title": "Lohengrin Act III, Prelude",
+            "url": "/music1/19_cent/wagner_lohengrin_prelude.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/wagner_lohengrin_prelude.mp3"
+            ]
+          },
+          {
+            "title": "Lohengrin Act III, Prelude",
+            "url": "/music1/19_cent/wagner_tannhauser_overture.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/wagner_tannhauser_overture.mp3"
+            ]
+          },
+          {
+            "title": "Die Walküre, Act I, Winterstürme wichen dem Wonnemond",
+            "url": "/music1/19_cent/wagner_walkure.html",
+            "source": ["https://www.wga.hu/music1/19_cent/wagner_walkure.mp3"]
+          },
+          {
+            "title": "Die Walküre, Act III, Ride of the Valkyries",
+            "url": "/music1/19_cent/wagner_walkure_ride.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/wagner_walkure_ride.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "WEBER, Carl Maria von",
+        "date": "1786-1826",
+        "language": "German",
+        "songs": [
+          {
+            "title": "Der Freischütz, Act III: Hunters' Chorus",
+            "url": "/music1/19_cent/weber_freischutz_chorus.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/weber_freischutz_chorus.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "WOLF, Hugo",
+        "date": "1860-1903",
+        "language": "Austrian",
+        "songs": [
+          {
+            "title": "3 Songs on the Poems of Michelangelo",
+            "url": "/music1/19_cent/wolf_michelangelo.html",
+            "source": [
+              "https://www.wga.hu/music1/19_cent/wolf_michelangelo.mp3"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "century": "20",
+    "composers": [
+      {
+        "name": "BARBER, Samuel",
+        "date": "1910-1981",
+        "language": "American",
+        "songs": [
+          {
+            "title": "Adagio for Strings op. 11",
+            "url": "/music1/20_cent/barber_adagio.html",
+            "source": ["https://www.wga.hu/music1/20_cent/barber_adagio.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "ELGAR, Sir Edward",
+        "date": "1857-1934",
+        "language": "English",
+        "songs": [
+          {
+            "title": "Enigma variations op. 36 No. 9, Nimrod",
+            "url": "/music1/20_cent/elgar_enigma_nimrod.html",
+            "source": [
+              "https://www.wga.hu/music1/20_cent/elgar_enigma_nimrod.mp3"
+            ]
+          },
+          {
+            "title": "Pomp and Circumstance Marches op. 39 No. 1",
+            "url": "/music1/20_cent/elgar_pomp_no1.html",
+            "source": ["https://www.wga.hu/music1/20_cent/elgar_pomp_no1.mp3"]
+          },
+          {
+            "title": "Land of Hope and Glory",
+            "url": "/music1/20_cent/elgar_land_of_hope.html",
+            "source": [
+              "https://www.wga.hu/music1/20_cent/elgar_land_of_hope.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "HINDEMITH, Paul",
+        "date": "1895-1963",
+        "language": "German",
+        "songs": [
+          {
+            "title": "Mathis the Painter, Scene 6, Mathis' vision",
+            "url": "/music1/20_cent/hindemith_mathis.html",
+            "source": ["https://www.wga.hu/music1/20_cent/hindemith_mathis.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "HOLST, Gustav",
+        "date": "1874-1934",
+        "language": "English",
+        "songs": [
+          {
+            "title": "The Planets op. 32, Jupiter",
+            "url": "/music1/20_cent/holst_planets.html",
+            "source": ["https://www.wga.hu/music1/20_cent/holst_planets.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "KHACHATURIAN, Aram",
+        "date": "1903-1978",
+        "language": "Armenian",
+        "songs": [
+          {
+            "title": "Sabre Dance",
+            "url": "/music1/20_cent/khachaturian_sabre_dance.html",
+            "source": [
+              "https://www.wga.hu/music1/20_cent/khachaturian_sabre_dance.mp3"
+            ]
+          },
+          {
+            "title": "Spartacus, Adagio of Spartacus and Phrygia",
+            "url": "/music1/20_cent/khachaturian_spartacus.html",
+            "source": [
+              "https://www.wga.hu/music1/20_cent/khachaturian_spartacus.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "MASCAGNI, Pietro",
+        "date": "1863-1945",
+        "language": "Italian",
+        "songs": [
+          {
+            "title": "Cavalleria rusticana, Intermezzo",
+            "url": "/music1/20_cent/mascagni_intermezzo.html",
+            "source": [
+              "https://www.wga.hu/music1/20_cent/mascagni_intermezzo.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "NIELSEN, Carl August",
+        "date": "1865-1931",
+        "language": "Danish",
+        "songs": [
+          {
+            "title": "Maskarade, overture",
+            "url": "/music1/20_cent/nielsen_maskarade_overture.html",
+            "source": [
+              "https://www.wga.hu/music1/20_cent/nielsen_maskarade_overture.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "ORFF, Karl",
+        "date": "1895-1982",
+        "language": "German",
+        "songs": [
+          {
+            "title": "Carmina Burana, O Fortuna",
+            "url": "/music1/20_cent/orff_carmina.html",
+            "source": ["https://www.wga.hu/music1/20_cent/orff_carmina.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "PUCCINI, Giacomo",
+        "date": "1858-1924",
+        "language": "Italian",
+        "songs": [
+          {
+            "title": "Crisantemi (Chrysanthemums), elegy for string quartet",
+            "url": "/music1/20_cent/puccini_crisantemi.html",
+            "source": [
+              "https://www.wga.hu/music1/20_cent/puccini_crisantemi.mp3"
+            ]
+          },
+          {
+            "title": "Gianni Schicchi, O mio babbino caro",
+            "url": "/music1/20_cent/puccini_gianni_schicchi.html",
+            "source": [
+              "https://www.wga.hu/music1/20_cent/puccini_gianni_schicchi.mp3"
+            ]
+          },
+          {
+            "title": "Tosca, `Vissi d'Arte`, soprano aria",
+            "url": "/music1/20_cent/puccini_tosca.html",
+            "source": ["https://www.wga.hu/music1/20_cent/puccini_tosca.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "RACHMANINOFF, Sergei",
+        "date": "1873-1943",
+        "language": "Russian",
+        "songs": [
+          {
+            "title": "Piano Concerto No. 2 in C minor (2nd mvt)",
+            "url": "/music1/20_cent/puccini_crisantemi.html",
+            "source": [
+              "https://www.wga.hu/music1/20_cent/rachmaninoff_piano_concerto_2.mp3"
+            ]
+          },
+          {
+            "title": "Piano Concerto No. 3 in D minor (2nd mvt)",
+            "url": "/music1/20_cent/rachmaninoff_piano_concerto_3.html",
+            "source": [
+              "https://www.wga.hu/music1/20_cent/rachmaninoff_piano_concerto_3.mp3"
+            ]
+          },
+          {
+            "title": "Rhapsody on a Theme of Paganini (excerpt)",
+            "url": "/music1/20_cent/rachmaninoff_paganini_rhapsody.html",
+            "source": [
+              "https://www.wga.hu/music1/20_cent/rachmaninoff_paganini_rhapsody.mp3"
+            ]
+          },
+          {
+            "title": "Vocalise for Cello and Piano",
+            "url": "/music1/20_cent/rachmaninoff_vocalise.html",
+            "source": [
+              "https://www.wga.hu/music1/20_cent/rachmaninoff_vocalise.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "RESPIGHI, Ottorino",
+        "date": "1879-1936",
+        "language": "Italian",
+        "songs": [
+          {
+            "title": "Trittico Botticelliano",
+            "url": "/music1/20_cent/respighi_trittico.html",
+            "source": [
+              "https://www.wga.hu/music1/20_cent/respighi_primavera.mp3",
+              "https://www.wga.hu/music1/20_cent/respighi_adorazione.mp3",
+              "https://www.wga.hu/music1/20_cent/respighi_venere.mp3"
+            ]
+          },
+          {
+            "title": "Birds, suite",
+            "url": "/music1/20_cent/respighi_birds.html",
+            "source": ["https://www.wga.hu/music1/20_cent/respighi_birds.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "RODRIGO, Joaquín",
+        "date": "1901-1999",
+        "language": "Spanish",
+        "songs": [
+          {
+            "title": "Concierto de Aranjuez, Adagio",
+            "url": "/music1/20_cent/rodrigo_aranjuez_adagio.html",
+            "source": [
+              "https://www.wga.hu/music1/20_cent/rodrigo_aranjuez_adagio.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "SIBELIUS, Jean",
+        "date": "1856-1941",
+        "language": "Finnish",
+        "songs": [
+          {
+            "title": "Finlandia op. 26",
+            "url": "/music1/20_cent/sibelius_finlandia.html",
+            "source": [
+              "https://www.wga.hu/music1/20_cent/sibelius_finlandia.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "SINDING, Christian",
+        "date": "1856-1941",
+        "language": "Norwegian",
+        "songs": [
+          {
+            "title": "Frühlingsrauschen (Rustle of Spring)",
+            "url": "/music1/20_cent/sinding_fruhlingsrauschen.html",
+            "source": [
+              "https://www.wga.hu/music1/20_cent/sinding_fruhlingsrauschen.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "STRAUSS, Richard",
+        "date": "1864-1949",
+        "language": "German",
+        "songs": [
+          {
+            "title": "Salome, closing scene",
+            "url": "/music1/20_cent/strauss_salome.html",
+            "source": ["https://www.wga.hu/music1/20_cent/strauss_salome.mp3"]
+          },
+          {
+            "title": "Danae's Love, Danae's monologue",
+            "url": "/music1/20_cent/strauss_danae.html",
+            "source": ["https://www.wga.hu/music1/20_cent/strauss_danae.mp3"]
+          }
+        ]
+      },
+      {
+        "name": "VAUGHAN WILLIAMS, Ralph",
+        "date": "1872-1918",
+        "songs": [
+          {
+            "title": "Fantasia on Greensleeves",
+            "url": "/music1/20_cent/vaughan_williams_greensleeves.html",
+            "source": [
+              "https://www.wga.hu/music1/20_cent/vaughan_williams_greensleeves.mp3"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "VILLA-LOBOS, Heitor",
+        "date": "1887-1959",
+        "language": "Brasilian",
+        "songs": [
+          {
+            "title": "Bachianas Brasileiras No. 5",
+            "url": "/music1/20_cent/villa-lobos_bachianas.html",
+            "source": [
+              "https://www.wga.hu/music1/20_cent/villa-lobos_bachianas.mp3"
+            ]
           }
         ]
       }

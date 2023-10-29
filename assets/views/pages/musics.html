@@ -27,16 +27,15 @@ Musics
         </div>
         {{range .MusicList}}
             <div class="block">
-                <a name="{{.century}}" id="{{.century}}" class="title has-text-centered is-5">{{.century}}th century</a>
-                {{range .composers}}
+                <a name="{{.Century}}" id="{{.Century}}" class="title has-text-centered is-5">{{.Century}}th century</a>
+                {{range .Composers}}
                     <div class="block">
-                        <h4 class="title is-6">{{.composer}} ({{.date}}), {{.language}}</h4>
+                        <h4 class="title is-6">{{.Name}} ({{.Date}}), {{.Language}}</h4>
                         <ul>
-                            {{range .songs}}
+                            {{range .Songs}}
                                 <li>
-                                    {{if .source}}
-                                        <a href="/musics/{{removeExt .source}}" hx-get="/musics/{{removeExt .source}}" hx-target="#mc-area">{{.name}}</a>
-                                        ({{.time}})
+                                    {{if .URL}}
+                                        <a href="/musics/{{getFileNameFromUrl .URL}}" hx-get="/musics/{{getFileNameFromUrl .URL}}" hx-target="#mc-area">{{.Title}}</a>
                                     {{else}}
                                         <a href=""></a>
                                     {{end}}

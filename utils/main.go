@@ -56,8 +56,9 @@ var TemplateFuncs = template.FuncMap{
 	"yesno": yesno,
 
 	// URL functions
-	"urlSetParam": urlSetParam,
-	"urlDelParam": urlDelParam,
+	"urlSetParam":        urlSetParam,
+	"urlDelParam":        urlDelParam,
+	"getFileNameFromUrl": GetFileNameFromUrl,
 
 	// JSON functions
 	"marshalJSON": marshalJSON,
@@ -275,4 +276,17 @@ func SetBoolWithFallback(value *bool, fallback bool) {
 
 func RemoveExtension(s string) string {
 	return s[:len(s)-4]
+}
+
+func GetFileNameFromUrl(url string) string {
+	// split the url by /
+	splitUrl := strings.Split(url, "/")
+	// get the last element of the split url
+	lastElement := splitUrl[len(splitUrl)-1]
+	// split the last element by .
+	splitLastElement := strings.Split(lastElement, ".")
+	// get the first element of the split last element
+	fileName := splitLastElement[0]
+
+	return fileName
 }
