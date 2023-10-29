@@ -17,7 +17,7 @@ type School struct {
 var _ models.Model = (*School)(nil)
 
 func (m *School) TableName() string {
-	return "art_forms" // the name of your collection
+	return "schools" // the name of your collection
 }
 
 func SchoolQuery(dao *daos.Dao) *dbx.SelectQuery {

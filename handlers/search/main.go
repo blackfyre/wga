@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"blackfyre.ninja/wga/assets"
+	"blackfyre.ninja/wga/models"
 	"blackfyre.ninja/wga/utils"
 	"blackfyre.ninja/wga/utils/jsonld"
 	"blackfyre.ninja/wga/utils/url"
@@ -96,22 +97,37 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 
 		for _, v := range records {
 
+			artistIds := v.GetStringSlice("author")
+
+			if len(artistIds) == 0 {
+				// wating for the promised logging system by @pocketbase
+				continue
+			}
+
+			artist, err := models.GetArtistById(app.Dao(), artistIds[0])
+
+			if err != nil {
+				// wating for the promised logging system by @pocketbase
+				continue
+			}
+
 			jsonLd := jsonld.GenerateVisualArtworkJsonLdContent(v, c)
 
 			jsonLd["image"] = url.GenerateFileUrl(app, "artworks", v.GetString("id"), v.GetString("image"))
 			// jsonLd["url"] = fullUrl + "/" + v.GetString("id")
-			// jsonLd["creator"] = jsonld.GenerateArtistJsonLdContent(artist[0], c)
+			jsonLd["creator"] = jsonld.GenerateArtistJsonLdContent(artist, c)
 			// jsonLd["creator"].(map[string]any)["sameAs"] = fullUrl
 			jsonLd["thumbnailUrl"] = url.GenerateThumbUrl(app, "artworks", v.GetString("id"), v.GetString("image"), "320x240")
 
 			td["Artworks"] = append(td["Artworks"].([]any), map[string]any{
-				"Id":        v.GetId(),
-				"Title":     v.GetString("title"),
-				"Comment":   v.GetString("comment"),
-				"Technique": v.GetString("technique"),
-				"Image":     jsonLd["image"].(string),
-				"Thumb":     jsonLd["thumbnailUrl"].(string),
-				"Jsonld":    jsonLd,
+				"Id":         v.GetId(),
+				"Title":      v.GetString("title"),
+				"Comment":    v.GetString("comment"),
+				"Technique":  v.GetString("technique"),
+				"Image":      jsonLd["image"].(string),
+				"Thumb":      jsonLd["thumbnailUrl"].(string),
+				"ArtistSlug": artist.Slug,
+				"Jsonld":     jsonLd,
 			})
 		}
 
