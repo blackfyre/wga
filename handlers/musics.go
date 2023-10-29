@@ -1,7 +1,10 @@
 package handlers
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
+	"os"
 
 	"blackfyre.ninja/wga/assets"
 	"github.com/labstack/echo/v5"
@@ -9,6 +12,24 @@ import (
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 )
+
+type Song struct {
+	Title  string
+	URL    string
+	Source []string
+}
+
+type Composer struct {
+	Name     string
+	Date     string
+	Language string
+	Songs    []Song
+}
+
+type Century struct {
+	Century   string
+	Composers []Composer
+}
 
 func registerMusicHandlers(app *pocketbase.PocketBase) {
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
@@ -23,8 +44,12 @@ func registerMusicHandlers(app *pocketbase.PocketBase) {
 			found := app.Cache().Has(cacheKey)
 
 			// TODO: implement data getter
-			musicList, years := getMock()
+			musicList := getMusics()
 
+			years := []string{}
+			for _, century := range musicList {
+				years = append(years, century.Century)
+			}
 			if found {
 				html = app.Cache().Get(cacheKey).(string)
 			} else {
@@ -88,198 +113,20 @@ func registerMusicHandlers(app *pocketbase.PocketBase) {
 	})
 }
 
-func getMock() ([]map[string]interface{}, []string) {
-	musicList := []map[string]interface{}{
-		{
-			"century": "12",
-			"composers": []map[string]interface{}{
-				{
-					"composer": "Anonymus",
-					"date":     "1100-1199",
-					"language": "French",
-					"songs": []map[string]interface{}{
-						{
-							"name": "Gregorian Chants",
-							"time": "3 minutes",
-							"source":  "anonymous_conductus.mp3",
-						},
-						{
-							"name": "Viderunt omnes, organum",
-							"time": "3 minutes",
-						},
-					},
-				},
-				{
-					"composer": "Hildegard von Bingen",
-					"date":     "1100-1199",
-					"language": "French",
-					"songs": []map[string]interface{}{
-						{
-							"name": "O viridissima virga",
-							"time": "3 minutes",
-						},
-					},
-				},
-			},
-		},
-		{
-			"century": "13",
-			"composers": []map[string]interface{}{
-				{
-					"composer": "Shakira",
-					"date":     "1200-1299",
-					"language": "German",
-					"songs": []map[string]interface{}{
-						{
-							"name": "Loca",
-							"time": "3 minutes",
-						},
-					},
-				},
-			},
-		},
-		{
-			"century": "14",
-			"composers": []map[string]interface{}{
-				{
-					"composer": "Shakira",
-					"date":     "1200-1299",
-					"language": "German",
-					"songs": []map[string]interface{}{
-						{
-							"name": "Loca",
-							"time": "3 minutes",
-						},
-					},
-				},
-			},
-		},
-		{
-			"century": "16",
-			"composers": []map[string]interface{}{
-				{
-					"composer": "Shakira",
-					"date":     "1200-1299",
-					"language": "German",
-					"songs": []map[string]interface{}{
-						{
-							"name": "Loca",
-							"time": "3 minutes",
-						},
-						{
-							"name": "Loca2",
-							"time": "3 minutes",
-						},
-						{
-							"name": "Loca3",
-							"time": "3 minutes",
-						},
-					},
-				},
-			},
-		},
-		{
-			"century": "17",
-			"composers": []map[string]interface{}{
-				{
-					"composer": "Shakira",
-					"date":     "1200-1299",
-					"language": "German",
-					"songs": []map[string]interface{}{
-						{
-							"name": "Loca",
-							"time": "3 minutes",
-						},
-						{
-							"name": "Loca2",
-							"time": "3 minutes",
-						},
-						{
-							"name": "Loca3",
-							"time": "3 minutes",
-						},
-					},
-				},
-			},
-		},
-		{
-			"century": "18",
-			"composers": []map[string]interface{}{
-				{
-					"composer": "Shakira",
-					"date":     "1200-1299",
-					"language": "German",
-					"songs": []map[string]interface{}{
-						{
-							"name": "Loca",
-							"time": "3 minutes",
-						},
-						{
-							"name": "Loca2",
-							"time": "3 minutes",
-						},
-						{
-							"name": "Loca3",
-							"time": "3 minutes",
-						},
-					},
-				},
-			},
-		},
-		{
-			"century": "19",
-			"composers": []map[string]interface{}{
-				{
-					"composer": "Shakira",
-					"date":     "1200-1299",
-					"language": "German",
-					"songs": []map[string]interface{}{
-						{
-							"name": "Loca",
-							"time": "3 minutes",
-						},
-						{
-							"name": "Loca2",
-							"time": "3 minutes",
-						},
-						{
-							"name": "Loca3",
-							"time": "3 minutes",
-						},
-					},
-				},
-			},
-		},
-		{
-			"century": "20",
-			"composers": []map[string]interface{}{
-				{
-					"composer": "Shakira",
-					"date":     "1200-1299",
-					"language": "German",
-					"songs": []map[string]interface{}{
-						{
-							"name": "Loca",
-							"time": "3 minutes",
-						},
-						{
-							"name": "Loca2",
-							"time": "3 minutes",
-						},
-						{
-							"name": "Loca3",
-							"time": "3 minutes",
-						},
-					},
-				},
-			},
-		},
+func getMusics() []Century {
+	var data []Century
+
+	fileData, err := os.ReadFile("./assets/reference/musics.json")
+
+	if err != nil {
+		fmt.Println("Error reading file:", err)
 	}
 
-	years := []string{}
-
-	for _, century := range musicList {
-		years = append(years, century["century"].(string))
+	err = json.Unmarshal(fileData, &data)
+	if err != nil {
+		fmt.Println("Error unmarshalling JSON data:", err)
 	}
-	return musicList, years
+
+	musicList := data
+	return musicList
 }

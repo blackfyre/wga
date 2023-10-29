@@ -9,10 +9,11 @@ import (
 	"blackfyre.ninja/wga/handlers"
 	"blackfyre.ninja/wga/hooks"
 	_ "blackfyre.ninja/wga/migrations"
+
+	// "blackfyre.ninja/wga/utils"
 	"github.com/joho/godotenv"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/plugins/migratecmd"
-	// "blackfyre.ninja/wga/utils"
 )
 
 func main() {
