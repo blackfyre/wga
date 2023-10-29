@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"blackfyre.ninja/wga/assets"
+	"blackfyre.ninja/wga/utils"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/daos"
 	m "github.com/pocketbase/pocketbase/migrations"
@@ -38,6 +39,12 @@ func init() {
 				Type:        schema.FieldTypeText,
 				Options:     &schema.TextOptions{},
 				Presentable: true,
+			},
+			&schema.SchemaField{
+				Id:      "schools_slug",
+				Name:    "slug",
+				Type:    schema.FieldTypeText,
+				Options: &schema.TextOptions{},
 			},
 			&schema.SchemaField{
 				Id:      tName + "_start",
@@ -86,6 +93,7 @@ func init() {
 				"end":         g.End,
 				"name":        g.Name,
 				"description": g.Description,
+				"slug":        utils.Slugify(g.Name),
 			})
 
 			_, err = q.Execute()

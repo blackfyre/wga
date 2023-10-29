@@ -1,0 +1,10 @@
+// Based on: https://stackoverflow.com/a/5379820/1012431
+
+a[href]:not(:where(
+  [href^="#"],
+  [href^="?"],
+  [href^="/"]:not([href^="//"]),
+  [onclick]
+)):after {
+  content: "↗️";
+}

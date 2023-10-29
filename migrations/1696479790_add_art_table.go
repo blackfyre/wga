@@ -38,6 +38,7 @@ type ArtworkStage1 struct {
 	Comment   string            `json:"comment"`
 	Technique string            `json:"technique"`
 	Image     string            `json:"image"`
+	TypeId    string            `json:"type_id"`
 }
 
 type ArtworkStage1Meta struct {
@@ -121,6 +122,15 @@ func init() {
 				},
 			},
 			&schema.SchemaField{
+				Id:   tName + "_type",
+				Name: "type",
+				Type: schema.FieldTypeRelation,
+				Options: &schema.RelationOptions{
+					CollectionId: "art_types",
+					MinSelect:    Ptr(1),
+				},
+			},
+			&schema.SchemaField{
 				Id:      tName + "_technique",
 				Name:    "technique",
 				Type:    schema.FieldTypeText,
@@ -182,6 +192,7 @@ func init() {
 				"comment":   g.Comment,
 				"published": true,
 				"image":     g.Image,
+				"type":      g.TypeId,
 			})
 
 			_, err = q.Execute()

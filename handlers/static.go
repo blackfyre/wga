@@ -4,22 +4,66 @@ import (
 	"embed"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
+	"os"
 	"path/filepath"
 	"strings"
 
 	"blackfyre.ninja/wga/assets"
+	"blackfyre.ninja/wga/models"
+	"blackfyre.ninja/wga/utils"
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
+	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 )
 
-// registerStatic registers the static assets handler to the PocketBase app.
-// It adds a BeforeServe event to the app that serves the static assets from the embedded files.
+// registerStatic registers the static routes for the application.
+// It adds a middleware to serve static assets and a handler to serve static pages.
+// The static pages are retrieved from the database based on the slug parameter in the URL.
+// If the request is an Htmx request, only the content block is rendered, otherwise the entire page is rendered.
+// The function returns an error if there was a problem registering the routes.
 func registerStatic(app *pocketbase.PocketBase) {
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
-		// fmt.Println(assets.PublicFiles.ReadFile("public/css/style.css"))
+		// Assets
 		e.Router.GET("/assets/*", staticEmbeddedHandler(assets.PublicFiles))
+
+		// Sitemap
+		e.Router.GET("/sitemap/*", apis.StaticDirectoryHandler(os.DirFS("./wga_sitemap"), false))
+
+		// "Static" pages
+		e.Router.GET("/pages/:slug", func(c echo.Context) error {
+
+			slug := c.PathParam("slug")
+
+			page, err := models.FindStaticPageBySlug(app.Dao(), slug)
+
+			if err != nil {
+				return err
+			}
+
+			d := assets.NewRenderData(app)
+
+			d["Title"] = page.Title
+			d["Slug"] = page.Slug
+			d["Content"] = page.Content
+
+			html, err := assets.Render(assets.Renderable{
+				IsHtmx: utils.IsHtmxRequest(c),
+				Block:  "staticpage:content",
+				Data:   d,
+			})
+
+			if err != nil {
+				return err
+			}
+
+			c.Response().Header().Set("HX-Push-Url", "/pages/"+slug)
+
+			return c.HTML(http.StatusOK, html)
+
+		})
 		return nil
 	})
 }

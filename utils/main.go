@@ -13,6 +13,7 @@ import (
 	"unicode"
 
 	strip "github.com/grokify/html-strip-tags-go"
+	"github.com/labstack/echo/v5"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 )
@@ -36,7 +37,7 @@ var TemplateFuncs = template.FuncMap{
 	"uppercase":    strings.ToUpper,
 	"lowercase":    strings.ToLower,
 	"pluralize":    pluralize,
-	"slugify":      slugify,
+	"slugify":      Slugify,
 	"safeHTML":     safeHTML,
 	"strippedHTML": StrippedHTML,
 	"removeExt":    RemoveExtension,
@@ -135,7 +136,7 @@ func pluralize(count any, singular string, plural string) (string, error) {
 	return plural, nil
 }
 
-func slugify(s string) string {
+func Slugify(s string) string {
 	var buf bytes.Buffer
 
 	for _, r := range s {
@@ -289,4 +290,9 @@ func GetFileNameFromUrl(url string) string {
 	fileName := splitLastElement[0]
 
 	return fileName
+}
+
+// IsHtmxRequest checks if the request is an htmx request by checking the value of the "HX-Request" header.
+func IsHtmxRequest(c echo.Context) bool {
+	return c.Request().Header.Get("HX-Request") == "true"
 }
