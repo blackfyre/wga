@@ -9,15 +9,15 @@ Artwork search - Web Gallery of Art
     <div class="columns">
         <div class="column is-one-quarter">
             <div class="box">
-                <form action="/search" hx-target="#artwork-search-results">
+                <form action="/search" hx-get="/search" hx-target="#artwork-search-results">
                     <div class="field">
                         <label class="label">Artforms</label>
                         <div class="control">
                             <div class="select">
                                 <select name="art_form">
-                                    <option value="na">Select artform</option>
                                     {{range $k, $v := .ArtFormOptions}}
-                                    <option value="{{$k}}">{{$v}}</option>
+                                    <option value="{{$k}}" {{if eq $.ActiveFilterValues.ArtFormString
+                                        $k}}selected{{end}}>{{$v}}</option>
                                     {{end}}
                                 </select>
                             </div>
@@ -28,9 +28,9 @@ Artwork search - Web Gallery of Art
                         <div class="control">
                             <div class="select">
                                 <select name="art_type">
-                                    <option value="na">Select art type</option>
                                     {{range $k, $v := .ArtTypeOptions}}
-                                    <option value="{{$k}}">{{$v}}</option>
+                                    <option value="{{$k}}" {{if eq $.ActiveFilterValues.ArtTypeString
+                                        $k}}selected{{end}}>{{$v}}</option>
                                     {{end}}
                                 </select>
                             </div>
@@ -41,9 +41,9 @@ Artwork search - Web Gallery of Art
                         <div class="control">
                             <div class="select">
                                 <select name="art_school">
-                                    <option value="na">Select school</option>
                                     {{range $k, $v := .ArtSchoolOptions}}
-                                    <option value="{{$k}}">{{$v}}</option>
+                                    <option value="{{$k}}" {{if eq $.ActiveFilterValues.SchoolString
+                                        $k}}selected{{end}}>{{$v}}</option>
                                     {{end}}
                                 </select>
                             </div>
@@ -52,9 +52,23 @@ Artwork search - Web Gallery of Art
                     <div class="field">
                         <label class="label">Title</label>
                         <p class="control">
-                            <input class="input" type="search" name="q" placeholder="Artwork title">
+                            <input class="input" type="search" name="title" placeholder="Artwork title"
+                                value="{{.ActiveFilterValues.Title}}">
                         </p>
                     </div>
+                    <div class="field">
+                        <label class="label">Artist</label>
+                        <p class="control">
+                            <input class="input" list="artist_list" type="search" name="artist"
+                                placeholder="Artist name" value="{{.ActiveFilterValues.ArtistString}}">
+                            <datalist id="artist_list">
+                                {{range .ArtistNameList}}
+                                <option value="{{.}}"></option>
+                                {{end}}
+                            </datalist>
+                        </p>
+                    </div>
+
                     <div class="field"><button type="submit" class="button is-primary">Search</button></div>
                 </form>
             </div>
