@@ -44,7 +44,7 @@ func (f *filters) BuildFilter() (string, dbx.Params) {
 	}
 
 	if f.ArtType != "" {
-		filterString = filterString + " && art_type = {:art_type}"
+		filterString = filterString + " && type = {:art_type}"
 		params["art_type"] = f.ArtType
 	}
 
