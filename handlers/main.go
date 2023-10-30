@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"github.com/labstack/echo/v5"
+	"blackfyre.ninja/wga/handlers/search"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/pocketbase/pocketbase"
 )
@@ -21,10 +21,6 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 	registerPostcardHandlers(app, p)
 	registerContributors(app)
 	registerStatic(app)
+	search.RegisterSearchHandlers(app)
 	registerHome(app)
-}
-
-// isHtmxRequest checks if the request is an htmx request by checking the value of the "HX-Request" header.
-func isHtmxRequest(c echo.Context) bool {
-	return c.Request().Header.Get("HX-Request") == "true"
 }
