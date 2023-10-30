@@ -52,6 +52,14 @@ func GetArtistBySlug(dao *daos.Dao, slug string) (*Artist, error) {
 	return &c, err
 }
 
+func GetArtistByNameLike(dao *daos.Dao, name string) ([]*Artist, error) {
+	var c []*Artist
+	err := ArtistQuery(dao).AndWhere(dbx.NewExp("LOWER(name) LIKE {:name}", dbx.Params{
+		"name": "%" + name + "%",
+	})).All(&c)
+	return c, err
+}
+
 func GetArtistById(dao *daos.Dao, id string) (*Artist, error) {
 	var c Artist
 	err := ArtistQuery(dao).AndWhere(dbx.NewExp("id={:id}", dbx.Params{
