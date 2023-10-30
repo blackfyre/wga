@@ -114,17 +114,10 @@ func registerArtist(app *pocketbase.PocketBase) {
 			html := ""
 
 			found := app.Cache().Has(cacheKey)
-			// found := false
 
 			if found {
 				html = app.Cache().Get(cacheKey).(string)
 			} else {
-
-				err := godotenv.Load()
-
-				if err != nil {
-					return apis.NewBadRequestError("Error loading .env file", err)
-				}
 
 				fullUrl := os.Getenv("WGA_PROTOCOL") + "://" + c.Request().Host + c.Request().URL.String()
 				artist, err := app.Dao().FindRecordsByFilter("artists", "slug = '"+slug+"'", "+name", 1, 0)
@@ -139,7 +132,7 @@ func registerArtist(app *pocketbase.PocketBase) {
 					return apis.NewNotFoundError("", err)
 				}
 
-				data := newTemplateData(c)
+				data := assets.NewRenderData(app)
 
 				data["Name"] = artist[0].GetString("name")
 				data["Bio"] = artist[0].GetString("bio")
@@ -194,6 +187,7 @@ func registerArtist(app *pocketbase.PocketBase) {
 						"Image":     jsonLd["image"].(string),
 						"Thumb":     jsonLd["thumbnailUrl"].(string),
 						"Jsonld":    jsonLd,
+						"Url":       c.Request().URL.String() + "/" + w.GetString("id"),
 					})
 				}
 
@@ -255,7 +249,7 @@ func registerArtist(app *pocketbase.PocketBase) {
 					return apis.NewNotFoundError("", err)
 				}
 
-				data := newTemplateData(c)
+				data := assets.NewRenderData(app)
 
 				data["ArtistName"] = artist[0].GetString("name")
 				data["ArtistUrl"] = "/artists/" + slug

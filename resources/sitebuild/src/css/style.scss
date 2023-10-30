@@ -189,6 +189,11 @@ figure.hidden-caption {
   transform: rotate(-90deg) translate(0, 93%);
 }
 
+// fix for cookie consent title hover jumping
+.c-bl .title {
+  margin-bottom: 0;
+}
+
 @import "_dialog.scss";
 @import "_trix.scss";
 @import "_table.scss";

@@ -6,9 +6,11 @@ import (
 	"errors"
 	"html/template"
 	"log"
+	"os"
 	"strings"
 
 	"blackfyre.ninja/wga/utils"
+	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 )
 
@@ -20,6 +22,31 @@ type Renderable struct {
 	Page   string
 	Block  string
 	Data   map[string]any
+}
+
+func NewRenderData(app *pocketbase.PocketBase) map[string]any {
+
+	//read file ./analytics.txt and append it to the data map
+
+	data := map[string]any{}
+
+	if !app.Cache().Has("renderable:analytics") {
+
+		analytics, err := os.ReadFile("./analytics.txt")
+
+		if err != nil {
+			log.Println("Error reading analytics.txt")
+			log.Println(err)
+		}
+
+		app.Cache().Set("renderable:analytics", string(analytics))
+
+		data["Analytics"] = string(analytics)
+	} else {
+		data["Analytics"] = app.Cache().Get("renderable:analytics")
+	}
+
+	return data
 }
 
 // renderPage renders the given template with the provided data and returns the resulting HTML string.

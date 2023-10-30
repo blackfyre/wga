@@ -56,9 +56,9 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 		return c.HTML(http.StatusOK, html)
 	} else {
 
-		td := map[string]any{
-			"Artworks": []any{},
-		}
+		td := assets.NewRenderData(app)
+
+		td["Artworks"] = []any{}
 
 		filterString, filterParams := filters.BuildFilter()
 

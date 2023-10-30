@@ -130,9 +130,8 @@ func registerContributors(app *pocketbase.PocketBase) {
 					}
 				}
 
-				data := map[string]any{
-					"Contributors": contributors,
-				}
+				data := assets.NewRenderData(app)
+				data["Contributors"] = contributors
 
 				html, err = assets.Render(assets.Renderable{
 					IsHtmx: htmx,

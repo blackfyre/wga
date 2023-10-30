@@ -43,14 +43,16 @@ func registerStatic(app *pocketbase.PocketBase) {
 				return err
 			}
 
+			d := assets.NewRenderData(app)
+
+			d["Title"] = page.Title
+			d["Slug"] = page.Slug
+			d["Content"] = page.Content
+
 			html, err := assets.Render(assets.Renderable{
 				IsHtmx: utils.IsHtmxRequest(c),
 				Block:  "staticpage:content",
-				Data: map[string]any{
-					"Title":   page.Title,
-					"Slug":    page.Slug,
-					"Content": page.Content,
-				},
+				Data:   d,
 			})
 
 			if err != nil {

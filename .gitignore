@@ -2,6 +2,7 @@ resources/sitebuild/node_modules
 resources/sitebuild/out/style.css
 wga_data
 wga_sitemap
+analytics.txt
 .env
 
 dist/
