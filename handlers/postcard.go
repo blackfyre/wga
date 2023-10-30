@@ -97,7 +97,7 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 
 			aw := r.ExpandedOne("image_id")
 
-			data := newTemplateData(c)
+			data := assets.NewRenderData(app)
 
 			data["SenderName"] = r.GetString("sender_name")
 			data["Message"] = r.GetString("message")
