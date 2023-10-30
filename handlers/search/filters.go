@@ -1,112 +1,66 @@
 package search
 
 import (
-	"fmt"
-
-	"blackfyre.ninja/wga/models"
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 )
 
 type filters struct {
-	Q       string
-	School  string
-	ArtForm string
-	ArtType string
+	Title         string
+	SchoolString  string
+	ArtFormString string
+	ArtTypeString string
+	ArtistString  string
 }
 
 func (f *filters) AnyFilterActive() bool {
-	return f.Q != "" || f.School != "" || f.ArtForm != "" || f.ArtType != ""
+	return f.Title != "" || f.SchoolString != "" || f.ArtFormString != "" || f.ArtTypeString != "" || f.ArtistString != ""
 }
 
 func (f *filters) FingerPrint() string {
-	return f.Q + ":" + f.School + ":" + f.ArtForm + ":" + f.ArtType
+	return f.Title + ":" + f.SchoolString + ":" + f.ArtFormString + ":" + f.ArtTypeString + ":" + f.ArtistString
 }
 
 func (f *filters) BuildFilter() (string, dbx.Params) {
 	filterString := "published = true"
 	params := dbx.Params{}
 
-	if f.Q != "" {
-		filterString = filterString + " && name ~ {:q}"
-		params["q"] = f.Q
+	if f.Title != "" {
+		filterString = filterString + " && title ~ {:title}"
+		params["title"] = f.Title
 	}
 
-	if f.School != "" {
-		filterString = filterString + " && school = {:art_school}"
-		params["art_school"] = f.School
+	if f.SchoolString != "" {
+		filterString = filterString + " && school.slug = {:art_school}"
+		params["art_school"] = f.SchoolString
 	}
 
-	if f.ArtForm != "" {
-		filterString = filterString + " && form = {:art_form}"
-		params["art_form"] = f.ArtForm
+	if f.ArtFormString != "" {
+		filterString = filterString + " && form.slug = {:art_form}"
+		params["art_form"] = f.ArtFormString
 	}
 
-	if f.ArtType != "" {
-		filterString = filterString + " && type = {:art_type}"
-		params["art_type"] = f.ArtType
+	if f.ArtTypeString != "" {
+		filterString = filterString + " && type.slug = {:art_type}"
+		params["art_type"] = f.ArtTypeString
 	}
 
-	fmt.Println(filterString, params)
+	if f.ArtistString != "" {
+		filterString = filterString + " && author.name ~ {:artist}"
+		params["artist"] = f.ArtistString
+	}
 
 	return filterString, params
 }
 
 func buildFilters(app *pocketbase.PocketBase, c echo.Context) *filters {
 	f := &filters{
-		Q:       c.QueryParamDefault("q", ""),
-		School:  c.QueryParamDefault("art_school", ""),
-		ArtForm: c.QueryParamDefault("art_form", ""),
-		ArtType: c.QueryParamDefault("art_type", ""),
-	}
-
-	if f.School == "na" {
-		f.School = ""
-	} else {
-		if app.Cache().Has("search:schools:" + f.School) {
-			f.School = app.Cache().Get("search:schools:" + f.School).(string)
-		} else {
-			r, err := models.GetSchoolBySlug(app.Dao(), f.School)
-
-			if err != nil {
-				f.School = ""
-			} else {
-				f.School = r.GetId()
-			}
-		}
-	}
-
-	if f.ArtForm == "na" {
-		f.ArtForm = ""
-	} else {
-		if app.Cache().Has("search:forms:" + f.ArtForm) {
-			f.ArtForm = app.Cache().Get("search:forms:" + f.ArtForm).(string)
-		} else {
-			r, err := models.GetArtFormBySlug(app.Dao(), f.ArtForm)
-
-			if err != nil {
-				f.ArtForm = ""
-			} else {
-				f.ArtForm = r.GetId()
-			}
-		}
-	}
-
-	if f.ArtType == "na" {
-		f.ArtType = ""
-	} else {
-		if app.Cache().Has("search:types:" + f.ArtType) {
-			f.ArtType = app.Cache().Get("search:types:" + f.ArtType).(string)
-		} else {
-			r, err := models.GetArtTypeBySlug(app.Dao(), f.ArtType)
-
-			if err != nil {
-				f.ArtType = ""
-			} else {
-				f.ArtType = r.GetId()
-			}
-		}
+		Title:         c.QueryParamDefault("title", ""),
+		SchoolString:  c.QueryParamDefault("art_school", ""),
+		ArtFormString: c.QueryParamDefault("art_form", ""),
+		ArtTypeString: c.QueryParamDefault("art_type", ""),
+		ArtistString:  c.QueryParamDefault("artist", ""),
 	}
 
 	return f
