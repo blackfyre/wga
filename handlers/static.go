@@ -11,6 +11,7 @@ import (
 
 	"blackfyre.ninja/wga/assets"
 	"blackfyre.ninja/wga/models"
+	"blackfyre.ninja/wga/utils"
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
@@ -35,18 +36,15 @@ func registerStatic(app *pocketbase.PocketBase) {
 				return err
 			}
 
-			html := ""
-			data := map[string]any{
-				"Title":   page.Title,
-				"Slug":    page.Slug,
-				"Content": page.Content,
-			}
-
-			if isHtmxRequest(c) {
-				html, err = assets.RenderBlock("staticpage:content", data)
-			} else {
-				html, err = assets.RenderPage("staticpage", data)
-			}
+			html, err := assets.Render(assets.Renderable{
+				IsHtmx: utils.IsHtmxRequest(c),
+				Block:  "staticpage:content",
+				Data: map[string]any{
+					"Title":   page.Title,
+					"Slug":    page.Slug,
+					"Content": page.Content,
+				},
+			})
 
 			if err != nil {
 				return err

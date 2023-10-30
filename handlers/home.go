@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"blackfyre.ninja/wga/assets"
+	"blackfyre.ninja/wga/utils"
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
@@ -131,7 +132,7 @@ func registerHome(app *pocketbase.PocketBase) {
 				fmt.Println(err)
 			}
 
-			isHtmx := isHtmxRequest(c)
+			isHtmx := utils.IsHtmxRequest(c)
 
 			html := ""
 
@@ -141,12 +142,11 @@ func registerHome(app *pocketbase.PocketBase) {
 			data["ArtistCount"] = artistCount
 			data["ArtworkCount"] = artworkCount
 
-			if isHtmx {
-				html, err = assets.RenderBlock("home:content", data)
-
-			} else {
-				html, err = assets.RenderPage("home", data)
-			}
+			html, err = assets.Render(assets.Renderable{
+				IsHtmx: isHtmx,
+				Block:  "home:content",
+				Data:   data,
+			})
 
 			if err != nil {
 				// or redirect to a dedicated 404 HTML page

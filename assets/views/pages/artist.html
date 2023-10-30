@@ -39,6 +39,7 @@
 
         <div class="columns is-multiline works-listing" data-viewer>
             {{range .Works}}
+            {{ block "artist:work" .}}
             <div class="column is-one-third-tablet is-one-quarter-desktop">
                 <section class="card is-art-card">
                     <div class="card-image">
@@ -73,6 +74,7 @@
                     </script>
                 </section>
             </div>
+            {{end}}
             {{ else }}
 
             {{end}}
