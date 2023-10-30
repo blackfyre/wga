@@ -136,7 +136,7 @@ func registerHome(app *pocketbase.PocketBase) {
 
 			html := ""
 
-			data := newTemplateData(c)
+			data := assets.NewRenderData(app)
 
 			data["Content"] = welcomeText
 			data["ArtistCount"] = artistCount
