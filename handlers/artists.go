@@ -148,7 +148,7 @@ func registerArtists(app *pocketbase.PocketBase) {
 					preRendered = append(preRendered, row)
 				}
 
-				data := newTemplateData(c)
+				data := assets.NewRenderData(app)
 
 				data["Content"] = preRendered
 				data["Count"] = recordsCount
