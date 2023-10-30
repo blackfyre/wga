@@ -23,9 +23,6 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 	limit := 30
 	page := 1
 
-	//set push url
-	c.Response().Header().Set("HX-Push-Url", currentUrl)
-
 	//build filters
 	filters := buildFilters(app, c)
 
@@ -134,14 +131,22 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 		td["ArtFormOptions"], _ = getArtFormOptions(app)
 		td["ArtTypeOptions"], _ = getArtTypesOptions(app)
 		td["ArtSchoolOptions"], _ = getArtSchoolOptions(app)
+		td["ArtistNameList"], _ = getArtistNameList(app)
+		td["ActiveFilterValues"] = filters
 
 		pagination := utils.NewPagination(recordsCount, limit, page, "/artists?q=")
 
 		td["Pagination"] = pagination.Render()
 
+		blockToRender := "search:content"
+
+		if filters.AnyFilterActive() {
+			blockToRender = "search:search-results"
+		}
+
 		html, err := assets.Render(assets.Renderable{
 			IsHtmx: htmx,
-			Block:  "search:content",
+			Block:  blockToRender,
 			Data:   td,
 		})
 
@@ -149,7 +154,7 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 			return apis.NewNotFoundError("", err)
 		}
 
-		c.Response().Header().Set("HX-Push-Url", "/search")
+		c.Response().Header().Set("HX-Push-Url", currentUrl)
 
 		return c.HTML(http.StatusOK, html)
 	}
