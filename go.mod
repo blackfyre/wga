@@ -9,6 +9,7 @@ require (
 	github.com/microcosm-cc/bluemonday v1.0.26
 	github.com/pocketbase/dbx v1.10.1
 	github.com/pocketbase/pocketbase v0.19.0
+	github.com/sabloger/sitemap-generator v1.2.2
 	golang.org/x/text v0.13.0
 )
 
