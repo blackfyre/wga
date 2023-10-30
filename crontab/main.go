@@ -11,6 +11,7 @@ func RegisterCronJobs(app *pocketbase.PocketBase) {
 		scheduler := cron.New()
 
 		sendPostcards(app, scheduler)
+		generateSiteMap(app, scheduler)
 
 		scheduler.Start()
 
