@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -14,6 +15,7 @@ import (
 	"blackfyre.ninja/wga/utils"
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
+	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 )
 
@@ -24,8 +26,13 @@ import (
 // The function returns an error if there was a problem registering the routes.
 func registerStatic(app *pocketbase.PocketBase) {
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
-		// fmt.Println(assets.PublicFiles.ReadFile("public/css/style.css"))
+		// Assets
 		e.Router.GET("/assets/*", staticEmbeddedHandler(assets.PublicFiles))
+
+		// Sitemap
+		e.Router.GET("/sitemap/*", apis.StaticDirectoryHandler(os.DirFS("./wga_sitemap"), false))
+
+		// "Static" pages
 		e.Router.GET("/pages/:slug", func(c echo.Context) error {
 
 			slug := c.PathParam("slug")
