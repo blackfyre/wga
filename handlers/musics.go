@@ -45,7 +45,7 @@ func registerMusicHandlers(app *pocketbase.PocketBase) {
 			found := app.Cache().Has(cacheKey)
 
 			// TODO: implement data getter
-			musicList := getMusics()
+			musicList := GetMusics()
 
 			years := []string{}
 			for _, century := range musicList {
@@ -115,7 +115,7 @@ func registerMusicHandlers(app *pocketbase.PocketBase) {
 	})
 }
 
-func getMusics() []Century {
+func GetMusics() []Century {
 	var data []Century
 
 	fileData, err := os.ReadFile("./assets/reference/musics.json")

@@ -279,17 +279,18 @@ func RemoveExtension(s string) string {
 	return s[:len(s)-4]
 }
 
-func GetFileNameFromUrl(url string) string {
+func GetFileNameFromUrl(url string, extension bool) string {
 	// split the url by /
 	splitUrl := strings.Split(url, "/")
 	// get the last element of the split url
 	lastElement := splitUrl[len(splitUrl)-1]
-	// split the last element by .
-	splitLastElement := strings.Split(lastElement, ".")
-	// get the first element of the split last element
-	fileName := splitLastElement[0]
 
-	return fileName
+	// if extension is false, remove the extension
+	if !extension {
+		lastElement = RemoveExtension(lastElement)
+	}
+
+	return lastElement
 }
 
 // IsHtmxRequest checks if the request is an htmx request by checking the value of the "HX-Request" header.
