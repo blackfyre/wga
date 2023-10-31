@@ -19,9 +19,9 @@ Music player
         </p>
         <div class="level columns block is-mobil">
             <audio class="level-item is-mobil" controls preload="auto">
-                {{/* <source src="{{.Source}}" type="audio/mpeg"> */}}
+                {{/* <source src="{{getFileNameFromUrl .Source}}" type="audio/mpeg"> */}}
                 {{if .Source}}
-                    <source src="/assets/music/{{.Source}}" type="audio/mpeg">
+                    <source src="/assets/music/{{getFileNameFromUrl (.Source true)}}" type="audio/mpeg">
                 {{else}}
                     <source src="" type="audio/mpeg">
                 {{end}}

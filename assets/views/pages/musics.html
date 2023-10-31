@@ -35,7 +35,7 @@ Musics
                             {{range .Songs}}
                                 <li>
                                     {{if .URL}}
-                                        <a href="/musics/{{getFileNameFromUrl .URL}}" hx-get="/musics/{{getFileNameFromUrl .URL}}" hx-target="#mc-area">{{.Title}}</a>
+                                        <a href="/musics/{{getFileNameFromUrl (.URL false)}}" hx-get="/musics/{{getFileNameFromUrl (.URL false)}}" hx-target="#mc-area">{{.Title}}</a>
                                     {{else}}
                                         <a href=""></a>
                                     {{end}}
