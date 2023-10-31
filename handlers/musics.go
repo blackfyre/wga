@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"blackfyre.ninja/wga/assets"
+	"blackfyre.ninja/wga/utils"
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
@@ -36,7 +37,7 @@ func registerMusicHandlers(app *pocketbase.PocketBase) {
 
 		e.Router.GET("musics", func(c echo.Context) error {
 			html, err := "", error(nil)
-			isHtmx := isHtmxRequest(c)
+			isHtmx := utils.IsHtmxRequest(c)
 			cacheKey := "musics"
 
 			setUrl(c, "")
@@ -74,10 +75,11 @@ func registerMusicHandlers(app *pocketbase.PocketBase) {
 		})
 
 		e.Router.GET("musics/:name", func(c echo.Context) error {
+			isHtmx := utils.IsHtmxRequest(c)
 			slug := c.PathParam("name")
 			cacheKey := "music:" + slug
 
-			if isHtmxRequest(c) {
+			if isHtmx {
 				cacheKey = cacheKey + "-htmx"
 			}
 
@@ -91,7 +93,7 @@ func registerMusicHandlers(app *pocketbase.PocketBase) {
 				"Source":   "anonymous_conductus.mp3",
 			}
 
-			if isHtmxRequest(c) {
+			if isHtmx {
 				html, err = assets.RenderBlock("music:content", data)
 			} else {
 				html, err = assets.RenderPageWithLayout("musics/music", "noLayout", data)
