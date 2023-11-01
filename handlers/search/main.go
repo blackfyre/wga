@@ -134,7 +134,7 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 		td["ArtistNameList"], _ = getArtistNameList(app)
 		td["ActiveFilterValues"] = filters
 
-		pagination := utils.NewPagination(recordsCount, limit, page, "/artists?q=")
+		pagination := utils.NewPagination(recordsCount, limit, page, currentUrl, "artwork-search-results")
 
 		td["Pagination"] = pagination.Render()
 
