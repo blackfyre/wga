@@ -30,6 +30,21 @@
 
     {{template "partial:top-nav" .}}
 
+    {{if ne .Env "production"}}
+    <section class="section" style="padding-bottom: 0;">
+        <div class="container">
+            <article class="message is-warning">
+                <div class="message-body">
+                    This is a development version of the site. It is not intended for public use. You can give us a
+                    helping
+                    hand
+                    at <a href="https://github.com/blackfyre/wga">GitHub</a>.
+                </div>
+            </article>
+        </div>
+    </section>
+    {{end}}
+
     <main id="mc-area">
         {{block "body" .}}
 
