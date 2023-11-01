@@ -28,7 +28,9 @@ func NewRenderData(app *pocketbase.PocketBase) map[string]any {
 
 	//read file ./analytics.txt and append it to the data map
 
-	data := map[string]any{}
+	data := map[string]any{
+		"Env": os.Getenv("WGA_ENV"),
+	}
 
 	if !app.Cache().Has("renderable:analytics") {
 
