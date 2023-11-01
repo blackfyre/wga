@@ -16,6 +16,7 @@ type Pagination struct {
 	currentPage int
 	totalPage   int
 	baseUrl     string
+	htmxTarget  string
 
 	// render parts
 	firstPart  []string
@@ -24,7 +25,7 @@ type Pagination struct {
 }
 
 // constructor
-func NewPagination(totalAmount, perPage, currentPage int, baseUrl string) *Pagination {
+func NewPagination(totalAmount, perPage, currentPage int, baseUrl string, htmxTarget string) *Pagination {
 	if currentPage == 0 {
 		currentPage = 1
 	}
@@ -40,6 +41,7 @@ func NewPagination(totalAmount, perPage, currentPage int, baseUrl string) *Pagin
 		currentPage: currentPage,
 		totalPage:   int(math.Ceil(float64(totalAmount) / float64(perPage))),
 		baseUrl:     baseUrl,
+		htmxTarget:  htmxTarget,
 	}
 }
 
@@ -144,7 +146,7 @@ func (p *Pagination) GetDisabledPageWrapper(text string) string {
 	return "<li><a class=\"pagination-link is-disabled\">" + text + "</a></li>"
 }
 func (p *Pagination) GetAvailablePageWrapper(href, page string) string {
-	return "<li><a class='pagination-link' aria-label='Goto page " + page + "' hx-get=\"" + href + "\" href=\"" + href + "\" hx-target=\"#search-results\">" + page + "</a></li>"
+	return "<li><a class='pagination-link' aria-label='Goto page " + page + "' hx-get=\"" + href + "\" href=\"" + href + "\" hx-target=\"#" + p.htmxTarget + "\">" + page + "</a></li>"
 }
 func (p *Pagination) GetDots() string {
 	return "<li><span class=\"pagination-ellipsis\">&hellip;</span></li>"

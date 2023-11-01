@@ -20,7 +20,7 @@ Artists - Web Gallery of Art
                             <p class="control">
                                 <input class="input" type="search" name="q" placeholder="Find an artist"
                                     hx-get="/artists" hx-trigger="keyup changed delay:500ms, search"
-                                    hx-target="#search-results">
+                                    hx-target="#search-results" hx-disabled-elt="this">
                             </p>
                         </div>
                     </div>
