@@ -1,50 +1,50 @@
 dialog {
-    display: block;
-    inset: 0;
-    z-index: 2147483647;
-    transition: opacity 0.5s;
-    animation: scale-down 0.5s cubic-bezier(0.25, 0, 0.3, 1) forwards;
-    animation-timing-function: cubic-bezier(0.5, -0.5, 0.1, 1.5);
-    border-radius: calc(1rem / 3);
-    padding: 1.5rem;
-    border: solid 1px #ccc;
-    box-shadow: 0 0 2rem 0 rgba(0, 0, 0, 0.5);
-    background-color: $wgaLightestBlue;
-    border: none !important;
+  display: block;
+  inset: 0;
+  z-index: 2147483647;
+  transition: opacity 0.5s;
+  animation: scale-down 0.5s cubic-bezier(0.25, 0, 0.3, 1) forwards;
+  animation-timing-function: cubic-bezier(0.5, -0.5, 0.1, 1.5);
+  border-radius: calc(1rem / 3);
+  padding: 1.5rem;
+  border: solid 1px #ccc;
+  box-shadow: 0 0 2rem 0 rgba(0, 0, 0, 0.5);
+  background-color: $wgaLightestBlue;
+  border: none !important;
 
-    &[open] {
-        animation: slide-in-up 0.5s cubic-bezier(0.25, 0, 0.3, 1) forwards;
-    }
+  &[open] {
+    animation: slide-in-up 0.5s cubic-bezier(0.25, 0, 0.3, 1) forwards;
+  }
 
-    &:not([open]) {
-        pointer-events: none;
-        opacity: 0;
-    }
+  &:not([open]) {
+    pointer-events: none;
+    opacity: 0;
+  }
 
-    &::backdrop {
-        backdrop-filter: blur(0.25rem);
-    }
+  &::backdrop {
+    backdrop-filter: blur(0.25rem);
+  }
 
-    .close-dialog {
-        position: absolute;
-        right: 1rem;
-    }
+  .close-dialog {
+    position: absolute;
+    right: 1rem;
+  }
 }
 
 @keyframes slide-in-up {
-    0% {
-        transform: translateY(100%);
-    }
+  0% {
+    transform: translateY(100%);
+  }
 }
 
 @keyframes scale-down {
-    to {
-        transform: scale(0.75);
-    }
+  to {
+    transform: scale(0.75);
+  }
 }
 
 @media (min-width: $tablet) {
-    dialog {
-        max-width: 70vw;
-    }
+  dialog {
+    max-width: 70vw;
+  }
 }

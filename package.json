@@ -1,0 +1,32 @@
+{
+  "name": "wga",
+  "version": "1.0.0",
+  "description": "Front-end build system for the Web Gallery of Art: Project Phoenix",
+  "private": "true",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "husky install"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/blackfyre/wga.git"
+  },
+  "author": "Miklós Galicz <miklos.galicz@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/blackfyre/wga/issues"
+  },
+  "homepage": "https://github.com/blackfyre/wga#readme",
+  "devDependencies": {
+    "autoprefixer": "^10.4.16",
+    "esbuild": "0.19.5",
+    "esbuild-sass-plugin": "^2.16.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.0.2",
+    "postcss": "^8.4.31",
+    "prettier": "3.0.3"
+  },
+  "lint-staged": {
+    "**/*": "prettier --write --ignore-unknown"
+  }
+}
