@@ -20,7 +20,7 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 	//setup request variables
 	htmx := utils.IsHtmxRequest(c)
 	currentUrl := c.Request().URL.String()
-	limit := 30
+	limit := 16
 	page := 1
 
 	//build filters
@@ -37,7 +37,7 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 	}
 
 	//set offset
-	offset := (page - 1) * limit
+	offset := page * limit
 
 	//set cache key
 	cacheKey := "search:" + strconv.Itoa(offset) + ":" + strconv.Itoa(limit) + ":" + strconv.Itoa(page) + ":" + filters.FingerPrint()
@@ -140,7 +140,7 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 
 		blockToRender := "search:content"
 
-		if filters.AnyFilterActive() {
+		if htmx {
 			blockToRender = "search:search-results"
 		}
 
