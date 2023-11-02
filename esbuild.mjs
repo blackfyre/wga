@@ -2,30 +2,51 @@ import * as esbuild from "esbuild";
 import { sassPlugin } from "esbuild-sass-plugin";
 import postcss from "postcss";
 import autoprefixer from "autoprefixer";
+import purgeCSSPlugin from "@fullhuman/postcss-purgecss";
+import fs from "node:fs";
 
-esbuild
-  .build({
-    entryPoints: [
-      "./resources/sitebuild/src/js/app.js",
-      "./resources/sitebuild/src/css/style.scss",
-    ],
-    bundle: true,
-    minify: true,
-    sourcemap: true,
-    legalComments: "linked",
-    allowOverwrite: true,
-    plugins: [
-      sassPlugin({
-        loadPath: ["./resources/sitebuild/src/css"],
-        async transform(source) {
-          const { css } = await postcss([autoprefixer]).process(source);
-          return css;
-        },
-      }),
-    ],
-    outdir: "./assets/public/",
-  })
-  .then(() => {
-    console.log("⚡ Build complete! ⚡");
-  })
-  .catch(() => process.exit(1));
+console.info("🚀 Starting build 🚀");
+
+let result = await esbuild.build({
+  entryPoints: ["resources/js/app.js", "resources/css/style.scss"],
+  bundle: true,
+  minify: true,
+  logLevel: "debug",
+  metafile: true,
+  sourcemap: true,
+  legalComments: "linked",
+  allowOverwrite: true,
+  outbase: "resources",
+  loader: {
+    ".png": "file",
+    ".jpg": "file",
+    ".svg": "file",
+    ".woff": "file",
+    ".woff2": "file",
+    ".ttf": "file",
+    ".eot": "file",
+  },
+  plugins: [
+    sassPlugin({
+      basedir: "resources/css",
+      loadPaths: ["node_modules", "resources/css"],
+      async transform(source) {
+        const { css } = await postcss([
+          autoprefixer,
+          purgeCSSPlugin({
+            content: [
+              "assets/views/pages/**/*.html",
+              "assets/views/partials/**/*.html",
+              "resources/js/**/*.js",
+            ],
+          }),
+        ]).process(source, { from: undefined });
+
+        return css;
+      },
+    }),
+  ],
+  outdir: "./assets/public/",
+});
+
+fs.writeFileSync("meta.json", JSON.stringify(result.metafile));
