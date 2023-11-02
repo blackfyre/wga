@@ -18,13 +18,20 @@
   },
   "homepage": "https://github.com/blackfyre/wga#readme",
   "devDependencies": {
+    "@creativebulma/bulma-divider": "^1.1.0",
+    "@fullhuman/postcss-purgecss": "^5.0.0",
     "autoprefixer": "^10.4.16",
+    "bulma": "^0.9.4",
+    "bulma-toast": "^2.4.3",
     "esbuild": "0.19.5",
+    "esbuild-plugin-purgecss-2": "^1.0.1",
     "esbuild-sass-plugin": "^2.16.0",
+    "glob-all": "^3.3.1",
     "husky": "^8.0.3",
     "lint-staged": "^15.0.2",
     "postcss": "^8.4.31",
-    "prettier": "3.0.3"
+    "prettier": "3.0.3",
+    "purgecss-from-html": "^6.0.0-alpha.0"
   },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown"
