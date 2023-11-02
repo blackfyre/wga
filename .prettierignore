@@ -13,15 +13,7 @@ tmp/
 
 # Front-end build files
 resources/sitebuild/out/style.css
-assets/public/css/style.css
-assets/public/js/*.js
-assets/public/js/*.map
-assets/public/js/*.txt
-
-# hosts seed data for the guestbook, can't include because of GDPR
-guestbook.json
-# this file is used for cache only
-contributors.json
+assets/*
 
 # Dependecies shouldn't be a part of the source code
 node_modules
