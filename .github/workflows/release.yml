@@ -32,7 +32,7 @@ jobs:
         working-directory: ./resources/sitebuild
         run: |
           npm ci
-          npm run build
+          node esbuild.mjs
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v3

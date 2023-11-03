@@ -34,10 +34,13 @@ let result = await esbuild.build({
         const { css } = await postcss([
           autoprefixer,
           purgeCSSPlugin({
+            safelist: ["content"],
             content: [
+              "assets/views/layout.html",
               "assets/views/pages/**/*.html",
               "assets/views/partials/**/*.html",
               "resources/js/**/*.js",
+              "utils/**/*.go",
             ],
           }),
         ]).process(source, { from: undefined });
