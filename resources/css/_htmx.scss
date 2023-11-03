@@ -1,0 +1,17 @@
+.htmx-indicator-show {
+  display: none;
+}
+
+.htmx-indicator-hide {
+  display: initial !important;
+}
+
+.htmx-request {
+  .message.htmx-indicator-show {
+    display: block !important;
+  }
+
+  .htmx-indicator-hide {
+    display: none;
+  }
+}
