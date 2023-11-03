@@ -1,0 +1,19 @@
+# App local data
+wga_data
+wga_sitemap
+analytics.txt
+.env
+
+# Go build related files
+dist/
+tmp/
+
+# VSCode can output html from mjml
+*/mjml/*.html
+
+# Front-end build files
+resources/sitebuild/out/style.css
+assets/*
+
+# Dependecies shouldn't be a part of the source code
+node_modules
