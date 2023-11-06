@@ -10,7 +10,7 @@ import (
 	"blackfyre.ninja/wga/hooks"
 	_ "blackfyre.ninja/wga/migrations"
 
-	// "blackfyre.ninja/wga/utils"
+	"blackfyre.ninja/wga/utils"
 	"blackfyre.ninja/wga/utils/sitemap"
 	"github.com/joho/godotenv"
 	"github.com/pocketbase/pocketbase"
@@ -20,7 +20,7 @@ import (
 
 func main() {
 
-	// utils.ParseMusicListToUrls("./assets/reference/musics.json")
+	utils.ParseMusicListToUrls("./assets/reference/musics.json")
 	err := godotenv.Load()
 	if err != nil {
 		log.Println("Error loading .env file")
