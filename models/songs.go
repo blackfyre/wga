@@ -4,17 +4,17 @@ import (
 	"github.com/pocketbase/pocketbase/models"
 )
 
-type Song struct {
+type Music_song struct {
 	models.BaseModel
-	Title  string `db:"title" json:"title"`
-	URL    string `db:"url" json:"url"`
-	Source []string `db:"source" json:"source"`
-	ComposerID uint `db:"composer_id" json:"composer_id"`
+	Title  		string `db:"title" json:"title"`
+	URL    		string `db:"url" json:"url"`
+	Source 		string `db:"source" json:"source"`
+	ComposerID  string `db:"composer_id" json:"composer_id"` // foreign key
 }
 
-var _ models.Model = (*Song)(nil)
+var _ models.Model = (*Music_song)(nil)
 
 
-func (m *Song) TableName() string {
-	return "Song" // the name of your collection
+func (m *Music_song) TableName() string {
+	return "music_song" // the name of your collection
 }

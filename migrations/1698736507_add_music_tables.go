@@ -1,11 +1,7 @@
 package migrations
 
 import (
-	"strings"
-
 	"blackfyre.ninja/wga/handlers"
-	shape "blackfyre.ninja/wga/models"
-	"blackfyre.ninja/wga/utils"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/daos"
 	m "github.com/pocketbase/pocketbase/migrations"
@@ -19,21 +15,28 @@ func init() {
 
 		collection := &models.Collection{}
 
-		collection.Name = "music_composers"
+		collection.Name = "music_composer"
 		collection.Type = models.CollectionTypeBase
 		collection.System = false
-		collection.Id = "music_composers"
+		collection.Id = "music_composer"
 		collection.MarkAsNew()
 		collection.Schema = schema.NewSchema(
 			&schema.SchemaField{
-				Id:          "music_composers_name",
+				Id:          "music_composer_id",
+				Name:        "id",
+				Type:        schema.FieldTypeText,
+				Options:     &schema.TextOptions{},
+				Presentable: true,
+			},
+			&schema.SchemaField{
+				Id:          "music_composer_name",
 				Name:        "name",
 				Type:        schema.FieldTypeText,
 				Options:     &schema.TextOptions{},
 				Presentable: true,
 			},
 			&schema.SchemaField{
-				Id:          "music_composers_century",
+				Id:          "music_composer_century",
 				Name:        "century",
 				Type:        schema.FieldTypeSelect,
 				Options:     &schema.SelectOptions{
@@ -43,14 +46,14 @@ func init() {
 				Presentable: true,
 			},
 			&schema.SchemaField{
-				Id:          "music_composers_date",
+				Id:          "music_composer_date",
 				Name:        "date",
 				Type:        schema.FieldTypeText,
 				Options:     &schema.TextOptions{},
 				Presentable: true,
 			},
 			&schema.SchemaField{
-				Id:          "music_composers_language",
+				Id:          "music_composer_language",
 				Name:        "language",
 				Type:        schema.FieldTypeText,
 				Options:     &schema.TextOptions{},
@@ -60,41 +63,42 @@ func init() {
 
 		err := dao.SaveCollection(collection)
 
-		collection.Name = "music_songs"
+		collection.Name = "music_song"
 		collection.Type = models.CollectionTypeBase
 		collection.System = false
-		collection.Id = "music_songs"
+		collection.Id = "music_song"
 		collection.MarkAsNew()
 		collection.Schema = schema.NewSchema(
 			&schema.SchemaField{
-				Id:          "music_songs_title",
+				Id:          "music_composer_id",
+				Name:        "composer_id",
+				Type: schema.FieldTypeRelation,
+				Options: &schema.RelationOptions{
+					CollectionId: "music_composer",
+					MinSelect:    Ptr(1),
+				},
+				Presentable: true,
+			},
+			&schema.SchemaField{
+				Id:          "music_song_title",
 				Name:        "title",
 				Type:        schema.FieldTypeText,
 				Options:     &schema.TextOptions{},
 				Presentable: true,
 			},
 			&schema.SchemaField{
-				Id:          "music_songs_url",
+				Id:          "music_song_url",
 				Name:        "url",
 				Type:        schema.FieldTypeText,
 				Options:     &schema.TextOptions{},
 				Presentable: true,
 			},
 			&schema.SchemaField{
-				Id:          "music_songs_source",
+				Id:          "music_song_source",
 				Name:        "source",
 				Type:        schema.FieldTypeText,
 				Options:     &schema.TextOptions{},
 				Presentable: true,
-			},
-			&schema.SchemaField{
-				Id:          "music_composer_name",
-				Name:        "music_composer_name",
-				Type: schema.FieldTypeRelation,
-				Options: &schema.RelationOptions{
-					CollectionId: "music_composers",
-					MinSelect:    Ptr(1),
-				},
 			},
 		)
 
@@ -103,7 +107,7 @@ func init() {
 		if err != nil {
 			return err
 		}
-		var composers []shape.Composer
+		var composers []handlers.Composer_seed
 
 		composers = handlers.GetParsedMusics(handlers.GetMusics())
 
@@ -113,7 +117,8 @@ func init() {
 
 		for _, composer := range composers {
 
-			q := db.Insert("music_composers", dbx.Params{
+			q := db.Insert("music_composer", dbx.Params{
+				"id": composer.ID,
 				"name": composer.Name,
 				"date": composer.Date,
 				"century": composer.Century,
@@ -127,16 +132,11 @@ func init() {
 			}
 
 			for _, song := range composer.Songs {
-				newSource := []string{}
-				for _, source := range song.Source {
-					newSource = append(newSource, utils.GetFileNameFromUrl(source, true))
-				}
-				newSourceStr := strings.Join(newSource, ",")
-				q := db.Insert("music_songs", dbx.Params{
+				q := db.Insert("music_song", dbx.Params{
+					"composer_id": song.ComposerID,
 					"title": song.Title,
 					"url": song.URL,
-					"source": newSourceStr,
-					"music_composer_name": composer.Name,
+					"source": song.Source,
 				})
 				
 				_, err = q.Execute()
@@ -150,10 +150,10 @@ func init() {
 
 		return nil
 	}, func(db dbx.Builder) error {
-		q := db.DropTable("music_songs")
+		q := db.DropTable("music_song")
 		_, err := q.Execute()
 
-		q = db.DropTable("music_composers")
+		q = db.DropTable("music_composer")
 		_, err = q.Execute()
 
 		return err
