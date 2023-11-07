@@ -10,7 +10,7 @@ require (
 	github.com/pocketbase/dbx v1.10.1
 	github.com/pocketbase/pocketbase v0.19.3
 	github.com/sabloger/sitemap-generator v1.2.2
-	github.com/spf13/cobra v1.7.0
+	github.com/spf13/cobra v1.8.0
 	golang.org/x/text v0.14.0
 )
 
