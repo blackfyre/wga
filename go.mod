@@ -11,7 +11,7 @@ require (
 	github.com/pocketbase/pocketbase v0.19.3
 	github.com/sabloger/sitemap-generator v1.2.2
 	github.com/spf13/cobra v1.7.0
-	golang.org/x/text v0.13.0
+	golang.org/x/text v0.14.0
 )
 
 require (
