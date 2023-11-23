@@ -3,7 +3,7 @@ module blackfyre.ninja/wga
 go 1.21.0
 
 require (
-	github.com/grokify/html-strip-tags-go v0.0.1
+	github.com/grokify/html-strip-tags-go v0.1.0
 	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v5 v5.0.0-20230722203903-ec5b858dab61
 	github.com/microcosm-cc/bluemonday v1.0.26
