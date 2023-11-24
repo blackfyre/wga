@@ -67,7 +67,7 @@ func init() {
 
 		collection := &models.Collection{}
 
-		collection.Name = "artists"
+		collection.Name = "Artists"
 		collection.Id = "artists"
 		collection.Type = models.CollectionTypeBase
 		collection.System = false
