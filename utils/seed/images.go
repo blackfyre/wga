@@ -43,7 +43,7 @@ func SeedImages(app *pocketbase.PocketBase) error {
 		}
 	}()
 
-	artworks, err := models.GetArtowrks(app.Dao())
+	artworks, err := models.GetArtworks(app.Dao())
 
 	if err != nil {
 		return err

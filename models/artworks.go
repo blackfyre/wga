@@ -30,7 +30,7 @@ func ArtworkQuery(dao *daos.Dao) *dbx.SelectQuery {
 	return dao.ModelQuery(&Artwork{})
 }
 
-func GetArtowrks(dao *daos.Dao) ([]*Artwork, error) {
+func GetArtworks(dao *daos.Dao) ([]*Artwork, error) {
 	var c []*Artwork
 	err := ArtworkQuery(dao).OrderBy("title asc").All(&c)
 	return c, err
