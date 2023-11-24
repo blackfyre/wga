@@ -12,12 +12,12 @@ import (
 )
 
 type GuestbookRecord struct {
-	Message          string `json:"message"`
-	Name        	 string `json:"name"`
-	Email       	 string `json:"email"`
-	Location         string `json:"location"`
-	Created          string `json:"created"`
-	Updated          string `json:"updated"`
+	Message  string `json:"message"`
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Location string `json:"location"`
+	Created  string `json:"created"`
+	Updated  string `json:"updated"`
 }
 
 func init() {
@@ -26,7 +26,8 @@ func init() {
 
 		collection := &models.Collection{}
 
-		collection.Name = "guestbook"
+		collection.Name = "Guestbook"
+		collection.Id = "guestbook"
 		collection.Type = models.CollectionTypeBase
 		collection.System = false
 		collection.MarkAsNew()
@@ -79,12 +80,12 @@ func init() {
 
 			for _, g := range c {
 				q := db.Insert("guestbook", dbx.Params{
-					"message":      g.Message,
-					"name":         g.Name,
-					"email":        g.Email,
-					"location": 	g.Location,
-					"created":      g.Created,
-					"updated":      g.Updated,
+					"message":  g.Message,
+					"name":     g.Name,
+					"email":    g.Email,
+					"location": g.Location,
+					"created":  g.Created,
+					"updated":  g.Updated,
 				})
 
 				_, err = q.Execute()
