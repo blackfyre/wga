@@ -24,6 +24,10 @@ type Renderable struct {
 	Data   map[string]any
 }
 
+// NewRenderData creates and returns a map containing render data for the given app.
+// The render data includes the environment variable "WGA_ENV" and the contents of the "analytics.txt" file.
+// If the "renderable:analytics" cache is not available, the file is read and stored in the cache.
+// The "Analytics" key in the map contains the contents of the "analytics.txt" file.
 func NewRenderData(app *pocketbase.PocketBase) map[string]any {
 
 	//read file ./analytics.txt and append it to the data map
@@ -39,6 +43,7 @@ func NewRenderData(app *pocketbase.PocketBase) map[string]any {
 		if err != nil {
 			log.Println("Error reading analytics.txt")
 			log.Println(err)
+			return data
 		}
 
 		app.Cache().Set("renderable:analytics", string(analytics))

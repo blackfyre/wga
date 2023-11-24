@@ -67,7 +67,7 @@ func init() {
 
 		collection := &models.Collection{}
 
-		collection.Name = "artists"
+		collection.Name = "Artists"
 		collection.Id = "artists"
 		collection.Type = models.CollectionTypeBase
 		collection.System = false
@@ -117,18 +117,6 @@ func init() {
 				Options: &schema.TextOptions{},
 			},
 			&schema.SchemaField{
-				Id:      "artist_place_of_activity_start",
-				Name:    "place_of_activity_start",
-				Type:    schema.FieldTypeText,
-				Options: &schema.TextOptions{},
-			},
-			&schema.SchemaField{
-				Id:      "artist_place_of_activity_end",
-				Name:    "place_of_activity_end",
-				Type:    schema.FieldTypeText,
-				Options: &schema.TextOptions{},
-			},
-			&schema.SchemaField{
 				Id:       "artist_exact_year_of_birth",
 				Name:     "exact_year_of_birth",
 				Type:     schema.FieldTypeSelect,
@@ -138,20 +126,6 @@ func init() {
 			&schema.SchemaField{
 				Id:       "artist_exact_year_of_death",
 				Name:     "exact_year_of_death",
-				Type:     schema.FieldTypeSelect,
-				Options:  &schema.SelectOptions{Values: []string{Yes, No, NotApplicable}, MaxSelect: 1},
-				Required: true,
-			},
-			&schema.SchemaField{
-				Id:       "artist_exact_active_start",
-				Name:     "exact_active_start",
-				Type:     schema.FieldTypeSelect,
-				Options:  &schema.SelectOptions{Values: []string{Yes, No, NotApplicable}, MaxSelect: 1},
-				Required: true,
-			},
-			&schema.SchemaField{
-				Id:       "artist_exact_active_end",
-				Name:     "exact_active_end",
 				Type:     schema.FieldTypeSelect,
 				Options:  &schema.SelectOptions{Values: []string{Yes, No, NotApplicable}, MaxSelect: 1},
 				Required: true,
@@ -233,23 +207,19 @@ func init() {
 
 		for _, i := range c {
 			q := db.Insert("artists", dbx.Params{
-				"id":                      i.Id,
-				"name":                    i.Name,
-				"bio":                     i.Bio,
-				"slug":                    i.Slug,
-				"year_of_birth":           i.Meta.YearOfBirth,
-				"year_of_death":           i.Meta.YearOfDeath,
-				"place_of_birth":          i.Meta.PlaceOfBirth,
-				"place_of_death":          i.Meta.PlaceOfDeath,
-				"profession":              i.Source.Profession,
-				"school":                  i.School,
-				"published":               true,
-				"place_of_activity_start": i.Meta.PlaceOfActivityStart,
-				"place_of_activity_end":   i.Meta.PlaceOfActivityEnd,
-				"exact_year_of_birth":     i.Meta.ExactYearOfBirth,
-				"exact_year_of_death":     i.Meta.ExactYearOfDeath,
-				"exact_active_start":      i.Meta.ExactActiveStart,
-				"exact_active_end":        i.Meta.ExactActiveEnd,
+				"id":                  i.Id,
+				"name":                i.Name,
+				"bio":                 i.Bio,
+				"slug":                i.Slug,
+				"year_of_birth":       i.Meta.YearOfBirth,
+				"year_of_death":       i.Meta.YearOfDeath,
+				"place_of_birth":      i.Meta.PlaceOfBirth,
+				"place_of_death":      i.Meta.PlaceOfDeath,
+				"profession":          i.Source.Profession,
+				"exact_year_of_birth": i.Meta.ExactYearOfBirth,
+				"exact_year_of_death": i.Meta.ExactYearOfDeath,
+				"school":              i.School,
+				"published":           true,
 			})
 
 			_, err = q.Execute()

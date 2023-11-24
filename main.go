@@ -9,6 +9,7 @@ import (
 	"blackfyre.ninja/wga/handlers"
 	"blackfyre.ninja/wga/hooks"
 	_ "blackfyre.ninja/wga/migrations"
+	"blackfyre.ninja/wga/utils/seed"
 	"blackfyre.ninja/wga/utils/sitemap"
 	"github.com/joho/godotenv"
 	"github.com/pocketbase/pocketbase"
@@ -45,6 +46,23 @@ func main() {
 			sitemap.GenerateSiteMap(app)
 		},
 	})
+
+	if os.Getenv("WGA_ENV") == "development" {
+		app.RootCmd.AddCommand(&cobra.Command{
+			Use:   "seed:images",
+			Short: "Seed images to the specified S3 bucket",
+			Run: func(cmd *cobra.Command, args []string) {
+				err := seed.SeedImages(app)
+
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				log.Println("Done seeding images")
+
+			},
+		})
+	}
 
 	if err := app.Start(); err != nil {
 		log.Fatal(err)
