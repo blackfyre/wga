@@ -43,6 +43,7 @@ func NewRenderData(app *pocketbase.PocketBase) map[string]any {
 		if err != nil {
 			log.Println("Error reading analytics.txt")
 			log.Println(err)
+			return data
 		}
 
 		app.Cache().Set("renderable:analytics", string(analytics))
