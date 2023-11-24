@@ -49,13 +49,19 @@ func SeedImages(app *pocketbase.PocketBase) error {
 		return err
 	}
 
-	log.Printf("Found %d artworks", len(artworks))
+	awc := len(artworks)
+
+	log.Printf("Found %d artworks", awc)
 
 	// start overall timer here
 	startTime := time.Now()
 
+	// circular buffer for the last 10 times
+	var lastTenTimes [10]time.Duration
+
 	for i, artwork := range artworks {
 		// timer start here
+		jobStart := time.Now()
 
 		uploadKey := fmt.Sprintf("artworks/%s/%s", artwork.Id, artwork.Image)
 
@@ -92,10 +98,23 @@ func SeedImages(app *pocketbase.PocketBase) error {
 			return err
 		}
 
+		lastTenTimes[i%10] = time.Since(jobStart)
+
 		if i%200 == 0 {
 			log.Printf("Uploaded %d images", i)
 			log.Printf("Elapsed time: %s", time.Since(startTime))
-			log.Printf("Estimated time remaining: %s", time.Duration((len(artworks)-i)/200)*time.Minute)
+
+			var lastTenTimesAverage time.Duration
+
+			for _, t := range lastTenTimes {
+				lastTenTimesAverage += t
+			}
+
+			lastTenTimesAverage = lastTenTimesAverage / 10
+
+			log.Printf("Average job time: %s", lastTenTimesAverage)
+
+			log.Printf("Estimated time remaining: %s", lastTenTimesAverage*time.Duration(awc-i))
 		}
 	}
 
