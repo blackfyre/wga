@@ -50,7 +50,7 @@ func init() {
 				// if errString contains "UNIQUE constraint failed: artists.slug" then ignore
 				// otherwise return error
 
-				if !strings.Contains(errString, "UNIQUE constraint failed: artists.slug") {
+				if !strings.Contains(errString, "UNIQUE constraint failed: Artists.slug") {
 					return err
 				}
 
