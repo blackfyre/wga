@@ -9,6 +9,8 @@ services:
     environment:
       - MINIO_ROOT_USER=${WGA_S3_ACCESS_KEY}
       - MINIO_ROOT_PASSWORD=${WGA_S3_ACCESS_SECRET}
+      - MINIO_ACCESS_KEY=${WGA_S3_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${WGA_S3_ACCESS_SECRET}
     command: server /data --console-address ":9001"
     volumes:
       - minio:/data
@@ -22,9 +24,10 @@ services:
       /bin/sh -c "
       /usr/bin/mc alias set wgaminio http://minio:9000 ${WGA_S3_ACCESS_KEY} ${WGA_S3_ACCESS_SECRET};
       /usr/bin/mc mb wgaminio/${WGA_S3_BUCKET};
-      /usr/bin/mc policy set public wgaminio/${WGA_S3_BUCKET};
+      /usr/bin/mc anonymous set public wgaminio/${WGA_S3_BUCKET};
       exit 0;
       "
+    restart: "no"
 
   mailpit:
     image: axllent/mailpit
