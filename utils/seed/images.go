@@ -84,14 +84,14 @@ func SeedImages(app *pocketbase.PocketBase) error {
 			return err
 		}
 
-		err = generateThunmbnail(artwork, rfs, "100x100")
+		err = generateThumbnail(artwork, rfs, "100x100")
 
 		if err != nil {
 			fmt.Println(err.Error())
 			return err
 		}
 
-		err = generateThunmbnail(artwork, rfs, "320x240")
+		err = generateThumbnail(artwork, rfs, "320x240")
 
 		if err != nil {
 			fmt.Println(err.Error())
@@ -136,7 +136,7 @@ func SeedImages(app *pocketbase.PocketBase) error {
 // The thumbnail is saved with a filename that includes the size and original image name.
 // If an error occurs during the thumbnail generation, it is printed and returned.
 // Otherwise, nil is returned.
-func generateThunmbnail(aw *models.Artwork, rfs *filesystem.System, size string) error {
+func generateThumbnail(aw *models.Artwork, rfs *filesystem.System, size string) error {
 
 	uploadKey := fmt.Sprintf("artworks/%s/%s", aw.Id, aw.Image)
 
