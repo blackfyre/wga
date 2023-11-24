@@ -1,3 +1,9 @@
+---
+runme:
+  id: 01HG08MCJYF04DTTTHQENSWVK6
+  version: v2.0
+---
+
 # Web Gallery of Art
 
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fblackfyre%2Fwga.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fblackfyre%2Fwga?ref=badge_shield)
@@ -23,7 +29,7 @@ The project is built using the following technologies:
 
 To run the application you'll have to have a `.env` file next to your executable with the following contents:
 
-```bash
+```bash {"id":"01HG08MCJXSNDZ9CYZ40JF0V9R"}
 WGA_ENV=development
 
 WGA_ADMIN_EMAIL=
@@ -44,37 +50,32 @@ WGA_SMTP_USERNAME=
 WGA_SMTP_PASSWORD=
 WGA_SENDER_ADDRESS=
 WGA_SENDER_NAME=
-
-WGA_RECAPTCHA_SITE_KEY=
-WGA_RECAPTCHA_SECRET_KEY=
 ```
 
-| Variable                   | Description                                                                                            |
-| -------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `WGA_ENV`                  | The environment the application is running in, valid values are `development`, `staging`, `production` |
-| `WGA_ADMIN_EMAIL`          | The email address of the admin user                                                                    |
-| `WGA_ADMIN_PASSWORD`       | The password of the admin user                                                                         |
-| `WGA_S3_ENDPOINT`          | The endpoint of the S3 bucket                                                                          |
-| `WGA_S3_BUCKET`            | The name of the S3 bucket                                                                              |
-| `WGA_S3_REGION`            | The region of the S3 bucket                                                                            |
-| `WGA_S3_ACCESS_KEY`        | The access key of the S3 bucket                                                                        |
-| `WGA_S3_ACCESS_SECRET`     | The access secret of the S3 bucket                                                                     |
-| `WGA_PROTOCOL`             | The protocol to use for the application, valid values are `http` and `https`                           |
-| `WGA_HOSTNAME`             | The domain pointing to the application                                                                 |
-| `WGA_SMTP_HOST`            | The address of the SMTP host                                                                           |
-| `WGA_SMTP_PORT`            | The SMTP service port on the host adress                                                               |
-| `WGA_SMTP_USERNAME`        | The username for the SMTP service                                                                      |
-| `WGA_SMTP_PASSWORD`        | The password for the SMTP service                                                                      |
-| `WGA_SENDER_ADDRESS`       | The sending email address                                                                              |
-| `WGA_SENDER_NAME`          | The name of the email sender                                                                           |
-| `WGA_RECAPTCHA_SITE_KEY`   | The site key for the recaptcha service                                                                 |
-| `WGA_RECAPTCHA_SECRET_KEY` | The secret key for the recaptcha service                                                               |
+| Variable               | Description                                                                                            |
+| ---------------------- | ------------------------------------------------------------------------------------------------------ |
+| `WGA_ENV`              | The environment the application is running in, valid values are `development`, `staging`, `production` |
+| `WGA_ADMIN_EMAIL`      | The email address of the admin user                                                                    |
+| `WGA_ADMIN_PASSWORD`   | The password of the admin user                                                                         |
+| `WGA_S3_ENDPOINT`      | The endpoint of the S3 bucket                                                                          |
+| `WGA_S3_BUCKET`        | The name of the S3 bucket                                                                              |
+| `WGA_S3_REGION`        | The region of the S3 bucket                                                                            |
+| `WGA_S3_ACCESS_KEY`    | The access key of the S3 bucket                                                                        |
+| `WGA_S3_ACCESS_SECRET` | The access secret of the S3 bucket                                                                     |
+| `WGA_PROTOCOL`         | The protocol to use for the application, valid values are `http` and `https`                           |
+| `WGA_HOSTNAME`         | The domain pointing to the application                                                                 |
+| `WGA_SMTP_HOST`        | The address of the SMTP host                                                                           |
+| `WGA_SMTP_PORT`        | The SMTP service port on the host adress                                                               |
+| `WGA_SMTP_USERNAME`    | The username for the SMTP service                                                                      |
+| `WGA_SMTP_PASSWORD`    | The password for the SMTP service                                                                      |
+| `WGA_SENDER_ADDRESS`   | The sending email address                                                                              |
+| `WGA_SENDER_NAME`      | The name of the email sender                                                                           |
 
 ### Running the application
 
 To run the application simply download the release for your platform and run it with:
 
-```bash
+```bash {"id":"01HG08MCJYF04DTTTHQB8QKM5Z"}
 ./wga serve
 ```
 
@@ -95,7 +96,7 @@ To build the application you will need to have the following installed:
 
 Building the application relies on [Goreleaser](https://goreleaser.com/) to build the application. To build the application simply run:
 
-```bash
+```bash {"id":"01HG08MCJYF04DTTTHQC3TYW4M"}
 goreleaser release --snapshot --clean
 ```
 
