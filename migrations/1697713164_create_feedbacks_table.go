@@ -12,7 +12,8 @@ import (
 
 func init() {
 
-	tName := "feedbacks"
+	tId := "feedbacks"
+	tName := "Feedbacks"
 
 	m.Register(func(db dbx.Builder) error {
 		dao := daos.New(db)
@@ -20,14 +21,14 @@ func init() {
 		collection := &models.Collection{}
 
 		collection.Name = tName
-		collection.Id = tName
+		collection.Id = tId
 		collection.Type = models.CollectionTypeBase
 		collection.System = false
 		collection.MarkAsNew()
 
 		collection.Schema = schema.NewSchema(
 			&schema.SchemaField{
-				Id:          tName + "_name",
+				Id:          tId + "_name",
 				Name:        "name",
 				Type:        schema.FieldTypeText,
 				Options:     &schema.TextOptions{},
@@ -35,14 +36,14 @@ func init() {
 				Required:    true,
 			},
 			&schema.SchemaField{
-				Id:       tName + "_email",
+				Id:       tId + "_email",
 				Name:     "email",
 				Type:     schema.FieldTypeEmail,
 				Options:  &schema.EmailOptions{},
 				Required: true,
 			},
 			&schema.SchemaField{
-				Id:   tName + "_refer_to",
+				Id:   tId + "_refer_to",
 				Name: "refer_to",
 				Type: schema.FieldTypeUrl,
 				Options: &schema.UrlOptions{
@@ -51,7 +52,7 @@ func init() {
 				Required: true,
 			},
 			&schema.SchemaField{
-				Id:   tName + "_message",
+				Id:   tId + "_message",
 				Name: "message",
 				Type: schema.FieldTypeEditor,
 				Options: &schema.EditorOptions{
@@ -60,7 +61,7 @@ func init() {
 				Required: true,
 			},
 			&schema.SchemaField{
-				Id:          tName + "_handled",
+				Id:          tId + "_handled",
 				Name:        "handled",
 				Type:        schema.FieldTypeBool,
 				Options:     &schema.BoolOptions{},
@@ -71,7 +72,7 @@ func init() {
 		return dao.SaveCollection(collection)
 
 	}, func(db dbx.Builder) error {
-		q := db.DropTable(tName)
+		q := db.DropTable(tId)
 		_, err := q.Execute()
 
 		return err

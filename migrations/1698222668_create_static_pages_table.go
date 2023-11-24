@@ -19,7 +19,8 @@ type staticPage struct {
 
 func init() {
 
-	tName := "static_pages"
+	tId := "static_pages"
+	tName := "Static_pages"
 
 	m.Register(func(db dbx.Builder) error {
 		dao := daos.New(db)
@@ -27,14 +28,14 @@ func init() {
 		collection := &models.Collection{}
 
 		collection.Name = tName
-		collection.Id = tName
+		collection.Id = tId
 		collection.Type = models.CollectionTypeBase
 		collection.System = false
 		collection.MarkAsNew()
 
 		collection.Schema = schema.NewSchema(
 			&schema.SchemaField{
-				Id:          tName + "_title",
+				Id:          tId + "_title",
 				Name:        "title",
 				Type:        schema.FieldTypeText,
 				Options:     &schema.TextOptions{},
@@ -42,13 +43,13 @@ func init() {
 				Required:    true,
 			},
 			&schema.SchemaField{
-				Id:      tName + "_slug",
+				Id:      tId + "_slug",
 				Name:    "slug",
 				Type:    schema.FieldTypeText,
 				Options: &schema.TextOptions{},
 			},
 			&schema.SchemaField{
-				Id:   tName + "_content",
+				Id:   tId + "_content",
 				Name: "content",
 				Type: schema.FieldTypeEditor,
 				Options: &schema.EditorOptions{
@@ -79,7 +80,7 @@ func init() {
 		}
 
 		for _, g := range c {
-			q := db.Insert(tName, dbx.Params{
+			q := db.Insert(tId, dbx.Params{
 				"title":   g.Title,
 				"slug":    g.Slug,
 				"content": g.Content,
@@ -96,7 +97,7 @@ func init() {
 		return nil
 
 	}, func(db dbx.Builder) error {
-		q := db.DropTable(tName)
+		q := db.DropTable(tId)
 		_, err := q.Execute()
 
 		return err

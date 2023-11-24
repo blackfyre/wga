@@ -22,7 +22,7 @@ func init() {
 
 		collection := &models.Collection{}
 
-		collection.Name = "strings"
+		collection.Name = "Strings"
 		collection.Type = models.CollectionTypeBase
 		collection.System = false
 		collection.Id = "strings"
