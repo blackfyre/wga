@@ -162,7 +162,7 @@ func registerArtist(app *pocketbase.PocketBase) {
 
 					jsonLd := jsonld.GenerateVisualArtworkJsonLdContent(w, c)
 
-					jsonLd["image"] = url.GenerateFileUrl(app, "artworks", w.GetString("id"), w.GetString("image"))
+					jsonLd["image"] = url.GenerateFileUrl("artworks", w.GetString("id"), w.GetString("image"), "")
 					jsonLd["url"] = fullUrl + "/" + w.GetString("id")
 					jsonLd["creator"] = jsonld.GenerateArtistJsonLdContent(&wgamodels.Artist{
 						Name:         artist[0].GetString("name"),
@@ -177,7 +177,7 @@ func registerArtist(app *pocketbase.PocketBase) {
 						Profession:   artist[0].GetString("profession"),
 					}, c)
 					jsonLd["creator"].(map[string]any)["sameAs"] = fullUrl
-					jsonLd["thumbnailUrl"] = url.GenerateThumbUrl(app, "artworks", w.GetString("id"), w.GetString("image"), "320x240")
+					jsonLd["thumbnailUrl"] = url.GenerateThumbUrl("artworks", w.GetString("id"), w.GetString("image"), "320x240", "")
 
 					data["Works"] = append(data["Works"].([]map[string]any), map[string]any{
 						"Id":        w.GetId(),
@@ -254,7 +254,7 @@ func registerArtist(app *pocketbase.PocketBase) {
 				data["ArtistName"] = artist[0].GetString("name")
 				data["ArtistUrl"] = "/artists/" + slug
 				data["AwId"] = awid
-				data["AwImage"] = url.GenerateFileUrl(app, "artworks", aw.GetString("id"), aw.GetString("image"))
+				data["AwImage"] = url.GenerateFileUrl("artworks", aw.GetString("id"), aw.GetString("image"), "")
 				data["AwTitle"] = aw.GetString("title")
 				data["AwComment"] = aw.GetString("comment")
 				data["AwTechnique"] = aw.GetString("technique")
@@ -262,7 +262,7 @@ func registerArtist(app *pocketbase.PocketBase) {
 				fullUrl := os.Getenv("WGA_PROTOCOL") + "://" + c.Request().Host + c.Request().URL.String()
 				jsonLd := jsonld.GenerateVisualArtworkJsonLdContent(aw, c)
 
-				jsonLd["image"] = url.GenerateFileUrl(app, "artworks", aw.GetString("id"), aw.GetString("image"))
+				jsonLd["image"] = url.GenerateFileUrl("artworks", aw.GetString("id"), aw.GetString("image"), "")
 				jsonLd["url"] = fullUrl
 				jsonLd["creator"] = jsonld.GenerateArtistJsonLdContent(&wgamodels.Artist{
 					Name:         artist[0].GetString("name"),
@@ -277,7 +277,7 @@ func registerArtist(app *pocketbase.PocketBase) {
 					Profession:   artist[0].GetString("profession"),
 				}, c)
 				jsonLd["creator"].(map[string]any)["sameAs"] = os.Getenv("WGA_PROTOCOL") + "://" + c.Request().Host + "/artists/" + slug
-				jsonLd["thumbnailUrl"] = url.GenerateThumbUrl(app, "artworks", aw.GetString("id"), aw.GetString("image"), "320x240")
+				jsonLd["thumbnailUrl"] = url.GenerateThumbUrl("artworks", aw.GetString("id"), aw.GetString("image"), "320x240", "")
 
 				data["Jsonld"] = jsonLd
 
