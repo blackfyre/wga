@@ -165,6 +165,8 @@ func init() {
 					MimeTypes: []string{
 						"image/jpeg", "image/png",
 					},
+					Thumbs:  []string{"100x100", "320x240"},
+					MaxSize: 1024 * 1024 * 5,
 				},
 				Required: true,
 			},
