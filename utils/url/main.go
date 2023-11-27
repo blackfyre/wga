@@ -2,6 +2,7 @@ package url
 
 import (
 	"fmt"
+	"net/url"
 )
 
 func GenerateFileUrl(collection string, collectionId string, fileName string, token string) string {
@@ -11,7 +12,7 @@ func GenerateFileUrl(collection string, collectionId string, fileName string, to
 		collection,
 		collectionId,
 		fileName,
-		token,
+		url.QueryEscape(token),
 	)
 }
 
@@ -22,7 +23,7 @@ func GenerateThumbUrl(collection string, collectionId string, fileName string, t
 		collection,
 		collectionId,
 		fileName,
-		token,
+		url.QueryEscape(token),
 		thumbSize,
 	)
 }
