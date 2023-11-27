@@ -110,11 +110,11 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 
 			jsonLd := jsonld.GenerateVisualArtworkJsonLdContent(v, c)
 
-			jsonLd["image"] = url.GenerateFileUrl(app, "artworks", v.GetString("id"), v.GetString("image"))
+			jsonLd["image"] = url.GenerateFileUrl("artworks", v.GetString("id"), v.GetString("image"), "")
 			// jsonLd["url"] = fullUrl + "/" + v.GetString("id")
 			jsonLd["creator"] = jsonld.GenerateArtistJsonLdContent(artist, c)
 			// jsonLd["creator"].(map[string]any)["sameAs"] = fullUrl
-			jsonLd["thumbnailUrl"] = url.GenerateThumbUrl(app, "artworks", v.GetString("id"), v.GetString("image"), "320x240")
+			jsonLd["thumbnailUrl"] = url.GenerateThumbUrl("artworks", v.GetString("id"), v.GetString("image"), "320x240", "")
 
 			td["Artworks"] = append(td["Artworks"].([]any), map[string]any{
 				"Id":         v.GetId(),
