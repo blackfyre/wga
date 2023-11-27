@@ -1,25 +1,28 @@
 package url
 
 import (
-	"strings"
-
-	"github.com/pocketbase/pocketbase"
+	"fmt"
 )
 
-func GenerateFileUrl(app *pocketbase.PocketBase, collection string, collectionId string, fileName string) string {
+func GenerateFileUrl(collection string, collectionId string, fileName string, token string) string {
 
-	endPoint := app.Settings().S3.Endpoint
-
-	endPoint = strings.Replace(endPoint, "https://", "https://"+app.Settings().S3.Bucket+".", 1)
-
-	return endPoint + "/" + collection + "/" + collectionId + "/" + fileName
+	return fmt.Sprintf(
+		"/api/files/%s/%s/%s?token=%s",
+		collection,
+		collectionId,
+		fileName,
+		token,
+	)
 }
 
-func GenerateThumbUrl(app *pocketbase.PocketBase, collection string, collectionId string, fileName string, thumbSize string) string {
+func GenerateThumbUrl(collection string, collectionId string, fileName string, thumbSize string, token string) string {
 
-	endPoint := app.Settings().S3.Endpoint
-
-	endPoint = strings.Replace(endPoint, "https://", "https://"+app.Settings().S3.Bucket+".", 1)
-
-	return endPoint + "/" + collection + "/" + collectionId + "/thumb_" + fileName + "/" + thumbSize + "_" + fileName
+	return fmt.Sprintf(
+		"/api/files/%s/%s/%s?token=%s&thumb=%s",
+		collection,
+		collectionId,
+		fileName,
+		token,
+		thumbSize,
+	)
 }
