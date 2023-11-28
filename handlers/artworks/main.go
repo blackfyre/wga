@@ -1,4 +1,4 @@
-package search
+package artworks
 
 import (
 	"fmt"
@@ -160,10 +160,10 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 	}
 }
 
-// RegisterSearchHandlers registers search handlers to the given PocketBase app.
-func RegisterSearchHandlers(app *pocketbase.PocketBase) {
+// RegisterArtworksHandlers registers search handlers to the given PocketBase app.
+func RegisterArtworksHandlers(app *pocketbase.PocketBase) {
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
-		e.Router.GET("/search", func(c echo.Context) error {
+		e.Router.GET("/artworks", func(c echo.Context) error {
 			return search(app, e, c)
 		})
 		return nil

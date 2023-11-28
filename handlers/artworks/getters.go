@@ -1,4 +1,4 @@
-package search
+package artworks
 
 import (
 	"blackfyre.ninja/wga/models"

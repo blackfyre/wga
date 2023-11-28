@@ -1,4 +1,4 @@
-package search
+package artworks
 
 import (
 	"github.com/labstack/echo/v5"
