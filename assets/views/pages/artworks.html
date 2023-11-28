@@ -9,8 +9,8 @@ Artwork search - Web Gallery of Art
     <div class="columns">
         <div class="column is-one-quarter">
             <div class="box">
-                <form action="/search" hx-get="/search" hx-target="#artwork-search-results"
-                    hx-disabled-elt="input,button,select" hx-indicator="#search-result-container">
+                <form action="/artworks" hx-get="/artworks" hx-target="#artwork-search-results"
+                    hx-disabled-elt="input,button,select" hx-indicator="#search-result-container" hx-trigger="load">
                     <div class="field">
                         <label class="label">Artforms</label>
                         <div class="control">
