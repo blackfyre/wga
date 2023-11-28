@@ -128,20 +128,20 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 			})
 		}
 
+		pagination := utils.NewPagination(recordsCount, limit, page, currentUrl, "artwork-search-results")
+
+		td["Pagination"] = pagination.Render()
+
 		td["ArtFormOptions"], _ = getArtFormOptions(app)
 		td["ArtTypeOptions"], _ = getArtTypesOptions(app)
 		td["ArtSchoolOptions"], _ = getArtSchoolOptions(app)
 		td["ArtistNameList"], _ = getArtistNameList(app)
 		td["ActiveFilterValues"] = filters
 
-		pagination := utils.NewPagination(recordsCount, limit, page, currentUrl, "artwork-search-results")
-
-		td["Pagination"] = pagination.Render()
-
-		blockToRender := "search:content"
+		blockToRender := "artworks:content"
 
 		if htmx {
-			blockToRender = "search:search-results"
+			blockToRender = "artworks:search-results"
 		}
 
 		html, err := assets.Render(assets.Renderable{
