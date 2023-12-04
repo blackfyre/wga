@@ -16,154 +16,184 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
-func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) error {
+func searchPage(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) error {
 	//setup request variables
 	htmx := utils.IsHtmxRequest(c)
-	currentUrl := c.Request().URL.String()
-	limit := 16
-	page := 1
+	// currentUrl := c.Request().URL.String()
+	currentUrlPath := c.Request().URL.Path
 
 	//build filters
 	filters := buildFilters(app, c)
 
 	//set page
+
+	//check cache
+	td := assets.NewRenderData(app)
+
+	td["ArtFormOptions"], _ = getArtFormOptions(app)
+	td["ArtTypeOptions"], _ = getArtTypesOptions(app)
+	td["ArtSchoolOptions"], _ = getArtSchoolOptions(app)
+	td["ArtistNameList"], _ = getArtistNameList(app)
+	td["ActiveFilterValues"] = filters
+	td["NewFilterValues"] = filters.BuildFilterString()
+
+	html, err := assets.Render(assets.Renderable{
+		IsHtmx: htmx,
+		Block:  "artworks:content",
+		Data:   td,
+	})
+
+	if err != nil {
+		return apis.NewNotFoundError("", err)
+	}
+
+	c.Response().Header().Set("HX-Push-Url", currentUrlPath+"?"+filters.BuildFilterString())
+
+	return c.HTML(http.StatusOK, html)
+}
+
+func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) error {
+
+	htmx := utils.IsHtmxRequest(c)
+
+	if !htmx {
+		return c.Redirect(http.StatusFound, "/artworks")
+	}
+
+	currentUrl := c.Request().URL.String()
+
+	fmt.Println("Starting search")
+
+	limit := 16
+	page := 1
+	offset := page * limit
+
 	if c.QueryParam("page") != "" {
 		err := error(nil)
 		page, err = strconv.Atoi(c.QueryParam("page"))
 
 		if err != nil {
-			return apis.NewBadRequestError("Invalid page", err)
-		}
-	}
-
-	//set offset
-	offset := page * limit
-
-	//set cache key
-	cacheKey := "search:" + strconv.Itoa(offset) + ":" + strconv.Itoa(limit) + ":" + strconv.Itoa(page) + ":" + filters.FingerPrint()
-
-	if htmx {
-		cacheKey = cacheKey + ":htmx"
-	}
-
-	if filters.AnyFilterActive() {
-		cacheKey = cacheKey + ":search"
-	}
-
-	//check cache
-	if app.Cache().Has(cacheKey) {
-		html := app.Cache().Get(cacheKey).(string)
-		return c.HTML(http.StatusOK, html)
-	} else {
-
-		td := assets.NewRenderData(app)
-
-		td["Artworks"] = []any{}
-
-		filterString, filterParams := filters.BuildFilter()
-
-		records, err := app.Dao().FindRecordsByFilter(
-			"artworks",
-			filterString,
-			"+title",
-			limit,
-			offset,
-			filterParams,
-		)
-
-		if err != nil {
 			fmt.Println(err)
 			return apis.NewBadRequestError("Invalid page", err)
 		}
-
-		// this could be replaced with a dedicated sql query, but this is more convinient
-		totalRecords, err := app.Dao().FindRecordsByFilter(
-			"artworks",
-			filterString,
-			"",
-			0,
-			0,
-			filterParams,
-		)
-
-		if err != nil {
-			return apis.NewBadRequestError("Invalid page", err)
-		}
-
-		recordsCount := len(totalRecords)
-
-		for _, v := range records {
-
-			artistIds := v.GetStringSlice("author")
-
-			if len(artistIds) == 0 {
-				// wating for the promised logging system by @pocketbase
-				continue
-			}
-
-			artist, err := models.GetArtistById(app.Dao(), artistIds[0])
-
-			if err != nil {
-				// wating for the promised logging system by @pocketbase
-				continue
-			}
-
-			jsonLd := jsonld.GenerateVisualArtworkJsonLdContent(v, c)
-
-			jsonLd["image"] = url.GenerateFileUrl("artworks", v.GetString("id"), v.GetString("image"), "")
-			// jsonLd["url"] = fullUrl + "/" + v.GetString("id")
-			jsonLd["creator"] = jsonld.GenerateArtistJsonLdContent(artist, c)
-			// jsonLd["creator"].(map[string]any)["sameAs"] = fullUrl
-			jsonLd["thumbnailUrl"] = url.GenerateThumbUrl("artworks", v.GetString("id"), v.GetString("image"), "320x240", "")
-
-			td["Artworks"] = append(td["Artworks"].([]any), map[string]any{
-				"Id":         v.GetId(),
-				"Title":      v.GetString("title"),
-				"Comment":    v.GetString("comment"),
-				"Technique":  v.GetString("technique"),
-				"Image":      jsonLd["image"].(string),
-				"Thumb":      jsonLd["thumbnailUrl"].(string),
-				"ArtistSlug": artist.Slug,
-				"Jsonld":     jsonLd,
-			})
-		}
-
-		pagination := utils.NewPagination(recordsCount, limit, page, currentUrl, "artwork-search-results")
-
-		td["Pagination"] = pagination.Render()
-
-		td["ArtFormOptions"], _ = getArtFormOptions(app)
-		td["ArtTypeOptions"], _ = getArtTypesOptions(app)
-		td["ArtSchoolOptions"], _ = getArtSchoolOptions(app)
-		td["ArtistNameList"], _ = getArtistNameList(app)
-		td["ActiveFilterValues"] = filters
-
-		blockToRender := "artworks:content"
-
-		if htmx {
-			blockToRender = "artworks:search-results"
-		}
-
-		html, err := assets.Render(assets.Renderable{
-			IsHtmx: htmx,
-			Block:  blockToRender,
-			Data:   td,
-		})
-
-		if err != nil {
-			return apis.NewNotFoundError("", err)
-		}
-
-		c.Response().Header().Set("HX-Push-Url", currentUrl)
-
-		return c.HTML(http.StatusOK, html)
 	}
+
+	fmt.Println("Page query param: ", page)
+
+	//build filters
+	filters := buildFilters(app, c)
+
+	filterString, filterParams := filters.BuildFilter()
+
+	fmt.Println("Filter string: ", filterString, " Filter params: ", filterParams)
+
+	td := assets.NewRenderData(app)
+
+	records, err := app.Dao().FindRecordsByFilter(
+		"artworks",
+		filterString,
+		"+title",
+		limit,
+		offset,
+		filterParams,
+	)
+
+	if err != nil {
+		fmt.Println(err)
+		return apis.NewBadRequestError("Invalid page", err)
+	}
+
+	fmt.Println("Found records: ", len(records))
+
+	// this could be replaced with a dedicated sql query, but this is more convinient
+	totalRecords, err := app.Dao().FindRecordsByFilter(
+		"artworks",
+		filterString,
+		"",
+		0,
+		0,
+		filterParams,
+	)
+
+	if err != nil {
+		fmt.Println(err)
+		return apis.NewBadRequestError("Invalid page", err)
+	}
+
+	fmt.Println("Found total records: ", len(totalRecords))
+
+	recordsCount := len(totalRecords)
+
+	td["Artworks"] = []any{}
+
+	for _, v := range records {
+
+		artistIds := v.GetStringSlice("author")
+
+		if len(artistIds) == 0 {
+			// wating for the promised logging system by @pocketbase
+			fmt.Println("No artist found for artwork: ", v.GetId())
+			continue
+		}
+
+		artist, err := models.GetArtistById(app.Dao(), artistIds[0])
+
+		if err != nil {
+			// wating for the promised logging system by @pocketbase
+			fmt.Println(err)
+			continue
+		}
+
+		jsonLd := jsonld.GenerateVisualArtworkJsonLdContent(v, c)
+
+		jsonLd["image"] = url.GenerateFileUrl("artworks", v.GetString("id"), v.GetString("image"), "")
+		jsonLd["creator"] = jsonld.GenerateArtistJsonLdContent(artist, c)
+		jsonLd["thumbnailUrl"] = url.GenerateThumbUrl("artworks", v.GetString("id"), v.GetString("image"), "320x240", "")
+
+		row := map[string]any{
+			"Id":         v.GetId(),
+			"Title":      v.GetString("title"),
+			"Comment":    v.GetString("comment"),
+			"Technique":  v.GetString("technique"),
+			"Image":      jsonLd["image"].(string),
+			"Thumb":      jsonLd["thumbnailUrl"].(string),
+			"ArtistSlug": artist.Slug,
+			"Jsonld":     jsonLd,
+		}
+
+		td["Artworks"] = append(td["Artworks"].([]any), row)
+	}
+
+	pagination := utils.NewPagination(recordsCount, limit, page, currentUrl, "artwork-search-results")
+
+	td["Pagination"] = pagination.Render()
+
+	fmt.Println("Rendering results: ", len(td["Artworks"].([]any)))
+
+	html, err := assets.Render(assets.Renderable{
+		IsHtmx: htmx,
+		Block:  "artworks:results",
+		Data:   td,
+	})
+
+	if err != nil {
+		fmt.Println(err)
+		return apis.NewNotFoundError("", err)
+	}
+
+	// c.Response().Header().Set("HX-Push-Url", currentUrl)
+
+	return c.HTML(http.StatusOK, html)
 }
 
 // RegisterArtworksHandlers registers search handlers to the given PocketBase app.
 func RegisterArtworksHandlers(app *pocketbase.PocketBase) {
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 		e.Router.GET("/artworks", func(c echo.Context) error {
+			return searchPage(app, e, c)
+		})
+
+		e.Router.GET("/artworks/results", func(c echo.Context) error {
 			return search(app, e, c)
 		})
 		return nil
