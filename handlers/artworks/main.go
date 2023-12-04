@@ -1,7 +1,6 @@
 package artworks
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -62,8 +61,6 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 
 	currentUrl := c.Request().URL.String()
 
-	fmt.Println("Starting search")
-
 	limit := 16
 	page := 1
 	offset := page * limit
@@ -73,19 +70,14 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 		page, err = strconv.Atoi(c.QueryParam("page"))
 
 		if err != nil {
-			fmt.Println(err)
 			return apis.NewBadRequestError("Invalid page", err)
 		}
 	}
-
-	fmt.Println("Page query param: ", page)
 
 	//build filters
 	filters := buildFilters(app, c)
 
 	filterString, filterParams := filters.BuildFilter()
-
-	fmt.Println("Filter string: ", filterString, " Filter params: ", filterParams)
 
 	td := assets.NewRenderData(app)
 
@@ -99,11 +91,8 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 	)
 
 	if err != nil {
-		fmt.Println(err)
 		return apis.NewBadRequestError("Invalid page", err)
 	}
-
-	fmt.Println("Found records: ", len(records))
 
 	// this could be replaced with a dedicated sql query, but this is more convinient
 	totalRecords, err := app.Dao().FindRecordsByFilter(
@@ -116,11 +105,8 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 	)
 
 	if err != nil {
-		fmt.Println(err)
 		return apis.NewBadRequestError("Invalid page", err)
 	}
-
-	fmt.Println("Found total records: ", len(totalRecords))
 
 	recordsCount := len(totalRecords)
 
@@ -132,7 +118,6 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 
 		if len(artistIds) == 0 {
 			// wating for the promised logging system by @pocketbase
-			fmt.Println("No artist found for artwork: ", v.GetId())
 			continue
 		}
 
@@ -140,7 +125,6 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 
 		if err != nil {
 			// wating for the promised logging system by @pocketbase
-			fmt.Println(err)
 			continue
 		}
 
@@ -168,8 +152,6 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 
 	td["Pagination"] = pagination.Render()
 
-	fmt.Println("Rendering results: ", len(td["Artworks"].([]any)))
-
 	html, err := assets.Render(assets.Renderable{
 		IsHtmx: htmx,
 		Block:  "artworks:results",
@@ -177,7 +159,6 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 	})
 
 	if err != nil {
-		fmt.Println(err)
 		return apis.NewNotFoundError("", err)
 	}
 
