@@ -1,0 +1,49 @@
+{{block "artworks:results" .}}
+<div class="columns is-multiline works-listing" data-viewer>
+    {{range .Artworks}}
+    <div class="column is-one-third-tablet is-one-quarter-desktop">
+        <section class="card is-art-card">
+            <div class="card-image">
+                <figure class="image is-4by3 hidden-caption">
+                    <picture>
+                        <source media="(max-width: 768px)" srcset="{{.Thumb}}">
+                        <source media="(min-width: 769px)" srcset="{{.Thumb}}">
+                        <source media="(min-width: 1024px)" srcset="{{.Thumb}}">
+                        <img src="{{.Image}}" alt="{{ .Title}}" loading="lazy">
+                    </picture>
+                    <figcaption>{{.Title}} - {{ .Technique }}</figcaption>
+                </figure>
+            </div>
+            <div class="card-content">
+                <div>
+                    <h3 class="title is-size-3">{{ .Title}}</h3>
+                    <p class="subtitle">{{ .Technique }}</p>
+                    <div class="line-clamp-3 content">
+                        {{safeHTML .Comment}}
+                    </div>
+                </div>
+            </div>
+            <footer class="card-footer">
+                <a class="card-footer-item" href="/artists/{{.ArtistSlug}}/{{.Id}}"
+                    hx-get="/artists/{{.ArtistSlug}}/{{.Id}}" hx-target="#mc-area">Learn More</a>
+                <a href="#" hx-on="click: document.getElementById('d').showModal();"
+                    hx-get="/postcard/send?awid={{.Id}}" hx-target="#d" class="card-footer-item">Send
+                    Postcard</a>
+            </footer>
+            <script type="application/ld+json">
+                                {{marshalJSON .Jsonld}}
+                                </script>
+        </section>
+    </div>
+    {{else}}
+    <div class="column">
+        <div class="notification is-warning">
+            Sorry, no matching artworks found.
+        </div>
+    </div>
+    {{end}}
+</div>
+<nav class="pagination" role="navigation" aria-label="pagination">
+    {{.Pagination}}
+</nav>
+{{end}}

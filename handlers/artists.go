@@ -153,7 +153,7 @@ func registerArtists(app *pocketbase.PocketBase) {
 				data["Content"] = preRendered
 				data["Count"] = recordsCount
 
-				pagination := utils.NewPagination(recordsCount, limit, page, "/artists?q="+searchExpression, "search-results")
+				pagination := utils.NewPagination(recordsCount, limit, page, "/artists?q="+searchExpression, "search-results", "")
 
 				data["Pagination"] = pagination.Render()
 
