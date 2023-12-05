@@ -1,6 +1,7 @@
 package artworks
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -59,11 +60,9 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 		return c.Redirect(http.StatusFound, "/artworks")
 	}
 
-	currentUrl := c.Request().URL.String()
-
 	limit := 16
-	page := 1
-	offset := page * limit
+	page := 0
+	offset := 0
 
 	if c.QueryParam("page") != "" {
 		err := error(nil)
@@ -72,6 +71,12 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 		if err != nil {
 			return apis.NewBadRequestError("Invalid page", err)
 		}
+	}
+
+	if page == 0 {
+		offset = 0
+	} else {
+		offset = page * limit
 	}
 
 	//build filters
@@ -148,7 +153,13 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 		td["Artworks"] = append(td["Artworks"].([]any), row)
 	}
 
-	pagination := utils.NewPagination(recordsCount, limit, page, currentUrl, "artwork-search-results")
+	pUrl := "/artworks?" + filters.BuildFilterString()
+	pHtmxUrl := "/artworks/results?" + filters.BuildFilterString()
+
+	fmt.Printf("pUrl: %s\n", pUrl)
+	fmt.Printf("pHtmxUrl: %s\n", pHtmxUrl)
+
+	pagination := utils.NewPagination(recordsCount, limit, page, pUrl, "artwork-search-results", pHtmxUrl)
 
 	td["Pagination"] = pagination.Render()
 
