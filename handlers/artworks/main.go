@@ -1,7 +1,6 @@
 package artworks
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -151,9 +150,6 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 
 	pUrl := "/artworks?" + filters.BuildFilterString()
 	pHtmxUrl := "/artworks/results?" + filters.BuildFilterString()
-
-	fmt.Printf("pUrl: %s\n", pUrl)
-	fmt.Printf("pHtmxUrl: %s\n", pHtmxUrl)
 
 	pagination := utils.NewPagination(recordsCount, limit, page, pUrl, "artwork-search-results", pHtmxUrl)
 
