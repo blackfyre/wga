@@ -17,6 +17,7 @@ type Pagination struct {
 	totalPage   int
 	baseUrl     string
 	htmxTarget  string
+	htmxBaseUrl string
 
 	// render parts
 	firstPart  []string
@@ -25,7 +26,7 @@ type Pagination struct {
 }
 
 // constructor
-func NewPagination(totalAmount, perPage, currentPage int, baseUrl string, htmxTarget string) *Pagination {
+func NewPagination(totalAmount, perPage, currentPage int, baseUrl string, htmxTarget string, htmxUrl string) *Pagination {
 	if currentPage == 0 {
 		currentPage = 1
 	}
@@ -35,6 +36,10 @@ func NewPagination(totalAmount, perPage, currentPage int, baseUrl string, htmxTa
 		currentPage = n
 	}
 
+	if htmxUrl == "" {
+		htmxUrl = baseUrl
+	}
+
 	return &Pagination{
 		perPage:     perPage,
 		totalAmount: totalAmount,
@@ -42,6 +47,7 @@ func NewPagination(totalAmount, perPage, currentPage int, baseUrl string, htmxTa
 		totalPage:   int(math.Ceil(float64(totalAmount) / float64(perPage))),
 		baseUrl:     baseUrl,
 		htmxTarget:  htmxTarget,
+		htmxBaseUrl: htmxUrl,
 	}
 }
 
@@ -134,8 +140,22 @@ func (p *Pagination) getUrl(page int, text string) string {
 			strParam = strParam + "&" + k + "=" + v[0] // TODO
 		}
 
-		href := baseUrl.Host + "?page=" + strPage + strParam
-		return p.GetAvailablePageWrapper(href, text)
+		href := baseUrl.Path + "?page=" + strPage + strParam
+
+		htmxBase, _ := url.Parse(p.htmxBaseUrl)
+
+		fmt.Printf("htmxBase: %s\n", htmxBase)
+
+		htmxParams := htmxBase.Query()
+		delete(htmxParams, "page")
+		htmxStrParam := ""
+		for k, v := range htmxParams {
+			htmxStrParam = htmxStrParam + "&" + k + "=" + v[0] // TODO
+		}
+
+		htmxUrl := htmxBase.Path + "?page=" + strPage + htmxStrParam
+
+		return p.GetAvailablePageWrapper(href, text, htmxUrl)
 	}
 }
 
@@ -145,8 +165,8 @@ func (p *Pagination) GetActivePageWrapper(text string) string {
 func (p *Pagination) GetDisabledPageWrapper(text string) string {
 	return "<li><a class=\"pagination-link is-disabled\">" + text + "</a></li>"
 }
-func (p *Pagination) GetAvailablePageWrapper(href, page string) string {
-	return "<li><a class='pagination-link' aria-label='Goto page " + page + "' hx-get=\"" + href + "\" href=\"" + href + "\" hx-target=\"#" + p.htmxTarget + "\">" + page + "</a></li>"
+func (p *Pagination) GetAvailablePageWrapper(href, page, htmxUrl string) string {
+	return "<li><a class='pagination-link' aria-label='Goto page " + page + "' hx-get=\"" + htmxUrl + "\" href=\"" + href + "\" hx-target=\"#" + p.htmxTarget + "\">" + page + "</a></li>"
 }
 func (p *Pagination) GetDots() string {
 	return "<li><span class=\"pagination-ellipsis\">&hellip;</span></li>"
