@@ -1,4 +1,4 @@
-# The Artwork seach page
+# The Artwork search page
 
 ```mermaid
 sequenceDiagram
