@@ -71,13 +71,11 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 		if err != nil {
 			return apis.NewBadRequestError("Invalid page", err)
 		}
+
+		page = page - 1
 	}
 
-	if page == 0 {
-		offset = 0
-	} else {
-		offset = page * limit
-	}
+	offset = page * limit
 
 	//build filters
 	filters := buildFilters(app, c)
@@ -159,7 +157,7 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 	fmt.Printf("pUrl: %s\n", pUrl)
 	fmt.Printf("pHtmxUrl: %s\n", pHtmxUrl)
 
-	pagination := utils.NewPagination(recordsCount, limit, page, pUrl, "artwork-search-results", pHtmxUrl)
+	pagination := utils.NewPagination(recordsCount, limit, page+1, pUrl, "artwork-search-results", pHtmxUrl)
 
 	td["Pagination"] = pagination.Render()
 
