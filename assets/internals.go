@@ -41,9 +41,13 @@ func NewRenderData(app *pocketbase.PocketBase) map[string]any {
 		analytics, err := os.ReadFile("./analytics.txt")
 
 		if err != nil {
-			log.Println("Error reading analytics.txt")
-			log.Println(err)
-			return data
+			if errors.Is(err, os.ErrNotExist) {
+				log.Println("Error reading analytics.txt")
+				log.Println(err)
+				analytics = []byte("") // Provide an empty string if file does not exist
+			} else {
+				log.Fatalf("Failed to read file: %v", err) // Log other errors
+			}
 		}
 
 		app.Cache().Set("renderable:analytics", string(analytics))
