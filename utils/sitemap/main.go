@@ -11,14 +11,15 @@ import (
 )
 
 func GenerateSiteMap(app *pocketbase.PocketBase) {
+	isDevelopment := os.Getenv("WGA_ENV") == "development"
 
-	index := smg.NewSitemapIndex(app.IsDebug())
+	index := smg.NewSitemapIndex(isDevelopment)
 	index.SetSitemapIndexName("web_gallery_of_art")
 	index.SetHostname(os.Getenv("WGA_PROTOCOL") + "://" + os.Getenv("WGA_HOSTNAME"))
 	index.SetOutputPath("./wga_sitemap")
 	index.SetServerURI("/sitemaps/")
 
-	index.SetCompress(!app.IsDebug())
+	index.SetCompress(!isDevelopment)
 
 	generateArtistMap(app, index)
 	generateArtworksMap(app, index)
