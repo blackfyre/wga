@@ -15,7 +15,7 @@ func init() {
 
 		collection := &models.Collection{}
 
-		collection.Name = "music_composer"
+		collection.Name = "Music_composer"
 		collection.Type = models.CollectionTypeBase
 		collection.System = false
 		collection.Id = "music_composer"
@@ -26,7 +26,6 @@ func init() {
 				Name:        "id",
 				Type:        schema.FieldTypeText,
 				Options:     &schema.TextOptions{},
-				Presentable: true,
 			},
 			&schema.SchemaField{
 				Id:          "music_composer_name",
@@ -63,7 +62,7 @@ func init() {
 
 		err := dao.SaveCollection(collection)
 
-		collection.Name = "music_song"
+		collection.Name = "Music_song"
 		collection.Type = models.CollectionTypeBase
 		collection.System = false
 		collection.Id = "music_song"
@@ -71,13 +70,12 @@ func init() {
 		collection.Schema = schema.NewSchema(
 			&schema.SchemaField{
 				Id:          "music_composer_id",
-				Name:        "composer_id",
+				Name:        "composer",
 				Type: schema.FieldTypeRelation,
 				Options: &schema.RelationOptions{
 					CollectionId: "music_composer",
 					MinSelect:    Ptr(1),
 				},
-				Presentable: true,
 			},
 			&schema.SchemaField{
 				Id:          "music_song_title",
@@ -91,13 +89,12 @@ func init() {
 				Name:        "url",
 				Type:        schema.FieldTypeText,
 				Options:     &schema.TextOptions{},
-				Presentable: true,
 			},
 			&schema.SchemaField{
 				Id:          "music_song_source",
 				Name:        "source",
-				Type:        schema.FieldTypeText,
-				Options:     &schema.TextOptions{},
+				Type:        schema.FieldTypeFile,
+				Options:     &schema.FileOptions{},
 				Presentable: true,
 			},
 		)

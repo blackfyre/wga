@@ -20,7 +20,6 @@ import (
 
 func main() {
 
-	utils.ParseMusicListToUrls("./assets/reference/musics.json")
 	err := godotenv.Load()
 	if err != nil {
 		log.Println("Error loading .env file")
@@ -48,6 +47,15 @@ func main() {
 			sitemap.GenerateSiteMap(app)
 		},
 	})
+
+	app.RootCmd.AddCommand(&cobra.Command{
+		Use:   "generate-music-urls",
+		Short: "Generate music urls",
+		Run: func(cmd *cobra.Command, args []string) {
+			utils.ParseMusicListToUrls("./assets/reference/musics.json")
+		},
+	})
+
 
 	if err := app.Start(); err != nil {
 		log.Fatal(err)
