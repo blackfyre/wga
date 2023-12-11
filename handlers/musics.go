@@ -212,7 +212,11 @@ func newGetComposers(app *pocketbase.PocketBase, c echo.Context) ([]shape.Music_
 	// query := app.Dao().DB().Select().InnerJoin("music_song", dbx.NewExp("music_composer.id = music_song.composer_id")).From("music_composer", "music_song")
 	// query := app.Dao().DB().Select()
 	err := app.Dao().DB().NewQuery("SELECT * FROM music_song INNER JOIN music_composer ON music_composer.id = music_song.composer_id").All(&composers)
+
 	// err := query.All(&composers)
+
+	// TODO: get composers
+	// TODO: get songs for each composer
 
 
 	if err != nil {

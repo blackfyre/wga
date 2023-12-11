@@ -44,6 +44,8 @@ func ParseMusicListToUrls(filePath string) ([]string, error) {
 
 	fmt.Println("Done reading file")
 
+	// TODO: add id to each song
+
 	var parsedData []string
 	for _, century := range data {
 		for _, composer := range century.Composers {
