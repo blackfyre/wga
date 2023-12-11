@@ -1,6 +1,8 @@
 package migrations
 
 import (
+	"log"
+
 	"blackfyre.ninja/wga/handlers"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/daos"
@@ -61,6 +63,11 @@ func init() {
 		)
 
 		err := dao.SaveCollection(collection)
+		if err != nil {
+			// Handle the error, for example log it and return
+			log.Printf("Error saving collection: %v", err)
+			return err
+		}
 
 		collection.Name = "Music_song"
 		collection.Type = models.CollectionTypeBase
@@ -69,13 +76,11 @@ func init() {
 		collection.MarkAsNew()
 		collection.Schema = schema.NewSchema(
 			&schema.SchemaField{
-				Id:          "music_composer_id",
-				Name:        "composer",
-				Type: schema.FieldTypeRelation,
-				Options: &schema.RelationOptions{
-					CollectionId: "music_composer",
-					MinSelect:    Ptr(1),
-				},
+				Id:          "composer_id",
+				Name:        "composer_id",
+				Type:        schema.FieldTypeText,
+				Options:     &schema.TextOptions{},
+				Presentable: true,
 			},
 			&schema.SchemaField{
 				Id:          "music_song_title",
@@ -104,9 +109,7 @@ func init() {
 		if err != nil {
 			return err
 		}
-		var composers []handlers.Composer_seed
-
-		composers = handlers.GetParsedMusics(handlers.GetMusics())
+		composers := handlers.GetParsedMusics(handlers.GetMusics())
 
 		if err != nil {
 			return err
@@ -150,8 +153,18 @@ func init() {
 		q := db.DropTable("music_song")
 		_, err := q.Execute()
 
+		if err != nil {
+			log.Printf("Error executing drop music_song query: %v", err)
+			return err
+		}
+
 		q = db.DropTable("music_composer")
 		_, err = q.Execute()
+
+		if err != nil {
+			log.Printf("Error executing drop music_composer query: %v", err)
+			return err
+		}
 
 		return err
 	})

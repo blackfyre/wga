@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sort"
 	"strings"
 
 	"blackfyre.ninja/wga/assets"
@@ -15,7 +16,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
 
-	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
@@ -59,6 +59,11 @@ type Song_seed struct {
 	ComposerID  string `db:"composer_id" json:"composer_id"` // foreign key
 }
 
+type Grouped_music_list struct {
+	Century string
+	Composers []shape.Music_composer
+}
+
 
 func registerMusicHandlers(app *pocketbase.PocketBase) {
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
@@ -72,9 +77,7 @@ func registerMusicHandlers(app *pocketbase.PocketBase) {
 
 			found := app.Cache().Has(cacheKey)
 
-			// TODO: implement data getter
 			musicList, err := newGetComposers(app, c)
-			// musicList := GetMusics()
 
 			if err != nil {
 				fmt.Println("Error:", err)
@@ -82,15 +85,24 @@ func registerMusicHandlers(app *pocketbase.PocketBase) {
 			}
 
 			years := []string{}
-			for _, century := range musicList {
-				years = append(years, century.Century)
+			seen := make(map[string]struct{})
+
+			// make years unique
+			for _, musicList := range musicList {
+				if _, ok := seen[musicList.Century]; !ok {
+					years = append(years, musicList.Century)
+					seen[musicList.Century] = struct{}{}
+				}
 			}
+
+			groupedMusicListByCenturies := GroupAndSortMusicByCentury(musicList)
+
 			if found {
 				html = app.Cache().Get(cacheKey).(string)
 			} else {
 				data := map[string]any{
 					"Centuries": years,
-					"MusicList": musicList,
+					"MusicList": groupedMusicListByCenturies,
 				}
 
 				if isHtmx {
@@ -203,99 +215,45 @@ func GetParsedMusics([]Century) ([]Composer_seed) {
 }
 
 func newGetComposers(app *pocketbase.PocketBase, c echo.Context) ([]shape.Music_composer, error) {
-	
-	// Then you can create an Expression like this:
-	// expression := MyExpression("music_composer.id = music_song.composer_id")
-	composers := []shape.Music_composer{}
-	// i want to build this expression music_composer.id = music_song.composer_id
-	// expression := Expression.Build(app.Dao(), Params{})
-	// query := app.Dao().DB().Select().InnerJoin("music_song", dbx.NewExp("music_composer.id = music_song.composer_id")).From("music_composer", "music_song")
-	// query := app.Dao().DB().Select()
-	err := app.Dao().DB().NewQuery("SELECT * FROM music_song INNER JOIN music_composer ON music_composer.id = music_song.composer_id").All(&composers)
+    composers := []shape.Music_composer{}
+    err := app.Dao().DB().NewQuery("SELECT * FROM music_composer").All(&composers)
+    if err != nil {
+        log.Println("error executing query", err)
+        return nil, errors.New("error executing query")
+    }
 
-	// err := query.All(&composers)
+    for i, composer := range composers {
+        songs := []shape.Music_song{}
 
-	// TODO: get composers
-	// TODO: get songs for each composer
+		query := fmt.Sprintf("SELECT * FROM music_song WHERE composer_id = '%s'", composer.ID)
+        err := app.Dao().DB().NewQuery(query).All(&songs)
+        if err != nil {
+            return nil, errors.New("error executing query")
+        }
 
+        composers[i].Songs = songs
+    }
 
-	if err != nil {
-		log.Println("Error executing query", err)
-		return nil, errors.New("Error executing query")
-	}
-
-	for _, row := range composers {
-		fmt.Println(row)
-		for _, song := range row.Songs {
-			fmt.Println(song.Title)
-		}
-	}
-
-
-	// composers, err := app.Dao().FindRecordsByFilter(
-	// 	"music_composers",
-	// 	"id != null",
-	// 	"+name",
-	// 	0,
-	// 	0,
-	// 	dbx.Params{},
-	// )
-
-	// if err != nil {
-    //     return nil, err
-    // }
-
-	// songs, err := app.Dao().FindRecordsByFilter(
-	// 	"music_songs",
-	// 	"id != null",
-	// 	"+title",
-	// 	0,
-	// 	0,
-	// 	dbx.Params{},
-	// )
-
-	// if err != nil {
-    //     return nil, err
-    // }
-
-	// var data []shape.Music_composer
-
-	// // i need to group songs by composer
-
-	// for _, composer := range composers {
-	// 	var songsByComposer []shape.Song
-	// 	for _, song := range songs {
-	// 		fmt.Println(song.GetString("music_composer_name"))
-	// 		if song.GetString("music_composer_name") == composer.GetString("name") {
-	// 			fmt.Println(song.GetString("title"))
-	// 			songsByComposer = append(songsByComposer, shape.Song{
-	// 				Title: song.GetString("title"),
-	// 				URL: song.GetString("url"),
-	// 				Source: song.GetStringSlice("source"),
-	// 			})
-	// 		}
-	// 	}
-	// 	data = append(data, shape.Music_composer{
-	// 		Name: composer.GetString("name"),
-	// 		Date: composer.GetString("date"),
-	// 		Language: composer.GetString("language"),
-	// 		Century: composer.GetString("century"),
-	// 		Songs: songsByComposer,
-	// 	})
-	// }
-
-	// for _, row := range data {
-	// 	fmt.Println(row)
-	// }
-
-	mockComposer := []shape.Music_composer{}
-
-    return mockComposer, nil
+    return composers, nil
 }
 
-func MyExpression(me string) dbx.Expression {
-	// Logic to convert the expression into a SQL fragment goes here.
-	// This is just a placeholder.
-	myNewExpression := dbx.NewExp(me)
-	return myNewExpression
+func GroupAndSortMusicByCentury(musicList []shape.Music_composer) []Grouped_music_list {
+    groupedMusicListItemsByCenturies := make(map[string][]shape.Music_composer)
+    for _, music := range musicList {
+        groupedMusicListItemsByCenturies[music.Century] = append(groupedMusicListItemsByCenturies[music.Century], music)
+    }
+
+    groupedMusicListByCenturies := make([]Grouped_music_list, 0, len(groupedMusicListItemsByCenturies))
+    for century, composers := range groupedMusicListItemsByCenturies {
+        groupedMusicListByCenturies = append(groupedMusicListByCenturies, Grouped_music_list{
+            Century:   century,
+            Composers: composers,
+        })
+    }
+
+    sort.Slice(groupedMusicListByCenturies, func(i, j int) bool {
+        return groupedMusicListByCenturies[i].Century < groupedMusicListByCenturies[j].Century
+    })
+
+    return groupedMusicListByCenturies
 }

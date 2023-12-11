@@ -27,22 +27,27 @@ Musics
         </div>
         {{range .MusicList}}
             <div class="block">
-                <a name="{{.Century}}" id="{{.Century}}" class="title has-text-centered is-5">{{.Century}}th century</a>
+                <div name="{{.Century}}" id="{{.Century}}" class="title has-text-centered is-5">{{.Century}}<sup>th</sup> century</div>
                 {{range .Composers}}
-                    <div class="block">
-                        <h4 class="title is-6">{{.Name}} ({{.Date}}), {{.Language}}</h4>
-                        <ul>
-                            {{range .Songs}}
-                                <li>
-                                    {{if .URL}}
-                                        <a href="/musics/{{getFileNameFromUrl (.URL false)}}" hx-get="/musics/{{getFileNameFromUrl (.URL false)}}" hx-target="#mc-area">{{.Title}}</a>
-                                    {{else}}
-                                        <a href=""></a>
-                                    {{end}}
-                                </li>
-                            {{end}}
-                        </ul>
-                    </div>
+                <div class="block">
+                    <h4 class="title is-6">
+                        {{.Name}} 
+                        {{if .Date}}({{.Date}}){{end}}{{if .Date}}{{if .Language}}, {{.Language}}{{end}}
+                        {{else}}
+                            {{.Language}}
+                        {{end}}</h4>
+                    <ul>
+                        {{range .Songs}}
+                            <li>
+                                {{if .URL}}
+                                    <a href="{{.URL}}" hx-get="/musics/{{.URL}}" hx-target="#mc-area">{{.Title}}</a>
+                                {{else}}
+                                    <a href=""></a>
+                                {{end}}
+                            </li>
+                        {{end}}
+                    </ul>
+                </div>
                 {{end}}
             </div>
         {{end}}
