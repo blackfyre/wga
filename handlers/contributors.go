@@ -129,7 +129,7 @@ func registerContributors(app *pocketbase.PocketBase) {
 				contributors, err := getContributorsFromGithub()
 
 				if err != nil {
-					app.Logger().Error("Error getting contributors from Github, HTTP status code:", err)
+					app.Logger().Error("Error getting contributors from Github", "cacheKey", cacheKey, "error", err)
 					contributors, err = readStoredContributors()
 
 					if err != nil {
