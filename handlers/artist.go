@@ -123,12 +123,14 @@ func registerArtist(app *pocketbase.PocketBase) {
 				artist, err := app.Dao().FindRecordsByFilter("artists", "slug = '"+slug+"'", "+name", 1, 0)
 
 				if err != nil {
+					app.Logger().Error("Artist not found: ", slug, err)
 					return apis.NewNotFoundError("", err)
 				}
 
 				works, err := app.Dao().FindRecordsByFilter("artworks", "author = '"+artist[0].GetString("id")+"'", "+title", 100, 0)
 
 				if err != nil {
+					app.Logger().Error("Error finding artworks: ", err)
 					return apis.NewNotFoundError("", err)
 				}
 
@@ -240,12 +242,14 @@ func registerArtist(app *pocketbase.PocketBase) {
 				artist, err := app.Dao().FindRecordsByFilter("artists", "slug = '"+slug+"'", "+name", 1, 0)
 
 				if err != nil {
+					app.Logger().Error("Artist not found: ", slug, err)
 					return apis.NewNotFoundError("", err)
 				}
 
 				aw, err := app.Dao().FindRecordById("artworks", awid)
 
 				if err != nil {
+					app.Logger().Error("Error finding artwork: ", awid, err)
 					return apis.NewNotFoundError("", err)
 				}
 
