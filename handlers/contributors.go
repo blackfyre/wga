@@ -123,9 +123,11 @@ func registerContributors(app *pocketbase.PocketBase) {
 				contributors, err := getContributorsFromGithub()
 
 				if err != nil {
+					app.Logger().Error("Error getting contributors from Github", err)
 					contributors, err = readStoredContributors()
 
 					if err != nil {
+						app.Logger().Error("Error reading stored contributors", err)
 						return apis.NewApiError(500, err.Error(), err)
 					}
 				}
@@ -140,6 +142,7 @@ func registerContributors(app *pocketbase.PocketBase) {
 				})
 
 				if err != nil {
+					app.Logger().Error("Error rendering contributors", err)
 					return apis.NewApiError(500, err.Error(), err)
 				}
 
