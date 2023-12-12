@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"sort"
@@ -75,12 +74,12 @@ func registerMusicHandlers(app *pocketbase.PocketBase) {
 
 			setUrl(c, "")
 
-			found := app.Cache().Has(cacheKey)
+			found := app.Store().Has(cacheKey)
 
 			musicList, err := newGetComposers(app, c)
 
 			if err != nil {
-				fmt.Println("Error:", err)
+				app.Logger().Error("Composers not found: ", err)
 				return apis.NewNotFoundError("", err)
 			}
 
@@ -98,7 +97,7 @@ func registerMusicHandlers(app *pocketbase.PocketBase) {
 			groupedMusicListByCenturies := GroupAndSortMusicByCentury(musicList)
 
 			if found {
-				html = app.Cache().Get(cacheKey).(string)
+				html = app.Store().Get(cacheKey).(string)
 			} else {
 				data := map[string]any{
 					"Centuries": years,
@@ -150,7 +149,7 @@ func registerMusicHandlers(app *pocketbase.PocketBase) {
 				return apis.NewNotFoundError("", err)
 			}
 
-			app.Cache().Set(cacheKey, html)
+			app.Store().Set(cacheKey, html)
 
 			c.Response().Header().Set("HX-Push-Url", "/musics/"+slug)
 
@@ -218,8 +217,8 @@ func newGetComposers(app *pocketbase.PocketBase, c echo.Context) ([]shape.Music_
     composers := []shape.Music_composer{}
     err := app.Dao().DB().NewQuery("SELECT * FROM music_composer").All(&composers)
     if err != nil {
-        log.Println("error executing query", err)
-        return nil, errors.New("error executing query")
+		app.Logger().Error("failed to get music composers", err)
+        return nil, errors.New("failed to get music composers")
     }
 
     for i, composer := range composers {
@@ -228,7 +227,8 @@ func newGetComposers(app *pocketbase.PocketBase, c echo.Context) ([]shape.Music_
 		query := fmt.Sprintf("SELECT * FROM music_song WHERE composer_id = '%s'", composer.ID)
         err := app.Dao().DB().NewQuery(query).All(&songs)
         if err != nil {
-            return nil, errors.New("error executing query")
+			app.Logger().Error("failed to get music song by composer", err)
+            return nil, errors.New("failed to get music song by composer")
         }
 
         composers[i].Songs = songs
