@@ -176,7 +176,7 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 					return err
 				}
 
-				app.Logger().Error("Failed to store the postcard", err)
+				app.Logger().Error(fmt.Sprintf("Failed to store the postcard with image_id %s", postData.ImageId), err)
 
 				sendToastMessage("Failed to store the postcard", "is-danger", false, c)
 
