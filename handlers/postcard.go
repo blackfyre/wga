@@ -142,7 +142,6 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 
 			if postData.HoneyPotEmail != "" || postData.HoneyPotName != "" {
 				// this is probably a bot
-				//TODO: use the new generic logger in pb to log this event
 				app.Logger().Warn("Honey pot triggered", "data", fmt.Sprintf("+%v", postData))
 				sendToastMessage("Failed to find postcard collection", "is-danger", true, c)
 				return nil
