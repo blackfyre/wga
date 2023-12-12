@@ -120,20 +120,23 @@ func registerContributors(app *pocketbase.PocketBase) {
 			if app.Store().Has(cacheKey) {
 				storedValue, ok := app.Store().Get(cacheKey).(string)
 				if !ok {
-				    // Handle the case where the value is not a string
-				    app.Logger().Error("Expected string value in store for key:", "error", cacheKey)
-				    return apis.NewApiError(500, "Internal server error", nil)
+					// Handle the case where the value is not a string
+					app.Logger().Error("Expected string value in store for key", "cacheKey", cacheKey)
+					return apis.NewApiError(500, "Internal server error", nil)
+
 				}
 				html = storedValue
 			} else {
 				contributors, err := getContributorsFromGithub()
 
 				if err != nil {
-					app.Logger().Error("Error getting contributors from Github", err)
+
+					app.Logger().Error("Error getting contributors from Github", "cacheKey", cacheKey, "error", err)
+
 					contributors, err = readStoredContributors()
 
 					if err != nil {
-						app.Logger().Error("Error reading stored contributors", err)
+						app.Logger().Error("Error reading stored contributors", "cacheKey", cacheKey, "error", err)
 						return apis.NewApiError(500, err.Error(), err)
 					}
 				}
