@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"os"
-	"strings"
 
 	"blackfyre.ninja/wga/crontab"
 	"blackfyre.ninja/wga/handlers"
@@ -25,7 +24,6 @@ func main() {
 	}
 
 	app := pocketbase.NewWithConfig(pocketbase.Config{
-		DefaultDebug:   strings.HasPrefix(os.Args[0], os.TempDir()),
 		DefaultDataDir: "./wga_data",
 	})
 

@@ -24,10 +24,10 @@ type counter struct {
 
 func getWelcomContent(app *pocketbase.PocketBase) (string, error) {
 
-	found := app.Cache().Has("strings:welcome")
+	found := app.Store().Has("strings:welcome")
 
 	if found {
-		return app.Cache().Get("strings:welcome").(string), nil
+		return app.Store().Get("strings:welcome").(string), nil
 	}
 
 	record, err := app.Dao().FindFirstRecordByData("strings", "name", "welcome")
@@ -39,7 +39,7 @@ func getWelcomContent(app *pocketbase.PocketBase) (string, error) {
 
 	result := record.Get("content")
 
-	app.Cache().Set("strings:welcome", result.(string))
+	app.Store().Set("strings:welcome", result.(string))
 
 	return result.(string), nil
 
@@ -49,10 +49,10 @@ func getArtistCount(app *pocketbase.PocketBase) (string, error) {
 
 	key := "count:artists"
 
-	found := app.Cache().Has(key)
+	found := app.Store().Has(key)
 
 	if found {
-		return app.Cache().Get(key).(string), nil
+		return app.Store().Get(key).(string), nil
 	}
 
 	c := counter{}
@@ -66,7 +66,7 @@ func getArtistCount(app *pocketbase.PocketBase) (string, error) {
 
 	result := fmt.Sprintf("%d", c.C)
 
-	app.Cache().Set(key, result)
+	app.Store().Set(key, result)
 
 	return result, nil
 
@@ -76,10 +76,10 @@ func getArtworkCount(app *pocketbase.PocketBase) (string, error) {
 
 	key := "count:artworks"
 
-	found := app.Cache().Has(key)
+	found := app.Store().Has(key)
 
 	if found {
-		return app.Cache().Get(key).(string), nil
+		return app.Store().Get(key).(string), nil
 	}
 
 	c := counter{}
@@ -93,7 +93,7 @@ func getArtworkCount(app *pocketbase.PocketBase) (string, error) {
 
 	result := fmt.Sprintf("%d", c.C)
 
-	app.Cache().Set(key, result)
+	app.Store().Set(key, result)
 
 	return result, nil
 

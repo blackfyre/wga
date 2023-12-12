@@ -113,10 +113,10 @@ func registerArtist(app *pocketbase.PocketBase) {
 
 			html := ""
 
-			found := app.Cache().Has(cacheKey)
+			found := app.Store().Has(cacheKey)
 
 			if found {
-				html = app.Cache().Get(cacheKey).(string)
+				html = app.Store().Get(cacheKey).(string)
 			} else {
 
 				fullUrl := os.Getenv("WGA_PROTOCOL") + "://" + c.Request().Host + c.Request().URL.String()
@@ -202,7 +202,7 @@ func registerArtist(app *pocketbase.PocketBase) {
 					return apis.NewNotFoundError("", err)
 				}
 
-				app.Cache().Set(cacheKey, html)
+				app.Store().Set(cacheKey, html)
 			}
 
 			c.Response().Header().Set("HX-Push-Url", "/artists/"+slug)
@@ -224,11 +224,11 @@ func registerArtist(app *pocketbase.PocketBase) {
 
 			html := ""
 
-			found := app.Cache().Has(cacheKey)
+			found := app.Store().Has(cacheKey)
 			// found := false
 
 			if found {
-				html = app.Cache().Get(cacheKey).(string)
+				html = app.Store().Get(cacheKey).(string)
 			} else {
 
 				err := godotenv.Load()
@@ -292,7 +292,7 @@ func registerArtist(app *pocketbase.PocketBase) {
 					return apis.NewNotFoundError("", err)
 				}
 
-				app.Cache().Set(cacheKey, html)
+				app.Store().Set(cacheKey, html)
 			}
 
 			c.Response().Header().Set("HX-Push-Url", "/artists/"+slug+"/"+awid)
