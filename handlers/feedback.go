@@ -65,13 +65,14 @@ func registerFeedbackHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 			}
 
 			if err := c.Bind(&postData); err != nil {
+				app.Logger().Error("Failed to parse form data", err)
 				sendToastMessage("Failed to parse form", "is-danger", true, c)
 				return apis.NewBadRequestError("Failed to parse form data", err)
 			}
 
 			if postData.HoneyPotEmail != "" || postData.HoneyPotName != "" {
 				// this is probably a bot
-				app.Logger().Error("Honey pot triggered", "data", fmt.Sprintf("+%v", postData))
+				app.Logger().Warn("Honey pot triggered", "data", fmt.Sprintf("+%v", postData))
 				sendToastMessage("Failed to parse form", "is-danger", true, c)
 				return nil
 			}
