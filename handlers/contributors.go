@@ -121,7 +121,7 @@ func registerContributors(app *pocketbase.PocketBase) {
 				storedValue, ok := app.Store().Get(cacheKey).(string)
 				if !ok {
 					// Handle the case where the value is not a string
-					app.Logger().Error("Expected string value in store for key:", "cacheKey", cacheKey)
+					app.Logger().Error("Expected string value in store for key", "cacheKey", cacheKey)
 					return apis.NewApiError(500, "Internal server error", nil)
 				}
 				html = storedValue
