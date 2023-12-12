@@ -23,8 +23,9 @@ func init() {
 
 		collection := &models.Collection{}
 
-		collection.Name = "glossary"
+		collection.Name = "Glossary"
 		collection.Type = models.CollectionTypeBase
+		collection.Id = "glossary"
 		collection.System = false
 		collection.MarkAsNew()
 		collection.Schema = schema.NewSchema(

@@ -4,5 +4,5 @@ tasks:
   reboot:
     cmds:
       - rm -rf wga_data
-      # - go run main.go migrate up
+      - node esbuild.mjs
       - go run . serve

@@ -29,7 +29,8 @@
 
         <div class="column">
             <div class="box">
-                <form hx-post="/postcards" enctype="multipart/form-data" hx-target="#d" id="postcard_create">
+                <form hx-post="/postcards" enctype="multipart/form-data" hx-target="#d" id="postcard_create"
+                    hx-disabled-elt="input,button,select">
                     <input type="hidden" name="image_id" value="{{.ImageId}}">
                     <div class="field">
                         <label class="label">Name</label>

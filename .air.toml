@@ -17,6 +17,7 @@ exclude_dir = [
   ".github",
   "wga_data",
   "wga_sitemap",
+  "node_modules",
 ]
 exclude_file = []
 exclude_regex = ["_test.go"]

@@ -20,7 +20,7 @@
     <link rel="stylesheet" type="text/css" href="https://unpkg.com/trix@2.0.0/dist/trix.css">
     <script type="text/javascript" src="https://unpkg.com/trix@2.0.0/dist/trix.umd.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.0.0/animate.min.css" />
-    <link rel="stylesheet" href="/assets/css/cookieconsent.css" />
+    <link rel="stylesheet" href="/assets/css/vendor/cookieconsent.css" />
     {{block "head" .}}
     {{end}}
     {{safeHTML .Analytics}}
@@ -29,6 +29,21 @@
 <body class="customBody">
 
     {{template "partial:top-nav" .}}
+
+    {{if ne .Env "production"}}
+    <section class="section" style="padding-bottom: 0;">
+        <div class="container">
+            <article class="message is-warning">
+                <div class="message-body">
+                    This is a development version of the site. It is not intended for public use. You can give us a
+                    helping
+                    hand
+                    at <a href="https://github.com/blackfyre/wga">GitHub</a>.
+                </div>
+            </article>
+        </div>
+    </section>
+    {{end}}
 
     <main id="mc-area">
         {{block "body" .}}

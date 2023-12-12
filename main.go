@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"os"
-	"strings"
 
 	"blackfyre.ninja/wga/crontab"
 	"blackfyre.ninja/wga/handlers"
@@ -11,6 +10,7 @@ import (
 	_ "blackfyre.ninja/wga/migrations"
 
 	"blackfyre.ninja/wga/utils"
+	"blackfyre.ninja/wga/utils/seed"
 	"blackfyre.ninja/wga/utils/sitemap"
 	"github.com/joho/godotenv"
 	"github.com/pocketbase/pocketbase"
@@ -26,7 +26,6 @@ func main() {
 	}
 
 	app := pocketbase.NewWithConfig(pocketbase.Config{
-		DefaultDebug:   strings.HasPrefix(os.Args[0], os.TempDir()),
 		DefaultDataDir: "./wga_data",
 	})
 
@@ -56,6 +55,22 @@ func main() {
 		},
 	})
 
+	if os.Getenv("WGA_ENV") == "development" {
+		app.RootCmd.AddCommand(&cobra.Command{
+			Use:   "seed:images",
+			Short: "Seed images to the specified S3 bucket",
+			Run: func(cmd *cobra.Command, args []string) {
+				err := seed.SeedImages(app)
+
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				log.Println("Done seeding images")
+
+			},
+		})
+	}
 
 	if err := app.Start(); err != nil {
 		log.Fatal(err)

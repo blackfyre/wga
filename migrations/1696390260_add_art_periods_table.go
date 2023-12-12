@@ -21,20 +21,21 @@ type ArtPeriod struct {
 }
 
 func init() {
-	tName := "art_periods"
+	tName := "Art_periods"
+	tId := "art_periods"
 	m.Register(func(db dbx.Builder) error {
 		dao := daos.New(db)
 
 		collection := &models.Collection{}
 
 		collection.Name = tName
-		collection.Id = tName
+		collection.Id = tId
 		collection.Type = models.CollectionTypeBase
 		collection.System = false
 		collection.MarkAsNew()
 		collection.Schema = schema.NewSchema(
 			&schema.SchemaField{
-				Id:          tName + "_name",
+				Id:          tId + "_name",
 				Name:        "name",
 				Type:        schema.FieldTypeText,
 				Options:     &schema.TextOptions{},
@@ -47,19 +48,19 @@ func init() {
 				Options: &schema.TextOptions{},
 			},
 			&schema.SchemaField{
-				Id:      tName + "_start",
+				Id:      tId + "_start",
 				Name:    "start",
 				Type:    schema.FieldTypeNumber,
 				Options: &schema.NumberOptions{},
 			},
 			&schema.SchemaField{
-				Id:      tName + "_end",
+				Id:      tId + "_end",
 				Name:    "end",
 				Type:    schema.FieldTypeNumber,
 				Options: &schema.NumberOptions{},
 			},
 			&schema.SchemaField{
-				Id:      tName + "_description",
+				Id:      tId + "_description",
 				Name:    "description",
 				Type:    schema.FieldTypeText,
 				Options: &schema.TextOptions{},
@@ -87,7 +88,7 @@ func init() {
 		}
 
 		for _, g := range c {
-			q := db.Insert(tName, dbx.Params{
+			q := db.Insert(tId, dbx.Params{
 				"id":          g.ID,
 				"start":       g.Start,
 				"end":         g.End,
@@ -106,7 +107,7 @@ func init() {
 
 		return nil
 	}, func(db dbx.Builder) error {
-		q := db.DropTable(tName)
+		q := db.DropTable(tId)
 		_, err := q.Execute()
 
 		return err

@@ -83,20 +83,21 @@ func readArtworkStage1Files() ([]ArtworkStage1, error) {
 }
 
 func init() {
-	tName := "artworks"
+	tId := "artworks"
+	tName := "Artworks"
 	m.Register(func(db dbx.Builder) error {
 		dao := daos.New(db)
 
 		collection := &models.Collection{}
 
 		collection.Name = tName
-		collection.Id = tName
+		collection.Id = tId
 		collection.Type = models.CollectionTypeBase
 		collection.System = false
 		collection.MarkAsNew()
 		collection.Schema = schema.NewSchema(
 			&schema.SchemaField{
-				Id:          tName + "_title",
+				Id:          tId + "_title",
 				Name:        "title",
 				Type:        schema.FieldTypeText,
 				Options:     &schema.TextOptions{},
@@ -104,7 +105,7 @@ func init() {
 				Required:    true,
 			},
 			&schema.SchemaField{
-				Id:   tName + "_author",
+				Id:   tId + "_author",
 				Name: "author",
 				Type: schema.FieldTypeRelation,
 				Options: &schema.RelationOptions{
@@ -113,7 +114,7 @@ func init() {
 				},
 			},
 			&schema.SchemaField{
-				Id:   tName + "_form",
+				Id:   tId + "_form",
 				Name: "form",
 				Type: schema.FieldTypeRelation,
 				Options: &schema.RelationOptions{
@@ -122,7 +123,7 @@ func init() {
 				},
 			},
 			&schema.SchemaField{
-				Id:   tName + "_type",
+				Id:   tId + "_type",
 				Name: "type",
 				Type: schema.FieldTypeRelation,
 				Options: &schema.RelationOptions{
@@ -131,13 +132,13 @@ func init() {
 				},
 			},
 			&schema.SchemaField{
-				Id:      tName + "_technique",
+				Id:      tId + "_technique",
 				Name:    "technique",
 				Type:    schema.FieldTypeText,
 				Options: &schema.TextOptions{},
 			},
 			&schema.SchemaField{
-				Id:   tName + "_school",
+				Id:   tId + "_school",
 				Name: "school",
 				Type: schema.FieldTypeRelation,
 				Options: &schema.RelationOptions{
@@ -146,24 +147,26 @@ func init() {
 				},
 			},
 			&schema.SchemaField{
-				Id:      tName + "_comment",
+				Id:      tId + "_comment",
 				Name:    "comment",
 				Type:    schema.FieldTypeEditor,
 				Options: &schema.EditorOptions{},
 			},
 			&schema.SchemaField{
-				Id:   tName + "_published",
+				Id:   tId + "_published",
 				Name: "published",
 				Type: schema.FieldTypeBool,
 			},
 			&schema.SchemaField{
-				Id:   tName + "_image",
+				Id:   tId + "_image",
 				Name: "image",
 				Type: schema.FieldTypeFile,
 				Options: &schema.FileOptions{
 					MimeTypes: []string{
 						"image/jpeg", "image/png",
 					},
+					Thumbs:  []string{"100x100", "320x240"},
+					MaxSize: 1024 * 1024 * 5,
 				},
 				Required: true,
 			},
@@ -182,7 +185,7 @@ func init() {
 		}
 
 		for _, g := range data {
-			q := db.Insert(tName, dbx.Params{
+			q := db.Insert(tId, dbx.Params{
 				"id":        g.Id,
 				"title":     g.Title,
 				"author":    g.AuthorId,
@@ -205,7 +208,7 @@ func init() {
 
 		return nil
 	}, func(db dbx.Builder) error {
-		q := db.DropTable(tName)
+		q := db.DropTable(tId)
 		_, err := q.Execute()
 
 		return err
