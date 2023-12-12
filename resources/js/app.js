@@ -1,4 +1,5 @@
 import * as bulmaToast from "bulma-toast";
+import tippy from "tippy.js";
 
 const wga = {
   els: {},
@@ -232,6 +233,19 @@ function initCloner() {
   });
 }
 
+function initTooltips() {
+  tippy("[data-tt-content]", {
+    allowHTML: true,
+    arrow: true,
+    arrowType: "round",
+    animation: "fade",
+    duration: 200,
+    placement: "top",
+    theme: "dark",
+    touch: true,
+  });
+}
+
 window.wga = {
   openDialog() {
     wga.els.dialog.showModal();
@@ -240,4 +254,5 @@ window.wga = {
     wga.els.dialog.close();
     wga.els.dialog.innerHTML = wga.els.dialogDefaultContent;
   },
+  initTooltips,
 };
