@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 
 	"blackfyre.ninja/wga/assets"
@@ -22,6 +21,12 @@ type counter struct {
 	C int `db:"c" json:"c"`
 }
 
+// getWelcomeContent retrieves the welcome content from the application.
+// It checks if the content is already stored in the application's store.
+// If found, it returns the stored content.
+// If not found, it queries the application's DAO to find the content by name.
+// If an error occurs during the retrieval process, it logs the error and returns an empty string.
+// Finally, it stores the retrieved content in the application's store for future use.
 func getWelcomContent(app *pocketbase.PocketBase) (string, error) {
 
 	found := app.Store().Has("strings:welcome")
@@ -33,7 +38,7 @@ func getWelcomContent(app *pocketbase.PocketBase) (string, error) {
 	record, err := app.Dao().FindFirstRecordByData("strings", "name", "welcome")
 
 	if err != nil {
-		log.Println(err)
+		app.Logger().Error("Error getting welcome content", err)
 		return "", err
 	}
 
@@ -45,6 +50,11 @@ func getWelcomContent(app *pocketbase.PocketBase) (string, error) {
 
 }
 
+// getArtistCount retrieves the count of artists from the database.
+// It first checks if the count is already stored in the app's store.
+// If found, it returns the stored count. Otherwise, it queries the database
+// to get the count and stores it in the app's store for future use.
+// It returns the count as a string and any error encountered during the process.
 func getArtistCount(app *pocketbase.PocketBase) (string, error) {
 
 	key := "count:artists"
@@ -60,7 +70,7 @@ func getArtistCount(app *pocketbase.PocketBase) (string, error) {
 	err := app.Dao().DB().NewQuery("SELECT COUNT(*) as c FROM artists WHERE published IS true").One(&c)
 
 	if err != nil {
-		log.Println(err)
+		app.Logger().Error("Error getting artist count", err)
 		return "0", err
 	}
 
@@ -72,6 +82,11 @@ func getArtistCount(app *pocketbase.PocketBase) (string, error) {
 
 }
 
+// getArtworkCount retrieves the count of artworks from the database.
+// It first checks if the count is already stored in the app's store, and if so, returns it.
+// Otherwise, it queries the database to get the count of artworks where published is true.
+// The count is then stored in the app's store for future use.
+// If an error occurs during the retrieval or storage process, it returns an error along with the count "0".
 func getArtworkCount(app *pocketbase.PocketBase) (string, error) {
 
 	key := "count:artworks"
@@ -87,7 +102,7 @@ func getArtworkCount(app *pocketbase.PocketBase) (string, error) {
 	err := app.Dao().DB().NewQuery("SELECT COUNT(*) as c FROM artworks WHERE published IS true").One(&c)
 
 	if err != nil {
-		log.Println(err)
+		app.Logger().Error("Error getting artwork count", err)
 		return "0", err
 	}
 
@@ -105,14 +120,6 @@ func registerHome(app *pocketbase.PocketBase) {
 		// (it acts as store for the parsed templates)
 
 		e.Router.GET("/", func(c echo.Context) error {
-
-			fs, err := app.NewFilesystem()
-
-			if err != nil {
-				return err
-			}
-
-			defer fs.Close()
 
 			welcomeText, err := getWelcomContent(app)
 
@@ -150,6 +157,7 @@ func registerHome(app *pocketbase.PocketBase) {
 
 			if err != nil {
 				// or redirect to a dedicated 404 HTML page
+				app.Logger().Error("Error rendering home page", err)
 				return apis.NewNotFoundError("", err)
 			}
 
