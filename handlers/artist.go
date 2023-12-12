@@ -135,7 +135,7 @@ func registerArtist(app *pocketbase.PocketBase) {
 				data := assets.NewRenderData(app)
 
 				data["Name"] = artist[0].GetString("name")
-				data["Bio"] = artist[0].GetString("bio")
+				data["Bio"] = utils.ApplyGlossary(app, artist[0].GetString("bio"))
 				data["Works"] = []map[string]any{}
 				data["Slug"] = slug
 				data["BioExcerpt"] = normalizedBioExcerpt(artist[0])
