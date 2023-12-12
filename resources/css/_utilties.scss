@@ -8,3 +8,9 @@ a[href]:not(:where(
 )):after {
   content: "↗️";
 }
+
+span[data-tt-content] {
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  cursor: help;
+}
