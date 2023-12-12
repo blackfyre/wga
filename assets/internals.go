@@ -30,31 +30,32 @@ type Renderable struct {
 // The "Analytics" key in the map contains the contents of the "analytics.txt" file.
 func NewRenderData(app *pocketbase.PocketBase) map[string]any {
 
-	//read file ./analytics.txt and append it to the data map
-
 	data := map[string]any{
-		"Env": os.Getenv("WGA_ENV"),
+		"Env":       os.Getenv("WGA_ENV"),
+		"Analytics": "",
 	}
 
-	if !app.Store().Has("renderable:analytics") {
+	if app != nil {
+		if !app.Store().Has("renderable:analytics") {
 
-		analytics, err := os.ReadFile("./analytics.txt")
+			analytics, err := os.ReadFile("./analytics.txt")
 
-		if err != nil {
-			if errors.Is(err, os.ErrNotExist) {
-				app.Logger().Warn("analytics.txt file not found, using empty string as default", err)
-				analytics = []byte("") // Provide an empty string if file does not exist
-			} else {
-				app.Logger().Error("Failed to read file", err)
-				return nil
+			if err != nil {
+				if errors.Is(err, os.ErrNotExist) {
+					app.Logger().Warn("analytics.txt file not found, using empty string as default", err)
+					analytics = []byte("") // Provide an empty string if file does not exist
+				} else {
+					app.Logger().Error("Failed to read file", err)
+					return nil
+				}
 			}
+
+			app.Store().Set("renderable:analytics", string(analytics))
+
+			data["Analytics"] = string(analytics)
+		} else {
+			data["Analytics"] = app.Store().Get("renderable:analytics")
 		}
-
-		app.Store().Set("renderable:analytics", string(analytics))
-
-		data["Analytics"] = string(analytics)
-	} else {
-		data["Analytics"] = app.Store().Get("renderable:analytics")
 	}
 
 	return data
