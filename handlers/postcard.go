@@ -84,7 +84,7 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 			postCardId := c.QueryParamDefault("p", "nope")
 
 			if postCardId == "nope" {
-				app.Logger().Error("Invalid postcard id: nope")
+				app.Logger().Error(fmt.Sprintf("Invalid postcard id: %s", postCardId))
 				return apis.NewBadRequestError("Invalid postcard id", nil)
 			}
 
