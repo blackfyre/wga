@@ -42,11 +42,10 @@ func NewRenderData(app *pocketbase.PocketBase) map[string]any {
 
 		if err != nil {
 			if errors.Is(err, os.ErrNotExist) {
-				log.Println("analytics.txt file not found, using empty string as default")
-				log.Println(err)
+				app.Logger().Error("analytics.txt file not found, using empty string as default", err)
 				analytics = []byte("") // Provide an empty string if file does not exist
 			} else {
-				log.Printf("Failed to read file: %v", err)
+				app.Logger().Error("Failed to read file", err)
 				return nil
 			}
 		}
