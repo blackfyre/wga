@@ -27,7 +27,7 @@ type counter struct {
 // If not found, it queries the application's DAO to find the content by name.
 // If an error occurs during the retrieval process, it logs the error and returns an empty string.
 // Finally, it stores the retrieved content in the application's store for future use.
-func getWelcomContent(app *pocketbase.PocketBase) (string, error) {
+func getWelcomeContent(app *pocketbase.PocketBase) (string, error) {
 
 	found := app.Store().Has("strings:welcome")
 
