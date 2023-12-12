@@ -133,6 +133,7 @@ func registerContributors(app *pocketbase.PocketBase) {
 					contributors, err = readStoredContributors()
 
 					if err != nil {
+						app.Logger().Error("Error reading stored contributors", "cacheKey", cacheKey, "error", err)
 						app.Logger().Error("Error reading stored contributors", err)
 						return apis.NewApiError(500, err.Error(), err)
 					}
