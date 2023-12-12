@@ -144,8 +144,6 @@ func (p *Pagination) getUrl(page int, text string) string {
 
 		htmxBase, _ := url.Parse(p.htmxBaseUrl)
 
-		fmt.Printf("htmxBase: %s\n", htmxBase)
-
 		htmxParams := htmxBase.Query()
 		delete(htmxParams, "page")
 		htmxStrParam := ""
