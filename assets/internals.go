@@ -36,7 +36,7 @@ func NewRenderData(app *pocketbase.PocketBase) map[string]any {
 		"Env": os.Getenv("WGA_ENV"),
 	}
 
-	if !app.Cache().Has("renderable:analytics") {
+	if !app.Store().Has("renderable:analytics") {
 
 		analytics, err := os.ReadFile("./analytics.txt")
 
@@ -46,11 +46,11 @@ func NewRenderData(app *pocketbase.PocketBase) map[string]any {
 			return data
 		}
 
-		app.Cache().Set("renderable:analytics", string(analytics))
+		app.Store().Set("renderable:analytics", string(analytics))
 
 		data["Analytics"] = string(analytics)
 	} else {
-		data["Analytics"] = app.Cache().Get("renderable:analytics")
+		data["Analytics"] = app.Store().Get("renderable:analytics")
 	}
 
 	return data

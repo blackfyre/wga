@@ -117,8 +117,8 @@ func registerContributors(app *pocketbase.PocketBase) {
 
 			html := ""
 
-			if app.Cache().Has(cacheKey) {
-				html = app.Cache().Get(cacheKey).(string)
+			if app.Store().Has(cacheKey) {
+				html = app.Store().Get(cacheKey).(string)
 			} else {
 				contributors, err := getContributorsFromGithub()
 
@@ -143,7 +143,7 @@ func registerContributors(app *pocketbase.PocketBase) {
 					return apis.NewApiError(500, err.Error(), err)
 				}
 
-				app.Cache().Set(cacheKey, html)
+				app.Store().Set(cacheKey, html)
 			}
 
 			c.Response().Header().Set("HX-Push-Url", "/contributors")

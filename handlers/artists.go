@@ -60,8 +60,8 @@ func registerArtists(app *pocketbase.PocketBase) {
 				cacheKey = cacheKey + ":search"
 			}
 
-			if app.Cache().Has(cacheKey) {
-				html := app.Cache().Get(cacheKey).(string)
+			if app.Store().Has(cacheKey) {
+				html := app.Store().Get(cacheKey).(string)
 				return c.HTML(http.StatusOK, html)
 			} else {
 
@@ -177,7 +177,7 @@ func registerArtists(app *pocketbase.PocketBase) {
 					return apis.NewNotFoundError("", err)
 				}
 
-				app.Cache().Set(cacheKey, html)
+				app.Store().Set(cacheKey, html)
 
 				return c.HTML(http.StatusOK, html)
 			}
