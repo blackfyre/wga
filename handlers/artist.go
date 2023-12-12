@@ -11,7 +11,6 @@ import (
 	"blackfyre.ninja/wga/utils"
 	"blackfyre.ninja/wga/utils/jsonld"
 	"blackfyre.ninja/wga/utils/url"
-	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
@@ -232,12 +231,6 @@ func registerArtist(app *pocketbase.PocketBase) {
 			if found {
 				html = app.Store().Get(cacheKey).(string)
 			} else {
-
-				err := godotenv.Load()
-
-				if err != nil {
-					return apis.NewBadRequestError("Error loading .env file", err)
-				}
 
 				artist, err := app.Dao().FindRecordsByFilter("artists", "slug = '"+slug+"'", "+name", 1, 0)
 
