@@ -117,15 +117,23 @@ func registerContributors(app *pocketbase.PocketBase) {
 
 			html := ""
 
-			if app.Cache().Has(cacheKey) {
-				html = app.Cache().Get(cacheKey).(string)
+			if app.Store().Has(cacheKey) {
+				storedValue, ok := app.Store().Get(cacheKey).(string)
+				if !ok {
+				    // Handle the case where the value is not a string
+				    app.Logger().Error("Expected string value in store for key:", cacheKey)
+				    return apis.NewApiError(500, "Internal server error", nil)
+				}
+				html = storedValue
 			} else {
 				contributors, err := getContributorsFromGithub()
 
 				if err != nil {
+					app.Logger().Error("Error getting contributors from Github, HTTP status code:", resp.StatusCode, err)
 					contributors, err = readStoredContributors()
 
 					if err != nil {
+						app.Logger().Error("Error reading stored contributors", err)
 						return apis.NewApiError(500, err.Error(), err)
 					}
 				}
@@ -140,10 +148,11 @@ func registerContributors(app *pocketbase.PocketBase) {
 				})
 
 				if err != nil {
+					app.Logger().Error("Error rendering contributors", err)
 					return apis.NewApiError(500, err.Error(), err)
 				}
 
-				app.Cache().Set(cacheKey, html)
+				app.Store().Set(cacheKey, html)
 			}
 
 			c.Response().Header().Set("HX-Push-Url", "/contributors")
