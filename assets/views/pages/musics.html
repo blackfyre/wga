@@ -41,8 +41,6 @@ Musics
                             <li>
                                 {{if .URL}}
                                     <a href="{{.URL}}" hx-get="/musics/{{.URL}}" hx-target="#mc-area">{{.Title}}</a>
-                                {{else}}
-                                    <a href=""></a>
                                 {{end}}
                             </li>
                         {{end}}
