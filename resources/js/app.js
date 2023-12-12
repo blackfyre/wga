@@ -248,7 +248,7 @@ window.wga = {
   },
   music: {
     openMusicWindow() {
-      window.open(
+      let w = window.open(
         `/musics`,
         `newWin`,
         `scrollbars=yes,status=no,dependent=no,screenX=0,screenY=0,width=420,height=300`,
