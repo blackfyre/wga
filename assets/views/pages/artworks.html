@@ -1,0 +1,99 @@
+{{define "title"}}
+Artwork search - Web Gallery of Art
+{{end}}
+
+{{define "body"}}
+{{block "artworks:content" .}}
+<section class="section">
+    <h1 class="title is-size-1">Artwork search</h1>
+    <div class="columns">
+        <div class="column is-one-quarter">
+            <div class="box">
+                <form action="/artworks?{{$.NewFilterValues}}" hx-get="/artworks/results?{{$.NewFilterValues}}"
+                    hx-target="#artwork-search-results" hx-disabled-elt="input,button,select"
+                    hx-indicator="#search-result-container" hx-trigger="load">
+                    <div class="field">
+                        <label class="label">Artforms</label>
+                        <div class="control">
+                            <div class="select">
+                                <select name="art_form">
+                                    {{range $k, $v := .ArtFormOptions}}
+                                    <option value="{{$k}}" {{if eq $.ActiveFilterValues.ArtFormString
+                                        $k}}selected{{end}}>{{$v}}</option>
+                                    {{end}}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label">Art types</label>
+                        <div class="control">
+                            <div class="select">
+                                <select name="art_type">
+                                    {{range $k, $v := .ArtTypeOptions}}
+                                    <option value="{{$k}}" {{if eq $.ActiveFilterValues.ArtTypeString
+                                        $k}}selected{{end}}>{{$v}}</option>
+                                    {{end}}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label">Art shool</label>
+                        <div class="control">
+                            <div class="select">
+                                <select name="art_school">
+                                    {{range $k, $v := .ArtSchoolOptions}}
+                                    <option value="{{$k}}" {{if eq $.ActiveFilterValues.SchoolString
+                                        $k}}selected{{end}}>{{$v}}</option>
+                                    {{end}}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label">Title</label>
+                        <p class="control">
+                            <input class="input" type="search" name="title" placeholder="Artwork title"
+                                value="{{.ActiveFilterValues.Title}}">
+                        </p>
+                    </div>
+                    <div class="field">
+                        <label class="label">Artist</label>
+                        <p class="control">
+                            <input class="input" list="artist_list" type="search" name="artist"
+                                placeholder="Artist name" value="{{.ActiveFilterValues.ArtistString}}">
+                            <datalist id="artist_list">
+                                {{range .ArtistNameList}}
+                                <option value="{{.}}"></option>
+                                {{end}}
+                            </datalist>
+                        </p>
+                    </div>
+
+                    <div class="field"><button type="submit" class="button is-primary">Search</button></div>
+                </form>
+            </div>
+        </div>
+        <div class="column" id="search-result-container">
+            <article class="message is-warning htmx-indicator-show">
+                <div class="message-body">
+                    Search in progress... <span class="icon">
+                        <i class="fas fa-spinner fa-pulse"></i>
+                    </span>
+                </div>
+            </article>
+            <div id="artwork-search-results" class="card-search">
+                <div class="columns is-multiline works-listing">
+                    <div class="column">
+                        <div class="notification is-warning">
+                            Loading artworks...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{{end}}
+{{end}}

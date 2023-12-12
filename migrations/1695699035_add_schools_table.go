@@ -23,7 +23,7 @@ func init() {
 
 		collection := &models.Collection{}
 
-		collection.Name = "schools"
+		collection.Name = "Schools"
 		collection.Id = "schools"
 		collection.Type = models.CollectionTypeBase
 		collection.System = false

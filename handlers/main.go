@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"blackfyre.ninja/wga/handlers/search"
+	"blackfyre.ninja/wga/handlers/artworks"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/pocketbase/pocketbase"
 )
@@ -22,6 +22,6 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 	registerPostcardHandlers(app, p)
 	registerContributors(app)
 	registerStatic(app)
-	search.RegisterSearchHandlers(app)
+	artworks.RegisterArtworksHandlers(app)
 	registerHome(app)
 }

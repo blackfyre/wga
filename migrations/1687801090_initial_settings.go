@@ -31,6 +31,7 @@ func init() {
 		settings.S3.Bucket = os.Getenv("WGA_S3_BUCKET")
 		settings.S3.Secret = os.Getenv("WGA_S3_ACCESS_SECRET")
 		settings.S3.Region = os.Getenv("WGA_S3_REGION")
+		settings.S3.ForcePathStyle = true
 
 		return dao.SaveSettings(settings)
 	}, nil)

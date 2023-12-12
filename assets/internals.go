@@ -24,26 +24,37 @@ type Renderable struct {
 	Data   map[string]any
 }
 
+// NewRenderData creates and returns a map containing render data for the given app.
+// The render data includes the environment variable "WGA_ENV" and the contents of the "analytics.txt" file.
+// If the "renderable:analytics" cache is not available, the file is read and stored in the cache.
+// The "Analytics" key in the map contains the contents of the "analytics.txt" file.
 func NewRenderData(app *pocketbase.PocketBase) map[string]any {
 
 	//read file ./analytics.txt and append it to the data map
 
-	data := map[string]any{}
+	data := map[string]any{
+		"Env": os.Getenv("WGA_ENV"),
+	}
 
-	if !app.Cache().Has("renderable:analytics") {
+	if !app.Store().Has("renderable:analytics") {
 
 		analytics, err := os.ReadFile("./analytics.txt")
 
 		if err != nil {
-			log.Println("Error reading analytics.txt")
-			log.Println(err)
+			if errors.Is(err, os.ErrNotExist) {
+				app.Logger().Warn("analytics.txt file not found, using empty string as default", err)
+				analytics = []byte("") // Provide an empty string if file does not exist
+			} else {
+				app.Logger().Error("Failed to read file", err)
+				return nil
+			}
 		}
 
-		app.Cache().Set("renderable:analytics", string(analytics))
+		app.Store().Set("renderable:analytics", string(analytics))
 
 		data["Analytics"] = string(analytics)
 	} else {
-		data["Analytics"] = app.Cache().Get("renderable:analytics")
+		data["Analytics"] = app.Store().Get("renderable:analytics")
 	}
 
 	return data

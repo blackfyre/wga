@@ -14,7 +14,7 @@ func init() {
 
 		collection := &models.Collection{}
 
-		collection.Name = "postcards"
+		collection.Name = "Postcards"
 		collection.Id = "postcards"
 		collection.Type = models.CollectionTypeBase
 		collection.System = false
