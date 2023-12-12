@@ -41,7 +41,7 @@ func registerFeedbackHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 
 			if err != nil {
 				app.Logger().Error("Failed to render the feedback form", err)
-				apis.NewApiError(500, "Failed to render the form", nil)
+				return apis.NewApiError(500, "Failed to render the form", nil)
 			}
 
 			return c.HTML(http.StatusOK, html)
