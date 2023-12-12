@@ -61,6 +61,10 @@ type GuestBookMessagePrepared struct {
 	Created  string
 }
 
+// registerGuestbookHandlers registers the handlers for the guestbook routes.
+// It takes an instance of pocketbase.PocketBase as input and adds the necessary
+// route handlers to the app's router. The handlers include GET and POST methods
+// for displaying and adding messages to the guestbook.
 func registerGuestbookHandlers(app *pocketbase.PocketBase) {
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
@@ -173,6 +177,10 @@ func setUrl(c echo.Context, url string) {
 	}
 }
 
+// gbProcessRequest is a function that processes the request and returns a SearchSettings struct.
+// It takes an echo.Context as a parameter and extracts the search expression from the query parameters.
+// If the search expression is present, it updates the filter to include the search expression.
+// The function returns a SearchSettings struct containing the search expression, a flag indicating if the search expression is present, and the filter.
 func gbProcessRequest(c echo.Context) SearchSettings {
 	searchExpression := strconv.Itoa(time.Now().Year())
 	searchExpressionPresent := false
@@ -199,6 +207,15 @@ func gbProcessRequest(c echo.Context) SearchSettings {
 	return searchSettings
 }
 
+// gbSetCacheSettings generates a cache key based on the provided parameters.
+// The cache key is used to store and retrieve data from the cache.
+//
+// Parameters:
+// - confirmedHtmxRequest: A boolean indicating whether the request is confirmed as an htmx request.
+// - searchSettings: The search settings used to generate the cache key.
+//
+// Returns:
+// - The generated cache key as a string.
 func gbSetCacheSettings(confirmedHtmxRequest bool, searchSettings SearchSettings) string {
 	cacheKey := "guestbook:" + ":" + searchSettings.searchExpression
 
@@ -212,6 +229,9 @@ func gbSetCacheSettings(confirmedHtmxRequest bool, searchSettings SearchSettings
 	return cacheKey
 }
 
+// gbIsCached checks if the given cacheKey exists in the app's store.
+// If the cacheKey exists, it retrieves the HTML content from the store and returns true along with the HTML response.
+// If the cacheKey does not exist, it returns false and a nil error.
 func gbIsCached(app *pocketbase.PocketBase, cacheKey string, c echo.Context) (bool, error) {
 	if app.Store().Has(cacheKey) {
 		html := app.Store().Get(cacheKey).(string)
@@ -220,6 +240,9 @@ func gbIsCached(app *pocketbase.PocketBase, cacheKey string, c echo.Context) (bo
 	return false, nil
 }
 
+// gbGetData retrieves data for the guestbook based on the provided search settings.
+// It calls various functions to fetch the guestbook title, text content, main content, and latest entries.
+// The retrieved data is then prepared for rendering and returned along with any error encountered.
 func gbGetData(app *pocketbase.PocketBase, searchSettings SearchSettings) (GbPreparedData, error) {
 	guestBookTitle, err := gbGetGuestbookTextContent(app, "guestbook")
 
@@ -264,9 +287,13 @@ func gbGetData(app *pocketbase.PocketBase, searchSettings SearchSettings) (GbPre
 	return data, err
 }
 
+// gbPrepareDataForRender prepares the data for rendering the guestbook page.
+// It takes the GbData and SearchSettings as input parameters and returns the prepared data of type GbPreparedData.
 func gbPrepareDataForRender(data GbData, searchSettings SearchSettings) GbPreparedData {
+	// Retrieve the years for the calendar
 	years := gbGetYears()
 
+	// Create a new instance of GbPreparedData and populate its fields
 	preparedData := GbPreparedData{
 		Title:                   data.Title,
 		FirstContent:            data.FirstContent,
@@ -281,6 +308,11 @@ func gbPrepareDataForRender(data GbData, searchSettings SearchSettings) GbPrepar
 	return preparedData
 }
 
+// gbRender is a function that renders the guestbook page based on the provided data.
+// It takes a boolean flag 'confirmedHtmxRequest' to determine the rendering behavior.
+// If 'confirmedHtmxRequest' is true, it renders a specific block of the guestbook content using assets.RenderBlock.
+// If 'confirmedHtmxRequest' is false, it renders the entire guestbook page using assets.RenderPage.
+// The function returns the rendered HTML string and an error, if any.
 func gbRender(confirmedHtmxRequest bool, data GbPreparedData) (string, error) {
 	dataMap, shouldReturn, html, err := gbGeneralizer(data)
 	if shouldReturn {
@@ -298,15 +330,22 @@ func gbRender(confirmedHtmxRequest bool, data GbPreparedData) (string, error) {
 	}
 }
 
+// gbGetGuestbookTextContent retrieves the text content for a guestbook entry.
+// It takes an app object of type *pocketbase.PocketBase and a content string as input.
+// It returns the retrieved text content as a string and an error if any.
 func gbGetGuestbookTextContent(app *pocketbase.PocketBase, content string) (string, error) {
+	// Format the content string
 	strContent := fmt.Sprintf("strings:%s", content)
 
+	// Check if the content string exists in the app store
 	found := app.Store().Has(strContent)
 
 	if found {
+		// If the content string exists, retrieve and return it
 		return app.Store().Get(strContent).(string), nil
 	}
 
+	// If the content string does not exist in the app store, find the first record by data
 	record, err := app.Dao().FindFirstRecordByData("strings", "name", content)
 
 	if err != nil {
@@ -314,13 +353,18 @@ func gbGetGuestbookTextContent(app *pocketbase.PocketBase, content string) (stri
 		return "", err
 	}
 
+	// Get the content from the record
 	result := record.Get("content")
 
+	// Set the content in the app store
 	app.Store().Set(strContent, result.(string))
 
+	// Return the retrieved content
 	return result.(string), nil
 }
 
+// gbGetGuestbookContent retrieves the guestbook content based on the provided filter and search expression.
+// It returns a slice of GuestBookMessagePrepared and an error if any.
 func gbGetGuestbookContent(app *pocketbase.PocketBase, filter string, searchExpression string) ([]GuestBookMessagePrepared, error) {
 	records, err := app.Dao().FindRecordsByFilter(
 		"guestbook",
@@ -362,6 +406,10 @@ func gbGetGuestbookContent(app *pocketbase.PocketBase, filter string, searchExpr
 	return preRendered, err
 }
 
+// gbGetYears returns a 2D slice of strings representing grouped years.
+// The function generates a list of years from 1997 to the current year.
+// The years are then grouped into sub-slices of 5 years each.
+// The order of the grouped years is reversed before returning the result.
 func gbGetYears() [][]string {
 	years := []string{}
 	thisYear := time.Now().Year()
@@ -387,6 +435,10 @@ func gbGetYears() [][]string {
 	return groupedYears
 }
 
+// gbGeneralizer is a function that takes a GbPreparedData struct as input and returns a map[string]interface{},
+// a boolean value, a string, and an error. It converts the input data into a JSON string, then unmarshals it
+// into a map[string]interface{}. If successful, it returns the data map, false, an empty string, and nil error.
+// Otherwise, it returns nil, true, an empty string, and the encountered error.
 func gbGeneralizer(data GbPreparedData) (map[string]interface{}, bool, string, error) {
 	dataMap := make(map[string]interface{})
 	jsonData, err := json.Marshal(data)
@@ -400,6 +452,11 @@ func gbGeneralizer(data GbPreparedData) (map[string]interface{}, bool, string, e
 	return dataMap, false, "", nil
 }
 
+// gbAddMessageRender is a function that renders the HTML content for adding a message to the guestbook.
+// It takes a boolean parameter, confirmedHtmxRequest, which indicates whether the request is confirmed as an Htmx request.
+// If confirmedHtmxRequest is true, it renders a block of HTML content using assets.RenderBlock.
+// If confirmedHtmxRequest is false, it renders a page of HTML content using assets.RenderPage.
+// The function returns the rendered HTML content as a string and any error that occurred during rendering.
 func gbAddMessageRender(confirmedHtmxRequest bool) (string, error) {
 	dataMap := make(map[string]any)
 
@@ -413,6 +470,9 @@ func gbAddMessageRender(confirmedHtmxRequest bool) (string, error) {
 	}
 }
 
+// addGuestbookMessageToDB adds a guestbook message to the database.
+// It takes an app object of type *pocketbase.PocketBase and a content object of type GuestBookMessage as parameters.
+// It returns an error if there is any issue with adding the message to the database.
 func addGuestbookMessageToDB(app *pocketbase.PocketBase, content GuestBookMessage) error {
 	collection, err := app.Dao().FindCollectionByNameOrId("guestbook")
 	if err != nil {
@@ -436,6 +496,9 @@ func addGuestbookMessageToDB(app *pocketbase.PocketBase, content GuestBookMessag
 	return err
 }
 
+// addGuestbookMessageGeneralizer is a function that takes a GuestBookMessage as input and returns a map[string]any and an error.
+// It converts the GuestBookMessage into a JSON string, then unmarshals the JSON string into a map[string]any.
+// If there is an error during the conversion or unmarshaling process, it returns the error.
 func addGuestbookMessageGeneralizer(data GuestBookMessage) (map[string]any, error) {
 	messageMap := make(map[string]any)
 	jsonData, err := json.Marshal(data)
