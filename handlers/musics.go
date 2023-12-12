@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -115,6 +114,9 @@ func registerMusicHandlers(app *pocketbase.PocketBase) {
 					// or redirect to a dedicated 404 HTML page
 					return apis.NewNotFoundError("", err)
 				}
+
+				// Update the cache with the newly generated HTML
+				app.Store().Set(cacheKey, html)
 			}
 
 			return c.HTML(http.StatusOK, html)
@@ -161,27 +163,27 @@ func registerMusicHandlers(app *pocketbase.PocketBase) {
 	})
 }
 
-func GetMusics() (centuries []Century, err error) {
-	var data []Century
+func GetMusics(filePath string) (centuries []Century, err error) {
+    var data []Century
 
-	fileData, err := os.ReadFile("./assets/reference/musics.json")
+    fileData, err := os.ReadFile(filePath)
 
-	if err != nil {
-		return nil, fmt.Errorf("error reading file: %w", err)
-	}
+    if err != nil {
+        return nil, fmt.Errorf("error reading file: %w", err)
+    }
 
-	err = json.Unmarshal(fileData, &data)
-	if err != nil {
-		return nil, fmt.Errorf("error unmarshalling JSON data: %w", err)
-	}
+    err = json.Unmarshal(fileData, &data)
+    if err != nil {
+        return nil, fmt.Errorf("error unmarshalling JSON data: %w", err)
+    }
 
-	return data, err
+    return data, err
 }
 
 func GetParsedMusics() ([]Composer_seed, error) {
 	var composers []Composer_seed
 
-	musics, err := GetMusics()
+	musics, err := GetMusics("./assets/reference/musics.json")
     if err != nil {
         return nil, err
     }
@@ -224,7 +226,7 @@ func getComposers(app *pocketbase.PocketBase, c echo.Context) ([]shape.Music_com
     err := app.Dao().DB().NewQuery("SELECT * FROM music_composer").All(&composers)
     if err != nil {
 		app.Logger().Error("failed to get music composers", err)
-        return nil, errors.New("failed to get music composers")
+        return nil, fmt.Errorf("failed to get music composers: %w", err)
     }
 
     for i, composer := range composers {
@@ -234,7 +236,7 @@ func getComposers(app *pocketbase.PocketBase, c echo.Context) ([]shape.Music_com
 		err := app.Dao().DB().NewQuery(query).Bind(dbx.Params{"id": composer.ID}).All(&songs)
         if err != nil {
 			app.Logger().Error("failed to get music song by composer", err)
-            return nil, errors.New("failed to get music song by composer")
+            return nil, fmt.Errorf("failed to get music song by composer: %w", err)
         }
 
         composers[i].Songs = songs
