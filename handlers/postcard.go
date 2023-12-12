@@ -71,7 +71,7 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 			html, err := renderPostcardEditor(awid, app, c)
 
 			if err != nil {
-				app.Logger().Error("Failed to render the postcard form", err)
+				app.Logger().Error(fmt.Sprintf("Failed to render the postcard form for awid %s", awid), err)
 				return err
 			}
 
