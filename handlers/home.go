@@ -121,7 +121,7 @@ func registerHome(app *pocketbase.PocketBase) {
 
 		e.Router.GET("/", func(c echo.Context) error {
 
-			welcomeText, err := getWelcomContent(app)
+			welcomeText, err := getWelcomeContent(app)
 
 			if err != nil {
 				fmt.Println(err)
