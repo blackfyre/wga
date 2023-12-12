@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -39,6 +40,7 @@ func registerFeedbackHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 			html, err := renderFeedbackEditor()
 
 			if err != nil {
+				app.Logger().Error("Failed to render the feedback form", err)
 				apis.NewApiError(500, "Failed to render the form", nil)
 			}
 
@@ -69,13 +71,14 @@ func registerFeedbackHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 
 			if postData.HoneyPotEmail != "" || postData.HoneyPotName != "" {
 				// this is probably a bot
-				//TODO: use the new generic logger in pb to log this event
+				app.Logger().Error("Honey pot triggered", "data", fmt.Sprintf("+%v", postData))
 				sendToastMessage("Failed to parse form", "is-danger", true, c)
 				return nil
 			}
 
 			collection, err := app.Dao().FindCollectionByNameOrId("feedbacks")
 			if err != nil {
+				app.Logger().Error("Database table not found", err)
 				sendToastMessage("Database table not found", "is-danger", true, c)
 				return apis.NewNotFoundError("Database table not found", err)
 			}
@@ -98,6 +101,8 @@ func registerFeedbackHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 				if err != nil {
 					return err
 				}
+
+				app.Logger().Error("Failed to store the feedback", err)
 
 				sendToastMessage("Failed to store the feedback", "is-danger", false, c)
 
