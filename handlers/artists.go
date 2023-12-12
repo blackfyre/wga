@@ -36,6 +36,7 @@ func registerArtists(app *pocketbase.PocketBase) {
 				page, err = strconv.Atoi(c.QueryParam("page"))
 
 				if err != nil {
+					app.Logger().Error("Invalid page: ", c.QueryParam("page"), err)
 					return apis.NewBadRequestError("Invalid page", err)
 				}
 			}
@@ -60,8 +61,8 @@ func registerArtists(app *pocketbase.PocketBase) {
 				cacheKey = cacheKey + ":search"
 			}
 
-			if app.Cache().Has(cacheKey) {
-				html := app.Cache().Get(cacheKey).(string)
+			if app.Store().Has(cacheKey) {
+				html := app.Store().Get(cacheKey).(string)
 				return c.HTML(http.StatusOK, html)
 			} else {
 
@@ -83,6 +84,7 @@ func registerArtists(app *pocketbase.PocketBase) {
 				)
 
 				if err != nil {
+					app.Logger().Error("Failed to get artist records: ", err)
 					return apis.NewBadRequestError("Invalid page", err)
 				}
 
@@ -98,6 +100,7 @@ func registerArtists(app *pocketbase.PocketBase) {
 				)
 
 				if err != nil {
+					app.Logger().Error("Failed to get total records: ", err)
 					return apis.NewBadRequestError("Invalid page", err)
 				}
 
@@ -174,10 +177,11 @@ func registerArtists(app *pocketbase.PocketBase) {
 
 				if err != nil {
 					// or redirect to a dedicated 404 HTML page
-					return apis.NewNotFoundError("", err)
+					app.Logger().Error("Failed to render artists: ", err)
+					return apis.NewApiError(500, err.Error(), err)
 				}
 
-				app.Cache().Set(cacheKey, html)
+				app.Store().Set(cacheKey, html)
 
 				return c.HTML(http.StatusOK, html)
 			}
