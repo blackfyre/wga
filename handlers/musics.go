@@ -76,7 +76,7 @@ func registerMusicHandlers(app *pocketbase.PocketBase) {
 
 			found := app.Store().Has(cacheKey)
 
-			musicList, err := newGetComposers(app, c)
+			musicList, err := getComposers(app, c)
 
 			if err != nil {
 				app.Logger().Error("Composers not found: ", err)
@@ -160,27 +160,32 @@ func registerMusicHandlers(app *pocketbase.PocketBase) {
 	})
 }
 
-func GetMusics() []Century {
+func GetMusics() (centuries []Century, err error) {
 	var data []Century
 
 	fileData, err := os.ReadFile("./assets/reference/musics.json")
 
 	if err != nil {
-		fmt.Println("Error reading file:", err)
+		return nil, fmt.Errorf("error reading file: %w", err)
 	}
 
 	err = json.Unmarshal(fileData, &data)
 	if err != nil {
-		fmt.Println("Error unmarshalling JSON data:", err)
+		return nil, fmt.Errorf("error unmarshalling JSON data: %w", err)
 	}
 
-	return data
+	return data, err
 }
 
-func GetParsedMusics([]Century) ([]Composer_seed) {
+func GetParsedMusics() ([]Composer_seed, error) {
 	var composers []Composer_seed
 
-	for _, century := range GetMusics() {
+	musics, err := GetMusics()
+    if err != nil {
+        return nil, err
+    }
+
+	for _, century := range musics {
 		for _, composer := range century.Composers {
 			id := uuid.New().String()
 
@@ -210,10 +215,10 @@ func GetParsedMusics([]Century) ([]Composer_seed) {
 		}
 	}
 
-	return composers
+	return composers, nil
 }
 
-func newGetComposers(app *pocketbase.PocketBase, c echo.Context) ([]shape.Music_composer, error) {
+func getComposers(app *pocketbase.PocketBase, c echo.Context) ([]shape.Music_composer, error) {
     composers := []shape.Music_composer{}
     err := app.Dao().DB().NewQuery("SELECT * FROM music_composer").All(&composers)
     if err != nil {

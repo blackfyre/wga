@@ -4,9 +4,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+
+	"github.com/google/uuid"
 )
 
+type UrlData struct {
+    Url string
+    ID  uuid.UUID
+}
+
 type Song struct {
+	ID     uuid.UUID
 	Title  string
 	URL    string
 	Source []string
@@ -24,7 +32,7 @@ type Century struct {
 	Composers []Composer
 }
 
-func ParseMusicListToUrls(filePath string) ([]string, error) {
+func ParseMusicListToUrls(filePath string) ([]UrlData, error) {
 	fmt.Println("Parsing music list to urls...")
 
 	var data []Century
@@ -34,26 +42,27 @@ func ParseMusicListToUrls(filePath string) ([]string, error) {
 
 	if err != nil {
 		fmt.Println("Error reading file:", err)
+		return nil, err
 	}
 
 	// Unmarshal the JSON data into the data variable
 	err = json.Unmarshal(fileData, &data)
 	if err != nil {
 		fmt.Println("Error unmarshalling JSON data:", err)
+		return nil, err
 	}
 
-	fmt.Println("Done reading file")
-
-	// TODO: add id to each song
-
-	var parsedData []string
+	var parsedData []UrlData
 	for _, century := range data {
 		for _, composer := range century.Composers {
 			for _, song := range composer.Songs {
 				if len(song.Source) > 0 {
 					for _, source := range song.Source {
-						url := fmt.Sprintf("%s", source)
-						parsedData = append(parsedData, url)
+						urlData := UrlData{
+							Url: source,
+							ID:  uuid.New(),
+						}
+						parsedData = append(parsedData, urlData)
 					}
 				}
 			}
@@ -66,17 +75,25 @@ func ParseMusicListToUrls(filePath string) ([]string, error) {
 	file, err := os.Create("musicUrls.json")
 	if err != nil {
 		fmt.Println("Error creating file:", err)
+		return nil, err
 	}
-	defer file.Close()
+
+	defer func() {
+		if cerr := file.Close(); cerr != nil {
+			fmt.Println("Error closing file:", cerr)
+		}
+	}()
 
 	jsonData, err := json.Marshal(parsedData)
 	if err != nil {
 		fmt.Println("Error marshalling JSON data:", err)
+		return nil, err
 	}
 
 	_, err = file.Write(jsonData)
 	if err != nil {
 		fmt.Println("Error writing JSON data to file:", err)
+		return nil, err
 	}
 
 	return parsedData, nil

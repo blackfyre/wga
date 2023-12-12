@@ -276,7 +276,10 @@ func SetBoolWithFallback(value *bool, fallback bool) {
 }
 
 func RemoveExtension(s string) string {
-	return s[:len(s)-4]
+	if idx := strings.LastIndex(s, "."); idx != -1 {
+		return s[:idx]
+	}
+	return s
 }
 
 func GetFileNameFromUrl(url string, extension bool) string {

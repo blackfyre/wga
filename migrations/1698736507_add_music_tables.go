@@ -109,7 +109,7 @@ func init() {
 		if err != nil {
 			return err
 		}
-		composers := handlers.GetParsedMusics(handlers.GetMusics())
+		composers, err := handlers.GetParsedMusics()
 
 		if err != nil {
 			return err
