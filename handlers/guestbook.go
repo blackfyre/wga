@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -114,7 +113,7 @@ func registerGuestbookHandlers(app *pocketbase.PocketBase) {
 
 			if guestBookMessage.HoneyPotEmail != "" || guestBookMessage.HoneyPotName != "" {
 				// this is probably a bot
-				//TODO: use the new generic logger in pb to log this event
+				app.Logger().Error("Guestbook HoneyPot triggered", "ip", c.RealIP())
 				sendToastMessage("Failed to create message, please try again later.", "is-danger", true, c)
 				return c.NoContent(204)
 			}
@@ -308,26 +307,27 @@ func gbPrepareDataForRender(data GbData, searchSettings SearchSettings) GbPrepar
 	return preparedData
 }
 
-// gbRender is a function that renders the guestbook page based on the provided data.
-// It takes a boolean flag 'confirmedHtmxRequest' to determine the rendering behavior.
-// If 'confirmedHtmxRequest' is true, it renders a specific block of the guestbook content using assets.RenderBlock.
-// If 'confirmedHtmxRequest' is false, it renders the entire guestbook page using assets.RenderPage.
-// The function returns the rendered HTML string and an error, if any.
+// gbRender is a function that renders the guestbook content based on the provided data.
+// It takes a boolean flag 'confirmedHtmxRequest' to indicate whether the request is confirmed as an Htmx request.
+// The 'data' parameter is of type GbPreparedData, which contains the necessary data for rendering the guestbook content.
+// The function returns a string representing the rendered HTML content and an error if any occurred during the rendering process.
 func gbRender(confirmedHtmxRequest bool, data GbPreparedData) (string, error) {
 	dataMap, shouldReturn, html, err := gbGeneralizer(data)
 	if shouldReturn {
 		return html, err
 	}
 
-	if confirmedHtmxRequest {
-		blockToRender := "guestbook:content"
+	dto := assets.NewRenderData(nil)
 
-		html, err := assets.RenderBlock(blockToRender, dataMap)
-		return html, err
-	} else {
-		html, err := assets.RenderPage("guestbook", dataMap)
-		return html, err
+	for k, v := range dataMap {
+		dto[k] = v
 	}
+
+	return assets.Render(assets.Renderable{
+		IsHtmx: confirmedHtmxRequest,
+		Block:  "guestbook:content",
+		Data:   dto,
+	})
 }
 
 // gbGetGuestbookTextContent retrieves the text content for a guestbook entry.
@@ -349,7 +349,7 @@ func gbGetGuestbookTextContent(app *pocketbase.PocketBase, content string) (stri
 	record, err := app.Dao().FindFirstRecordByData("strings", "name", content)
 
 	if err != nil {
-		log.Println(err)
+		app.Logger().Error("Failed to find guestbook record", err)
 		return "", err
 	}
 
@@ -378,6 +378,7 @@ func gbGetGuestbookContent(app *pocketbase.PocketBase, filter string, searchExpr
 	)
 
 	if err != nil {
+		app.Logger().Error("Failed to find guestbook records", err)
 		return nil, apis.NewBadRequestError("Invalid something", err)
 	}
 
@@ -388,7 +389,7 @@ func gbGetGuestbookContent(app *pocketbase.PocketBase, filter string, searchExpr
 		createDateString := m.GetString("created")
 		createTime, err := time.Parse("2006-01-02 15:04:05.000Z", createDateString)
 		if err != nil {
-			fmt.Println("Error parsing the date:", err)
+			app.Logger().Error("Failed to parse date", err)
 			return nil, err
 		}
 		formattedDateString := createTime.Format("January 2, 2006")
