@@ -100,6 +100,7 @@ func registerFeedbackHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 				html, err := renderFeedbackEditor()
 
 				if err != nil {
+					app.Logger().Error("Failed to render the feedback form after form submission error", err)
 					return err
 				}
 
