@@ -15,6 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
 
+	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
@@ -229,8 +230,8 @@ func getComposers(app *pocketbase.PocketBase, c echo.Context) ([]shape.Music_com
     for i, composer := range composers {
         songs := []shape.Music_song{}
 
-		query := fmt.Sprintf("SELECT * FROM music_song WHERE composer_id = '%s'", composer.ID)
-        err := app.Dao().DB().NewQuery(query).All(&songs)
+		query := "SELECT * FROM music_song WHERE composer_id = {:id}"
+		err := app.Dao().DB().NewQuery(query).Bind(dbx.Params{"id": composer.ID}).All(&songs)
         if err != nil {
 			app.Logger().Error("failed to get music song by composer", err)
             return nil, errors.New("failed to get music song by composer")
