@@ -213,8 +213,8 @@ func gbSetCacheSettings(confirmedHtmxRequest bool, searchSettings SearchSettings
 }
 
 func gbIsCached(app *pocketbase.PocketBase, cacheKey string, c echo.Context) (bool, error) {
-	if app.Cache().Has(cacheKey) {
-		html := app.Cache().Get(cacheKey).(string)
+	if app.Store().Has(cacheKey) {
+		html := app.Store().Get(cacheKey).(string)
 		return true, c.HTML(http.StatusOK, html)
 	}
 	return false, nil
@@ -301,10 +301,10 @@ func gbRender(confirmedHtmxRequest bool, data GbPreparedData) (string, error) {
 func gbGetGuestbookTextContent(app *pocketbase.PocketBase, content string) (string, error) {
 	strContent := fmt.Sprintf("strings:%s", content)
 
-	found := app.Cache().Has(strContent)
+	found := app.Store().Has(strContent)
 
 	if found {
-		return app.Cache().Get(strContent).(string), nil
+		return app.Store().Get(strContent).(string), nil
 	}
 
 	record, err := app.Dao().FindFirstRecordByData("strings", "name", content)
@@ -316,7 +316,7 @@ func gbGetGuestbookTextContent(app *pocketbase.PocketBase, content string) (stri
 
 	result := record.Get("content")
 
-	app.Cache().Set(strContent, result.(string))
+	app.Store().Set(strContent, result.(string))
 
 	return result.(string), nil
 }

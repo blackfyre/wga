@@ -64,12 +64,14 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 
 			//check if awid is empty
 			if awid == "" {
+				app.Logger().Error("awid is empty on postcard/send")
 				return apis.NewBadRequestError("awid is empty", nil)
 			}
 
 			html, err := renderPostcardEditor(awid, app, c)
 
 			if err != nil {
+				app.Logger().Error(fmt.Sprintf("Failed to render the postcard form for awid %s", awid), err)
 				return err
 			}
 
@@ -82,16 +84,19 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 			postCardId := c.QueryParamDefault("p", "nope")
 
 			if postCardId == "nope" {
+				app.Logger().Error(fmt.Sprintf("Invalid postcard id: %s", postCardId))
 				return apis.NewBadRequestError("Invalid postcard id", nil)
 			}
 
 			r, err := app.Dao().FindRecordById("postcards", postCardId)
 
 			if err != nil {
+				app.Logger().Error("Failed to find postcard", "id", postCardId, err)
 				return apis.NewNotFoundError("", err)
 			}
 
 			if errs := app.Dao().ExpandRecord(r, []string{"image_id"}, nil); len(errs) > 0 {
+				app.Logger().Error("Failed to expand record", "id", postCardId, "errors", errs)
 				return fmt.Errorf("failed to expand: %v", errs)
 			}
 
@@ -109,6 +114,7 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 			html, err := assets.RenderPage("postcard", data)
 
 			if err != nil {
+				app.Logger().Error("Failed to render the postcard", err)
 				return apis.NewBadRequestError("", err)
 			}
 
@@ -136,13 +142,14 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 
 			if postData.HoneyPotEmail != "" || postData.HoneyPotName != "" {
 				// this is probably a bot
-				//TODO: use the new generic logger in pb to log this event
+				app.Logger().Warn("Honey pot triggered", "data", fmt.Sprintf("+%v", postData))
 				sendToastMessage("Failed to find postcard collection", "is-danger", true, c)
 				return nil
 			}
 
 			collection, err := app.Dao().FindCollectionByNameOrId("postcards")
 			if err != nil {
+				app.Logger().Error("Failed to find postcard collection", err)
 				sendToastMessage("Failed to find postcard collection", "is-danger", true, c)
 				return apis.NewNotFoundError("Failed to find postcard collection", err)
 			}
@@ -168,6 +175,8 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 				if err != nil {
 					return err
 				}
+
+				app.Logger().Error(fmt.Sprintf("Failed to store the postcard with image_id %s", postData.ImageId), err)
 
 				sendToastMessage("Failed to store the postcard", "is-danger", false, c)
 

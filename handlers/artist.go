@@ -11,7 +11,6 @@ import (
 	"blackfyre.ninja/wga/utils"
 	"blackfyre.ninja/wga/utils/jsonld"
 	"blackfyre.ninja/wga/utils/url"
-	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
@@ -113,22 +112,24 @@ func registerArtist(app *pocketbase.PocketBase) {
 
 			html := ""
 
-			found := app.Cache().Has(cacheKey)
+			found := app.Store().Has(cacheKey)
 
 			if found {
-				html = app.Cache().Get(cacheKey).(string)
+				html = app.Store().Get(cacheKey).(string)
 			} else {
 
 				fullUrl := os.Getenv("WGA_PROTOCOL") + "://" + c.Request().Host + c.Request().URL.String()
 				artist, err := app.Dao().FindRecordsByFilter("artists", "slug = '"+slug+"'", "+name", 1, 0)
 
 				if err != nil {
+					app.Logger().Error("Artist not found: ", slug, err)
 					return apis.NewNotFoundError("", err)
 				}
 
 				works, err := app.Dao().FindRecordsByFilter("artworks", "author = '"+artist[0].GetString("id")+"'", "+title", 100, 0)
 
 				if err != nil {
+					app.Logger().Error("Error finding artworks: ", err)
 					return apis.NewNotFoundError("", err)
 				}
 
@@ -202,7 +203,7 @@ func registerArtist(app *pocketbase.PocketBase) {
 					return apis.NewNotFoundError("", err)
 				}
 
-				app.Cache().Set(cacheKey, html)
+				app.Store().Set(cacheKey, html)
 			}
 
 			c.Response().Header().Set("HX-Push-Url", "/artists/"+slug)
@@ -224,28 +225,24 @@ func registerArtist(app *pocketbase.PocketBase) {
 
 			html := ""
 
-			found := app.Cache().Has(cacheKey)
+			found := app.Store().Has(cacheKey)
 			// found := false
 
 			if found {
-				html = app.Cache().Get(cacheKey).(string)
+				html = app.Store().Get(cacheKey).(string)
 			} else {
-
-				err := godotenv.Load()
-
-				if err != nil {
-					return apis.NewBadRequestError("Error loading .env file", err)
-				}
 
 				artist, err := app.Dao().FindRecordsByFilter("artists", "slug = '"+slug+"'", "+name", 1, 0)
 
 				if err != nil {
+					app.Logger().Error("Artist not found: ", slug, err)
 					return apis.NewNotFoundError("", err)
 				}
 
 				aw, err := app.Dao().FindRecordById("artworks", awid)
 
 				if err != nil {
+					app.Logger().Error("Error finding artwork: ", awid, err)
 					return apis.NewNotFoundError("", err)
 				}
 
@@ -292,7 +289,7 @@ func registerArtist(app *pocketbase.PocketBase) {
 					return apis.NewNotFoundError("", err)
 				}
 
-				app.Cache().Set(cacheKey, html)
+				app.Store().Set(cacheKey, html)
 			}
 
 			c.Response().Header().Set("HX-Push-Url", "/artists/"+slug+"/"+awid)
