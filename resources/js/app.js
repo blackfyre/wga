@@ -240,4 +240,22 @@ window.wga = {
     wga.els.dialog.close();
     wga.els.dialog.innerHTML = wga.els.dialogDefaultContent;
   },
+  windowHistoryBack() {
+    window.history.back();
+  },
+  windowClose() {
+    window.close();
+  },
+  music: {
+    openMusicWindow() {
+      let w = window.open(
+        `/musics`,
+        `newWin`,
+        `scrollbars=yes,status=no,dependent=no,screenX=0,screenY=0,width=420,height=300`,
+      );
+      w.opener = this;
+      w.focus();
+      return false;
+    },
+  },
 };

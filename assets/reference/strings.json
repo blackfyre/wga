@@ -17,7 +17,7 @@
     },
     {
         "name": "guestbookPlayMusicLink",
-        "content": "<p class='is-vcentered'><a href='https://www.wga.hu/guestbook.html'>Play period music</a> in the background while reading the guestbook!</p>"
+        "content": "<p class='is-vcentered'><a hx-on='click: wga.music.openMusicWindow()'>Play period music</a> in the background while reading the guestbook!</p>"
     },
     {
         "name": "guestbook",

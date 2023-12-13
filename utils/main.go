@@ -40,6 +40,7 @@ var TemplateFuncs = template.FuncMap{
 	"slugify":      Slugify,
 	"safeHTML":     safeHTML,
 	"strippedHTML": StrippedHTML,
+	"removeExt":    RemoveExtension,
 
 	// Slice functions
 	"join": strings.Join,
@@ -56,8 +57,9 @@ var TemplateFuncs = template.FuncMap{
 	"yesno": yesno,
 
 	// URL functions
-	"urlSetParam": urlSetParam,
-	"urlDelParam": urlDelParam,
+	"urlSetParam":        urlSetParam,
+	"urlDelParam":        urlDelParam,
+	"getFileNameFromUrl": GetFileNameFromUrl,
 
 	// JSON functions
 	"marshalJSON": marshalJSON,
@@ -271,6 +273,27 @@ func SetBoolWithFallback(value *bool, fallback bool) {
 	if value == nil {
 		*value = fallback
 	}
+}
+
+func RemoveExtension(s string) string {
+	if idx := strings.LastIndex(s, "."); idx != -1 {
+		return s[:idx]
+	}
+	return s
+}
+
+func GetFileNameFromUrl(url string, extension bool) string {
+	// split the url by /
+	splitUrl := strings.Split(url, "/")
+	// get the last element of the split url
+	lastElement := splitUrl[len(splitUrl)-1]
+
+	// if extension is false, remove the extension
+	if !extension {
+		lastElement = RemoveExtension(lastElement)
+	}
+
+	return lastElement
 }
 
 // IsHtmxRequest checks if the request is an htmx request by checking the value of the "HX-Request" header.

@@ -8,6 +8,8 @@ import (
 	"blackfyre.ninja/wga/handlers"
 	"blackfyre.ninja/wga/hooks"
 	_ "blackfyre.ninja/wga/migrations"
+
+	"blackfyre.ninja/wga/utils"
 	"blackfyre.ninja/wga/utils/seed"
 	"blackfyre.ninja/wga/utils/sitemap"
 	"github.com/joho/godotenv"
@@ -42,6 +44,14 @@ func main() {
 		Short: "Generate sitemap",
 		Run: func(cmd *cobra.Command, args []string) {
 			sitemap.GenerateSiteMap(app)
+		},
+	})
+
+	app.RootCmd.AddCommand(&cobra.Command{
+		Use:   "generate-music-urls",
+		Short: "Generate music urls",
+		Run: func(cmd *cobra.Command, args []string) {
+			utils.ParseMusicListToUrls("./assets/reference/musics.json")
 		},
 	})
 
