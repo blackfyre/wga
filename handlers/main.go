@@ -23,4 +23,5 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 	registerStatic(app)
 	artworks.RegisterArtworksHandlers(app)
 	registerHome(app)
+	registerDualMode(app)
 }
