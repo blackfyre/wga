@@ -1,0 +1,109 @@
+{{define "title"}}
+Dual Mode
+{{end}}
+
+{{define "body"}}
+<div>
+    <div>
+        {{block "dualMode:left" .}}
+        <section class="section">
+        
+            <div class="container block">
+                <div class="box content">
+                    {{safeHTML .Content}}
+                </div>
+            </div>
+            <div class="container">
+                <div class="box level">
+                    <div class="level-item has-text-centered">
+                        <div>
+                            <p class="title">{{ .ArtistCount }}</p>
+                            <p class="heading">Artists</p>
+                        </div>
+                    </div>
+                    <div class="level-item has-text-centered">
+                        <div>
+                            <p class="title">{{ .ArtworkCount }}</p>
+                            <p class="heading">Artworks</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        
+        </section>
+        {{end}}
+    </div>
+    <div>
+        {{block "dualMode:right" .}}
+        <section class="section">
+        
+            <div class="container block">
+                <div class="box content">
+                    {{safeHTML .Content}}
+                </div>
+            </div>
+            <div class="container">
+                <div class="box level">
+                    <div class="level-item has-text-centered">
+                        <div>
+                            <p class="title">{{ .ArtistCount }}</p>
+                            <p class="heading">Artists</p>
+                        </div>
+                    </div>
+                    <div class="level-item has-text-centered">
+                        <div>
+                            <p class="title">{{ .ArtworkCount }}</p>
+                            <p class="heading">Artworks</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        
+        </section>
+        {{end}}
+    </div>
+    <div>
+        {{block "dualMode:footer" .}}
+        <footer class="footer">
+            <button hx-get="/dualMode" hx-trigger="click" hx-target="#mc-area" class="button is-link is-normal is-light dualMode-latestEntriesBtn">
+                Links point to the opposite side (to right)
+            </button>
+            <button hx-get="/dualMode" hx-trigger="click" hx-target="#mc-area" class="button is-link is-normal is-light dualMode-latestEntriesBtn">
+                Links point to the opposite side (to left)
+            </button>
+            <button hx-get="/dualMode" hx-trigger="click" hx-target="#mc-area" class="button is-link is-normal is-light dualMode-latestEntriesBtn">
+                Standard view
+            </button>
+            <button hx-get="/dualMode" hx-trigger="click" hx-target="#mc-area" class="button is-link is-normal is-light dualMode-latestEntriesBtn">
+                Music selection
+            </button>
+            <button hx-get="/dualMode" hx-trigger="click" hx-target="#mc-area" class="button is-link is-normal is-light dualMode-latestEntriesBtn">
+                Search (on left)
+            </button>
+            <button hx-get="/dualMode" hx-trigger="click" hx-target="#mc-area" class="button is-link is-normal is-light dualMode-latestEntriesBtn">
+                Search (on right)
+            </button>
+            <button hx-get="/dualMode" hx-trigger="click" hx-target="#mc-area" class="button is-link is-normal is-light dualMode-latestEntriesBtn">
+                Copy (to right)
+            </button>
+            <button hx-get="/dualMode" hx-trigger="click" hx-target="#mc-area" class="button is-link is-normal is-light dualMode-latestEntriesBtn">
+                Copy (to left)
+            </button>
+            <button hx-get="/dualMode" hx-trigger="click" hx-target="#mc-area" class="button is-link is-normal is-light dualMode-latestEntriesBtn">
+                Clear (on left)
+            </button>
+            <button hx-get="/dualMode" hx-trigger="click" hx-target="#mc-area" class="button is-link is-normal is-light dualMode-latestEntriesBtn">
+                Clear (on right)
+            </button>
+            <button hx-get="/dualMode" hx-trigger="click" hx-target="#mc-area" class="button is-link is-normal is-light dualMode-latestEntriesBtn">
+                Hints
+            </button>
+            <button hx-get="/dualMode" hx-trigger="click" hx-target="#mc-area" class="button is-link is-normal is-light dualMode-latestEntriesBtn">
+                Reverse
+            </button>
+        </footer>
+        {{end}}
+    </div>
+
+</div>
+{{end}}
