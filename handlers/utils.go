@@ -4,15 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase/models"
 )
 
-func slugUrl(path string, slug string) string {
-    parts := []string{path, slug}
-    return strings.Join(parts, "/")
+func artistUrl(slug string) string {
+	return "/artists/" + slug
 }
 
 func normalizedBirthDeathActivity(record *models.Record) string {

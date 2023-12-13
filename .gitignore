@@ -24,7 +24,7 @@ assets/public/fa-*
 
 # hosts seed data for the guestbook, can't include because of GDPR
 guestbook.json
-musicUrls.json
+
 # this file is used for cache only
 contributors.json
 
