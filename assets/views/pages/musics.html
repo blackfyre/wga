@@ -1,0 +1,55 @@
+{{block "musics" .}}
+
+{{end}}
+
+{{define "title"}}
+Musics
+{{end}}
+
+{{define "body"}}
+{{block "musics:content" .}}
+<main class="container block box my-6 p-0">
+    <section class="section is-vcentered">
+        <h1 class="has-text-centered title is-5">
+            <i>Music player</i>
+        </h1>
+        <p class="has-text-centered block">
+            Please select one of the musical pieces from the list below. Please note that this is neither a comprehensive nor a representative musical collection. Its only aim is to provide a selection of matching classical music to listen while viewing and studying the old masters' works. The musical pieces were selected in such a way that visitors could find music matching the stylistic periods from the Renaissance to Romanticism. Whenever possible we call the visitors' attention to musical pieces (mainly operas) treating the same subject as a particular painting or sculpture. For this reason the suggested listenings include music from periods different from that of the creation of the artworks.
+        </p>
+        <p class="has-text-centered block">
+        {{range .Centuries}}
+            <a href="#{{.}}">{{.}}th</a> |
+        {{end}}
+         century
+        </p>
+        <div class="tabs">
+            <ul></ul>
+        </div>
+        {{range .MusicList}}
+            <div class="block">
+                <div name="{{.Century}}" id="{{.Century}}" class="title has-text-centered is-5">{{.Century}}<sup>th</sup> century</div>
+                {{range .Composers}}
+                <div class="block">
+                    <h4 class="title is-6">
+                        {{.Name}} 
+                        {{if .Date}}({{.Date}}){{end}}{{if .Date}}{{if .Language}}, {{.Language}}{{end}}
+                        {{else}}
+                            {{.Language}}
+                        {{end}}</h4>
+                    <ul>
+                        {{range .Songs}}
+                            <li>
+                                {{if .URL}}
+                                    <a href="{{.URL}}" hx-get="/musics/{{.URL}}" hx-target="#mc-area">{{.Title}}</a>
+                                {{end}}
+                            </li>
+                        {{end}}
+                    </ul>
+                </div>
+                {{end}}
+            </div>
+        {{end}}
+    </section>
+</main>
+{{end}}
+{{end}}
