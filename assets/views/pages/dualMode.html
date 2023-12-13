@@ -2,65 +2,15 @@
 Dual Mode
 {{end}}
 
-{{define "body"}}
+{{block "dualMode:content" .}}
 <div>
-    <div>
-        {{block "dualMode:left" .}}
-        <section class="section">
-        
-            <div class="container block">
-                <div class="box content">
-                    {{safeHTML .Content}}
-                </div>
-            </div>
-            <div class="container">
-                <div class="box level">
-                    <div class="level-item has-text-centered">
-                        <div>
-                            <p class="title">{{ .ArtistCount }}</p>
-                            <p class="heading">Artists</p>
-                        </div>
-                    </div>
-                    <div class="level-item has-text-centered">
-                        <div>
-                            <p class="title">{{ .ArtworkCount }}</p>
-                            <p class="heading">Artworks</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        
-        </section>
-        {{end}}
-    </div>
-    <div>
-        {{block "dualMode:right" .}}
-        <section class="section">
-        
-            <div class="container block">
-                <div class="box content">
-                    {{safeHTML .Content}}
-                </div>
-            </div>
-            <div class="container">
-                <div class="box level">
-                    <div class="level-item has-text-centered">
-                        <div>
-                            <p class="title">{{ .ArtistCount }}</p>
-                            <p class="heading">Artists</p>
-                        </div>
-                    </div>
-                    <div class="level-item has-text-centered">
-                        <div>
-                            <p class="title">{{ .ArtworkCount }}</p>
-                            <p class="heading">Artworks</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        
-        </section>
-        {{end}}
+    <div style="display: flex;">
+        <div style="flex: 1;">
+            {{.LeftContent}}
+        </div>
+        <div style="flex: 1;">
+            {{.RightContent}}
+        </div>
     </div>
     <div>
         {{block "dualMode:footer" .}}
