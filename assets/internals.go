@@ -167,3 +167,24 @@ func Render(r Renderable) (string, error) {
 
 	return RenderPage(page, r.Data)
 }
+
+func RenderWithLayout(r Renderable, layout string) (string, error) {
+
+	if r.IsHtmx {
+		return RenderBlock(r.Block, r.Data)
+	}
+
+	page := ""
+
+	if r.Page != "" {
+		page = r.Page
+	} else {
+		page = strings.Split(r.Block, ":")[0]
+	}
+
+	if page == "" {
+		return "", errors.New("Renderable " + page + " not found")
+	}
+
+	return RenderPageWithLayout(page, layout, r.Data)
+}
