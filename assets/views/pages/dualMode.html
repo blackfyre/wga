@@ -5,11 +5,11 @@ Dual Mode
 {{define "body"}}
 {{block "dualMode:content" .}}
 <div>
-    <div style="display: flex;">
-        <div style="flex: 1;">
+    <div class="columns is-gapless">
+        <div class="column">
             {{.LeftContent}}
         </div>
-        <div style="flex: 1;">
+        <div class="column">
             {{.RightContent}}
         </div>
     </div>

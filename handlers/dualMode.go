@@ -52,17 +52,15 @@ func registerDualMode(app *pocketbase.PocketBase) {
 
 func dualModeHandler(c echo.Context, app *pocketbase.PocketBase, confirmedHtmxRequest bool) (string, error) {
 	// Get the names of the pages to display from the request parameters
-	// leftPageName := c.QueryParam("left")
-	// rightPageName := c.QueryParam("right")
+	leftPageName := c.QueryParam("left")
+	rightPageName := c.QueryParam("right")
 
-	// Get the Page structures for the left and right pages
-
-	leftHTML, err := renderPageByName("artists", c, app)
+	leftHTML, err := renderPage(c, app, leftPageName, "default_left")
 	if err != nil {
 		return "", err
 	}
 
-	rightHTML, err := renderPageByName("artists", c, app)
+	rightHTML, err := renderPage(c, app, rightPageName, "default_right")
 	if err != nil {
 		return "", err
 	}
@@ -91,6 +89,25 @@ func dualModeHandler(c echo.Context, app *pocketbase.PocketBase, confirmedHtmxRe
 	return dualModeHtml, err
 }
 
+func renderPage(c echo.Context, app *pocketbase.PocketBase, pageName, defaultPage string) (string, error) {
+	if pageName == "" {
+		pageName = defaultPage
+	}
+
+	html, err := defaultPage, error(nil)
+	if html == defaultPage {
+		html, err = renderDefaultSide(c, app, defaultPage)
+	} else {
+		html, err = renderPageByName(pageName, c, app)
+	}
+
+	if err != nil {
+		return "", err
+	}
+
+	return html, nil
+}
+
 func renderPageByName(pageName string, c echo.Context, app *pocketbase.PocketBase) (string, error) {
 	page := Pages[pageName]
 	return renderSide(page, c, app, "/"+pageName, pageName+":content")
@@ -106,6 +123,20 @@ func renderSide(page Page, c echo.Context, app *pocketbase.PocketBase, path stri
 		IsHtmx: false,
 		Block:  block,
 		Data:   data,
+	}, "noLayout")
+
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%v", prerenderedHtml), nil
+}
+
+func renderDefaultSide(c echo.Context, app *pocketbase.PocketBase, block string) (string, error) {
+
+	prerenderedHtml, err := assets.RenderWithLayout(assets.Renderable{
+		IsHtmx: false,
+		Block:  block,
 	}, "noLayout")
 
 	if err != nil {

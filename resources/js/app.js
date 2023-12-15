@@ -106,39 +106,6 @@ function initJumpToTop() {
   }
 }
 
-function DualModeListeners() {
-  const dualModeToggles = document.getElementsByClassName("toggle-dual");
-  const body = document.querySelector("body");
-  const dualModeSection = document.getElementById("dual");
-
-  if (dualModeToggles.length > 0) {
-    for (let i = 0; i < dualModeToggles.length; i++) {
-      //remove click event from all dual mode toggles
-      dualModeToggles[i].removeEventListener("click", (e) => {});
-
-      dualModeToggles[i].addEventListener("click", (e) => {
-        e.preventDefault();
-      });
-    }
-  }
-}
-
-function ToggleDualMode() {
-  const html = document.querySelector("html");
-  const body = document.querySelector("body");
-  const dualModeSection = document.getElementById("dual");
-
-  if (body.classList.contains("has-active-backdrop")) {
-    html.classList.remove("is-clipped");
-    body.classList.remove("has-active-backdrop");
-    dualModeSection.classList.remove("is-active");
-  } else {
-    html.classList.add("is-clipped");
-    body.classList.add("has-active-backdrop");
-    dualModeSection.classList.add("is-active");
-  }
-}
-
 /**
  * Initializes event listeners for the postcard dialog success and error events, as well as the htmx:load event and the trix-before-initialize event.
  * @function
