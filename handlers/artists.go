@@ -23,7 +23,34 @@ func registerArtists(app *pocketbase.PocketBase) {
 
 		e.Router.GET("/artists", func(c echo.Context) error {
 
-			html, err := loadArtists(c, app, "/artists")
+			data, confirmedHtmxRequest, searchExpression, searchExpressionPresent, cacheKey, err := loadArtists(c, app, "/artists")
+
+			if err != nil {
+				return err
+			}
+
+			html := ""
+			blockToRender := "artists:content"
+
+			if confirmedHtmxRequest {
+				if searchExpression != "" || searchExpressionPresent {
+					blockToRender = "artists:search-results"
+				}
+			}
+
+			html, err = assets.Render(assets.Renderable{
+				IsHtmx: confirmedHtmxRequest,
+				Block:  blockToRender,
+				Data:   data,
+			})
+
+			if err != nil {
+				// or redirect to a dedicated 404 HTML page
+				app.Logger().Error("Failed to render artists: ", err)
+				return apis.NewApiError(500, err.Error(), err)
+			}
+
+			app.Store().Set(cacheKey, html)
 
 			if err != nil {
 				return err
@@ -36,7 +63,7 @@ func registerArtists(app *pocketbase.PocketBase) {
 	})
 }
 
-func loadArtists(c echo.Context, app *pocketbase.PocketBase, url string) (string, error) {
+func loadArtists(c echo.Context, app *pocketbase.PocketBase, url string) (map[string]any, bool, string, bool, string, error) {
 	limit := 30
 	page := 1
 	searchExpression := ""
@@ -51,7 +78,7 @@ func loadArtists(c echo.Context, app *pocketbase.PocketBase, url string) (string
 
 		if err != nil {
 			app.Logger().Error("Invalid page: ", c.QueryParam("page"), err)
-			return "", apis.NewBadRequestError("Invalid page", err)
+			return nil, false, "", false, "", apis.NewBadRequestError("Invalid page", err)
 		}
 	}
 
@@ -77,7 +104,7 @@ func loadArtists(c echo.Context, app *pocketbase.PocketBase, url string) (string
 
 	if app.Store().Has(cacheKey) {
 		html := app.Store().Get(cacheKey).(string)
-		return html, nil
+		return nil, false, html, false, "", nil
 	} else {
 
 		filter := "published = true"
@@ -99,7 +126,7 @@ func loadArtists(c echo.Context, app *pocketbase.PocketBase, url string) (string
 
 		if err != nil {
 			app.Logger().Error("Failed to get artist records: ", err)
-			return "", apis.NewBadRequestError("Invalid page", err)
+			return nil, false, "", false, "", apis.NewBadRequestError("Invalid page", err)
 		}
 
 		totalRecords, err := app.Dao().FindRecordsByFilter(
@@ -115,7 +142,7 @@ func loadArtists(c echo.Context, app *pocketbase.PocketBase, url string) (string
 
 		if err != nil {
 			app.Logger().Error("Failed to get total records: ", err)
-			return "", apis.NewBadRequestError("Invalid page", err)
+			return nil, false, "", false, "", apis.NewBadRequestError("Invalid page", err)
 		}
 
 		recordsCount := len(totalRecords)
@@ -174,29 +201,6 @@ func loadArtists(c echo.Context, app *pocketbase.PocketBase, url string) (string
 
 		data["Pagination"] = pagination.Render()
 
-		html := ""
-		blockToRender := "artists:content"
-
-		if confirmedHtmxRequest {
-			if searchExpression != "" || searchExpressionPresent {
-				blockToRender = "artists:search-results"
-			}
-		}
-
-		html, err = assets.Render(assets.Renderable{
-			IsHtmx: confirmedHtmxRequest,
-			Block:  blockToRender,
-			Data:   data,
-		})
-
-		if err != nil {
-			// or redirect to a dedicated 404 HTML page
-			app.Logger().Error("Failed to render artists: ", err)
-			return "", apis.NewApiError(500, err.Error(), err)
-		}
-
-		app.Store().Set(cacheKey, html)
-
-		return html, err
+		return data, confirmedHtmxRequest, searchExpression, searchExpressionPresent, cacheKey, err
 	}
 }

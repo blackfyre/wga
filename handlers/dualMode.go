@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
 
@@ -14,14 +15,14 @@ import (
 )
 
 type Page struct {
-	Prerender func(c echo.Context, app *pocketbase.PocketBase, url string) (string, error)
+	Prerender func(c echo.Context, app *pocketbase.PocketBase, url string) (map[string]any, error)
 }
 
 var Pages = map[string]Page{
 	"artists": {
-		Prerender: func(c echo.Context, app *pocketbase.PocketBase, url string) (string, error) {
-			html, err := loadArtists(c, app, "/artists")
-			return html, err
+		Prerender: func(c echo.Context, app *pocketbase.PocketBase, url string) (map[string]any, error) {
+			data, _, _, _, _, err := loadArtists(c, app, "/artists")
+			return data, err
 		},
 	},
 	// Add other pages here
@@ -51,22 +52,17 @@ func registerDualMode(app *pocketbase.PocketBase) {
 
 func dualModeHandler(c echo.Context, app *pocketbase.PocketBase, confirmedHtmxRequest bool) (string, error) {
 	// Get the names of the pages to display from the request parameters
-	leftPageName := c.QueryParam("left")
-	rightPageName := c.QueryParam("right")
-
-	leftPageName = "artists"
-	rightPageName = "artists"
+	// leftPageName := c.QueryParam("left")
+	// rightPageName := c.QueryParam("right")
 
 	// Get the Page structures for the left and right pages
-	leftPage := Pages[leftPageName]
-	rightPage := Pages[rightPageName]
 
-	// Render the left and right pages
-	leftHTML, err := leftPage.Prerender(c, app, "/artists")
+	leftHTML, err := renderPageByName("artists", c, app)
 	if err != nil {
 		return "", err
 	}
-	rightHTML, err := rightPage.Prerender(c, app, "/artists")
+
+	rightHTML, err := renderPageByName("artists", c, app)
 	if err != nil {
 		return "", err
 	}
@@ -79,13 +75,13 @@ func dualModeHandler(c echo.Context, app *pocketbase.PocketBase, confirmedHtmxRe
 	dualModeHtml := ""
 
 	if !confirmedHtmxRequest {
-		dualModeHtml, err = assets.RenderBlock("dualMode:content", dualModeData)
-	} else {
-		dualModeHtml, err = assets.Render(assets.Renderable{
-			IsHtmx: confirmedHtmxRequest,
-			Block:  "dualMode:content",
+		dualModeHtml, err = assets.RenderWithLayout(assets.Renderable{
+			IsHtmx: false,
+			Page:   "dualMode",
 			Data:   dualModeData,
-		})
+		}, "noLayout")
+	} else {
+		dualModeHtml, err = assets.RenderBlock("dualMode:content", dualModeData)
 	}
 
 	if err != nil {
@@ -93,4 +89,28 @@ func dualModeHandler(c echo.Context, app *pocketbase.PocketBase, confirmedHtmxRe
 	}
 
 	return dualModeHtml, err
+}
+
+func renderPageByName(pageName string, c echo.Context, app *pocketbase.PocketBase) (string, error) {
+	page := Pages[pageName]
+	return renderSide(page, c, app, "/"+pageName, pageName+":content")
+}
+
+func renderSide(page Page, c echo.Context, app *pocketbase.PocketBase, path string, block string) (string, error) {
+	data, err := page.Prerender(c, app, path)
+	if err != nil {
+		return "", err
+	}
+
+	prerenderedHtml, err := assets.RenderWithLayout(assets.Renderable{
+		IsHtmx: false,
+		Block:  block,
+		Data:   data,
+	}, "noLayout")
+
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%v", prerenderedHtml), nil
 }
