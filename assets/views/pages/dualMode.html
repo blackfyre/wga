@@ -14,74 +14,71 @@ Dual Mode
         </div>
     </div>
     {{block "dualMode:footer" .}}
-    <footer class="navbar is-flex-direction-column block">
+    <footer class="dual-mode-nav">
         <div class="has-text-centered has-text-white is-size-7">DUAL-WINDOW VIEW</div>
         <div class="columns is-gapless">
-            <div class="column">a</div>
-            <div class="column">
+            <div class="column is-flex is-justify-content-center">a</div>
+            <div class="column is-one-fifth">
                 <div>
                     <div class="columns is-gapless mb-0">
                         <div class="column has-text-centered has-background-white">
                             <a hx-target="#lc-area" hx-get="/dualMode?left=artists">
-                                Search (on left)
+                                << Search
                             </a>
                         </div>
-                        <div class="column has-text-centered">c</div>
-                        <div class="column has-text-centered">d</div>
+                        <div class="column has-text-centered has-background-white">Hints</div>
+                        <div class="column has-text-centered has-background-white">
+                            <a hx-target="#rc-area" hx-get="/dualMode?left=search">
+                                Search >>
+                            </a>
+                        </div>
                     </div>
                     <div class="columns is-gapless">
-                        <div class="column has-text-centered">b</div>
-                        <div class="column has-text-centered">c</div>
-                        <div class="column has-text-centered">d</div>
+                        <div class="column has-text-centered has-background-white">
+                            <a hx-target="#lc-area" hx-get="/dualMode?left=copy">
+                                << Copy
+                            </a>
+                        </div>
+                        <div class="column has-text-centered has-background-white">
+                            <a hx-target="#ac-area" hx-get="/dualMode?left=copy&right=copy">
+                                Reverse
+                            </a>
+                        </div>
+                        <div class="column has-text-centered has-background-white">
+                            <a hx-target="#rc-area" hx-get="/dualMode?right=copy">
+                                Copy >>
+                            </a>
+                        </div>
                     </div>
                 </div>
                 <div>
                     <div class="columns is-gapless mb-0">
-                        <div class="column has-text-centered">b</div>
-                        <div class="column has-text-centered">d</div>
+                        <div class="column has-text-centered has-background-white">
+                            <a hx-target="#rc-area" hx-get="/dualMode?right=copy">
+                                Music selection
+                            </a>
+                        </div>
+                        <div class="column has-text-centered has-background-white">
+                            <a href="/" hx-target="#mc-area">
+                                Standard view
+                            </a>
+                        </div>
                     </div>
                     <div class="columns is-gapless">
-                        <div class="column has-text-centered">b</div>
-                        <div class="column has-text-centered">d</div>
+                        <div class="column has-text-centered has-background-white">
+                            <a hx-target="#lc-area" hx-get="/dualMode?left=clear">
+                                << CLEAR left
+                            </a>
+                        </div>
+                        <div class="column has-text-centered has-background-white">
+                            <a hx-target="#rc-area" hx-get="/dualMode?right=clear">
+                                CLEAR right >>
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="column">c</div>
-        </div>
-        <div>
-            <button hx-get="/dualMode" hx-trigger="click" hx-target="#mc-area" class="button is-link is-normal is-light dualMode-latestEntriesBtn">
-                Links point to the opposite side (to right)
-            </button>
-            <button hx-get="/dualMode" hx-trigger="click" hx-target="#mc-area" class="button is-link is-normal is-light dualMode-latestEntriesBtn">
-                Links point to the opposite side (to left)
-            </button>
-            <button hx-get="/dualMode" hx-trigger="click" hx-target="#mc-area" class="button is-link is-normal is-light dualMode-latestEntriesBtn">
-                Standard view
-            </button>
-            <button hx-get="/dualMode" hx-trigger="click" hx-target="#mc-area" class="button is-link is-normal is-light dualMode-latestEntriesBtn">
-                Music selection
-            </button>
-            <button hx-get="/dualMode" hx-trigger="click" hx-target="#mc-area" class="button is-link is-normal is-light dualMode-latestEntriesBtn">
-                Search (on right)
-            </button>
-            <button hx-get="/dualMode" hx-trigger="click" hx-target="#mc-area" class="button is-link is-normal is-light dualMode-latestEntriesBtn">
-                Copy (to right)
-            </button>
-            <button hx-get="/dualMode" hx-trigger="click" hx-target="#mc-area" class="button is-link is-normal is-light dualMode-latestEntriesBtn">
-                Copy (to left)
-            </button>
-            <button hx-get="/dualMode" hx-trigger="click" hx-target="#mc-area" class="button is-link is-normal is-light dualMode-latestEntriesBtn">
-                Clear (on left)
-            </button>
-            <button hx-get="/dualMode" hx-trigger="click" hx-target="#mc-area" class="button is-link is-normal is-light dualMode-latestEntriesBtn">
-                Clear (on right)
-            </button>
-            <button hx-get="/dualMode" hx-trigger="click" hx-target="#mc-area" class="button is-link is-normal is-light dualMode-latestEntriesBtn">
-                Hints
-            </button>
-            <button hx-get="/dualMode" hx-trigger="click" hx-target="#mc-area" class="button is-link is-normal is-light dualMode-latestEntriesBtn">
-                Reverse
-            </button>
         </div>
     </footer>
     {{end}}
