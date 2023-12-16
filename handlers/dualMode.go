@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"strings"
 
 	"blackfyre.ninja/wga/assets"
 	"blackfyre.ninja/wga/utils"
+	"golang.org/x/net/html"
 
 	// wgamodels "blackfyre.ninja/wga/models"
 	"github.com/labstack/echo/v5"
@@ -25,6 +27,11 @@ var Pages = map[string]Page{
 			return data, err
 		},
 	},
+	"clear": {
+		Prerender: func(c echo.Context, app *pocketbase.PocketBase, url string) (map[string]any, error) {
+			return map[string]any{}, nil
+		},
+	},
 	// Add other pages here
 }
 
@@ -35,6 +42,9 @@ func registerDualMode(app *pocketbase.PocketBase) {
 		// (it acts as store for the parsed templates)
 
 		e.Router.GET("/dualMode", func(c echo.Context) error {
+			currentUrl := c.Request().URL.String()
+			c.Response().Header().Set("HX-Push-Url", currentUrl)
+
 			confirmedHtmxRequest := utils.IsHtmxRequest(c)
 
 			html, err := dualModeHandler(c, app, confirmedHtmxRequest)
@@ -52,30 +62,37 @@ func registerDualMode(app *pocketbase.PocketBase) {
 
 func dualModeHandler(c echo.Context, app *pocketbase.PocketBase, confirmedHtmxRequest bool) (string, error) {
 	// Get the names of the pages to display from the request parameters
-	leftPageName := c.QueryParam("left")
-	rightPageName := c.QueryParam("right")
+	leftParam := c.QueryParam("left")
+	rightParam := c.QueryParam("right")
 
-	leftHTML, err := renderPage(c, app, leftPageName, "default_left")
+	leftHTML, err := "", error(nil)
+	rightHTML, err := "", error(nil)
+
+	leftHTML, err = renderPage(c, app, leftParam, "default_left")
 	if err != nil {
 		return "", err
 	}
 
-	rightHTML, err := renderPage(c, app, rightPageName, "default_right")
+	rightHTML, err = renderPage(c, app, rightParam, "default_right")
 	if err != nil {
 		return "", err
 	}
 
-	if _, exists := Pages[leftPageName]; exists && confirmedHtmxRequest {
+	if _, exists := Pages[leftParam]; exists && confirmedHtmxRequest {
 		return leftHTML, nil
 	}
 
-	if _, exists := Pages[rightPageName]; exists && confirmedHtmxRequest {
+	if _, exists := Pages[rightParam]; exists && confirmedHtmxRequest {
 		return rightHTML, nil
 	}
 
 	// Pass both rendered pages to the dual mode page
+	testHtml, err := linkUpdater(leftHTML)
+	if err != nil {
+		return "", err
+	}
 	dualModeData := assets.NewRenderData(app)
-	dualModeData["LeftContent"] = template.HTML(leftHTML)
+	dualModeData["LeftContent"] = template.HTML(testHtml)
 	dualModeData["RightContent"] = template.HTML(rightHTML)
 
 	dualModeHtml := ""
@@ -97,13 +114,13 @@ func dualModeHandler(c echo.Context, app *pocketbase.PocketBase, confirmedHtmxRe
 	return dualModeHtml, err
 }
 
-func renderPage(c echo.Context, app *pocketbase.PocketBase, pageName string, defaultPage string) (string, error) {
-	if pageName == "" {
-		pageName = defaultPage
+func renderPage(c echo.Context, app *pocketbase.PocketBase, param string, defaultPage string) (string, error) {
+	if param == "" {
+		param = defaultPage
 	}
 
-	if page, exists := Pages[pageName]; exists {
-		return renderSideBlock(page, c, app, "/"+pageName, pageName+":content")
+	if page, exists := Pages[param]; exists {
+		return renderSideBlock(page, c, app, "/"+param, param+":content")
 	}
 
 	return renderDefaultSide(c, app, defaultPage)
@@ -135,4 +152,30 @@ func renderDefaultSide(c echo.Context, app *pocketbase.PocketBase, block string)
 	}
 
 	return fmt.Sprintf("%v", prerenderedHtml), nil
+}
+
+func linkUpdater(htmlStr string) (string, error) {
+	doc, err := html.Parse(strings.NewReader(htmlStr))
+	if err != nil {
+		return "", err
+	}
+
+	var f func(*html.Node)
+	f = func(n *html.Node) {
+		if n.Type == html.ElementNode && n.Data == "a" {
+			for i := range n.Attr {
+				if n.Attr[i].Key == "hx-get" {
+					n.Attr[i].Val += "a" // add the extra character
+				}
+			}
+		}
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			f(c)
+		}
+	}
+	f(doc)
+
+	var b strings.Builder
+	html.Render(&b, doc)
+	return b.String(), nil
 }
