@@ -55,14 +55,27 @@ func dualModeHandler(c echo.Context, app *pocketbase.PocketBase, confirmedHtmxRe
 	leftPageName := c.QueryParam("left")
 	rightPageName := c.QueryParam("right")
 
-	leftHTML, err := renderPage(c, app, leftPageName, "default_left")
+	_, leftExists := Pages[leftPageName]
+	_, rightExists := Pages[rightPageName]
+
+	leftHTML, err := renderPage(c, app, leftPageName, leftExists, "default_left")
 	if err != nil {
 		return "", err
 	}
 
-	rightHTML, err := renderPage(c, app, rightPageName, "default_right")
+	rightHTML, err := renderPage(c, app, leftPageName, rightExists, "default_right")
 	if err != nil {
 		return "", err
+	}
+
+	leftChanged := leftExists && confirmedHtmxRequest
+	rightChanged := rightExists && confirmedHtmxRequest
+	if leftChanged {
+		return leftHTML, nil
+	}
+
+	if rightChanged {
+		return rightHTML, nil
 	}
 
 	// Pass both rendered pages to the dual mode page
@@ -89,16 +102,16 @@ func dualModeHandler(c echo.Context, app *pocketbase.PocketBase, confirmedHtmxRe
 	return dualModeHtml, err
 }
 
-func renderPage(c echo.Context, app *pocketbase.PocketBase, pageName, defaultPage string) (string, error) {
+func renderPage(c echo.Context, app *pocketbase.PocketBase, pageName string, exists bool, defaultPage string) (string, error) {
 	if pageName == "" {
 		pageName = defaultPage
 	}
 
 	html, err := defaultPage, error(nil)
-	if html == defaultPage {
-		html, err = renderDefaultSide(c, app, defaultPage)
+	if exists {
+		html, err = renderSideBlock(Pages[pageName], c, app, "/"+pageName, pageName+":content")
 	} else {
-		html, err = renderPageByName(pageName, c, app)
+		html, err = renderDefaultSide(c, app, defaultPage)
 	}
 
 	if err != nil {
@@ -108,22 +121,13 @@ func renderPage(c echo.Context, app *pocketbase.PocketBase, pageName, defaultPag
 	return html, nil
 }
 
-func renderPageByName(pageName string, c echo.Context, app *pocketbase.PocketBase) (string, error) {
-	page := Pages[pageName]
-	return renderSide(page, c, app, "/"+pageName, pageName+":content")
-}
-
-func renderSide(page Page, c echo.Context, app *pocketbase.PocketBase, path string, block string) (string, error) {
+func renderSideBlock(page Page, c echo.Context, app *pocketbase.PocketBase, path string, block string) (string, error) {
 	data, err := page.Prerender(c, app, path)
 	if err != nil {
 		return "", err
 	}
 
-	prerenderedHtml, err := assets.RenderWithLayout(assets.Renderable{
-		IsHtmx: false,
-		Block:  block,
-		Data:   data,
-	}, "noLayout")
+	prerenderedHtml, err := assets.RenderBlock(block, data)
 
 	if err != nil {
 		return "", err
@@ -133,7 +137,6 @@ func renderSide(page Page, c echo.Context, app *pocketbase.PocketBase, path stri
 }
 
 func renderDefaultSide(c echo.Context, app *pocketbase.PocketBase, block string) (string, error) {
-
 	prerenderedHtml, err := assets.RenderWithLayout(assets.Renderable{
 		IsHtmx: false,
 		Block:  block,
