@@ -6,16 +6,49 @@ Dual Mode
 {{block "dualMode:content" .}}
 <div class="customBody">
     <div class="columns is-gapless">
-        <div class="column">
+        <div id="lc-area" class="column">
             {{.LeftContent}}
         </div>
-        <div class="column">
+        <div id="rc-area" class="column">
             {{.RightContent}}
         </div>
     </div>
-    <div>
-        {{block "dualMode:footer" .}}
-        <footer class="footer">
+    {{block "dualMode:footer" .}}
+    <footer class="navbar is-flex-direction-column block">
+        <div class="has-text-centered has-text-white is-size-7">DUAL-WINDOW VIEW</div>
+        <div class="columns is-gapless">
+            <div class="column">a</div>
+            <div class="column">
+                <div>
+                    <div class="columns is-gapless mb-0">
+                        <div class="column has-text-centered has-background-white">
+                            <a hx-target="#lc-area" hx-get="/dualMode?left=artists">
+                                Search (on left)
+                            </a>
+                        </div>
+                        <div class="column has-text-centered">c</div>
+                        <div class="column has-text-centered">d</div>
+                    </div>
+                    <div class="columns is-gapless">
+                        <div class="column has-text-centered">b</div>
+                        <div class="column has-text-centered">c</div>
+                        <div class="column has-text-centered">d</div>
+                    </div>
+                </div>
+                <div>
+                    <div class="columns is-gapless mb-0">
+                        <div class="column has-text-centered">b</div>
+                        <div class="column has-text-centered">d</div>
+                    </div>
+                    <div class="columns is-gapless">
+                        <div class="column has-text-centered">b</div>
+                        <div class="column has-text-centered">d</div>
+                    </div>
+                </div>
+            </div>
+            <div class="column">c</div>
+        </div>
+        <div>
             <button hx-get="/dualMode" hx-trigger="click" hx-target="#mc-area" class="button is-link is-normal is-light dualMode-latestEntriesBtn">
                 Links point to the opposite side (to right)
             </button>
@@ -27,9 +60,6 @@ Dual Mode
             </button>
             <button hx-get="/dualMode" hx-trigger="click" hx-target="#mc-area" class="button is-link is-normal is-light dualMode-latestEntriesBtn">
                 Music selection
-            </button>
-            <button hx-get="/dualMode" hx-trigger="click" hx-target="#mc-area" class="button is-link is-normal is-light dualMode-latestEntriesBtn">
-                Search (on left)
             </button>
             <button hx-get="/dualMode" hx-trigger="click" hx-target="#mc-area" class="button is-link is-normal is-light dualMode-latestEntriesBtn">
                 Search (on right)
@@ -52,10 +82,9 @@ Dual Mode
             <button hx-get="/dualMode" hx-trigger="click" hx-target="#mc-area" class="button is-link is-normal is-light dualMode-latestEntriesBtn">
                 Reverse
             </button>
-        </footer>
-        {{end}}
-    </div>
-
+        </div>
+    </footer>
+    {{end}}
 </div>
 {{end}}
 {{end}}
