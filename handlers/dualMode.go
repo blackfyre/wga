@@ -55,26 +55,21 @@ func dualModeHandler(c echo.Context, app *pocketbase.PocketBase, confirmedHtmxRe
 	leftPageName := c.QueryParam("left")
 	rightPageName := c.QueryParam("right")
 
-	_, leftExists := Pages[leftPageName]
-	_, rightExists := Pages[rightPageName]
-
-	leftHTML, err := renderPage(c, app, leftPageName, leftExists, "default_left")
+	leftHTML, err := renderPage(c, app, leftPageName, "default_left")
 	if err != nil {
 		return "", err
 	}
 
-	rightHTML, err := renderPage(c, app, leftPageName, rightExists, "default_right")
+	rightHTML, err := renderPage(c, app, rightPageName, "default_right")
 	if err != nil {
 		return "", err
 	}
 
-	leftChanged := leftExists && confirmedHtmxRequest
-	rightChanged := rightExists && confirmedHtmxRequest
-	if leftChanged {
+	if _, exists := Pages[leftPageName]; exists && confirmedHtmxRequest {
 		return leftHTML, nil
 	}
 
-	if rightChanged {
+	if _, exists := Pages[rightPageName]; exists && confirmedHtmxRequest {
 		return rightHTML, nil
 	}
 
@@ -102,23 +97,16 @@ func dualModeHandler(c echo.Context, app *pocketbase.PocketBase, confirmedHtmxRe
 	return dualModeHtml, err
 }
 
-func renderPage(c echo.Context, app *pocketbase.PocketBase, pageName string, exists bool, defaultPage string) (string, error) {
+func renderPage(c echo.Context, app *pocketbase.PocketBase, pageName string, defaultPage string) (string, error) {
 	if pageName == "" {
 		pageName = defaultPage
 	}
 
-	html, err := defaultPage, error(nil)
-	if exists {
-		html, err = renderSideBlock(Pages[pageName], c, app, "/"+pageName, pageName+":content")
-	} else {
-		html, err = renderDefaultSide(c, app, defaultPage)
+	if page, exists := Pages[pageName]; exists {
+		return renderSideBlock(page, c, app, "/"+pageName, pageName+":content")
 	}
 
-	if err != nil {
-		return "", err
-	}
-
-	return html, nil
+	return renderDefaultSide(c, app, defaultPage)
 }
 
 func renderSideBlock(page Page, c echo.Context, app *pocketbase.PocketBase, path string, block string) (string, error) {
