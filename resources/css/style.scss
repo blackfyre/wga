@@ -150,6 +150,13 @@ figure.hidden-caption {
   transform: rotate(-90deg) translate(0, 93%);
 }
 
+.dual-mode-nav {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background-color: $wgaDarkBlue;
+}
+
 // fix for cookie consent title hover jumping
 .c-bl .title {
   margin-bottom: 0;
