@@ -1,9 +1,3 @@
----
-runme:
-  id: 01HG08MCJYF04DTTTHQENSWVK6
-  version: v2.0
----
-
 # Web Gallery of Art
 
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fblackfyre%2Fwga.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fblackfyre%2Fwga?ref=badge_shield)
