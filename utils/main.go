@@ -156,6 +156,9 @@ func Slugify(s string) string {
 }
 
 func safeHTML(s string) template.HTML {
+	if s == "" {
+		return ""
+	}
 	return template.HTML(s)
 }
 
