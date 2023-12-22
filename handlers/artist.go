@@ -118,78 +118,9 @@ func registerArtist(app *pocketbase.PocketBase) {
 				html = app.Store().Get(cacheKey).(string)
 			} else {
 
-				fullUrl := os.Getenv("WGA_PROTOCOL") + "://" + c.Request().Host + c.Request().URL.String()
-				artist, err := app.Dao().FindRecordsByFilter("artists", "slug = '"+slug+"'", "+name", 1, 0)
-
+				data, err := getArtist(c, app, slug)
 				if err != nil {
-					app.Logger().Error("Artist not found: ", slug, err)
-					return apis.NewNotFoundError("", err)
-				}
-
-				works, err := app.Dao().FindRecordsByFilter("artworks", "author = '"+artist[0].GetString("id")+"'", "+title", 100, 0)
-
-				if err != nil {
-					app.Logger().Error("Error finding artworks: ", err)
-					return apis.NewNotFoundError("", err)
-				}
-
-				data := assets.NewRenderData(app)
-
-				data["Name"] = artist[0].GetString("name")
-				data["Bio"] = artist[0].GetString("bio")
-				data["Works"] = []map[string]any{}
-				data["Slug"] = slug
-				data["BioExcerpt"] = normalizedBioExcerpt(artist[0])
-				data["CurrentUrl"] = fullUrl
-				data["Profession"] = artist[0].GetString("profession")
-				data["YearOfBirth"] = artist[0].GetString("year_of_birth")
-				data["YearOfDeath"] = artist[0].GetString("year_of_death")
-				data["PlaceOfBirth"] = artist[0].GetString("place_of_birth")
-				data["PlaceOfDeath"] = artist[0].GetString("place_of_death")
-				data["Jsonld"] = jsonld.GenerateArtistJsonLdContent(&wgamodels.Artist{
-					Name:         artist[0].GetString("name"),
-					Slug:         artist[0].GetString("slug"),
-					Bio:          artist[0].GetString("bio"),
-					YearOfBirth:  artist[0].GetInt("year_of_birth"),
-					YearOfDeath:  artist[0].GetInt("year_of_death"),
-					PlaceOfBirth: artist[0].GetString("place_of_birth"),
-					PlaceOfDeath: artist[0].GetString("place_of_death"),
-					Published:    artist[0].GetBool("published"),
-					School:       artist[0].GetString("school"),
-					Profession:   artist[0].GetString("profession"),
-				}, c)
-
-				for _, w := range works {
-
-					jsonLd := jsonld.GenerateVisualArtworkJsonLdContent(w, c)
-
-					jsonLd["image"] = url.GenerateFileUrl("artworks", w.GetString("id"), w.GetString("image"), "")
-					jsonLd["url"] = fullUrl + "/" + w.GetString("id")
-					jsonLd["creator"] = jsonld.GenerateArtistJsonLdContent(&wgamodels.Artist{
-						Name:         artist[0].GetString("name"),
-						Slug:         artist[0].GetString("slug"),
-						Bio:          artist[0].GetString("bio"),
-						YearOfBirth:  artist[0].GetInt("year_of_birth"),
-						YearOfDeath:  artist[0].GetInt("year_of_death"),
-						PlaceOfBirth: artist[0].GetString("place_of_birth"),
-						PlaceOfDeath: artist[0].GetString("place_of_death"),
-						Published:    artist[0].GetBool("published"),
-						School:       artist[0].GetString("school"),
-						Profession:   artist[0].GetString("profession"),
-					}, c)
-					jsonLd["creator"].(map[string]any)["sameAs"] = fullUrl
-					jsonLd["thumbnailUrl"] = url.GenerateThumbUrl("artworks", w.GetString("id"), w.GetString("image"), "320x240", "")
-
-					data["Works"] = append(data["Works"].([]map[string]any), map[string]any{
-						"Id":        w.GetId(),
-						"Title":     w.GetString("title"),
-						"Comment":   w.GetString("comment"),
-						"Technique": w.GetString("technique"),
-						"Image":     jsonLd["image"].(string),
-						"Thumb":     jsonLd["thumbnailUrl"].(string),
-						"Jsonld":    jsonLd,
-						"Url":       c.Request().URL.String() + "/" + w.GetString("id"),
-					})
+					return err
 				}
 
 				html, err = assets.Render(assets.Renderable{
@@ -298,4 +229,81 @@ func registerArtist(app *pocketbase.PocketBase) {
 		})
 		return nil
 	})
+}
+
+func getArtist(c echo.Context, app *pocketbase.PocketBase, slug string) (map[string]interface{}, error) { // replace AppType with the actual type of your app
+	fullUrl := os.Getenv("WGA_PROTOCOL") + "://" + c.Request().Host + c.Request().URL.String()
+	data := assets.NewRenderData(app)
+	var err error
+
+	artist, err := app.Dao().FindRecordsByFilter("artists", "slug = '"+slug+"'", "+name", 1, 0)
+	if err != nil {
+		app.Logger().Error("Artist not found: ", slug, err)
+		return nil, apis.NewNotFoundError("", err)
+	}
+
+	works, err := app.Dao().FindRecordsByFilter("artworks", "author = '"+artist[0].GetString("id")+"'", "+title", 100, 0)
+	if err != nil {
+		app.Logger().Error("Error finding artworks: ", err)
+		return nil, apis.NewNotFoundError("", err)
+	}
+
+	data["Name"] = artist[0].GetString("name")
+	data["Bio"] = artist[0].GetString("bio")
+	data["Works"] = []map[string]any{}
+	data["Slug"] = slug
+	data["BioExcerpt"] = normalizedBioExcerpt(artist[0])
+	data["CurrentUrl"] = fullUrl
+	data["Profession"] = artist[0].GetString("profession")
+	data["YearOfBirth"] = artist[0].GetString("year_of_birth")
+	data["YearOfDeath"] = artist[0].GetString("year_of_death")
+	data["PlaceOfBirth"] = artist[0].GetString("place_of_birth")
+	data["PlaceOfDeath"] = artist[0].GetString("place_of_death")
+	data["Jsonld"] = jsonld.GenerateArtistJsonLdContent(&wgamodels.Artist{
+		Name:         artist[0].GetString("name"),
+		Slug:         artist[0].GetString("slug"),
+		Bio:          artist[0].GetString("bio"),
+		YearOfBirth:  artist[0].GetInt("year_of_birth"),
+		YearOfDeath:  artist[0].GetInt("year_of_death"),
+		PlaceOfBirth: artist[0].GetString("place_of_birth"),
+		PlaceOfDeath: artist[0].GetString("place_of_death"),
+		Published:    artist[0].GetBool("published"),
+		School:       artist[0].GetString("school"),
+		Profession:   artist[0].GetString("profession"),
+	}, c)
+
+	for _, w := range works {
+
+		jsonLd := jsonld.GenerateVisualArtworkJsonLdContent(w, c)
+
+		jsonLd["image"] = url.GenerateFileUrl("artworks", w.GetString("id"), w.GetString("image"), "")
+		jsonLd["url"] = fullUrl + "/" + w.GetString("id")
+		jsonLd["creator"] = jsonld.GenerateArtistJsonLdContent(&wgamodels.Artist{
+			Name:         artist[0].GetString("name"),
+			Slug:         artist[0].GetString("slug"),
+			Bio:          artist[0].GetString("bio"),
+			YearOfBirth:  artist[0].GetInt("year_of_birth"),
+			YearOfDeath:  artist[0].GetInt("year_of_death"),
+			PlaceOfBirth: artist[0].GetString("place_of_birth"),
+			PlaceOfDeath: artist[0].GetString("place_of_death"),
+			Published:    artist[0].GetBool("published"),
+			School:       artist[0].GetString("school"),
+			Profession:   artist[0].GetString("profession"),
+		}, c)
+		jsonLd["creator"].(map[string]any)["sameAs"] = fullUrl
+		jsonLd["thumbnailUrl"] = url.GenerateThumbUrl("artworks", w.GetString("id"), w.GetString("image"), "320x240", "")
+
+		data["Works"] = append(data["Works"].([]map[string]any), map[string]any{
+			"Id":        w.GetId(),
+			"Title":     w.GetString("title"),
+			"Comment":   w.GetString("comment"),
+			"Technique": w.GetString("technique"),
+			"Image":     jsonLd["image"].(string),
+			"Thumb":     jsonLd["thumbnailUrl"].(string),
+			"Jsonld":    jsonLd,
+			"Url":       c.Request().URL.String() + "/" + w.GetString("id"),
+		})
+	}
+
+	return data, nil
 }
