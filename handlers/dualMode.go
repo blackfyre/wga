@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"blackfyre.ninja/wga/assets"
@@ -79,7 +80,6 @@ func registerDualMode(app *pocketbase.PocketBase) {
 }
 
 func dualModeHandler(c echo.Context, app *pocketbase.PocketBase, confirmedHtmxRequest bool) (string, error) {
-	// Get the names of the pages to display from the request parameters
 	params := c.QueryParams()
 	leftParams := params["left"]
 	rightParams := params["right"]
@@ -100,12 +100,12 @@ func dualModeHandler(c echo.Context, app *pocketbase.PocketBase, confirmedHtmxRe
 		}
 	}
 
-	leftHTML, err := renderPage(c, app, leftPage, leftTarget, leftParams)
+	leftHTML, err := renderPage(c, app, leftPage, leftTarget, leftParams, params)
 	if err != nil {
 		return "", err
 	}
 
-	rightHTML, err := renderPage(c, app, rightPage, rightTarget, rightParams)
+	rightHTML, err := renderPage(c, app, rightPage, rightTarget, rightParams, params)
 	if err != nil {
 		return "", err
 	}
@@ -146,19 +146,19 @@ func dualModeHandler(c echo.Context, app *pocketbase.PocketBase, confirmedHtmxRe
 	return dualModeHtml, err
 }
 
-func renderPage(c echo.Context, app *pocketbase.PocketBase, targetPage string, target string, params []string) (string, error) {
+func renderPage(c echo.Context, app *pocketbase.PocketBase, targetPage string, target string, pageParams []string, params url.Values) (string, error) {
 	html, err := renderSideBlock(targetPage, c, app, "/"+targetPage, targetPage+":content")
 	if err != nil {
 		return "", err
 	}
 
-	linkUpdatedHtml, err := linkUpdater(html, target, params)
+	linkUpdatedHtml, err := linkUpdater(html, target, pageParams)
 	if err != nil {
 		return "", err
 	}
 
 	// Update the hx-target attribute before returning the HTML
-	updatedHtml, err := updateHxTarget(linkUpdatedHtml, target)
+	updatedHtml, err := updateHxTarget(linkUpdatedHtml, target, params)
 	if err != nil {
 		return "", err
 	}
@@ -171,7 +171,6 @@ func renderSideBlock(targetPage string, c echo.Context, app *pocketbase.PocketBa
 	var prerenderedHtml string
 	var err error
 
-	fmt.Println("targetPage: ", targetPage)
 	if strings.HasPrefix(targetPage, "artists") && len(targetPage) > 8 {
 		targetPage = "artistS"
 		block = "artist:content"
@@ -200,8 +199,7 @@ func renderSideBlock(targetPage string, c echo.Context, app *pocketbase.PocketBa
 	return fmt.Sprintf("%v", prerenderedHtml), nil
 }
 
-func linkUpdater(htmlStr string, target string, params []string) (string, error) {
-	fmt.Println("params: ", params)
+func linkUpdater(htmlStr string, target string, pageParams []string) (string, error) {
 	doc, err := html.Parse(strings.NewReader(htmlStr))
 	if err != nil {
 		return "", err
@@ -220,7 +218,7 @@ func linkUpdater(htmlStr string, target string, params []string) (string, error)
 						origin = "right"
 					}
 					// add the href to the end of the hx-get attribute
-					n.Attr[i].Val = "/dualMode?" + origin + "=" + params[0] + "&" + target + "=" + href
+					n.Attr[i].Val = "/dualMode?" + origin + "=" + pageParams[0] + "&" + target + "=" + href
 				}
 				// remove href
 			}
@@ -236,11 +234,13 @@ func linkUpdater(htmlStr string, target string, params []string) (string, error)
 	return b.String(), nil
 }
 
-func updateHxTarget(htmlStr string, target string) (string, error) {
+func updateHxTarget(htmlStr string, target string, params url.Values) (string, error) {
 	doc, err := html.Parse(strings.NewReader(htmlStr))
 	if err != nil {
 		return "", err
 	}
+
+	fmt.Println(target)
 
 	var f func(*html.Node)
 	f = func(n *html.Node) {

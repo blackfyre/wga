@@ -17,7 +17,19 @@ Dual Mode
     <footer class="dual-mode-nav">
         <div class="has-text-centered has-text-white is-size-7">DUAL-WINDOW VIEW</div>
         <div class="columns is-gapless">
-            <div class="column is-flex is-justify-content-center">a</div>
+            <div class="column is-flex is-flex-direction-column is-justify-content-center">
+                <div class="columns">
+                    <div class="column">
+                        <!-- Content for first row goes here -->
+                    </div>
+                </div>
+                <div class="columns">
+                    <label class="checkbox">
+                        Links point to opposite side
+                        <input type="checkbox" id="dualModeCheckbox" hx-target="#lc-area" hx-on:change="wga.dualMode.changeLinkTargets(this)">
+                    </label>
+                </div>
+            </div>
             <div class="column is-one-fifth">
                 <div>
                     <div class="columns is-gapless mb-0">

@@ -147,6 +147,18 @@ function InitEventListeners() {
     </div>`;
     }; // Change Trix.config if you need
   });
+
+  document.addEventListener("DOMContentLoaded", (event) => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const checkbox = document.getElementById("dualModeCheckbox");
+
+    for (let param of urlParams.entries()) {
+      if (param[0] === "left" && param[1] === "right") {
+        checkbox.checked = true;
+        break;
+      }
+    }
+  });
 }
 
 function initCloner() {
@@ -212,6 +224,80 @@ window.wga = {
   },
   windowClose() {
     window.close();
+  },
+  dualMode: {
+    changeLinkTargets(checkbox) {
+      let currentUrl = new URL(window.location.href);
+      let params = currentUrl.searchParams;
+
+      let newParams = new URLSearchParams(params.toString()); // create a copy of current params
+
+      if (checkbox.checked) {
+        newParams.append("left", "right"); // append new 'left' param
+      } else {
+        // remove the 'left=right' param if it exists
+        let paramsArray = [...newParams.entries()];
+        paramsArray = paramsArray.filter(
+          (param) => !(param[0] === "left" && param[1] === "right"),
+        );
+        newParams = new URLSearchParams(paramsArray);
+      }
+
+      currentUrl.search = newParams.toString();
+      const newUrl = currentUrl.toString();
+
+      // get tag with id lc-area
+      const alma = htmx.ajax("GET", newUrl, checkbox);
+      return alma;
+      // leftContent.innerHTML = alma;
+
+      // checkbox.setAttribute('hx-get', newUrl);
+      // htmx.trigger(checkbox, 'htmx:trigger');
+
+      // xhr.addEventListener('load', function() {
+      //   var response = xhr.response;
+      //   var leftContent = document.querySelector('.LeftContent');
+      //   leftContent.innerHTML = response;
+      // });
+
+      // var xhr = htmx.ajax('GET', newUrl, checkbox);
+      // xhr.onload = function() {
+      //   if (xhr.status >= 200 && xhr.status < 400) {
+      //     // The request has been completed successfully
+      //     console.log(xhr);
+      //     console.log(xhr.responseText);
+      //     // var leftContent = document.querySelector('.LeftContent');
+      //     // leftContent.innerHTML = response;
+      //   } else {
+      //     // There was an error with the request
+      //     console.error('Server responded with status: ' + xhr.status);
+      //   }
+      // }
+      // xhr.onerror = function() {
+      //   // There was a connection error
+      //   console.error('There was a connection error');
+      // }
+    },
+    changeLinkTargets2(checkbox) {
+      let currentUrl = new URL(window.location.href);
+      let params = currentUrl.searchParams;
+
+      let newParams = new URLSearchParams(params.toString()); // create a copy of current params
+
+      if (checkbox.checked) {
+        newParams.append("left", "right"); // append new 'left' param
+      } else {
+        // remove the 'left=right' param if it exists
+        let paramsArray = [...newParams.entries()];
+        paramsArray = paramsArray.filter(
+          (param) => !(param[0] === "left" && param[1] === "right"),
+        );
+        newParams = new URLSearchParams(paramsArray);
+      }
+
+      currentUrl.search = newParams.toString();
+      return currentUrl.toString();
+    },
   },
   music: {
     openMusicWindow() {
