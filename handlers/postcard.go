@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strings"
 
-	"blackfyre.ninja/wga/assets"
-	"blackfyre.ninja/wga/utils"
-	"blackfyre.ninja/wga/utils/url"
+	"github.com/blackfyre/wga/assets"
+	"github.com/blackfyre/wga/utils"
+	"github.com/blackfyre/wga/utils/url"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v5"
 	"github.com/microcosm-cc/bluemonday"

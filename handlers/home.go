@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"blackfyre.ninja/wga/assets"
-	"blackfyre.ninja/wga/utils"
+	"github.com/blackfyre/wga/assets"
+	"github.com/blackfyre/wga/utils"
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"

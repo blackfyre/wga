@@ -5,8 +5,8 @@ import (
 	"log"
 	"net/http"
 
-	"blackfyre.ninja/wga/assets"
-	"blackfyre.ninja/wga/utils"
+	"github.com/blackfyre/wga/assets"
+	"github.com/blackfyre/wga/utils"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v5"
 	"github.com/microcosm-cc/bluemonday"

@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"time"
 
-	"blackfyre.ninja/wga/assets"
-	"blackfyre.ninja/wga/utils"
+	"github.com/blackfyre/wga/assets"
+	"github.com/blackfyre/wga/utils"
 
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/dbx"
