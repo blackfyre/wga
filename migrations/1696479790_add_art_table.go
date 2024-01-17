@@ -1,10 +1,11 @@
 package migrations
 
 import (
+	"bytes"
 	"encoding/json"
-	"strings"
 
 	"blackfyre.ninja/wga/assets"
+	"blackfyre.ninja/wga/utils"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/daos"
 	m "github.com/pocketbase/pocketbase/migrations"
@@ -43,43 +44,6 @@ type ArtworkStage1 struct {
 
 type ArtworkStage1Meta struct {
 	WgaId string `json:"wga_id"`
-}
-
-func readArtworkStage1Files() ([]ArtworkStage1, error) {
-	var artworks []ArtworkStage1
-
-	fileList, err := assets.InternalFiles.ReadDir("reference")
-
-	if err != nil {
-		return nil, err
-	}
-
-	files := []string{}
-
-	for _, file := range fileList {
-
-		//if file name contains `artworks_stage_1_` then add to files
-		if strings.Contains(file.Name(), "artworks_stage_2_") {
-			files = append(files, "reference/"+file.Name())
-		}
-	}
-
-	for _, file := range files {
-		data, err := assets.InternalFiles.ReadFile(file)
-		if err != nil {
-			return nil, err
-		}
-
-		var c []ArtworkStage1
-		err = json.Unmarshal(data, &c)
-		if err != nil {
-			return nil, err
-		}
-
-		artworks = append(artworks, c...)
-	}
-
-	return artworks, nil
 }
 
 func init() {
@@ -178,13 +142,29 @@ func init() {
 			return err
 		}
 
-		data, err := readArtworkStage1Files()
+		zstFile, err := assets.InternalFiles.ReadFile("reference/artworks_stage_2.json.zst")
 
 		if err != nil {
 			return err
 		}
 
-		for _, g := range data {
+		var buf bytes.Buffer
+
+		err = utils.Decompress(bytes.NewReader(zstFile), &buf)
+
+		if err != nil {
+			return err
+		}
+
+		var c []ArtworkStage1
+
+		err = json.Unmarshal(buf.Bytes(), &c)
+
+		if err != nil {
+			return err
+		}
+
+		for _, g := range c {
 			q := db.Insert(tId, dbx.Params{
 				"id":        g.Id,
 				"title":     g.Title,
