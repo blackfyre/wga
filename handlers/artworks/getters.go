@@ -1,7 +1,7 @@
 package artworks
 
 import (
-	"blackfyre.ninja/wga/models"
+	"github.com/blackfyre/wga/models"
 	"github.com/pocketbase/pocketbase"
 )
 

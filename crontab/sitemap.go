@@ -1,7 +1,7 @@
 package crontab
 
 import (
-	"blackfyre.ninja/wga/utils/sitemap"
+	"github.com/blackfyre/wga/utils/sitemap"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/tools/cron"
 )

@@ -3,7 +3,7 @@ package migrations
 import (
 	"log"
 
-	"blackfyre.ninja/wga/handlers"
+	"github.com/blackfyre/wga/handlers"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/daos"
 	m "github.com/pocketbase/pocketbase/migrations"
@@ -24,10 +24,10 @@ func init() {
 		collection.MarkAsNew()
 		collection.Schema = schema.NewSchema(
 			&schema.SchemaField{
-				Id:          "music_composer_id",
-				Name:        "id",
-				Type:        schema.FieldTypeText,
-				Options:     &schema.TextOptions{},
+				Id:      "music_composer_id",
+				Name:    "id",
+				Type:    schema.FieldTypeText,
+				Options: &schema.TextOptions{},
 			},
 			&schema.SchemaField{
 				Id:          "music_composer_name",
@@ -37,11 +37,11 @@ func init() {
 				Presentable: true,
 			},
 			&schema.SchemaField{
-				Id:          "music_composer_century",
-				Name:        "century",
-				Type:        schema.FieldTypeSelect,
-				Options:     &schema.SelectOptions{
-					Values:  []string{"12", "13", "14", "15", "16", "17", "18", "19", "20", "21"},
+				Id:   "music_composer_century",
+				Name: "century",
+				Type: schema.FieldTypeSelect,
+				Options: &schema.SelectOptions{
+					Values:    []string{"12", "13", "14", "15", "16", "17", "18", "19", "20", "21"},
 					MaxSelect: 1,
 				},
 				Presentable: true,
@@ -90,10 +90,10 @@ func init() {
 				Presentable: true,
 			},
 			&schema.SchemaField{
-				Id:          "music_song_url",
-				Name:        "url",
-				Type:        schema.FieldTypeText,
-				Options:     &schema.TextOptions{},
+				Id:      "music_song_url",
+				Name:    "url",
+				Type:    schema.FieldTypeText,
+				Options: &schema.TextOptions{},
 			},
 			&schema.SchemaField{
 				Id:          "music_song_source",
@@ -118,10 +118,10 @@ func init() {
 		for _, composer := range composers {
 
 			q := db.Insert("music_composer", dbx.Params{
-				"id": composer.ID,
-				"name": composer.Name,
-				"date": composer.Date,
-				"century": composer.Century,
+				"id":       composer.ID,
+				"name":     composer.Name,
+				"date":     composer.Date,
+				"century":  composer.Century,
 				"language": composer.Language,
 			})
 
@@ -134,11 +134,11 @@ func init() {
 			for _, song := range composer.Songs {
 				q := db.Insert("music_song", dbx.Params{
 					"composer_id": song.ComposerID,
-					"title": song.Title,
-					"url": song.URL,
-					"source": song.Source,
+					"title":       song.Title,
+					"url":         song.URL,
+					"source":      song.Source,
 				})
-				
+
 				_, err = q.Execute()
 
 				if err != nil {
