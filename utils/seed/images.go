@@ -6,8 +6,8 @@ import (
 	"math/rand"
 	"time"
 
-	"blackfyre.ninja/wga/assets"
-	"blackfyre.ninja/wga/models"
+	"github.com/blackfyre/wga/assets"
+	"github.com/blackfyre/wga/models"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/tools/filesystem"
 )

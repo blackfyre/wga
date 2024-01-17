@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"blackfyre.ninja/wga/assets"
-	"blackfyre.ninja/wga/utils"
+	"github.com/blackfyre/wga/assets"
+	"github.com/blackfyre/wga/utils"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/tools/cron"
 	"github.com/pocketbase/pocketbase/tools/mailer"

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"blackfyre.ninja/wga/assets"
+	"github.com/blackfyre/wga/assets"
 	"github.com/pocketbase/dbx"
 	m "github.com/pocketbase/pocketbase/migrations"
 )

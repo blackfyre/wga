@@ -8,9 +8,9 @@ import (
 	"sort"
 	"strings"
 
-	"blackfyre.ninja/wga/assets"
-	shape "blackfyre.ninja/wga/models"
-	"blackfyre.ninja/wga/utils"
+	"github.com/blackfyre/wga/assets"
+	shape "github.com/blackfyre/wga/models"
+	"github.com/blackfyre/wga/utils"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
 
@@ -26,43 +26,41 @@ type Century struct {
 }
 
 type Composer_source struct {
-	ID	     string `db:"id" json:"id"`
-	Name     string `db:"name" json:"name"`
-	Date     string `db:"date" json:"date"`
-	Language string `db:"language" json:"language"`
-	Century  string `db:"century" json:"century"`
+	ID       string        `db:"id" json:"id"`
+	Name     string        `db:"name" json:"name"`
+	Date     string        `db:"date" json:"date"`
+	Language string        `db:"language" json:"language"`
+	Century  string        `db:"century" json:"century"`
 	Songs    []Song_source `db:"songs" json:"songs"`
 }
 
 type Song_source struct {
-	Title  		string `db:"title" json:"title"`
-	URL    		string `db:"url" json:"url"`
-	Source 		[]string `db:"source" json:"source"`
-	ComposerID  string `db:"composer_id" json:"composer_id"` // foreign key
+	Title      string   `db:"title" json:"title"`
+	URL        string   `db:"url" json:"url"`
+	Source     []string `db:"source" json:"source"`
+	ComposerID string   `db:"composer_id" json:"composer_id"` // foreign key
 }
 
 type Composer_seed struct {
-	ID	     string `db:"id" json:"id"`
-	Name     string `db:"name" json:"name"`
-	Date     string `db:"date" json:"date"`
-	Language string `db:"language" json:"language"`
-	Century  string `db:"century" json:"century"`
+	ID       string      `db:"id" json:"id"`
+	Name     string      `db:"name" json:"name"`
+	Date     string      `db:"date" json:"date"`
+	Language string      `db:"language" json:"language"`
+	Century  string      `db:"century" json:"century"`
 	Songs    []Song_seed `db:"songs" json:"songs"`
 }
 
-
 type Song_seed struct {
-	Title  		string `db:"title" json:"title"`
-	URL    		string `db:"url" json:"url"`
-	Source 		string `db:"source" json:"source"`
-	ComposerID  string `db:"composer_id" json:"composer_id"` // foreign key
+	Title      string `db:"title" json:"title"`
+	URL        string `db:"url" json:"url"`
+	Source     string `db:"source" json:"source"`
+	ComposerID string `db:"composer_id" json:"composer_id"` // foreign key
 }
 
 type Grouped_music_list struct {
-	Century string
+	Century   string
 	Composers []shape.Music_composer
 }
-
 
 func registerMusicHandlers(app *pocketbase.PocketBase) {
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
@@ -164,29 +162,29 @@ func registerMusicHandlers(app *pocketbase.PocketBase) {
 }
 
 func GetMusics(filePath string) (centuries []Century, err error) {
-    var data []Century
+	var data []Century
 
-    fileData, err := os.ReadFile(filePath)
+	fileData, err := os.ReadFile(filePath)
 
-    if err != nil {
-        return nil, fmt.Errorf("error reading file: %w", err)
-    }
+	if err != nil {
+		return nil, fmt.Errorf("error reading file: %w", err)
+	}
 
-    err = json.Unmarshal(fileData, &data)
-    if err != nil {
-        return nil, fmt.Errorf("error unmarshalling JSON data: %w", err)
-    }
+	err = json.Unmarshal(fileData, &data)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling JSON data: %w", err)
+	}
 
-    return data, err
+	return data, err
 }
 
 func GetParsedMusics() ([]Composer_seed, error) {
 	var composers []Composer_seed
 
 	musics, err := GetMusics("./assets/reference/musics.json")
-    if err != nil {
-        return nil, err
-    }
+	if err != nil {
+		return nil, err
+	}
 
 	for _, century := range musics {
 		for _, composer := range century.Composers {
@@ -200,20 +198,20 @@ func GetParsedMusics() ([]Composer_seed, error) {
 				}
 				newSourceStr := strings.Join(newSource, ",")
 				songs[i] = Song_seed{
-					Title: song.Title,
-					URL: song.URL,
-					Source: newSourceStr,
+					Title:      song.Title,
+					URL:        song.URL,
+					Source:     newSourceStr,
 					ComposerID: id,
 				}
 			}
-		
+
 			composers = append(composers, Composer_seed{
-				ID: id,
-				Name: composer.Name,
-				Date: composer.Date,
+				ID:       id,
+				Name:     composer.Name,
+				Date:     composer.Date,
 				Language: composer.Language,
-				Century: century.Century,
-				Songs: songs,
+				Century:  century.Century,
+				Songs:    songs,
 			})
 		}
 	}
@@ -222,46 +220,46 @@ func GetParsedMusics() ([]Composer_seed, error) {
 }
 
 func getComposers(app *pocketbase.PocketBase, c echo.Context) ([]shape.Music_composer, error) {
-    composers := []shape.Music_composer{}
-    err := app.Dao().DB().NewQuery("SELECT * FROM music_composer").All(&composers)
-    if err != nil {
+	composers := []shape.Music_composer{}
+	err := app.Dao().DB().NewQuery("SELECT * FROM music_composer").All(&composers)
+	if err != nil {
 		app.Logger().Error("failed to get music composers", err)
-        return nil, fmt.Errorf("failed to get music composers: %w", err)
-    }
+		return nil, fmt.Errorf("failed to get music composers: %w", err)
+	}
 
-    for i, composer := range composers {
-        songs := []shape.Music_song{}
+	for i, composer := range composers {
+		songs := []shape.Music_song{}
 
 		query := "SELECT * FROM music_song WHERE composer_id = {:id}"
 		err := app.Dao().DB().NewQuery(query).Bind(dbx.Params{"id": composer.ID}).All(&songs)
-        if err != nil {
+		if err != nil {
 			app.Logger().Error("failed to get music song by composer", err)
-            return nil, fmt.Errorf("failed to get music song by composer: %w", err)
-        }
+			return nil, fmt.Errorf("failed to get music song by composer: %w", err)
+		}
 
-        composers[i].Songs = songs
-    }
+		composers[i].Songs = songs
+	}
 
-    return composers, nil
+	return composers, nil
 }
 
 func GroupAndSortMusicByCentury(musicList []shape.Music_composer) []Grouped_music_list {
-    groupedMusicListItemsByCenturies := make(map[string][]shape.Music_composer)
-    for _, music := range musicList {
-        groupedMusicListItemsByCenturies[music.Century] = append(groupedMusicListItemsByCenturies[music.Century], music)
-    }
+	groupedMusicListItemsByCenturies := make(map[string][]shape.Music_composer)
+	for _, music := range musicList {
+		groupedMusicListItemsByCenturies[music.Century] = append(groupedMusicListItemsByCenturies[music.Century], music)
+	}
 
-    groupedMusicListByCenturies := make([]Grouped_music_list, 0, len(groupedMusicListItemsByCenturies))
-    for century, composers := range groupedMusicListItemsByCenturies {
-        groupedMusicListByCenturies = append(groupedMusicListByCenturies, Grouped_music_list{
-            Century:   century,
-            Composers: composers,
-        })
-    }
+	groupedMusicListByCenturies := make([]Grouped_music_list, 0, len(groupedMusicListItemsByCenturies))
+	for century, composers := range groupedMusicListItemsByCenturies {
+		groupedMusicListByCenturies = append(groupedMusicListByCenturies, Grouped_music_list{
+			Century:   century,
+			Composers: composers,
+		})
+	}
 
-    sort.Slice(groupedMusicListByCenturies, func(i, j int) bool {
-        return groupedMusicListByCenturies[i].Century < groupedMusicListByCenturies[j].Century
-    })
+	sort.Slice(groupedMusicListByCenturies, func(i, j int) bool {
+		return groupedMusicListByCenturies[i].Century < groupedMusicListByCenturies[j].Century
+	})
 
-    return groupedMusicListByCenturies
+	return groupedMusicListByCenturies
 }

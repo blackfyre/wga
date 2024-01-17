@@ -3,8 +3,8 @@ package jsonld
 import (
 	"os"
 
-	wgamodels "blackfyre.ninja/wga/models"
-	"blackfyre.ninja/wga/utils"
+	wgamodels "github.com/blackfyre/wga/models"
+	"github.com/blackfyre/wga/utils"
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase/models"
 )

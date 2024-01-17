@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"blackfyre.ninja/wga/handlers/artworks"
+	"github.com/blackfyre/wga/handlers/artworks"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/pocketbase/pocketbase"
 )
