@@ -3,8 +3,8 @@ package migrations
 import (
 	"encoding/json"
 
-	"blackfyre.ninja/wga/assets"
-	"blackfyre.ninja/wga/utils"
+	"github.com/blackfyre/wga/assets"
+	"github.com/blackfyre/wga/utils"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/daos"
 	m "github.com/pocketbase/pocketbase/migrations"
