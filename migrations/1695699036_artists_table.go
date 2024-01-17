@@ -1,9 +1,11 @@
 package migrations
 
 import (
+	"bytes"
 	"encoding/json"
 
 	"blackfyre.ninja/wga/assets"
+	"blackfyre.ninja/wga/utils"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/daos"
 	m "github.com/pocketbase/pocketbase/migrations"
@@ -191,7 +193,15 @@ func init() {
 		// create a up query for each Glossary
 		// execute the up query
 
-		data, err := assets.InternalFiles.ReadFile("reference/artists_with_bio_stage_2.json")
+		zstFile, err := assets.InternalFiles.ReadFile("reference/artists_with_bio_stage_2.json.zst")
+
+		if err != nil {
+			return err
+		}
+
+		var buf bytes.Buffer
+
+		err = utils.Decompress(bytes.NewReader(zstFile), &buf)
 
 		if err != nil {
 			return err
@@ -199,7 +209,7 @@ func init() {
 
 		var c []Artist
 
-		err = json.Unmarshal(data, &c)
+		err = json.Unmarshal(buf.Bytes(), &c)
 
 		if err != nil {
 			return err
