@@ -15,7 +15,7 @@ import (
 // birth and death dates, and birth and death places (if available).
 func GenerateArtistJsonLdContent(r *wgamodels.Artist, c echo.Context) map[string]any {
 
-	fullUrl := os.Getenv("WGA_PROTOCOL") + "://" + c.Request().Host + "/artists/" + r.Slug
+	fullUrl := os.Getenv("WGA_PROTOCOL") + "://" + c.Request().Host + "/artists/" + r.Slug + "-" + r.Id
 
 	d := map[string]any{
 		"@context":      "https://schema.org",

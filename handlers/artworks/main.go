@@ -135,14 +135,14 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 		jsonLd["thumbnailUrl"] = url.GenerateThumbUrl("artworks", v.GetString("id"), v.GetString("image"), "320x240", "")
 
 		row := map[string]any{
-			"Id":         v.GetId(),
-			"Title":      v.GetString("title"),
-			"Comment":    v.GetString("comment"),
-			"Technique":  v.GetString("technique"),
-			"Image":      jsonLd["image"].(string),
-			"Thumb":      jsonLd["thumbnailUrl"].(string),
-			"ArtistSlug": artist.Slug,
-			"Jsonld":     jsonLd,
+			"Id":          v.GetId(),
+			"Title":       v.GetString("title"),
+			"Comment":     v.GetString("comment"),
+			"Technique":   v.GetString("technique"),
+			"Image":       jsonLd["image"].(string),
+			"Thumb":       jsonLd["thumbnailUrl"].(string),
+			"ArtoworkUrl": "/artists/" + artist.Slug + "-" + artist.Id + "/artworks/" + utils.Slugify(v.GetString("title")) + "-" + v.Id,
+			"Jsonld":      jsonLd,
 		}
 
 		td["Artworks"] = append(td["Artworks"].([]any), row)
