@@ -130,7 +130,7 @@ func registerArtists(app *pocketbase.PocketBase) {
 
 					row := map[string]any{
 						"Name":       m.GetString("name"),
-						"Url":        artistUrl(m.GetString("slug")),
+						"Url":        artistUrl(m),
 						"Profession": m.GetString("profession"),
 						"BornDied":   normalizedBirthDeathActivity(m),
 						"Schools":    strings.Join(schoolCollector, ", "),

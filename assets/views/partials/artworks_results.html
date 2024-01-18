@@ -24,8 +24,8 @@
                 </div>
             </div>
             <footer class="card-footer">
-                <a class="card-footer-item" href="/artists/{{.ArtistSlug}}/{{.Id}}"
-                    hx-get="/artists/{{.ArtistSlug}}/{{.Id}}" hx-target="#mc-area">Learn More</a>
+                <a class="card-footer-item" href="{{.ArtoworkUrl}}"
+                    hx-get="{{.ArtoworkUrl}}" hx-target="#mc-area">Learn More</a>
                 <a href="#" hx-on="click: document.getElementById('d').showModal();"
                     hx-get="/postcard/send?awid={{.Id}}" hx-target="#d" class="card-footer-item">Send
                     Postcard</a>

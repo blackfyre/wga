@@ -178,12 +178,12 @@ func GetMusics(filePath string) (centuries []Century, err error) {
 	return data, err
 }
 
-func GetParsedMusics() ([]Composer_seed, error) {
+func GetParsedMusics() []Composer_seed {
 	var composers []Composer_seed
 
 	musics, err := GetMusics("./assets/reference/musics.json")
 	if err != nil {
-		return nil, err
+		return nil
 	}
 
 	for _, century := range musics {
@@ -216,7 +216,7 @@ func GetParsedMusics() ([]Composer_seed, error) {
 		}
 	}
 
-	return composers, nil
+	return composers
 }
 
 func getComposers(app *pocketbase.PocketBase, c echo.Context) ([]shape.Music_composer, error) {
