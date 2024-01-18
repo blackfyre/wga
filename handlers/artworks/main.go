@@ -141,7 +141,7 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 			"Technique":  v.GetString("technique"),
 			"Image":      jsonLd["image"].(string),
 			"Thumb":      jsonLd["thumbnailUrl"].(string),
-			"ArtistSlug": artist.Slug,
+			"ArtworkUrl": "/artists/" + artist.Slug + "-" + artist.Id + "/artworks/" + utils.Slugify(v.GetString("title")) + "-" + v.Id,
 			"Jsonld":     jsonLd,
 		}
 
