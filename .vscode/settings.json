@@ -9,5 +9,6 @@
   },
   "emmet.includeLanguages": {
     "templ": "html"
-  }
+  },
+  "cSpell.words": ["Htmx", "labstack", "pocketbase", "templ", "tmpl"]
 }

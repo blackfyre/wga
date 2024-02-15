@@ -2,6 +2,7 @@ package pages
 
 import (
 	"github.com/blackfyre/wga/assets/templ/layouts"
+	"github.com/blackfyre/wga/assets/templ/utils"
 )
 
 type HomePage struct {
@@ -17,6 +18,9 @@ templ HomePageWrapped(c HomePage) {
 }
 
 templ HomePageContent(c HomePage) {
+	<head>
+		<title>{ utils.GetTitle(ctx) }</title>
+	</head>
 	<section class="section">
 		<div class="container block">
 			<div class="box content">
