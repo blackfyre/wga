@@ -1,13 +1,16 @@
 package handlers
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/blackfyre/wga/assets"
-	wgamodels "github.com/blackfyre/wga/models"
+	"github.com/blackfyre/wga/assets/templ/pages"
+	tmplUtils "github.com/blackfyre/wga/assets/templ/utils"
+	wgaModels "github.com/blackfyre/wga/models"
 	"github.com/blackfyre/wga/utils"
 	"github.com/blackfyre/wga/utils/jsonld"
 	"github.com/labstack/echo/v5"
@@ -61,130 +64,153 @@ func registerArtists(app *pocketbase.PocketBase) {
 				cacheKey = cacheKey + ":search"
 			}
 
-			if app.Store().Has(cacheKey) {
-				html := app.Store().Get(cacheKey).(string)
-				return c.HTML(http.StatusOK, html)
-			} else {
+			filter := "published = true"
 
-				filter := "published = true"
+			if searchExpression != "" {
+				filter = filter + " && name ~ {:searchExpression}"
+			}
 
-				if searchExpression != "" {
-					filter = filter + " && name ~ {:searchExpression}"
-				}
+			records, err := app.Dao().FindRecordsByFilter(
+				"artists",
+				filter,
+				"+name",
+				limit,
+				offset,
+				dbx.Params{
+					"searchExpression": searchExpression,
+				},
+			)
 
-				records, err := app.Dao().FindRecordsByFilter(
-					"artists",
-					filter,
-					"+name",
-					limit,
-					offset,
-					dbx.Params{
-						"searchExpression": searchExpression,
-					},
-				)
+			if err != nil {
+				app.Logger().Error("Failed to get artist records: ", err)
+				return apis.NewBadRequestError("Invalid page", err)
+			}
 
-				if err != nil {
-					app.Logger().Error("Failed to get artist records: ", err)
-					return apis.NewBadRequestError("Invalid page", err)
-				}
+			totalRecords, err := app.Dao().FindRecordsByFilter(
+				"artists",
+				filter,
+				"+name",
+				0,
+				0,
+				dbx.Params{
+					"searchExpression": searchExpression,
+				},
+			)
 
-				totalRecords, err := app.Dao().FindRecordsByFilter(
-					"artists",
-					filter,
-					"+name",
-					0,
-					0,
-					dbx.Params{
-						"searchExpression": searchExpression,
-					},
-				)
+			if err != nil {
+				app.Logger().Error("Failed to get total records: ", err)
+				return apis.NewBadRequestError("Invalid page", err)
+			}
 
-				if err != nil {
-					app.Logger().Error("Failed to get total records: ", err)
-					return apis.NewBadRequestError("Invalid page", err)
-				}
+			recordsCount := len(totalRecords)
 
-				recordsCount := len(totalRecords)
+			content := pages.ArtistsView{
+				Count: strconv.Itoa(recordsCount),
+			}
 
-				preRendered := []map[string]any{}
+			preRendered := []map[string]any{}
 
-				for _, m := range records {
+			for _, m := range records {
 
-					// TODO: handle aka
+				// TODO: handle aka
 
-					school := m.GetStringSlice("school")
+				school := m.GetStringSlice("school")
 
-					schoolCollector := []string{}
+				schoolCollector := []string{}
 
-					for _, s := range school {
-						r, err := app.Dao().FindRecordById("schools", s)
+				for _, s := range school {
+					r, err := app.Dao().FindRecordById("schools", s)
 
-						if err != nil {
-							log.Print("school not found")
-							continue
-						}
-
-						schoolCollector = append(schoolCollector, r.GetString("name"))
-
+					if err != nil {
+						log.Print("school not found")
+						continue
 					}
 
-					row := map[string]any{
-						"Name":       m.GetString("name"),
-						"Url":        artistUrl(m),
-						"Profession": m.GetString("profession"),
-						"BornDied":   normalizedBirthDeathActivity(m),
-						"Schools":    strings.Join(schoolCollector, ", "),
-						"Jsonld": jsonld.GenerateArtistJsonLdContent(&wgamodels.Artist{
-							Name:         m.GetString("name"),
-							Slug:         m.GetString("slug"),
-							Bio:          m.GetString("bio"),
-							YearOfBirth:  m.GetInt("year_of_birth"),
-							YearOfDeath:  m.GetInt("year_of_death"),
-							PlaceOfBirth: m.GetString("place_of_birth"),
-							PlaceOfDeath: m.GetString("place_of_death"),
-							Published:    m.GetBool("published"),
-							School:       m.GetString("school"),
-							Profession:   m.GetString("profession"),
-						}, c),
-					}
+					schoolCollector = append(schoolCollector, r.GetString("name"))
 
-					preRendered = append(preRendered, row)
 				}
 
-				data := assets.NewRenderData(app)
-
-				data["Content"] = preRendered
-				data["Count"] = recordsCount
-
-				pagination := utils.NewPagination(recordsCount, limit, page, "/artists?q="+searchExpression, "search-results", "")
-
-				data["Pagination"] = pagination.Render()
-
-				html := ""
-				blockToRender := "artists:content"
-
-				if confirmedHtmxRequest {
-					if searchExpression != "" || searchExpressionPresent {
-						blockToRender = "artists:search-results"
-					}
-				}
-
-				html, err = assets.Render(assets.Renderable{
-					IsHtmx: confirmedHtmxRequest,
-					Block:  blockToRender,
-					Data:   data,
+				content.Artists = append(content.Artists, pages.Artist{
+					Name:       m.GetString("name"),
+					Url:        artistUrl(m),
+					Profession: m.GetString("profession"),
+					BornDied:   normalizedBirthDeathActivity(m),
+					Schools:    strings.Join(schoolCollector, ", "),
 				})
 
-				if err != nil {
-					// or redirect to a dedicated 404 HTML page
-					app.Logger().Error("Failed to render artists: ", err)
-					return apis.NewApiError(500, err.Error(), err)
+				row := map[string]any{
+					"Name":       m.GetString("name"),
+					"Url":        artistUrl(m),
+					"Profession": m.GetString("profession"),
+					"BornDied":   normalizedBirthDeathActivity(m),
+					"Schools":    strings.Join(schoolCollector, ", "),
+					"Jsonld": jsonld.GenerateArtistJsonLdContent(&wgaModels.Artist{
+						Name:         m.GetString("name"),
+						Slug:         m.GetString("slug"),
+						Bio:          m.GetString("bio"),
+						YearOfBirth:  m.GetInt("year_of_birth"),
+						YearOfDeath:  m.GetInt("year_of_death"),
+						PlaceOfBirth: m.GetString("place_of_birth"),
+						PlaceOfDeath: m.GetString("place_of_death"),
+						Published:    m.GetBool("published"),
+						School:       m.GetString("school"),
+						Profession:   m.GetString("profession"),
+					}, c),
 				}
 
-				app.Store().Set(cacheKey, html)
-
-				return c.HTML(http.StatusOK, html)
+				preRendered = append(preRendered, row)
 			}
+
+			data := assets.NewRenderData(app)
+
+			data["Content"] = preRendered
+			data["Count"] = recordsCount
+
+			pagination := utils.NewPagination(recordsCount, limit, page, "/artists?q="+searchExpression, "search-results", "")
+
+			data["Pagination"] = pagination.Render()
+
+			html := ""
+			blockToRender := "artists:content"
+
+			if confirmedHtmxRequest {
+				if searchExpression != "" || searchExpressionPresent {
+					blockToRender = "artists:search-results"
+				}
+			}
+
+			html, err = assets.Render(assets.Renderable{
+				IsHtmx: confirmedHtmxRequest,
+				Block:  blockToRender,
+				Data:   data,
+			})
+
+			if err != nil {
+				// or redirect to a dedicated 404 HTML page
+				app.Logger().Error("Failed to render artists: ", err)
+				return apis.NewApiError(500, err.Error(), err)
+			}
+
+			app.Store().Set(cacheKey, html)
+
+			ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, "Artists")
+
+			if confirmedHtmxRequest {
+				c.Response().Header().Set("HX-Push-Url", currentUrl)
+				err = pages.ArtistBlock(content).Render(ctx, c.Response().Writer)
+
+			} else {
+				err = pages.ArtistPage(content).Render(ctx, c.Response().Writer)
+
+			}
+
+			if err != nil {
+				app.Logger().Error("Error rendering home page", err)
+				return c.String(http.StatusInternalServerError, "failed to render response template")
+			}
+
+			return nil
+
 		})
 
 		return nil

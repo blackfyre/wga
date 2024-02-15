@@ -15,10 +15,10 @@ var EnvironmentKey ContextKey = "environment"
 // If the title is not found, it returns an empty string.
 func GetTitle(c context.Context) string {
 	if v, ok := c.Value(TitleKey).(string); ok {
-		return v
+		return v + " - WGA"
 	}
 
-	return ""
+	return "Web Gallery of Art"
 }
 
 // GetDescription retrieves the description value from the context.
