@@ -14,3 +14,16 @@ tasks:
   build:frontend:
     cmds:
       - node esbuild.mjs
+  watch:frontend:
+    cmds:
+      - node esbuild.mjs --watch
+  watch:templ:
+    cmds:
+      - templ generate --watch
+  watch:wga:
+    cmds:
+      - air serve
+  watch:all:
+    deps: [watch:frontend, watch:templ, watch:wga]
+    cmds:
+      - echo "watching wga"

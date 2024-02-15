@@ -17,6 +17,7 @@ let result = await esbuild.build({
   legalComments: "linked",
   allowOverwrite: true,
   outbase: "resources",
+  target: ["es2020", "chrome58", "edge16", "firefox57", "safari11"],
   loader: {
     ".png": "file",
     ".jpg": "file",
