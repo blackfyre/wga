@@ -1,0 +1,152 @@
+package pages
+
+import (
+	"github.com/blackfyre/wga/assets/templ/layouts"
+)
+
+templ error404() {
+	@layouts.LayoutMain() {
+		<h1>404</h1>
+		<p>Page not found</p>
+	}
+}
+
+templ error500() {
+	@layouts.LayoutMain() {
+		<h1>500</h1>
+		<p>Internal server error</p>
+	}
+}
+
+templ error403() {
+	@layouts.LayoutMain() {
+		<h1>403</h1>
+		<p>Forbidden</p>
+	}
+}
+
+templ error401() {
+	@layouts.LayoutMain() {
+		<h1>401</h1>
+		<p>Unauthorized</p>
+	}
+}
+
+templ error400() {
+	@layouts.LayoutMain() {
+		<h1>400</h1>
+		<p>Bad request</p>
+	}
+}
+
+templ error405() {
+	@layouts.LayoutMain() {
+		<h1>405</h1>
+		<p>Method not allowed</p>
+	}
+}
+
+templ error406() {
+	@layouts.LayoutMain() {
+		<h1>406</h1>
+		<p>Not acceptable</p>
+	}
+}
+
+templ error408() {
+	@layouts.LayoutMain() {
+		<h1>408</h1>
+		<p>Request timeout</p>
+	}
+}
+
+templ error409() {
+	@layouts.LayoutMain() {
+		<h1>409</h1>
+		<p>Conflict</p>
+	}
+}
+
+templ error410() {
+	@layouts.LayoutMain() {
+		<h1>410</h1>
+		<p>Gone</p>
+	}
+}
+
+templ error411() {
+	@layouts.LayoutMain() {
+		<h1>411</h1>
+		<p>Length required</p>
+	}
+}
+
+templ error412() {
+	@layouts.LayoutMain() {
+		<h1>412</h1>
+		<p>Precondition failed</p>
+	}
+}
+
+templ error413() {
+	@layouts.LayoutMain() {
+		<h1>413</h1>
+		<p>Request entity too large</p>
+	}
+}
+
+templ error414() {
+	@layouts.LayoutMain() {
+		<h1>414</h1>
+		<p>Request URI too long</p>
+	}
+}
+
+templ error415() {
+	@layouts.LayoutMain() {
+		<h1>415</h1>
+		<p>Unsupported media type</p>
+	}
+}
+
+templ error416() {
+	@layouts.LayoutMain() {
+		<h1>416</h1>
+		<p>Requested range not satisfiable</p>
+	}
+}
+
+templ error417() {
+	@layouts.LayoutMain() {
+		<h1>417</h1>
+		<p>Expectation failed</p>
+	}
+}
+
+templ error418() {
+	@layouts.LayoutMain() {
+		<h1>418</h1>
+		<p>I'm a teapot</p>
+	}
+}
+
+templ error422() {
+	@layouts.LayoutMain() {
+		<h1>422</h1>
+		<p>Unprocessable entity</p>
+	}
+}
+
+templ error423() {
+	@layouts.LayoutMain() {
+		<h1>423</h1>
+		<p>Locked</p>
+	}
+}
+
+templ error424() {
+	@layouts.LayoutMain() {
+		<h1>424</h1>
+		<p>Failed dependency</p>
+	}
+}

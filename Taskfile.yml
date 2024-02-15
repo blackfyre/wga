@@ -6,3 +6,11 @@ tasks:
       - rm -rf wga_data
       - node esbuild.mjs
       - go run . serve
+  start:
+    cmds:
+      - node esbuild.mjs
+      - templ generate
+      - go run . serve
+  build:frontend:
+    cmds:
+      - node esbuild.mjs

@@ -12,6 +12,7 @@ before:
     - npm ci
     - node esbuild.mjs
     - go mod tidy
+    - templ generate
     # you may remove this if you don't need go generate
     # - go generate ./...
 
