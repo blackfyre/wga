@@ -1,0 +1,86 @@
+package layouts
+
+import (
+	"github.com/blackfyre/wga/assets/templ/utils"
+	"github.com/blackfyre/wga/assets/templ/components"
+)
+
+templ layout_base() {
+	<!DOCTYPE html>
+	<html class="has-navbar-fixed-top" style="height: 100%;">
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<title>{ utils.GetTitle(ctx) } </title>
+			<meta name="description" content={ utils.GetDescription(ctx) }/>
+			<link rel="stylesheet" href="/assets/css/style.css"/>
+			<link rel="stylesheet" href="/assets/css/vendor/viewer.min.css"/>
+			<link rel="apple-touch-icon" sizes="180x180" href="/assets/images/apple-touch-icon.png"/>
+			<link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32x32.png"/>
+			<link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon-16x16.png"/>
+			<link rel="manifest" href="/assets/site.webmanifest"/>
+			<link rel="mask-icon" href="/assets/images/safari-pinned-tab.svg" color="#013365"/>
+			<link rel="shortcut icon" href="/assets/images/favicon.ico"/>
+			<meta name="msapplication-TileColor" content="#013365"/>
+			<meta name="msapplication-config" content="/assets/browserconfig.xml"/>
+			<meta name="theme-color" content="#013365"/>
+			<link rel="stylesheet" type="text/css" href="https://unpkg.com/trix@2.0.0/dist/trix.css"/>
+			<script type="text/javascript" src="https://unpkg.com/trix@2.0.0/dist/trix.umd.min.js"></script>
+			<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.0.0/animate.min.css"/>
+			<link rel="stylesheet" href="/assets/css/vendor/cookieconsent.css"/>
+		</head>
+		<body class="customBody">
+			{ children... }
+			<dialog id="d"></dialog>
+			<a
+				href="#"
+				hx-get="/feedback"
+				hx-on="click: wga.openDialog()"
+				hx-target="#d"
+				class="button is-primary is-feedback"
+			>Feedback</a>
+			<script src="/assets/js/vendor/viewer.min.js"></script>
+			<script src="/assets/js/vendor/htmx.min.js"></script>
+			<script src="/assets/js/app.js"></script>
+			<script defer src="/assets/js/vendor/cookieconsent.js" crossorigin="anonymous"></script>
+			<script defer src="/assets/js/vendor/cookieconsent-init.js" crossorigin="anonymous"></script>
+		</body>
+	</html>
+}
+
+templ LayoutMain() {
+	@layout_base() {
+		@components.TopNav()
+		if utils.GetEnvironment(ctx) != "production" {
+			<section class="section" style="padding-bottom: 0;">
+				<div class="container">
+					<article class="message is-warning">
+						<div class="message-body">
+							This is a development version of the site. It is not intended for public use. You can give us a
+							helping
+							hand
+							at <a href="https://github.com/blackfyre/wga">GitHub</a>.
+						</div>
+					</article>
+				</div>
+			</section>
+		}
+		<main id="mc-area">
+			{ children... }
+		</main>
+		@components.Footer()
+		<div class="jump back-to-top">
+			<span class="icon is-medium">
+				<i class="fas fa-arrow-up fa-2x"></i>
+			</span>
+		</div>
+	}
+}
+
+templ LayoutSlim() {
+	@layout_base() {
+		<main id="mc-area">
+			{ children... }
+		</main>
+	}
+}

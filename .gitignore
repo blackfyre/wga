@@ -31,3 +31,7 @@ contributors.json
 # Dependecies shouldn't be a part of the source code
 node_modules
 meta.json
+
+# Ignore templ generated files
+*_templ.go
+*_templ.txt

@@ -36,9 +36,7 @@ let result = await esbuild.build({
           purgeCSSPlugin({
             safelist: ["content"],
             content: [
-              "assets/views/layout.html",
-              "assets/views/pages/**/*.html",
-              "assets/views/partials/**/*.html",
+              "assets/templ/**/*.templ",
               "resources/js/**/*.js",
               "utils/**/*.go",
             ],

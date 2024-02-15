@@ -1,0 +1,23 @@
+package components
+
+templ ImageBase(ThumbUrl string, ImageUrl string, Title string, Technique string) {
+	<figure class="image is-4by3 hidden-caption">
+		<picture>
+			<source media="(max-width: 768px)" srcset={ ThumbUrl }/>
+			<source media="(min-width: 769px)" srcset={ ThumbUrl }/>
+			<source media="(min-width: 1024px)" srcset={ ThumbUrl }/>
+			<img src={ ImageUrl } alt="{Title}" loading="lazy" alt="{ Title } -  { Technique }"/>
+		</picture>
+		<figcaption>{ Title } -  { Technique } </figcaption>
+	</figure>
+}
+
+// image_big is a template that renders a big image with its title and artist.
+// It takes three parameters: ImageUrl (string) - the URL of the image,
+// Title (string) - the title of the image, and Artist (string) - the artist of the image.
+templ ImageBig(ImageUrl string, Title string, Artist string) {
+	<figure class="image hidden-caption">
+		<img src={ ImageUrl } alt="{ Title } by { Artist }"/>
+		<figcaption>{ Title } by { Artist }</figcaption>
+	</figure>
+}
