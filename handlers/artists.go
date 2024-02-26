@@ -2,12 +2,13 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
 
-	"github.com/blackfyre/wga/assets"
 	"github.com/blackfyre/wga/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/assets/templ/utils"
 	wgaModels "github.com/blackfyre/wga/models"
@@ -29,7 +30,6 @@ func registerArtists(app *pocketbase.PocketBase) {
 			limit := 30
 			page := 1
 			searchExpression := ""
-			searchExpressionPresent := false
 			confirmedHtmxRequest := utils.IsHtmxRequest(c)
 			currentUrl := c.Request().URL.String()
 			c.Response().Header().Set("HX-Push-Url", currentUrl)
@@ -48,21 +48,7 @@ func registerArtists(app *pocketbase.PocketBase) {
 				searchExpression = c.QueryParam("q")
 			}
 
-			if c.QueryParams().Has("q") {
-				searchExpressionPresent = true
-			}
-
 			offset := (page - 1) * limit
-
-			cacheKey := "artists:" + strconv.Itoa(offset) + ":" + strconv.Itoa(limit) + ":" + strconv.Itoa(page) + ":" + searchExpression
-
-			if confirmedHtmxRequest {
-				cacheKey = cacheKey + ":htmx"
-			}
-
-			if searchExpressionPresent {
-				cacheKey = cacheKey + ":search"
-			}
 
 			filter := "published = true"
 
@@ -108,11 +94,11 @@ func registerArtists(app *pocketbase.PocketBase) {
 				Count: strconv.Itoa(recordsCount),
 			}
 
-			preRendered := []map[string]any{}
+			jsonLdCollector := []jsonld.Person{}
 
 			for _, m := range records {
 
-				// TODO: handle aka
+				// TODO: handle a.k.a. names
 
 				school := m.GetStringSlice("school")
 
@@ -138,60 +124,33 @@ func registerArtists(app *pocketbase.PocketBase) {
 					Schools:    strings.Join(schoolCollector, ", "),
 				})
 
-				row := map[string]any{
-					"Name":       m.GetString("name"),
-					"Url":        artistUrl(m),
-					"Profession": m.GetString("profession"),
-					"BornDied":   normalizedBirthDeathActivity(m),
-					"Schools":    strings.Join(schoolCollector, ", "),
-					"Jsonld": jsonld.GenerateArtistJsonLdContent(&wgaModels.Artist{
-						Name:         m.GetString("name"),
-						Slug:         m.GetString("slug"),
-						Bio:          m.GetString("bio"),
-						YearOfBirth:  m.GetInt("year_of_birth"),
-						YearOfDeath:  m.GetInt("year_of_death"),
-						PlaceOfBirth: m.GetString("place_of_birth"),
-						PlaceOfDeath: m.GetString("place_of_death"),
-						Published:    m.GetBool("published"),
-						School:       m.GetString("school"),
-						Profession:   m.GetString("profession"),
-					}, c),
-				}
+				jsonLdCollector = append(jsonLdCollector, jsonld.ArtistJsonLd(&wgaModels.Artist{
+					Name:         m.GetString("name"),
+					Slug:         m.GetString("slug"),
+					Bio:          m.GetString("bio"),
+					YearOfBirth:  m.GetInt("year_of_birth"),
+					YearOfDeath:  m.GetInt("year_of_death"),
+					PlaceOfBirth: m.GetString("place_of_birth"),
+					PlaceOfDeath: m.GetString("place_of_death"),
+					Published:    m.GetBool("published"),
+					School:       m.GetString("school"),
+					Profession:   m.GetString("profession"),
+				}, c))
 
-				preRendered = append(preRendered, row)
 			}
 
-			data := assets.NewRenderData(app)
+			marshalledJsonLd, err := json.Marshal(jsonLdCollector)
 
-			data["Content"] = preRendered
-			data["Count"] = recordsCount
+			if err != nil {
+				app.Logger().Error("Failed to marshal Artist JSON-LD", err)
+				return apis.NewBadRequestError("Invalid page", err)
+			}
+
+			content.Jsonld = fmt.Sprintf(`<script type="application/ld+json">%s</script>`, marshalledJsonLd)
 
 			pagination := utils.NewPagination(recordsCount, limit, page, "/artists?q="+searchExpression, "search-results", "")
 
-			data["Pagination"] = pagination.Render()
-
-			html := ""
-			blockToRender := "artists:content"
-
-			if confirmedHtmxRequest {
-				if searchExpression != "" || searchExpressionPresent {
-					blockToRender = "artists:search-results"
-				}
-			}
-
-			html, err = assets.Render(assets.Renderable{
-				IsHtmx: confirmedHtmxRequest,
-				Block:  blockToRender,
-				Data:   data,
-			})
-
-			if err != nil {
-				// or redirect to a dedicated 404 HTML page
-				app.Logger().Error("Failed to render artists: ", err)
-				return apis.NewApiError(500, err.Error(), err)
-			}
-
-			app.Store().Set(cacheKey, html)
+			content.Pagination = string(pagination.Render())
 
 			ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, "Artists")
 
