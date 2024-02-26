@@ -22,7 +22,41 @@ type ArtistsView struct {
 
 templ ArtistPage(c ArtistsView) {
 	@layouts.LayoutMain() {
-		@ArtistBlock(c)
+		<head>
+			<title>{ utils.GetTitle(ctx) }</title>
+		</head>
+		<section class="section">
+			<div class="container">
+				<div class="box">
+					<nav class="level">
+						<div class="level-left">
+							<div class="level-item">
+								<p class="subtitle is-5">
+									<strong>{ c.Count }</strong> artists
+								</p>
+							</div>
+							<div class="level-item">
+								<div class="field has-addons">
+									<p class="control">
+										<input
+											class="input"
+											type="search"
+											name="q"
+											placeholder="Find an artist"
+											hx-get="/artists"
+											hx-trigger="keyup changed delay:500ms, search"
+											hx-target="#search-results"
+											hx-disabled-elt="this"
+										/>
+									</p>
+								</div>
+							</div>
+						</div>
+					</nav>
+					@ArtistBlock(c)
+				</div>
+			</div>
+		</section>
 	}
 }
 
@@ -74,51 +108,15 @@ templ artistsTable(list []Artist) {
 }
 
 templ ArtistBlock(c ArtistsView) {
-	<head>
-		<title>{ utils.GetTitle(ctx) }</title>
-	</head>
-	<section class="section">
-		<div class="container">
-			<div class="box">
-				<nav class="level">
-					<div class="level-left">
-						<div class="level-item">
-							<p class="subtitle is-5">
-								<strong>{ c.Count }</strong> artists
-							</p>
-						</div>
-						<div class="level-item">
-							<div class="field has-addons">
-								<p class="control">
-									<input
-										class="input"
-										type="search"
-										name="q"
-										placeholder="Find an artist"
-										hx-get="/artists"
-										hx-trigger="keyup changed delay:500ms, search"
-										hx-target="#search-results"
-										hx-disabled-elt="this"
-									/>
-								</p>
-							</div>
-						</div>
-					</div>
-				</nav>
-				<div id="search-results">
-					<div class="table-container">
-						@artistsTable(c.Artists)
-					</div>
-					// <nav class="pagination" role="navigation" aria-label="pagination">
-					//     {{.Pagination}}
-					// </nav>
-					// {{range .Content}}
-					<script type="application/ld+json">
-					    {c.Jsonld}
-					</script>
-					// {{end}}
-				</div>
-			</div>
+	<div id="search-results">
+		<div class="table-container">
+			@artistsTable(c.Artists)
 		</div>
-	</section>
+		<nav class="pagination" role="navigation" aria-label="pagination">
+			@templ.Raw(c.Pagination)
+		</nav>
+		// {{range .Content}}
+		@templ.Raw(c.Jsonld)
+		// {{end}}
+	</div>
 }
