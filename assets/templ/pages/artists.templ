@@ -25,44 +25,48 @@ type ArtistsView struct {
 	Jsonld     string
 }
 
-templ ArtistsPage(c ArtistsView) {
+templ ArtistsPageFull(c ArtistsView) {
 	@layouts.LayoutMain() {
-		<head>
-			<title>{ utils.GetTitle(ctx) }</title>
-		</head>
-		<section class="section">
-			<div class="container">
-				<div class="box">
-					<nav class="level">
-						<div class="level-left">
-							<div class="level-item">
-								<p class="subtitle is-5">
-									<strong>{ c.Count }</strong> artists
+		@ArtistsPageBlock(c)
+	}
+}
+
+templ ArtistsPageBlock(c ArtistsView) {
+	<head>
+		<title>{ utils.GetTitle(ctx) }</title>
+	</head>
+	<section class="section">
+		<div class="container">
+			<div class="box">
+				<nav class="level">
+					<div class="level-left">
+						<div class="level-item">
+							<p class="subtitle is-5">
+								<strong>{ c.Count }</strong> artists
+							</p>
+						</div>
+						<div class="level-item">
+							<div class="field has-addons">
+								<p class="control">
+									<input
+										class="input"
+										type="search"
+										name="q"
+										placeholder="Find an artist"
+										hx-get="/artists"
+										hx-trigger="keyup changed delay:500ms, search"
+										hx-target="#search-results"
+										hx-disabled-elt="this"
+									/>
 								</p>
 							</div>
-							<div class="level-item">
-								<div class="field has-addons">
-									<p class="control">
-										<input
-											class="input"
-											type="search"
-											name="q"
-											placeholder="Find an artist"
-											hx-get="/artists"
-											hx-trigger="keyup changed delay:500ms, search"
-											hx-target="#search-results"
-											hx-disabled-elt="this"
-										/>
-									</p>
-								</div>
-							</div>
 						</div>
-					</nav>
-					@ArtistsBlock(c)
-				</div>
+					</div>
+				</nav>
+				@ArtistsSearchResults(c)
 			</div>
-		</section>
-	}
+		</div>
+	</section>
 }
 
 templ artistsTable(list []Artist) {
@@ -112,7 +116,7 @@ templ artistsTable(list []Artist) {
 	</table>
 }
 
-templ ArtistsBlock(c ArtistsView) {
+templ ArtistsSearchResults(c ArtistsView) {
 	<div id="search-results">
 		<div class="table-container">
 			@artistsTable(c.Artists)
