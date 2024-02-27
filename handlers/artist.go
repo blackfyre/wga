@@ -1,13 +1,19 @@
 package handlers
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
 
 	"github.com/blackfyre/wga/assets"
-	wgamodels "github.com/blackfyre/wga/models"
+	"github.com/blackfyre/wga/assets/templ/components"
+	"github.com/blackfyre/wga/assets/templ/pages"
+	tmplUtils "github.com/blackfyre/wga/assets/templ/utils"
+	wgaModels "github.com/blackfyre/wga/models"
 	"github.com/blackfyre/wga/utils"
 	"github.com/blackfyre/wga/utils/jsonld"
 	"github.com/blackfyre/wga/utils/url"
@@ -100,124 +106,120 @@ func normalizedBioExcerpt(r *models.Record) string {
 // It also sets the HX-Push-Url header to enable Htmx push for the artist page.
 func processArtist(c echo.Context, app *pocketbase.PocketBase) error {
 	slug := c.PathParam("name")
-	cacheKey := "artist:" + slug
 
 	htmx := utils.IsHtmxRequest(c)
 
-	if htmx {
-		cacheKey = cacheKey + "-htmx"
+	id := utils.ExtractIdFromString(slug)
+
+	fullUrl := c.Scheme() + "://" + c.Request().Host + c.Request().URL.String()
+	artist, err := app.Dao().FindRecordById("artists", id)
+
+	if err != nil {
+		app.Logger().Error("Artist not found: ", slug, err)
+		return apis.NewNotFoundError("", err)
 	}
 
-	html := ""
+	expectedSlug := artist.GetString("slug") + "-" + artist.GetString("id")
 
-	found := app.Store().Has(cacheKey)
+	if slug != expectedSlug {
+		return c.Redirect(http.StatusMovedPermanently, "/artists/"+expectedSlug)
+	}
 
-	if found {
-		html = app.Store().Get(cacheKey).(string)
-	} else {
+	works, err := app.Dao().FindRecordsByFilter("artworks", "author = '"+artist.GetString("id")+"'", "+title", 100, 0)
 
-		// split the slug on the last dash and use the last part as the artist id
+	if err != nil {
+		app.Logger().Error("Error finding artworks: ", err)
+		return apis.NewNotFoundError("", err)
+	}
 
-		slugParts := strings.Split(slug, "-")
-		id := slugParts[len(slugParts)-1]
+	school := artist.GetStringSlice("school")
 
-		fullUrl := os.Getenv("WGA_PROTOCOL") + "://" + c.Request().Host + c.Request().URL.String()
-		artist, err := app.Dao().FindRecordById("artists", id)
+	schoolCollector := []string{}
 
-		if err != nil {
-			app.Logger().Error("Artist not found: ", slug, err)
-			return apis.NewNotFoundError("", err)
-		}
-
-		expectedSlug := artist.GetString("slug") + "-" + artist.GetString("id")
-
-		if slug != expectedSlug {
-			return c.Redirect(http.StatusMovedPermanently, "/artists/"+expectedSlug)
-		}
-
-		works, err := app.Dao().FindRecordsByFilter("artworks", "author = '"+artist.GetString("id")+"'", "+title", 100, 0)
+	for _, s := range school {
+		r, err := app.Dao().FindRecordById("schools", s)
 
 		if err != nil {
-			app.Logger().Error("Error finding artworks: ", err)
-			return apis.NewNotFoundError("", err)
+			app.Logger().Error("school not found", err)
+			continue
 		}
 
-		data := assets.NewRenderData(app)
+		schoolCollector = append(schoolCollector, r.GetString("name"))
 
-		data["Name"] = artist.GetString("name")
-		data["Bio"] = artist.GetString("bio")
-		data["Works"] = []map[string]any{}
-		data["Slug"] = slug
-		data["BioExcerpt"] = normalizedBioExcerpt(artist)
-		data["CurrentUrl"] = fullUrl
-		data["Profession"] = artist.GetString("profession")
-		data["YearOfBirth"] = artist.GetString("year_of_birth")
-		data["YearOfDeath"] = artist.GetString("year_of_death")
-		data["PlaceOfBirth"] = artist.GetString("place_of_birth")
-		data["PlaceOfDeath"] = artist.GetString("place_of_death")
-		data["Jsonld"] = jsonld.GenerateArtistJsonLdContent(&wgamodels.Artist{
-			Name:         artist.GetString("name"),
-			Slug:         artist.GetString("slug"),
-			Bio:          artist.GetString("bio"),
-			YearOfBirth:  artist.GetInt("year_of_birth"),
-			YearOfDeath:  artist.GetInt("year_of_death"),
-			PlaceOfBirth: artist.GetString("place_of_birth"),
-			PlaceOfDeath: artist.GetString("place_of_death"),
-			Published:    artist.GetBool("published"),
-			School:       artist.GetString("school"),
-			Profession:   artist.GetString("profession"),
-		}, c)
+	}
 
-		for _, w := range works {
+	schools := strings.Join(schoolCollector, ", ")
 
-			jsonLd := jsonld.GenerateVisualArtworkJsonLdContent(w, c)
+	content := pages.Artist{
+		Name:       artist.GetString("name"),
+		Bio:        artist.GetString("bio"),
+		BioExcerpt: normalizedBioExcerpt(artist),
+		Schools:    schools,
+		Profession: artist.GetString("profession"),
+		Works:      components.ImageGrid{},
+	}
 
-			jsonLd["image"] = url.GenerateFileUrl("artworks", w.GetString("id"), w.GetString("image"), "")
-			jsonLd["url"] = fullUrl + "/" + utils.Slugify(w.GetString("title")) + "-" + w.GetString("id")
-			jsonLd["creator"] = jsonld.GenerateArtistJsonLdContent(&wgamodels.Artist{
-				Name:         artist.GetString("name"),
-				Slug:         artist.GetString("slug"),
-				Bio:          artist.GetString("bio"),
-				YearOfBirth:  artist.GetInt("year_of_birth"),
-				YearOfDeath:  artist.GetInt("year_of_death"),
-				PlaceOfBirth: artist.GetString("place_of_birth"),
-				PlaceOfDeath: artist.GetString("place_of_death"),
-				Published:    artist.GetBool("published"),
-				School:       artist.GetString("school"),
-				Profession:   artist.GetString("profession"),
-			}, c)
-			jsonLd["creator"].(map[string]any)["sameAs"] = fullUrl
-			jsonLd["thumbnailUrl"] = url.GenerateThumbUrl("artworks", w.GetString("id"), w.GetString("image"), "320x240", "")
+	JsonLd := jsonld.ArtistJsonLd(&wgaModels.Artist{
+		Id:           artist.GetId(),
+		Name:         artist.GetString("name"),
+		Slug:         artist.GetString("slug"),
+		Bio:          artist.GetString("bio"),
+		YearOfBirth:  artist.GetInt("year_of_birth"),
+		YearOfDeath:  artist.GetInt("year_of_death"),
+		PlaceOfBirth: artist.GetString("place_of_birth"),
+		PlaceOfDeath: artist.GetString("place_of_death"),
+		Published:    artist.GetBool("published"),
+		School:       schools,
+		Profession:   artist.GetString("profession"),
+	}, c)
 
-			data["Works"] = append(data["Works"].([]map[string]any), map[string]any{
-				"Id":        w.GetId(),
-				"Title":     w.GetString("title"),
-				"Comment":   w.GetString("comment"),
-				"Technique": w.GetString("technique"),
-				"Image":     jsonLd["image"].(string),
-				"Thumb":     jsonLd["thumbnailUrl"].(string),
-				"Jsonld":    jsonLd,
-				"Url":       c.Request().URL.String() + "/" + utils.Slugify(w.GetString("title")) + "-" + w.GetString("id"),
-			})
+	marshalled, err := json.Marshal(JsonLd)
+
+	if err != nil {
+		app.Logger().Error("Error marshalling artist jsonld for"+id, err)
+	}
+
+	content.Jsonld = fmt.Sprintf(`<script type="application/ld+json">%s</script>`, marshalled)
+
+	for _, w := range works {
+
+		artJsonLd := jsonld.ArtworkJsonLd(w, c)
+
+		marshalled, err := json.Marshal(artJsonLd)
+
+		if err != nil {
+			app.Logger().Error("Error marshalling artwork jsonld for"+w.GetId(), err)
 		}
 
-		html, err = assets.Render(assets.Renderable{
-			IsHtmx: htmx,
-			Block:  "artist:content",
-			Data:   data,
+		content.Works = append(content.Works, components.Image{
+			Id:        w.GetId(),
+			Title:     w.GetString("title"),
+			Comment:   w.GetString("comment"),
+			Technique: w.GetString("technique"),
+			Image:     url.GenerateFileUrl("artworks", w.GetString("id"), w.GetString("image"), ""),
+			Thumb:     url.GenerateThumbUrl("artworks", w.GetString("id"), w.GetString("image"), "320x240", ""),
+			Url:       c.Request().URL.String() + "/" + utils.Slugify(w.GetString("title")) + "-" + w.GetString("id"),
+			Jsonld:    fmt.Sprintf(`<script type="application/ld+json">%s</script>`, marshalled),
 		})
-
-		if err != nil {
-			// or redirect to a dedicated 404 HTML page
-			return apis.NewNotFoundError("", err)
-		}
-
-		app.Store().Set(cacheKey, html)
 	}
 
-	c.Response().Header().Set("HX-Push-Url", "/artists/"+slug)
+	ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", content.Name, content.BioExcerpt))
 
-	return c.HTML(http.StatusOK, html)
+	if htmx {
+		c.Response().Header().Set("HX-Push-Url", fullUrl)
+		err = pages.ArtistBlock(content).Render(ctx, c.Response().Writer)
+
+	} else {
+		err = pages.ArtistPage(content).Render(ctx, c.Response().Writer)
+
+	}
+
+	if err != nil {
+		app.Logger().Error("Error rendering home page", err)
+		return c.String(http.StatusInternalServerError, "failed to render response template")
+	}
+
+	return nil
 }
 
 // processArtwork processes the artwork based on the given context and PocketBase application.
@@ -300,7 +302,7 @@ func processArtwork(c echo.Context, app *pocketbase.PocketBase) error {
 
 		jsonLd["image"] = url.GenerateFileUrl("artworks", aw.GetString("id"), aw.GetString("image"), "")
 		jsonLd["url"] = fullUrl
-		jsonLd["creator"] = jsonld.GenerateArtistJsonLdContent(&wgamodels.Artist{
+		jsonLd["creator"] = jsonld.GenerateArtistJsonLdContent(&wgaModels.Artist{
 			Name:         artist.GetString("name"),
 			Slug:         artist.GetString("slug"),
 			Bio:          artist.GetString("bio"),
