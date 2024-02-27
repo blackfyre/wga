@@ -51,7 +51,7 @@ templ ImageCard(i Image, hasLearnMore bool) {
 		</div>
 		<footer class="card-footer">
 			if hasLearnMore {
-				<a class="card-footer-item" href="{{.Url}}" hx-get="{{.Url}}" hx-target="#mc-area">
+				<a class="card-footer-item" href={ templ.SafeURL(i.Url) } hx-get={ i.Url } hx-target="#mc-area">
 					Learn
 					More
 				</a>
@@ -59,7 +59,7 @@ templ ImageCard(i Image, hasLearnMore bool) {
 			<a
 				href="#"
 				hx-on="click: document.getElementById('d').showModal();"
-				hx-get="/postcard/send?awid={{.Id}}"
+				hx-get={ `/postcard/send?awid=` + i.Id }
 				hx-target="#d"
 				class="card-footer-item"
 			>
