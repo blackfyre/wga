@@ -21,6 +21,11 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
+// processArtists is a function that handles the processing of artists in the application.
+// It takes a PocketBase instance and an echo.Context as parameters.
+// The function retrieves artists based on the provided search expression and pagination parameters.
+// It then renders the artists' information in different views based on the request type (HTML or HTMX).
+// The function returns an error if there is any issue with retrieving or rendering the artists' information.
 func processArtists(app *pocketbase.PocketBase, c echo.Context) error {
 
 	limit := 30
@@ -183,6 +188,8 @@ func processArtists(app *pocketbase.PocketBase, c echo.Context) error {
 
 }
 
+// registerArtists registers the "/artists" route in the provided PocketBase application.
+// It adds a GET handler for the "/artists" route that calls the processArtists function.
 func registerArtists(app *pocketbase.PocketBase) {
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
