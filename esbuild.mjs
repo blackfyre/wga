@@ -57,6 +57,7 @@ let result = await esbuild.build({
             ],
             content: [
               "assets/templ/**/*.templ",
+              "assets/templ/**/*.go",
               "resources/js/**/*.js",
               "utils/**/*.go",
             ],
