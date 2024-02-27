@@ -1,0 +1,127 @@
+package pages
+
+import (
+	"github.com/blackfyre/wga/assets/templ/layouts"
+	"github.com/blackfyre/wga/assets/templ/utils"
+	"github.com/blackfyre/wga/assets/templ/components"
+)
+
+type Artist struct {
+	Name       string
+	BornDied   string
+	Schools    string
+	Profession string
+	Url        string
+	BioExcerpt string
+	Jsonld     string
+	Bio        string
+	Works      components.ImageGrid
+}
+
+type ArtistsView struct {
+	Count      string
+	Artists    []Artist
+	Pagination string
+	Jsonld     string
+}
+
+templ ArtistsPage(c ArtistsView) {
+	@layouts.LayoutMain() {
+		<head>
+			<title>{ utils.GetTitle(ctx) }</title>
+		</head>
+		<section class="section">
+			<div class="container">
+				<div class="box">
+					<nav class="level">
+						<div class="level-left">
+							<div class="level-item">
+								<p class="subtitle is-5">
+									<strong>{ c.Count }</strong> artists
+								</p>
+							</div>
+							<div class="level-item">
+								<div class="field has-addons">
+									<p class="control">
+										<input
+											class="input"
+											type="search"
+											name="q"
+											placeholder="Find an artist"
+											hx-get="/artists"
+											hx-trigger="keyup changed delay:500ms, search"
+											hx-target="#search-results"
+											hx-disabled-elt="this"
+										/>
+									</p>
+								</div>
+							</div>
+						</div>
+					</nav>
+					@ArtistsBlock(c)
+				</div>
+			</div>
+		</section>
+	}
+}
+
+templ artistsTable(list []Artist) {
+	<table class="table is-hoverable is-fullwidth">
+		<thead>
+			<tr>
+				<th>
+					ARTIST
+				</th>
+				<th>
+					BORN-DIED
+				</th>
+				<th>
+					School(s)
+				</th>
+				<th>
+					Profession
+				</th>
+			</tr>
+		</thead>
+		<tbody>
+			for _, a := range list {
+				<tr>
+					<td><a href={ templ.SafeURL(a.Url) } hx-get={ a.Url } hx-target="#mc-area"><b>{ a.Name }</b></a></td>
+					<td>{ a.BornDied }</td>
+					<td>{ a.Schools }</td>
+					<td>{ a.Profession }</td>
+				</tr>
+			}
+		</tbody>
+		<tfoot>
+			<tr>
+				<th>
+					ARTIST
+				</th>
+				<th>
+					BORN-DIED
+				</th>
+				<th>
+					PERIOD
+				</th>
+				<th>
+					SCHOOL
+				</th>
+			</tr>
+		</tfoot>
+	</table>
+}
+
+templ ArtistsBlock(c ArtistsView) {
+	<div id="search-results">
+		<div class="table-container">
+			@artistsTable(c.Artists)
+		</div>
+		<nav class="pagination" role="navigation" aria-label="pagination">
+			@templ.Raw(c.Pagination)
+		</nav>
+		// {{range .Content}}
+		@templ.Raw(c.Jsonld)
+		// {{end}}
+	</div>
+}

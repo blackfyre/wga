@@ -1,14 +1,27 @@
 package components
 
-templ ImageBase(ThumbUrl string, ImageUrl string, Title string, Technique string) {
+type Image struct {
+	Thumb     string
+	Image     string
+	Title     string
+	Technique string
+	Comment   string
+	Url       string
+	Id        string
+	Jsonld    interface{}
+}
+
+type ImageGrid []Image
+
+templ ImageBase(i Image) {
 	<figure class="image is-4by3 hidden-caption">
 		<picture>
-			<source media="(max-width: 768px)" srcset={ ThumbUrl }/>
-			<source media="(min-width: 769px)" srcset={ ThumbUrl }/>
-			<source media="(min-width: 1024px)" srcset={ ThumbUrl }/>
-			<img src={ ImageUrl } alt="{Title}" loading="lazy" alt="{ Title } -  { Technique }"/>
+			<source media="(max-width: 768px)" srcset={ i.Thumb }/>
+			<source media="(min-width: 769px)" srcset={ i.Thumb }/>
+			<source media="(min-width: 1024px)" srcset={ i.Thumb }/>
+			<img src={ i.Image } alt={ i.Title } loading="lazy" alt="{ i.Title } -  { i.Technique }"/>
 		</picture>
-		<figcaption>{ Title } -  { Technique } </figcaption>
+		<figcaption>{ i.Title } -  { i.Technique } </figcaption>
 	</figure>
 }
 
@@ -20,4 +33,49 @@ templ ImageBig(ImageUrl string, Title string, Artist string) {
 		<img src={ ImageUrl } alt="{ Title } by { Artist }"/>
 		<figcaption>{ Title } by { Artist }</figcaption>
 	</figure>
+}
+
+templ ImageCard(i Image, hasLearnMore bool) {
+	<section class="card is-art-card">
+		<div class="card-image">
+			@ImageBase(i)
+		</div>
+		<div class="card-content">
+			<div>
+				<h3 class="title is-size-3">{ i.Title }</h3>
+				<p class="subtitle">{  i.Technique  }</p>
+				<div class="line-clamp-3 content">
+					@templ.Raw(i.Comment)
+				</div>
+			</div>
+		</div>
+		<footer class="card-footer">
+			if hasLearnMore {
+				<a class="card-footer-item" href="{{.Url}}" hx-get="{{.Url}}" hx-target="#mc-area">
+					Learn
+					More
+				</a>
+			}
+			<a
+				href="#"
+				hx-on="click: document.getElementById('d').showModal();"
+				hx-get="/postcard/send?awid={{.Id}}"
+				hx-target="#d"
+				class="card-footer-item"
+			>
+				Send
+				Postcard
+			</a>
+		</footer>
+	</section>
+}
+
+templ ImageGridComponent(i ImageGrid, hasLearnMore bool) {
+	<div class="columns is-multiline is-mobile works-listing" data-viewer>
+		for _, img := range i {
+			<div class="column is-one-third-tablet is-one-quarter-desktop">
+				@ImageCard(img, hasLearnMore)
+			</div>
+		}
+	</div>
 }
