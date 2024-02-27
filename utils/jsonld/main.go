@@ -57,7 +57,7 @@ func GenerateArtistJsonLdContent(r *wgamodels.Artist, c echo.Context) map[string
 func ArtistJsonLd(r *wgamodels.Artist, c echo.Context) Person {
 	return newPerson(Person{
 		Name:      r.Name,
-		Url:       c.Scheme() + "://" + c.Request().Host + "/artists/" + r.Slug + "-" + r.GetId(),
+		Url:       c.Scheme() + "://" + c.Request().Host + "/artists/" + r.Slug + "-" + r.Id,
 		BirthDate: fmt.Sprint(r.YearOfBirth),
 		DeathDate: fmt.Sprint(r.YearOfDeath),
 		PlaceOfBirth: newPlace(Place{
