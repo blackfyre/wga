@@ -116,15 +116,18 @@ func registerArtists(app *pocketbase.PocketBase) {
 
 				}
 
+				schools := strings.Join(schoolCollector, ", ")
+
 				content.Artists = append(content.Artists, pages.Artist{
 					Name:       m.GetString("name"),
 					Url:        artistUrl(m),
 					Profession: m.GetString("profession"),
 					BornDied:   normalizedBirthDeathActivity(m),
-					Schools:    strings.Join(schoolCollector, ", "),
+					Schools:    schools,
 				})
 
 				jsonLdCollector = append(jsonLdCollector, jsonld.ArtistJsonLd(&wgaModels.Artist{
+					Id:           m.GetId(),
 					Name:         m.GetString("name"),
 					Slug:         m.GetString("slug"),
 					Bio:          m.GetString("bio"),
@@ -133,7 +136,7 @@ func registerArtists(app *pocketbase.PocketBase) {
 					PlaceOfBirth: m.GetString("place_of_birth"),
 					PlaceOfDeath: m.GetString("place_of_death"),
 					Published:    m.GetBool("published"),
-					School:       m.GetString("school"),
+					School:       schools,
 					Profession:   m.GetString("profession"),
 				}, c))
 
@@ -156,10 +159,17 @@ func registerArtists(app *pocketbase.PocketBase) {
 
 			if confirmedHtmxRequest {
 				c.Response().Header().Set("HX-Push-Url", currentUrl)
-				err = pages.ArtistBlock(content).Render(ctx, c.Response().Writer)
+
+				if searchExpression != "" {
+					err = pages.ArtistsBlock(content).Render(ctx, c.Response().Writer)
+
+				} else {
+					err = pages.ArtistsPage(content).Render(ctx, c.Response().Writer)
+
+				}
 
 			} else {
-				err = pages.ArtistPage(content).Render(ctx, c.Response().Writer)
+				err = pages.ArtistsPage(content).Render(ctx, c.Response().Writer)
 
 			}
 
