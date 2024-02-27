@@ -9,6 +9,7 @@ import (
 // WIP - this is a work in progress
 type Artist struct {
 	models.BaseModel
+	Id           string `db:"id" json:"id"`
 	Name         string `db:"name" json:"name"`
 	Slug         string `db:"slug" json:"slug"`
 	Bio          string `db:"bio" json:"bio"`
