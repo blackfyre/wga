@@ -20,7 +20,7 @@ templ ArtistPage(c Artist) {
 templ ArtistBlock(a Artist) {
 	<section class="section">
 		<div class="container">
-			<article>
+			<article class="box">
 				<!-- Main container -->
 				<div class="level">
 					<!-- Left side -->
@@ -35,12 +35,10 @@ templ ArtistBlock(a Artist) {
 						</div>
 					</div>
 				</div>
+				<div class="content">
+					@templ.Raw(a.Bio)
+				</div>
 			</article>
-			<div class="divider">Biography</div>
-			<div class="content">
-				@templ.Raw(a.Bio)
-			</div>
-			<div class="divider">Works</div>
 			@components.ImageGridComponent(a.Works, true)
 			@templ.Raw(a.Jsonld)
 		</div>
