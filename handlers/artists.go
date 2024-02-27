@@ -30,7 +30,8 @@ func registerArtists(app *pocketbase.PocketBase) {
 			limit := 30
 			page := 1
 			searchExpression := ""
-			confirmedHtmxRequest := utils.IsHtmxRequest(c)
+			searchExpressionPresent := false
+			isHtmx := utils.IsHtmxRequest(c)
 			currentUrl := c.Request().URL.String()
 			c.Response().Header().Set("HX-Push-Url", currentUrl)
 
@@ -42,6 +43,10 @@ func registerArtists(app *pocketbase.PocketBase) {
 					app.Logger().Error("Invalid page: ", c.QueryParam("page"), err)
 					return apis.NewBadRequestError("Invalid page", err)
 				}
+			}
+
+			if c.QueryParams().Has("q") {
+				searchExpressionPresent = true
 			}
 
 			if c.QueryParam("q") != "" {
@@ -157,19 +162,19 @@ func registerArtists(app *pocketbase.PocketBase) {
 
 			ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, "Artists")
 
-			if confirmedHtmxRequest {
+			if isHtmx {
 				c.Response().Header().Set("HX-Push-Url", currentUrl)
 
-				if searchExpression != "" {
-					err = pages.ArtistsBlock(content).Render(ctx, c.Response().Writer)
+				if len(searchExpression) > 0 || searchExpressionPresent {
+					err = pages.ArtistsSearchResults(content).Render(ctx, c.Response().Writer)
 
 				} else {
-					err = pages.ArtistsPage(content).Render(ctx, c.Response().Writer)
+					err = pages.ArtistsPageBlock(content).Render(ctx, c.Response().Writer)
 
 				}
 
 			} else {
-				err = pages.ArtistsPage(content).Render(ctx, c.Response().Writer)
+				err = pages.ArtistsPageFull(content).Render(ctx, c.Response().Writer)
 
 			}
 
