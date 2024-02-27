@@ -35,7 +35,15 @@ let result = await esbuild.build({
         const { css } = await postcss([
           autoprefixer,
           purgeCSSPlugin({
-            safelist: ["content"],
+            safelist: [
+              "content",
+              "is-multiline",
+              "is-4by3",
+              "hidden-caption",
+              "divider",
+              "card",
+              "image",
+            ],
             content: [
               "assets/templ/**/*.templ",
               "resources/js/**/*.js",
