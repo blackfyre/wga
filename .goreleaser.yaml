@@ -10,9 +10,9 @@ before:
   hooks:
     # You may remove this if you don't use go modules.
     - npm ci
-    - node esbuild.mjs
-    - go mod tidy
     - templ generate
+    - go mod tidy
+    - node esbuild.mjs
     # you may remove this if you don't need go generate
     # - go generate ./...
 
