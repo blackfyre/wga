@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/blackfyre/wga/assets/templ/components"
+	"github.com/blackfyre/wga/assets/templ/error_pages"
 	"github.com/blackfyre/wga/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/assets/templ/utils"
 	wgaModels "github.com/blackfyre/wga/models"
@@ -127,7 +128,8 @@ func processArtist(c echo.Context, app *pocketbase.PocketBase) error {
 
 	if err != nil {
 		app.Logger().Error("Error finding artworks: ", err)
-		return apis.NewNotFoundError("", err)
+
+		return utils.NotFoundError(c)
 	}
 
 	school := artist.GetStringSlice("school")
@@ -211,12 +213,16 @@ func processArtist(c echo.Context, app *pocketbase.PocketBase) error {
 
 	} else {
 		err = pages.ArtistPage(content).Render(ctx, c.Response().Writer)
-
 	}
 
 	if err != nil {
 		app.Logger().Error("Error rendering artist page", err)
-		return c.String(http.StatusInternalServerError, "failed to render response template")
+
+		if htmx {
+			return error_pages.ServerFaultBlock().Render(ctx, c.Response().Writer)
+		}
+
+		return error_pages.ServerFaultPage().Render(ctx, c.Response().Writer)
 	}
 
 	return nil
@@ -247,7 +253,7 @@ func processArtwork(c echo.Context, app *pocketbase.PocketBase) error {
 	// if the artist is not found, return a not found error
 	if err != nil {
 		app.Logger().Error("Artist not found: ", artistSlug, err)
-		return apis.NewNotFoundError("", err)
+		return utils.NotFoundError(c)
 	}
 
 	// generate the expected slug for the artist
@@ -262,7 +268,7 @@ func processArtwork(c echo.Context, app *pocketbase.PocketBase) error {
 
 	if err != nil {
 		app.Logger().Error("Error finding artwork: ", artworkSlug, err)
-		return apis.NewNotFoundError("", err)
+		return utils.NotFoundError(c)
 	}
 
 	// generate the expected slug for the artwork
