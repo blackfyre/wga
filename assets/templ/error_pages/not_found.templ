@@ -1,0 +1,21 @@
+package error_pages
+
+import (
+	"github.com/blackfyre/wga/assets/templ/layouts"
+)
+
+templ NotFoundPage() {
+	@layouts.LayoutMain() {
+		<head>
+			<title>404 - Content not found!</title>
+		</head>
+		@NotFoundBlock()
+	}
+}
+
+templ NotFoundBlock() {
+	<div class="error">
+		<h1>404</h1>
+		<p>Page not found</p>
+	</div>
+}
