@@ -14,8 +14,14 @@ templ ServerFaultPage() {
 }
 
 templ ServerFaultBlock() {
-	<div class="error">
-		<h1>500</h1>
-		<p>Server Fault</p>
+	<div class="is-flex is-justify-content-center is-align-items-center">
+		<div class="has-text-centered">
+			<h1 class="is-size-1 has-text-weight-bold has-text-primary">500</h1>
+			<p class="is-size-5 has-text-weight-medium"><span class="has-text-danger">Opps!</span> Internal Server Error</p>
+			<p class="is-size-6 mb-4">
+				Something went wrong on our end. We are working on it. Please try again later.
+			</p>
+			<a href="/" hx-get="/" hx-target="#mc-area" class="button is-primary">Go Home</a>
+		</div>
 	</div>
 }
