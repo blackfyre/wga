@@ -55,6 +55,11 @@ let result = await esbuild.build({
               "fa-times",
               "fa-2x",
               "mb-2",
+              "has-sticky-header",
+              "is-sticky",
+              "is-reversed-mobile",
+              "is-clipped",
+              "bottom-level",
             ],
             content: [
               "assets/templ/**/*.templ",
