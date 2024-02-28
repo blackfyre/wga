@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"strconv"
 	"strings"
 
@@ -75,7 +74,7 @@ func processArtists(app *pocketbase.PocketBase, c echo.Context) error {
 
 	if err != nil {
 		app.Logger().Error("Failed to get artist records: ", err)
-		return apis.NewBadRequestError("Invalid page", err)
+		return utils.ServerFaultError(c)
 	}
 
 	totalRecords, err := app.Dao().FindRecordsByFilter(
@@ -91,7 +90,7 @@ func processArtists(app *pocketbase.PocketBase, c echo.Context) error {
 
 	if err != nil {
 		app.Logger().Error("Failed to get total records: ", err)
-		return apis.NewBadRequestError("Invalid page", err)
+		return utils.ServerFaultError(c)
 	}
 
 	recordsCount := len(totalRecords)
@@ -180,8 +179,8 @@ func processArtists(app *pocketbase.PocketBase, c echo.Context) error {
 	}
 
 	if err != nil {
-		app.Logger().Error("Error rendering home page", err)
-		return c.String(http.StatusInternalServerError, "failed to render response template")
+		app.Logger().Error("Error rendering artists", err)
+		return utils.ServerFaultError(c)
 	}
 
 	return nil
