@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/blackfyre/wga/assets"
-	"github.com/blackfyre/wga/assets/templ/error_pages"
 	"github.com/blackfyre/wga/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/assets/templ/utils"
 	"github.com/blackfyre/wga/models"
@@ -45,11 +44,8 @@ func registerStatic(app *pocketbase.PocketBase) {
 
 			if err != nil {
 				app.Logger().Error("Error retrieving static page", "page", slug, err)
-				if isHtmx {
-					return error_pages.NotFoundBlock().Render(context.Background(), c.Response().Writer)
-				} else {
-					return error_pages.NotFoundPage().Render(context.Background(), c.Response().Writer)
-				}
+
+				return utils.NotFoundError(c)
 			}
 
 			content := pages.StaticPageDTO{
