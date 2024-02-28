@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"embed"
 	"errors"
 	"fmt"
@@ -11,6 +12,8 @@ import (
 	"strings"
 
 	"github.com/blackfyre/wga/assets"
+	"github.com/blackfyre/wga/assets/templ/pages"
+	tmplUtils "github.com/blackfyre/wga/assets/templ/utils"
 	"github.com/blackfyre/wga/models"
 	"github.com/blackfyre/wga/utils"
 	"github.com/labstack/echo/v5"
@@ -35,6 +38,7 @@ func registerStatic(app *pocketbase.PocketBase) {
 		// "Static" pages
 		e.Router.GET("/pages/:slug", func(c echo.Context) error {
 
+			isHtmx := utils.IsHtmxRequest(c)
 			slug := c.PathParam("slug")
 
 			page, err := models.FindStaticPageBySlug(app.Dao(), slug)
@@ -44,26 +48,28 @@ func registerStatic(app *pocketbase.PocketBase) {
 				return err
 			}
 
-			d := assets.NewRenderData(app)
-
-			d["Title"] = page.Title
-			d["Slug"] = page.Slug
-			d["Content"] = page.Content
-
-			html, err := assets.Render(assets.Renderable{
-				IsHtmx: utils.IsHtmxRequest(c),
-				Block:  "staticpage:content",
-				Data:   d,
-			})
-
-			if err != nil {
-				app.Logger().Error("Error rendering static page", "page", slug, err)
-				return err
+			content := pages.StaticPageDTO{
+				Title:   page.Title,
+				Content: page.Content,
 			}
 
-			c.Response().Header().Set("HX-Push-Url", "/pages/"+slug)
+			ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, page.Title)
 
-			return c.HTML(http.StatusOK, html)
+			if isHtmx {
+				c.Response().Header().Set("HX-Push-Url", "/pages/"+slug)
+				err = pages.StaticPageBlock(content).Render(ctx, c.Response().Writer)
+
+			} else {
+				err = pages.StaticPage(content).Render(ctx, c.Response().Writer)
+
+			}
+
+			if err != nil {
+				app.Logger().Error("Error rendering artwork page", err)
+				return c.String(http.StatusInternalServerError, "failed to render response template")
+			}
+
+			return nil
 
 		})
 		return nil
