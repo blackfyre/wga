@@ -1,0 +1,21 @@
+package error_pages
+
+import (
+	"github.com/blackfyre/wga/assets/templ/layouts"
+)
+
+templ ServerFaultPage() {
+	@layouts.LayoutMain() {
+		<head>
+			<title>500 - Server Fault</title>
+		</head>
+		@NotFoundBlock()
+	}
+}
+
+templ ServerFaultBlock() {
+	<div class="error">
+		<h1>500</h1>
+		<p>Server Fault</p>
+	</div>
+}
