@@ -1,0 +1,35 @@
+package pages
+
+import (
+	"github.com/blackfyre/wga/assets/templ/layouts"
+	"github.com/blackfyre/wga/assets/templ/utils"
+)
+
+type StaticPageDTO struct {
+	Title   string
+	Content string
+}
+
+templ StaticPage(sp StaticPageDTO) {
+	@layouts.LayoutMain() {
+		<head>
+			<title>{ utils.GetTitle(ctx) }</title>
+		</head>
+		@StaticPageBlock(sp)
+	}
+}
+
+templ StaticPageBlock(sp StaticPageDTO) {
+	<section class="section">
+		<article class="container">
+			<div class="box">
+				<h1 class="title is-size-1">
+					{ sp.Title }
+				</h1>
+				<div class="content">
+					@templ.Raw(sp.Content)
+				</div>
+			</div>
+		</article>
+	</section>
+}
