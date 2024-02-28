@@ -5,13 +5,13 @@ import (
 	"embed"
 	"errors"
 	"fmt"
-	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/blackfyre/wga/assets"
+	"github.com/blackfyre/wga/assets/templ/error_pages"
 	"github.com/blackfyre/wga/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/assets/templ/utils"
 	"github.com/blackfyre/wga/models"
@@ -45,7 +45,11 @@ func registerStatic(app *pocketbase.PocketBase) {
 
 			if err != nil {
 				app.Logger().Error("Error retrieving static page", "page", slug, err)
-				return err
+				if isHtmx {
+					return error_pages.NotFoundBlock().Render(context.Background(), c.Response().Writer)
+				} else {
+					return error_pages.NotFoundPage().Render(context.Background(), c.Response().Writer)
+				}
 			}
 
 			content := pages.StaticPageDTO{
@@ -57,19 +61,12 @@ func registerStatic(app *pocketbase.PocketBase) {
 
 			if isHtmx {
 				c.Response().Header().Set("HX-Push-Url", "/pages/"+slug)
-				err = pages.StaticPageBlock(content).Render(ctx, c.Response().Writer)
+				return pages.StaticPageBlock(content).Render(ctx, c.Response().Writer)
 
 			} else {
-				err = pages.StaticPage(content).Render(ctx, c.Response().Writer)
+				return pages.StaticPage(content).Render(ctx, c.Response().Writer)
 
 			}
-
-			if err != nil {
-				app.Logger().Error("Error rendering artwork page", err)
-				return c.String(http.StatusInternalServerError, "failed to render response template")
-			}
-
-			return nil
 
 		})
 		return nil
