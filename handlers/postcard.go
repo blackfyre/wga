@@ -58,6 +58,11 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 				Technique: r.GetString("technique"),
 			}).Render(ctx, c.Response().Writer)
 
+			if err != nil {
+				app.Logger().Error(fmt.Sprintf("Failed to render the postcard editor with image_id %s", awid), err)
+				error_pages.ServerFaultBlock().Render(ctx, c.Response().Writer)
+			}
+
 			return nil
 
 		})
