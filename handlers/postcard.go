@@ -1,15 +1,16 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 
 	"github.com/blackfyre/wga/assets"
+	"github.com/blackfyre/wga/assets/templ/components"
+	"github.com/blackfyre/wga/assets/templ/error_pages"
 	"github.com/blackfyre/wga/utils"
 	"github.com/blackfyre/wga/utils/url"
-	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v5"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/pocketbase/pocketbase"
@@ -19,37 +20,8 @@ import (
 	"github.com/pocketbase/pocketbase/models"
 )
 
-// renderPostcardEditor renders the postcard editor HTML for a given artwork ID.
-// It takes the artwork ID, a PocketBase app instance, and an Echo context as input.
-// It returns the rendered HTML and an error if any occurred.
-func renderPostcardEditor(awid string, app *pocketbase.PocketBase, c echo.Context) (string, error) {
-	r, err := app.Dao().FindRecordById("artworks", awid)
-
-	if err != nil {
-		return "", apis.NewNotFoundError("", err)
-	}
-
-	html, err := assets.RenderBlock("postcard:editor", map[string]any{
-		"Image":     url.GenerateFileUrl("artworks", awid, r.GetString("image"), ""),
-		"ImageId":   awid,
-		"Title":     r.GetString("title"),
-		"Comment":   r.GetString("comment"),
-		"Technique": r.GetString("technique"),
-	})
-
-	if err != nil {
-		return "", apis.NewBadRequestError("", err)
-	}
-
-	return html, nil
-}
-
+// registerPostcardHandlers registers the postcard handlers
 func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) {
-
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("Error loading .env file")
-	}
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 
@@ -68,14 +40,25 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 				return apis.NewBadRequestError("awid is empty", nil)
 			}
 
-			html, err := renderPostcardEditor(awid, app, c)
+			ctx := context.Background()
+
+			r, err := app.Dao().FindRecordById("artworks", awid)
 
 			if err != nil {
-				app.Logger().Error(fmt.Sprintf("Failed to render the postcard form for awid %s", awid), err)
-				return err
+				app.Logger().Error("Failed to find artwork "+awid, err)
+				error_pages.NotFoundBlock().Render(ctx, c.Response().Writer)
+				return nil
 			}
 
-			return c.HTML(http.StatusOK, html)
+			err = components.PostcardEditor(components.PostcardEditorDTO{
+				Image:     url.GenerateFileUrl("artworks", awid, r.GetString("image"), ""),
+				ImageId:   awid,
+				Title:     r.GetString("title"),
+				Comment:   r.GetString("comment"),
+				Technique: r.GetString("technique"),
+			}).Render(ctx, c.Response().Writer)
+
+			return nil
 
 		})
 
@@ -168,20 +151,31 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 				"notify_sender": postData.NotificationRequired,
 			})
 
+			ctx := context.Background()
+
 			if err := form.Submit(); err != nil {
 
-				html, err := renderPostcardEditor(postData.ImageId, app, c)
+				r, err := app.Dao().FindRecordById("artworks", postData.ImageId)
 
 				if err != nil {
-					return err
+					app.Logger().Error("Failed to find artwork "+postData.ImageId, err)
+					error_pages.NotFoundBlock().Render(ctx, c.Response().Writer)
+					return nil
 				}
+
+				err = components.PostcardEditor(components.PostcardEditorDTO{
+					Image:     url.GenerateFileUrl("artworks", postData.ImageId, r.GetString("image"), ""),
+					ImageId:   postData.ImageId,
+					Title:     r.GetString("title"),
+					Comment:   r.GetString("comment"),
+					Technique: r.GetString("technique"),
+				}).Render(ctx, c.Response().Writer)
 
 				app.Logger().Error(fmt.Sprintf("Failed to store the postcard with image_id %s", postData.ImageId), err)
 
 				sendToastMessage("Failed to store the postcard", "is-danger", false, c)
 
-				return c.HTML(http.StatusOK, html)
-
+				return nil
 			}
 
 			sendToastMessage("Thank you! Your postcard has been queued for sending!", "is-success", true, c)
