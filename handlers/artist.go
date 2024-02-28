@@ -291,6 +291,7 @@ func processArtwork(c echo.Context, app *pocketbase.PocketBase) error {
 			Name:       artist.GetString("name"),
 			Bio:        artist.GetString("bio"),
 			Profession: artist.GetString("profession"),
+			Url:        "/artists/" + artistSlug,
 		},
 	}
 
@@ -334,7 +335,7 @@ func processArtwork(c echo.Context, app *pocketbase.PocketBase) error {
 
 	content.Jsonld = fmt.Sprintf(`<script type="application/ld+json">%s</script>`, marshalled)
 
-	ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", content.Name, content.BioExcerpt))
+	ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", content.Title, content.Artist.Name))
 
 	if isHtmx {
 		c.Response().Header().Set("HX-Push-Url", fullUrl)
