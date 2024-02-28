@@ -60,6 +60,8 @@ let result = await esbuild.build({
               "is-reversed-mobile",
               "is-clipped",
               "bottom-level",
+              "progress-indicator",
+              "htmx-request",
             ],
             content: [
               "assets/templ/**/*.templ",
