@@ -54,6 +54,7 @@ let result = await esbuild.build({
               "fas",
               "fa-times",
               "fa-2x",
+              "mb-2",
             ],
             content: [
               "assets/templ/**/*.templ",
