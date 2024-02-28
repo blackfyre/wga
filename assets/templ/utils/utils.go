@@ -10,6 +10,8 @@ var TitleKey ContextKey = "title"
 var DescriptionKey ContextKey = "description"
 var EnvironmentKey ContextKey = "environment"
 
+var ctx context.Context
+
 // GetTitle retrieves the title from the context.
 // If the title is found, it returns the title as a string.
 // If the title is not found, it returns an empty string.
