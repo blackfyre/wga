@@ -9,15 +9,15 @@ import (
 // ArtistPage is the template for the artist page
 templ ArtistPage(c Artist) {
 	@layouts.LayoutMain() {
-		<head>
-			<title>{ utils.GetTitle(ctx) }</title>
-		</head>
 		@ArtistBlock(c)
 	}
 }
 
 // ArtistsBlock is the template for the artist block
 templ ArtistBlock(a Artist) {
+	<head>
+		<title>{ utils.GetTitle(ctx) }</title>
+	</head>
 	<section class="section">
 		<div class="container">
 			<article class="box">
