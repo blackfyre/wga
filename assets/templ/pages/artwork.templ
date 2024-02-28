@@ -18,14 +18,14 @@ type Artwork struct {
 
 templ ArtworkPage(aw Artwork) {
 	@layouts.LayoutMain() {
-		<head>
-			<title>{ utils.GetTitle(ctx) }</title>
-		</head>
 		@ArtworkBlock(aw)
 	}
 }
 
 templ ArtworkBlock(aw Artwork) {
+	<head>
+		<title>{ utils.GetTitle(ctx) }</title>
+	</head>
 	<section class="section">
 		<div class="container">
 			<div class="columns">
@@ -37,8 +37,8 @@ templ ArtworkBlock(aw Artwork) {
 						<h1 class="title">{ aw.Title }</h1>
 						<h2 class="subtitle">
 							by <a
-	href="{{.ArtistUrl}}"
-	hx-get="{{.ArtistUrl}}"
+	href={ templ.SafeURL(aw.Artist.Url) }
+	hx-get={ aw.Artist.Url }
 	hx-target="#mc-area"
 >{ aw.Artist.Name }</a>, { aw.Technique }
 						</h2>
