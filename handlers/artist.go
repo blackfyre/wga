@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/blackfyre/wga/assets/templ/components"
-	"github.com/blackfyre/wga/assets/templ/error_pages"
 	"github.com/blackfyre/wga/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/assets/templ/utils"
 	wgaModels "github.com/blackfyre/wga/models"
@@ -18,7 +17,6 @@ import (
 	"github.com/blackfyre/wga/utils/url"
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
-	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/models"
 )
@@ -115,7 +113,7 @@ func processArtist(c echo.Context, app *pocketbase.PocketBase) error {
 
 	if err != nil {
 		app.Logger().Error("Artist not found: ", slug, err)
-		return apis.NewNotFoundError("", err)
+		return utils.NotFoundError(c)
 	}
 
 	expectedSlug := artist.GetString("slug") + "-" + artist.GetString("id")
@@ -218,11 +216,7 @@ func processArtist(c echo.Context, app *pocketbase.PocketBase) error {
 	if err != nil {
 		app.Logger().Error("Error rendering artist page", err)
 
-		if htmx {
-			return error_pages.ServerFaultBlock().Render(ctx, c.Response().Writer)
-		}
-
-		return error_pages.ServerFaultPage().Render(ctx, c.Response().Writer)
+		utils.ServerFaultError(c)
 	}
 
 	return nil
