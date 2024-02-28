@@ -10,5 +10,5 @@
   "emmet.includeLanguages": {
     "templ": "html"
   },
-  "cSpell.words": ["Htmx", "labstack", "pocketbase", "templ", "tmpl"]
+  "cSpell.words": ["Artform", "Htmx", "labstack", "pocketbase", "templ", "tmpl"]
 }
