@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"fmt"
-	"net/http"
 
 	"github.com/blackfyre/wga/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/assets/templ/utils"
@@ -125,19 +124,22 @@ func registerHome(app *pocketbase.PocketBase) {
 			welcomeText, err := getWelcomeContent(app)
 
 			if err != nil {
-				fmt.Println(err)
+				app.Logger().Error("Error getting welcome content", err)
+				return utils.ServerFaultError(c)
 			}
 
 			artistCount, err := getArtistCount(app)
 
 			if err != nil {
-				fmt.Println(err)
+				app.Logger().Error("Error getting artist count for home page", err)
+				return utils.ServerFaultError(c)
 			}
 
 			artworkCount, err := getArtworkCount(app)
 
 			if err != nil {
-				fmt.Println(err)
+				app.Logger().Error("Error getting artwork count for home page", err)
+				return utils.ServerFaultError(c)
 			}
 
 			isHtmx := utils.IsHtmxRequest(c)
@@ -146,11 +148,6 @@ func registerHome(app *pocketbase.PocketBase) {
 				Content:      welcomeText,
 				ArtistCount:  artistCount,
 				ArtworkCount: artworkCount,
-			}
-
-			if err != nil {
-				app.Logger().Error("Error rendering home page", err)
-				return c.String(http.StatusInternalServerError, "failed to render response template")
 			}
 
 			ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, "Welcome to the Gallery")
@@ -167,7 +164,7 @@ func registerHome(app *pocketbase.PocketBase) {
 
 			if err != nil {
 				app.Logger().Error("Error rendering home page", err)
-				return c.String(http.StatusInternalServerError, "failed to render response template")
+				return utils.ServerFaultError(c)
 			}
 
 			return nil
