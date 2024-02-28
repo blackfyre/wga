@@ -14,8 +14,14 @@ templ NotFoundPage() {
 }
 
 templ NotFoundBlock() {
-	<div class="error">
-		<h1>404</h1>
-		<p>Page not found</p>
+	<div class="is-flex is-justify-content-center is-align-items-center">
+		<div class="has-text-centered">
+			<h1 class="is-size-1 has-text-weight-bold has-text-primary">404</h1>
+			<p class="is-size-5 has-text-weight-medium"><span class="has-text-danger">Opps!</span> Page not found.</p>
+			<p class="is-size-6 mb-4">
+				The page you're looking for doesn't exist.
+			</p>
+			<a href="/" hx-get="/" hx-target="#mc-area" class="button is-primary">Go Home</a>
+		</div>
 	</div>
 }
