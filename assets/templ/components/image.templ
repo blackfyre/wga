@@ -30,7 +30,7 @@ templ ImageBase(i Image) {
 // Title (string) - the title of the image, and Artist (string) - the artist of the image.
 templ ImageBig(ImageUrl string, Title string, Artist string) {
 	<figure class="image hidden-caption">
-		<img src={ ImageUrl } alt="{ Title } by { Artist }"/>
+		<img src={ ImageUrl } alt={ Title + " by " + Artist }/>
 		<figcaption>{ Title } by { Artist }</figcaption>
 	</figure>
 }
