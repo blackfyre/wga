@@ -18,9 +18,9 @@ $navbar-item-hover-color: $white;
 $navbar-item-hover-background-color: $wgaOrangeHighlight;
 $navbar-dropdown-background-color: $wgaDarkBlue;
 $navbar-dropdown-item-hover-background-color: $wgaOrangeHighlight;
-$navbar-divider-background-color: $wgaTorquise;
-$navbar-burger-color: $wgaTorquise;
-$navbar-dropdown-arrow: $wgaTorquise;
+$navbar-divider-background-color: $wgaTurquoise;
+$navbar-burger-color: $wgaTurquoise;
+$navbar-dropdown-arrow: $wgaTurquoise;
 $navbar-height: 2.813rem;
 $navbar-item-active-color: $white;
 $navbar-item-active-background-color: $wgaOrangeHighlight;
@@ -196,7 +196,7 @@ figure.hidden-caption {
 
 .progress-indicator {
   position: fixed;
-  top: 0;
+  top: 45px;
   z-index: 1000;
   height: 4px;
   width: 100%;
