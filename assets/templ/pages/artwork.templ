@@ -40,7 +40,6 @@ templ ArtworkBlock(aw Artwork) {
 	href={ templ.SafeURL(aw.Artist.Url) }
 	hx-get={ aw.Artist.Url }
 	hx-target="#mc-area"
-	hx-indicator=".progress-indicator"
 >{ aw.Artist.Name }</a>, { aw.Technique }
 						</h2>
 						<div class="content">
@@ -50,7 +49,6 @@ templ ArtworkBlock(aw Artwork) {
 							href="#"
 							hx-on="click: document.getElementById('d').showModal();"
 							hx-get={ "/postcard/send?awid=" + aw.Id }
-							hx-indicator=".progress-indicator"
 							hx-target="#d"
 							class="card-footer-item"
 						>

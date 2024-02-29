@@ -29,7 +29,7 @@ templ layout_base() {
 			<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.0.0/animate.min.css"/>
 			<link rel="stylesheet" href="/assets/css/vendor/cookieconsent.css"/>
 		</head>
-		<body class="customBody">
+		<body class="customBody" hx-indicator=".progress-indicator">
 			<div class="progress-indicator" style="height: 3px;">
 				<div class="indeterminate" style="background-color: #489393;"></div>
 			</div>
@@ -41,7 +41,6 @@ templ layout_base() {
 				hx-on="click: wga.openDialog()"
 				hx-target="#d"
 				class="button is-primary is-feedback"
-				hx-indicator=".progress-indicator"
 			>Feedback</a>
 			<script src="/assets/js/vendor/viewer.min.js"></script>
 			<script src="/assets/js/vendor/htmx.min.js"></script>
