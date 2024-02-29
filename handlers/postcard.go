@@ -1,14 +1,15 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net/http"
 	"strings"
 
-	"github.com/blackfyre/wga/assets"
 	"github.com/blackfyre/wga/assets/templ/components"
 	"github.com/blackfyre/wga/assets/templ/error_pages"
+	"github.com/blackfyre/wga/assets/templ/pages"
 	"github.com/blackfyre/wga/utils"
 	"github.com/blackfyre/wga/utils/url"
 	"github.com/labstack/echo/v5"
@@ -60,7 +61,7 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 
 			if err != nil {
 				app.Logger().Error(fmt.Sprintf("Failed to render the postcard editor with image_id %s", awid), err)
-				error_pages.ServerFaultBlock().Render(ctx, c.Response().Writer)
+				return utils.ServerFaultError(c)
 			}
 
 			return nil
@@ -69,12 +70,26 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 
 		e.Router.GET("postcards", func(c echo.Context) error {
 
+			isHtmx := utils.IsHtmxRequest(c)
+
 			postCardId := c.QueryParamDefault("p", "nope")
 
 			if postCardId == "nope" {
 				app.Logger().Error(fmt.Sprintf("Invalid postcard id: %s", postCardId))
 				return apis.NewBadRequestError("Invalid postcard id", nil)
 			}
+
+			cacheKey := fmt.Sprintf("postcard-%s", postCardId)
+
+			if isHtmx {
+				cacheKey = cacheKey + ":htmx"
+			}
+
+			if app.Store().Has(cacheKey) {
+				return c.HTML(http.StatusOK, app.Store().Get(cacheKey).(string))
+			}
+
+			var cacheBuffer bytes.Buffer
 
 			r, err := app.Dao().FindRecordById("postcards", postCardId)
 
@@ -90,23 +105,31 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 
 			aw := r.ExpandedOne("image_id")
 
-			data := assets.NewRenderData(app)
+			content := pages.PostcardView{
+				SenderName: r.GetString("sender_name"),
+				Message:    r.GetString("message"),
+				Image:      url.GenerateFileUrl("artworks", aw.GetString("id"), aw.GetString("image"), ""),
+				Title:      aw.GetString("title"),
+				Comment:    aw.GetString("comment"),
+				Technique:  aw.GetString("technique"),
+			}
 
-			data["SenderName"] = r.GetString("sender_name")
-			data["Message"] = r.GetString("message")
-			data["AwImage"] = url.GenerateFileUrl("artworks", aw.GetString("id"), aw.GetString("image"), "")
-			data["AwTitle"] = aw.GetString("title")
-			data["AwComment"] = aw.GetString("comment")
-			data["AwTechnique"] = aw.GetString("technique")
+			ctx := context.Background()
 
-			html, err := assets.RenderPage("postcard", data)
+			if isHtmx {
+				err = pages.PostcardBlock(content).Render(ctx, &cacheBuffer)
+			} else {
+				err = pages.PostcardPage(content).Render(ctx, &cacheBuffer)
+			}
 
 			if err != nil {
 				app.Logger().Error("Failed to render the postcard", err)
-				return apis.NewBadRequestError("", err)
+				return utils.ServerFaultError(c)
 			}
 
-			return c.HTML(http.StatusOK, html)
+			app.Store().Set(cacheKey, cacheBuffer.String())
+
+			return c.HTML(http.StatusOK, cacheBuffer.String())
 		})
 
 		e.Router.POST("postcards", func(c echo.Context) error {

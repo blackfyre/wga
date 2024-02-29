@@ -1,0 +1,52 @@
+package pages
+
+import (
+	"github.com/blackfyre/wga/assets/templ/layouts"
+	"github.com/blackfyre/wga/assets/templ/components"
+)
+
+type PostcardView struct {
+	Message    string
+	Image      string
+	Title      string
+	Comment    string
+	Technique  string
+	Author     string
+	SenderName string
+}
+
+templ PostcardPage(p PostcardView) {
+	@layouts.LayoutMain() {
+		@PostcardBlock(p)
+	}
+}
+
+templ PostcardBlock(p PostcardView) {
+	<section class="section">
+		<div class="container">
+			<div class="columns">
+				<div class="column is-half">
+					<div class="card">
+						<div class="card-image">
+							@components.ImageBig(p.Image, p.Title, p.Author)
+						</div>
+						<div class="card-content">
+							<div>
+								<h3 class="title is-size-3">{ p.Title }</h3>
+								<p class="subtitle">{ p.Technique }</p>
+								<div class="line-clamp-3 content">
+									@templ.Raw(p.Comment)
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="column">
+					<div class="box content">
+						@templ.Raw(p.Message)
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+}
