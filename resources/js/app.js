@@ -162,6 +162,30 @@ function InitEventListeners() {
     initCloner();
   });
 
+  document.body.addEventListener("htmx:swapError", function (evt) {
+    console.error(evt);
+    bulmaToast.toast({
+      message: "An error occurred while processing your request.",
+      type: "is-danger",
+    });
+  });
+
+  document.body.addEventListener("htmx:targetError", function (evt) {
+    console.error(evt);
+    bulmaToast.toast({
+      message: "An error occurred while processing your request.",
+      type: "is-danger",
+    });
+  });
+
+  document.body.addEventListener("htmx:timeout", function (evt) {
+    console.error(evt);
+    bulmaToast.toast({
+      message: "The request timed out.",
+      type: "is-danger",
+    });
+  });
+
   document.addEventListener("trix-before-initialize", () => {
     Trix.config.toolbar.getDefaultHTML = () => {
       return `
