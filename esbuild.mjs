@@ -3,6 +3,7 @@ import { sassPlugin } from "esbuild-sass-plugin";
 import postcss from "postcss";
 import autoprefixer from "autoprefixer";
 import purgeCSSPlugin from "@fullhuman/postcss-purgecss";
+import { copy } from "esbuild-plugin-copy";
 import fs from "node:fs";
 
 console.info("🚀 Starting build 🚀");
@@ -74,6 +75,14 @@ let result = await esbuild.build({
 
         return css;
       },
+    }),
+    copy({
+      resolveFrom: "cwd",
+      assets: {
+        from: ["./node_modules/htmx.org/dist/htmx.min.js"],
+        to: ["./assets/public/js/vendor"],
+      },
+      watch: true,
     }),
   ],
   outdir: "./assets/public/",
