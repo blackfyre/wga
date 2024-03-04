@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/blackfyre/wga/assets"
 	"github.com/blackfyre/wga/assets/templ/components"
 	"github.com/blackfyre/wga/utils"
 	"github.com/labstack/echo/v5"
@@ -15,13 +14,6 @@ import (
 	"github.com/pocketbase/pocketbase/forms"
 	"github.com/pocketbase/pocketbase/models"
 )
-
-// renderFeedbackEditor renders the feedback editor block using the assets package.
-// It returns the rendered block as a string and an error if there was any.
-func renderFeedbackEditor() (string, error) {
-	return assets.RenderBlock("feedback:editor", nil)
-
-}
 
 func registerFeedbackHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) {
 
