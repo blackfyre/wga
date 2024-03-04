@@ -87,15 +87,30 @@ const tmpl string = `
 
 const onEachSide int = 3
 
+// FirstPart returns the first part of the pagination.
 func (p *Pagination) FirstPart() []string {
 	return p.firstPart
 }
+
+// MiddlePart returns the middle part of the pagination.
 func (p *Pagination) MiddlePart() []string {
 	return p.middlePart
 }
+
+// LastPart returns the last part of the pagination.
 func (p *Pagination) LastPart() []string {
 	return p.lastPart
 }
+
+// generate generates the pagination links based on the current state of the Pagination object.
+// It determines the range of pages to display based on the total number of pages and the current page.
+// The generated links are stored in the Pagination object's firstPart, middlePart, and lastPart fields.
+// If there are no pages to display, the method returns early.
+// If the total number of pages is less than (onEachSide*2 + 6), the method generates links for all pages.
+// Otherwise, the method generates links based on the current page's position relative to the window size.
+// If the current page is within the first window, links are generated for the first window + 2 pages and the last 2 pages.
+// If the current page is within the last window, links are generated for the first 2 pages and the last window + 2 pages.
+// Otherwise, links are generated for the first 2 pages, the pages within the current page's window, and the last 2 pages.
 func (p *Pagination) generate() {
 	if !p.HasPages() {
 		return
@@ -119,6 +134,9 @@ func (p *Pagination) generate() {
 	}
 }
 
+// getUrlRange returns a slice of URLs within the specified range.
+// The start and end parameters define the range of URLs to be generated.
+// Each URL is generated using the getUrl function with the corresponding index.
 func (p *Pagination) getUrlRange(start, end int) []string {
 	var ret []string
 	for i := start; i <= end; i++ {
@@ -127,6 +145,11 @@ func (p *Pagination) getUrlRange(start, end int) []string {
 	return ret
 }
 
+// getUrl returns the URL for a specific page with the given text.
+// It takes the page number and text as parameters and constructs the URL based on the current state of the Pagination object.
+// If the current page matches the given page number, it returns the URL wrapped in the active page wrapper.
+// Otherwise, it constructs the URL by appending the page number and any query parameters from the base URL and htmx base URL.
+// The constructed URL is then wrapped in the available page wrapper along with the given text.
 func (p *Pagination) getUrl(page int, text string) string {
 	strPage := strconv.Itoa(page)
 	if p.currentPage == page {
@@ -157,18 +180,43 @@ func (p *Pagination) getUrl(page int, text string) string {
 	}
 }
 
+// GetActivePageWrapper returns an HTML string representing the active page link for pagination.
+// The function takes a `text` parameter, which is the text to be displayed inside the link.
+// It generates an HTML string with the active page link using the provided `text`.
 func (p *Pagination) GetActivePageWrapper(text string) string {
 	return "<li><a class=\"pagination-link is-current\" aria-label=\"Page " + text + "\" aria-current=\"page\">" + text + "</a></li>"
 }
+
+// GetDisabledPageWrapper returns a disabled page wrapper HTML element for pagination.
+// It takes a `text` parameter representing the text to be displayed within the wrapper.
+// The method returns a string containing the disabled page wrapper HTML element.
 func (p *Pagination) GetDisabledPageWrapper(text string) string {
 	return "<li><a class=\"pagination-link is-disabled\">" + text + "</a></li>"
 }
+
+// GetAvailablePageWrapper returns a string representing a pagination link with the given href, page number, and htmxUrl.
+// If htmxTarget is specified, it adds the hx-target attribute to the link.
 func (p *Pagination) GetAvailablePageWrapper(href, page, htmxUrl string) string {
-	return "<li><a class='pagination-link' aria-label='Goto page " + page + "' hx-get=\"" + htmxUrl + "\" href=\"" + href + "\" hx-target=\"#" + p.htmxTarget + "\">" + page + "</a></li>"
+
+	str := "<li><a class='pagination-link' aria-label='Goto page " + page + "' hx-get='" + htmxUrl + "' href='" + href
+
+	if p.htmxTarget != "" {
+		str = str + "' hx-target='#" + p.htmxTarget
+	}
+
+	str = str + "'>" + page + "</a></li>"
+
+	return str
 }
+
+// GetDots returns the HTML representation of the dots used for pagination ellipsis.
 func (p *Pagination) GetDots() string {
 	return "<li><span class=\"pagination-ellipsis\">&hellip;</span></li>"
 }
+
+// GetPreviousButton returns the HTML string for the previous button in the pagination.
+// If the current page is the first page, it returns a disabled button.
+// Otherwise, it returns a button with the URL for the previous page and the specified text.
 func (p *Pagination) GetPreviousButton(text string) string {
 	if p.currentPage <= 1 {
 		return p.GetDisabledPageWrapper(text)
@@ -176,6 +224,10 @@ func (p *Pagination) GetPreviousButton(text string) string {
 
 	return p.getUrl(p.currentPage-1, text)
 }
+
+// GetNextButton returns the HTML code for the next button in the pagination.
+// If the current page is the last page, it returns the disabled page wrapper.
+// Otherwise, it returns the URL for the next page with the specified text.
 func (p *Pagination) GetNextButton(text string) string {
 	if p.currentPage == p.TotalPages() {
 		return p.GetDisabledPageWrapper(text)
