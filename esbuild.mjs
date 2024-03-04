@@ -84,6 +84,14 @@ let result = await esbuild.build({
       },
       watch: true,
     }),
+    copy({
+      resolveFrom: "cwd",
+      assets: {
+        from: ["./node_modules/htmx.org/dist/ext/loading-states.js"],
+        to: ["./assets/public/js/vendor"],
+      },
+      watch: true,
+    }),
   ],
   outdir: "./assets/public/",
 });
