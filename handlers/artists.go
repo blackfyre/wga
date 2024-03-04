@@ -99,6 +99,10 @@ func processArtists(app *pocketbase.PocketBase, c echo.Context) error {
 		Count: strconv.Itoa(recordsCount),
 	}
 
+	if len(searchExpression) > 0 && searchExpressionPresent {
+		content.QueryStr = searchExpression
+	}
+
 	jsonLdCollector := []jsonld.Person{}
 
 	for _, m := range records {
@@ -156,7 +160,7 @@ func processArtists(app *pocketbase.PocketBase, c echo.Context) error {
 
 	content.Jsonld = fmt.Sprintf(`<script type="application/ld+json">%s</script>`, marshalledJsonLd)
 
-	pagination := utils.NewPagination(recordsCount, limit, page, "/artists?q="+searchExpression, "search-results", "")
+	pagination := utils.NewPagination(recordsCount, limit, page, "/artists?q="+searchExpression, "", "")
 
 	content.Pagination = string(pagination.Render())
 
@@ -164,18 +168,9 @@ func processArtists(app *pocketbase.PocketBase, c echo.Context) error {
 
 	if isHtmx {
 		c.Response().Header().Set("HX-Push-Url", currentUrl)
-
-		if len(searchExpression) > 0 || searchExpressionPresent {
-			err = pages.ArtistsSearchResults(content).Render(ctx, c.Response().Writer)
-
-		} else {
-			err = pages.ArtistsPageBlock(content).Render(ctx, c.Response().Writer)
-
-		}
-
+		err = pages.ArtistsPageBlock(content).Render(ctx, c.Response().Writer)
 	} else {
 		err = pages.ArtistsPageFull(content).Render(ctx, c.Response().Writer)
-
 	}
 
 	if err != nil {
