@@ -3,7 +3,7 @@ package components
 templ TopNav() {
 	<nav class="navbar is-fixed-top" role="navigation" aria-label="main navigation">
 		<div class="navbar-brand">
-			<a class="navbar-item" id="nav-logo" href="/" hx-get="/" hx-target="#mc-area">
+			<a class="navbar-item" id="nav-logo" href="/" hx-get="/">
 				<img
 					src="/assets/images/logo.png"
 					loading="lazy"
@@ -21,16 +21,16 @@ templ TopNav() {
 		</div>
 		<div id="top-navbar" class="navbar-menu">
 			<div class="navbar-start">
-				<a class="navbar-item" href="/" hx-get="/" hx-target="#mc-area">
+				<a class="navbar-item" href="/" hx-get="/">
 					Home
 				</a>
-				<a class="navbar-item" href="/artists" hx-get="/artists" hx-target="#mc-area">
+				<a class="navbar-item" href="/artists" hx-get="/artists">
 					Artists
 				</a>
-				<a class="navbar-item" href="/artworks" hx-get="/artworks" hx-target="#mc-area">
+				<a class="navbar-item" href="/artworks" hx-get="/artworks">
 					Artworks
 				</a>
-				<a class="navbar-item" href="/guestbook" hx-get="/guestbook" hx-target="#mc-area">
+				<a class="navbar-item" href="/guestbook" hx-get="/guestbook">
 					Guestbook
 				</a>
 				<!-- 
@@ -50,7 +50,6 @@ templ TopNav() {
 							class="navbar-item"
 							href="/pages/privacy-policy"
 							hx-get="/pages/privacy-policy"
-							hx-target="#mc-area"
 						>
 							Privacy Policy
 						</a>

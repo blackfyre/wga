@@ -24,6 +24,7 @@ type ArtistsView struct {
 	Artists    []Artist
 	Pagination string
 	Jsonld     string
+	QueryStr   string
 }
 
 templ ArtistsPageFull(c ArtistsView) {
@@ -56,8 +57,8 @@ templ ArtistsPageBlock(c ArtistsView) {
 										placeholder="Find an artist"
 										hx-get="/artists"
 										hx-trigger="keyup changed delay:500ms, search"
-										hx-target="#search-results"
 										hx-disabled-elt="this"
+										value={ c.QueryStr }
 									/>
 								</p>
 							</div>
@@ -91,7 +92,7 @@ templ artistsTable(list []Artist) {
 		<tbody>
 			for _, a := range list {
 				<tr>
-					<td><a href={ templ.SafeURL(a.Url) } hx-get={ a.Url } hx-target="#mc-area"><b>{ a.Name }</b></a></td>
+					<td><a href={ templ.SafeURL(a.Url) } hx-get={ a.Url }><b>{ a.Name }</b></a></td>
 					<td>{ a.BornDied }</td>
 					<td>{ a.Schools }</td>
 					<td>{ a.Profession }</td>
