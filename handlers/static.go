@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/blackfyre/wga/assets"
+	"github.com/blackfyre/wga/assets/templ/error_pages"
 	"github.com/blackfyre/wga/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/assets/templ/utils"
 	"github.com/blackfyre/wga/models"
@@ -65,6 +66,12 @@ func registerStatic(app *pocketbase.PocketBase) {
 			}
 
 		})
+
+		e.Router.GET("/error_404", func(c echo.Context) error {
+			c.Response().Header().Set("HX-Push-Url", "/error_404")
+			return error_pages.NotFoundPage().Render(context.Background(), c.Response().Writer)
+		})
+
 		return nil
 	})
 }
@@ -89,7 +96,7 @@ func staticEmbeddedHandler(embedded embed.FS) echo.HandlerFunc {
 		fileErr := c.FileFS(name, embedded)
 
 		if fileErr != nil && errors.Is(fileErr, echo.ErrNotFound) {
-			return c.FileFS("public/404.html", embedded)
+			return c.Redirect(404, "/error_404")
 		}
 
 		return fileErr
