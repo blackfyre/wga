@@ -172,6 +172,13 @@ figure.hidden-caption {
   }
 }
 
+figure {
+  source,
+  img {
+    object-fit: cover;
+  }
+}
+
 .hpt {
   opacity: 0;
   position: absolute;
