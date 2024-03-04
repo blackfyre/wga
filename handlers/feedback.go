@@ -15,6 +15,16 @@ import (
 	"github.com/pocketbase/pocketbase/models"
 )
 
+// registerFeedbackHandlers registers the feedback handlers for the application.
+// It adds the GET and POST routes for the feedback form, handles form submission,
+// and stores the feedback in the database.
+//
+// Parameters:
+// - app: The PocketBase application instance.
+// - p: The bluemonday policy for sanitizing HTML input.
+//
+// Returns:
+// - An error if there was a problem registering the handlers, or nil otherwise.
 func registerFeedbackHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) {
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
