@@ -13,6 +13,12 @@ templ layout_base() {
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
 			<title>{ utils.GetTitle(ctx) } </title>
 			<meta name="description" content={ utils.GetDescription(ctx) }/>
+			for key, content := range utils.GetOpenGraphTags(ctx) {
+				<meta name={ key } content={ content }/>
+			}
+			for key, content := range utils.GetTwitterTags(ctx) {
+				<meta name={ key } content={ content }/>
+			}
 			<link rel="stylesheet" href="/assets/css/style.css"/>
 			<link rel="stylesheet" href="/assets/css/vendor/viewer.min.css"/>
 			<link rel="apple-touch-icon" sizes="180x180" href="/assets/images/apple-touch-icon.png"/>
