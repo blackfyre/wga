@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/blackfyre/wga/assets"
+	"github.com/blackfyre/wga/handlers/guestbook"
 	"github.com/blackfyre/wga/utils"
 
 	"github.com/labstack/echo/v5"
@@ -69,69 +70,15 @@ func registerGuestbookHandlers(app *pocketbase.PocketBase) {
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 
 		e.Router.GET("/guestbook", func(c echo.Context) error {
-			url := ""
-			html, shouldReturn, err := loadGuestbook(c, app, url)
-			if shouldReturn {
-				return err
-			}
-
-			return c.HTML(http.StatusOK, html)
+			return guestbook.EntriesHandler(app, c)
 		})
 
 		e.Router.GET("/guestbook/addMessage", func(c echo.Context) error {
-			confirmedHtmxRequest := utils.IsHtmxRequest(c)
-			url := ""
-
-			setUrl(c, url)
-
-			html, err := gbAddMessageRender(confirmedHtmxRequest)
-
-			if err != nil {
-				// or redirect to a dedicated 404 HTML page
-				return apis.NewNotFoundError("", err)
-			}
-
-			return c.HTML(http.StatusOK, html)
+			return guestbook.StoreEntryViewHandler(app, c)
 		})
 
 		e.Router.POST("/guestbook/addMessage", func(c echo.Context) error {
-			data := apis.RequestInfo(c).Data
-
-			if err := c.Bind(&data); err != nil {
-				sendToastMessage("Failed to create message, please try again later.", "is-danger", true, c)
-				return apis.NewBadRequestError("Failed to parse form data", err)
-			}
-
-			guestBookMessage := GuestBookMessage{
-				Name:          c.FormValue("sender_name"),
-				Email:         c.FormValue("sender_email"),
-				Location:      c.FormValue("location"),
-				Message:       c.FormValue("message"),
-				HoneyPotName:  c.FormValue("name"),
-				HoneyPotEmail: c.FormValue("email"),
-			}
-
-			if guestBookMessage.HoneyPotEmail != "" || guestBookMessage.HoneyPotName != "" {
-				// this is probably a bot
-				app.Logger().Error("Guestbook HoneyPot triggered", "ip", c.RealIP())
-				sendToastMessage("Failed to create message, please try again later.", "is-danger", true, c)
-				return c.NoContent(204)
-			}
-
-			err := addGuestbookMessageToDB(app, guestBookMessage)
-
-			if err != nil {
-				return apis.NewBadRequestError("Failed to add message to database", err)
-			}
-
-			sendToastMessage("Message added successfully", "is-success", true, c)
-
-			html, shouldReturn, err := loadGuestbook(c, app, "/guestbook")
-			if shouldReturn {
-				return err
-			}
-
-			return c.HTML(http.StatusOK, html)
+			return guestbook.EntriesHandler(app, c)
 		})
 
 		return nil
