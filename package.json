@@ -33,7 +33,8 @@
     "lint-staged": "^15.0.2",
     "postcss": "^8.4.31",
     "prettier": "3.2.5",
-    "purgecss-from-html": "^6.0.0-alpha.0"
+    "purgecss-from-html": "^6.0.0-alpha.0",
+    "bulma-list": "^1.2.0"
   },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown"
