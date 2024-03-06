@@ -19,6 +19,9 @@ templ layout_base() {
 			for key, content := range utils.GetTwitterTags(ctx) {
 				<meta name={ key } content={ content }/>
 			}
+			if utils.GetCanonicalUrl(ctx) != "" {
+				<link rel="canonical" href={ utils.GetCanonicalUrl(ctx) }/>
+			}
 			<link rel="stylesheet" href="/assets/css/style.css"/>
 			<link rel="stylesheet" href="/assets/css/vendor/viewer.min.css"/>
 			<link rel="apple-touch-icon" sizes="180x180" href="/assets/images/apple-touch-icon.png"/>

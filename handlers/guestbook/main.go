@@ -36,6 +36,7 @@ func yearOptions() []string {
 
 func EntriesHandler(app *pocketbase.PocketBase, c echo.Context) error {
 
+	fullUrl := c.Scheme() + "://" + c.Request().Host + c.Request().URL.String()
 	year := c.QueryParamDefault("year", fmt.Sprintf("%d", time.Now().Year()))
 
 	entries, err := models.FindEntriesForYear(app.Dao(), year)
@@ -52,9 +53,10 @@ func EntriesHandler(app *pocketbase.PocketBase, c echo.Context) error {
 	}
 
 	ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, "Guestbook")
+	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "This is the guestbook of the Web Gallery of Art. Please feel free to leave a message.")
+	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, fullUrl)
 
 	if utils.IsHtmxRequest(c) {
-		fullUrl := c.Scheme() + "://" + c.Request().Host + c.Request().URL.String()
 		c.Response().Header().Set("HX-Push-Url", fullUrl)
 		err = pages.GuestbookBlock(content).Render(ctx, c.Response().Writer)
 	} else {
