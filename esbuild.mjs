@@ -40,6 +40,7 @@ let result = await esbuild.build({
               "content",
               "is-multiline",
               "is-4by3",
+              "is-48x48",
               "hidden-caption",
               "divider",
               "card",
