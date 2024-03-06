@@ -104,8 +104,6 @@ func normalizedBioExcerpt(r *models.Record) string {
 func processArtist(c echo.Context, app *pocketbase.PocketBase) error {
 	slug := c.PathParam("name")
 
-	htmx := utils.IsHtmxRequest(c)
-
 	id := utils.ExtractIdFromString(slug)
 
 	fullUrl := c.Scheme() + "://" + c.Request().Host + c.Request().URL.String()
@@ -210,13 +208,8 @@ func processArtist(c echo.Context, app *pocketbase.PocketBase) error {
 		ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgImageKey, c.Scheme()+"://"+c.Request().Host+content.Works[0].Image)
 	}
 
-	if htmx {
-		c.Response().Header().Set("HX-Push-Url", fullUrl)
-		err = pages.ArtistBlock(content).Render(ctx, c.Response().Writer)
-
-	} else {
-		err = pages.ArtistPage(content).Render(ctx, c.Response().Writer)
-	}
+	c.Response().Header().Set("HX-Push-Url", fullUrl)
+	err = pages.ArtistPage(content).Render(ctx, c.Response().Writer)
 
 	if err != nil {
 		app.Logger().Error("Error rendering artist page", err)
@@ -238,8 +231,6 @@ func processArtist(c echo.Context, app *pocketbase.PocketBase) error {
 // Returns:
 // - An error if any error occurs during the processing, or nil if the processing is successful.
 func processArtwork(c echo.Context, app *pocketbase.PocketBase) error {
-	isHtmx := utils.IsHtmxRequest(c)
-
 	artistSlug := c.PathParam("name")
 	artworkSlug := c.PathParam("awid")
 
@@ -345,14 +336,8 @@ func processArtwork(c echo.Context, app *pocketbase.PocketBase) error {
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, fullUrl)
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgImageKey, c.Scheme()+"://"+c.Request().Host+content.Image.Image)
 
-	if isHtmx {
-		c.Response().Header().Set("HX-Push-Url", fullUrl)
-		err = pages.ArtworkBlock(content).Render(ctx, c.Response().Writer)
-
-	} else {
-		err = pages.ArtworkPage(content).Render(ctx, c.Response().Writer)
-
-	}
+	c.Response().Header().Set("HX-Push-Url", fullUrl)
+	err = pages.ArtworkPage(content).Render(ctx, c.Response().Writer)
 
 	if err != nil {
 		app.Logger().Error("Error rendering artwork page", err)

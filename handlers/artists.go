@@ -31,7 +31,6 @@ func processArtists(app *pocketbase.PocketBase, c echo.Context) error {
 	page := 1
 	searchExpression := ""
 	searchExpressionPresent := false
-	isHtmx := utils.IsHtmxRequest(c)
 	currentUrl := c.Request().URL.String()
 	c.Response().Header().Set("HX-Push-Url", currentUrl)
 
@@ -168,12 +167,8 @@ func processArtists(app *pocketbase.PocketBase, c echo.Context) error {
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "Check out the artists in the gallery.")
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgUrlKey, c.Scheme()+"://"+c.Request().Host+c.Request().URL.String())
 
-	if isHtmx {
-		c.Response().Header().Set("HX-Push-Url", currentUrl)
-		err = pages.ArtistsPageBlock(content).Render(ctx, c.Response().Writer)
-	} else {
-		err = pages.ArtistsPageFull(content).Render(ctx, c.Response().Writer)
-	}
+	c.Response().Header().Set("HX-Push-Url", currentUrl)
+	err = pages.ArtistsPageFull(content).Render(ctx, c.Response().Writer)
 
 	if err != nil {
 		app.Logger().Error("Error rendering artists", err)

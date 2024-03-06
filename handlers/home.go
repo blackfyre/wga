@@ -142,8 +142,6 @@ func registerHome(app *pocketbase.PocketBase) {
 				return utils.ServerFaultError(c)
 			}
 
-			isHtmx := utils.IsHtmxRequest(c)
-
 			content := pages.HomePage{
 				Content:      welcomeText,
 				ArtistCount:  artistCount,
@@ -154,14 +152,8 @@ func registerHome(app *pocketbase.PocketBase) {
 			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "Welcome to the Gallery")
 			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgUrlKey, c.Scheme()+"://"+c.Request().Host+c.Request().URL.String())
 
-			if isHtmx {
-				c.Response().Header().Set("HX-Push-Url", "/")
-				err = pages.HomePageContent(content).Render(ctx, c.Response().Writer)
-
-			} else {
-				err = pages.HomePageWrapped(content).Render(ctx, c.Response().Writer)
-
-			}
+			c.Response().Header().Set("HX-Push-Url", "/")
+			err = pages.HomePageWrapped(content).Render(ctx, c.Response().Writer)
 
 			if err != nil {
 				app.Logger().Error("Error rendering home page", err)

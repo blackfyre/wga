@@ -9,7 +9,6 @@ import (
 
 	"github.com/blackfyre/wga/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/assets/templ/utils"
-	"github.com/blackfyre/wga/utils"
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
@@ -89,7 +88,6 @@ func registerContributors(app *pocketbase.PocketBase) {
 		e.Router.GET("/contributors", func(c echo.Context) error {
 
 			cacheKey := "contributors"
-			isHtmx := utils.IsHtmxRequest(c)
 			fullUrl := c.Scheme() + "://" + c.Request().Host + c.Request().URL.String()
 
 			contributors, err := getContributorsFromGithub()
@@ -114,14 +112,8 @@ func registerContributors(app *pocketbase.PocketBase) {
 			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "The people who have contributed to the Web Gallery of Art.")
 			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, fullUrl)
 
-			if isHtmx {
-				c.Response().Header().Set("HX-Push-Url", fullUrl)
-				err = pages.ContributorsBlock(content).Render(ctx, c.Response().Writer)
-
-			} else {
-				err = pages.ContributorsPage(content).Render(ctx, c.Response().Writer)
-
-			}
+			c.Response().Header().Set("HX-Push-Url", fullUrl)
+			err = pages.ContributorsPage(content).Render(ctx, c.Response().Writer)
 
 			if err != nil {
 				app.Logger().Error("Error rendering artwork page", err)

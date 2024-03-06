@@ -38,7 +38,6 @@ func registerStatic(app *pocketbase.PocketBase) {
 		// "Static" pages
 		e.Router.GET("/pages/:slug", func(c echo.Context) error {
 
-			isHtmx := utils.IsHtmxRequest(c)
 			slug := c.PathParam("slug")
 			fullUrl := c.Scheme() + "://" + c.Request().Host + c.Request().URL.String()
 
@@ -59,14 +58,8 @@ func registerStatic(app *pocketbase.PocketBase) {
 			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, page.Content)
 			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, fullUrl)
 
-			if isHtmx {
-				c.Response().Header().Set("HX-Push-Url", fullUrl)
-				return pages.StaticPageBlock(content).Render(ctx, c.Response().Writer)
-
-			} else {
-				return pages.StaticPage(content).Render(ctx, c.Response().Writer)
-
-			}
+			c.Response().Header().Set("HX-Push-Url", fullUrl)
+			return pages.StaticPage(content).Render(ctx, c.Response().Writer)
 
 		})
 
