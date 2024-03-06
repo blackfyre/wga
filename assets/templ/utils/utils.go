@@ -2,6 +2,9 @@ package utils
 
 import (
 	"context"
+	"os"
+	"regexp"
+	"strings"
 )
 
 type ContextKey string
@@ -21,8 +24,22 @@ var TwitterCreatorKey ContextKey = "twitter:creator"
 var TwitterTitleKey ContextKey = "twitter:title"
 var TwitterDescriptionKey ContextKey = "twitter:description"
 var TwitterImageKey ContextKey = "twitter:image"
+var CanonicalUrlKey ContextKey = "canonical:url"
 
 var ctx context.Context
+
+func AssetUrl(path string) string {
+
+	protocol := os.Getenv("WGA_PROTOCOL")
+	hostname := os.Getenv("WGA_HOSTNAME")
+
+	// if the path beings with a slash, remove it
+	if !strings.HasPrefix(path, "/") {
+		path = "/" + path
+	}
+
+	return protocol + "://" + hostname + path
+}
 
 // GetTitle retrieves the title from the context.
 // If the title is found, it returns the title as a string.
@@ -33,6 +50,17 @@ func GetTitle(c context.Context) string {
 	}
 
 	return "Web Gallery of Art"
+}
+
+// GetCanonicalUrl returns the canonical URL from the given context.
+// If the canonical URL is found in the context, it is returned.
+// Otherwise, an empty string is returned.
+func GetCanonicalUrl(c context.Context) string {
+	if v, ok := c.Value(CanonicalUrlKey).(string); ok {
+		return v
+	}
+
+	return ""
 }
 
 // GetDescription retrieves the description value from the context.
@@ -69,6 +97,8 @@ func GetOpenGraphTags(c context.Context) map[string]string {
 
 	if v, ok := c.Value(OgImageKey).(string); ok {
 		ogTags["og:image"] = v
+	} else {
+		ogTags["og:image"] = AssetUrl("/images/smo_cover_1080x1080.png")
 	}
 
 	if v, ok := c.Value(OgUrlKey).(string); ok {
@@ -77,6 +107,8 @@ func GetOpenGraphTags(c context.Context) map[string]string {
 
 	if v, ok := c.Value(OgTypeKey).(string); ok {
 		ogTags["og:type"] = v
+	} else {
+		ogTags["og:type"] = "website"
 	}
 
 	if v, ok := c.Value(OgSiteNameKey).(string); ok {
@@ -91,6 +123,8 @@ func GetTwitterTags(c context.Context) map[string]string {
 
 	if v, ok := c.Value(TwitterCardKey).(string); ok {
 		twitterTags["twitter:card"] = v
+	} else {
+		twitterTags["twitter:card"] = "summary_large_image"
 	}
 
 	if v, ok := c.Value(TwitterSiteKey).(string); ok {
@@ -111,6 +145,8 @@ func GetTwitterTags(c context.Context) map[string]string {
 
 	if v, ok := c.Value(TwitterImageKey).(string); ok {
 		twitterTags["twitter:image"] = v
+	} else {
+		twitterTags["twitter:image"] = AssetUrl("/images/smo_cover_1080x1080.png")
 	}
 
 	return twitterTags
@@ -128,8 +164,11 @@ func DecorateContext(c context.Context, k ContextKey, v string) context.Context 
 	}
 
 	if k == DescriptionKey || k == OgDescriptionKey || k == TwitterDescriptionKey {
+
+		v = StripHtmlTags(v)
+
 		if len(v) > 160 {
-			v = v[:160]
+			v = v[:157] + "..."
 		}
 
 		cwv := context.WithValue(c, DescriptionKey, v)
@@ -144,5 +183,17 @@ func DecorateContext(c context.Context, k ContextKey, v string) context.Context 
 		return cwv
 	}
 
+	if k == OgUrlKey || k == CanonicalUrlKey {
+		cwv := context.WithValue(c, OgUrlKey, v)
+		cwv = context.WithValue(cwv, CanonicalUrlKey, v)
+		return cwv
+	}
+
 	return context.WithValue(c, k, v)
+}
+
+func StripHtmlTags(s string) string {
+	// remove all html tags
+	re := regexp.MustCompile(`<[^>]*>`)
+	return re.ReplaceAllString(s, "")
 }

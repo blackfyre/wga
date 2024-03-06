@@ -152,6 +152,7 @@ func registerHome(app *pocketbase.PocketBase) {
 
 			ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, "Welcome to the Gallery")
 			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "Welcome to the Gallery")
+			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgUrlKey, c.Scheme()+"://"+c.Request().Host+c.Request().URL.String())
 
 			if isHtmx {
 				c.Response().Header().Set("HX-Push-Url", "/")

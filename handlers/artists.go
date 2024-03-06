@@ -165,6 +165,8 @@ func processArtists(app *pocketbase.PocketBase, c echo.Context) error {
 	content.Pagination = string(pagination.Render())
 
 	ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, "Artists")
+	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "Check out the artists in the gallery.")
+	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgUrlKey, c.Scheme()+"://"+c.Request().Host+c.Request().URL.String())
 
 	if isHtmx {
 		c.Response().Header().Set("HX-Push-Url", currentUrl)

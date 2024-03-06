@@ -204,6 +204,11 @@ func processArtist(c echo.Context, app *pocketbase.PocketBase) error {
 	}
 
 	ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", content.Name, content.BioExcerpt))
+	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, content.Bio)
+	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgUrlKey, fullUrl)
+	if len(content.Works) > 0 {
+		ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgImageKey, c.Scheme()+"://"+c.Request().Host+content.Works[0].Image)
+	}
 
 	if htmx {
 		c.Response().Header().Set("HX-Push-Url", fullUrl)
@@ -336,6 +341,9 @@ func processArtwork(c echo.Context, app *pocketbase.PocketBase) error {
 	content.Jsonld = fmt.Sprintf(`<script type="application/ld+json">%s</script>`, marshalled)
 
 	ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", content.Title, content.Artist.Name))
+	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, content.Comment)
+	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, fullUrl)
+	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgImageKey, c.Scheme()+"://"+c.Request().Host+content.Image.Image)
 
 	if isHtmx {
 		c.Response().Header().Set("HX-Push-Url", fullUrl)
