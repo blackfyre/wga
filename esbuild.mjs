@@ -70,6 +70,9 @@ let result = await esbuild.build({
               "my-*",
               "mx-*",
               "mb-0",
+              "is-one-third-tablet",
+              "is-one-quarter-desktop",
+              "is-full-mobile",
             ],
             content: [
               "assets/templ/**/*.templ",
