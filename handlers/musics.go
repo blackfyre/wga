@@ -70,7 +70,7 @@ func registerMusicHandlers(app *pocketbase.PocketBase) {
 			isHtmx := utils.IsHtmxRequest(c)
 			cacheKey := "musics"
 
-			setUrl(c, "")
+			// setUrl(c, "")
 
 			found := app.Store().Has(cacheKey)
 

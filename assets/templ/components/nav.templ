@@ -30,7 +30,7 @@ templ TopNav() {
 				<a class="navbar-item" href="/artworks" hx-get="/artworks">
 					Artworks
 				</a>
-				<a class="navbar-item" href="/guestbook" hx-get="/guestbook">
+				<a class="navbar-item" href="/guestbook" hx-get="/guestbook" hx-trigger="guestbook-updated from:body">
 					Guestbook
 				</a>
 				<!-- 
