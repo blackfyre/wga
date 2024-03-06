@@ -262,7 +262,9 @@ window.wga = {
   },
   closeDialog() {
     wga.els.dialog.close();
-    wga.els.dialog.innerHTML = wga.els.dialogDefaultContent;
+    setTimeout(() => {
+      wga.els.dialog.innerHTML = wga.els.dialogDefaultContent;
+    }, 500);
   },
   windowHistoryBack() {
     window.history.back();
