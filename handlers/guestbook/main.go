@@ -6,11 +6,13 @@ import (
 	"time"
 
 	"github.com/blackfyre/wga/assets/templ/pages"
-	"github.com/blackfyre/wga/models"
+	wgaModels "github.com/blackfyre/wga/models"
 	"github.com/blackfyre/wga/utils"
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
+	"github.com/pocketbase/pocketbase/forms"
+	"github.com/pocketbase/pocketbase/models"
 
 	tmplUtils "github.com/blackfyre/wga/assets/templ/utils"
 )
@@ -39,7 +41,7 @@ func EntriesHandler(app *pocketbase.PocketBase, c echo.Context) error {
 	fullUrl := c.Scheme() + "://" + c.Request().Host + c.Request().URL.String()
 	year := c.QueryParamDefault("year", fmt.Sprintf("%d", time.Now().Year()))
 
-	entries, err := models.FindEntriesForYear(app.Dao(), year)
+	entries, err := wgaModels.FindEntriesForYear(app.Dao(), year)
 
 	if err != nil {
 		app.Logger().Error("Failed to get guestbook entries", "error", err)
@@ -56,12 +58,8 @@ func EntriesHandler(app *pocketbase.PocketBase, c echo.Context) error {
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "This is the guestbook of the Web Gallery of Art. Please feel free to leave a message.")
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, fullUrl)
 
-	if utils.IsHtmxRequest(c) {
-		c.Response().Header().Set("HX-Push-Url", fullUrl)
-		err = pages.GuestbookBlock(content).Render(ctx, c.Response().Writer)
-	} else {
-		err = pages.GuestbookPage(content).Render(ctx, c.Response().Writer)
-	}
+	c.Response().Header().Set("HX-Push-Url", fullUrl)
+	err = pages.GuestbookPage(content).Render(ctx, c.Response().Writer)
 
 	if err != nil {
 		return utils.ServerFaultError(c)
@@ -76,7 +74,13 @@ func StoreEntryViewHandler(app *pocketbase.PocketBase, c echo.Context) error {
 		return utils.ServerFaultError(c)
 	}
 
-	return c.String(200, "Hello, World!")
+	err := pages.GuestbookEntryForm().Render(context.Background(), c.Response().Writer)
+
+	if err != nil {
+		return utils.ServerFaultError(c)
+	}
+
+	return nil
 }
 
 func StoreEntryHandler(app *pocketbase.PocketBase, c echo.Context) error {
@@ -88,11 +92,11 @@ func StoreEntryHandler(app *pocketbase.PocketBase, c echo.Context) error {
 	data := apis.RequestInfo(c).Data
 
 	if err := c.Bind(&data); err != nil {
-		utils.SendToastMessage("Failed to create message, please try again later.", "is-danger", true, c)
+		utils.SendToastMessage("Failed to create message, please try again later.", "is-danger", true, c, "")
 		return apis.NewBadRequestError("Failed to parse form data", err)
 	}
 
-	guestBookMessage := GuestBookMessage{
+	postData := GuestBookMessage{
 		Name:          c.FormValue("sender_name"),
 		Email:         c.FormValue("sender_email"),
 		Location:      c.FormValue("location"),
@@ -101,20 +105,48 @@ func StoreEntryHandler(app *pocketbase.PocketBase, c echo.Context) error {
 		HoneyPotEmail: c.FormValue("email"),
 	}
 
-	if guestBookMessage.HoneyPotEmail != "" || guestBookMessage.HoneyPotName != "" {
+	if postData.HoneyPotEmail != "" || postData.HoneyPotName != "" {
 		// this is probably a bot
 		app.Logger().Error("Guestbook HoneyPot triggered", "ip", c.RealIP())
-		utils.SendToastMessage("Failed to create message, please try again later.", "is-danger", true, c)
+		utils.SendToastMessage("Failed to create message, please try again later.", "is-danger", true, c, "")
 		return c.NoContent(204)
 	}
 
-	// err := addGuestbookMessageToDB(app, guestBookMessage)
+	collection, err := app.Dao().FindCollectionByNameOrId("Guestbook")
+	if err != nil {
+		app.Logger().Error("Database table not found", err)
+		utils.SendToastMessage("Something went wrong!", "is-danger", true, c, "")
+		return utils.ServerFaultError(c)
+	}
 
-	// if err != nil {
-	// 	return apis.NewBadRequestError("Failed to add message to database", err)
-	// }
+	record := models.NewRecord(collection)
 
-	utils.SendToastMessage("Message added successfully", "is-success", true, c)
+	form := forms.NewRecordUpsert(app, record)
+
+	form.LoadData(map[string]any{
+		"email":    postData.Email,
+		"name":     postData.Name,
+		"message":  postData.Message,
+		"location": postData.Location,
+	})
+
+	if err := form.Submit(); err != nil {
+
+		err := pages.GuestbookEntryForm().Render(context.Background(), c.Response().Writer)
+
+		if err != nil {
+			app.Logger().Error("Failed to render the guestbook entry form after form submission error", err)
+			return utils.ServerFaultError(c)
+		}
+
+		app.Logger().Error("Failed to store the entry", err)
+
+		utils.SendToastMessage("Failed to store the entry", "is-danger", false, c, "")
+
+		return err
+	}
+
+	utils.SendToastMessage("Message added successfully", "is-success", true, c, "guestbook-updated")
 
 	return nil
 }

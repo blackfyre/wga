@@ -24,9 +24,17 @@ templ GuestbookPage(v GuestbookView) {
 templ GuestbookBlock(v GuestbookView) {
 	<section class="section">
 		<div class="container box">
+			<h1 class="title">Guestbook</h1>
 			<div class="level">
 				<div class="level-left">
-					<h1 class="title">Guestbook</h1>
+					<a
+						href="#"
+						hx-get="/guestbook/add"
+						hx-on="click: wga.openDialog()"
+						hx-target="#d"
+						hx-select="section.container"
+						class="button is-primary"
+					>Add Entry</a>
 				</div>
 				<div class="level-right">
 					<div class="select">
@@ -49,6 +57,96 @@ templ GuestbookBlock(v GuestbookView) {
 				<p>Be the first to sign the guestbook!</p>
 			}
 		</div>
+	</section>
+}
+
+templ GuestbookEntryForm() {
+	<section class="container">
+		<h1 class="title mb-3">Leave an enty!</h1>
+		<p>Leave your mark in the guestbook!</p>
+		<p>Be kind and respectful to others.</p>
+		<p>Messages are moderated and will be reviewed before being published.</p>
+		<p class="mb-3">You can post your message anonymously if you prefer.</p>
+		<form
+			hx-post="/guestbook/add"
+			enctype="multipart/form-data"
+			hx-target="#d"
+			hx-disabled-elt="input,button,select"
+		>
+			<div class="field">
+				<label class="label">Name</label>
+				<input
+					type="text"
+					class="input"
+					placeholder="Your name"
+					name="sender_name"
+					required
+					autocomplete="name"
+				/>
+			</div>
+			<div class="field">
+				<label class="label">Email</label>
+				<input
+					type="email"
+					class="input"
+					placeholder="Your email"
+					name="sender_email"
+					required
+					autocomplete="email"
+				/>
+			</div>
+			<div class="field">
+				<label class="label">Location</label>
+				<input
+					type="text"
+					class="input"
+					placeholder="Your location"
+					name="location"
+					required
+					autocomplete="location"
+				/>
+			</div>
+			<div class="field">
+				<trix-editor input="message" placeholder="Your message"></trix-editor>
+				<input type="hidden" id="message" name="message"/>
+			</div>
+			<div class="field">
+				<label aria-hidden="true" class="hpt" for="name"></label>
+				<input
+					aria-hidden="true"
+					class="hpt"
+					autocomplete="off"
+					type="text"
+					id="name"
+					name="name"
+					placeholder="Enter your name"
+				/>
+			</div>
+			<div class="field">
+				<label aria-hidden="true" class="hpt" for="email"></label>
+				<input
+					aria-hidden="true"
+					class="hpt"
+					autocomplete="off"
+					type="email"
+					id="email"
+					name="email"
+					placeholder="Enter your email"
+				/>
+			</div>
+			<div class="field is-grouped">
+				<p class="control">
+					<button class="button is-link" type="submit">
+						Leave entry
+					</button>
+				</p>
+				<p class="control">
+					<button type="button" class="button" hx-on="click: wga.closeDialog();">
+						Cancel
+					</button>
+				</p>
+			</div>
+		</form>
 	</section>
 }
 
@@ -81,11 +179,13 @@ templ GuestbookEntry(entry *models.GuestbookEntry) {
 				<div class="list-item-title">Anonymous</div>
 			}
 			<div class="list-item-description">
-				{ entry.Message }
+				<div class="content mb-0">
+					@templ.Raw(entry.Message)
+				</div>
 				if entry.Location != "" {
-					<br/>
-					<span class="tag is-light">{ entry.Location }</span>
+					<span class="tag is-light mr-3">{ entry.Location }</span>
 				}
+				<span class="tag is-light">{ entry.Created }</span>
 			</div>
 		</div>
 	</div>

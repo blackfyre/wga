@@ -98,7 +98,7 @@ func GetOpenGraphTags(c context.Context) map[string]string {
 	if v, ok := c.Value(OgImageKey).(string); ok {
 		ogTags["og:image"] = v
 	} else {
-		ogTags["og:image"] = AssetUrl("/images/smo_cover_1080x1080.png")
+		ogTags["og:image"] = AssetUrl("/assets/images/smo_cover_1080x1080.png")
 	}
 
 	if v, ok := c.Value(OgUrlKey).(string); ok {
@@ -146,7 +146,7 @@ func GetTwitterTags(c context.Context) map[string]string {
 	if v, ok := c.Value(TwitterImageKey).(string); ok {
 		twitterTags["twitter:image"] = v
 	} else {
-		twitterTags["twitter:image"] = AssetUrl("/images/smo_cover_1080x1080.png")
+		twitterTags["twitter:image"] = AssetUrl("/assets/images/smo_cover_1080x1080.png")
 	}
 
 	return twitterTags

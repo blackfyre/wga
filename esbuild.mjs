@@ -64,6 +64,12 @@ let result = await esbuild.build({
               "bottom-level",
               "progress-indicator",
               "htmx-request",
+              "*-auto",
+              "mb-3",
+              "mr-*",
+              "my-*",
+              "mx-*",
+              "mb-0",
             ],
             content: [
               "assets/templ/**/*.templ",

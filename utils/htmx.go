@@ -17,7 +17,7 @@ func SetHxTrigger(c echo.Context, data map[string]any) {
 	c.Response().Header().Set("HX-Trigger", string(hd))
 }
 
-func SendToastMessage(message string, t string, closeDialog bool, c echo.Context) {
+func SendToastMessage(message string, t string, closeDialog bool, c echo.Context, trigger string) {
 	payload := struct {
 		Message     string `json:"message"`
 		Type        string `json:"type"`
@@ -30,6 +30,10 @@ func SendToastMessage(message string, t string, closeDialog bool, c echo.Context
 
 	m := map[string]any{
 		"notification:toast": payload,
+	}
+
+	if trigger != "" {
+		m[trigger] = trigger
 	}
 
 	SetHxTrigger(c, m)

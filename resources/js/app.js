@@ -258,7 +258,9 @@ function initCloner() {
 
 window.wga = {
   openDialog() {
-    wga.els.dialog.showModal();
+    setTimeout(() => {
+      wga.els.dialog.showModal();
+    }, 500);
   },
   closeDialog() {
     wga.els.dialog.close();

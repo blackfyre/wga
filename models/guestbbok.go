@@ -12,6 +12,7 @@ type GuestbookEntry struct {
 	Message  string `db:"message" json:"message"`
 	Email    string `db:"email" json:"email"`
 	Location string `db:"location" json:"location"`
+	Created  string `db:"created" json:"created"`
 }
 
 var _ models.Model = (*GuestbookEntry)(nil)
@@ -27,7 +28,7 @@ func GuestbookQuery(dao *daos.Dao) *dbx.SelectQuery {
 func FindEntriesForYear(dao *daos.Dao, year string) ([]*GuestbookEntry, error) {
 	var entries []*GuestbookEntry
 
-	err := GuestbookQuery(dao).AndWhere(dbx.Like("created", year)).OrderBy("created").All(&entries)
+	err := GuestbookQuery(dao).AndWhere(dbx.Like("created", year)).OrderBy("created DESC").All(&entries)
 
 	return entries, err
 }
