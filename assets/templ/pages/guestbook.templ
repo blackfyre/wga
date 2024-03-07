@@ -74,41 +74,40 @@ templ GuestbookEntryForm() {
 			hx-disabled-elt="input,button,select"
 		>
 			<div class="field">
-				<label class="label">Name</label>
+				<label class="label" for="sender_name">Name</label>
 				<input
 					type="text"
 					class="input"
 					placeholder="Your name"
 					name="sender_name"
-					required
 					autocomplete="name"
+					id="sender_name"
 				/>
 			</div>
 			<div class="field">
-				<label class="label">Email</label>
+				<label class="label" for="sender_email">Email</label>
 				<input
 					type="email"
 					class="input"
 					placeholder="Your email"
 					name="sender_email"
-					required
 					autocomplete="email"
+					id="sender_email"
 				/>
 			</div>
 			<div class="field">
-				<label class="label">Location</label>
+				<label class="label" for="location">Location</label>
 				<input
 					type="text"
 					class="input"
 					placeholder="Your location"
 					name="location"
-					required
 					autocomplete="location"
 				/>
 			</div>
 			<div class="field">
-				<trix-editor input="message" placeholder="Your message"></trix-editor>
-				<input type="hidden" id="message" name="message"/>
+				<label class="label" for="message">Entry</label>
+				<textarea class="textarea" id="message" name="message" placeholder="Your entry"></textarea>
 			</div>
 			<div class="field">
 				<label aria-hidden="true" class="hpt" for="name"></label>
