@@ -62,6 +62,8 @@ templ ImageCard(i Image, hasLearnMore bool) {
 				hx-get={ `/postcard/send?awid=` + i.Id }
 				hx-target="#d"
 				class="card-footer-item"
+				hx-swap="innerHTML"
+				hx-select="section.postcard-editor"
 			>
 				Send
 				Postcard
