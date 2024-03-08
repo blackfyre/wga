@@ -1,13 +1,15 @@
 package artworks
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 
-	"github.com/blackfyre/wga/assets"
+	"github.com/blackfyre/wga/assets/templ/components"
+	"github.com/blackfyre/wga/assets/templ/pages"
+	tmplUtils "github.com/blackfyre/wga/assets/templ/utils"
 	"github.com/blackfyre/wga/models"
 	"github.com/blackfyre/wga/utils"
-	"github.com/blackfyre/wga/utils/jsonld"
 	"github.com/blackfyre/wga/utils/url"
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
@@ -16,39 +18,40 @@ import (
 )
 
 func searchPage(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) error {
-	//setup request variables
-	htmx := utils.IsHtmxRequest(c)
-	// currentUrl := c.Request().URL.String()
-	currentUrlPath := c.Request().URL.Path
 
-	//build filters
+	fullUrl := c.Scheme() + "://" + c.Request().Host + c.Request().URL.String()
 	filters := buildFilters(app, c)
 
-	//set page
-
-	//check cache
-	td := assets.NewRenderData(app)
-
-	td["ArtFormOptions"], _ = getArtFormOptions(app)
-	td["ArtTypeOptions"], _ = getArtTypesOptions(app)
-	td["ArtSchoolOptions"], _ = getArtSchoolOptions(app)
-	td["ArtistNameList"], _ = getArtistNameList(app)
-	td["ActiveFilterValues"] = filters
-	td["NewFilterValues"] = filters.BuildFilterString()
-
-	html, err := assets.Render(assets.Renderable{
-		IsHtmx: htmx,
-		Block:  "artworks:content",
-		Data:   td,
-	})
-
-	if err != nil {
-		return apis.NewNotFoundError("", err)
+	content := pages.ArtworkSearchDTO{
+		ActiveFilterValues: &pages.ArtworkSearchFilterValues{
+			Title:         filters.Title,
+			SchoolString:  filters.SchoolString,
+			ArtFormString: filters.ArtFormString,
+			ArtTypeString: filters.ArtTypeString,
+			ArtistString:  filters.ArtistString,
+		},
 	}
 
-	c.Response().Header().Set("HX-Push-Url", currentUrlPath+"?"+filters.BuildFilterString())
+	content.ArtFormOptions, _ = getArtFormOptions(app)
+	content.ArtTypeOptions, _ = getArtTypesOptions(app)
+	content.ArtSchoolOptions, _ = getArtSchoolOptions(app)
+	content.ArtistNameList, _ = getArtistNameList(app)
+	content.NewFilterValues = filters.BuildFilterString()
 
-	return c.HTML(http.StatusOK, html)
+	ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, "Artworks Search")
+	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "On this page you can search for artworks by title, artist, art form, art type and art school!")
+	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgUrlKey, fullUrl)
+
+	c.Response().Header().Set("HX-Push-Url", fullUrl)
+	err := pages.ArtworkSearchPage(content).Render(ctx, c.Response().Writer)
+
+	if err != nil {
+		app.Logger().Error("Error rendering artwork search page", err)
+		return utils.ServerFaultError(c)
+	}
+
+	return nil
+
 }
 
 func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) error {
@@ -79,8 +82,6 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 
 	filterString, filterParams := filters.BuildFilter()
 
-	td := assets.NewRenderData(app)
-
 	records, err := app.Dao().FindRecordsByFilter(
 		"artworks",
 		filterString,
@@ -110,64 +111,74 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 
 	recordsCount := len(totalRecords)
 
-	td["Artworks"] = []any{}
+	content := pages.ArtworkSearchDTO{
+		Results: pages.ArtworkSearchResultDTO{
+			Artworks: components.ImageGrid{},
+		},
+		ActiveFilterValues: &pages.ArtworkSearchFilterValues{
+			Title:         filters.Title,
+			SchoolString:  filters.SchoolString,
+			ArtFormString: filters.ArtFormString,
+			ArtTypeString: filters.ArtTypeString,
+			ArtistString:  filters.ArtistString,
+		},
+	}
+
+	content.ArtFormOptions, _ = getArtFormOptions(app)
+	content.ArtTypeOptions, _ = getArtTypesOptions(app)
+	content.ArtSchoolOptions, _ = getArtSchoolOptions(app)
+	content.ArtistNameList, _ = getArtistNameList(app)
+	content.NewFilterValues = filters.BuildFilterString()
+	content.Results.ActiveFiltering = filters.AnyFilterActive()
 
 	for _, v := range records {
 
 		artistIds := v.GetStringSlice("author")
 
 		if len(artistIds) == 0 {
-			// wating for the promised logging system by @pocketbase
+			// waiting for the promised logging system by @pocketbase
 			continue
 		}
 
 		artist, err := models.GetArtistById(app.Dao(), artistIds[0])
 
 		if err != nil {
-			// wating for the promised logging system by @pocketbase
+			// waiting for the promised logging system by @pocketbase
 			continue
 		}
 
-		jsonLd := jsonld.GenerateVisualArtworkJsonLdContent(v, c)
+		content.Results.Artworks = append(content.Results.Artworks, components.Image{
+			Url:       "/artists/" + artist.Slug + "-" + artist.Id + "/artworks/" + utils.Slugify(v.GetString("title")) + "-" + v.Id,
+			Image:     url.GenerateFileUrl("artworks", v.GetString("id"), v.GetString("image"), ""),
+			Thumb:     url.GenerateThumbUrl("artworks", v.GetString("id"), v.GetString("image"), "320x240", ""),
+			Comment:   v.GetString("comment"),
+			Title:     v.GetString("title"),
+			Technique: v.GetString("technique"),
+			Id:        v.GetId(),
+		})
 
-		jsonLd["image"] = url.GenerateFileUrl("artworks", v.GetString("id"), v.GetString("image"), "")
-		jsonLd["creator"] = jsonld.GenerateArtistJsonLdContent(artist, c)
-		jsonLd["thumbnailUrl"] = url.GenerateThumbUrl("artworks", v.GetString("id"), v.GetString("image"), "320x240", "")
-
-		row := map[string]any{
-			"Id":         v.GetId(),
-			"Title":      v.GetString("title"),
-			"Comment":    v.GetString("comment"),
-			"Technique":  v.GetString("technique"),
-			"Image":      jsonLd["image"].(string),
-			"Thumb":      jsonLd["thumbnailUrl"].(string),
-			"ArtworkUrl": "/artists/" + artist.Slug + "-" + artist.Id + "/artworks/" + utils.Slugify(v.GetString("title")) + "-" + v.Id,
-			"Jsonld":     jsonLd,
-		}
-
-		td["Artworks"] = append(td["Artworks"].([]any), row)
 	}
 
 	pUrl := "/artworks?" + filters.BuildFilterString()
 	pHtmxUrl := "/artworks/results?" + filters.BuildFilterString()
 
-	pagination := utils.NewPagination(recordsCount, limit, page, pUrl, "artwork-search-results", pHtmxUrl)
+	pagination := utils.NewPagination(recordsCount, limit, page, pUrl, "", pHtmxUrl)
 
-	td["Pagination"] = pagination.Render()
+	content.Results.Pagination = string(pagination.Render())
 
-	html, err := assets.Render(assets.Renderable{
-		IsHtmx: htmx,
-		Block:  "artworks:results",
-		Data:   td,
-	})
+	ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, "Artworks Search")
+	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "On this page you can search for artworks by title, artist, art form, art type and art school!")
+	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgUrlKey, pHtmxUrl)
+
+	c.Response().Header().Set("HX-Push-Url", pHtmxUrl)
+	err = pages.ArtworkSearchPage(content).Render(ctx, c.Response().Writer)
 
 	if err != nil {
-		return apis.NewNotFoundError("", err)
+		app.Logger().Error("Error rendering artwork search page", err)
+		return utils.ServerFaultError(c)
 	}
 
-	// c.Response().Header().Set("HX-Push-Url", currentUrl)
-
-	return c.HTML(http.StatusOK, html)
+	return nil
 }
 
 // RegisterArtworksHandlers registers search handlers to the given PocketBase app.

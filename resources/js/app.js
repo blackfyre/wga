@@ -186,6 +186,13 @@ function InitEventListeners() {
     });
   });
 
+  //! This is a workaround, has to be removed when htmx fixes the issue
+  addEventListener("htmx:beforeHistorySave", () => {
+    document
+      .querySelectorAll(":disabled")
+      .forEach((el) => (el.disabled = false));
+  });
+
   document.addEventListener("trix-before-initialize", () => {
     Trix.config.toolbar.getDefaultHTML = () => {
       return `
