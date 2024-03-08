@@ -57,6 +57,8 @@ let result = await esbuild.build({
               "fa-times",
               "fa-2x",
               "mb-2",
+              "fa-spinner",
+              "fa-pulse",
               "has-sticky-header",
               "is-sticky",
               "is-reversed-mobile",
