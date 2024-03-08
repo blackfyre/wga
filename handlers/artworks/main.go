@@ -22,6 +22,11 @@ func searchPage(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) 
 	fullUrl := c.Scheme() + "://" + c.Request().Host + c.Request().URL.String()
 	filters := buildFilters(app, c)
 
+	if filters.AnyFilterActive() {
+		// redirect to the search results page
+		return c.Redirect(http.StatusFound, "/artworks/results?"+filters.BuildFilterString())
+	}
+
 	content := pages.ArtworkSearchDTO{
 		ActiveFilterValues: &pages.ArtworkSearchFilterValues{
 			Title:         filters.Title,
@@ -55,12 +60,6 @@ func searchPage(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) 
 }
 
 func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) error {
-
-	htmx := utils.IsHtmxRequest(c)
-
-	if !htmx {
-		return c.Redirect(http.StatusFound, "/artworks")
-	}
 
 	limit := 16
 	page := 1
