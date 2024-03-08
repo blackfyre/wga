@@ -1,16 +1,19 @@
 package handlers
 
 import (
+	"context"
 	"embed"
 	"errors"
 	"fmt"
-	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/blackfyre/wga/assets"
+	"github.com/blackfyre/wga/assets/templ/error_pages"
+	"github.com/blackfyre/wga/assets/templ/pages"
+	tmplUtils "github.com/blackfyre/wga/assets/templ/utils"
 	"github.com/blackfyre/wga/models"
 	"github.com/blackfyre/wga/utils"
 	"github.com/labstack/echo/v5"
@@ -36,36 +39,35 @@ func registerStatic(app *pocketbase.PocketBase) {
 		e.Router.GET("/pages/:slug", func(c echo.Context) error {
 
 			slug := c.PathParam("slug")
+			fullUrl := c.Scheme() + "://" + c.Request().Host + c.Request().URL.String()
 
 			page, err := models.FindStaticPageBySlug(app.Dao(), slug)
 
 			if err != nil {
 				app.Logger().Error("Error retrieving static page", "page", slug, err)
-				return err
+
+				return utils.NotFoundError(c)
 			}
 
-			d := assets.NewRenderData(app)
-
-			d["Title"] = page.Title
-			d["Slug"] = page.Slug
-			d["Content"] = page.Content
-
-			html, err := assets.Render(assets.Renderable{
-				IsHtmx: utils.IsHtmxRequest(c),
-				Block:  "staticpage:content",
-				Data:   d,
-			})
-
-			if err != nil {
-				app.Logger().Error("Error rendering static page", "page", slug, err)
-				return err
+			content := pages.StaticPageDTO{
+				Title:   page.Title,
+				Content: page.Content,
 			}
 
-			c.Response().Header().Set("HX-Push-Url", "/pages/"+slug)
+			ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, page.Title)
+			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, page.Content)
+			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, fullUrl)
 
-			return c.HTML(http.StatusOK, html)
+			c.Response().Header().Set("HX-Push-Url", fullUrl)
+			return pages.StaticPage(content).Render(ctx, c.Response().Writer)
 
 		})
+
+		e.Router.GET("/error_404", func(c echo.Context) error {
+			c.Response().Header().Set("HX-Push-Url", "/error_404")
+			return error_pages.NotFoundPage().Render(context.Background(), c.Response().Writer)
+		})
+
 		return nil
 	})
 }
@@ -90,7 +92,7 @@ func staticEmbeddedHandler(embedded embed.FS) echo.HandlerFunc {
 		fileErr := c.FileFS(name, embedded)
 
 		if fileErr != nil && errors.Is(fileErr, echo.ErrNotFound) {
-			return c.FileFS("public/404.html", embedded)
+			return c.Redirect(404, "/error_404")
 		}
 
 		return fileErr

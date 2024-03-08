@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/blackfyre/wga/utils"
 	"github.com/pocketbase/pocketbase"
 	"github.com/sabloger/sitemap-generator/smg"
 )
@@ -57,7 +58,7 @@ func generateArtistMap(app *pocketbase.PocketBase, index *smg.SitemapIndex) {
 		updatedAtTime := m.GetUpdated().Time()
 
 		err := artistSitemap.Add(&smg.SitemapLoc{
-			Loc:        fmt.Sprintf("/artist/%s", m.GetString("slug")),
+			Loc:        fmt.Sprintf("/artist/%s-%s", m.GetString("slug"), m.GetId()),
 			LastMod:    &updatedAtTime,
 			ChangeFreq: smg.Monthly,
 			Priority:   0.8,
@@ -106,7 +107,7 @@ func generateArtworksMap(app *pocketbase.PocketBase, index *smg.SitemapIndex) {
 		updatedAtTime := m.GetUpdated().Time()
 
 		err := artistSitemap.Add(&smg.SitemapLoc{
-			Loc:        fmt.Sprintf("/artist/%s/%s", author.GetString("slug"), m.GetId()),
+			Loc:        fmt.Sprintf("/artist/%s-%s/%s-%s", author.GetString("slug"), author.GetId(), utils.Slugify(m.GetString("title")), m.GetId()),
 			LastMod:    &updatedAtTime,
 			ChangeFreq: smg.Monthly,
 			Priority:   0.8,

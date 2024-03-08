@@ -23,15 +23,18 @@
     "autoprefixer": "^10.4.16",
     "bulma": "^0.9.4",
     "bulma-toast": "^2.4.3",
-    "esbuild": "0.19.5",
+    "esbuild": "0.20.1",
+    "esbuild-plugin-copy": "^2.1.1",
     "esbuild-plugin-purgecss-2": "^1.0.1",
-    "esbuild-sass-plugin": "^2.16.0",
+    "esbuild-sass-plugin": "^3.1.0",
     "glob-all": "^3.3.1",
-    "husky": "^8.0.3",
+    "htmx.org": "^1.9.10",
+    "husky": "^9.0.11",
     "lint-staged": "^15.0.2",
     "postcss": "^8.4.31",
-    "prettier": "3.0.3",
-    "purgecss-from-html": "^6.0.0-alpha.0"
+    "prettier": "3.2.5",
+    "purgecss-from-html": "^6.0.0-alpha.0",
+    "bulma-list": "^1.2.0"
   },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown"

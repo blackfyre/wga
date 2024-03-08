@@ -1,0 +1,205 @@
+package pages
+
+import (
+	"github.com/blackfyre/wga/assets/templ/layouts"
+	"github.com/blackfyre/wga/models"
+	// "github.com/blackfyre/wga/assets/templ/utils"
+	// "github.com/blackfyre/wga/assets/templ/components"
+	"crypto/md5"
+	"fmt"
+)
+
+type GuestbookView struct {
+	SelectedYear string
+	YearOptions  []string
+	Entries      []*models.GuestbookEntry
+}
+
+templ GuestbookPage(v GuestbookView) {
+	@layouts.LayoutMain() {
+		@GuestbookBlock(v)
+	}
+}
+
+templ GuestbookBlock(v GuestbookView) {
+	<section class="section">
+		<div class="container box">
+			<h1 class="title">Guestbook</h1>
+			<div class="level">
+				<div class="level-left">
+					<a
+						href="#"
+						hx-get="/guestbook/add"
+						hx-on="click: wga.openDialog()"
+						hx-target="#d"
+						hx-select="section.container"
+						class="button is-primary"
+					>Add Entry</a>
+				</div>
+				<div class="level-right">
+					<div class="select">
+						<select
+							title="Select a year to filter the guestbook entries"
+							name="year"
+							hx-get="/guestbook"
+						>
+							for _, year := range v.YearOptions {
+								<option value={ year } selected?={ v.SelectedYear == year }>{ year }</option>
+							}
+						</select>
+					</div>
+				</div>
+			</div>
+			if len(v.Entries) > 0 {
+				@GuestbookEntries(v.Entries)
+			} else {
+				<p>No entries found</p>
+				<p>Be the first to sign the guestbook!</p>
+			}
+		</div>
+	</section>
+}
+
+templ GuestbookEntryForm() {
+	<section class="container">
+		<h1 class="title mb-3">Leave an enty!</h1>
+		<p>Leave your mark in the guestbook!</p>
+		<p>Be kind and respectful to others.</p>
+		<p>Messages are moderated and will be reviewed before being published.</p>
+		<p class="mb-3">You can post your message anonymously if you prefer.</p>
+		<form
+			hx-post="/guestbook/add"
+			enctype="multipart/form-data"
+			hx-target="#d"
+			hx-disabled-elt="input,button,select"
+		>
+			<div class="field">
+				<label class="label" for="sender_name">Name</label>
+				<input
+					type="text"
+					class="input"
+					placeholder="Your name"
+					name="sender_name"
+					autocomplete="name"
+					id="sender_name"
+				/>
+			</div>
+			<div class="field">
+				<label class="label" for="sender_email">Email</label>
+				<input
+					type="email"
+					class="input"
+					placeholder="Your email"
+					name="sender_email"
+					autocomplete="email"
+					id="sender_email"
+				/>
+			</div>
+			<div class="field">
+				<label class="label" for="location">Location</label>
+				<input
+					type="text"
+					class="input"
+					placeholder="Your location"
+					name="location"
+					autocomplete="location"
+				/>
+			</div>
+			<div class="field">
+				<label class="label" for="message">Entry</label>
+				<textarea class="textarea" id="message" name="message" placeholder="Your entry"></textarea>
+			</div>
+			<div class="field">
+				<label aria-hidden="true" class="hpt" for="name"></label>
+				<input
+					aria-hidden="true"
+					class="hpt"
+					autocomplete="off"
+					type="text"
+					id="name"
+					name="name"
+					placeholder="Enter your name"
+				/>
+			</div>
+			<div class="field">
+				<label aria-hidden="true" class="hpt" for="email"></label>
+				<input
+					aria-hidden="true"
+					class="hpt"
+					autocomplete="off"
+					type="email"
+					id="email"
+					name="email"
+					placeholder="Enter your email"
+				/>
+			</div>
+			<div class="field is-grouped">
+				<p class="control">
+					<button class="button is-link" type="submit">
+						Leave entry
+					</button>
+				</p>
+				<p class="control">
+					<button type="button" class="button" hx-on="click: wga.closeDialog();">
+						Cancel
+					</button>
+				</p>
+			</div>
+		</form>
+	</section>
+}
+
+templ GuestbookEntries(entries []*models.GuestbookEntry) {
+	<div class="list has-hoverable-list-items">
+		for _, entry := range entries {
+			@GuestbookEntry(entry)
+		}
+	</div>
+}
+
+templ GuestbookEntry(entry *models.GuestbookEntry) {
+	if (entry.Message == "") {
+		return
+	}
+	<div class="list-item">
+		<div class="list-item-image">
+			<figure class="image is-64x64">
+				if entry.Email != "" {
+					<img class="is-rounded" src={ genGravatarUrl(entry.Email) }/>
+				} else {
+					<img class="is-rounded" src="https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y&size=128"/>
+				}
+			</figure>
+		</div>
+		<div class="list-item-content">
+			if entry.Name != "" {
+				<div class="list-item-title">{ entry.Name }</div>
+			} else {
+				<div class="list-item-title">Anonymous</div>
+			}
+			<div class="list-item-description">
+				<div class="content mb-0">
+					@templ.Raw(entry.Message)
+				</div>
+				if entry.Location != "" {
+					<span class="tag is-light mr-3">{ entry.Location }</span>
+				}
+				<span class="tag is-light">{ entry.Created }</span>
+			</div>
+		</div>
+	</div>
+}
+
+func genMd5(email string) string {
+	hash := md5.New()
+	hash.Write([]byte(email))
+	return fmt.Sprintf("%x", hash.Sum(nil))
+}
+
+func urlEncode(s string) string {
+	return s
+}
+
+func genGravatarUrl(email string) string {
+	return "https://www.gravatar.com/avatar/" + genMd5(email) + "?d=identicon&size=128"
+}

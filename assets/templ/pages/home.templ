@@ -1,0 +1,47 @@
+package pages
+
+import (
+	"github.com/blackfyre/wga/assets/templ/layouts"
+	"github.com/blackfyre/wga/assets/templ/utils"
+)
+
+type HomePage struct {
+	Content      string
+	ArtistCount  string
+	ArtworkCount string
+}
+
+templ HomePageWrapped(c HomePage) {
+	@layouts.LayoutMain() {
+		@HomePageContent(c)
+	}
+}
+
+templ HomePageContent(c HomePage) {
+	<head>
+		<title>{ utils.GetTitle(ctx) }</title>
+	</head>
+	<section class="section">
+		<div class="container block">
+			<div class="box content">
+				@templ.Raw(c.Content)
+			</div>
+		</div>
+		<div class="container">
+			<div class="box level">
+				<div class="level-item has-text-centered">
+					<div>
+						<p class="title">{ c.ArtistCount }</p>
+						<p class="heading">Artists</p>
+					</div>
+				</div>
+				<div class="level-item has-text-centered">
+					<div>
+						<p class="title">{ c.ArtworkCount }</p>
+						<p class="heading">Artworks</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+}
