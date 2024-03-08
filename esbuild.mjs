@@ -3,6 +3,7 @@ import { sassPlugin } from "esbuild-sass-plugin";
 import postcss from "postcss";
 import autoprefixer from "autoprefixer";
 import purgeCSSPlugin from "@fullhuman/postcss-purgecss";
+import { copy } from "esbuild-plugin-copy";
 import fs from "node:fs";
 
 console.info("🚀 Starting build 🚀");
@@ -17,6 +18,7 @@ let result = await esbuild.build({
   legalComments: "linked",
   allowOverwrite: true,
   outbase: "resources",
+  target: ["es2020", "chrome58", "edge16", "firefox57", "safari11"],
   loader: {
     ".png": "file",
     ".jpg": "file",
@@ -34,11 +36,50 @@ let result = await esbuild.build({
         const { css } = await postcss([
           autoprefixer,
           purgeCSSPlugin({
-            safelist: ["content"],
+            safelist: [
+              "content",
+              "is-multiline",
+              "is-4by3",
+              "is-48x48",
+              "hidden-caption",
+              "divider",
+              "card",
+              "image",
+              "field",
+              "is-grouped",
+              "hpt",
+              "postcard-editor",
+              "icon",
+              "is-clickable",
+              "close-dialog",
+              "is-large",
+              "fas",
+              "fa-times",
+              "fa-2x",
+              "mb-2",
+              "fa-spinner",
+              "fa-pulse",
+              "has-sticky-header",
+              "is-sticky",
+              "is-reversed-mobile",
+              "is-clipped",
+              "bottom-level",
+              "progress-indicator",
+              "htmx-request",
+              "*-auto",
+              "mb-3",
+              "mr-*",
+              "my-*",
+              "mx-*",
+              "mb-0",
+              "is-one-third-tablet",
+              "is-one-quarter-desktop",
+              "is-full-mobile",
+              "textarea",
+            ],
             content: [
-              "assets/views/layout.html",
-              "assets/views/pages/**/*.html",
-              "assets/views/partials/**/*.html",
+              "assets/templ/**/*.templ",
+              "assets/templ/**/*.go",
               "resources/js/**/*.js",
               "utils/**/*.go",
             ],
@@ -47,6 +88,22 @@ let result = await esbuild.build({
 
         return css;
       },
+    }),
+    copy({
+      resolveFrom: "cwd",
+      assets: {
+        from: ["./node_modules/htmx.org/dist/htmx.min.js"],
+        to: ["./assets/public/js/vendor"],
+      },
+      watch: true,
+    }),
+    copy({
+      resolveFrom: "cwd",
+      assets: {
+        from: ["./node_modules/htmx.org/dist/ext/loading-states.js"],
+        to: ["./assets/public/js/vendor"],
+      },
+      watch: true,
     }),
   ],
   outdir: "./assets/public/",

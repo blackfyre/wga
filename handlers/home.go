@@ -1,14 +1,14 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
-	"net/http"
 
-	"github.com/blackfyre/wga/assets"
+	"github.com/blackfyre/wga/assets/templ/pages"
+	tmplUtils "github.com/blackfyre/wga/assets/templ/utils"
 	"github.com/blackfyre/wga/utils"
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
-	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 )
 
@@ -124,46 +124,43 @@ func registerHome(app *pocketbase.PocketBase) {
 			welcomeText, err := getWelcomeContent(app)
 
 			if err != nil {
-				fmt.Println(err)
+				app.Logger().Error("Error getting welcome content", err)
+				return utils.ServerFaultError(c)
 			}
 
 			artistCount, err := getArtistCount(app)
 
 			if err != nil {
-				fmt.Println(err)
+				app.Logger().Error("Error getting artist count for home page", err)
+				return utils.ServerFaultError(c)
 			}
 
 			artworkCount, err := getArtworkCount(app)
 
 			if err != nil {
-				fmt.Println(err)
+				app.Logger().Error("Error getting artwork count for home page", err)
+				return utils.ServerFaultError(c)
 			}
 
-			isHtmx := utils.IsHtmxRequest(c)
-
-			html := ""
-
-			data := assets.NewRenderData(app)
-
-			data["Content"] = welcomeText
-			data["ArtistCount"] = artistCount
-			data["ArtworkCount"] = artworkCount
-
-			html, err = assets.Render(assets.Renderable{
-				IsHtmx: isHtmx,
-				Block:  "home:content",
-				Data:   data,
-			})
-
-			if err != nil {
-				// or redirect to a dedicated 404 HTML page
-				app.Logger().Error("Error rendering home page", err)
-				return apis.NewNotFoundError("", err)
+			content := pages.HomePage{
+				Content:      welcomeText,
+				ArtistCount:  artistCount,
+				ArtworkCount: artworkCount,
 			}
+
+			ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, "Welcome to the Gallery")
+			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "Welcome to the Gallery")
+			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgUrlKey, c.Scheme()+"://"+c.Request().Host+c.Request().URL.String())
 
 			c.Response().Header().Set("HX-Push-Url", "/")
+			err = pages.HomePageWrapped(content).Render(ctx, c.Response().Writer)
 
-			return c.HTML(http.StatusOK, html)
+			if err != nil {
+				app.Logger().Error("Error rendering home page", err)
+				return utils.ServerFaultError(c)
+			}
+
+			return nil
 		})
 
 		return nil
