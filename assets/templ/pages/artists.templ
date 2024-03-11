@@ -59,6 +59,8 @@ templ ArtistsPageBlock(c ArtistsView) {
 										hx-trigger="keyup changed delay:500ms, search"
 										hx-disabled-elt="this"
 										value={ c.QueryStr }
+										aria-label="Search artists"
+										aria-role="search"
 									/>
 								</p>
 							</div>
