@@ -70,7 +70,7 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: "wga serve",
+    command: "./wga serve",
     url: "http://localhost:8090",
     reuseExistingServer: !process.env.CI,
   },
