@@ -13,6 +13,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: lts/*
+      - name: Generate .env file
+        run: cp .env.example .env
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
