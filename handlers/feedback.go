@@ -9,7 +9,6 @@ import (
 	"github.com/labstack/echo/v5"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/pocketbase/pocketbase"
-	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/forms"
 	"github.com/pocketbase/pocketbase/models"
@@ -47,7 +46,7 @@ func registerFeedbackHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 		e.Router.POST("feedback", func(c echo.Context) error {
 
 			if !utils.IsHtmxRequest(c) {
-				return apis.NewBadRequestError("Unexpected request", nil)
+				return utils.ServerFaultError(c)
 			}
 
 			postData := struct {
@@ -64,21 +63,21 @@ func registerFeedbackHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 			if err := c.Bind(&postData); err != nil {
 				app.Logger().Error("Failed to parse form data", err)
 				sendToastMessage("Failed to parse form", "is-danger", true, c)
-				return apis.NewBadRequestError("Failed to parse form data", err)
+				return utils.ServerFaultError(c)
 			}
 
 			if postData.HoneyPotEmail != "" || postData.HoneyPotName != "" {
 				// this is probably a bot
 				app.Logger().Warn("Honey pot triggered", "data", fmt.Sprintf("+%v", postData))
-				sendToastMessage("Failed to parse form", "is-danger", true, c)
-				return nil
+				utils.SendToastMessage("Failed to parse form", "is-danger", true, c, "")
+				return utils.ServerFaultError(c)
 			}
 
 			collection, err := app.Dao().FindCollectionByNameOrId("feedbacks")
 			if err != nil {
 				app.Logger().Error("Database table not found", err)
-				sendToastMessage("Database table not found", "is-danger", true, c)
-				return apis.NewNotFoundError("Database table not found", err)
+				utils.SendToastMessage("Database table not found", "is-danger", true, c, "")
+				return utils.ServerFaultError(c)
 			}
 
 			record := models.NewRecord(collection)
@@ -94,6 +93,8 @@ func registerFeedbackHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 
 			if err := form.Submit(); err != nil {
 
+				app.Logger().Error("Failed to store the feedback", err)
+
 				err := components.FeedbackForm().Render(context.Background(), c.Response().Writer)
 
 				if err != nil {
@@ -101,14 +102,12 @@ func registerFeedbackHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 					return utils.ServerFaultError(c)
 				}
 
-				app.Logger().Error("Failed to store the feedback", err)
+				utils.SendToastMessage("Failed to store the feedback", "is-danger", false, c, "")
 
-				sendToastMessage("Failed to store the feedback", "is-danger", false, c)
-
-				return err
+				return utils.ServerFaultError(c)
 			}
 
-			sendToastMessage("Thank you! Your feedback is valuable to us!", "is-success", true, c)
+			utils.SendToastMessage("Thank you! Your feedback is valuable to us!", "is-success", true, c, "")
 
 			return nil
 		})
