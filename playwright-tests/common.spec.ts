@@ -57,3 +57,29 @@ test("check artists page", async ({ page }) => {
   // expect to find "KOEDIJCK, Isaack" in the title.
   await expect(page).toHaveTitle(/KOEDIJCK, Isaack/);
 });
+
+test("send postcard", async ({ page }) => {
+  await page.goto("/artists/koedijck-isaack-3ed9e200b9e8252");
+
+  // Click the get started link.
+  await page.getByRole("link", { name: "Send postcard" }).click();
+
+  // expect dialog #d to be visible.
+  await expect(page.locator("#d")).toBeVisible();
+
+  // expect dialog #d to have text "Write a postcard"
+  await expect(page.locator("#d")).toHaveText(/Write a postcard/);
+
+  await page.getByLabel("Name").fill("Playwright Tester");
+  await page.getByLabel("Email").fill("playwright.tester@local.host");
+  await page
+    .getByPlaceholder("Email address", { exact: true })
+    .fill("playwright.tester@local.host");
+  await page.locator("trix-editor").fill("I am testing your site.");
+
+  // Click the submit button.
+  await page.getByRole("button", { name: "Send postcard" }).click();
+
+  // expect dialog #d to be hidden.
+  await expect(page.locator(".is-success")).toBeVisible();
+});
