@@ -6,3 +6,24 @@ tasks:
       - rm -rf wga_data
       - node esbuild.mjs
       - go run . serve
+  start:
+    cmds:
+      - node esbuild.mjs
+      - templ generate
+      - go run . serve
+  build:frontend:
+    cmds:
+      - node esbuild.mjs
+  watch:frontend:
+    cmds:
+      - node esbuild.mjs --watch
+  watch:templ:
+    cmds:
+      - templ generate --watch
+  watch:wga:
+    cmds:
+      - air serve
+  watch:all:
+    deps: [watch:frontend, watch:templ, watch:wga]
+    cmds:
+      - echo "watching wga"

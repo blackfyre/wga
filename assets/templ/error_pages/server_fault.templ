@@ -1,0 +1,27 @@
+package error_pages
+
+import (
+	"github.com/blackfyre/wga/assets/templ/layouts"
+)
+
+templ ServerFaultPage() {
+	@layouts.LayoutMain() {
+		<head>
+			<title>500 - Server Fault</title>
+		</head>
+		@NotFoundBlock()
+	}
+}
+
+templ ServerFaultBlock() {
+	<div class="is-flex is-justify-content-center is-align-items-center">
+		<div class="has-text-centered">
+			<h1 class="is-size-1 has-text-weight-bold has-text-primary">500</h1>
+			<p class="is-size-5 has-text-weight-medium"><span class="has-text-danger">Opps!</span> Internal Server Error</p>
+			<p class="is-size-6 mb-4">
+				Something went wrong on our end. We are working on it. Please try again later.
+			</p>
+			<a href="/" hx-get="/" class="button is-primary">Go Home</a>
+		</div>
+	</div>
+}

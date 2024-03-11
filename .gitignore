@@ -31,3 +31,13 @@ contributors.json
 # Dependecies shouldn't be a part of the source code
 node_modules
 meta.json
+
+# Ignore templ generated files
+*_templ.go
+*_templ.txt
+
+# Ignore playwright generated files
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/

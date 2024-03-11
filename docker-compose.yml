@@ -14,7 +14,6 @@ services:
     command: server /data --console-address ":9001"
     volumes:
       - minio:/data
-    restart: unless-stopped
 
   createbuckets:
     image: minio/mc
@@ -35,7 +34,6 @@ services:
     ports:
       - 8025:8025
       - 1025:1025
-    restart: unless-stopped
     environment:
       - MP_SMTP_AUTH_ACCEPT_ANY=1
       - MP_SMTP_AUTH_ALLOW_INSECURE=1
