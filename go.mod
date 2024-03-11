@@ -11,7 +11,7 @@ require (
 	github.com/labstack/echo/v5 v5.0.0-20230722203903-ec5b858dab61
 	github.com/microcosm-cc/bluemonday v1.0.26
 	github.com/pocketbase/dbx v1.10.1
-	github.com/pocketbase/pocketbase v0.22.0
+	github.com/pocketbase/pocketbase v0.22.2
 	github.com/sabloger/sitemap-generator v1.3.0
 	github.com/spf13/cobra v1.8.0
 	golang.org/x/text v0.14.0
