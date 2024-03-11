@@ -45,12 +45,13 @@ templ PostcardEditor(p PostcardEditorDTO) {
 					>
 						<input type="hidden" name="image_id" value={ p.ImageId }/>
 						<div class="field">
-							<label class="label">Name</label>
+							<label class="label" for="sender_name">Name</label>
 							<div class="control">
 								<input
 									class="input"
 									type="text"
 									name="sender_name"
+									id="sender_name"
 									placeholder="My name"
 									required
 									autocomplete="name"
@@ -58,12 +59,13 @@ templ PostcardEditor(p PostcardEditorDTO) {
 							</div>
 						</div>
 						<div class="field">
-							<label class="label">Email</label>
+							<label class="label" for="sender_email">Email</label>
 							<div class="control">
 								<input
 									class="input"
 									type="email"
 									name="sender_email"
+									id="sender_email"
 									placeholder="My email address"
 									autocomplete="email"
 									required
