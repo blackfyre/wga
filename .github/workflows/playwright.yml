@@ -18,6 +18,9 @@ jobs:
       - name: Get installed Playwright version
         id: playwright-version
         run: echo "PLAYWRIGHT_VERSION=$(node -e "console.log(require('./package-lock.json').packages['node_modules/@playwright/test'].version)")" >> $GITHUB_ENV
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: "go.mod"
       - name: Cache playwright binaries
         uses: actions/cache@v3
         id: playwright-cache
@@ -25,14 +28,10 @@ jobs:
           path: |
             ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}
-      - uses: "github.com/actions-go/go-install@main"
-        with:
-          module: "github.com/a-h/templ/cmd/templ@latest"
-          go-version: "1.22"
-      - uses: "github.com/actions-go/go-install@main"
-        with:
-          module: "github.com/go-task/task/v3/cmd/task@latest"
-          go-version: "1.22"
+      - name: Install a-h/templ
+        run: go install github.com/a-h/templ/cmd/templ@latest
+      - name: Install Taskfile CLI
+        run: go install github.com/go-task/task/v3/cmd/task@latest
       - name: Compile templates
         run: templ generate
       - name: Install go modules
