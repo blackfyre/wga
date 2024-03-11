@@ -30,7 +30,7 @@ jobs:
       - name: Build the application
         run: go build -o wga
       - name: Run the application
-        run: ./wga serve
+        run: ./wga serve &
       - name: Run Playwright tests
         run: npx playwright test
       - uses: actions/upload-artifact@v4
