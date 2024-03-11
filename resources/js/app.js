@@ -162,6 +162,37 @@ function InitEventListeners() {
     initCloner();
   });
 
+  document.body.addEventListener("htmx:swapError", function (evt) {
+    console.error(evt);
+    bulmaToast.toast({
+      message: "An error occurred while processing your request.",
+      type: "is-danger",
+    });
+  });
+
+  document.body.addEventListener("htmx:targetError", function (evt) {
+    console.error(evt);
+    bulmaToast.toast({
+      message: "An error occurred while processing your request.",
+      type: "is-danger",
+    });
+  });
+
+  document.body.addEventListener("htmx:timeout", function (evt) {
+    console.error(evt);
+    bulmaToast.toast({
+      message: "The request timed out.",
+      type: "is-danger",
+    });
+  });
+
+  //! This is a workaround, has to be removed when htmx fixes the issue
+  addEventListener("htmx:beforeHistorySave", () => {
+    document
+      .querySelectorAll(":disabled")
+      .forEach((el) => (el.disabled = false));
+  });
+
   document.addEventListener("trix-before-initialize", () => {
     Trix.config.toolbar.getDefaultHTML = () => {
       return `
@@ -234,11 +265,15 @@ function initCloner() {
 
 window.wga = {
   openDialog() {
-    wga.els.dialog.showModal();
+    setTimeout(() => {
+      wga.els.dialog.showModal();
+    }, 500);
   },
   closeDialog() {
     wga.els.dialog.close();
-    wga.els.dialog.innerHTML = wga.els.dialogDefaultContent;
+    setTimeout(() => {
+      wga.els.dialog.innerHTML = wga.els.dialogDefaultContent;
+    }, 500);
   },
   windowHistoryBack() {
     window.history.back();

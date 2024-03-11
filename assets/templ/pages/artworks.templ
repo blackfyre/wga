@@ -1,0 +1,198 @@
+package pages
+
+import (
+	"github.com/blackfyre/wga/assets/templ/layouts"
+	// "github.com/blackfyre/wga/assets/templ/utils"
+	"github.com/blackfyre/wga/assets/templ/components"
+)
+
+type ArtworkSearchDTO struct {
+	ArtFormOptions     map[string]string
+	ArtTypeOptions     map[string]string
+	ArtSchoolOptions   map[string]string
+	ActiveFilterValues *ArtworkSearchFilterValues
+	ArtistNameList     []string
+	NewFilterValues    string
+	Results            ArtworkSearchResultDTO
+}
+
+type ArtworkSearchFilterValues struct {
+	ArtFormString string
+	ArtTypeString string
+	SchoolString  string
+	Title         string
+	ArtistString  string
+}
+
+type ArtworkSearchResultDTO struct {
+	ActiveFiltering bool
+	Artworks        components.ImageGrid
+	Pagination      string
+}
+
+// ArtistPage is the template for the artist page
+templ ArtworkSearchPage(s ArtworkSearchDTO) {
+	@layouts.LayoutMain() {
+		@ArtworkSearchBlock(s)
+	}
+}
+
+templ ArtworkSeachFilterBlock(b ArtworkSearchDTO) {
+	<form
+		action="/artworks/results"
+		hx-get="/artworks/results"
+		hx-disabled-elt="input,button,select"
+		method="GET"
+	>
+		<div class="field">
+			<label class="label" for="art_form_select">Artforms</label>
+			<div class="control">
+				<div class="select">
+					<select name="art_form" id="art_form_select" title="Artforms">
+						for k, v := range b.ArtFormOptions {
+							<option
+								value={ k }
+								if b.ActiveFilterValues.ArtFormString == k {
+									selected
+								}
+							>{ v }</option>
+						}
+					</select>
+				</div>
+			</div>
+		</div>
+		<div class="field">
+			<label class="label" for="art_type_select">Art types</label>
+			<div class="control">
+				<div class="select">
+					<select name="art_type" id="art_type_select" title="Art types">
+						for k, v := range b.ArtTypeOptions {
+							<option
+								value={ k }
+								if b.ActiveFilterValues.ArtTypeString == k {
+									selected
+								}
+							>{ v }</option>
+						}
+					</select>
+				</div>
+			</div>
+		</div>
+		<div class="field">
+			<label class="label" for="art_school_select">Art school</label>
+			<div class="control">
+				<div class="select">
+					<select name="art_school" id="art_school_select" title="Art school">
+						for k, v := range b.ArtSchoolOptions {
+							<option
+								value={ k }
+								if b.ActiveFilterValues.SchoolString == k {
+									selected
+								}
+							>{ v }</option>
+						}
+					</select>
+				</div>
+			</div>
+		</div>
+		<div class="field">
+			<label class="label">Title</label>
+			<p class="control">
+				<input
+					class="input"
+					type="search"
+					name="title"
+					placeholder="Artwork title"
+					value={ b.ActiveFilterValues.Title }
+				/>
+			</p>
+		</div>
+		<div class="field">
+			<label class="label">Artist</label>
+			<p class="control">
+				<input
+					class="input"
+					list="artist_list"
+					type="search"
+					name="artist"
+					placeholder="Artist name"
+					value={ b.ActiveFilterValues.ArtistString }
+				/>
+				<datalist id="artist_list">
+					for _, v := range b.ArtistNameList {
+						<option value={ v }></option>
+					}
+				</datalist>
+			</p>
+		</div>
+		<div class="field"><button type="submit" class="button is-primary">Search</button></div>
+	</form>
+}
+
+templ searchIndicator() {
+	<article class="message is-warning htmx-indicator-show">
+		<div class="message-body">
+			Search in progress... 
+			<span class="icon">
+				<i class="fas fa-spinner fa-pulse"></i>
+			</span>
+		</div>
+	</article>
+}
+
+templ loadIndicator() {
+	<div id="artwork-search-results" class="card-search">
+		<div class="columns is-multiline works-listing">
+			<div class="column">
+				<div class="notification is-warning">
+					Loading artworks...
+					<span class="icon">
+						<i class="fas fa-spinner fa-pulse"></i>
+					</span>
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
+templ ArtworkSearchResults(r ArtworkSearchResultDTO) {
+	<div id="artwork-search-results">
+		// @loadIndicator()
+		if len(r.Artworks) > 0 {
+			@components.ImageGridComponent(r.Artworks, true)
+		} else if !r.ActiveFiltering {
+			<div class="column">
+				<div class="notification is-warning">
+					Use the filters to find artworks.
+				</div>
+			</div>
+		} else {
+			<div class="column">
+				<div class="notification is-warning">
+					Sorry, no matching artworks found.
+				</div>
+			</div>
+		}
+		if len(r.Pagination) > 10 {
+			<nav class="pagination box" role="navigation" aria-label="pagination">
+				@templ.Raw(r.Pagination)
+			</nav>
+		}
+	</div>
+}
+
+templ ArtworkSearchBlock(s ArtworkSearchDTO) {
+	<section class="section">
+		<h1 class="title is-size-1">Artwork search</h1>
+		<div class="columns">
+			<div class="column is-one-quarter">
+				<div class="box">
+					@ArtworkSeachFilterBlock(s)
+				</div>
+			</div>
+			<div class="column" id="search-result-container">
+				@ArtworkSearchResults(s.Results)
+			</div>
+		</div>
+	</section>
+}

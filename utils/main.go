@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -12,6 +13,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/blackfyre/wga/assets/templ/error_pages"
 	strip "github.com/grokify/html-strip-tags-go"
 	"github.com/labstack/echo/v5"
 	"golang.org/x/text/language"
@@ -299,4 +301,21 @@ func GetFileNameFromUrl(url string, extension bool) string {
 // IsHtmxRequest checks if the request is an htmx request by checking the value of the "HX-Request" header.
 func IsHtmxRequest(c echo.Context) bool {
 	return c.Request().Header.Get("HX-Request") == "true"
+}
+
+// NotFoundError is a handler that returns a 404 error page.
+func NotFoundError(c echo.Context) error {
+	if IsHtmxRequest(c) {
+		return error_pages.NotFoundBlock().Render(context.Background(), c.Response().Writer)
+	}
+
+	return error_pages.NotFoundPage().Render(context.Background(), c.Response().Writer)
+}
+
+func ServerFaultError(c echo.Context) error {
+	if IsHtmxRequest(c) {
+		return error_pages.ServerFaultBlock().Render(context.Background(), c.Response().Writer)
+	}
+
+	return error_pages.ServerFaultPage().Render(context.Background(), c.Response().Writer)
 }

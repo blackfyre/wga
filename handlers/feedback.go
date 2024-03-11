@@ -1,56 +1,52 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
-	"log"
-	"net/http"
 
-	"github.com/blackfyre/wga/assets"
+	"github.com/blackfyre/wga/assets/templ/components"
 	"github.com/blackfyre/wga/utils"
-	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v5"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/pocketbase/pocketbase"
-	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/forms"
 	"github.com/pocketbase/pocketbase/models"
 )
 
-// renderFeedbackEditor renders the feedback editor block using the assets package.
-// It returns the rendered block as a string and an error if there was any.
-func renderFeedbackEditor() (string, error) {
-	return assets.RenderBlock("feedback:editor", nil)
-
-}
-
+// registerFeedbackHandlers registers the feedback handlers for the application.
+// It adds the GET and POST routes for the feedback form, handles form submission,
+// and stores the feedback in the database.
+//
+// Parameters:
+// - app: The PocketBase application instance.
+// - p: The bluemonday policy for sanitizing HTML input.
+//
+// Returns:
+// - An error if there was a problem registering the handlers, or nil otherwise.
 func registerFeedbackHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) {
-
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("Error loading .env file")
-	}
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 		e.Router.GET("feedback", func(c echo.Context) error {
 			if !utils.IsHtmxRequest(c) {
-				return apis.NewBadRequestError("Unexpected request", nil)
+				app.Logger().Error("Unexpected request to feedback form")
+				return utils.ServerFaultError(c)
 			}
 
-			html, err := renderFeedbackEditor()
+			err := components.FeedbackForm().Render(context.Background(), c.Response().Writer)
 
 			if err != nil {
 				app.Logger().Error("Failed to render the feedback form", err)
-				return apis.NewApiError(500, "Failed to render the form", nil)
+				return utils.ServerFaultError(c)
 			}
 
-			return c.HTML(http.StatusOK, html)
+			return err
 		})
 
 		e.Router.POST("feedback", func(c echo.Context) error {
 
 			if !utils.IsHtmxRequest(c) {
-				return apis.NewBadRequestError("Unexpected request", nil)
+				return utils.ServerFaultError(c)
 			}
 
 			postData := struct {
@@ -67,21 +63,21 @@ func registerFeedbackHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 			if err := c.Bind(&postData); err != nil {
 				app.Logger().Error("Failed to parse form data", err)
 				sendToastMessage("Failed to parse form", "is-danger", true, c)
-				return apis.NewBadRequestError("Failed to parse form data", err)
+				return utils.ServerFaultError(c)
 			}
 
 			if postData.HoneyPotEmail != "" || postData.HoneyPotName != "" {
 				// this is probably a bot
 				app.Logger().Warn("Honey pot triggered", "data", fmt.Sprintf("+%v", postData))
-				sendToastMessage("Failed to parse form", "is-danger", true, c)
-				return nil
+				utils.SendToastMessage("Failed to parse form", "is-danger", true, c, "")
+				return utils.ServerFaultError(c)
 			}
 
 			collection, err := app.Dao().FindCollectionByNameOrId("feedbacks")
 			if err != nil {
 				app.Logger().Error("Database table not found", err)
-				sendToastMessage("Database table not found", "is-danger", true, c)
-				return apis.NewNotFoundError("Database table not found", err)
+				utils.SendToastMessage("Database table not found", "is-danger", true, c, "")
+				return utils.ServerFaultError(c)
 			}
 
 			record := models.NewRecord(collection)
@@ -97,22 +93,21 @@ func registerFeedbackHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 
 			if err := form.Submit(); err != nil {
 
-				html, err := renderFeedbackEditor()
+				app.Logger().Error("Failed to store the feedback", err)
+
+				err := components.FeedbackForm().Render(context.Background(), c.Response().Writer)
 
 				if err != nil {
 					app.Logger().Error("Failed to render the feedback form after form submission error", err)
-					return err
+					return utils.ServerFaultError(c)
 				}
 
-				app.Logger().Error("Failed to store the feedback", err)
+				utils.SendToastMessage("Failed to store the feedback", "is-danger", false, c, "")
 
-				sendToastMessage("Failed to store the feedback", "is-danger", false, c)
-
-				return c.HTML(http.StatusOK, html)
-
+				return utils.ServerFaultError(c)
 			}
 
-			sendToastMessage("Thank you! Your feedback is valuable to us!", "is-success", true, c)
+			utils.SendToastMessage("Thank you! Your feedback is valuable to us!", "is-success", true, c, "")
 
 			return nil
 		})

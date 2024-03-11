@@ -1,0 +1,29 @@
+{
+  "files.exclude": {
+    "**/*_templ.go": false,
+    "**/*_templ.txt": true
+  },
+  "editor.formatOnSave": true,
+  "[templ]": {
+    "editor.defaultFormatter": "a-h.templ"
+  },
+  "emmet.includeLanguages": {
+    "templ": "html"
+  },
+  "cSpell.words": [
+    "Artform",
+    "bluemonday",
+    "bulma",
+    "daos",
+    "esbuild",
+    "fontawesome",
+    "goarch",
+    "Htmx",
+    "labstack",
+    "Lexend",
+    "pocketbase",
+    "templ",
+    "tmpl",
+    "Upsert"
+  ]
+}

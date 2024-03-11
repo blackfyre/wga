@@ -1,0 +1,74 @@
+package components
+
+templ FeedbackForm() {
+	<section class="container">
+		<h1 class="title">Are we doing good?</h1>
+		<form
+			hx-post="/feedback"
+			enctype="multipart/form-data"
+			hx-target="#d"
+			id="postcard_create"
+			hx-select="section.container"
+			hx-swap="innerHTML"
+		>
+			<div class="field">
+				<label class="label" for="fp_name">Name</label>
+				<div class="control">
+					<input class="input" type="text" name="fp_name" id="fp_name" placeholder="My name" required autocomplete="name"/>
+				</div>
+			</div>
+			<div class="field">
+				<label class="label" for="fp_email">Email</label>
+				<div class="control">
+					<input
+						class="input"
+						type="email"
+						name="fp_email"
+						id="fp_email"
+						placeholder="My email address"
+						autocomplete="email"
+						required
+					/>
+				</div>
+			</div>
+			<div class="field">
+				<label class="label" for="message">Message</label>
+				<div class="control">
+					<textarea class="textarea" id="message" name="message" placeholder="Your message"></textarea>
+				</div>
+			</div>
+			<label aria-hidden="true" class="hpt" for="name"></label>
+			<input
+				aria-hidden="true"
+				class="hpt"
+				autocomplete="off"
+				type="text"
+				id="name"
+				name="name"
+				placeholder="Your name here"
+			/>
+			<label aria-hidden="true" class="hpt" for="email"></label>
+			<input
+				aria-hidden="true"
+				class="hpt"
+				autocomplete="off"
+				type="email"
+				id="email"
+				name="email"
+				placeholder="Your e-mail here"
+			/>
+			<div class="field is-grouped">
+				<p class="control">
+					<button class="button is-link" type="submit">
+						Send feedback
+					</button>
+				</p>
+				<p class="control">
+					<button type="button" class="button" hx-on="click: wga.closeDialog();">
+						Cancel
+					</button>
+				</p>
+			</div>
+		</form>
+	</section>
+}
