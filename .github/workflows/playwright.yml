@@ -15,10 +15,6 @@ jobs:
           node-version: lts/*
       - name: Generate .env file
         run: cp .env.example .env
-      - name: Set up Go
-        uses: actions/setup-go@v3
-        with:
-          go-version: ">=1.22.0"
       - name: Get installed Playwright version
         id: playwright-version
         run: echo "PLAYWRIGHT_VERSION=$(node -e "console.log(require('./package-lock.json').packages['node_modules/@playwright/test'].version)")" >> $GITHUB_ENV
@@ -29,14 +25,22 @@ jobs:
           path: |
             ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}
-      - name: Install a-h/templ
-        run: go install github.com/a-h/templ/cmd/templ@latest
+      - uses: "github.com/actions-go/go-install@main"
+        with:
+          module: "github.com/a-h/templ/cmd/templ@latest"
+          go-version: "1.22"
+      - uses: "github.com/actions-go/go-install@main"
+        with:
+          module: "github.com/go-task/task/v3/cmd/task@latest"
+          go-version: "1.22"
       - name: Compile templates
         run: templ generate
       - name: Install go modules
         run: go mod tidy
       - name: Install dependencies
         run: npm ci
+      - name: Transpile Frontend
+        run: task build:frontend
       - run: npx playwright install --with-deps
         name: Install Playwright
         if: steps.playwright-cache.outputs.cache-hit != 'true'
