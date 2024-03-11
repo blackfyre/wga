@@ -3,20 +3,28 @@ package components
 templ FeedbackForm() {
 	<section class="container">
 		<h1 class="title">Are we doing good?</h1>
-		<form hx-post="/feedback" enctype="multipart/form-data" hx-target="#d" id="postcard_create">
+		<form
+			hx-post="/feedback"
+			enctype="multipart/form-data"
+			hx-target="#d"
+			id="postcard_create"
+			hx-select="section.container"
+			hx-swap="innerHTML"
+		>
 			<div class="field">
-				<label class="label">Name</label>
+				<label class="label" for="fp_name">Name</label>
 				<div class="control">
-					<input class="input" type="text" name="fp_name" placeholder="My name" required autocomplete="name"/>
+					<input class="input" type="text" name="fp_name" id="fp_name" placeholder="My name" required autocomplete="name"/>
 				</div>
 			</div>
 			<div class="field">
-				<label class="label">Email</label>
+				<label class="label" for="fp_email">Email</label>
 				<div class="control">
 					<input
 						class="input"
 						type="email"
 						name="fp_email"
+						id="fp_email"
 						placeholder="My email address"
 						autocomplete="email"
 						required
@@ -24,10 +32,9 @@ templ FeedbackForm() {
 				</div>
 			</div>
 			<div class="field">
-				<label class="label">Message</label>
+				<label class="label" for="message">Message</label>
 				<div class="control">
-					<trix-editor input="message" placeholder="Any areas we can improve on?"></trix-editor>
-					<input type="hidden" id="message" name="message"/>
+					<textarea class="textarea" id="message" name="message" placeholder="Your message"></textarea>
 				</div>
 			</div>
 			<label aria-hidden="true" class="hpt" for="name"></label>
