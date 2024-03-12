@@ -68,7 +68,7 @@ func sendPostcards(app *pocketbase.PocketBase, scheduler *cron.Cron) {
 				}
 
 				if err := mailClient.Send(message); err != nil {
-					fmt.Println("Error sending postcard", err)
+					app.Logger().Error("Error sending postcard", err)
 					app.Logger().Error("Error sending postcard", err)
 					return
 				}
