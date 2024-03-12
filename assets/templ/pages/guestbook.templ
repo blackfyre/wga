@@ -151,7 +151,7 @@ templ GuestbookEntryForm() {
 }
 
 templ GuestbookEntries(entries []*models.GuestbookEntry) {
-	<div class="list has-hoverable-list-items">
+	<div class="list has-hoverable-list-items gb-entries">
 		for _, entry := range entries {
 			@GuestbookEntry(entry)
 		}
@@ -162,7 +162,7 @@ templ GuestbookEntry(entry *models.GuestbookEntry) {
 	if (entry.Message == "") {
 		return
 	}
-	<div class="list-item">
+	<div class="list-item gb-entry">
 		<div class="list-item-image">
 			<figure class="image is-64x64">
 				if entry.Email != "" {
