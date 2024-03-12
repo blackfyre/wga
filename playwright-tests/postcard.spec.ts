@@ -32,6 +32,7 @@ test("send postcard", async ({ page }) => {
   await page.goto("http://localhost:8025/");
   await page
     .getByRole("link", { name: "WGA playwright.tester@local." })
+    .nth(0)
     .click();
   const page1Promise = page.waitForEvent("popup");
   await page
