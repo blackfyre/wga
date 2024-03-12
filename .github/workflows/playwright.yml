@@ -15,6 +15,12 @@ jobs:
           node-version: lts/*
       - name: Generate .env file
         run: cp .env.example .env
+      - name: Download Mailpit
+        run: wget https://github.com/axllent/mailpit/releases/download/v1.14.4/mailpit-linux-amd64.tar.gz
+      - name: Install Mailpit
+        run: tar -xvf mailpit-linux-amd64.tar.gz
+      - name: Run Mailpit
+        run: ./mailpit > mailpit.log &
       - name: Get installed Playwright version
         id: playwright-version
         run: echo "PLAYWRIGHT_VERSION=$(node -e "console.log(require('./package-lock.json').packages['node_modules/@playwright/test'].version)")" >> $GITHUB_ENV
