@@ -67,6 +67,12 @@ jobs:
           name: blob-report-${{ matrix.shardIndex }}
           path: blob-report
           retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mailpit-${{ matrix.shardIndex }}
+          path: mailpit.log
+          retention-days: 1
   merge-reports:
     # Merge reports after playwright-tests, even if some shards have failed
     if: always()
