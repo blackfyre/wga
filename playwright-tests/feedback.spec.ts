@@ -19,9 +19,6 @@ test("check feedback", async ({ page }) => {
   // Click the submit button.
   await page.getByRole("button", { name: "Send feedback" }).click();
 
-  // expect dialog #d to be hidden.
-  // await expect(page.locator("#d")).toBeHidden();
-
   // expect notification popup: Thank you! Your feedback is valuable to us!
   await expect(page.locator(".is-success")).toBeVisible();
 });
