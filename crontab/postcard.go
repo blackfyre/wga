@@ -1,6 +1,7 @@
 package crontab
 
 import (
+	"fmt"
 	"net/mail"
 	"os"
 	"strings"
@@ -15,7 +16,7 @@ import (
 
 func sendPostcards(app *pocketbase.PocketBase, scheduler *cron.Cron) {
 
-	scheduler.MustAdd("hello", "*/1 * * * *", func() {
+	scheduler.MustAdd("postcards", "*/1 * * * *", func() {
 		records, err := app.Dao().FindRecordsByFilter(
 			"postcards",         // collection
 			"status = 'queued'", // filter
@@ -25,10 +26,11 @@ func sendPostcards(app *pocketbase.PocketBase, scheduler *cron.Cron) {
 		)
 
 		if err != nil {
-			panic(err)
+			app.Logger().Error("Error fetching postcards", err)
+			return
 		}
 
-		mailCleint := app.NewMailClient()
+		mailClient := app.NewMailClient()
 
 		for _, r := range records {
 
@@ -40,7 +42,9 @@ func sendPostcards(app *pocketbase.PocketBase, scheduler *cron.Cron) {
 				recipients = append(recipients, mail.Address{Address: recipient})
 			}
 
-			for _, rec := range recipients {
+			for i, rec := range recipients {
+
+				app.Logger().Info("Sending postcard to", fmt.Sprintf("%d", i), r.GetId())
 
 				html, err := assets.RenderEmail("postcard:notification", map[string]any{
 					"SenderName": r.GetString("sender_name"),
@@ -63,8 +67,10 @@ func sendPostcards(app *pocketbase.PocketBase, scheduler *cron.Cron) {
 					HTML:    html,
 				}
 
-				if err := mailCleint.Send(message); err != nil {
-					panic(err)
+				if err := mailClient.Send(message); err != nil {
+					fmt.Println("Error sending postcard", err)
+					app.Logger().Error("Error sending postcard", err)
+					return
 				}
 			}
 
@@ -72,7 +78,7 @@ func sendPostcards(app *pocketbase.PocketBase, scheduler *cron.Cron) {
 			r.Set("sent_at", time.Now().Unix())
 
 			if err := app.Dao().SaveRecord(r); err != nil {
-				panic(err)
+				app.Logger().Error("Error updating postcard record", err)
 			}
 
 		}
