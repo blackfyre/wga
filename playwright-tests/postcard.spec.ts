@@ -20,10 +20,9 @@ test("send postcard", async ({ page }) => {
   await expect(page.locator(".is-success")).toBeVisible();
 
   test.slow();
-  // wait for a minute
-  await page.waitForTimeout(60000);
 
   await page.goto("http://localhost:8025/");
+
   await page
     .getByRole("link", { name: "WGA playwright.tester@local." })
     .nth(0)
@@ -33,6 +32,8 @@ test("send postcard", async ({ page }) => {
     .frameLocator("#preview-html")
     .getByRole("link", { name: "Pickup my Postcard!" })
     .getAttribute("href");
+
+  await page.getByRole("button", { name: /Delete/ }).click();
 
   if (!postcardLink) {
     throw new Error("Postcard link not found");
