@@ -31,6 +31,7 @@ export default defineConfig({
     screenshot: "only-on-failure",
     video: "retain-on-failure",
     headless: process.env.CI ? true : false,
+    viewport: { width: 1920, height: 1080 },
   },
 
   /* Configure projects for major browsers */

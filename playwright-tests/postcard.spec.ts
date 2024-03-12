@@ -2,14 +2,10 @@ import { test, expect } from "@playwright/test";
 
 test("send postcard", async ({ page }) => {
   await page.goto("/artists/koedijck-isaack-3ed9e200b9e8252");
-
-  // Click the get started link.
   await page.getByRole("link", { name: "Send postcard" }).click();
 
-  // expect dialog #d to be visible.
   await expect(page.locator("#d")).toBeVisible();
 
-  // expect dialog #d to have text "Write a postcard"
   await expect(page.locator("#d")).toHaveText(/Write a postcard/);
 
   await page.getByLabel("Name").fill("Playwright Tester");
@@ -19,10 +15,8 @@ test("send postcard", async ({ page }) => {
     .fill("playwright.tester@local.host");
   await page.locator("trix-editor").fill("I am testing your site.");
 
-  // Click the submit button.
   await page.getByRole("button", { name: "Send postcard" }).click();
 
-  // expect dialog #d to be hidden.
   await expect(page.locator(".is-success")).toBeVisible();
 
   test.slow();
@@ -34,13 +28,16 @@ test("send postcard", async ({ page }) => {
     .getByRole("link", { name: "WGA playwright.tester@local." })
     .nth(0)
     .click();
-  const page1Promise = page.waitForEvent("popup");
-  await page
+
+  const postcardLink = await page
     .frameLocator("#preview-html")
     .getByRole("link", { name: "Pickup my Postcard!" })
-    .click();
-  const page1 = await page1Promise;
+    .getAttribute("href");
 
-  // expect to find "I am testing your site." on the page.
-  await expect(page1.locator("#mc-area")).toHaveText(/I am testing your site/);
+  if (!postcardLink) {
+    throw new Error("Postcard link not found");
+  }
+
+  await page.goto(postcardLink);
+  await expect(page.locator("#mc-area")).toHaveText(/I am testing your site/);
 });
