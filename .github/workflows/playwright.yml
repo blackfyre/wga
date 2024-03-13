@@ -94,7 +94,7 @@ jobs:
     # Merge reports after playwright-tests, even if some shards have failed
     if: always()
     needs: [playwright-tests]
-
+    environment: playwright
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -120,3 +120,14 @@ jobs:
           name: html-report--attempt-${{ github.run_attempt }}
           path: playwright-report
           retention-days: 14
+      - name: Upload HTML report to Azure
+        shell: bash
+        run: |
+          REPORT_DIR='run-${{ github.run_id }}-${{ github.run_attempt }}'
+          azcopy cp --recursive "./playwright-report/*" "https://wga.blob.core.windows.net/\$web/$REPORT_DIR"
+          echo "::notice title=HTML report url::https://wga.z6.web.core.windows.net/$REPORT_DIR/index.html"
+        env:
+          AZCOPY_AUTO_LOGIN_TYPE: SPN
+          AZCOPY_SPA_APPLICATION_ID: "${{ secrets.AZCOPY_SPA_APPLICATION_ID }}"
+          AZCOPY_SPA_CLIENT_SECRET: "${{ secrets.AZCOPY_SPA_CLIENT_SECRET }}"
+          AZCOPY_TENANT_ID: "${{ secrets.AZCOPY_TENANT_ID }}"
