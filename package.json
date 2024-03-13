@@ -25,6 +25,7 @@
     "bulma": "^0.9.4",
     "bulma-list": "^1.2.0",
     "bulma-toast": "^2.4.3",
+    "dotenv": "^16.4.5",
     "esbuild": "0.20.1",
     "esbuild-plugin-copy": "^2.1.1",
     "esbuild-plugin-purgecss-2": "^1.0.1",
