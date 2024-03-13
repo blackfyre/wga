@@ -19,8 +19,6 @@ test("send postcard", async ({ page }) => {
 
   await expect(page.locator(".is-success")).toBeVisible();
 
-  test.slow();
-
   await page.goto("http://localhost:8025/");
 
   await page
@@ -31,7 +29,7 @@ test("send postcard", async ({ page }) => {
   const postcardLink = await page
     .frameLocator("#preview-html")
     .getByRole("link", { name: "Pickup my Postcard!" })
-    .getAttribute("href");
+    .getAttribute("href", { timeout: 90000 });
 
   await page.getByRole("button", { name: /Delete/ }).click();
 
