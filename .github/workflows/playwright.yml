@@ -76,6 +76,8 @@ jobs:
           WGA_SENDER_ADDRESS: ${{ vars.WGA_SENDER_ADDRESS }}
           WGA_SENDER_NAME: ${{ vars.WGA_SENDER_NAME }}
 
+      - name: Run the application
+        run: ./wga serve --dev > wga.log &
       - name: Run Playwright tests
         run: npx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
         env:
@@ -92,6 +94,12 @@ jobs:
         with:
           name: mailpit-${{ matrix.shardIndex }}
           path: mailpit.log
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wga-${{ matrix.shardIndex }}
+          path: wga.log
           retention-days: 1
   merge-reports:
     # Merge reports after playwright-tests, even if some shards have failed
