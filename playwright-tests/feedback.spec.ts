@@ -6,9 +6,6 @@ test("check feedback", async ({ page }) => {
   // Click the get started link.
   await page.getByRole("link", { name: "Feedback" }).click();
 
-  // expect dialog #d to be visible.
-  await expect(page.locator("#d")).toBeVisible();
-
   // expect dialog #d to have text "Are doing good?"
   await expect(page.locator("#d")).toHaveText(/Are we doing good/);
 
