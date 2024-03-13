@@ -3,6 +3,7 @@ wga_data
 wga_sitemap
 analytics.txt
 .env
+wga
 
 # Go build related files
 dist/
