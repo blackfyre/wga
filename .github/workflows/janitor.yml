@@ -5,7 +5,9 @@ on:
     - cron: "0 1 * * *"
 jobs:
   cleanup:
-    permissions: write-all
+    permissions:
+      actions: write
+      contents: write
     runs-on: ubuntu-latest
     steps:
       - name: clean workflow runs
