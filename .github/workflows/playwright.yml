@@ -5,7 +5,37 @@ on:
   pull_request:
     branches: [main]
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: "go.mod"
+      - name: Install a-h/templ
+        run: go install github.com/a-h/templ/cmd/templ@latest
+      - name: Install Taskfile CLI
+        run: go install github.com/go-task/task/v3/cmd/task@latest
+      - name: Compile templates
+        run: templ generate
+      - name: Install go modules
+        run: go mod tidy
+      - name: Install dependencies
+        run: npm ci
+      - name: Transpile Frontend
+        run: task build:frontend
+      - name: Build the application
+        run: go build -o wga
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wga_exec
+          path: wga
+          retention-days: 1
   playwright-tests:
+    needs: build
     timeout-minutes: 5
     strategy:
       fail-fast: false
@@ -19,6 +49,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: lts/*
+      - name: Fetch the executable
+        uses: actions/download-artifact@v4
+        with:
+          name: wga_exec
+          path: .
       - name: Download Mailpit
         run: wget https://github.com/axllent/mailpit/releases/download/v1.14.4/mailpit-linux-amd64.tar.gz
       - name: Install Mailpit
@@ -28,9 +63,6 @@ jobs:
       - name: Get installed Playwright version
         id: playwright-version
         run: echo "PLAYWRIGHT_VERSION=$(node -e "console.log(require('./package-lock.json').packages['node_modules/@playwright/test'].version)")" >> $GITHUB_ENV
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: "go.mod"
       - name: Cache playwright binaries
         uses: actions/cache@v4
         id: playwright-cache
@@ -38,27 +70,12 @@ jobs:
           path: |
             ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}
-      - name: Install a-h/templ
-        run: go install github.com/a-h/templ/cmd/templ@latest
-      - name: Install Taskfile CLI
-        run: go install github.com/go-task/task/v3/cmd/task@latest
-      - name: Compile templates
-        run: templ generate
-      - name: Install go modules
-        run: go mod tidy
-      - name: Install dependencies
-        run: npm ci
-      - name: Transpile Frontend
-        run: task build:frontend
       - run: npx playwright install --with-deps
         name: Install Playwright
         if: steps.playwright-cache.outputs.cache-hit != 'true'
       - run: npx playwright install-deps
         name: Install Playwright dependencies
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-
-      - name: Build the application
-        run: go build -o wga
       - name: Run the application
         run: ./wga serve --dev > wga.log &
       - name: Run Playwright tests
