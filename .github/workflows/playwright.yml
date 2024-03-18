@@ -79,6 +79,7 @@ jobs:
           WGA_SMTP_PASSWORD: ""
           WGA_SENDER_ADDRESS: ${{ vars.WGA_SENDER_ADDRESS }}
           WGA_SENDER_NAME: ${{ vars.WGA_SENDER_NAME }}
+          MAILPIT_URL: ${{ vars.MAILPIT_URL }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
