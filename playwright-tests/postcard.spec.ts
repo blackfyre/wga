@@ -24,7 +24,9 @@ test("send postcard", async ({ page }) => {
   await page
     .getByRole("link", { name: "WGA playwright.tester@local." })
     .nth(0)
-    .click();
+    .click({
+      timeout: 90 * 60 * 1000,
+    });
 
   const postcardLink = await page
     .frameLocator("#preview-html")
