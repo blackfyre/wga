@@ -19,7 +19,11 @@ test("send postcard", async ({ page }) => {
 
   await expect(page.locator(".is-success")).toBeVisible();
 
-  await page.goto(process.env.MAILPIT_URL!);
+  const mailpitUrl = process.env.MAILPIT_URL;
+  if (!mailpitUrl) {
+    throw new Error("MAILPIT_URL environment variable is not set.");
+  }
+  await page.goto(mailpitUrl);
 
   await page
     .getByRole("link", { name: "WGA playwright.tester@local." })
