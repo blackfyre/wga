@@ -62,7 +62,7 @@ func registerFeedbackHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 
 			if err := c.Bind(&postData); err != nil {
 				app.Logger().Error("Failed to parse form data", err)
-				sendToastMessage("Failed to parse form", "is-danger", true, c)
+				utils.SendToastMessage("Failed to parse form", "is-danger", true, c, "")
 				return utils.ServerFaultError(c)
 			}
 

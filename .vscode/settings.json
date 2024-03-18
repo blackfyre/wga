@@ -12,18 +12,27 @@
   },
   "cSpell.words": [
     "Artform",
+    "Automigrate",
     "bluemonday",
     "bulma",
     "daos",
     "esbuild",
     "fontawesome",
     "goarch",
+    "godotenv",
+    "Goreleaser",
     "Htmx",
+    "isaack",
+    "koedijck",
     "labstack",
     "Lexend",
+    "Mailpit",
+    "migratecmd",
     "pocketbase",
+    "sabloger",
     "templ",
     "tmpl",
+    "trix",
     "Upsert"
   ]
 }

@@ -5,29 +5,16 @@ on:
   pull_request:
     branches: [main]
 jobs:
-  test:
-    timeout-minutes: 5
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: lts/*
-      - name: Generate .env file
-        run: cp .env.example .env
-      - name: Get installed Playwright version
-        id: playwright-version
-        run: echo "PLAYWRIGHT_VERSION=$(node -e "console.log(require('./package-lock.json').packages['node_modules/@playwright/test'].version)")" >> $GITHUB_ENV
       - uses: actions/setup-go@v5
         with:
           go-version-file: "go.mod"
-      - name: Cache playwright binaries
-        uses: actions/cache@v3
-        id: playwright-cache
-        with:
-          path: |
-            ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}
       - name: Install a-h/templ
         run: go install github.com/a-h/templ/cmd/templ@latest
       - name: Install Taskfile CLI
@@ -40,19 +27,161 @@ jobs:
         run: npm ci
       - name: Transpile Frontend
         run: task build:frontend
+      - name: Build the application
+        run: go build -o wga
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wga_exec
+          path: wga
+          retention-days: 1
+  playwright-tests:
+    needs: build
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        shardIndex: [1, 2, 3, 4]
+        shardTotal: [4]
+    runs-on: ubuntu-latest
+    environment: playwright
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+      - name: Fetch the executable
+        uses: actions/download-artifact@v4
+        with:
+          name: wga_exec
+          path: ./wga_tmp
+      - name: Download Mailpit
+        run: wget https://github.com/axllent/mailpit/releases/download/v1.14.4/mailpit-linux-amd64.tar.gz
+      - name: Install Mailpit
+        run: tar -xvf mailpit-linux-amd64.tar.gz
+      - name: Run Mailpit
+        run: ./mailpit > mailpit.log &
+      - name: Install NPM dependencies
+        run: npm ci
+      - name: Get installed Playwright version
+        id: playwright-version
+        run: echo "PLAYWRIGHT_VERSION=$(node -e "console.log(require('./package-lock.json').packages['node_modules/@playwright/test'].version)")" >> $GITHUB_ENV
+      - name: Cache playwright binaries
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: |
+            ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}
       - run: npx playwright install --with-deps
         name: Install Playwright
         if: steps.playwright-cache.outputs.cache-hit != 'true'
       - run: npx playwright install-deps
         name: Install Playwright dependencies
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-      - name: Build the application
-        run: go build -o wga
+      - name: Add executable permissions
+        run: chmod +x ./wga_tmp/wga
+      - name: Run the application
+        run: ./wga_tmp/wga serve --dev > wga.log &
+        env:
+          WGA_PROTOCOL: ${{ vars.WGA_PROTOCOL }}
+          WGA_HOSTNAME: ${{ vars.WGA_HOSTNAME }}
+          WGA_ADMIN_EMAIL: ${{ secrets.WGA_ADMIN_EMAIL }}
+          WGA_ADMIN_PASSWORD: ${{ secrets.WGA_ADMIN_PASSWORD }}
+          WGA_S3_ENDPOINT: ${{ vars.WGA_S3_ENDPOINT }}
+          WGA_S3_BUCKET: ${{ vars.WGA_S3_BUCKET }}
+          WGA_S3_REGION: ""
+          WGA_S3_ACCESS_KEY: ${{ secrets.WGA_S3_ACCESS_KEY }}
+          WGA_S3_ACCESS_SECRET: ${{ secrets.WGA_S3_ACCESS_SECRET }}
+          WGA_SMTP_HOST: ${{ vars.WGA_SMTP_HOST }}
+          WGA_SMTP_PORT: ${{ vars.WGA_SMTP_PORT }}
+          WGA_SMTP_USERNAME: ""
+          WGA_SMTP_PASSWORD: ""
+          WGA_SENDER_ADDRESS: ${{ vars.WGA_SENDER_ADDRESS }}
+          WGA_SENDER_NAME: ${{ vars.WGA_SENDER_NAME }}
+          MAILPIT_URL: ${{ vars.MAILPIT_URL }}
+      - run: ls -lah ./wga_tmp
+      - run: ls -lah
       - name: Run Playwright tests
-        run: npx playwright test
+        run: npx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+        env:
+          WGA_PROTOCOL: ${{ vars.WGA_PROTOCOL }}
+          WGA_HOSTNAME: ${{ vars.WGA_HOSTNAME }}
+          WGA_ADMIN_EMAIL: ${{ secrets.WGA_ADMIN_EMAIL }}
+          WGA_ADMIN_PASSWORD: ${{ secrets.WGA_ADMIN_PASSWORD }}
+          WGA_S3_ENDPOINT: ${{ vars.WGA_S3_ENDPOINT }}
+          WGA_S3_BUCKET: ${{ vars.WGA_S3_BUCKET }}
+          WGA_S3_REGION: ""
+          WGA_S3_ACCESS_KEY: ${{ secrets.WGA_S3_ACCESS_KEY }}
+          WGA_S3_ACCESS_SECRET: ${{ secrets.WGA_S3_ACCESS_SECRET }}
+          WGA_SMTP_HOST: ${{ vars.WGA_SMTP_HOST }}
+          WGA_SMTP_PORT: ${{ vars.WGA_SMTP_PORT }}
+          WGA_SMTP_USERNAME: ""
+          WGA_SMTP_PASSWORD: ""
+          WGA_SENDER_ADDRESS: ${{ vars.WGA_SENDER_ADDRESS }}
+          WGA_SENDER_NAME: ${{ vars.WGA_SENDER_NAME }}
+          MAILPIT_URL: ${{ vars.MAILPIT_URL }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 30
+          name: blob-report-${{ matrix.shardIndex }}
+          path: blob-report
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mailpit-${{ matrix.shardIndex }}
+          path: mailpit.log
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: wga-log-${{ matrix.shardIndex }}
+          path: wga.log
+          retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: wga-data-${{ matrix.shardIndex }}
+          path: wga_data
+          retention-days: 1
+  merge-reports:
+    # Merge reports after playwright-tests, even if some shards have failed
+    if: always()
+    needs: [playwright-tests]
+    environment: playwright
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download blob reports from GitHub Actions Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-blob-reports
+          pattern: blob-report-*
+          merge-multiple: true
+
+      - name: Merge into HTML Report
+        run: npx playwright merge-reports --reporter html ./all-blob-reports
+
+      - name: Upload HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: html-report--attempt-${{ github.run_attempt }}
+          path: playwright-report
+          retention-days: 14
+      - name: Upload HTML report to Azure
+        shell: bash
+        run: |
+          REPORT_DIR='run-${{ github.run_id }}-${{ github.run_attempt }}'
+          azcopy cp --recursive "./playwright-report/*" "https://wga.blob.core.windows.net/\$web/$REPORT_DIR"
+          echo "::notice title=HTML report url::https://wga.z6.web.core.windows.net/$REPORT_DIR/index.html"
+        env:
+          AZCOPY_AUTO_LOGIN_TYPE: SPN
+          AZCOPY_SPA_APPLICATION_ID: "${{ secrets.AZCOPY_SPA_APPLICATION_ID }}"
+          AZCOPY_SPA_CLIENT_SECRET: "${{ secrets.AZCOPY_SPA_CLIENT_SECRET }}"
+          AZCOPY_TENANT_ID: "${{ secrets.AZCOPY_TENANT_ID }}"

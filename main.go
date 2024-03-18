@@ -20,10 +20,7 @@ import (
 
 func main() {
 
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("Error loading .env file")
-	}
+	_ = godotenv.Load()
 
 	app := pocketbase.NewWithConfig(pocketbase.Config{
 		DefaultDataDir: "./wga_data",
