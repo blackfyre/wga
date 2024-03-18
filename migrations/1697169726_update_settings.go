@@ -1,7 +1,6 @@
 package migrations
 
 import (
-	"log"
 	"os"
 	"strconv"
 
@@ -13,10 +12,7 @@ import (
 
 func init() {
 
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("Error loading .env file")
-	}
+	_ = godotenv.Load()
 
 	m.Register(func(db dbx.Builder) error {
 		dao := daos.New(db)

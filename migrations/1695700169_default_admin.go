@@ -1,7 +1,6 @@
 package migrations
 
 import (
-	"log"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -13,10 +12,7 @@ import (
 
 func init() {
 
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("Error loading .env file")
-	}
+	_ = godotenv.Load()
 
 	email := os.Getenv("WGA_ADMIN_EMAIL")
 	password := os.Getenv("WGA_ADMIN_PASSWORD")

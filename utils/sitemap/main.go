@@ -28,10 +28,11 @@ func GenerateSiteMap(app *pocketbase.PocketBase) {
 	// Save func saves the xml files and returns more than one filename in case of split large files.
 	filenames, err := index.Save()
 	if err != nil {
-		log.Fatal("Unable to Save Sitemap:", err)
+		app.Logger().Error("Unable to Save Sitemap:", err)
+		return
 	}
-	for i, filename := range filenames {
-		fmt.Println("file no.", i+1, filename)
+	for _, filename := range filenames {
+		app.Logger().Info(fmt.Sprintf("Sitemap saved to %c", filename))
 	}
 }
 
@@ -50,7 +51,7 @@ func generateArtistMap(app *pocketbase.PocketBase, index *smg.SitemapIndex) {
 	)
 
 	if err != nil {
-		log.Fatal("Unable to Save Sitemap:", err)
+		app.Logger().Error("Error fetching artists for sitemap", err)
 	}
 
 	for _, m := range records {
@@ -91,7 +92,7 @@ func generateArtworksMap(app *pocketbase.PocketBase, index *smg.SitemapIndex) {
 	for _, m := range records {
 
 		if errs := app.Dao().ExpandRecord(m, []string{"author"}, nil); len(errs) > 0 {
-			fmt.Printf("failed to expand: %v", errs)
+			app.Logger().Error("Error expanding record", "err", errs)
 			// we should log the failed items, still waiting for pb logs
 			continue // we're skipping failed items
 		}
@@ -100,7 +101,8 @@ func generateArtworksMap(app *pocketbase.PocketBase, index *smg.SitemapIndex) {
 
 		if author == nil {
 			//every item in the db should have an author
-			// log those items which dont for fixing
+			// log those items which don't for fixing
+			app.Logger().Error("Error expanding record, no author found", "id", m.GetId())
 			continue
 		}
 
@@ -114,7 +116,8 @@ func generateArtworksMap(app *pocketbase.PocketBase, index *smg.SitemapIndex) {
 		})
 
 		if err != nil {
-			log.Fatal("Unable to Save Sitemap:", err)
+			app.Logger().Error("Unable to Save Sitemap:", err)
+			return
 		}
 	}
 }

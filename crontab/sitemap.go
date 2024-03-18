@@ -7,7 +7,7 @@ import (
 )
 
 func generateSiteMap(app *pocketbase.PocketBase, scheduler *cron.Cron) {
-	scheduler.MustAdd("hello", "0 0 * * *", func() {
+	scheduler.MustAdd("sitemap", "0 0 * * *", func() {
 		sitemap.GenerateSiteMap(app)
 	})
 }
