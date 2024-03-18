@@ -142,7 +142,7 @@ jobs:
         if: failure()
         with:
           name: wga-data-${{ matrix.shardIndex }}
-          path: ./wga_tmp/wga_data
+          path: wga_data
           retention-days: 1
   merge-reports:
     # Merge reports after playwright-tests, even if some shards have failed
