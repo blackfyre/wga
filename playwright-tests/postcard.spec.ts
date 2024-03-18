@@ -9,7 +9,6 @@ test("send postcard", async ({ page }) => {
   await expect(page.locator("#d")).toHaveText(/Write a postcard/);
 
   await page.getByLabel("Name").fill("Playwright Tester");
-  await page.getByLabel("Email").fill("playwright.tester@local.host");
   await page
     .getByPlaceholder("Email address", { exact: true })
     .fill("playwright.tester@local.host");
@@ -19,7 +18,7 @@ test("send postcard", async ({ page }) => {
 
   await expect(page.locator(".is-success")).toBeVisible();
 
-  await page.goto("http://localhost:8025/");
+  await page.goto(process.env.MAILPIT_URL!);
 
   await page
     .getByRole("link", { name: "WGA playwright.tester@local." })
