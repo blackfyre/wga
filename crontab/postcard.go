@@ -16,7 +16,13 @@ import (
 
 func sendPostcards(app *pocketbase.PocketBase, scheduler *cron.Cron) {
 
-	scheduler.MustAdd("postcards", "*/1 * * * *", func() {
+	var frequency = os.Getenv("WGA_POSTCARD_FREQUENCY")
+
+	if frequency == "" {
+		frequency = "*/1 * * * *"
+	}
+
+	scheduler.MustAdd("postcards", frequency, func() {
 		records, err := app.Dao().FindRecordsByFilter(
 			"postcards",         // collection
 			"status = 'queued'", // filter
