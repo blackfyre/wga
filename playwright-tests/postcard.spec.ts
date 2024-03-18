@@ -9,9 +9,10 @@ test("send postcard", async ({ page }) => {
   await expect(page.locator("#d")).toHaveText(/Write a postcard/);
 
   await page.getByLabel("Name").fill("Playwright Tester");
+  await page.getByLabel("Email").fill("playwright.tester@local.host"); // this is the postcard sender's email
   await page
     .getByPlaceholder("Email address", { exact: true })
-    .fill("playwright.tester@local.host");
+    .fill("playwright.tester@local.host"); // this is the postcard recipient's email
   await page.locator("trix-editor").fill("I am testing your site.");
 
   await page.getByRole("button", { name: "Send postcard" }).click();
