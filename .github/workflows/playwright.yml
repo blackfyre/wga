@@ -60,6 +60,8 @@ jobs:
         run: tar -xvf mailpit-linux-amd64.tar.gz
       - name: Run Mailpit
         run: ./mailpit > mailpit.log &
+      - name: Install NPM dependencies
+        run: npm ci
       - name: Get installed Playwright version
         id: playwright-version
         run: echo "PLAYWRIGHT_VERSION=$(node -e "console.log(require('./package-lock.json').packages['node_modules/@playwright/test'].version)")" >> $GITHUB_ENV
