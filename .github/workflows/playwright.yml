@@ -82,8 +82,6 @@ jobs:
         run: chmod +x ./wga_tmp/wga
       - name: Run the application
         run: ./wga_tmp/wga serve --dev > wga.log &
-      - name: Wait for the application to start
-        run: npx wait-on http://localhost:8080
       - run: ls -lah ./wga_tmp
       - run: ls -lah
       - name: Run Playwright tests
