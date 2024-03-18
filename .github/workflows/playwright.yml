@@ -76,6 +76,7 @@ jobs:
       - run: npx playwright install-deps
         name: Install Playwright dependencies
         if: steps.playwright-cache.outputs.cache-hit != 'true'
+      - run: ls -lah
       - name: Run the application
         run: ./wga_tmp/wga serve --dev > wga.log &
       - name: Run Playwright tests
