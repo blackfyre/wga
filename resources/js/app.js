@@ -186,6 +186,16 @@ function InitEventListeners() {
     });
   });
 
+  document.body.addEventListener("htmx:configRequest", (event) => {
+    //get the value of the _csrf cookie
+    const csrf_token = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("_csrf"))
+      .split("=")[1];
+
+    event.detail.headers["X-XSRF-TOKEN"] = csrf_token;
+  });
+
   //! This is a workaround, has to be removed when htmx fixes the issue
   addEventListener("htmx:beforeHistorySave", () => {
     document

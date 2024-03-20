@@ -8,12 +8,14 @@ import (
 	"github.com/blackfyre/wga/handlers"
 	"github.com/blackfyre/wga/hooks"
 	_ "github.com/blackfyre/wga/migrations"
+	"github.com/labstack/echo/v5/middleware"
 
 	"github.com/blackfyre/wga/utils"
 	"github.com/blackfyre/wga/utils/seed"
 	"github.com/blackfyre/wga/utils/sitemap"
 	"github.com/joho/godotenv"
 	"github.com/pocketbase/pocketbase"
+	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/plugins/migratecmd"
 	"github.com/spf13/cobra"
 )
@@ -24,6 +26,14 @@ func main() {
 
 	app := pocketbase.NewWithConfig(pocketbase.Config{
 		DefaultDataDir: "./wga_data",
+	})
+
+	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
+		e.Router.Use(middleware.CSRFWithConfig(middleware.CSRFConfig{
+			TokenLookup: "header:X-XSRF-TOKEN",
+		}))
+
+		return nil
 	})
 
 	handlers.RegisterHandlers(app)
