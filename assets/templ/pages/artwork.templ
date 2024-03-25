@@ -27,12 +27,12 @@ templ ArtworkBlock(aw Artwork) {
 		<title>{ utils.GetTitle(ctx) }</title>
 	</head>
 	<section class="section">
-		<div class="container">
-			<div class="columns">
-				<div class="column" data-viewer>
+		<div class="container mx-auto">
+			<div class="flex flex-row">
+				<div class="" data-viewer>
 					@components.ImageBig(aw.Image.Image, aw.Image.Title, aw.Artist.Name)
 				</div>
-				<article class="column">
+				<article class="">
 					<div class="box">
 						<h1 class="title">{ aw.Title }</h1>
 						<h2 class="subtitle">
@@ -41,7 +41,7 @@ templ ArtworkBlock(aw Artwork) {
 	hx-get={ aw.Artist.Url }
 >{ aw.Artist.Name }</a>, { aw.Technique }
 						</h2>
-						<div class="content">
+						<div class="prose">
 							@templ.Raw(aw.Comment)
 						</div>
 						<a
@@ -49,7 +49,7 @@ templ ArtworkBlock(aw Artwork) {
 							hx-on="click: document.getElementById('d').showModal();"
 							hx-get={ "/postcard/send?awid=" + aw.Id }
 							hx-target="#d"
-							class="card-footer-item"
+							class="btn btn-primary"
 						>
 							Send
 							Postcard

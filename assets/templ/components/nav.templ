@@ -1,81 +1,130 @@
 package components
 
 templ TopNav() {
-	<nav class="navbar is-fixed-top" role="navigation" aria-label="main navigation">
-		<div class="navbar-brand">
-			<a class="navbar-item" id="nav-logo" href="/" hx-get="/">
-				<img
-					src="/assets/images/logo.png"
-					loading="lazy"
-					width="318"
-					height="45"
-					alt="Web Gallery of Art"
-					title="Go to Home"
-				/>
-			</a>
-			<a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="top-navbar">
-				<span aria-hidden="true"></span>
-				<span aria-hidden="true"></span>
-				<span aria-hidden="true"></span>
-			</a>
-		</div>
-		<div id="top-navbar" class="navbar-menu">
-			<div class="navbar-start">
-				<a class="navbar-item" href="/" hx-get="/">
-					Home
-				</a>
-				<a class="navbar-item" href="/artists" hx-get="/artists">
-					Artists
-				</a>
-				<a class="navbar-item" href="/artworks" hx-get="/artworks">
-					Artworks
-				</a>
-				<a class="navbar-item" href="/guestbook" hx-get="/guestbook" hx-trigger="guestbook-updated from:body">
-					Guestbook
-				</a>
-				<!-- 
-            <a class="navbar-item">
-                Tours
-            </a>
-            <a class="navbar-item is-hidden-touch" hx-on="click: ToggleDualMode()">
-                Dual mode
-            </a>
-        -->
-				<div class="navbar-item has-dropdown is-hoverable">
-					<a class="navbar-link">
-						More
-					</a>
-					<div class="navbar-dropdown">
-						<a
-							class="navbar-item"
-							href="/pages/privacy-policy"
-							hx-get="/pages/privacy-policy"
-						>
-							Privacy Policy
-						</a>
-						<!--
-                    <a class="navbar-item">
-                        Glossary
-                    </a>
-                    <a class="navbar-item">
-                        Music
-                    </a>
-                    <a class="navbar-item">
-                        Database
-                    </a>
-                    <a class="navbar-item">
-                        Sources
-                    </a>
-                    <a class="navbar-item">
-                        About Us
-                    </a>
-                    <a class="navbar-item">
-                        Contact Us
-                    </a>
-                    -->
-					</div>
+	<div class="navbar bg-primary text-primary-content fixed top-0 z-40">
+		<div class="navbar-start">
+			<div class="dropdown">
+				<div tabindex="0" role="button" class="btn btn-ghost lg:hidden">
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16"></path></svg>
 				</div>
+				<ul tabindex="0" class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
+					<li><a href="/" hx-get="/">Home</a></li>
+					<li><a href="/artists" hx-get="/artists">Artists</a></li>
+					<li><a href="/artworks" hx-get="/artworks">Artworks</a></li>
+					<li><a href="/guestbook" hx-get="/guestbook" hx-trigger="guestbook-updated from:body">Guestbook</a></li>
+					<li>
+						<a>More</a>
+						<ul class="p-2">
+							<li>
+								<a
+									href="/pages/privacy-policy"
+									hx-get="/pages/privacy-policy"
+								>Privacy Policy</a>
+							</li>
+						</ul>
+					</li>
+				</ul>
 			</div>
+			<a class="btn btn-ghost text-xl">WGA</a>
 		</div>
-	</nav>
+		<div class="navbar-center hidden lg:flex">
+			<ul class="menu menu-horizontal px-1">
+				<li><a href="/" hx-get="/">Home</a></li>
+				<li><a href="/artists" hx-get="/artists">Artists</a></li>
+				<li><a href="/artworks" hx-get="/artworks">Artworks</a></li>
+				<li><a href="/guestbook" hx-get="/guestbook" hx-trigger="guestbook-updated from:body">Guestbook</a></li>
+				<li>
+					<details>
+						<summary>More</summary>
+						<ul class="p-2">
+							<li>
+								<a
+									href="/pages/privacy-policy"
+									hx-get="/pages/privacy-policy"
+								>Privacy Policy</a>
+							</li>
+						</ul>
+					</details>
+				</li>
+			</ul>
+		</div>
+		<div class="navbar-end"></div>
+	</div>
+	// <nav class="navbar is-fixed-top" role="navigation" aria-label="main navigation">
+	// 	<div class="navbar-brand">
+	// 		<a class="navbar-item" id="nav-logo" href="/" hx-get="/">
+	// 			<img
+	// 				src="/assets/images/logo.png"
+	// 				loading="lazy"
+	// 				width="318"
+	// 				height="45"
+	// 				alt="Web Gallery of Art"
+	// 				title="Go to Home"
+	// 			/>
+	// 		</a>
+	// 		<a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="top-navbar">
+	// 			<span aria-hidden="true"></span>
+	// 			<span aria-hidden="true"></span>
+	// 			<span aria-hidden="true"></span>
+	// 		</a>
+	// 	</div>
+	// 	<div id="top-navbar" class="navbar-menu">
+	// 		<div class="navbar-start">
+	// 			<a class="navbar-item" href="/" hx-get="/">
+	// 				Home
+	// 			</a>
+	// 			<a class="navbar-item" href="/artists" hx-get="/artists">
+	// 				Artists
+	// 			</a>
+	// 			<a class="navbar-item" href="/artworks" hx-get="/artworks">
+	// 				Artworks
+	// 			</a>
+	// 			<a class="navbar-item" href="/guestbook" hx-get="/guestbook" hx-trigger="guestbook-updated from:body">
+	// 				Guestbook
+	// 			</a>
+	// 			<!-- 
+	//         <a class="navbar-item">
+	//             Tours
+	//         </a>
+	//         <a class="navbar-item is-hidden-touch" hx-on="click: ToggleDualMode()">
+	//             Dual mode
+	//         </a>
+	//     -->
+	// 			<div class="navbar-item has-dropdown is-hoverable">
+	// 				<a class="navbar-link">
+	// 					More
+	// 				</a>
+	// 				<div class="navbar-dropdown">
+	// 					<a
+	// 						class="navbar-item"
+	// 						href="/pages/privacy-policy"
+	// 						hx-get="/pages/privacy-policy"
+	// 					>
+	// 						Privacy Policy
+	// 					</a>
+	// 					<!--
+	//                 <a class="navbar-item">
+	//                     Glossary
+	//                 </a>
+	//                 <a class="navbar-item">
+	//                     Music
+	//                 </a>
+	//                 <a class="navbar-item">
+	//                     Database
+	//                 </a>
+	//                 <a class="navbar-item">
+	//                     Sources
+	//                 </a>
+	//                 <a class="navbar-item">
+	//                     About Us
+	//                 </a>
+	//                 <a class="navbar-item">
+	//                     Contact Us
+	//                 </a>
+	//                 -->
+	// 				</div>
+	// 			</div>
+	// 		</div>
+	// 	</div>
+	// </nav>
 }

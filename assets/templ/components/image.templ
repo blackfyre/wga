@@ -14,7 +14,7 @@ type Image struct {
 type ImageGrid []Image
 
 templ ImageBase(i Image) {
-	<figure class="image is-4by3 hidden-caption">
+	<figure class="aspect-square hidden-caption">
 		<picture>
 			<source media="(max-width: 768px)" srcset={ i.Thumb }/>
 			<source media="(min-width: 769px)" srcset={ i.Thumb }/>
@@ -36,48 +36,39 @@ templ ImageBig(ImageUrl string, Title string, Artist string) {
 }
 
 templ ImageCard(i Image, hasLearnMore bool) {
-	<section class="card is-art-card">
-		<div class="card-image">
-			@ImageBase(i)
-		</div>
-		<div class="card-content">
-			<div>
-				<h3 class="title is-size-3">{ i.Title }</h3>
-				<p class="subtitle">{  i.Technique  }</p>
-				<div class="line-clamp-3 content">
-					@templ.Raw(i.Comment)
-				</div>
+	<div class="card w-full bg-base-100 shadow-xl m-4 sm:m-0">
+		@ImageBase(i)
+		<div class="card-body justify-between">
+			<h2 class="card-title">{ i.Title }</h2>
+			<div class="prose line-clamp-3">
+				@templ.Raw(i.Comment)
 			</div>
-		</div>
-		<footer class="card-footer">
-			if hasLearnMore {
-				<a class="card-footer-item" href={ templ.SafeURL(i.Url) } hx-get={ i.Url }>
+			<div class="card-actions">
+				<a
+					href="#"
+					hx-on="click: document.getElementById('d').showModal();"
+					hx-get={ `/postcard/send?awid=` + i.Id }
+					hx-target="#d"
+					class="btn btn-secondary"
+					hx-swap="innerHTML"
+					hx-select="section.postcard-editor"
+				>
+					Send
+					Postcard
+				</a>
+				<a class="btn btn-primary" href={ templ.SafeURL(i.Url) } hx-get={ i.Url }>
 					Learn
 					More
 				</a>
-			}
-			<a
-				href="#"
-				hx-on="click: document.getElementById('d').showModal();"
-				hx-get={ `/postcard/send?awid=` + i.Id }
-				hx-target="#d"
-				class="card-footer-item"
-				hx-swap="innerHTML"
-				hx-select="section.postcard-editor"
-			>
-				Send
-				Postcard
-			</a>
-		</footer>
-	</section>
+			</div>
+		</div>
+	</div>
 }
 
 templ ImageGridComponent(i ImageGrid, hasLearnMore bool) {
-	<div class="columns is-multiline is-mobile works-listing" data-viewer>
+	<div class="grid gird-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" data-viewer>
 		for _, img := range i {
-			<div class="column is-full-mobile is-one-third-tablet is-one-quarter-desktop">
-				@ImageCard(img, hasLearnMore)
-			</div>
+			@ImageCard(img, hasLearnMore)
 		}
 	</div>
 }

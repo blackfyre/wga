@@ -4,7 +4,10 @@
   "description": "Front-end build system for the Web Gallery of Art: Project Phoenix",
   "private": "true",
   "scripts": {
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "build": "postcss ./resources/css/style.css -o ./assets/public/css/style.css",
+    "build:watch": "npm run build -- --watch",
+    "dev": "concurrently -c \"red,magenta,yellow\" \"templ generate --watch\" \"air serve\" \"npm run build:watch\""
   },
   "repository": {
     "type": "git",
@@ -17,26 +20,25 @@
   },
   "homepage": "https://github.com/blackfyre/wga#readme",
   "devDependencies": {
-    "@creativebulma/bulma-divider": "^1.1.0",
-    "@fullhuman/postcss-purgecss": "^5.0.0",
     "@playwright/test": "^1.42.1",
+    "@tailwindcss/typography": "^0.5.10",
     "@types/node": "^20.11.25",
-    "autoprefixer": "^10.4.16",
-    "bulma": "^0.9.4",
-    "bulma-list": "^1.2.0",
-    "bulma-toast": "^2.4.3",
+    "autoprefixer": "^10.4.19",
+    "concurrently": "^8.2.2",
+    "cssnano": "^6.1.1",
+    "daisyui": "^4.8.0",
     "dotenv": "^16.4.5",
     "esbuild": "0.20.1",
     "esbuild-plugin-copy": "^2.1.1",
-    "esbuild-plugin-purgecss-2": "^1.0.1",
-    "esbuild-sass-plugin": "^3.1.0",
-    "glob-all": "^3.3.1",
-    "htmx.org": "^1.9.10",
+    "htmx.org": "^1.9.11",
     "husky": "^9.0.11",
     "lint-staged": "^15.0.2",
-    "postcss": "^8.4.31",
-    "prettier": "3.2.5",
-    "purgecss-from-html": "^6.0.0-alpha.0"
+    "postcss": "^8.4.38",
+    "postcss-cli": "^11.0.0",
+    "postcss-import": "^16.1.0",
+    "postcss-nesting": "^12.1.0",
+    "prettier": "^3.2.5",
+    "tailwindcss": "^3.4.1"
   },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown"
