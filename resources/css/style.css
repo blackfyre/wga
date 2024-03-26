@@ -238,3 +238,12 @@ dialog {
     max-width: 70vw;
   }
 } */
+
+a[href]:not(:where(
+  [href^="#"],
+  [href^="?"],
+  [href^="/"]:not([href^="//"]),
+  [onclick]
+)):after {
+  content: "↗️";
+}

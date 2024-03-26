@@ -9,9 +9,6 @@ module.exports = {
       mono: ["Fira Code", "monospace"],
     },
   },
-  corePlugins: {
-    aspectRatio: false,
-  },
   plugins: [require("daisyui"), require("@tailwindcss/typography")],
   daisyui: {
     themes: [
