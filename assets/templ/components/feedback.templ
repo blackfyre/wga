@@ -1,8 +1,14 @@
 package components
 
 templ FeedbackForm() {
-	<section class="container">
-		<h1 class="title">Are we doing good?</h1>
+	<section class="container mx-auto">
+		<h1 class="mb-4 text-xl">Are we doing good?</h1>
+		<p class="mb-4">Please, share your observations with us!</p>
+		<button class="btn btn-ghost close-dialog" hx-on="click: wga.closeDialog();">
+			<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+				<path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"></path>
+			</svg>
+		</button>
 		<form
 			hx-post="/feedback"
 			enctype="multipart/form-data"
@@ -11,31 +17,18 @@ templ FeedbackForm() {
 			hx-select="section.container"
 			hx-swap="innerHTML"
 		>
-			<div class="field">
-				<label class="label" for="fp_name">Name</label>
-				<div class="control">
-					<input class="input" type="text" name="fp_name" id="fp_name" placeholder="My name" required autocomplete="name"/>
-				</div>
-			</div>
-			<div class="field">
-				<label class="label" for="fp_email">Email</label>
-				<div class="control">
-					<input
-						class="input"
-						type="email"
-						name="fp_email"
-						id="fp_email"
-						placeholder="My email address"
-						autocomplete="email"
-						required
-					/>
-				</div>
-			</div>
-			<div class="field">
-				<label class="label" for="message">Message</label>
-				<div class="control">
-					<textarea class="textarea" id="message" name="message" placeholder="Your message"></textarea>
-				</div>
+			<div class="flex flex-col">
+				<input class="input input-bordered w-full max-w-xs mb-4" type="text" name="fp_name" id="fp_name" placeholder="Name" required autocomplete="name"/>
+				<input
+					class="input input-bordered w-full max-w-xs mb-4"
+					type="email"
+					name="fp_email"
+					id="fp_email"
+					placeholder="Email"
+					autocomplete="email"
+					required
+				/>
+				<textarea class="textarea textarea-bordered mb-4" id="message" name="message" placeholder="Your message"></textarea>
 			</div>
 			<label aria-hidden="true" class="hpt" for="name"></label>
 			<input
@@ -57,17 +50,13 @@ templ FeedbackForm() {
 				name="email"
 				placeholder="Your e-mail here"
 			/>
-			<div class="field is-grouped">
-				<p class="control">
-					<button class="button is-link" type="submit">
-						Send feedback
-					</button>
-				</p>
-				<p class="control">
-					<button type="button" class="button" hx-on="click: wga.closeDialog();">
-						Cancel
-					</button>
-				</p>
+			<div class="flex flex-row justify-end gap-4">
+				<button class="btn btn-primary" type="submit">
+					Send feedback
+				</button>
+				<button type="button" class="btn btn-neutral" hx-on="click: wga.closeDialog();">
+					Cancel
+				</button>
 			</div>
 		</form>
 	</section>

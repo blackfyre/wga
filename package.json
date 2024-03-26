@@ -7,7 +7,7 @@
     "prepare": "husky install",
     "build": "postcss ./resources/css/style.css -o ./assets/public/css/style.css",
     "build:watch": "npm run build -- --watch",
-    "dev": "concurrently -c \"red,magenta,yellow\" \"templ generate --watch\" \"air serve\" \"npm run build:watch\""
+    "dev": "concurrently -n \"templ,serve,tailwind\" -c \"red,magenta,yellow\" \"templ generate --watch\" \"air serve\" \"npm run build:watch\""
   },
   "repository": {
     "type": "git",
