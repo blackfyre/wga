@@ -239,11 +239,21 @@ dialog {
   }
 } */
 
+a:not([class]) {
+  @apply font-semibold underline;
+}
+
+.menu {
+  a:not([class]) {
+    @apply font-normal no-underline;
+  }
+}
+
 a[href]:not(:where(
   [href^="#"],
   [href^="?"],
   [href^="/"]:not([href^="//"]),
   [onclick]
 )):after {
-  content: "↗️";
+  content: "↗";
 }

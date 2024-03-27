@@ -28,20 +28,20 @@ templ ArtworkBlock(aw Artwork) {
 	</head>
 	<section class="section">
 		<div class="container mx-auto">
-			<div class="flex flex-row">
+			<div class="flex flex-row gap-6">
 				<div class="" data-viewer>
 					@components.ImageBig(aw.Image.Image, aw.Image.Title, aw.Artist.Name)
 				</div>
 				<article class="">
 					<div class="box">
-						<h1 class="title">{ aw.Title }</h1>
-						<h2 class="subtitle">
+						<h1 class="text-2xl">{ aw.Title }</h1>
+						<h2 class="">
 							by <a
 	href={ templ.SafeURL(aw.Artist.Url) }
 	hx-get={ aw.Artist.Url }
 >{ aw.Artist.Name }</a>, { aw.Technique }
 						</h2>
-						<div class="prose">
+						<div class="prose mb-6">
 							@templ.Raw(aw.Comment)
 						</div>
 						<a
