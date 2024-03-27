@@ -22,139 +22,129 @@ templ GuestbookPage(v GuestbookView) {
 }
 
 templ GuestbookBlock(v GuestbookView) {
-	<section class="section">
-		<div class="container box">
-			<h1 class="title">Guestbook</h1>
-			<div class="level">
-				<div class="level-left">
-					<a
-						href="#"
-						hx-get="/guestbook/add"
-						hx-on="click: wga.openDialog()"
-						hx-target="#d"
-						hx-select="section.container"
-						hx-swap="innerHTML"
-						class="button is-primary"
-					>Add Entry</a>
-				</div>
-				<div class="level-right">
-					<div class="select">
-						<select
-							title="Select a year to filter the guestbook entries"
-							name="year"
-							hx-get="/guestbook"
-						>
-							for _, year := range v.YearOptions {
-								<option value={ year } selected?={ v.SelectedYear == year }>{ year }</option>
-							}
-						</select>
-					</div>
-				</div>
+	<section class="container mx-auto">
+		<h1 class="text-xl mb-6">Guestbook</h1>
+		<p class="mb-4">Take a moment to leave your mark in our online gallery's guestbook—your thoughts, reflections, and feedback add depth and richness to our community's experience with art. </p>
+		<div class="flex flex-row justify-between items-center mb-6">
+			<div>
+				<a
+					href="#"
+					hx-get="/guestbook/add"
+					hx-on="click: wga.openDialog()"
+					hx-target="#d"
+					hx-select="section.container"
+					hx-swap="innerHTML"
+					class="btn btn-primary"
+				>Add Entry</a>
 			</div>
-			if len(v.Entries) > 0 {
-				@GuestbookEntries(v.Entries)
-			} else {
-				<p>No entries found</p>
-				<p>Be the first to sign the guestbook!</p>
-			}
+			<div>
+				<select
+					title="Select a year to filter the guestbook entries"
+					name="year"
+					hx-get="/guestbook"
+					class="select select-bordered w-full "
+				>
+					for _, year := range v.YearOptions {
+						<option value={ year } selected?={ v.SelectedYear == year }>{ year }</option>
+					}
+				</select>
+			</div>
 		</div>
+		if len(v.Entries) > 0 {
+			@GuestbookEntries(v.Entries)
+		} else {
+			<div role="alert" class="alert alert-info">
+				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+				<p>No entries found</p>
+				<p>Be the first to sign the guestbook for { v.SelectedYear }!</p>
+			</div>
+		}
 	</section>
 }
 
 templ GuestbookEntryForm() {
 	<section class="container">
-		<h1 class="title mb-3">Leave an enty!</h1>
+		<button class="btn btn-ghost close-dialog" hx-on="click: wga.closeDialog();">
+			<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+				<path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"></path>
+			</svg>
+		</button>
+		<h1 class="text-2xl mb-4">Leave an enty!</h1>
 		<p>Leave your mark in the guestbook!</p>
 		<p>Be kind and respectful to others.</p>
 		<p>Messages are moderated and will be reviewed before being published.</p>
-		<p class="mb-3">You can post your message anonymously if you prefer.</p>
+		<p class="mb-4">You can post your message anonymously if you prefer.</p>
 		<form
 			hx-post="/guestbook/add"
 			enctype="multipart/form-data"
 			hx-target="#d"
 			hx-disabled-elt="input,button,select"
 		>
-			<div class="field">
-				<label class="label" for="sender_name">Name</label>
+			<div class="flex flex-col gap-6 mb-6">
 				<input
 					type="text"
-					class="input"
+					class="input input-bordered w-full "
 					placeholder="Your name"
 					name="sender_name"
 					autocomplete="name"
 					id="sender_name"
 				/>
-			</div>
-			<div class="field">
-				<label class="label" for="sender_email">Email</label>
 				<input
 					type="email"
-					class="input"
+					class="input input-bordered w-full "
 					placeholder="Your email"
 					name="sender_email"
 					autocomplete="email"
 					id="sender_email"
 				/>
-			</div>
-			<div class="field">
-				<label class="label" for="location">Location</label>
 				<input
 					type="text"
-					class="input"
+					class="input input-bordered w-full "
 					placeholder="Your location"
 					name="location"
 					autocomplete="location"
 				/>
+				<textarea class="textarea textarea-bordered" id="message" name="message" placeholder="Your entry"></textarea>
 			</div>
-			<div class="field">
-				<label class="label" for="message">Entry</label>
-				<textarea class="textarea" id="message" name="message" placeholder="Your entry"></textarea>
-			</div>
-			<div class="field">
-				<label aria-hidden="true" class="hpt" for="name"></label>
-				<input
-					aria-hidden="true"
-					class="hpt"
-					autocomplete="off"
-					type="text"
-					id="name"
-					name="name"
-					placeholder="Enter your name"
-				/>
-			</div>
-			<div class="field">
-				<label aria-hidden="true" class="hpt" for="email"></label>
-				<input
-					aria-hidden="true"
-					class="hpt"
-					autocomplete="off"
-					type="email"
-					id="email"
-					name="email"
-					placeholder="Enter your email"
-				/>
-			</div>
-			<div class="field is-grouped">
-				<p class="control">
-					<button class="button is-link" type="submit">
-						Leave entry
-					</button>
-				</p>
-				<p class="control">
-					<button type="button" class="button" hx-on="click: wga.closeDialog();">
-						Cancel
-					</button>
-				</p>
+			<label aria-hidden="true" class="hpt" for="name"></label>
+			<input
+				aria-hidden="true"
+				class="hpt"
+				autocomplete="off"
+				type="text"
+				id="name"
+				name="name"
+				placeholder="Enter your name"
+			/>
+			<label aria-hidden="true" class="hpt" for="email"></label>
+			<input
+				aria-hidden="true"
+				class="hpt"
+				autocomplete="off"
+				type="email"
+				id="email"
+				name="email"
+				placeholder="Enter your email"
+			/>
+			<div class="flex flex-row justify-end gap-4">
+				<button class="btn btn-primary" type="submit">
+					Leave entry
+				</button>
+				<button type="button" class="btn btn-neutral" hx-on="click: wga.closeDialog();">
+					Cancel
+				</button>
 			</div>
 		</form>
 	</section>
 }
 
 templ GuestbookEntries(entries []*models.GuestbookEntry) {
-	<div class="list has-hoverable-list-items gb-entries">
-		for _, entry := range entries {
-			@GuestbookEntry(entry)
-		}
+	<div class="flow-root">
+		<div class="divide-y divide-gray-200">
+			for _, entry := range entries {
+				@GuestbookEntry(entry)
+			}
+		</div>
 	</div>
 }
 
@@ -162,31 +152,33 @@ templ GuestbookEntry(entry *models.GuestbookEntry) {
 	if (entry.Message == "") {
 		return
 	}
-	<div class="list-item gb-entry">
-		<div class="list-item-image">
-			<figure class="image is-64x64">
+	<div class="py-12">
+		<div class="flex items-center">
+			<figure class="h-12 w-12 rounded-full">
 				if entry.Email != "" {
-					<img class="is-rounded" src={ genGravatarUrl(entry.Email) }/>
+					<img class="" src={ genGravatarUrl(entry.Email) }/>
 				} else {
-					<img class="is-rounded" src="https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y&size=128"/>
+					<img class="" src="https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y&size=128"/>
 				}
 			</figure>
-		</div>
-		<div class="list-item-content">
-			if entry.Name != "" {
-				<div class="list-item-title">{ entry.Name }</div>
-			} else {
-				<div class="list-item-title">Anonymous</div>
-			}
-			<div class="list-item-description">
-				<div class="content mb-0">
-					@templ.Raw(entry.Message)
+			<div class="ml-4">
+				<h4 class="text-sm font-bold">
+					if entry.Name != "" {
+						{ entry.Name }
+					} else {
+						Anonymous
+					}
+				</h4>
+				<div class="flex flex-row items-center mt-2">
+					if entry.Location != "" {
+						<div class="badge badge-neutral mr-4">{ entry.Location }</div>
+					}
+					<div class="badge badge-neutral">{ entry.Created }</div>
 				</div>
-				if entry.Location != "" {
-					<span class="tag is-light mr-3">{ entry.Location }</span>
-				}
-				<span class="tag is-light">{ entry.Created }</span>
 			</div>
+		</div>
+		<div class="mt-4 space-y-6 text-base italic">
+			@templ.Raw(entry.Message)
 		</div>
 	</div>
 }

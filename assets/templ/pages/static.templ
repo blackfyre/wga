@@ -20,16 +20,10 @@ templ StaticPage(sp StaticPageDTO) {
 }
 
 templ StaticPageBlock(sp StaticPageDTO) {
-	<section class="section">
-		<article class="container">
-			<div class="box">
-				<h1 class="title is-size-1">
-					{ sp.Title }
-				</h1>
-				<div class="content">
-					@templ.Raw(sp.Content)
-				</div>
-			</div>
-		</article>
-	</section>
+	<article class="container mx-auto prose">
+		<h1>
+			{ sp.Title }
+		</h1>
+		@templ.Raw(sp.Content)
+	</article>
 }

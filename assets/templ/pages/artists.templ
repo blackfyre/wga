@@ -37,87 +37,81 @@ templ ArtistsPageBlock(c ArtistsView) {
 	<head>
 		<title>{ utils.GetTitle(ctx) }</title>
 	</head>
-	<section class="section">
-		<div class="container">
-			<div class="box">
-				<nav class="level">
-					<div class="level-left">
-						<div class="level-item">
-							<p class="subtitle is-5">
-								<strong>{ c.Count }</strong> artists
-							</p>
-						</div>
-						<div class="level-item">
-							<div class="field has-addons">
-								<p class="control">
-									<input
-										class="input"
-										type="search"
-										name="q"
-										placeholder="Find an artist"
-										hx-get="/artists"
-										hx-trigger="keyup changed delay:500ms, search"
-										hx-disabled-elt="this"
-										value={ c.QueryStr }
-										aria-label="Search artists"
-										aria-role="search"
-									/>
-								</p>
-							</div>
-						</div>
-					</div>
-				</nav>
-				@ArtistsSearchResults(c)
+	<section class="container mx-auto">
+		<div class="flex flex-row items-center gap-4">
+			<div>
+				<p><strong>{ c.Count }</strong> artists</p>
+			</div>
+			<div>
+				<label class="input input-bordered flex items-center gap-2 input-sm">
+					<input
+						type="search"
+						class="grow"
+						placeholder="Search"
+						name="q"
+						placeholder="Find an artist"
+						hx-get="/artists"
+						hx-trigger="keyup changed delay:500ms, search"
+						hx-disabled-elt="this"
+						value={ c.QueryStr }
+						aria-label="Search artists"
+						aria-role="search"
+					/>
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 opacity-70"><path fill-rule="evenodd" d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z" clip-rule="evenodd"></path></svg>
+				</label>
 			</div>
 		</div>
+		@ArtistsSearchResults(c)
 	</section>
 }
 
 templ artistsTable(list []Artist) {
-	<table class="table is-hoverable is-fullwidth">
-		<thead>
-			<tr>
-				<th>
-					ARTIST
-				</th>
-				<th>
-					BORN-DIED
-				</th>
-				<th>
-					School(s)
-				</th>
-				<th>
-					Profession
-				</th>
-			</tr>
-		</thead>
-		<tbody>
-			for _, a := range list {
+	<div class="overflow-x-auto">
+		<table class="table">
+			<thead>
 				<tr>
-					<td><a href={ templ.SafeURL(a.Url) } hx-get={ a.Url }><b>{ a.Name }</b></a></td>
-					<td>{ a.BornDied }</td>
-					<td>{ a.Schools }</td>
-					<td>{ a.Profession }</td>
+					<th>
+						ARTIST
+					</th>
+					<th>
+						BORN-DIED
+					</th>
+					<th>
+						School(s)
+					</th>
+					<th>
+						Profession
+					</th>
 				</tr>
-			}
-		</tbody>
-		<tfoot>
-			<tr>
-				<th>
-					ARTIST
-				</th>
-				<th>
-					BORN-DIED
-				</th>
-				<th>
-					PERIOD
-				</th>
-				<th>
-					SCHOOL
-				</th>
-			</tr>
-		</tfoot>
-	</table>
+			</thead>
+			<tbody>
+				for _, a := range list {
+					<tr>
+						<td><a href={ templ.SafeURL(a.Url) } hx-get={ a.Url }><b>{ a.Name }</b></a></td>
+						<td>{ a.BornDied }</td>
+						<td>{ a.Schools }</td>
+						<td>{ a.Profession }</td>
+					</tr>
+				}
+			</tbody>
+			<tfoot>
+				<tr>
+					<th>
+						ARTIST
+					</th>
+					<th>
+						BORN-DIED
+					</th>
+					<th>
+						PERIOD
+					</th>
+					<th>
+						SCHOOL
+					</th>
+				</tr>
+			</tfoot>
+		</table>
+	</div>
 }
 
 templ ArtistsSearchResults(c ArtistsView) {

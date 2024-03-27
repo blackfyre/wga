@@ -18,29 +18,24 @@ templ ArtistBlock(a Artist) {
 	<head>
 		<title>{ utils.GetTitle(ctx) }</title>
 	</head>
-	<section class="section">
-		<div class="container">
-			<article class="box">
-				<!-- Main container -->
-				<div class="level">
-					<!-- Left side -->
-					<div class="bottom-level">
-						<div>
-							<h1 class="title is-size-1">
-								{ a.Name }
-							</h1>
-						</div>
-						<div>
-							({ a.BioExcerpt })
-						</div>
-					</div>
+	<section class="container mx-auto">
+		<article class="mb-4 px-4 sm:px-0">
+			<!-- Main container -->
+			<div class="flex flex-col md:flex-row">
+				<div>
+					<h1 class="title is-size-1">
+						{ a.Name }
+					</h1>
 				</div>
-				<div class="content">
-					@templ.Raw(a.Bio)
+				<div class="ml-0 md:ml-2">
+					({ a.BioExcerpt })
 				</div>
-			</article>
-			@components.ImageGridComponent(a.Works, true)
-			@templ.Raw(a.Jsonld)
-		</div>
+			</div>
+			<div class="prose">
+				@templ.Raw(a.Bio)
+			</div>
+		</article>
+		@components.ImageGridComponent(a.Works, true)
+		@templ.Raw(a.Jsonld)
 	</section>
 }
