@@ -6,7 +6,7 @@ module.exports = {
     fontFamily: {
       sans: ["Lexend", "Arial", "sans-serif"],
       serif: ["Merriweather", "Georgia", "serif"],
-      mono: ["Fira Code", "monospace"],
+      mono: ["JetBrains Mono", "monospace"],
     },
   },
   plugins: [require("daisyui"), require("@tailwindcss/typography")],

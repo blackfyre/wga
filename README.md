@@ -88,6 +88,7 @@ To build the application you will need to have the following installed:
 - [NodeJS](https://nodejs.org/en/) 14+
 - [NPM](https://www.npmjs.com/) 6+
 - [Goreleaser](https://goreleaser.com/)
+- [Templ](https://templ.guide/)
 
 #### Building the application
 
@@ -102,6 +103,16 @@ This will build the application and place the binary in the `dist` folder.
 ## Contributing
 
 Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
+
+### Development quick start
+
+#### Docker
+
+The supplied `docker-compose.yml` file will bring up a configured `minio` and `mailpit` instance to simulate the services used in production.
+
+#### Frontend
+
+All frontend assets (templ, postcss) can be built with `npm run dev` (this command will start a dev server as well) and the JS dependencies with `npm run build:js`.
 
 ## License
 
