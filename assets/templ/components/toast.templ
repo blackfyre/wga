@@ -1,0 +1,74 @@
+package components
+
+import (
+	"github.com/blackfyre/wga/assets/templ/utils"
+)
+
+templ Toast() {
+	<script type="text/javascript">
+        function addClass(el, className) {
+            if (el.classList)
+                el.classList.add(className);
+        }
+
+        function removeClass(el, className) {
+            if (el.classList)
+                el.classList.remove(className);
+        }
+
+        function closeToast(time = 3000) {
+            const toast = document.getElementById('toast');
+            removeClass(toast, 'entered');
+            addClass(toast, 'leaving');
+            setTimeout(function() {
+                removeClass(toast, 'leaving');
+                addClass(toast, 'left');
+            }, time);
+        }
+
+		function handleClick(el) {
+			const toast = document.getElementById('toast');
+			closeToast(0);
+		}
+
+        window.onload = function() {
+            const toast = document.getElementById('toast');
+			removeClass(toast, 'entering');
+			addClass(toast, 'entered');
+			closeToast();
+        }
+	</script>
+	<div id="toast" aria-live="assertive" class="fixed inset-0 z-50 flex items-end px-4 py-6 pointer-events-none entering sm:items-start sm:p-6" onclick="handleClick(this)">
+		<div class="flex flex-col items-center w-full space-y-4 sm:items-end">
+			<div class="w-full max-w-sm overflow-hidden bg-white rounded-lg shadow-lg pointer-events-auto ring-1 ring-black ring-opacity-5">
+				<div class="p-4">
+					<div class="flex items-start">
+						<div class="flex-shrink-0">
+							if utils.GetToast(ctx).Style == "success" {
+								<svg class="w-6 h-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+									<path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+								</svg>
+							} else if utils.GetToast(ctx).Style == "warning" {
+								<svg class="w-6 h-6" fill="#eaea00" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="64px" height="64px" viewBox="0 0 123.996 123.996" xml:space="preserve" stroke="#eaea00"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><g><path d="M9.821,118.048h104.4c7.3,0,12-7.7,8.7-14.2l-52.2-92.5c-3.601-7.199-13.9-7.199-17.5,0l-52.2,92.5 C-2.179,110.348,2.521,118.048,9.821,118.048z M70.222,96.548c0,4.8-3.5,8.5-8.5,8.5s-8.5-3.7-8.5-8.5v-0.2c0-4.8,3.5-8.5,8.5-8.5 s8.5,3.7,8.5,8.5V96.548z M57.121,34.048h9.801c2.699,0,4.3,2.3,4,5.2l-4.301,37.6c-0.3,2.7-2.1,4.4-4.6,4.4s-4.3-1.7-4.6-4.4 l-4.301-37.6C52.821,36.348,54.422,34.048,57.121,34.048z"></path> </g> </g></svg>
+							} else {
+								<svg class="w-6 h-6" fill="#ff0000" height="64px" width="64px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 493.636 493.636" xml:space="preserve" stroke="#ff0000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><g><g><path d="M421.428,72.476C374.868,25.84,312.86,0.104,246.724,0.044C110.792,0.044,0.112,110.624,0,246.548 c-0.068,65.912,25.544,127.944,72.1,174.584c46.564,46.644,108.492,72.46,174.4,72.46h0.58v-0.048 c134.956,0,246.428-110.608,246.556-246.532C493.7,181.12,468,119.124,421.428,72.476z M257.516,377.292 c-2.852,2.856-6.844,4.5-10.904,4.5c-4.052,0-8.044-1.66-10.932-4.516c-2.856-2.864-4.496-6.852-4.492-10.916 c0.004-4.072,1.876-8.044,4.732-10.884c2.884-2.86,7.218-4.511,11.047-4.542c3.992,0.038,7.811,1.689,10.677,4.562 c2.872,2.848,4.46,6.816,4.456,10.884C262.096,370.46,260.404,374.432,257.516,377.292z M262.112,304.692 c-0.008,8.508-6.928,15.404-15.448,15.404c-8.5-0.008-15.42-6.916-15.416-15.432L231.528,135 c0.004-8.484,3.975-15.387,15.488-15.414c4.093,0.021,7.895,1.613,10.78,4.522c2.912,2.916,4.476,6.788,4.472,10.912 L262.112,304.692z"></path> </g> </g> </g></svg>
+							}
+						</div>
+						<div class="ml-3 w-0 flex-1 pt-0.5">
+							<p class="text-sm font-medium text-gray-900">{ utils.GetToast(ctx).Title }</p>
+							<p class="mt-1 text-sm text-gray-500">{ utils.GetToast(ctx).Subtitle }</p>
+						</div>
+						<div class="flex flex-shrink-0 ml-4">
+							<button type="button" class="inline-flex text-gray-400 bg-white rounded-md hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" onclick="handleClick(this)">
+								<span class="sr-only">Close</span>
+								<svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+									<path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"></path>
+								</svg>
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+}

@@ -1,18 +1,8 @@
-import * as bulmaToast from "bulma-toast";
-
 const wga = {
   els: {},
   existingCloners: [],
   dialogDefaultContent: "",
 };
-
-bulmaToast.setDefaults({
-  duration: 5000,
-  position: "top-right",
-  closeOnClick: true,
-  dismissible: true,
-  animate: { in: "fadeIn", out: "fadeOut" },
-});
 
 wga.els.dialog = document.getElementById("d");
 wga.els.dialogDefaultContent = wga.els.dialog.innerHTML;
@@ -151,10 +141,10 @@ function InitEventListeners() {
       wga.els.dialog.close();
     }
 
-    bulmaToast.toast({
-      message: evt.detail.message,
-      type: evt.detail.type,
-    });
+    // bulmaToast.toast({
+    //   message: evt.detail.message,
+    //   type: evt.detail.type,
+    // });
   });
 
   document.body.addEventListener("htmx:load", function (evt) {
@@ -164,26 +154,26 @@ function InitEventListeners() {
 
   document.body.addEventListener("htmx:swapError", function (evt) {
     console.error(evt);
-    bulmaToast.toast({
-      message: "An error occurred while processing your request.",
-      type: "is-danger",
-    });
+    // bulmaToast.toast({
+    //   message: "An error occurred while processing your request.",
+    //   type: "is-danger",
+    // });
   });
 
   document.body.addEventListener("htmx:targetError", function (evt) {
     console.error(evt);
-    bulmaToast.toast({
-      message: "An error occurred while processing your request.",
-      type: "is-danger",
-    });
+    // bulmaToast.toast({
+    //   message: "An error occurred while processing your request.",
+    //   type: "is-danger",
+    // });
   });
 
   document.body.addEventListener("htmx:timeout", function (evt) {
     console.error(evt);
-    bulmaToast.toast({
-      message: "The request timed out.",
-      type: "is-danger",
-    });
+    // bulmaToast.toast({
+    //   message: "The request timed out.",
+    //   type: "is-danger",
+    // });
   });
 
   document.body.addEventListener("htmx:configRequest", (event) => {

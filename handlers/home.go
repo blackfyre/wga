@@ -152,6 +152,16 @@ func registerHome(app *pocketbase.PocketBase) {
 			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "Welcome to the Gallery")
 			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgUrlKey, c.Scheme()+"://"+c.Request().Host+c.Request().URL.String())
 
+			ctx = tmplUtils.DecorateContextWithToast(ctx, tmplUtils.ToastKey, struct {
+				Title    string
+				Subtitle string
+				Style    string
+			}{
+				Title:    "Title",
+				Subtitle: "SubTitle",
+				Style:    "success",
+			})
+
 			c.Response().Header().Set("HX-Push-Url", "/")
 			err = pages.HomePageWrapped(content).Render(ctx, c.Response().Writer)
 

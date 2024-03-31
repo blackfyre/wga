@@ -25,6 +25,7 @@ var TwitterTitleKey ContextKey = "twitter:title"
 var TwitterDescriptionKey ContextKey = "twitter:description"
 var TwitterImageKey ContextKey = "twitter:image"
 var CanonicalUrlKey ContextKey = "canonical:url"
+var ToastKey ContextKey = "notification:toast"
 
 var ctx context.Context
 
@@ -39,6 +40,26 @@ func AssetUrl(path string) string {
 	}
 
 	return protocol + "://" + hostname + path
+}
+
+type ToastMessage struct {
+	Title    string
+	Subtitle string
+	Style    string
+}
+
+func GetToast(c context.Context) ToastMessage {
+	if v, ok := c.Value(ToastKey).(ToastMessage); ok {
+		return v
+	}
+
+	fallback := ToastMessage{
+		Title:    "",
+		Subtitle: "",
+		Style:    "",
+	}
+
+	return fallback
 }
 
 // GetTitle retrieves the title from the context.
@@ -189,6 +210,10 @@ func DecorateContext(c context.Context, k ContextKey, v string) context.Context 
 		return cwv
 	}
 
+	return context.WithValue(c, k, v)
+}
+
+func DecorateContextWithToast(c context.Context, k ContextKey, v ToastMessage) context.Context {
 	return context.WithValue(c, k, v)
 }
 

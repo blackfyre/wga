@@ -39,7 +39,7 @@ templ layout_base() {
 			<script type="text/javascript" src="/assets/js/vendor/htmx.min.js"></script>
 			<link rel="stylesheet" href="/assets/css/vendor/cookieconsent.css"/>
 		</head>
-		<body class="customBody pt-20" hx-indicator=".progress-indicator" hx-target="#mc-area" hx-select="#mc-area" hx-swap="outerHTML">
+		<body class="pt-20 customBody" hx-indicator=".progress-indicator" hx-target="#mc-area" hx-select="#mc-area" hx-swap="outerHTML">
 			<div class="progress-indicator" style="height: 3px;">
 				<div class="indeterminate" style="background-color: #489393;"></div>
 			</div>
@@ -65,10 +65,11 @@ templ layout_base() {
 templ LayoutMain() {
 	@layout_base() {
 		@components.TopNav()
+		@components.Toast()
 		if utils.GetEnvironment(ctx) != "production" {
 			<section class="container my-4">
 				<div role="alert" class="alert alert-warning">
-					<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+					<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 stroke-current shrink-0" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
 					<span>
 						This is a development version of the site. It is not intended for public use. You can give us a
 						helping

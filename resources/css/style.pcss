@@ -257,3 +257,19 @@ a[href]:not(:where(
 )):not(.has-sm-icon):after {
   content: "↗";
 }
+
+.entering {
+  @apply transform ease-out duration-300 transition translate-y-2 opacity-0 sm:translate-y-0 sm:translate-x-2;
+}
+
+.entered {
+  @apply transform ease-out duration-300 transition translate-y-0 opacity-100 sm:translate-x-0;
+}
+
+.leaving {
+  @apply transition ease-in duration-100 opacity-100;
+}
+
+.left {
+  @apply transition ease-in duration-100 opacity-0;
+}
