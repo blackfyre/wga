@@ -5,6 +5,7 @@
   "private": "true",
   "scripts": {
     "prepare": "husky install",
+    "build": "npm run build:css",
     "build:js": "node esbuild.mjs",
     "build:css": "postcss ./resources/css/style.pcss -o ./assets/public/css/style.css",
     "build:watch": "npm run build:css -- --watch",
