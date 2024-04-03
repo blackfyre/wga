@@ -254,6 +254,6 @@ a[href]:not(:where(
   [href^="?"],
   [href^="/"]:not([href^="//"]),
   [onclick]
-)):after {
+)):not(.has-sm-icon):after {
   content: "↗";
 }
