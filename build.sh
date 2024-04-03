@@ -11,6 +11,9 @@ handle_error() {
 # Set the error trap
 trap 'handle_error' ERR
 
+echo "Fetching dependencies"
+go mod tidy
+
 if command -v templ &> /dev/null; then
     echo "templ command found!"
 else
