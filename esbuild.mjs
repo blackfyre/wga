@@ -5,7 +5,7 @@ import fs from "node:fs";
 console.info("🚀 Starting build 🚀");
 
 let result = await esbuild.build({
-  entryPoints: ["resources/js/app.js", "resources/css/style.scss"],
+  // entryPoints: ["resources/js/app.js"],
   bundle: true,
   minify: true,
   logLevel: "debug",
