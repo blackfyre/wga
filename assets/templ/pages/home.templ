@@ -21,12 +21,12 @@ templ HomePageContent(c HomePage) {
 	<head>
 		<title>{ utils.GetTitle(ctx) }</title>
 	</head>
-	<section class="container mx-auto">
+	<section class="container">
 		<div class="prose mx-auto">
 			@templ.Raw(c.Content)
 		</div>
 	</section>
-	<section class="container mx-auto flex justify-center">
+	<section class="container flex justify-center">
 		<div class="stats shadow my-4">
 			<div class="stat place-items-center">
 				<div class="stat-figure text-secondary">
