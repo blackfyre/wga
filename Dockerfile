@@ -7,9 +7,9 @@ RUN go mod download && go mod verify
 COPY . .
 RUN go install github.com/a-h/templ/cmd/templ@latest
 RUN templ generate
-RUN apk add --update nodejs npm
-RUN npm ci
-RUN npm run build
+RUN curl -fsSL https://bun.sh/install | bash
+RUN bun install
+RUN bun run build
 RUN go build -v -o /run-app .
 
 

@@ -5,11 +5,11 @@
   "private": "true",
   "scripts": {
     "prepare": "husky install",
-    "build": "npm run build:css && npm run build:js",
+    "build": "bun run build:css && bun run build:js",
     "build:js": "node esbuild.mjs",
     "build:css": "postcss ./resources/css/style.pcss -o ./assets/public/css/style.css",
-    "build:watch": "npm run build:css -- --watch",
-    "dev": "concurrently -n \"templ,serve,tailwind\" -c \"red,magenta,yellow\" \"templ generate --watch\" \"air serve\" \"npm run build:watch\""
+    "build:watch": "bun run build:css -- --watch",
+    "dev": "concurrently -n \"templ,serve,tailwind\" -c \"red,magenta,yellow\" \"templ generate --watch\" \"air serve\" \"bun run build:watch\""
   },
   "repository": {
     "type": "git",
