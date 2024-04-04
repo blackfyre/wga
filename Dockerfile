@@ -1,9 +1,9 @@
-ARG GOLANG_VERSION=1.22.2
+ARG GO_VERSION=1.22.2
 FROM oven/bun:alpine as builder
 
-RUN wget https://go.dev/dl/go${GOLANG_VERSION}.linux-amd64.tar.gz && \
-    rm -rf /usr/local/go && tar -C /usr/local -xzf go${GOLANG_VERSION}.linux-amd64.tar.gz && \
-    rm go${GOLANG_VERSION}.linux-amd64.tar.gz
+RUN wget https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz && \
+    rm -rf /usr/local/go && tar -C /usr/local -xzf go${GO_VERSION}.linux-amd64.tar.gz && \
+    rm go${GO_VERSION}.linux-amd64.tar.gz
 ENV PATH="${PATH}:/usr/local/go/bin"
 
 WORKDIR /usr/src/app
