@@ -7,7 +7,7 @@ app = 'wga'
 
 [build]
 [build.args]
-GO_VERSION = '1.22.0'
+GO_VERSION = '1.22.2'
 
 [env]
 PORT = '8080'

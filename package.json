@@ -4,7 +4,7 @@
   "description": "Front-end build system for the Web Gallery of Art: Project Phoenix",
   "private": "true",
   "scripts": {
-    "prepare": "husky install",
+    "prepare": "husky",
     "build": "bun run build:css && bun run build:js",
     "build:js": "node esbuild.mjs",
     "build:css": "postcss ./resources/css/style.pcss -o ./assets/public/css/style.css",
