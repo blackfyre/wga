@@ -153,6 +153,7 @@ func processArtist(c echo.Context, app *pocketbase.PocketBase) error {
 		Schools:    schools,
 		Profession: artist.GetString("profession"),
 		Works:      components.ImageGrid{},
+		Url:        "/artists/" + expectedSlug,
 	}
 
 	artistReferenceModel := &wgaModels.Artist{
@@ -274,6 +275,7 @@ func processArtwork(c echo.Context, app *pocketbase.PocketBase) error {
 		Title:     aw.GetString("title"),
 		Comment:   aw.GetString("comment"),
 		Technique: aw.GetString("technique"),
+		Url:       "/artists/" + expectedArtistSlug + "/" + expectedArtworkSlug,
 		Image: components.Image{
 			Id:        aw.GetString("id"),
 			Title:     aw.GetString("title"),
