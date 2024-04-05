@@ -6,10 +6,11 @@
   "scripts": {
     "prepare": "husky",
     "build": "bun run build:css && bun run build:js",
-    "build:js": "node esbuild.mjs",
+    "build:js": "bun build.js",
     "build:css": "postcss ./resources/css/style.pcss -o ./assets/public/css/style.css",
-    "build:watch": "bun run build:css -- --watch",
-    "dev": "concurrently -n \"templ,serve,tailwind\" -c \"red,magenta,yellow\" \"templ generate --watch\" \"air serve\" \"bun run build:watch\""
+    "build:watch:css": "bun run build:css -- --watch",
+    "build:watch:js": "bun run build:js -- --watch",
+    "dev": "concurrently -n \"templ,serve,tailwind,ts\" -c \"red,magenta,yellow\" \"templ generate --watch\" \"air serve\" \"bun run build:watch:css\" \"bun run build:js\" "
   },
   "repository": {
     "type": "git",
@@ -40,7 +41,9 @@
     "postcss-import": "^16.1.0",
     "postcss-nesting": "^12.1.0",
     "prettier": "^3.2.5",
-    "tailwindcss": "^3.4.1"
+    "tailwindcss": "^3.4.1",
+    "trix": "^2.1.0",
+    "viewerjs": "^1.11.6"
   },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown"
