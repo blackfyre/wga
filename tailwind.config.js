@@ -46,7 +46,7 @@ module.exports = {
   },
   safelist: [
     {
-      pattern: /toast-.+/,
+      pattern: /alert-.+/,
     },
   ],
 };
