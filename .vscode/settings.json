@@ -15,11 +15,13 @@
     "Automigrate",
     "bluemonday",
     "bulma",
+    "Cloners",
     "cssnano",
     "daisyui",
     "daos",
     "esbuild",
     "fontawesome",
+    "Galicz",
     "goarch",
     "godotenv",
     "Goreleaser",
@@ -31,15 +33,18 @@
     "Mailpit",
     "metafile",
     "migratecmd",
+    "Miklós",
     "onclick",
     "outbase",
     "outdir",
+    "pcss",
     "pocketbase",
     "sabloger",
     "tailwindcss",
     "templ",
     "tmpl",
     "trix",
-    "Upsert"
+    "Upsert",
+    "viewerjs"
   ]
 }
