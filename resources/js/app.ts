@@ -187,28 +187,28 @@ function InitEventListeners() {
     createToast("Request timed out!", "danger");
   });
 
-  document.body.addEventListener("htmx:configRequest", (event) => {
-    const evt = event as CustomEvent;
-    //get the value of the _csrf cookie
-    const rawCookies: string = document.cookie;
-    const cookieList: string[] = rawCookies.split("; ");
+  // document.body.addEventListener("htmx:configRequest", (event) => {
+  //   const evt = event as CustomEvent;
+  //   //get the value of the _csrf cookie
+  //   const rawCookies: string = document.cookie;
+  //   const cookieList: string[] = rawCookies.split("; ");
 
-    if (cookieList.length === 0) {
-      return;
-    }
+  //   if (cookieList.length === 0) {
+  //     return;
+  //   }
 
-    let csrf_token = "";
+  //   let csrf_token = "";
 
-    for (let i = 0; i < cookieList.length; i++) {
-      const cookie = cookieList[i];
-      if (cookie.startsWith("_csrf=")) {
-        csrf_token = cookie.split("=")[1];
-        break;
-      }
-    }
+  //   for (let i = 0; i < cookieList.length; i++) {
+  //     const cookie = cookieList[i];
+  //     if (cookie.startsWith("_csrf=")) {
+  //       csrf_token = cookie.split("=")[1];
+  //       break;
+  //     }
+  //   }
 
-    evt.detail.headers["X-XSRF-TOKEN"] = csrf_token;
-  });
+  //   evt.detail.headers["X-XSRF-TOKEN"] = csrf_token;
+  // });
 
   //! This is a workaround, has to be removed when htmx fixes the issue
   addEventListener("htmx:beforeHistorySave", () => {
