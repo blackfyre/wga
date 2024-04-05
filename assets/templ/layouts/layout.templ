@@ -65,7 +65,6 @@ templ layout_base() {
 templ LayoutMain() {
 	@layout_base() {
 		@components.TopNav()
-		@components.Toast()
 		if utils.GetEnvironment(ctx) != "production" {
 			<section class="container my-4">
 				<div role="alert" class="alert alert-warning">
