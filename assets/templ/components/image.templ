@@ -36,10 +36,10 @@ templ ImageBig(ImageUrl string, Title string, Artist string) {
 }
 
 templ ImageCard(i Image, hasLearnMore bool) {
-	<div class="card w-full bg-base-100 shadow-xl m-4 sm:m-0">
+	<div class="card w-full bg-base-100  m-4 sm:m-0">
 		@ImageBase(i)
-		<div class="card-body justify-between">
-			<h2 class="card-title">{ i.Title }</h2>
+		<div class="card-body justify-between pl-0">
+			<h2 class="card-title line-clamp-1" title={ i.Title }>{ i.Title }</h2>
 			<div class="prose line-clamp-3">
 				@templ.Raw(i.Comment)
 			</div>
