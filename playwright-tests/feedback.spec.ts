@@ -17,5 +17,5 @@ test("check feedback", async ({ page }) => {
   await page.getByRole("button", { name: "Send feedback" }).click();
 
   // expect notification popup: Thank you! Your feedback is valuable to us!
-  await expect(page.locator(".is-success")).toBeVisible();
+  await expect(page.locator(".toast-success")).toBeVisible();
 });

@@ -17,7 +17,7 @@ test("send postcard", async ({ page }) => {
 
   await page.getByRole("button", { name: "Send postcard" }).click();
 
-  await expect(page.locator(".is-success")).toBeVisible();
+  await expect(page.locator(".toast-success")).toBeVisible();
 
   const mailpitUrl = process.env.MAILPIT_URL;
   if (!mailpitUrl) {
