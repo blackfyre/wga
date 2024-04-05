@@ -63,25 +63,31 @@ func (p *Pagination) HasPages() bool {
 
 const tmpl string = `
 {{ if .HasPages }}
-<ul class="pagination-list">
-  {{ .GetPreviousButton "Previous" }}
-  {{ range .FirstPart }}
-    {{ . }}
-  {{ end }}
-  {{ if len .MiddlePart }}
-    {{ .GetDots }}
-	{{ range .MiddlePart }}
-	  {{ . }}
-	{{ end }}
-  {{ end }}
-  {{ if len .LastPart }}
-	{{ .GetDots }}
-	{{ range .LastPart }}
-	  {{ . }}
-	{{ end }}
-  {{ end }}
-  {{ .GetNextButton "Next Page" }}
-</ul>
+<nav class="flex items-center justify-between border-t px-4 sm:px-0 mt-2">
+		<div class="-mt-px flex w-0 flex-1">
+			{{ .GetPreviousButton "Previous" }}
+		</div>
+		<div class="hidden md:-mt-px md:flex">
+			{{ range .FirstPart }}
+				{{ . }}
+			{{ end }}
+			{{ if len .MiddlePart }}
+				{{ .GetDots }}
+				{{ range .MiddlePart }}
+				{{ . }}
+				{{ end }}
+			{{ end }}
+			{{ if len .LastPart }}
+				{{ .GetDots }}
+				{{ range .LastPart }}
+				{{ . }}
+				{{ end }}
+			{{ end }}
+		</div>
+		<div class="-mt-px flex w-0 flex-1 justify-end">
+			{{ .GetNextButton "Next Page" }}
+		</div>
+</nav>
 {{end}}
 `
 
@@ -184,34 +190,34 @@ func (p *Pagination) getUrl(page int, text string) string {
 // The function takes a `text` parameter, which is the text to be displayed inside the link.
 // It generates an HTML string with the active page link using the provided `text`.
 func (p *Pagination) GetActivePageWrapper(text string) string {
-	return "<li><a class=\"pagination-link is-current\" aria-label=\"Page " + text + "\" aria-current=\"page\">" + text + "</a></li>"
+	return "<a class=\"inline-flex items-center border-t-2 border-primary px-4 pt-4 text-sm font-medium text-primary\" aria-label=\"Page " + text + "\" aria-current=\"page\">" + text + "</a>"
 }
 
 // GetDisabledPageWrapper returns a disabled page wrapper HTML element for pagination.
 // It takes a `text` parameter representing the text to be displayed within the wrapper.
 // The method returns a string containing the disabled page wrapper HTML element.
 func (p *Pagination) GetDisabledPageWrapper(text string) string {
-	return "<li><a class=\"pagination-link is-disabled\">" + text + "</a></li>"
+	return "<a class=\"inline-flex items-center border-t-2 border-transparent pr-1 pt-4 text-sm font-medium text-gray-500 cursor-not-allowed\">" + text + "</a>"
 }
 
 // GetAvailablePageWrapper returns a string representing a pagination link with the given href, page number, and htmxUrl.
 // If htmxTarget is specified, it adds the hx-target attribute to the link.
 func (p *Pagination) GetAvailablePageWrapper(href, page, htmxUrl string) string {
 
-	str := "<li><a class='pagination-link' aria-label='Goto page " + page + "' hx-get='" + htmxUrl + "' href='" + href
+	str := "<a class='inline-flex items-center border-t-2 border-transparent pr-1 pt-4 text-sm font-medium text-gray-500 hover:border-secondary hover:text-secondary' aria-label='Goto page " + page + "' hx-get='" + htmxUrl + "' href='" + href
 
 	if p.htmxTarget != "" {
 		str = str + "' hx-target='#" + p.htmxTarget
 	}
 
-	str = str + "'>" + page + "</a></li>"
+	str = str + "'>" + page + "</a>"
 
 	return str
 }
 
 // GetDots returns the HTML representation of the dots used for pagination ellipsis.
 func (p *Pagination) GetDots() string {
-	return "<li><span class=\"pagination-ellipsis\">&hellip;</span></li>"
+	return "<span class=\"inline-flex items-center border-t-2 border-transparent pr-1 pt-4 text-sm font-medium text-gray-500 cursor-not-allowed \">&hellip;</span>"
 }
 
 // GetPreviousButton returns the HTML string for the previous button in the pagination.
