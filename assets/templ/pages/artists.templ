@@ -1,39 +1,18 @@
 package pages
 
 import (
+	"github.com/blackfyre/wga/assets/templ/dto"
 	"github.com/blackfyre/wga/assets/templ/layouts"
 	"github.com/blackfyre/wga/assets/templ/utils"
-	"github.com/blackfyre/wga/assets/templ/components"
 )
 
-type Artist struct {
-	Id         string
-	Name       string
-	BornDied   string
-	Schools    string
-	Profession string
-	Url        string
-	BioExcerpt string
-	Jsonld     string
-	Bio        string
-	Works      components.ImageGrid
-}
-
-type ArtistsView struct {
-	Count      string
-	Artists    []Artist
-	Pagination string
-	Jsonld     string
-	QueryStr   string
-}
-
-templ ArtistsPageFull(c ArtistsView) {
+templ ArtistsPageFull(c dto.ArtistsView) {
 	@layouts.LayoutMain() {
 		@ArtistsPageBlock(c)
 	}
 }
 
-templ ArtistsPageBlock(c ArtistsView) {
+templ ArtistsPageBlock(c dto.ArtistsView) {
 	<head>
 		<title>{ utils.GetTitle(ctx) }</title>
 	</head>
@@ -86,7 +65,7 @@ templ ArtistsPageBlock(c ArtistsView) {
 	</section>
 }
 
-templ artistsTable(list []Artist) {
+templ artistsTable(list []dto.Artist) {
 	<div class="overflow-x-auto">
 		<table class="table">
 			<thead>
@@ -135,7 +114,7 @@ templ artistsTable(list []Artist) {
 	</div>
 }
 
-templ ArtistsSearchResults(c ArtistsView) {
+templ ArtistsSearchResults(c dto.ArtistsView) {
 	<div id="search-results">
 		<div class="table-container">
 			@artistsTable(c.Artists)

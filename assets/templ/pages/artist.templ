@@ -1,20 +1,21 @@
 package pages
 
 import (
+	"github.com/blackfyre/wga/assets/templ/dto"
 	"github.com/blackfyre/wga/assets/templ/layouts"
 	"github.com/blackfyre/wga/assets/templ/utils"
 	"github.com/blackfyre/wga/assets/templ/components"
 )
 
 // ArtistPage is the template for the artist page
-templ ArtistPage(c Artist) {
+templ ArtistPage(c dto.Artist) {
 	@layouts.LayoutMain() {
 		@ArtistBlock(c)
 	}
 }
 
 // ArtistsBlock is the template for the artist block
-templ ArtistBlock(a Artist) {
+templ ArtistBlock(a dto.Artist) {
 	<head>
 		<title>{ utils.GetTitle(ctx) }</title>
 	</head>

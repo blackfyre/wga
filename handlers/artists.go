@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/blackfyre/wga/assets/templ/pages"
+	"github.com/blackfyre/wga/assets/templ/dto"
 	tmplUtils "github.com/blackfyre/wga/assets/templ/utils"
 	wgaModels "github.com/blackfyre/wga/models"
 	"github.com/blackfyre/wga/utils"
@@ -94,7 +95,7 @@ func processArtists(app *pocketbase.PocketBase, c echo.Context) error {
 
 	recordsCount := len(totalRecords)
 
-	content := pages.ArtistsView{
+	content := dto.ArtistsView{
 		Count: strconv.Itoa(recordsCount),
 	}
 
@@ -126,7 +127,7 @@ func processArtists(app *pocketbase.PocketBase, c echo.Context) error {
 
 		schools := strings.Join(schoolCollector, ", ")
 
-		content.Artists = append(content.Artists, pages.Artist{
+		content.Artists = append(content.Artists, dto.Artist{
 			Name:       m.GetString("name"),
 			Url:        artistUrl(m),
 			Profession: m.GetString("profession"),

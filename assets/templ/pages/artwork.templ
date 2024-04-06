@@ -1,29 +1,19 @@
 package pages
 
 import (
+	"github.com/blackfyre/wga/assets/templ/dto"
 	"github.com/blackfyre/wga/assets/templ/layouts"
 	"github.com/blackfyre/wga/assets/templ/utils"
 	"github.com/blackfyre/wga/assets/templ/components"
 )
 
-type Artwork struct {
-	Id        string
-	Title     string
-	Comment   string
-	Technique string
-	Jsonld    string
-	Url       string
-	components.Image
-	Artist
-}
-
-templ ArtworkPage(aw Artwork) {
+templ ArtworkPage(aw dto.Artwork) {
 	@layouts.LayoutMain() {
 		@ArtworkBlock(aw)
 	}
 }
 
-templ ArtworkBlock(aw Artwork) {
+templ ArtworkBlock(aw dto.Artwork) {
 	<head>
 		<title>{ utils.GetTitle(ctx) }</title>
 	</head>

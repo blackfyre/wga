@@ -1,43 +1,20 @@
 package pages
 
 import (
+	"github.com/blackfyre/wga/assets/templ/dto"
 	"github.com/blackfyre/wga/assets/templ/layouts"
 	// "github.com/blackfyre/wga/assets/templ/utils"
 	"github.com/blackfyre/wga/assets/templ/components"
 )
 
-type ArtworkSearchDTO struct {
-	ArtFormOptions     map[string]string
-	ArtTypeOptions     map[string]string
-	ArtSchoolOptions   map[string]string
-	ActiveFilterValues *ArtworkSearchFilterValues
-	ArtistNameList     []string
-	NewFilterValues    string
-	Results            ArtworkSearchResultDTO
-}
-
-type ArtworkSearchFilterValues struct {
-	ArtFormString string
-	ArtTypeString string
-	SchoolString  string
-	Title         string
-	ArtistString  string
-}
-
-type ArtworkSearchResultDTO struct {
-	ActiveFiltering bool
-	Artworks        components.ImageGrid
-	Pagination      string
-}
-
 // ArtistPage is the template for the artist page
-templ ArtworkSearchPage(s ArtworkSearchDTO) {
+templ ArtworkSearchPage(s dto.ArtworkSearchDTO) {
 	@layouts.LayoutMain() {
 		@ArtworkSearchBlock(s)
 	}
 }
 
-templ ArtworkSeachFilterBlock(b ArtworkSearchDTO) {
+templ ArtworkSeachFilterBlock(b dto.ArtworkSearchDTO) {
 	<form
 		action="/artworks/results"
 		hx-get="/artworks/results"
@@ -142,7 +119,7 @@ templ loadIndicator() {
 	</div>
 }
 
-templ ArtworkSearchResults(r ArtworkSearchResultDTO) {
+templ ArtworkSearchResults(r dto.ArtworkSearchResultDTO) {
 	<div id="artwork-search-results">
 		// @loadIndicator()
 		if len(r.Artworks) > 0 {
@@ -170,7 +147,7 @@ templ ArtworkSearchResults(r ArtworkSearchResultDTO) {
 	</div>
 }
 
-templ ArtworkSearchBlock(s ArtworkSearchDTO) {
+templ ArtworkSearchBlock(s dto.ArtworkSearchDTO) {
 	<section class="section px-4">
 		<h1 class="text-2xl font-bold mb-4">Artwork search</h1>
 		<div class="flex flex-col md:flex-row gap-4">
