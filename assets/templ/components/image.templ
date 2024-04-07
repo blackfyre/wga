@@ -10,9 +10,9 @@ templ ImageBase(i dto.Image) {
 			<source media="(max-width: 768px)" srcset={ i.Thumb }/>
 			<source media="(min-width: 769px)" srcset={ i.Thumb }/>
 			<source media="(min-width: 1024px)" srcset={ i.Thumb }/>
-			<img src={ i.Image } alt={ i.Title } loading="lazy" alt={ i.Title + " - " + i.Technique }/>
+			<img src={ i.Image } alt={ i.Title } loading="lazy" alt={ i.Title + " by" + i.Artist.Name }/>
 		</picture>
-		<figcaption>{ i.Title } -  { i.Technique } </figcaption>
+		<figcaption>{ i.Title } by { i.Artist.Name } </figcaption>
 	</figure>
 }
 
@@ -30,7 +30,7 @@ templ ImageCard(i dto.Image, hasLearnMore bool) {
 	<div class="card w-full bg-base-100  m-4 sm:m-0">
 		@ImageBase(i)
 		<div class="card-body justify-between pl-0">
-			<h2 class="card-title line-clamp-1" title={ i.Title }>{ i.Title }</h2>
+			<h2 class="card-title line-clamp-1" title={ i.Title + "by" + i.Artist.Name }>{ i.Title }</h2>
 			<h3>{ i.Artist.Name }</h3>
 			<div class="prose line-clamp-3">
 				@templ.Raw(i.Comment)
