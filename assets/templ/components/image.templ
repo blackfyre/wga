@@ -38,7 +38,7 @@ templ ImageCard(i dto.Image, hasLearnMore bool) {
 			<div class="card-actions">
 				<a
 					href="#"
-					hx-on="click: document.getElementById('d').showModal();"
+					hx-on="click: wga.openDialog();"
 					hx-get={ `/postcard/send?awid=` + i.Id }
 					hx-target="#d"
 					class="btn btn-secondary"
