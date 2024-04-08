@@ -3,6 +3,8 @@ wga_data
 wga_sitemap
 analytics.txt
 .env
+.env.dev
+.env.uat
 wga
 
 # Go build related files

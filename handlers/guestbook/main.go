@@ -92,7 +92,7 @@ func StoreEntryHandler(app *pocketbase.PocketBase, c echo.Context) error {
 	data := apis.RequestInfo(c).Data
 
 	if err := c.Bind(&data); err != nil {
-		utils.SendToastMessage("Failed to create message, please try again later.", "is-danger", true, c, "")
+		utils.SendToastMessage("Failed to create message, please try again later.", "error", true, c, "")
 		return apis.NewBadRequestError("Failed to parse form data", err)
 	}
 
@@ -108,14 +108,14 @@ func StoreEntryHandler(app *pocketbase.PocketBase, c echo.Context) error {
 	if postData.HoneyPotEmail != "" || postData.HoneyPotName != "" {
 		// this is probably a bot
 		app.Logger().Error("Guestbook HoneyPot triggered", "ip", c.RealIP())
-		utils.SendToastMessage("Failed to create message, please try again later.", "is-danger", true, c, "")
+		utils.SendToastMessage("Failed to create message, please try again later.", "error", true, c, "")
 		return c.NoContent(204)
 	}
 
 	collection, err := app.Dao().FindCollectionByNameOrId("Guestbook")
 	if err != nil {
 		app.Logger().Error("Database table not found", err)
-		utils.SendToastMessage("Something went wrong!", "is-danger", true, c, "")
+		utils.SendToastMessage("Something went wrong!", "error", true, c, "")
 		return utils.ServerFaultError(c)
 	}
 
@@ -141,12 +141,12 @@ func StoreEntryHandler(app *pocketbase.PocketBase, c echo.Context) error {
 
 		app.Logger().Error("Failed to store the entry", err)
 
-		utils.SendToastMessage("Failed to store the entry", "is-danger", false, c, "")
+		utils.SendToastMessage("Failed to store the entry", "error", false, c, "")
 
 		return err
 	}
 
-	utils.SendToastMessage("Message added successfully", "is-success", true, c, "guestbook-updated")
+	utils.SendToastMessage("Message added successfully", "success", true, c, "guestbook-updated")
 
 	return nil
 }

@@ -52,6 +52,7 @@ func registerStatic(app *pocketbase.PocketBase) {
 			content := pages.StaticPageDTO{
 				Title:   page.Title,
 				Content: page.Content,
+				Url:     "/pages/" + page.Slug,
 			}
 
 			ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, page.Title)

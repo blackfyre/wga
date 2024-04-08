@@ -18,6 +18,8 @@ exclude_dir = [
   "wga_data",
   "wga_sitemap",
   "node_modules",
+  "test-results",
+  "playwright-report",
 ]
 exclude_file = []
 exclude_regex = ["_test.go"]

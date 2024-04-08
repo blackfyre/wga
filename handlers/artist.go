@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/blackfyre/wga/assets/templ/components"
+	"github.com/blackfyre/wga/assets/templ/dto"
 	"github.com/blackfyre/wga/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/assets/templ/utils"
 	wgaModels "github.com/blackfyre/wga/models"
@@ -146,13 +146,14 @@ func processArtist(c echo.Context, app *pocketbase.PocketBase) error {
 
 	schools := strings.Join(schoolCollector, ", ")
 
-	content := pages.Artist{
+	content := dto.Artist{
 		Name:       artist.GetString("name"),
 		Bio:        artist.GetString("bio"),
 		BioExcerpt: normalizedBioExcerpt(artist),
 		Schools:    schools,
 		Profession: artist.GetString("profession"),
-		Works:      components.ImageGrid{},
+		Works:      dto.ImageGrid{},
+		Url:        "/artists/" + expectedSlug,
 	}
 
 	artistReferenceModel := &wgaModels.Artist{
@@ -189,7 +190,7 @@ func processArtist(c echo.Context, app *pocketbase.PocketBase) error {
 			app.Logger().Error("Error marshalling artwork jsonld for"+w.GetId(), err)
 		}
 
-		content.Works = append(content.Works, components.Image{
+		content.Works = append(content.Works, dto.Image{
 			Id:        w.GetId(),
 			Title:     w.GetString("title"),
 			Comment:   w.GetString("comment"),
@@ -269,12 +270,13 @@ func processArtwork(c echo.Context, app *pocketbase.PocketBase) error {
 		return c.Redirect(http.StatusMovedPermanently, "/artists/"+expectedArtistSlug+"/"+expectedArtworkSlug)
 	}
 
-	content := pages.Artwork{
+	content := dto.Artwork{
 		Id:        aw.GetId(),
 		Title:     aw.GetString("title"),
 		Comment:   aw.GetString("comment"),
 		Technique: aw.GetString("technique"),
-		Image: components.Image{
+		Url:       "/artists/" + expectedArtistSlug + "/" + expectedArtworkSlug,
+		Image: dto.Image{
 			Id:        aw.GetString("id"),
 			Title:     aw.GetString("title"),
 			Comment:   aw.GetString("comment"),
@@ -282,7 +284,7 @@ func processArtwork(c echo.Context, app *pocketbase.PocketBase) error {
 			Image:     url.GenerateFileUrl("artworks", aw.GetString("id"), aw.GetString("image"), ""),
 			Thumb:     url.GenerateThumbUrl("artworks", aw.GetString("id"), aw.GetString("image"), "320x240", ""),
 		},
-		Artist: pages.Artist{
+		Artist: dto.Artist{
 			Id:         artist.GetId(),
 			Name:       artist.GetString("name"),
 			Bio:        artist.GetString("bio"),

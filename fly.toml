@@ -1,0 +1,26 @@
+# fly.toml app configuration file generated for wga on 2024-03-26T06:13:52+01:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'wga'
+
+[build]
+[build.args]
+GO_VERSION = '1.22.2'
+
+[env]
+PORT = '8080'
+
+[http_service]
+internal_port = 8090
+force_https = true
+auto_stop_machines = true
+auto_start_machines = true
+min_machines_running = 0
+processes = ['app']
+
+[[vm]]
+memory = '1gb'
+cpu_kind = 'shared'
+cpus = 1

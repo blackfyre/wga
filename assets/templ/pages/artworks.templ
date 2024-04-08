@@ -1,131 +1,95 @@
 package pages
 
 import (
+	"github.com/blackfyre/wga/assets/templ/dto"
 	"github.com/blackfyre/wga/assets/templ/layouts"
 	// "github.com/blackfyre/wga/assets/templ/utils"
 	"github.com/blackfyre/wga/assets/templ/components"
 )
 
-type ArtworkSearchDTO struct {
-	ArtFormOptions     map[string]string
-	ArtTypeOptions     map[string]string
-	ArtSchoolOptions   map[string]string
-	ActiveFilterValues *ArtworkSearchFilterValues
-	ArtistNameList     []string
-	NewFilterValues    string
-	Results            ArtworkSearchResultDTO
-}
-
-type ArtworkSearchFilterValues struct {
-	ArtFormString string
-	ArtTypeString string
-	SchoolString  string
-	Title         string
-	ArtistString  string
-}
-
-type ArtworkSearchResultDTO struct {
-	ActiveFiltering bool
-	Artworks        components.ImageGrid
-	Pagination      string
-}
-
 // ArtistPage is the template for the artist page
-templ ArtworkSearchPage(s ArtworkSearchDTO) {
+templ ArtworkSearchPage(s dto.ArtworkSearchDTO) {
 	@layouts.LayoutMain() {
 		@ArtworkSearchBlock(s)
 	}
 }
 
-templ ArtworkSeachFilterBlock(b ArtworkSearchDTO) {
+templ ArtworkSeachFilterBlock(b dto.ArtworkSearchDTO) {
 	<form
 		action="/artworks/results"
 		hx-get="/artworks/results"
 		hx-disabled-elt="input,button,select"
 		method="GET"
+		class="flex flex-col gap-4"
 	>
-		<div class="field">
-			<label class="label" for="art_form_select">Artforms</label>
-			<div class="control">
-				<div class="select">
-					<select name="art_form" id="art_form_select" title="Artforms">
-						for k, v := range b.ArtFormOptions {
-							<option
-								value={ k }
-								if b.ActiveFilterValues.ArtFormString == k {
-									selected
-								}
-							>{ v }</option>
+		<label class="form-control w-full">
+			Artforms
+			<select name="art_form" id="art_form_select" title="Artforms" class="select select-bordered">
+				for k, v := range b.ArtFormOptions {
+					<option
+						value={ k }
+						if b.ActiveFilterValues.ArtFormString == k {
+							selected
 						}
-					</select>
-				</div>
-			</div>
-		</div>
-		<div class="field">
-			<label class="label" for="art_type_select">Art types</label>
-			<div class="control">
-				<div class="select">
-					<select name="art_type" id="art_type_select" title="Art types">
-						for k, v := range b.ArtTypeOptions {
-							<option
-								value={ k }
-								if b.ActiveFilterValues.ArtTypeString == k {
-									selected
-								}
-							>{ v }</option>
+					>{ v }</option>
+				}
+			</select>
+		</label>
+		<label class="form-control w-full ">
+			Artforms
+			<select name="art_type" id="art_type_select" title="Art types" class="select select-bordered">
+				for k, v := range b.ArtTypeOptions {
+					<option
+						value={ k }
+						if b.ActiveFilterValues.ArtTypeString == k {
+							selected
 						}
-					</select>
-				</div>
-			</div>
-		</div>
-		<div class="field">
-			<label class="label" for="art_school_select">Art school</label>
-			<div class="control">
-				<div class="select">
-					<select name="art_school" id="art_school_select" title="Art school">
-						for k, v := range b.ArtSchoolOptions {
-							<option
-								value={ k }
-								if b.ActiveFilterValues.SchoolString == k {
-									selected
-								}
-							>{ v }</option>
+					>{ v }</option>
+				}
+			</select>
+		</label>
+		<label class="form-control w-full">
+			Art school
+			<select name="art_school" id="art_school_select" title="Art school" class="select select-bordered">
+				for k, v := range b.ArtSchoolOptions {
+					<option
+						value={ k }
+						if b.ActiveFilterValues.SchoolString == k {
+							selected
 						}
-					</select>
-				</div>
-			</div>
-		</div>
-		<div class="field">
-			<label class="label">Title</label>
-			<p class="control">
-				<input
-					class="input"
-					type="search"
-					name="title"
-					placeholder="Artwork title"
-					value={ b.ActiveFilterValues.Title }
-				/>
-			</p>
-		</div>
-		<div class="field">
-			<label class="label">Artist</label>
-			<p class="control">
-				<input
-					class="input"
-					list="artist_list"
-					type="search"
-					name="artist"
-					placeholder="Artist name"
-					value={ b.ActiveFilterValues.ArtistString }
-				/>
-				<datalist id="artist_list">
-					for _, v := range b.ArtistNameList {
-						<option value={ v }></option>
-					}
-				</datalist>
-			</p>
-		</div>
-		<div class="field"><button type="submit" class="button is-primary">Search</button></div>
+					>{ v }</option>
+				}
+			</select>
+		</label>
+		<label class="input input-bordered flex items-center gap-2">
+			Title
+			<input
+				class="grow"
+				type="search"
+				name="title"
+				id="title"
+				autocomplete="title"
+				value={ b.ActiveFilterValues.Title }
+			/>
+		</label>
+		<label class="input input-bordered flex items-center gap-2">
+			Artist
+			<input
+				class="grow"
+				type="search"
+				list="artist_list"
+				id="artist_name"
+				autocomplete="artist_name"
+				name="artist"
+				value={ b.ActiveFilterValues.ArtistString }
+			/>
+			<datalist id="artist_list">
+				for _, v := range b.ArtistNameList {
+					<option value={ v }></option>
+				}
+			</datalist>
+		</label>
+		<button type="submit" class="btn btn-primary">Search</button>
 	</form>
 }
 
@@ -155,22 +119,24 @@ templ loadIndicator() {
 	</div>
 }
 
-templ ArtworkSearchResults(r ArtworkSearchResultDTO) {
+templ ArtworkSearchResults(r dto.ArtworkSearchResultDTO) {
 	<div id="artwork-search-results">
 		// @loadIndicator()
 		if len(r.Artworks) > 0 {
 			@components.ImageGridComponent(r.Artworks, true)
 		} else if !r.ActiveFiltering {
-			<div class="column">
-				<div class="notification is-warning">
-					Use the filters to find artworks.
-				</div>
+			<div role="alert" class="alert alert-info">
+				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 rotate-90 md:rotate-0">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"></path>
+				</svg>
+				<span>Use the filters to find artworks you are looking for in our database.</span>
 			</div>
 		} else {
-			<div class="column">
-				<div class="notification is-warning">
+			<div role="alert" class="alert alert-warning">
+				<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+				<span>
 					Sorry, no matching artworks found.
-				</div>
+				</span>
 			</div>
 		}
 		if len(r.Pagination) > 10 {
@@ -181,16 +147,14 @@ templ ArtworkSearchResults(r ArtworkSearchResultDTO) {
 	</div>
 }
 
-templ ArtworkSearchBlock(s ArtworkSearchDTO) {
-	<section class="section">
-		<h1 class="title is-size-1">Artwork search</h1>
-		<div class="columns">
-			<div class="column is-one-quarter">
-				<div class="box">
-					@ArtworkSeachFilterBlock(s)
-				</div>
+templ ArtworkSearchBlock(s dto.ArtworkSearchDTO) {
+	<section class="section px-4">
+		<h1 class="text-2xl font-bold mb-4">Artwork search</h1>
+		<div class="flex flex-col md:flex-row gap-4">
+			<div class="w-full md:w-1/4 lg:w-1/5">
+				@ArtworkSeachFilterBlock(s)
 			</div>
-			<div class="column" id="search-result-container">
+			<div class="w-full" id="search-result-container">
 				@ArtworkSearchResults(s.Results)
 			</div>
 		</div>

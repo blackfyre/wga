@@ -147,21 +147,21 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 			}{}
 
 			if err := c.Bind(&postData); err != nil {
-				sendToastMessage("Failed to parse form", "is-danger", true, c)
+				sendToastMessage("Failed to parse form", "error", true, c)
 				return apis.NewBadRequestError("Failed to parse form data", err)
 			}
 
 			if postData.HoneyPotEmail != "" || postData.HoneyPotName != "" {
 				// this is probably a bot
 				app.Logger().Warn("Honey pot triggered", "data", fmt.Sprintf("+%v", postData))
-				sendToastMessage("Failed to find postcard collection", "is-danger", true, c)
+				sendToastMessage("Failed to find postcard collection", "error", true, c)
 				return nil
 			}
 
 			collection, err := app.Dao().FindCollectionByNameOrId("postcards")
 			if err != nil {
 				app.Logger().Error("Failed to find postcard collection", err)
-				sendToastMessage("Failed to find postcard collection", "is-danger", true, c)
+				sendToastMessage("Failed to find postcard collection", "error", true, c)
 				return apis.NewNotFoundError("Failed to find postcard collection", err)
 			}
 
@@ -201,12 +201,12 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 
 				app.Logger().Error(fmt.Sprintf("Failed to store the postcard with image_id %s", postData.ImageId), err)
 
-				sendToastMessage("Failed to store the postcard", "is-danger", false, c)
+				sendToastMessage("Failed to store the postcard", "error", false, c)
 
 				return nil
 			}
 
-			sendToastMessage("Thank you! Your postcard has been queued for sending!", "is-success", true, c)
+			sendToastMessage("Thank you! Your postcard has been queued for sending!", "success", true, c)
 
 			return nil
 		})

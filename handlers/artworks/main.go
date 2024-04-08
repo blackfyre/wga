@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/blackfyre/wga/assets/templ/components"
+	"github.com/blackfyre/wga/assets/templ/dto"
 	"github.com/blackfyre/wga/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/assets/templ/utils"
 	"github.com/blackfyre/wga/models"
@@ -27,8 +27,8 @@ func searchPage(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) 
 		return c.Redirect(http.StatusFound, "/artworks/results?"+filters.BuildFilterString())
 	}
 
-	content := pages.ArtworkSearchDTO{
-		ActiveFilterValues: &pages.ArtworkSearchFilterValues{
+	content := dto.ArtworkSearchDTO{
+		ActiveFilterValues: &dto.ArtworkSearchFilterValues{
 			Title:         filters.Title,
 			SchoolString:  filters.SchoolString,
 			ArtFormString: filters.ArtFormString,
@@ -110,11 +110,11 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 
 	recordsCount := len(totalRecords)
 
-	content := pages.ArtworkSearchDTO{
-		Results: pages.ArtworkSearchResultDTO{
-			Artworks: components.ImageGrid{},
+	content := dto.ArtworkSearchDTO{
+		Results: dto.ArtworkSearchResultDTO{
+			Artworks: dto.ImageGrid{},
 		},
-		ActiveFilterValues: &pages.ArtworkSearchFilterValues{
+		ActiveFilterValues: &dto.ArtworkSearchFilterValues{
 			Title:         filters.Title,
 			SchoolString:  filters.SchoolString,
 			ArtFormString: filters.ArtFormString,
@@ -146,7 +146,7 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 			continue
 		}
 
-		content.Results.Artworks = append(content.Results.Artworks, components.Image{
+		content.Results.Artworks = append(content.Results.Artworks, dto.Image{
 			Url:       "/artists/" + artist.Slug + "-" + artist.Id + "/artworks/" + utils.Slugify(v.GetString("title")) + "-" + v.Id,
 			Image:     url.GenerateFileUrl("artworks", v.GetString("id"), v.GetString("image"), ""),
 			Thumb:     url.GenerateThumbUrl("artworks", v.GetString("id"), v.GetString("image"), "320x240", ""),
@@ -154,6 +154,12 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 			Title:     v.GetString("title"),
 			Technique: v.GetString("technique"),
 			Id:        v.GetId(),
+			Artist: dto.Artist{
+				Id:         artist.Id,
+				Name:       artist.Name,
+				Url:        "/artists/" + artist.Slug + "-" + artist.Id,
+				Profession: artist.Profession,
+			},
 		})
 
 	}
