@@ -19,15 +19,11 @@ templ PostcardEditor(p PostcardEditorDTO) {
 		<h1 class="text-2xl mb-6">Write a postcard</h1>
 		<div class="flex flex-col md:flex-row gap-6">
 			<div class="w-full md:w-1/2">
-				<div class="card bg-base-100 shadow-xl">
-					<figure><img src={ p.Image } alt={ p.Title + " by " + p.AuthorName }/></figure>
-					<div class="card-body">
-						<h2 class="card-title">{ p.Title }</h2>
-						<p class="subtitle">{ p.Technique }</p>
-						<div class="line-clamp-3 content">
-							@templ.Raw(p.Comment)
-						</div>
-					</div>
+				<figure><img src={ p.Image } alt={ p.Title + " by " + p.AuthorName }/></figure>
+				<h2 class="card-title">{ p.Title }</h2>
+				<p class="subtitle">{ p.AuthorName }</p>
+				<div class="line-clamp-3">
+					@templ.Raw(p.Comment)
 				</div>
 			</div>
 			<div class="grow">
@@ -128,7 +124,7 @@ templ PostcardEditor(p PostcardEditorDTO) {
 					/>
 					<div class="flex flex-row justify-end gap-4">
 						<button class="btn btn-primary" type="submit">
-							Send feedback
+							Send postcard
 						</button>
 						<button type="button" class="btn btn-neutral" hx-on="click: wga.closeDialog();">
 							Cancel

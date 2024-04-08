@@ -8,16 +8,20 @@ test("send postcard", async ({ page }) => {
 
   await expect(page.locator("#d")).toHaveText(/Write a postcard/);
 
-  await page.getByLabel("Name").fill("Playwright Tester");
-  await page.getByLabel("Email").fill("playwright.tester@local.host"); // this is the postcard sender's email
+  await page.locator("[name='sender_name']").fill("Playwright Tester");
   await page
-    .getByPlaceholder("Email address", { exact: true })
+    .locator("[name='sender_email']")
+    .fill("playwright.tester@local.host"); // this is the postcard sender's email
+  await page
+    .locator("[name='recipients[]']")
     .fill("playwright.tester@local.host"); // this is the postcard recipient's email
   await page.locator("trix-editor").fill("I am testing your site.");
 
   await page.getByRole("button", { name: "Send postcard" }).click();
 
-  await expect(page.locator(".toast-success")).toBeVisible();
+  await expect(page.locator(".toast")).toHaveText(
+    /Thank you! Your postcard has been queued for sending!/,
+  );
 
   const mailpitUrl = process.env.MAILPIT_URL;
   if (!mailpitUrl) {

@@ -21,7 +21,7 @@ test("test", async ({ page }) => {
   await page.getByPlaceholder("Your entry").fill(entry.entry);
   await page.getByRole("button", { name: "Leave entry" }).click();
 
-  await expect(page.locator(".toast-success")).toBeVisible();
+  await expect(page.locator(".toast")).toHaveText(/Message added successfully/);
 
   await expect(page.locator(".gb-entries .gb-entry").nth(0)).toHaveText(
     entry.entryTest,

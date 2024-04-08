@@ -168,7 +168,7 @@ templ GuestbookEntryForm() {
 
 templ GuestbookEntries(entries []*models.GuestbookEntry) {
 	<div class="flow-root">
-		<div class="divide-y divide-gray-200">
+		<div class="divide-y divide-gray-200 gb-entries">
 			for _, entry := range entries {
 				@GuestbookEntry(entry)
 			}
@@ -180,7 +180,7 @@ templ GuestbookEntry(entry *models.GuestbookEntry) {
 	if (entry.Message == "") {
 		return
 	}
-	<div class="py-12">
+	<div class="py-12 gb-entry">
 		<div class="flex items-center">
 			<figure class="h-12 w-12 rounded-full">
 				if entry.Email != "" {

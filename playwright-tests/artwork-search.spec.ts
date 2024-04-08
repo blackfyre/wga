@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-test("simple search", async ({ page }) => {
+test("artwork search", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("link", { name: "Artworks" }).click();
   // expect to find h1 "Artwork search" on page
@@ -15,7 +15,7 @@ test("simple search", async ({ page }) => {
 
 test("artform search", async ({ page }) => {
   await page.goto("/artworks");
-  await page.getByLabel("Artforms").selectOption("painting");
+  await page.locator("[name='art_form']").selectOption("painting");
   await page.getByRole("button", { name: "Search" }).click();
   // expect to at least 1 `.card` elements in #search-result-container
   await expect(page.locator("#search-result-container .card")).not.toHaveCount(
@@ -25,7 +25,7 @@ test("artform search", async ({ page }) => {
 
 test("art type search", async ({ page }) => {
   await page.goto("/artworks");
-  await page.getByLabel("Art types").selectOption("mythological");
+  await page.locator("[name='art_type']").selectOption("mythological");
   await page.getByRole("button", { name: "Search" }).click();
   // expect to at least 1 `.card` elements in #search-result-container
   await expect(page.locator("#search-result-container .card")).not.toHaveCount(
@@ -35,7 +35,7 @@ test("art type search", async ({ page }) => {
 
 test("art school search", async ({ page }) => {
   await page.goto("/artworks");
-  await page.getByLabel("Art school").selectOption("hungarian");
+  await page.locator("[name='art_school']").selectOption("hungarian");
   await page.getByRole("button", { name: "Search" }).click();
   // expect to at least 1 `.card` elements in #search-result-container
   await expect(page.locator("#search-result-container .card")).not.toHaveCount(
@@ -45,8 +45,8 @@ test("art school search", async ({ page }) => {
 
 test("art type and school combined search", async ({ page }) => {
   await page.goto("/artworks");
-  await page.getByLabel("Art types").selectOption("mythological");
-  await page.getByLabel("Art school").selectOption("hungarian");
+  await page.locator("[name='art_type']").selectOption("mythological");
+  await page.locator("[name='art_school']").selectOption("hungarian");
   await page.getByRole("button", { name: "Search" }).click();
   // expect to at least 1 `.card` elements in #search-result-container
   await expect(page.locator("#search-result-container .card")).not.toHaveCount(
@@ -56,7 +56,7 @@ test("art type and school combined search", async ({ page }) => {
 
 test("title search", async ({ page }) => {
   await page.goto("http://localhost:8090/artworks");
-  await page.getByPlaceholder("Artwork title").fill("Allegory");
+  await page.locator("[name='title']").fill("Allegory");
   await page.getByRole("button", { name: "Search" }).click();
   await expect(page.locator("#search-result-container .card")).not.toHaveCount(
     0,
@@ -65,7 +65,7 @@ test("title search", async ({ page }) => {
 
 test("artist name search", async ({ page }) => {
   await page.goto("http://localhost:8090/artworks");
-  await page.getByPlaceholder("Artist name").fill("aachen");
+  await page.locator("[name='artist']").fill("aachen");
   await page.getByRole("button", { name: "Search" }).click();
   await expect(page.locator("#search-result-container .card")).not.toHaveCount(
     0,
