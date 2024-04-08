@@ -9,13 +9,19 @@ test("check feedback", async ({ page }) => {
   // expect dialog #d to have text "Are doing good?"
   await expect(page.locator("#d")).toHaveText(/Are we doing good/);
 
-  await page.getByLabel("Name").fill("Playwright Tester");
-  await page.getByLabel("Email").fill("playwright.tester@local.host");
-  await page.getByLabel("Message").fill("I am testing your site.");
+  await page
+    .getByPlaceholder("Name", { exact: true })
+    .fill("Playwright Tester");
+  await page
+    .getByPlaceholder("Email", { exact: true })
+    .fill("playwright.tester@local.host");
+  await page.getByPlaceholder("Your message").fill("I am testing your site.");
 
   // Click the submit button.
   await page.getByRole("button", { name: "Send feedback" }).click();
 
   // expect notification popup: Thank you! Your feedback is valuable to us!
-  await expect(page.locator(".is-success")).toBeVisible();
+  await expect(page.locator(".toast")).toHaveText(
+    "Thank you! Your feedback is valuable to us!",
+  );
 });

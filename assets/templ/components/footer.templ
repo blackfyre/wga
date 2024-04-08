@@ -1,43 +1,70 @@
 package components
 
 templ Footer() {
-	<footer class="footer">
-		<div class="container">
-			<div class="columns">
-				<div class="column has-text-left">
-					<p>
-						Please send your comments, sign our guestbook and send a postcard.
-						© Web Gallery of Art, created by Emil Krén and Daniel Marx.
-					</p>
-					<p>
-						v2 was made possible by our <a
+	<footer class="footer p-10 bg-base-200 text-base-content mt-6">
+		<aside>
+			<a class="navbar-item" id="nav-logo" href="/" hx-get="/">
+				<img
+					src="/assets/images/logo.png"
+					loading="lazy"
+					alt="Web Gallery of Art"
+					title="Go to Home"
+				/>
+			</a>
+			<p>Providing experience since 1992</p>
+		</aside>
+		<div>
+			<p>
+				Please send your comments, sign our guestbook and send a postcard.
+				© Web Gallery of Art, created by Emil Krén and Daniel Marx.
+			</p>
+			<p>
+				v2 was made possible by our <a
 	href="/contributors"
 	hx-get="/contributors"
 >contributors</a>!
-					</p>
-				</div>
-				<div class="column has-text-center">
-					<p>
-						Donations for maintaining and developing the Gallery are welcome.
-					</p>
-					<ul class="has-text-right">
-						<li><a href="https://ko-fi.com/blackfyre" target="_blank">ko-fi.com/blackfyre</a></li>
-						<li><a href="https://github.com/sponsors/blackfyre" target="_blank">Github sponsorship</a></li>
-					</ul>
-				</div>
-				<div class="column has-text-right">
-					<p>
-						This is an open source project. You can find the source code on <a
+			</p>
+		</div>
+		<div class="column has-text-center">
+			<p>
+				Donations for maintaining and developing the Gallery are welcome.
+			</p>
+			<ul class="has-text-right">
+				<li><a href="https://ko-fi.com/blackfyre" target="_blank">ko-fi.com/blackfyre</a></li>
+				<li><a href="https://github.com/sponsors/blackfyre" target="_blank">Github sponsorship</a></li>
+			</ul>
+		</div>
+		<div class="column has-text-right">
+			<p>
+				This is an open source project. You can find the source code on <a
 	href="https://github.com/blackfyre/wga"
 	target="_blank"
 >Github</a>, and you're welcome to join
-						our <a href="/contributors" hx-get="/contributors">code contributors</a>!
-					</p>
-					<p>
-						<a data-cc="c-settings" href="#">Manage cookie settings</a>
-					</p>
-				</div>
-			</div>
+				our <a href="/contributors" hx-get="/contributors">code contributors</a>!
+			</p>
+			<p>
+				<a data-cc="c-settings" href="#">Manage cookie settings</a>
+			</p>
 		</div>
+		// <nav>
+		// 	<h6 class="footer-title">Services</h6>
+		// 	<a class="link link-hover">Branding</a>
+		// 	<a class="link link-hover">Design</a>
+		// 	<a class="link link-hover">Marketing</a>
+		// 	<a class="link link-hover">Advertisement</a>
+		// </nav>
+		// <nav>
+		// 	<h6 class="footer-title">Company</h6>
+		// 	<a class="link link-hover">About us</a>
+		// 	<a class="link link-hover">Contact</a>
+		// 	<a class="link link-hover">Jobs</a>
+		// 	<a class="link link-hover">Press kit</a>
+		// </nav>
+		// <nav>
+		// 	<h6 class="footer-title">Legal</h6>
+		// 	<a class="link link-hover">Terms of use</a>
+		// 	<a class="link link-hover">Privacy policy</a>
+		// 	<a class="link link-hover">Cookie policy</a>
+		// </nav>
 	</footer>
 }

@@ -62,21 +62,21 @@ func registerFeedbackHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 
 			if err := c.Bind(&postData); err != nil {
 				app.Logger().Error("Failed to parse form data", err)
-				utils.SendToastMessage("Failed to parse form", "is-danger", true, c, "")
+				utils.SendToastMessage("Failed to parse form", "error", true, c, "")
 				return utils.ServerFaultError(c)
 			}
 
 			if postData.HoneyPotEmail != "" || postData.HoneyPotName != "" {
 				// this is probably a bot
 				app.Logger().Warn("Honey pot triggered", "data", fmt.Sprintf("+%v", postData))
-				utils.SendToastMessage("Failed to parse form", "is-danger", true, c, "")
+				utils.SendToastMessage("Failed to parse form", "error", true, c, "")
 				return utils.ServerFaultError(c)
 			}
 
 			collection, err := app.Dao().FindCollectionByNameOrId("feedbacks")
 			if err != nil {
 				app.Logger().Error("Database table not found", err)
-				utils.SendToastMessage("Database table not found", "is-danger", true, c, "")
+				utils.SendToastMessage("Database table not found", "error", true, c, "")
 				return utils.ServerFaultError(c)
 			}
 
@@ -102,12 +102,12 @@ func registerFeedbackHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 					return utils.ServerFaultError(c)
 				}
 
-				utils.SendToastMessage("Failed to store the feedback", "is-danger", false, c, "")
+				utils.SendToastMessage("Failed to store the feedback", "error", false, c, "")
 
 				return utils.ServerFaultError(c)
 			}
 
-			utils.SendToastMessage("Thank you! Your feedback is valuable to us!", "is-success", true, c, "")
+			utils.SendToastMessage("Thank you! Your feedback is valuable to us!", "success", true, c, "")
 
 			return nil
 		})

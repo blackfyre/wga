@@ -1,9 +1,10 @@
 before:
   hooks:
-    - npm ci
+    - bun install
     - templ generate
     - go mod tidy
-    - node esbuild.mjs
+    - bun run build:css
+    - bun run build:js
 
 builds:
   - env:

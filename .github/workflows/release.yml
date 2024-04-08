@@ -16,11 +16,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
+      - name: Set up bun
+        uses: oven-sh/setup-bun@v1
         with:
-          node-version: ">=14.17.0"
-          cache: "npm"
+          bun-version: latest
 
       - name: Set up Go
         uses: actions/setup-go@v3

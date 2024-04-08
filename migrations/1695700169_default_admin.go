@@ -3,7 +3,6 @@ package migrations
 import (
 	"os"
 
-	"github.com/joho/godotenv"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/daos"
 	m "github.com/pocketbase/pocketbase/migrations"
@@ -11,8 +10,6 @@ import (
 )
 
 func init() {
-
-	_ = godotenv.Load()
 
 	email := os.Getenv("WGA_ADMIN_EMAIL")
 	password := os.Getenv("WGA_ADMIN_PASSWORD")

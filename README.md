@@ -10,12 +10,12 @@ This repository contains the code for the Web Gallery of Art project. The projec
 
 The project is built using the following technologies:
 
-- [PocketBase](https://pocketbase.io) - A Go based SaaS platform for building web applications
 - [htmx](https://htmx.org) - A javascript library for building web applications
-- [Bulma](https://bulma.io) - A CSS framework for building responsive web applications
+- [TailwindCSS](https://tailwindcss.com/) - A utility-first CSS framework
+  - [DaisyUI](https://daisyui.com/) - A component library for TailwindCSS
 - [Go](https://go.dev/) 1.21+ - A programming language for building web applications
-- [Sass](https://sass-lang.com/) - A CSS preprocessor for building responsive web applications
-- [Goreleaser](https://goreleaser.com/) - A tool for building and releasing Go applications
+  - [PocketBase](https://pocketbase.io) - A Go based SaaS platform for building web applications
+  - [Goreleaser](https://goreleaser.com/) - A tool for building and releasing Go applications
 
 ## Getting Started
 
@@ -85,9 +85,9 @@ The application will start on port 8090 by default. You can access it by going t
 To build the application you will need to have the following installed:
 
 - [Go](https://go.dev/) 1.21+
-- [NodeJS](https://nodejs.org/en/) 14+
-- [NPM](https://www.npmjs.com/) 6+
+- [Bun](https://bun.sh/) v1.1+
 - [Goreleaser](https://goreleaser.com/)
+- [Templ](https://templ.guide/)
 
 #### Building the application
 
@@ -97,11 +97,21 @@ Building the application relies on [Goreleaser](https://goreleaser.com/) to buil
 goreleaser release --snapshot --clean
 ```
 
-This will build the application and place the binary in the `dist` folder.
+This will build the application and place the binary in the `./dist` folder.
 
 ## Contributing
 
 Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
+
+### Development quick start
+
+#### Docker
+
+The supplied `docker-compose.yml` file will bring up a configured `minio` and `mailpit` instance to simulate the services used in production.
+
+#### Frontend
+
+All frontend assets (templ, postcss) can be built with `npm run dev` (this command will start a dev server as well) and the JS dependencies with `bun run build:js`.
 
 ## License
 
