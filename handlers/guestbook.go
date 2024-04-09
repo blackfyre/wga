@@ -8,47 +8,6 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
-type SearchSettings struct {
-	searchExpression        string
-	searchExpressionPresent bool
-	filter                  string
-}
-
-type GbData struct {
-	Title         string
-	FirstContent  string
-	SecondContent string
-	MainContent   []GuestBookMessagePrepared
-	LatestEntries string
-}
-
-type GbPreparedData struct {
-	Title                   string
-	FirstContent            string
-	SecondContent           string
-	MainContent             []GuestBookMessagePrepared
-	LatestEntries           string
-	CalendarYears           [][]string
-	SearchExpressionPresent bool
-	SearchExpression        string
-}
-
-type GuestBookMessage struct {
-	Name          string `json:"name" form:"name" query:"name" validate:"required"`
-	Email         string `json:"email" form:"email" query:"email" validate:"required"`
-	Location      string `json:"location" form:"location" query:"location" validate:"required"`
-	Message       string `json:"message" form:"message" query:"message" validate:"required"`
-	HoneyPotName  string `json:"honey_pot_name" query:"honey_pot_name"`
-	HoneyPotEmail string `json:"honey_pot_email" query:"honey_pot_email"`
-}
-
-type GuestBookMessagePrepared struct {
-	Message  string
-	Name     string
-	Location string
-	Created  string
-}
-
 // registerGuestbookHandlers registers the handlers for the guestbook routes.
 // It takes an instance of pocketbase.PocketBase as input and adds the necessary
 // route handlers to the app's router. The handlers include GET and POST methods

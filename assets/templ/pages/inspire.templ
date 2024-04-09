@@ -1,0 +1,25 @@
+package pages
+
+import (
+	"github.com/blackfyre/wga/assets/templ/dto"
+	"github.com/blackfyre/wga/assets/templ/layouts"
+	"github.com/blackfyre/wga/assets/templ/utils"
+	"github.com/blackfyre/wga/assets/templ/components"
+)
+
+templ InspirePage(c dto.ImageGrid) {
+	@layouts.LayoutMain() {
+		@InspirationContent(c)
+	}
+}
+
+templ InspirationContent(c dto.ImageGrid) {
+	<head>
+		<title>{ utils.GetTitle(ctx) }</title>
+	</head>
+	<section class="container">
+		<h1 class="text-2xl mb-6">Random inspiration</h1>
+		<p class="mb-6">This is a random selection from the database to inspire you! If you need new inspiration, just hit refresh!</p>
+		@components.ImageGridComponent(c, true)
+	</section>
+}

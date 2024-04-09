@@ -305,17 +305,9 @@ func IsHtmxRequest(c echo.Context) bool {
 
 // NotFoundError is a handler that returns a 404 error page.
 func NotFoundError(c echo.Context) error {
-	if IsHtmxRequest(c) {
-		return error_pages.NotFoundBlock().Render(context.Background(), c.Response().Writer)
-	}
-
 	return error_pages.NotFoundPage().Render(context.Background(), c.Response().Writer)
 }
 
 func ServerFaultError(c echo.Context) error {
-	if IsHtmxRequest(c) {
-		return error_pages.ServerFaultBlock().Render(context.Background(), c.Response().Writer)
-	}
-
 	return error_pages.ServerFaultPage().Render(context.Background(), c.Response().Writer)
 }
