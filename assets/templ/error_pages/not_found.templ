@@ -14,14 +14,19 @@ templ NotFoundPage() {
 }
 
 templ NotFoundBlock() {
-	<div class="is-flex is-justify-content-center is-align-items-center">
-		<div class="has-text-centered">
-			<h1 class="is-size-1 has-text-weight-bold has-text-primary">404</h1>
-			<p class="is-size-5 has-text-weight-medium"><span class="has-text-danger">Opps!</span> Page not found.</p>
-			<p class="is-size-6 mb-4">
-				The page you're looking for doesn't exist.
-			</p>
-			<a href="/" hx-get="/" class="button is-primary">Go Home</a>
+	<div class="container">
+		<div class="lg:px-24 lg:py-24 md:py-20 md:px-44 px-4 py-24 items-center flex justify-center flex-col-reverse lg:flex-row md:gap-28 gap-16">
+			<div class="xl:pt-24 w-full xl:w-1/2 relative pb-12 lg:pb-0">
+				<h1 class="my-2 font-bold text-2xl">
+					Looks like you've found the
+					doorway to the great nothing
+				</h1>
+				<p class="my-2">Sorry about that! Please visit our hompage to get where you need to go.</p>
+				<a href="/" hx-get="/" class="sm:w-full lg:w-auto my-2 btn btn-primary">Take me there!</a>
+			</div>
+			<div>
+				<img src="https://i.ibb.co/ck1SGFJ/Group.png"/>
+			</div>
 		</div>
 	</div>
 }
