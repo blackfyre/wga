@@ -25,7 +25,7 @@ type Pagination struct {
 	lastPart   []string
 }
 
-// constructor
+// NewPagination constructor
 func NewPagination(totalAmount, perPage, currentPage int, baseUrl string, htmxTarget string, htmxUrl string) *Pagination {
 	if currentPage == 0 {
 		currentPage = 1
