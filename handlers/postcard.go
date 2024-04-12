@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/blackfyre/wga/assets/templ/components"
-	"github.com/blackfyre/wga/assets/templ/error_pages"
 	"github.com/blackfyre/wga/assets/templ/pages"
 	"github.com/blackfyre/wga/utils"
 	"github.com/blackfyre/wga/utils/url"
