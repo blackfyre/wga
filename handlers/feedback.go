@@ -84,12 +84,16 @@ func registerFeedbackHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 
 			form := forms.NewRecordUpsert(app, record)
 
-			form.LoadData(map[string]any{
+			err = form.LoadData(map[string]any{
 				"email":    postData.Email,
 				"name":     postData.Name,
 				"message":  postData.Message,
 				"refer_to": postData.ReferTo,
 			})
+			if err != nil {
+				app.Logger().Error("Failed to process the feedback", err)
+				return err
+			}
 
 			if err := form.Submit(); err != nil {
 

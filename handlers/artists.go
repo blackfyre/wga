@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/blackfyre/wga/assets/templ/pages"
 	"github.com/blackfyre/wga/assets/templ/dto"
+	"github.com/blackfyre/wga/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/assets/templ/utils"
 	wgaModels "github.com/blackfyre/wga/models"
 	"github.com/blackfyre/wga/utils"
@@ -103,7 +103,7 @@ func processArtists(app *pocketbase.PocketBase, c echo.Context) error {
 		content.QueryStr = searchExpression
 	}
 
-	jsonLdCollector := []jsonld.Person{}
+	var jsonLdCollector []jsonld.Person
 
 	for _, m := range records {
 
@@ -111,7 +111,7 @@ func processArtists(app *pocketbase.PocketBase, c echo.Context) error {
 
 		school := m.GetStringSlice("school")
 
-		schoolCollector := []string{}
+		var schoolCollector []string
 
 		for _, s := range school {
 			r, err := app.Dao().FindRecordById("schools", s)

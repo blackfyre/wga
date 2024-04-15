@@ -3,11 +3,11 @@ module github.com/blackfyre/wga
 go 1.22.0
 
 require (
-	github.com/a-h/templ v0.2.648
+	github.com/a-h/templ v0.2.663
 	github.com/google/uuid v1.6.0
 	github.com/grokify/html-strip-tags-go v0.1.0
 	github.com/joho/godotenv v1.5.1
-	github.com/klauspost/compress v1.17.7
+	github.com/klauspost/compress v1.17.8
 	github.com/labstack/echo/v5 v5.0.0-20230722203903-ec5b858dab61
 	github.com/microcosm-cc/bluemonday v1.0.26
 	github.com/pocketbase/dbx v1.10.1
@@ -20,7 +20,7 @@ require (
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.7 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
-	github.com/aws/aws-sdk-go v1.51.17 // indirect
+	github.com/aws/aws-sdk-go v1.51.21 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.26.1 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.2 // indirect
 	github.com/aws/aws-sdk-go-v2/config v1.27.11 // indirect
@@ -80,7 +80,7 @@ require (
 	golang.org/x/time v0.5.0 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 	google.golang.org/api v0.172.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240401170217-c3f982113cda // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240412170617-26222e5d3d56 // indirect
 	google.golang.org/grpc v1.63.2 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
