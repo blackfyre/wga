@@ -30,7 +30,7 @@ const (
 // normalizedBioExcerpt returns a normalized biography excerpt for the given record.
 // It includes the person's year and place of birth and death (if available).
 func normalizedBioExcerpt(r *models.Record) string {
-	s := []string{}
+	var s []string
 
 	yob := r.GetInt("year_of_birth")
 	eyob := r.GetString("exact_year_of_birth")
@@ -44,7 +44,7 @@ func normalizedBioExcerpt(r *models.Record) string {
 
 	if yob > 0 {
 
-		c := []string{}
+		var c []string
 
 		prefix := "b."
 
@@ -69,7 +69,7 @@ func normalizedBioExcerpt(r *models.Record) string {
 
 	if yod > 0 {
 
-		c := []string{}
+		var c []string
 
 		prefix := "d."
 
@@ -130,7 +130,7 @@ func processArtist(c echo.Context, app *pocketbase.PocketBase) error {
 
 	school := artist.GetStringSlice("school")
 
-	schoolCollector := []string{}
+	var schoolCollector []string
 
 	for _, s := range school {
 		r, err := app.Dao().FindRecordById("schools", s)
@@ -215,7 +215,7 @@ func processArtist(c echo.Context, app *pocketbase.PocketBase) error {
 	if err != nil {
 		app.Logger().Error("Error rendering artist page", err)
 
-		utils.ServerFaultError(c)
+		return utils.ServerFaultError(c)
 	}
 
 	return nil
@@ -297,7 +297,7 @@ func processArtwork(c echo.Context, app *pocketbase.PocketBase) error {
 
 	school := artist.GetStringSlice("school")
 
-	schoolCollector := []string{}
+	var schoolCollector []string
 
 	for _, s := range school {
 		r, err := app.Dao().FindRecordById("schools", s)

@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/blackfyre/wga/assets/templ/components"
-	"github.com/blackfyre/wga/assets/templ/error_pages"
 	"github.com/blackfyre/wga/assets/templ/pages"
 	"github.com/blackfyre/wga/utils"
 	"github.com/blackfyre/wga/utils/url"
@@ -47,8 +46,7 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 
 			if err != nil {
 				app.Logger().Error("Failed to find artwork "+awid, err)
-				error_pages.NotFoundBlock().Render(ctx, c.Response().Writer)
-				return nil
+				return utils.NotFoundError(c)
 			}
 
 			err = components.PostcardEditor(components.PostcardEditorDTO{
@@ -147,21 +145,21 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 			}{}
 
 			if err := c.Bind(&postData); err != nil {
-				sendToastMessage("Failed to parse form", "error", true, c)
+				utils.SendToastMessage("Failed to parse form", "error", true, c, "")
 				return apis.NewBadRequestError("Failed to parse form data", err)
 			}
 
 			if postData.HoneyPotEmail != "" || postData.HoneyPotName != "" {
 				// this is probably a bot
 				app.Logger().Warn("Honey pot triggered", "data", fmt.Sprintf("+%v", postData))
-				sendToastMessage("Failed to find postcard collection", "error", true, c)
+				utils.SendToastMessage("Failed to find postcard collection", "error", true, c, "")
 				return nil
 			}
 
 			collection, err := app.Dao().FindCollectionByNameOrId("postcards")
 			if err != nil {
 				app.Logger().Error("Failed to find postcard collection", err)
-				sendToastMessage("Failed to find postcard collection", "error", true, c)
+				utils.SendToastMessage("Failed to find postcard collection", "error", true, c, "")
 				return apis.NewNotFoundError("Failed to find postcard collection", err)
 			}
 
@@ -169,7 +167,7 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 
 			form := forms.NewRecordUpsert(app, record)
 
-			form.LoadData(map[string]any{
+			err = form.LoadData(map[string]any{
 				"status":        "queued",
 				"sender_name":   postData.SenderName,
 				"sender_email":  postData.SenderEmail,
@@ -178,6 +176,11 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 				"image_id":      postData.ImageId,
 				"notify_sender": postData.NotificationRequired,
 			})
+			if err != nil {
+				app.Logger().Error("Failed to process postcard form", err)
+				utils.SendToastMessage("Failed to find postcard collection", "error", true, c, "")
+				return apis.NewBadRequestError("Failed to process postcard form", err)
+			}
 
 			ctx := context.Background()
 
@@ -187,8 +190,7 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 
 				if err != nil {
 					app.Logger().Error("Failed to find artwork "+postData.ImageId, err)
-					error_pages.NotFoundBlock().Render(ctx, c.Response().Writer)
-					return nil
+					return utils.NotFoundError(c)
 				}
 
 				err = components.PostcardEditor(components.PostcardEditorDTO{
@@ -201,12 +203,12 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 
 				app.Logger().Error(fmt.Sprintf("Failed to store the postcard with image_id %s", postData.ImageId), err)
 
-				sendToastMessage("Failed to store the postcard", "error", false, c)
+				utils.SendToastMessage("Failed to store the postcard", "error", false, c, "")
 
 				return nil
 			}
 
-			sendToastMessage("Thank you! Your postcard has been queued for sending!", "success", true, c)
+			utils.SendToastMessage("Thank you! Your postcard has been queued for sending!", "success", true, c, "")
 
 			return nil
 		})

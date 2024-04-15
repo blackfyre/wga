@@ -27,7 +27,7 @@ type GuestBookMessage struct {
 }
 
 func yearOptions() []string {
-	years := []string{}
+	var years []string
 
 	for i := time.Now().Year(); i >= 1997; i-- {
 		years = append(years, fmt.Sprintf("%d", i))

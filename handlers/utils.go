@@ -29,22 +29,3 @@ func setHxTrigger(c echo.Context, data map[string]any) {
 
 	c.Response().Header().Set("HX-Trigger", string(hd))
 }
-
-// Deprecated: use github.com/blackfyre/wga/utils instead
-func sendToastMessage(message string, t string, closeDialog bool, c echo.Context) {
-	payload := struct {
-		Message     string `json:"message"`
-		Type        string `json:"type"`
-		CloseDialog bool   `json:"closeDialog"`
-	}{
-		Message:     message,
-		Type:        t,
-		CloseDialog: closeDialog,
-	}
-
-	m := map[string]any{
-		"notification:toast": payload,
-	}
-
-	setHxTrigger(c, m)
-}

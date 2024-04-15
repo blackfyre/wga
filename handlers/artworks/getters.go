@@ -62,7 +62,7 @@ func getArtSchoolOptions(app *pocketbase.PocketBase) (map[string]string, error) 
 }
 
 func getArtistNameList(app *pocketbase.PocketBase) ([]string, error) {
-	names := []string{}
+	var names []string
 	c, err := app.Dao().FindRecordsByFilter(
 		"artists",
 		"published = true",
