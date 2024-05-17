@@ -26,4 +26,5 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 	artworks.RegisterArtworksHandlers(app)
 	inspire.RegisterHandlers(app)
 	registerHome(app)
+	registerDualMode(app)
 }
