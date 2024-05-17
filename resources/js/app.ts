@@ -1,6 +1,7 @@
 import htmx from "htmx.org";
 import Viewer from "viewerjs";
 import Trix from "trix";
+import { dualModeOperator } from "./dualModeOperator";
 
 declare global {
   interface Window {
@@ -54,6 +55,10 @@ const wgaInternal: wgaInternals = {
   htmx.config.globalViewTransitions = true;
   htmx.config.selfRequestsOnly = true;
   htmx.config.allowScriptTags = false;
+
+  htmx.on("htmx:load", () => {
+    dualModeOperator();
+  });
 
   InitEventListeners();
 })();
