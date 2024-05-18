@@ -17,6 +17,7 @@ type wgaWindow = {
   music: {
     openMusicWindow: () => void;
   };
+  toast: (message: string, type: string) => void;
 };
 
 type wgaInternals = {
@@ -313,4 +314,5 @@ window.wga = {
       return false;
     },
   },
+  toast: createToast,
 };
