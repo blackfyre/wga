@@ -1,15 +1,18 @@
-export const dualModeOperator = () => {
+const DEFAULTLEFTURL = "/artists";
+const DEFAULTRIGHTURL = "/artists";
+
+export const dualModeOperator = async (): Promise<void> => {
   if (!window.location.pathname.includes("/dualmode")) {
     return;
   }
   try {
-    createDualModePage();
+    await createDualModePage();
   } catch (error) {
-    console.error(error);
+    window.wga.toast(`Failed to create dual mode page: ${error}`, "danger");
   }
 };
 
-const createDualModePage = async () => {
+const createDualModePage = async (): Promise<void> => {
   const page = document.createElement("div");
   page.innerHTML = dualModePage();
   const dualModeSection = document.getElementById("dualModeSection");
@@ -17,150 +20,104 @@ const createDualModePage = async () => {
     return;
   }
   dualModeSection.appendChild(page);
-  console.log("Before fetchDefaultPages");
   await fetchDefaultPages();
-  console.log("After fetchDefaultPages");
 
-  const leftLinks = document.querySelectorAll("#leftPageContent a");
-  const rightLinks = document.querySelectorAll("#rightPageContent a");
+  const leftLinksCheckbox = getInputElementById("rewriteLeftLinksCheckbox");
+  const rightLinksCheckbox = getInputElementById("rewriteRightLinksCheckbox");
 
-  const rewriteLeftLinksCheckbox = document.getElementById(
-    "rewriteLeftLinksCheckbox",
-  );
-  const rewriteRightLinksCheckbox = document.getElementById(
-    "rewriteRightLinksCheckbox",
-  );
-
-  if (
-    !rewriteLeftLinksCheckbox ||
-    !rewriteRightLinksCheckbox ||
-    leftLinks.length === 0 ||
-    rightLinks.length === 0
-  ) {
-    return;
+  if (leftLinksCheckbox && rightLinksCheckbox) {
+    updateLinkBehavior(leftLinksCheckbox, rightLinksCheckbox)();
   }
-
-  const elements = {
-    leftLinks,
-    rightLinks,
-    rewriteLeftLinksCheckbox,
-    rewriteRightLinksCheckbox,
-  };
-
-  const listener: EventListenerOrEventListenerObject =
-    updateLinkBehavior(elements);
-  rewriteLeftLinksCheckbox.addEventListener("change", listener);
-  rewriteRightLinksCheckbox.addEventListener("change", listener);
 };
 
-function updateLinkBehavior(elements) {
-  let leftPage = document.getElementById("leftPageContent");
-  let rightPage = document.getElementById("rightPageContent");
-  if (!leftPage || !rightPage) {
+const fetchDefaultPages = async (): Promise<void> => {
+  const [leftPage, rightPage] = ["leftPageContent", "rightPageContent"].map(
+    (id) => document.getElementById(id),
+  );
+
+  if (!leftPage || !rightPage || leftPage.innerHTML || rightPage.innerHTML) {
     return;
   }
-  elements.leftLinks.forEach((link: HTMLElement) => {
-    link.addEventListener("click", function (e) {
-      e.preventDefault();
-      const url = link.getAttribute("href");
-      if (!url) return;
-      if (elements.rewriteLeftLinksCheckbox.checked) {
-        fetch(url)
-          .then((response) => response.text())
-          .then((html) => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, "text/html");
-            const element = doc.getElementById("mc-area");
-            console.log("🚀 ~ .then ~ element:", element);
-            if (!element) {
-              return;
-            }
-            rightPage.innerHTML = element.innerHTML;
-          });
-      } else {
-        fetch(url)
-          .then((response) => response.text())
-          .then((html) => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, "text/html");
-            const element = doc.getElementById("mc-area");
-            if (!element) {
-              return;
-            }
-            leftPage.innerHTML = element.innerHTML;
-          });
-      }
-    });
-  });
 
-  elements.rightLinks.forEach((link: HTMLElement) => {
-    link.addEventListener("click", function (e) {
-      e.preventDefault();
-      const url = link.getAttribute("href");
-      if (!url) return;
-      if (elements.rewriteRightLinksCheckbox.checked) {
-        fetch(url)
-          .then((response) => response.text())
-          .then((html) => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, "text/html");
-            const element = doc.getElementById("mc-area");
-            if (!element) {
-              return;
-            }
-            leftPage.innerHTML = element.innerHTML;
-          });
-      } else {
-        fetch(url)
-          .then((response) => response.text())
-          .then((html) => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, "text/html");
-            const element = doc.getElementById("mc-area");
-            if (!element) {
-              return;
-            }
-            rightPage.innerHTML = element.innerHTML;
-          });
-      }
-    });
-  });
+  const pages = [
+    { page: leftPage, start: DEFAULTLEFTURL },
+    { page: rightPage, start: DEFAULTRIGHTURL },
+  ];
+
+  try {
+    await Promise.all(
+      pages.map(({ page, start }) => fetchAndUpdatePage(start, page)),
+    );
+  } catch (error) {
+    handleError("Failed to fetch default pages", error);
+  }
+};
+
+const handleFetchError =
+  <T extends (...args: unknown[]) => Promise<void>>(fn: Function) =>
+  async (...args: Parameters<T>) => {
+    try {
+      await fn(...args);
+    } catch (error) {
+      handleError("Failed to fetch and update page", error);
+    }
+  };
+
+const fetchAndUpdatePage = handleFetchError(
+  async (url: string, page: HTMLElement) => {
+    const response = await fetch(url);
+    const html = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+    const element = doc.getElementById("mc-area");
+    if (element) {
+      page.innerHTML = element.innerHTML;
+    }
+  },
+);
+
+function updateLinkBehavior(
+  leftLinksCheckbox: HTMLInputElement,
+  rightLinksCheckbox: HTMLInputElement,
+): () => void {
+  const leftPage = document.getElementById("leftPageContent");
+  const rightPage = document.getElementById("rightPageContent");
+
+  return function () {
+    if (!leftPage || !rightPage) {
+      return;
+    }
+    attachLinkBehavior(leftPage, leftLinksCheckbox, [leftPage, rightPage]);
+    attachLinkBehavior(rightPage, rightLinksCheckbox, [rightPage, leftPage]);
+  };
 }
 
-function fetchDefaultPages() {
-  let leftPage = document.getElementById("leftPageContent");
-  let rightPage = document.getElementById("rightPageContent");
-  if (!leftPage || !rightPage) {
-    return;
-  }
-  if (leftPage?.innerHTML && rightPage?.innerHTML) {
-    return;
-  }
+const createLinkClickHandler =
+  (checkbox: HTMLInputElement, pageToUpdate: HTMLElement[]) =>
+  async (e: Event): Promise<void> => {
+    const link = (e.target as HTMLElement).closest("a");
+    const url = link?.href;
+    if (!url) return;
+    e.preventDefault();
 
-  return Promise.all([
-    fetch("/artists")
-      .then((response) => response.text())
-      .then((html) => {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, "text/html");
-        const element = doc.getElementById("mc-area");
-        if (!element) {
-          return;
-        }
-        leftPage.innerHTML = element.innerHTML;
-      }),
-    fetch("/guestbook")
-      .then((response) => response.text())
-      .then((html) => {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, "text/html");
-        const element = doc.getElementById("mc-area");
-        if (!element) {
-          return;
-        }
-        rightPage.innerHTML = element.innerHTML;
-      }),
-  ]);
+    const page = checkbox.checked ? pageToUpdate[1] : pageToUpdate[0];
+    await fetchAndUpdatePage(url, page);
+  };
+
+function attachLinkBehavior(
+  parentElement: HTMLElement,
+  checkbox: HTMLInputElement,
+  pageToUpdate: HTMLElement[],
+): void {
+  parentElement.addEventListener(
+    "click",
+    createLinkClickHandler(checkbox, pageToUpdate),
+  );
+}
+
+function getInputElementById(id: string): HTMLInputElement | null {
+  const el = document.getElementById(id);
+  return el instanceof HTMLInputElement ? el : null;
 }
 
 function dualModePage(): string {
@@ -181,3 +138,8 @@ function dualModePage(): string {
     </section>
   `;
 }
+
+const handleError = (message: string, error: unknown): void => {
+  console.error(message, error);
+  window.wga.toast(`${message}: ${error}`, "danger");
+};
