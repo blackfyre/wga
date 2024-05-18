@@ -1,0 +1,22 @@
+package pages
+
+import (
+	"github.com/blackfyre/wga/assets/templ/layouts"
+	"github.com/blackfyre/wga/assets/templ/utils"
+)
+
+type DualModePage struct {
+}
+
+templ DualModePageWrapped(c DualModePage) {
+	@layouts.LayoutMain() {
+		@DualModePageContent(c)
+	}
+}
+
+templ DualModePageContent(c DualModePage) {
+	<head>
+		<title>{ utils.GetTitle(ctx) }</title>
+	</head>
+	<section id="dualModeSection"></section>
+}
