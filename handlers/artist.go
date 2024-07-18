@@ -95,44 +95,20 @@ func normalizedBioExcerpt(r *models.Record) string {
 	return strings.Join(s, ", ")
 }
 
-// processArtist is a handler function that processes the artist request.
-// It retrieves the artist information from the database, including their works,
-// and renders the HTML template with the artist data.
-// If the artist is not found, it returns a not found error.
-// If the rendering fails, it returns an error.
-// It also sets the HX-Push-Url header to enable Htmx push for the artist page.
-func processArtist(c echo.Context, app *pocketbase.PocketBase) error {
-	slug := c.PathParam("name")
+// findArtworksByAuthorId retrieves a list of artworks by the given author ID.
+// It uses the provided PocketBase instance to query the database and returns
+// a slice of Record pointers and an error, if any.
+func findArtworksByAuthorId(app *pocketbase.PocketBase, authorId string) ([]*models.Record, error) {
+	return app.Dao().FindRecordsByFilter("artworks", "author = '"+authorId+"'", "+title", 100, 0)
+}
 
-	id := utils.ExtractIdFromString(slug)
-
-	fullUrl := c.Scheme() + "://" + c.Request().Host + c.Request().URL.String()
-	artist, err := app.Dao().FindRecordById("artists", id)
-
-	if err != nil {
-		app.Logger().Error("Artist not found: ", slug, err)
-		return utils.NotFoundError(c)
-	}
-
-	expectedSlug := artist.GetString("slug") + "-" + artist.GetString("id")
-
-	if slug != expectedSlug {
-		return c.Redirect(http.StatusMovedPermanently, "/artists/"+expectedSlug)
-	}
-
-	works, err := app.Dao().FindRecordsByFilter("artworks", "author = '"+artist.GetString("id")+"'", "+title", 100, 0)
-
-	if err != nil {
-		app.Logger().Error("Error finding artworks: ", err)
-
-		return utils.NotFoundError(c)
-	}
-
-	school := artist.GetStringSlice("school")
-
+// renderSchoolNames takes an instance of PocketBase and a slice of school IDs,
+// and returns a string containing the names of the schools corresponding to the given IDs.
+// If a school is not found, it logs an error and continues to the next ID.
+func renderSchoolNames(app *pocketbase.PocketBase, schoolIds []string) string {
 	var schoolCollector []string
 
-	for _, s := range school {
+	for _, s := range schoolIds {
 		r, err := app.Dao().FindRecordById("schools", s)
 
 		if err != nil {
@@ -144,7 +120,26 @@ func processArtist(c echo.Context, app *pocketbase.PocketBase) error {
 
 	}
 
-	schools := strings.Join(schoolCollector, ", ")
+	return strings.Join(schoolCollector, ", ")
+}
+
+// renderArtistContent renders the content of an artist by generating a DTO (Data Transfer Object) that contains
+// information about the artist, their works, and JSON-LD metadata. It takes the PocketBase application instance,
+// the Echo context, and the artist record as input parameters. It returns the DTO representing the artist content
+// and an error if any occurred during the process.
+func renderArtistContent(app *pocketbase.PocketBase, c echo.Context, artist *models.Record) (dto.Artist, error) {
+	id := artist.GetId()
+	expectedSlug := generateArtistSlug(artist)
+
+	works, err := findArtworksByAuthorId(app, id)
+
+	if err != nil {
+		app.Logger().Error("Error finding artworks: ", err)
+
+		return dto.Artist{}, utils.NotFoundError(c)
+	}
+
+	schools := renderSchoolNames(app, artist.GetStringSlice("school"))
 
 	content := dto.Artist{
 		Name:       artist.GetString("name"),
@@ -200,6 +195,40 @@ func processArtist(c echo.Context, app *pocketbase.PocketBase) error {
 			Url:       c.Request().URL.String() + "/" + utils.Slugify(w.GetString("title")) + "-" + w.GetString("id"),
 			Jsonld:    fmt.Sprintf(`<script type="application/ld+json">%s</script>`, marshalled),
 		})
+	}
+
+	return content, nil
+}
+
+// processArtist is a handler function that processes the artist request.
+// It retrieves the artist information from the database, including their works,
+// and renders the HTML template with the artist data.
+// If the artist is not found, it returns a not found error.
+// If the rendering fails, it returns an error.
+// It also sets the HX-Push-Url header to enable Htmx push for the artist page.
+func processArtist(c echo.Context, app *pocketbase.PocketBase) error {
+	slug := c.PathParam("name")
+
+	id := utils.ExtractIdFromString(slug)
+
+	fullUrl := generateCurrentPageUrl(c)
+	artist, err := app.Dao().FindRecordById("artists", id)
+
+	if err != nil {
+		app.Logger().Error("Artist not found: ", slug, err)
+		return utils.NotFoundError(c)
+	}
+
+	expectedSlug := generateArtistSlug(artist)
+
+	if slug != expectedSlug {
+		return c.Redirect(http.StatusMovedPermanently, "/artists/"+expectedSlug)
+	}
+
+	content, err := renderArtistContent(app, c, artist)
+
+	if err != nil {
+		return err
 	}
 
 	ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", content.Name, content.BioExcerpt))

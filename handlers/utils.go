@@ -29,3 +29,11 @@ func setHxTrigger(c echo.Context, data map[string]any) {
 
 	c.Response().Header().Set("HX-Trigger", string(hd))
 }
+
+func generateArtistSlug(artist *models.Record) string {
+	return artist.GetString("slug") + "-" + artist.GetString("id")
+}
+
+func generateCurrentPageUrl(c echo.Context) string {
+	return c.Scheme() + "://" + c.Request().Host + c.Request().URL.String()
+}
