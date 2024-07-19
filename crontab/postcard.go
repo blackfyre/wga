@@ -39,7 +39,7 @@ func sendPostcard(r *models.Record, app *pocketbase.PocketBase, mailClient maile
 		message := renderMessage(r, rec, app)
 
 		if err := mailClient.Send(message); err != nil {
-			app.Logger().Error("Error sending postcard", "error", err.Error())
+			app.Logger().Error("Error sending postcard", "recipient", rec.Address, "record_id", r.GetId(), "error", err.Error())
 			return
 		}
 	}
