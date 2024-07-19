@@ -84,7 +84,7 @@ func updatePostcardRecord(r *models.Record, app *pocketbase.PocketBase) {
 	r.Set("sent_at", time.Now().Unix())
 
 	if err := app.Dao().SaveRecord(r); err != nil {
-		app.Logger().Error("Error updating postcard record", "error", err.Error())
+		app.Logger().Error("Error updating postcard record", "record_id", r.GetId(), "error", err.Error())
 	}
 }
 
