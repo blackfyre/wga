@@ -2,7 +2,6 @@ package utils
 
 import (
     "github.com/labstack/echo/v5"
-    "net/http"
 )
 
 func IsHtmxRequestMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
