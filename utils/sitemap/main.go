@@ -8,12 +8,15 @@ import (
 
 	"github.com/blackfyre/wga/utils"
 	"github.com/pocketbase/pocketbase"
+	"github.com/pocketbase/pocketbase/models"
 	"github.com/sabloger/sitemap-generator/smg"
 )
 
-func GenerateSiteMap(app *pocketbase.PocketBase) {
+// setupSitemapIndex initializes and configures a SitemapIndex object.
+// It sets the SitemapIndex name, hostname, output path, server URI, and compression settings.
+// The SitemapIndex object is then returned.
+func setupSitemapIndex() *smg.SitemapIndex {
 	isDevelopment := os.Getenv("WGA_ENV") == "development"
-
 	index := smg.NewSitemapIndex(isDevelopment)
 	index.SetSitemapIndexName("web_gallery_of_art")
 	index.SetHostname(os.Getenv("WGA_PROTOCOL") + "://" + os.Getenv("WGA_HOSTNAME"))
@@ -21,6 +24,13 @@ func GenerateSiteMap(app *pocketbase.PocketBase) {
 	index.SetServerURI("/sitemaps/")
 
 	index.SetCompress(!isDevelopment)
+
+	return index
+}
+
+func GenerateSiteMap(app *pocketbase.PocketBase) {
+
+	index := setupSitemapIndex()
 
 	generateArtistMap(app, index)
 	generateArtworksMap(app, index)
@@ -36,19 +46,28 @@ func GenerateSiteMap(app *pocketbase.PocketBase) {
 	}
 }
 
-func generateArtistMap(app *pocketbase.PocketBase, index *smg.SitemapIndex) {
+func setupSitemap(name string, index *smg.SitemapIndex) *smg.Sitemap {
 	now := time.Now().UTC()
-	artistSitemap := index.NewSitemap()
-	artistSitemap.SetName("artists")
-	artistSitemap.SetLastMod(&now)
+	sitemap := index.NewSitemap()
+	sitemap.SetName(name)
+	sitemap.SetLastMod(&now)
+	return sitemap
+}
 
-	records, err := app.Dao().FindRecordsByFilter(
+func fetchArtistsForSitemap(app *pocketbase.PocketBase) ([]*models.Record, error) {
+	return app.Dao().FindRecordsByFilter(
 		"artists",
 		"published = true",
 		"+name",
 		0,
 		0,
 	)
+}
+
+func generateArtistMap(app *pocketbase.PocketBase, index *smg.SitemapIndex) {
+	sitemap := setupSitemap("artists", index)
+
+	records, err := fetchArtistsForSitemap(app)
 
 	if err != nil {
 		app.Logger().Error("Error fetching artists for sitemap", err)
@@ -58,8 +77,8 @@ func generateArtistMap(app *pocketbase.PocketBase, index *smg.SitemapIndex) {
 
 		updatedAtTime := m.GetUpdated().Time()
 
-		err := artistSitemap.Add(&smg.SitemapLoc{
-			Loc:        fmt.Sprintf("/artist/%s-%s", m.GetString("slug"), m.GetId()),
+		err := sitemap.Add(&smg.SitemapLoc{
+			Loc:        utils.ArtistUrl(m),
 			LastMod:    &updatedAtTime,
 			ChangeFreq: smg.Monthly,
 			Priority:   0.8,
@@ -72,10 +91,7 @@ func generateArtistMap(app *pocketbase.PocketBase, index *smg.SitemapIndex) {
 }
 
 func generateArtworksMap(app *pocketbase.PocketBase, index *smg.SitemapIndex) {
-	now := time.Now().UTC()
-	artistSitemap := index.NewSitemap()
-	artistSitemap.SetName("artworks")
-	artistSitemap.SetLastMod(&now)
+	sitemap := setupSitemap("artworks", index)
 
 	records, err := app.Dao().FindRecordsByFilter(
 		"artworks",
@@ -108,7 +124,7 @@ func generateArtworksMap(app *pocketbase.PocketBase, index *smg.SitemapIndex) {
 
 		updatedAtTime := m.GetUpdated().Time()
 
-		err := artistSitemap.Add(&smg.SitemapLoc{
+		err := sitemap.Add(&smg.SitemapLoc{
 			Loc:        fmt.Sprintf("/artist/%s-%s/%s-%s", author.GetString("slug"), author.GetId(), utils.Slugify(m.GetString("title")), m.GetId()),
 			LastMod:    &updatedAtTime,
 			ChangeFreq: smg.Monthly,
