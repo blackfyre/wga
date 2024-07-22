@@ -3,6 +3,8 @@ package utils
 import (
 	"os"
 	"strings"
+
+	"github.com/pocketbase/pocketbase/models"
 )
 
 func AssetUrl(path string) string {
@@ -22,4 +24,8 @@ func AssetUrl(path string) string {
 func ExtractIdFromString(s string) string {
 	parts := strings.Split(s, "-")
 	return parts[len(parts)-1]
+}
+
+func ArtistUrl(r *models.Record) string {
+	return "/artists/" + r.GetString("slug") + "-" + r.GetString("id")
 }
