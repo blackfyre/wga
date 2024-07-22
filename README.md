@@ -120,6 +120,7 @@ The database is populated on first start, and if you want to have images availab
 ```bash
 ./wga seed:images
 ```
+
 This will go through the contents of the database and will use placeholder images to "generate" the necessary images to the designated S3 compatible file hosting solution designated in the `.env` file.
 
 ## License
