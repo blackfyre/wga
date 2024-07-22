@@ -14,7 +14,10 @@ func normalizedBirthDeathActivity(record *models.Record) string {
 }
 
 func generateArtistSlug(artist *models.Record) string {
-	return artist.GetString("slug") + "-" + artist.GetString("id")
+    if artist == nil {
+        return ""
+    }
+    return artist.GetString("slug") + "-" + artist.GetString("id")
 }
 
 func generateCurrentPageUrl(c echo.Context) string {
