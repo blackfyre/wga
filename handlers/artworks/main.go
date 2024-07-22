@@ -17,10 +17,10 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
-func searchPage(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) error {
+func searchPage(app *pocketbase.PocketBase, c echo.Context) error {
 
 	fullUrl := c.Scheme() + "://" + c.Request().Host + c.Request().URL.String()
-	filters := buildFilters(app, c)
+	filters := buildFilters(c)
 
 	if filters.AnyFilterActive() {
 		// redirect to the search results page
@@ -51,7 +51,7 @@ func searchPage(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) 
 	err := pages.ArtworkSearchPage(content).Render(ctx, c.Response().Writer)
 
 	if err != nil {
-		app.Logger().Error("Error rendering artwork search page", err)
+		app.Logger().Error("Error rendering artwork search page", "error", err.Error())
 		return utils.ServerFaultError(c)
 	}
 
@@ -59,7 +59,7 @@ func searchPage(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) 
 
 }
 
-func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) error {
+func search(app *pocketbase.PocketBase, c echo.Context) error {
 
 	limit := 16
 	page := 1
@@ -77,7 +77,7 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 	offset = (page - 1) * limit
 
 	//build filters
-	filters := buildFilters(app, c)
+	filters := buildFilters(c)
 
 	filterString, filterParams := filters.BuildFilter()
 
@@ -147,12 +147,12 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 		}
 
 		content.Results.Artworks = append(content.Results.Artworks, dto.Image{
-			Url:       url.GenerateArtworkUrl(url.ArtworkUrlDTO{
-                ArtistName:   artist.Name,
-                ArtistId:     artist.Id,
-                ArtworkTitle: v.GetString("title"),
-                ArtworkId:    v.GetId(),
-            }),
+			Url: url.GenerateArtworkUrl(url.ArtworkUrlDTO{
+				ArtistName:   artist.Name,
+				ArtistId:     artist.Id,
+				ArtworkTitle: v.GetString("title"),
+				ArtworkId:    v.GetId(),
+			}),
 			Image:     url.GenerateFileUrl("artworks", v.GetString("id"), v.GetString("image"), ""),
 			Thumb:     url.GenerateThumbUrl("artworks", v.GetString("id"), v.GetString("image"), "320x240", ""),
 			Comment:   v.GetString("comment"),
@@ -160,10 +160,10 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 			Technique: v.GetString("technique"),
 			Id:        v.GetId(),
 			Artist: dto.Artist{
-				Id:         artist.Id,
-				Name:       artist.Name,
-				Url:        url.GenerateArtistUrl(url.ArtistUrlDTO{
-					ArtistId: artist.Id,
+				Id:   artist.Id,
+				Name: artist.Name,
+				Url: url.GenerateArtistUrl(url.ArtistUrlDTO{
+					ArtistId:   artist.Id,
 					ArtistName: artist.Name,
 				}),
 				Profession: artist.Profession,
@@ -186,7 +186,7 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 	err = pages.ArtworkSearchPage(content).Render(ctx, c.Response().Writer)
 
 	if err != nil {
-		app.Logger().Error("Error rendering artwork search page", err)
+		app.Logger().Error("Error rendering artwork search page", "error", err.Error())
 		return utils.ServerFaultError(c)
 	}
 
@@ -197,11 +197,11 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 func RegisterArtworksHandlers(app *pocketbase.PocketBase) {
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 		e.Router.GET("/artworks", func(c echo.Context) error {
-			return searchPage(app, e, c)
+			return searchPage(app, c)
 		})
 
 		e.Router.GET("/artworks/results", func(c echo.Context) error {
-			return search(app, e, c)
+			return search(app, c)
 		})
 		return nil
 	})

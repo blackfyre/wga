@@ -112,7 +112,7 @@ func renderSchoolNames(app *pocketbase.PocketBase, schoolIds []string) string {
 		r, err := app.Dao().FindRecordById("schools", s)
 
 		if err != nil {
-			app.Logger().Error("school not found", err)
+			app.Logger().Error("school not found", "error", err.Error())
 			continue
 		}
 
@@ -134,7 +134,7 @@ func renderArtistContent(app *pocketbase.PocketBase, c echo.Context, artist *mod
 	works, err := findArtworksByAuthorId(app, id)
 
 	if err != nil {
-		app.Logger().Error("Error finding artworks: ", err)
+		app.Logger().Error("Error finding artworks: ", "error", err.Error())
 
 		return dto.Artist{}, utils.NotFoundError(c)
 	}
@@ -170,7 +170,7 @@ func renderArtistContent(app *pocketbase.PocketBase, c echo.Context, artist *mod
 	marshalled, err := json.Marshal(JsonLd)
 
 	if err != nil {
-		app.Logger().Error("Error marshalling artist jsonld for"+id, err)
+		app.Logger().Error("Error marshalling artist jsonld for"+id, "error", err.Error())
 	}
 
 	content.Jsonld = fmt.Sprintf(`<script type="application/ld+json">%s</script>`, marshalled)
@@ -182,7 +182,7 @@ func renderArtistContent(app *pocketbase.PocketBase, c echo.Context, artist *mod
 		marshalled, err := json.Marshal(artJsonLd)
 
 		if err != nil {
-			app.Logger().Error("Error marshalling artwork jsonld for"+w.GetId(), err)
+			app.Logger().Error("Error marshalling artwork jsonld for"+w.GetId(), "error", err.Error())
 		}
 
 		content.Works = append(content.Works, dto.Image{
@@ -242,7 +242,7 @@ func processArtist(c echo.Context, app *pocketbase.PocketBase) error {
 	err = pages.ArtistPage(content).Render(ctx, c.Response().Writer)
 
 	if err != nil {
-		app.Logger().Error("Error rendering artist page", err)
+		app.Logger().Error("Error rendering artist page", "error", err.Error())
 
 		return utils.ServerFaultError(c)
 	}
@@ -304,10 +304,10 @@ func processArtwork(c echo.Context, app *pocketbase.PocketBase) error {
 		Title:     aw.GetString("title"),
 		Comment:   aw.GetString("comment"),
 		Technique: aw.GetString("technique"),
-		Url:       url.GenerateArtworkUrl(url.ArtworkUrlDTO{
-			ArtistName: artist.GetString("name"),
-			ArtistId: artist.Id,
-			ArtworkId: aw.GetId(),
+		Url: url.GenerateArtworkUrl(url.ArtworkUrlDTO{
+			ArtistName:   artist.GetString("name"),
+			ArtistId:     artist.Id,
+			ArtworkId:    aw.GetId(),
 			ArtworkTitle: aw.GetString("title"),
 		}),
 		Image: dto.Image{
@@ -323,8 +323,8 @@ func processArtwork(c echo.Context, app *pocketbase.PocketBase) error {
 			Name:       artist.GetString("name"),
 			Bio:        artist.GetString("bio"),
 			Profession: artist.GetString("profession"),
-			Url:        url.GenerateArtistUrl(url.ArtistUrlDTO{
-				ArtistId: artist.GetId(),
+			Url: url.GenerateArtistUrl(url.ArtistUrlDTO{
+				ArtistId:   artist.GetId(),
 				ArtistName: artist.GetString("name"),
 			}),
 		},
@@ -340,7 +340,7 @@ func processArtwork(c echo.Context, app *pocketbase.PocketBase) error {
 		r, err := app.Dao().FindRecordById("schools", s)
 
 		if err != nil {
-			app.Logger().Error("school not found", err)
+			app.Logger().Error("school not found", "error", err.Error())
 			continue
 		}
 
@@ -365,7 +365,7 @@ func processArtwork(c echo.Context, app *pocketbase.PocketBase) error {
 	marshalled, err := json.Marshal(jsonLd)
 
 	if err != nil {
-		app.Logger().Error("Error marshalling artwork jsonld for"+aw.GetId(), err)
+		app.Logger().Error("Error marshalling artwork jsonld for"+aw.GetId(), "error", err.Error())
 	}
 
 	content.Jsonld = fmt.Sprintf(`<script type="application/ld+json">%s</script>`, marshalled)
@@ -379,7 +379,7 @@ func processArtwork(c echo.Context, app *pocketbase.PocketBase) error {
 	err = pages.ArtworkPage(content).Render(ctx, c.Response().Writer)
 
 	if err != nil {
-		app.Logger().Error("Error rendering artwork page", err)
+		app.Logger().Error("Error rendering artwork page", "error", err.Error())
 		return c.String(http.StatusInternalServerError, "failed to render response template")
 	}
 

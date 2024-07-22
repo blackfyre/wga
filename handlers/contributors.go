@@ -3,8 +3,8 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-    "io"
-    "net/http"
+	"io"
+	"net/http"
 	"os"
 	"time"
 
@@ -84,7 +84,7 @@ func readStoredContributors() ([]pages.GithubContributor, error) {
 	defer func(f *os.File) {
         err := f.Close()
         if err != nil {
-            
+
         }
     }(f)
 
@@ -132,7 +132,7 @@ func registerContributors(app *pocketbase.PocketBase) {
 			err = pages.ContributorsPage(content).Render(ctx, c.Response().Writer)
 
 			if err != nil {
-				app.Logger().Error("Error rendering artwork page", err)
+				app.Logger().Error("Error rendering artwork page", "error", err.Error())
 				return c.String(http.StatusInternalServerError, "failed to render response template")
 			}
 

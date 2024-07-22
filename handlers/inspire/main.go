@@ -20,7 +20,7 @@ func inspirationHandler(app *pocketbase.PocketBase, c echo.Context) error {
 	items, err := models.GetRandomArtworks(app.Dao(), 20)
 
 	if err != nil {
-		app.Logger().Error("Error getting random artworks: %v", err)
+		app.Logger().Error("Error getting random artworks", "error", err.Error())
 		return utils.ServerFaultError(c)
 	}
 
@@ -38,11 +38,11 @@ func inspirationHandler(app *pocketbase.PocketBase, c echo.Context) error {
 		}
 
 		content = append(content, dto.Image{
-			Url:       url.GenerateArtworkUrl(url.ArtworkUrlDTO{
-				ArtistId: artist.Id,
-				ArtistName: artist.Name,
+			Url: url.GenerateArtworkUrl(url.ArtworkUrlDTO{
+				ArtistId:     artist.Id,
+				ArtistName:   artist.Name,
 				ArtworkTitle: item.Author,
-				ArtworkId: item.Id,
+				ArtworkId:    item.Id,
 			}),
 			Image:     url.GenerateFileUrl("artworks", artworkId, item.Image, ""),
 			Thumb:     url.GenerateThumbUrl("artworks", artworkId, item.Image, "320x240", ""),
@@ -51,10 +51,10 @@ func inspirationHandler(app *pocketbase.PocketBase, c echo.Context) error {
 			Technique: item.Technique,
 			Id:        artworkId,
 			Artist: dto.Artist{
-				Id:         artist.Id,
-				Name:       artist.Name,
-				Url:        url.GenerateArtistUrl(url.ArtistUrlDTO{
-					ArtistId: artist.Id,
+				Id:   artist.Id,
+				Name: artist.Name,
+				Url: url.GenerateArtistUrl(url.ArtistUrlDTO{
+					ArtistId:   artist.Id,
 					ArtistName: artist.Name,
 				}),
 				Profession: artist.Profession,

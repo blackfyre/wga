@@ -32,7 +32,7 @@ func registerFeedbackHandlers(app *pocketbase.PocketBase) {
 			err := components.FeedbackForm().Render(context.Background(), c.Response().Writer)
 
 			if err != nil {
-				app.Logger().Error("Failed to render the feedback form", err)
+				app.Logger().Error("Failed to render the feedback form", "error", err.Error())
 				return utils.ServerFaultError(c)
 			}
 
@@ -55,7 +55,7 @@ func registerFeedbackHandlers(app *pocketbase.PocketBase) {
 			}
 
 			if err := c.Bind(&postData); err != nil {
-				app.Logger().Error("Failed to parse form data", err)
+				app.Logger().Error("Failed to parse form data", "error", err.Error())
 				utils.SendToastMessage("Failed to parse form", "error", true, c, "")
 				return utils.ServerFaultError(c)
 			}
@@ -69,7 +69,7 @@ func registerFeedbackHandlers(app *pocketbase.PocketBase) {
 
 			collection, err := app.Dao().FindCollectionByNameOrId("feedbacks")
 			if err != nil {
-				app.Logger().Error("Database table not found", err)
+				app.Logger().Error("Database table not found", "error", err.Error())
 				utils.SendToastMessage("Database table not found", "error", true, c, "")
 				return utils.ServerFaultError(c)
 			}
@@ -85,18 +85,18 @@ func registerFeedbackHandlers(app *pocketbase.PocketBase) {
 				"refer_to": postData.ReferTo,
 			})
 			if err != nil {
-				app.Logger().Error("Failed to process the feedback", err)
+				app.Logger().Error("Failed to process the feedback", "error", err.Error())
 				return err
 			}
 
 			if err := form.Submit(); err != nil {
 
-				app.Logger().Error("Failed to store the feedback", err)
+				app.Logger().Error("Failed to store the feedback", "error", err.Error())
 
 				err := components.FeedbackForm().Render(context.Background(), c.Response().Writer)
 
 				if err != nil {
-					app.Logger().Error("Failed to render the feedback form after form submission error", err)
+					app.Logger().Error("Failed to render the feedback form after form submission error", "error", err.Error())
 					return utils.ServerFaultError(c)
 				}
 

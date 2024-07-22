@@ -106,7 +106,7 @@ func StoreEntryHandler(app *pocketbase.PocketBase, c echo.Context) error {
 
 	collection, err := app.Dao().FindCollectionByNameOrId("Guestbook")
 	if err != nil {
-		app.Logger().Error("Database table not found", err)
+		app.Logger().Error("Database table not found", "error", err.Error())
 		utils.SendToastMessage("Something went wrong!", "error", true, c, "")
 		return utils.ServerFaultError(c)
 	}
@@ -124,14 +124,14 @@ func StoreEntryHandler(app *pocketbase.PocketBase, c echo.Context) error {
 
 	if err := form.Submit(); err != nil {
 
-		err := pages.GuestbookEntryForm().Render(context.Background(), c.Response().Writer)
+		e := pages.GuestbookEntryForm().Render(context.Background(), c.Response().Writer)
 
-		if err != nil {
-			app.Logger().Error("Failed to render the guestbook entry form after form submission error", err)
+		if e != nil {
+			app.Logger().Error("Failed to render the guestbook entry form after form submission error", "error", e.Error())
 			return utils.ServerFaultError(c)
 		}
 
-		app.Logger().Error("Failed to store the entry", err)
+		app.Logger().Error("Failed to store the entry", "error", err.Error(), "data", postData)
 
 		utils.SendToastMessage("Failed to store the entry", "error", false, c, "")
 

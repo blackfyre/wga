@@ -44,7 +44,7 @@ func registerStatic(app *pocketbase.PocketBase) {
 			page, err := models.FindStaticPageBySlug(app.Dao(), slug)
 
 			if err != nil {
-				app.Logger().Error("Error retrieving static page", "page", slug, err)
+				app.Logger().Error("Error retrieving static page", "page", slug, "error", err)
 
 				return utils.NotFoundError(c)
 			}
