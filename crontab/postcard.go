@@ -26,7 +26,7 @@ func sendPostcard(r *models.Record, app *pocketbase.PocketBase, mailClient maile
 
 	recipientsRaw := r.GetString("recipients")
 	recipientsSlice := strings.Split(recipientsRaw, ",")
-	recipients := []mail.Address{}
+    var recipients []mail.Address
 
 	for _, recipient := range recipientsSlice {
 		recipients = append(recipients, mail.Address{Address: recipient})
