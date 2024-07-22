@@ -3,7 +3,8 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"net/http"
+    "io"
+    "net/http"
 	"os"
 	"time"
 
@@ -35,7 +36,12 @@ func getContributorsFromGithub() ([]pages.GithubContributor, error) {
 		return nil, err
 	}
 
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+        err := Body.Close()
+        if err != nil {
+
+        }
+    }(resp.Body)
 
 	var contributors []pages.GithubContributor
 
@@ -52,7 +58,12 @@ func getContributorsFromGithub() ([]pages.GithubContributor, error) {
 		return nil, err
 	}
 
-	defer f.Close()
+	defer func(f *os.File) {
+        err := f.Close()
+        if err != nil {
+
+        }
+    }(f)
 
 	err = json.NewEncoder(f).Encode(contributors)
 
@@ -70,7 +81,12 @@ func readStoredContributors() ([]pages.GithubContributor, error) {
 		return nil, err
 	}
 
-	defer f.Close()
+	defer func(f *os.File) {
+        err := f.Close()
+        if err != nil {
+            
+        }
+    }(f)
 
 	var contributors []pages.GithubContributor
 

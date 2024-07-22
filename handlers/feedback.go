@@ -24,7 +24,7 @@ import (
 //
 // Returns:
 // - An error if there was a problem registering the handlers, or nil otherwise.
-func registerFeedbackHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) {
+func registerFeedbackHandlers(app *pocketbase.PocketBase) {
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 		e.Router.GET("feedback", func(c echo.Context) error {
