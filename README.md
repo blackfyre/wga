@@ -113,6 +113,15 @@ The supplied `docker-compose.yml` file will bring up a configured `minio` and `m
 
 All frontend assets (templ, postcss) can be built with `npm run dev` (this command will start a dev server as well) and the JS dependencies with `bun run build:js`.
 
+#### Seeding
+
+The database is populated on first start, and if you want to have images available, make sure that your `WGA_ENV=development` is set and then you can execute:
+
+```bash
+./wga seed:images
+```
+This will go through the contents of the database and will use placeholder images to "generate" the necessary images to the designated S3 compatible file hosting solution designated in the `.env` file.
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
