@@ -1,12 +1,9 @@
 package handlers
 
 import (
-	"encoding/json"
-	"fmt"
-	"log"
-
-	"github.com/labstack/echo/v5"
-	"github.com/pocketbase/pocketbase/models"
+    "fmt"
+    "github.com/labstack/echo/v5"
+    "github.com/pocketbase/pocketbase/models"
 )
 
 func normalizedBirthDeathActivity(record *models.Record) string {

@@ -4,7 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+    "github.com/blackfyre/wga/utils/url"
+    "log"
 	"strconv"
 	"strings"
 
@@ -129,7 +130,7 @@ func processArtists(app *pocketbase.PocketBase, c echo.Context) error {
 
 		content.Artists = append(content.Artists, dto.Artist{
 			Name:       m.GetString("name"),
-			Url:        utils.ArtistUrl(m),
+			Url:        url.GenerateArtistUrlFromRecrod(m),
 			Profession: m.GetString("profession"),
 			BornDied:   normalizedBirthDeathActivity(m),
 			Schools:    schools,

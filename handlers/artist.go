@@ -304,7 +304,12 @@ func processArtwork(c echo.Context, app *pocketbase.PocketBase) error {
 		Title:     aw.GetString("title"),
 		Comment:   aw.GetString("comment"),
 		Technique: aw.GetString("technique"),
-		Url:       "/artists/" + expectedArtistSlug + "/" + expectedArtworkSlug,
+		Url:       url.GenerateArtworkUrl(url.ArtworkUrlDTO{
+			ArtistName: artist.GetString("name"),
+			ArtistId: artist.Id,
+			ArtworkId: aw.GetId(),
+			ArtworkTitle: aw.GetString("title"),
+		}),
 		Image: dto.Image{
 			Id:        aw.GetString("id"),
 			Title:     aw.GetString("title"),
@@ -318,7 +323,10 @@ func processArtwork(c echo.Context, app *pocketbase.PocketBase) error {
 			Name:       artist.GetString("name"),
 			Bio:        artist.GetString("bio"),
 			Profession: artist.GetString("profession"),
-			Url:        "/artists/" + artistSlug,
+			Url:        url.GenerateArtistUrl(url.ArtistUrlDTO{
+				ArtistId: artist.GetId(),
+				ArtistName: artist.GetString("name"),
+			}),
 		},
 	}
 

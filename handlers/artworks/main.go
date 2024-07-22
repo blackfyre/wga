@@ -147,7 +147,12 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 		}
 
 		content.Results.Artworks = append(content.Results.Artworks, dto.Image{
-			Url:       "/artists/" + artist.Slug + "-" + artist.Id + "/artworks/" + utils.Slugify(v.GetString("title")) + "-" + v.Id,
+			Url:       url.GenerateArtworkUrl(url.ArtworkUrlDTO{
+                ArtistName:   artist.Name,
+                ArtistId:     artist.Id,
+                ArtworkTitle: v.GetString("title"),
+                ArtworkId:    v.GetId(),
+            }),
 			Image:     url.GenerateFileUrl("artworks", v.GetString("id"), v.GetString("image"), ""),
 			Thumb:     url.GenerateThumbUrl("artworks", v.GetString("id"), v.GetString("image"), "320x240", ""),
 			Comment:   v.GetString("comment"),
@@ -157,11 +162,13 @@ func search(app *pocketbase.PocketBase, e *core.ServeEvent, c echo.Context) erro
 			Artist: dto.Artist{
 				Id:         artist.Id,
 				Name:       artist.Name,
-				Url:        "/artists/" + artist.Slug + "-" + artist.Id,
+				Url:        url.GenerateArtistUrl(url.ArtistUrlDTO{
+					ArtistId: artist.Id,
+					ArtistName: artist.Name,
+				}),
 				Profession: artist.Profession,
 			},
 		})
-
 	}
 
 	pUrl := "/artworks?" + filters.BuildFilterString()

@@ -2,7 +2,8 @@ package sitemap
 
 import (
 	"fmt"
-	"log"
+    "github.com/blackfyre/wga/utils/url"
+    "log"
 	"os"
 	"time"
 
@@ -78,7 +79,7 @@ func generateArtistMap(app *pocketbase.PocketBase, index *smg.SitemapIndex) {
 		updatedAtTime := m.GetUpdated().Time()
 
 		err := sitemap.Add(&smg.SitemapLoc{
-			Loc:        utils.ArtistUrl(m),
+			Loc:        url.GenerateArtistUrlFromRecrod(m),
 			LastMod:    &updatedAtTime,
 			ChangeFreq: smg.Monthly,
 			Priority:   0.8,
