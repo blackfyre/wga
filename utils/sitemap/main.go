@@ -78,7 +78,7 @@ func generateArtistMap(app *pocketbase.PocketBase, index *smg.SitemapIndex) {
 		updatedAtTime := m.GetUpdated().Time()
 
 		err := sitemap.Add(&smg.SitemapLoc{
-			Loc:        url.GenerateArtistUrlFromRecrod(m),
+			Loc:        url.GenerateArtistUrlFromRecord(m),
 			LastMod:    &updatedAtTime,
 			ChangeFreq: smg.Monthly,
 			Priority:   0.8,

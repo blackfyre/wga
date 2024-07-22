@@ -130,7 +130,7 @@ func processArtists(app *pocketbase.PocketBase, c echo.Context) error {
 
 		content.Artists = append(content.Artists, dto.Artist{
 			Name:       m.GetString("name"),
-			Url:        url.GenerateArtistUrlFromRecrod(m),
+			Url:        url.GenerateArtistUrlFromRecord(m),
 			Profession: m.GetString("profession"),
 			BornDied:   normalizedBirthDeathActivity(m),
 			Schools:    schools,

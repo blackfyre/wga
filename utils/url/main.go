@@ -42,7 +42,7 @@ func GenerateArtworkUrl (d ArtworkUrlDTO) string {
 	return fmt.Sprintf("%v/artists/%v-%v/artworks/%v-%v", d.BaseUrl, utils.Slugify(d.ArtistName), d.ArtistId, utils.Slugify(d.ArtistName), d.ArtworkId)
 }
 
-func GenerateArtistUrlFromRecrod(r *models.Record) string {
+func GenerateArtistUrlFromRecord(r *models.Record) string {
 	return  GenerateArtistUrl(ArtistUrlDTO{
 		ArtistName: r.GetString("name"),
 		ArtistId: r.Id,
