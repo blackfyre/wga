@@ -7,7 +7,6 @@ import (
 	"github.com/blackfyre/wga/assets/templ/components"
 	"github.com/blackfyre/wga/utils"
 	"github.com/labstack/echo/v5"
-	"github.com/microcosm-cc/bluemonday"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/forms"
@@ -28,10 +27,7 @@ func registerFeedbackHandlers(app *pocketbase.PocketBase) {
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 		e.Router.GET("feedback", func(c echo.Context) error {
-			if !utils.IsHtmxRequest(c) {
-				app.Logger().Error("Unexpected request to feedback form")
-				return utils.ServerFaultError(c)
-			}
+			e.Router.Use(utils.IsHtmxRequestMiddleware)
 
 			err := components.FeedbackForm().Render(context.Background(), c.Response().Writer)
 
@@ -45,9 +41,7 @@ func registerFeedbackHandlers(app *pocketbase.PocketBase) {
 
 		e.Router.POST("feedback", func(c echo.Context) error {
 
-			if !utils.IsHtmxRequest(c) {
-				return utils.ServerFaultError(c)
-			}
+			e.Router.Use(utils.IsHtmxRequestMiddleware)
 
 			postData := struct {
 				Email         string `json:"email" form:"fp_email" query:"email"`

@@ -16,16 +16,6 @@ func normalizedBirthDeathActivity(record *models.Record) string {
 	return fmt.Sprintf("%d-%d", Start, End)
 }
 
-func setHxTrigger(c echo.Context, data map[string]any) {
-	hd, err := json.Marshal(data)
-
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	c.Response().Header().Set("HX-Trigger", string(hd))
-}
-
 func generateArtistSlug(artist *models.Record) string {
 	return artist.GetString("slug") + "-" + artist.GetString("id")
 }

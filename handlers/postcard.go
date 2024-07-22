@@ -27,9 +27,7 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 
 		e.Router.GET("postcard/send", func(c echo.Context) error {
 
-			if !utils.IsHtmxRequest(c) {
-				return apis.NewBadRequestError("Unexpected request", nil)
-			}
+			e.Router.Use(utils.IsHtmxRequestMiddleware)
 
 			//get awid query param
 			awid := c.QueryParam("awid")

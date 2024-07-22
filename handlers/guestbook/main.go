@@ -70,10 +70,6 @@ func EntriesHandler(app *pocketbase.PocketBase, c echo.Context) error {
 
 func StoreEntryViewHandler(app *pocketbase.PocketBase, c echo.Context) error {
 
-	if !utils.IsHtmxRequest(c) {
-		return utils.ServerFaultError(c)
-	}
-
 	err := pages.GuestbookEntryForm().Render(context.Background(), c.Response().Writer)
 
 	if err != nil {
@@ -84,10 +80,6 @@ func StoreEntryViewHandler(app *pocketbase.PocketBase, c echo.Context) error {
 }
 
 func StoreEntryHandler(app *pocketbase.PocketBase, c echo.Context) error {
-
-	if !utils.IsHtmxRequest(c) {
-		return utils.ServerFaultError(c)
-	}
 
 	data := apis.RequestInfo(c).Data
 
