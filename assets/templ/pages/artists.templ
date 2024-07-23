@@ -4,7 +4,7 @@ import (
 	"github.com/blackfyre/wga/assets/templ/dto"
 	"github.com/blackfyre/wga/assets/templ/layouts"
 	"github.com/blackfyre/wga/assets/templ/utils"
-	"strings"
+	"regexp"
 )
 
 templ ArtistsPageFull(c dto.ArtistsView) {
@@ -14,7 +14,14 @@ templ ArtistsPageFull(c dto.ArtistsView) {
 }
 
 func HighlightArtistName(name string, query string) string {
-	return strings.ReplaceAll(name, query, "<mark>"+query+"</mark>")
+	if query == "" {
+		return name
+	}
+	// case insensitive regex seearch & replace
+	re := regexp.MustCompile(`(?mis)` + regexp.QuoteMeta(query))
+	return re.ReplaceAllStringFunc(name, func(s string) string {
+		return "<mark>" + s + "</mark>"
+	})
 }
 
 templ ArtistsPageBlock(c dto.ArtistsView) {
@@ -92,7 +99,13 @@ templ artistsTable(list []dto.Artist, query string) {
 			<tbody>
 				for _, a := range list {
 					<tr>
-						<td><a href={ templ.SafeURL(a.Url) } hx-get={ a.Url }><b>{ HighlightArtistName(a.Name, query) }</b></a></td>
+						<td>
+							<a href={ templ.SafeURL(a.Url) } hx-get={ a.Url }>
+								<b>
+									@templ.Raw(HighlightArtistName(a.Name, query))
+								</b>
+							</a>
+						</td>
 						<td>{ a.BornDied }</td>
 						<td>{ a.Schools }</td>
 						<td>{ a.Profession }</td>
