@@ -17,7 +17,6 @@ func HighlightArtistName(name string, query string) string {
 	if query == "" {
 		return name
 	}
-	// case insensitive regex seearch & replace
 	re := regexp.MustCompile(`(?mis)` + regexp.QuoteMeta(query))
 	return re.ReplaceAllStringFunc(name, func(s string) string {
 		return "<mark>" + s + "</mark>"
