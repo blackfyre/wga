@@ -4,12 +4,17 @@ import (
 	"github.com/blackfyre/wga/assets/templ/dto"
 	"github.com/blackfyre/wga/assets/templ/layouts"
 	"github.com/blackfyre/wga/assets/templ/utils"
+	"strings"
 )
 
 templ ArtistsPageFull(c dto.ArtistsView) {
 	@layouts.LayoutMain() {
 		@ArtistsPageBlock(c)
 	}
+}
+
+func HighlightArtistName(name string, query string) string {
+	return strings.ReplaceAll(name, query, "<mark>"+query+"</mark>")
 }
 
 templ ArtistsPageBlock(c dto.ArtistsView) {
@@ -65,7 +70,7 @@ templ ArtistsPageBlock(c dto.ArtistsView) {
 	</section>
 }
 
-templ artistsTable(list []dto.Artist) {
+templ artistsTable(list []dto.Artist, query string) {
 	<div class="overflow-x-auto">
 		<table class="table">
 			<thead>
@@ -87,7 +92,7 @@ templ artistsTable(list []dto.Artist) {
 			<tbody>
 				for _, a := range list {
 					<tr>
-						<td><a href={ templ.SafeURL(a.Url) } hx-get={ a.Url }><b>{ a.Name }</b></a></td>
+						<td><a href={ templ.SafeURL(a.Url) } hx-get={ a.Url }><b>{ HighlightArtistName(a.Name, query) }</b></a></td>
 						<td>{ a.BornDied }</td>
 						<td>{ a.Schools }</td>
 						<td>{ a.Profession }</td>
@@ -117,7 +122,7 @@ templ artistsTable(list []dto.Artist) {
 templ ArtistsSearchResults(c dto.ArtistsView) {
 	<div id="search-results">
 		<div class="table-container">
-			@artistsTable(c.Artists)
+			@artistsTable(c.Artists, c.QueryStr)
 		</div>
 		<nav class="pagination" role="navigation" aria-label="pagination">
 			@templ.Raw(c.Pagination)
