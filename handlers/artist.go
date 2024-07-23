@@ -27,70 +27,48 @@ const (
 	NotApplicable string = "n/a"
 )
 
+type BioExcerptDTO struct {
+	YearOfBirth       int
+	ExactYearOfBirth  string
+	PlaceOfBirth      string
+	KnownPlaceOfBirth string
+	YearOfDeath       int
+	ExactYearOfDeath  string
+	PlaceOfDeath      string
+	KnownPlaceOfDeath string
+}
+
+// generateBioSection generates a bio section based on the provided parameters.
+// It takes a prefix string, year integer, exactYear string, place string, and knownPlace string as input.
+// It returns a string representing the generated bio section.
+func generateBioSection(prefix string, year int, exactYear string, place string, knownPlace string) string {
+	var c []string
+
+	c = append(c, prefix)
+	y := strconv.Itoa(year)
+
+	if exactYear == No {
+		y = "~" + y
+	}
+
+	c = append(c, y)
+
+	if knownPlace == No {
+		place += "?"
+	}
+
+	c = append(c, place)
+
+	return strings.Join(c, " ")
+}
+
 // normalizedBioExcerpt returns a normalized biography excerpt for the given record.
 // It includes the person's year and place of birth and death (if available).
-func normalizedBioExcerpt(r *models.Record) string {
+func normalizedBioExcerpt(d BioExcerptDTO) string {
 	var s []string
 
-	yob := r.GetInt("year_of_birth")
-	eyob := r.GetString("exact_year_of_birth")
-	pob := r.GetString("place_of_birth")
-	kpob := r.GetString("known_place_of_birth")
-
-	yod := r.GetInt("year_of_death")
-	eyod := r.GetString("exact_year_of_death")
-	pod := r.GetString("place_of_death")
-	kpod := r.GetString("known_place_of_death")
-
-	if yob > 0 {
-
-		var c []string
-
-		prefix := "b."
-
-		c = append(c, prefix)
-		y := strconv.Itoa(yob)
-
-		if eyob == No {
-			y = "~" + y
-		}
-
-		c = append(c, y)
-
-		if kpob == No {
-			pob = pob + "?"
-		}
-
-		c = append(c, pob)
-
-		s = append(s, strings.Join(c, " "))
-
-	}
-
-	if yod > 0 {
-
-		var c []string
-
-		prefix := "d."
-
-		c = append(c, prefix)
-		y := strconv.Itoa(yod)
-
-		if eyod == No {
-			y = "~" + y
-		}
-
-		c = append(c, y)
-
-		if kpod == No {
-			pod = pod + "?"
-		}
-
-		c = append(c, pod)
-
-		s = append(s, strings.Join(c, " "))
-
-	}
+	s = append(s, generateBioSection("b.", d.YearOfBirth, d.ExactYearOfBirth, d.PlaceOfBirth, d.KnownPlaceOfBirth))
+	s = append(s, generateBioSection("d.", d.YearOfDeath, d.ExactYearOfDeath, d.PlaceOfDeath, d.KnownPlaceOfDeath))
 
 	return strings.Join(s, ", ")
 }
@@ -142,9 +120,18 @@ func renderArtistContent(app *pocketbase.PocketBase, c echo.Context, artist *mod
 	schools := renderSchoolNames(app, artist.GetStringSlice("school"))
 
 	content := dto.Artist{
-		Name:       artist.GetString("name"),
-		Bio:        artist.GetString("bio"),
-		BioExcerpt: normalizedBioExcerpt(artist),
+		Name: artist.GetString("name"),
+		Bio:  artist.GetString("bio"),
+		BioExcerpt: normalizedBioExcerpt(BioExcerptDTO{
+			YearOfBirth:       artist.GetInt("year_of_birth"),
+			ExactYearOfBirth:  artist.GetString("exact_year_of_birth"),
+			PlaceOfBirth:      artist.GetString("place_of_birth"),
+			KnownPlaceOfBirth: artist.GetString("known_place_of_birth"),
+			YearOfDeath:       artist.GetInt("year_of_death"),
+			ExactYearOfDeath:  artist.GetString("exact_year_of_death"),
+			PlaceOfDeath:      artist.GetString("place_of_death"),
+			KnownPlaceOfDeath: artist.GetString("known_place_of_death"),
+		}),
 		Schools:    schools,
 		Profession: artist.GetString("profession"),
 		Works:      dto.ImageGrid{},
