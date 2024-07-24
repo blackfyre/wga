@@ -21,5 +21,8 @@ func generateArtistSlug(artist *models.Record) string {
 }
 
 func generateCurrentPageUrl(c echo.Context) string {
-	return c.Scheme() + "://" + c.Request().Host + c.Request().URL.String()
+    if c == nil || c.Request() == nil {
+        return ""
+    }
+    return c.Scheme() + "://" + c.Request().Host + c.Request().URL.String()
 }
