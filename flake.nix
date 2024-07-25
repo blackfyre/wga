@@ -65,6 +65,9 @@
             flyctl
             nixpkgs-fmt
             zstd
+            nil
+            mailpit
+            sqlite
           ];
 
           # Environment variables
@@ -74,7 +77,8 @@
 
           # A hook run every time you enter the environment
           shellHook = ''
-            testhook
+            bun install
+            go mod tidy
           '';
         };
       });
