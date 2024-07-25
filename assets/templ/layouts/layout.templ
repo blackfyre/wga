@@ -1,8 +1,8 @@
 package layouts
 
 import (
-	"github.com/blackfyre/wga/assets/templ/utils"
 	"github.com/blackfyre/wga/assets/templ/components"
+	"github.com/blackfyre/wga/assets/templ/utils"
 )
 
 templ layout_base() {
@@ -46,7 +46,7 @@ templ layout_base() {
 			<a
 				href="#"
 				hx-get="/feedback"
-				hx-on="click: wga.openDialog()"
+				x-on:htmx:after-request="wga.openDialog()"
 				hx-target="#d"
 				hx-select="section.container"
 				class="btn btn-primary is-feedback no-animation"
