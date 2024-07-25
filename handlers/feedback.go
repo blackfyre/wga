@@ -26,20 +26,12 @@ import (
 func registerFeedbackHandlers(app *pocketbase.PocketBase) {
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
-		e.Router.GET("feedback", func(c echo.Context) error {
+		e.Router.GET("/feedback", func(c echo.Context) error {
 			e.Router.Use(utils.IsHtmxRequestMiddleware)
-
-			err := components.FeedbackForm().Render(context.Background(), c.Response().Writer)
-
-			if err != nil {
-				app.Logger().Error("Failed to render the feedback form", "error", err.Error())
-				return utils.ServerFaultError(c)
-			}
-
-			return err
+			return presentFeedbackForm(c, app)
 		})
 
-		e.Router.POST("feedback", func(c echo.Context) error {
+		e.Router.POST("/feedback", func(c echo.Context) error {
 
 			e.Router.Use(utils.IsHtmxRequestMiddleware)
 
@@ -112,4 +104,15 @@ func registerFeedbackHandlers(app *pocketbase.PocketBase) {
 
 		return nil
 	})
+}
+
+func presentFeedbackForm(c echo.Context, app *pocketbase.PocketBase) error {
+	err := components.FeedbackForm().Render(context.Background(), c.Response().Writer)
+
+	if err != nil {
+		app.Logger().Error("Failed to render the feedback form", "error", err.Error())
+		return utils.ServerFaultError(c)
+	}
+
+	return err
 }
