@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"io/fs"
-	"net/http"
 	"os"
 
 	"github.com/blackfyre/wga/assets"
@@ -18,17 +17,14 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
-// getFilePublicSystem returns an http.FileSystem that represents the public files system.
-// It retrieves the public files from the assets.PublicFiles and creates a sub file system.
-// It then returns the http.FS representation of the file system.
-func getFilePublicSystem() http.FileSystem {
+func getFilePublicSystem() fs.FS {
 	fsys, err := fs.Sub(assets.PublicFiles, "public")
 
 	if err != nil {
 		panic(err)
 	}
 
-	return http.FS(fsys)
+	return fsys
 }
 
 // registerStatic registers the static routes for the application.
@@ -39,8 +35,7 @@ func getFilePublicSystem() http.FileSystem {
 func registerStatic(app *pocketbase.PocketBase) {
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 		// Assets
-		assetHandler := http.FileServer(getFilePublicSystem())
-		e.Router.GET("/assets/*", echo.WrapHandler(http.StripPrefix("/assets/", assetHandler)))
+		e.Router.GET("/assets/*", apis.StaticDirectoryHandler(getFilePublicSystem(), false))
 
 		// Sitemap
 		e.Router.GET("/sitemap/*", apis.StaticDirectoryHandler(os.DirFS("./wga_sitemap"), false))
