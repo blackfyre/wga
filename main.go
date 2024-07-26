@@ -8,14 +8,12 @@ import (
 	"github.com/blackfyre/wga/handlers"
 	"github.com/blackfyre/wga/hooks"
 	_ "github.com/blackfyre/wga/migrations"
-	// "github.com/labstack/echo/v5/middleware"
 
 	"github.com/blackfyre/wga/utils"
 	"github.com/blackfyre/wga/utils/seed"
 	"github.com/blackfyre/wga/utils/sitemap"
 	"github.com/joho/godotenv"
 	"github.com/pocketbase/pocketbase"
-	// "github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/plugins/migratecmd"
 	"github.com/spf13/cobra"
 )
