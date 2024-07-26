@@ -4,9 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"strconv"
-	"strings"
 
 	"github.com/blackfyre/wga/utils/url"
 
@@ -111,23 +109,7 @@ func processArtists(app *pocketbase.PocketBase, c echo.Context) error {
 
 		// TODO: handle a.k.a. names
 
-		school := m.GetStringSlice("school")
-
-		var schoolCollector []string
-
-		for _, s := range school {
-			r, err := app.Dao().FindRecordById("schools", s)
-
-			if err != nil {
-				log.Print("school not found")
-				continue
-			}
-
-			schoolCollector = append(schoolCollector, r.GetString("name"))
-
-		}
-
-		schools := strings.Join(schoolCollector, ", ")
+		schools := renderSchoolNames(app, m.GetStringSlice("school"))
 
 		content.Artists = append(content.Artists, dto.Artist{
 			Name:       m.GetString("name"),
