@@ -91,10 +91,10 @@ To build the application you will need to have the following installed:
 
 #### Building the application
 
-Building the application relies on [Goreleaser](https://goreleaser.com/) to build the application. To build the application simply run:
+To build the application simply run:
 
 ```bash
-goreleaser release --snapshot --clean
+templ generate && go build -o wga
 ```
 
 This will build the application and place the binary in the `./dist` folder.
@@ -111,7 +111,7 @@ The supplied `docker-compose.yml` file will bring up a configured `minio` and `m
 
 #### Frontend
 
-All frontend assets (templ, postcss) can be built with `npm run dev` (this command will start a dev server as well) and the JS dependencies with `bun run build:js`.
+All frontend assets (templ, postcss) can be built with `bun run dev` (this command will start a dev server as well) and the JS dependencies with `bun run build:js`.
 
 #### Seeding
 
