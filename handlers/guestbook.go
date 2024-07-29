@@ -2,8 +2,9 @@ package handlers
 
 import (
 	"github.com/blackfyre/wga/handlers/guestbook"
+    "github.com/blackfyre/wga/utils"
 
-	"github.com/labstack/echo/v5"
+    "github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 )
@@ -21,10 +22,12 @@ func registerGuestbookHandlers(app *pocketbase.PocketBase) {
 		})
 
 		e.Router.GET("/guestbook/add", func(c echo.Context) error {
+			e.Router.Use(utils.IsHtmxRequestMiddleware)
 			return guestbook.StoreEntryViewHandler(app, c)
 		})
 
 		e.Router.POST("/guestbook/add", func(c echo.Context) error {
+			e.Router.Use(utils.IsHtmxRequestMiddleware)
 			return guestbook.StoreEntryHandler(app, c)
 		})
 

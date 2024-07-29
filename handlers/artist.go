@@ -27,116 +27,70 @@ const (
 	NotApplicable string = "n/a"
 )
 
+type BioExcerptDTO struct {
+	YearOfBirth       int
+	ExactYearOfBirth  string
+	PlaceOfBirth      string
+	KnownPlaceOfBirth string
+	YearOfDeath       int
+	ExactYearOfDeath  string
+	PlaceOfDeath      string
+	KnownPlaceOfDeath string
+}
+
+// generateBioSection generates a bio section based on the provided parameters.
+// It takes a prefix string, year integer, exactYear string, place string, and knownPlace string as input.
+// It returns a string representing the generated bio section.
+func generateBioSection(prefix string, year int, exactYear string, place string, knownPlace string) string {
+	var c []string
+
+	c = append(c, prefix)
+	y := strconv.Itoa(year)
+
+	if exactYear == No {
+		y = "~" + y
+	}
+
+	c = append(c, y)
+
+	if knownPlace == No {
+		place += "?"
+	}
+
+	c = append(c, place)
+
+	return strings.Join(c, " ")
+}
+
 // normalizedBioExcerpt returns a normalized biography excerpt for the given record.
 // It includes the person's year and place of birth and death (if available).
-func normalizedBioExcerpt(r *models.Record) string {
+func normalizedBioExcerpt(d BioExcerptDTO) string {
 	var s []string
 
-	yob := r.GetInt("year_of_birth")
-	eyob := r.GetString("exact_year_of_birth")
-	pob := r.GetString("place_of_birth")
-	kpob := r.GetString("known_place_of_birth")
-
-	yod := r.GetInt("year_of_death")
-	eyod := r.GetString("exact_year_of_death")
-	pod := r.GetString("place_of_death")
-	kpod := r.GetString("known_place_of_death")
-
-	if yob > 0 {
-
-		var c []string
-
-		prefix := "b."
-
-		c = append(c, prefix)
-		y := strconv.Itoa(yob)
-
-		if eyob == No {
-			y = "~" + y
-		}
-
-		c = append(c, y)
-
-		if kpob == No {
-			pob = pob + "?"
-		}
-
-		c = append(c, pob)
-
-		s = append(s, strings.Join(c, " "))
-
-	}
-
-	if yod > 0 {
-
-		var c []string
-
-		prefix := "d."
-
-		c = append(c, prefix)
-		y := strconv.Itoa(yod)
-
-		if eyod == No {
-			y = "~" + y
-		}
-
-		c = append(c, y)
-
-		if kpod == No {
-			pod = pod + "?"
-		}
-
-		c = append(c, pod)
-
-		s = append(s, strings.Join(c, " "))
-
-	}
+	s = append(s, generateBioSection("b.", d.YearOfBirth, d.ExactYearOfBirth, d.PlaceOfBirth, d.KnownPlaceOfBirth))
+	s = append(s, generateBioSection("d.", d.YearOfDeath, d.ExactYearOfDeath, d.PlaceOfDeath, d.KnownPlaceOfDeath))
 
 	return strings.Join(s, ", ")
 }
 
-// processArtist is a handler function that processes the artist request.
-// It retrieves the artist information from the database, including their works,
-// and renders the HTML template with the artist data.
-// If the artist is not found, it returns a not found error.
-// If the rendering fails, it returns an error.
-// It also sets the HX-Push-Url header to enable Htmx push for the artist page.
-func processArtist(c echo.Context, app *pocketbase.PocketBase) error {
-	slug := c.PathParam("name")
+// findArtworksByAuthorId retrieves a list of artworks by the given author ID.
+// It uses the provided PocketBase instance to query the database and returns
+// a slice of Record pointers and an error, if any.
+func findArtworksByAuthorId(app *pocketbase.PocketBase, authorId string) ([]*models.Record, error) {
+	return app.Dao().FindRecordsByFilter("artworks", "author = '"+authorId+"'", "+title", 100, 0)
+}
 
-	id := utils.ExtractIdFromString(slug)
-
-	fullUrl := c.Scheme() + "://" + c.Request().Host + c.Request().URL.String()
-	artist, err := app.Dao().FindRecordById("artists", id)
-
-	if err != nil {
-		app.Logger().Error("Artist not found: ", slug, err)
-		return utils.NotFoundError(c)
-	}
-
-	expectedSlug := artist.GetString("slug") + "-" + artist.GetString("id")
-
-	if slug != expectedSlug {
-		return c.Redirect(http.StatusMovedPermanently, "/artists/"+expectedSlug)
-	}
-
-	works, err := app.Dao().FindRecordsByFilter("artworks", "author = '"+artist.GetString("id")+"'", "+title", 100, 0)
-
-	if err != nil {
-		app.Logger().Error("Error finding artworks: ", err)
-
-		return utils.NotFoundError(c)
-	}
-
-	school := artist.GetStringSlice("school")
-
+// renderSchoolNames takes an instance of PocketBase and a slice of school IDs,
+// and returns a string containing the names of the schools corresponding to the given IDs.
+// If a school is not found, it logs an error and continues to the next ID.
+func renderSchoolNames(app *pocketbase.PocketBase, schoolIds []string) string {
 	var schoolCollector []string
 
-	for _, s := range school {
+	for _, s := range schoolIds {
 		r, err := app.Dao().FindRecordById("schools", s)
 
 		if err != nil {
-			app.Logger().Error("school not found", err)
+			app.Logger().Error("school not found", "error", err.Error())
 			continue
 		}
 
@@ -144,12 +98,40 @@ func processArtist(c echo.Context, app *pocketbase.PocketBase) error {
 
 	}
 
-	schools := strings.Join(schoolCollector, ", ")
+	return strings.Join(schoolCollector, ", ")
+}
+
+// renderArtistContent renders the content of an artist by generating a DTO (Data Transfer Object) that contains
+// information about the artist, their works, and JSON-LD metadata. It takes the PocketBase application instance,
+// the Echo context, and the artist record as input parameters. It returns the DTO representing the artist content
+// and an error if any occurred during the process.
+func renderArtistContent(app *pocketbase.PocketBase, c echo.Context, artist *models.Record) (dto.Artist, error) {
+	id := artist.GetId()
+	expectedSlug := generateArtistSlug(artist)
+
+	works, err := findArtworksByAuthorId(app, id)
+
+	if err != nil {
+		app.Logger().Error("Error finding artworks: ", "error", err.Error())
+
+		return dto.Artist{}, utils.NotFoundError(c)
+	}
+
+	schools := renderSchoolNames(app, artist.GetStringSlice("school"))
 
 	content := dto.Artist{
-		Name:       artist.GetString("name"),
-		Bio:        artist.GetString("bio"),
-		BioExcerpt: normalizedBioExcerpt(artist),
+		Name: artist.GetString("name"),
+		Bio:  artist.GetString("bio"),
+		BioExcerpt: normalizedBioExcerpt(BioExcerptDTO{
+			YearOfBirth:       artist.GetInt("year_of_birth"),
+			ExactYearOfBirth:  artist.GetString("exact_year_of_birth"),
+			PlaceOfBirth:      artist.GetString("place_of_birth"),
+			KnownPlaceOfBirth: artist.GetString("known_place_of_birth"),
+			YearOfDeath:       artist.GetInt("year_of_death"),
+			ExactYearOfDeath:  artist.GetString("exact_year_of_death"),
+			PlaceOfDeath:      artist.GetString("place_of_death"),
+			KnownPlaceOfDeath: artist.GetString("known_place_of_death"),
+		}),
 		Schools:    schools,
 		Profession: artist.GetString("profession"),
 		Works:      dto.ImageGrid{},
@@ -175,7 +157,7 @@ func processArtist(c echo.Context, app *pocketbase.PocketBase) error {
 	marshalled, err := json.Marshal(JsonLd)
 
 	if err != nil {
-		app.Logger().Error("Error marshalling artist jsonld for"+id, err)
+		app.Logger().Error("Error marshalling artist jsonld for"+id, "error", err.Error())
 	}
 
 	content.Jsonld = fmt.Sprintf(`<script type="application/ld+json">%s</script>`, marshalled)
@@ -187,7 +169,7 @@ func processArtist(c echo.Context, app *pocketbase.PocketBase) error {
 		marshalled, err := json.Marshal(artJsonLd)
 
 		if err != nil {
-			app.Logger().Error("Error marshalling artwork jsonld for"+w.GetId(), err)
+			app.Logger().Error("Error marshalling artwork jsonld for"+w.GetId(), "error", err.Error())
 		}
 
 		content.Works = append(content.Works, dto.Image{
@@ -202,6 +184,40 @@ func processArtist(c echo.Context, app *pocketbase.PocketBase) error {
 		})
 	}
 
+	return content, nil
+}
+
+// processArtist is a handler function that processes the artist request.
+// It retrieves the artist information from the database, including their works,
+// and renders the HTML template with the artist data.
+// If the artist is not found, it returns a not found error.
+// If the rendering fails, it returns an error.
+// It also sets the HX-Push-Url header to enable Htmx push for the artist page.
+func processArtist(c echo.Context, app *pocketbase.PocketBase) error {
+	slug := c.PathParam("name")
+
+	id := utils.ExtractIdFromString(slug)
+
+	fullUrl := generateCurrentPageUrl(c)
+	artist, err := app.Dao().FindRecordById("artists", id)
+
+	if err != nil {
+		app.Logger().Error("Artist not found: ", slug, err)
+		return utils.NotFoundError(c)
+	}
+
+	expectedSlug := generateArtistSlug(artist)
+
+	if slug != expectedSlug {
+		return c.Redirect(http.StatusMovedPermanently, "/artists/"+expectedSlug)
+	}
+
+	content, err := renderArtistContent(app, c, artist)
+
+	if err != nil {
+		return err
+	}
+
 	ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", content.Name, content.BioExcerpt))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, content.Bio)
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgUrlKey, fullUrl)
@@ -213,7 +229,7 @@ func processArtist(c echo.Context, app *pocketbase.PocketBase) error {
 	err = pages.ArtistPage(content).Render(ctx, c.Response().Writer)
 
 	if err != nil {
-		app.Logger().Error("Error rendering artist page", err)
+		app.Logger().Error("Error rendering artist page", "error", err.Error())
 
 		return utils.ServerFaultError(c)
 	}
@@ -275,7 +291,12 @@ func processArtwork(c echo.Context, app *pocketbase.PocketBase) error {
 		Title:     aw.GetString("title"),
 		Comment:   aw.GetString("comment"),
 		Technique: aw.GetString("technique"),
-		Url:       "/artists/" + expectedArtistSlug + "/" + expectedArtworkSlug,
+		Url: url.GenerateArtworkUrl(url.ArtworkUrlDTO{
+			ArtistName:   artist.GetString("name"),
+			ArtistId:     artist.Id,
+			ArtworkId:    aw.GetId(),
+			ArtworkTitle: aw.GetString("title"),
+		}),
 		Image: dto.Image{
 			Id:        aw.GetString("id"),
 			Title:     aw.GetString("title"),
@@ -289,7 +310,10 @@ func processArtwork(c echo.Context, app *pocketbase.PocketBase) error {
 			Name:       artist.GetString("name"),
 			Bio:        artist.GetString("bio"),
 			Profession: artist.GetString("profession"),
-			Url:        "/artists/" + artistSlug,
+			Url: url.GenerateArtistUrl(url.ArtistUrlDTO{
+				ArtistId:   artist.GetId(),
+				ArtistName: artist.GetString("name"),
+			}),
 		},
 	}
 
@@ -303,7 +327,7 @@ func processArtwork(c echo.Context, app *pocketbase.PocketBase) error {
 		r, err := app.Dao().FindRecordById("schools", s)
 
 		if err != nil {
-			app.Logger().Error("school not found", err)
+			app.Logger().Error("school not found", "error", err.Error())
 			continue
 		}
 
@@ -328,7 +352,7 @@ func processArtwork(c echo.Context, app *pocketbase.PocketBase) error {
 	marshalled, err := json.Marshal(jsonLd)
 
 	if err != nil {
-		app.Logger().Error("Error marshalling artwork jsonld for"+aw.GetId(), err)
+		app.Logger().Error("Error marshalling artwork jsonld for"+aw.GetId(), "error", err.Error())
 	}
 
 	content.Jsonld = fmt.Sprintf(`<script type="application/ld+json">%s</script>`, marshalled)
@@ -342,7 +366,7 @@ func processArtwork(c echo.Context, app *pocketbase.PocketBase) error {
 	err = pages.ArtworkPage(content).Render(ctx, c.Response().Writer)
 
 	if err != nil {
-		app.Logger().Error("Error rendering artwork page", err)
+		app.Logger().Error("Error rendering artwork page", "error", err.Error())
 		return c.String(http.StatusInternalServerError, "failed to render response template")
 	}
 

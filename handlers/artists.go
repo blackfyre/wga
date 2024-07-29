@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"strconv"
-	"strings"
+
+	"github.com/blackfyre/wga/utils/url"
 
 	"github.com/blackfyre/wga/assets/templ/dto"
 	"github.com/blackfyre/wga/assets/templ/pages"
@@ -73,7 +73,7 @@ func processArtists(app *pocketbase.PocketBase, c echo.Context) error {
 	)
 
 	if err != nil {
-		app.Logger().Error("Failed to get artist records: ", err)
+		app.Logger().Error("Failed to get artist records", "error", err.Error())
 		return utils.ServerFaultError(c)
 	}
 
@@ -89,7 +89,7 @@ func processArtists(app *pocketbase.PocketBase, c echo.Context) error {
 	)
 
 	if err != nil {
-		app.Logger().Error("Failed to get total records: ", err)
+		app.Logger().Error("Failed to get total records", "error", err.Error())
 		return utils.ServerFaultError(c)
 	}
 
@@ -109,27 +109,11 @@ func processArtists(app *pocketbase.PocketBase, c echo.Context) error {
 
 		// TODO: handle a.k.a. names
 
-		school := m.GetStringSlice("school")
-
-		var schoolCollector []string
-
-		for _, s := range school {
-			r, err := app.Dao().FindRecordById("schools", s)
-
-			if err != nil {
-				log.Print("school not found")
-				continue
-			}
-
-			schoolCollector = append(schoolCollector, r.GetString("name"))
-
-		}
-
-		schools := strings.Join(schoolCollector, ", ")
+		schools := renderSchoolNames(app, m.GetStringSlice("school"))
 
 		content.Artists = append(content.Artists, dto.Artist{
 			Name:       m.GetString("name"),
-			Url:        artistUrl(m),
+			Url:        url.GenerateArtistUrlFromRecord(m),
 			Profession: m.GetString("profession"),
 			BornDied:   normalizedBirthDeathActivity(m),
 			Schools:    schools,
@@ -154,7 +138,7 @@ func processArtists(app *pocketbase.PocketBase, c echo.Context) error {
 	marshalledJsonLd, err := json.Marshal(jsonLdCollector)
 
 	if err != nil {
-		app.Logger().Error("Failed to marshal Artist JSON-LD", err)
+		app.Logger().Error("Failed to marshal Artist JSON-LD", "error", err.Error())
 		return apis.NewBadRequestError("Invalid page", err)
 	}
 
@@ -172,7 +156,7 @@ func processArtists(app *pocketbase.PocketBase, c echo.Context) error {
 	err = pages.ArtistsPageFull(content).Render(ctx, c.Response().Writer)
 
 	if err != nil {
-		app.Logger().Error("Error rendering artists", err)
+		app.Logger().Error("Error rendering artists", "error", err.Error())
 		return utils.ServerFaultError(c)
 	}
 

@@ -31,7 +31,7 @@
         "aarch64-linux" # 64-bit ARM Linux
         "x86_64-darwin" # 64-bit Intel macOS
         "aarch64-darwin" # 64-bit ARM macOS
-       ];
+      ];
       forEachSupportedSystem = f: nixpkgs.lib.genAttrs supportedSystems (system: f {
         pkgs = import nixpkgs { inherit system; };
       });
@@ -50,8 +50,12 @@
             gopls
             gotools
             go-tools
+            gotest
+            gomodifytags
+            impl
+            delve
+            gdlv
             templ.packages.${system}.templ
-            nodejs-18_x
             bun
             gnumake
             curl
@@ -61,6 +65,9 @@
             flyctl
             nixpkgs-fmt
             zstd
+            nil
+            mailpit
+            sqlite
           ];
 
           # Environment variables
@@ -70,7 +77,8 @@
 
           # A hook run every time you enter the environment
           shellHook = ''
-            testhook
+            bun install
+            go mod tidy
           '';
         };
       });

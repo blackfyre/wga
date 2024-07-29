@@ -27,9 +27,7 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 
 		e.Router.GET("postcard/send", func(c echo.Context) error {
 
-			if !utils.IsHtmxRequest(c) {
-				return apis.NewBadRequestError("Unexpected request", nil)
-			}
+			e.Router.Use(utils.IsHtmxRequestMiddleware)
 
 			//get awid query param
 			awid := c.QueryParam("awid")
@@ -45,7 +43,7 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 			r, err := app.Dao().FindRecordById("artworks", awid)
 
 			if err != nil {
-				app.Logger().Error("Failed to find artwork "+awid, err)
+				app.Logger().Error("Failed to find artwork "+awid, "error", err.Error())
 				return utils.NotFoundError(c)
 			}
 
@@ -58,7 +56,7 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 			}).Render(ctx, c.Response().Writer)
 
 			if err != nil {
-				app.Logger().Error(fmt.Sprintf("Failed to render the postcard editor with image_id %s", awid), err)
+				app.Logger().Error(fmt.Sprintf("Failed to render the postcard editor with image_id %s", awid), "error", err.Error())
 				return utils.ServerFaultError(c)
 			}
 
@@ -92,7 +90,7 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 			r, err := app.Dao().FindRecordById("postcards", postCardId)
 
 			if err != nil {
-				app.Logger().Error("Failed to find postcard", "id", postCardId, err)
+				app.Logger().Error("Failed to find postcard", "id", postCardId, "error", err.Error())
 				return apis.NewNotFoundError("", err)
 			}
 
@@ -121,7 +119,7 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 			}
 
 			if err != nil {
-				app.Logger().Error("Failed to render the postcard", err)
+				app.Logger().Error("Failed to render the postcard", "error", err.Error())
 				return utils.ServerFaultError(c)
 			}
 
@@ -158,7 +156,7 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 
 			collection, err := app.Dao().FindCollectionByNameOrId("postcards")
 			if err != nil {
-				app.Logger().Error("Failed to find postcard collection", err)
+				app.Logger().Error("Failed to find postcard collection", "error", err.Error())
 				utils.SendToastMessage("Failed to find postcard collection", "error", true, c, "")
 				return apis.NewNotFoundError("Failed to find postcard collection", err)
 			}
@@ -177,7 +175,7 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 				"notify_sender": postData.NotificationRequired,
 			})
 			if err != nil {
-				app.Logger().Error("Failed to process postcard form", err)
+				app.Logger().Error("Failed to process postcard form", "error", err.Error())
 				utils.SendToastMessage("Failed to find postcard collection", "error", true, c, "")
 				return apis.NewBadRequestError("Failed to process postcard form", err)
 			}
@@ -189,7 +187,7 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 				r, err := app.Dao().FindRecordById("artworks", postData.ImageId)
 
 				if err != nil {
-					app.Logger().Error("Failed to find artwork "+postData.ImageId, err)
+					app.Logger().Error("Failed to find artwork "+postData.ImageId, "error", err.Error())
 					return utils.NotFoundError(c)
 				}
 
@@ -201,7 +199,7 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 					Technique: r.GetString("technique"),
 				}).Render(ctx, c.Response().Writer)
 
-				app.Logger().Error(fmt.Sprintf("Failed to store the postcard with image_id %s", postData.ImageId), err)
+				app.Logger().Error(fmt.Sprintf("Failed to store the postcard with image_id %s", postData.ImageId), "error", err.Error())
 
 				utils.SendToastMessage("Failed to store the postcard", "error", false, c, "")
 

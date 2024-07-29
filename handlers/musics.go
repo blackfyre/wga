@@ -74,10 +74,10 @@ func registerMusicHandlers(app *pocketbase.PocketBase) {
 
 			found := app.Store().Has(cacheKey)
 
-			musicList, err := getComposers(app, c)
+			musicList, err := getComposers(app)
 
 			if err != nil {
-				app.Logger().Error("Composers not found: ", err)
+				app.Logger().Error("Composers not found", "error", err.Error())
 				return apis.NewNotFoundError("", err)
 			}
 
@@ -219,11 +219,11 @@ func GetParsedMusics() []Composer_seed {
 	return composers
 }
 
-func getComposers(app *pocketbase.PocketBase, c echo.Context) ([]shape.Music_composer, error) {
+func getComposers(app *pocketbase.PocketBase) ([]shape.Music_composer, error) {
 	composers := []shape.Music_composer{}
 	err := app.Dao().DB().NewQuery("SELECT * FROM music_composer").All(&composers)
 	if err != nil {
-		app.Logger().Error("failed to get music composers", err)
+		app.Logger().Error("failed to get music composers", "error", err.Error())
 		return nil, fmt.Errorf("failed to get music composers: %w", err)
 	}
 
@@ -233,7 +233,7 @@ func getComposers(app *pocketbase.PocketBase, c echo.Context) ([]shape.Music_com
 		query := "SELECT * FROM music_song WHERE composer_id = {:id}"
 		err := app.Dao().DB().NewQuery(query).Bind(dbx.Params{"id": composer.ID}).All(&songs)
 		if err != nil {
-			app.Logger().Error("failed to get music song by composer", err)
+			app.Logger().Error("failed to get music song by composer", "error", err.Error())
 			return nil, fmt.Errorf("failed to get music song by composer: %w", err)
 		}
 

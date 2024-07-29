@@ -3,7 +3,6 @@ package artworks
 import (
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/dbx"
-	"github.com/pocketbase/pocketbase"
 )
 
 type filters struct {
@@ -95,7 +94,7 @@ func (f *filters) BuildFilterString() string {
 	return filterString
 }
 
-func buildFilters(app *pocketbase.PocketBase, c echo.Context) *filters {
+func buildFilters(c echo.Context) *filters {
 	f := &filters{
 		Title:         c.QueryParamDefault("title", ""),
 		SchoolString:  c.QueryParamDefault("art_school", ""),

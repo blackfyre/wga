@@ -21,6 +21,7 @@
     "daos",
     "esbuild",
     "fontawesome",
+    "fsys",
     "Galicz",
     "goarch",
     "godotenv",
