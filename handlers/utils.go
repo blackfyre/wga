@@ -1,17 +1,10 @@
 package handlers
 
 import (
-	"encoding/json"
-	"fmt"
-	"log"
-
-	"github.com/labstack/echo/v5"
-	"github.com/pocketbase/pocketbase/models"
+    "fmt"
+    "github.com/labstack/echo/v5"
+    "github.com/pocketbase/pocketbase/models"
 )
-
-func artistUrl(r *models.Record) string {
-	return "/artists/" + r.GetString("slug") + "-" + r.GetString("id")
-}
 
 func normalizedBirthDeathActivity(record *models.Record) string {
 	Start := record.GetInt("year_of_birth")
@@ -20,12 +13,16 @@ func normalizedBirthDeathActivity(record *models.Record) string {
 	return fmt.Sprintf("%d-%d", Start, End)
 }
 
-func setHxTrigger(c echo.Context, data map[string]any) {
-	hd, err := json.Marshal(data)
+func generateArtistSlug(artist *models.Record) string {
+    if artist == nil {
+        return ""
+    }
+    return artist.GetString("slug") + "-" + artist.GetString("id")
+}
 
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	c.Response().Header().Set("HX-Trigger", string(hd))
+func generateCurrentPageUrl(c echo.Context) string {
+    if c == nil || c.Request() == nil {
+        return ""
+    }
+    return c.Scheme() + "://" + c.Request().Host + c.Request().URL.String()
 }

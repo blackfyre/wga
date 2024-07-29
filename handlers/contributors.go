@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"os"
 	"time"
@@ -15,7 +16,14 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
-func getContributorsFromGithub() ([]pages.GithubContributor, error) {
+func getContributorsFromGithub(app *pocketbase.PocketBase) ([]pages.GithubContributor, error) {
+
+	ghContribCacheKey := "gh_contributors"
+
+	if app.Store().Has(ghContribCacheKey) {
+		return app.Store().Get(ghContribCacheKey).([]pages.GithubContributor), nil
+	}
+
 	client := &http.Client{
 		Timeout: 10 * time.Second,
 	}
@@ -35,7 +43,12 @@ func getContributorsFromGithub() ([]pages.GithubContributor, error) {
 		return nil, err
 	}
 
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			app.Logger().Error("Error closing response body", "error", err)
+		}
+	}(resp.Body)
 
 	var contributors []pages.GithubContributor
 
@@ -52,7 +65,12 @@ func getContributorsFromGithub() ([]pages.GithubContributor, error) {
 		return nil, err
 	}
 
-	defer f.Close()
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
+			app.Logger().Error("Error closing file", "error", err)
+		}
+	}(f)
 
 	err = json.NewEncoder(f).Encode(contributors)
 
@@ -60,17 +78,24 @@ func getContributorsFromGithub() ([]pages.GithubContributor, error) {
 		return nil, err
 	}
 
+	app.Store().Set(ghContribCacheKey, contributors)
+
 	return contributors, nil
 }
 
-func readStoredContributors() ([]pages.GithubContributor, error) {
+func readStoredContributors(app *pocketbase.PocketBase) ([]pages.GithubContributor, error) {
 	f, err := os.Open("contributors.json")
 
 	if err != nil {
 		return nil, err
 	}
 
-	defer f.Close()
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
+			app.Logger().Error("Error closing file", "error", err)
+		}
+	}(f)
 
 	var contributors []pages.GithubContributor
 
@@ -90,13 +115,13 @@ func registerContributors(app *pocketbase.PocketBase) {
 			cacheKey := "contributors"
 			fullUrl := c.Scheme() + "://" + c.Request().Host + c.Request().URL.String()
 
-			contributors, err := getContributorsFromGithub()
+			contributors, err := getContributorsFromGithub(app)
 
 			if err != nil {
 
 				app.Logger().Error("Error getting contributors from Github", "cacheKey", cacheKey, "error", err)
 
-				contributors, err = readStoredContributors()
+				contributors, err = readStoredContributors(app)
 
 				if err != nil {
 					app.Logger().Error("Error reading stored contributors", "cacheKey", cacheKey, "error", err)
@@ -116,7 +141,7 @@ func registerContributors(app *pocketbase.PocketBase) {
 			err = pages.ContributorsPage(content).Render(ctx, c.Response().Writer)
 
 			if err != nil {
-				app.Logger().Error("Error rendering artwork page", err)
+				app.Logger().Error("Error rendering artwork page", "error", err.Error())
 				return c.String(http.StatusInternalServerError, "failed to render response template")
 			}
 
