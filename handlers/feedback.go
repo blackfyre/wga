@@ -13,6 +13,32 @@ import (
 	"github.com/pocketbase/pocketbase/models"
 )
 
+type feedbackForm struct {
+	Email         string `json:"email" form:"fp_email" query:"email"`
+	Message       string `json:"message" form:"message" query:"message"`
+	Name          string `json:"name" form:"fp_name" query:"name"`
+	HoneyPotName  string `json:"honey_pot_name" form:"name" query:"honey_pot_name"`
+	HoneyPotEmail string `json:"honey_pot_email" form:"email" query:"honey_pot_email"`
+	ReferTo       string `json:"refer_to"`
+}
+
+func validateFeedbackForm(form feedbackForm) error {
+
+	if form.HoneyPotEmail != "" || form.HoneyPotName != "" {
+		return fmt.Errorf("failed to parse form")
+	}
+
+	if form.Email == "" {
+		return fmt.Errorf("email is required")
+	}
+
+	if form.Message == "" {
+		return fmt.Errorf("message is required")
+	}
+
+	return nil
+}
+
 // registerFeedbackHandlers registers the feedback handlers for the application.
 // It adds the GET and POST routes for the feedback form, handles form submission,
 // and stores the feedback in the database.
@@ -35,14 +61,7 @@ func registerFeedbackHandlers(app *pocketbase.PocketBase) {
 
 			e.Router.Use(utils.IsHtmxRequestMiddleware)
 
-			postData := struct {
-				Email         string `json:"email" form:"fp_email" query:"email"`
-				Message       string `json:"message" form:"message" query:"message"`
-				Name          string `json:"name" form:"fp_name" query:"name"`
-				HoneyPotName  string `json:"honey_pot_name" form:"name" query:"honey_pot_name"`
-				HoneyPotEmail string `json:"honey_pot_email" form:"email" query:"honey_pot_email"`
-				ReferTo       string `json:"refer_to"`
-			}{
+			postData := feedbackForm{
 				ReferTo: c.Request().Header.Get("Referer"),
 			}
 
@@ -52,10 +71,14 @@ func registerFeedbackHandlers(app *pocketbase.PocketBase) {
 				return utils.ServerFaultError(c)
 			}
 
-			if postData.HoneyPotEmail != "" || postData.HoneyPotName != "" {
-				// this is probably a bot
-				app.Logger().Warn("Honey pot triggered", "data", fmt.Sprintf("+%v", postData))
-				utils.SendToastMessage("Failed to parse form", "error", true, c, "")
+			if err := validateFeedbackForm(postData); err != nil {
+				app.Logger().Error("Failed to validate form data", "error", err.Error())
+				utils.SendToastMessage(err.Error(), "error", true, c, "")
+
+				if err == fmt.Errorf("failed to parse form") {
+					app.Logger().Error("Bot caught in honeypot", "error", err.Error())
+				}
+
 				return utils.ServerFaultError(c)
 			}
 
