@@ -1,7 +1,6 @@
 package crontab
 
 import (
-	"fmt"
 	"net/mail"
 	"os"
 	"strings"
@@ -24,25 +23,32 @@ import (
 // Finally, the postcard record is updated using the updatePostcardRecord function.
 func sendPostcard(r *models.Record, app *pocketbase.PocketBase, mailClient mailer.Mailer) {
 
-	recipientsRaw := r.GetString("recipients")
-	recipientsSlice := strings.Split(recipientsRaw, ",")
-    var recipients []mail.Address
+	recipients := convertCommaSeparatedEmailsToMailAddresses(r.GetString("recipients"))
+
+	for _, rec := range recipients {
+
+		message := renderMessage(r, rec, app)
+
+		err := mailClient.Send(message)
+
+		if err != nil {
+			app.Logger().Error("Error sending email", "error", err.Error())
+			return
+		}
+	}
+}
+
+// convertCommaSeparatedEmailsToMailAddresses converts a comma-separated string of email addresses
+// into a slice of mail.Address structs.
+func convertCommaSeparatedEmailsToMailAddresses(emails string) []mail.Address {
+	recipientsSlice := strings.Split(emails, ",")
+	var recipients []mail.Address
 
 	for _, recipient := range recipientsSlice {
 		recipients = append(recipients, mail.Address{Address: recipient})
 	}
 
-	for i, rec := range recipients {
-
-		app.Logger().Info("Sending postcard to", fmt.Sprintf("%d", i), r.GetId())
-
-		message := renderMessage(r, rec, app)
-
-		if err := mailClient.Send(message); err != nil {
-			app.Logger().Error("Error sending postcard", "recipient", rec.Address, "record_id", r.GetId(), "error", err.Error())
-			return
-		}
-	}
+	return recipients
 }
 
 // renderMessage renders the email message for a postcard notification.
