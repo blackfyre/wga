@@ -1,10 +1,10 @@
 package pages
 
 import (
+	"github.com/blackfyre/wga/assets/templ/components"
 	"github.com/blackfyre/wga/assets/templ/dto"
 	"github.com/blackfyre/wga/assets/templ/layouts"
 	"github.com/blackfyre/wga/assets/templ/utils"
-	"github.com/blackfyre/wga/assets/templ/components"
 )
 
 templ ArtworkPage(aw dto.Artwork) {
@@ -75,7 +75,7 @@ templ ArtworkBlock(aw dto.Artwork) {
 						</div>
 						<a
 							href="#"
-							hx-on="click: document.getElementById('d').showModal();"
+							hx-on:click="document.getElementById('d').showModal();"
 							hx-get={ "/postcard/send?awid=" + aw.Id }
 							hx-target="#d"
 							class="btn btn-primary"

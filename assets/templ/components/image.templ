@@ -1,8 +1,6 @@
 package components
 
-import (
-	"github.com/blackfyre/wga/assets/templ/dto"
-)
+import "github.com/blackfyre/wga/assets/templ/dto"
 
 templ ImageBase(i dto.Image) {
 	<figure class="aspect-square hidden-caption">
@@ -38,7 +36,7 @@ templ ImageCard(i dto.Image, hasLearnMore bool) {
 			<div class="card-actions">
 				<a
 					href="#"
-					hx-on="click: wga.openDialog();"
+					hx-on:click="wga.openDialog();"
 					hx-get={ `/postcard/send?awid=` + i.Id }
 					hx-target="#d"
 					class="btn btn-secondary"
