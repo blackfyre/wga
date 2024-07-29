@@ -23,3 +23,5 @@ func ExtractIdFromString(s string) string {
 	parts := strings.Split(s, "-")
 	return parts[len(parts)-1]
 }
+
+

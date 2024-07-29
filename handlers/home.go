@@ -38,7 +38,7 @@ func getWelcomeContent(app *pocketbase.PocketBase) (string, error) {
 	record, err := app.Dao().FindFirstRecordByData("strings", "name", "welcome")
 
 	if err != nil {
-		app.Logger().Error("Error getting welcome content", err)
+		app.Logger().Error("Error getting welcome content", "error", err.Error())
 		return "", err
 	}
 
@@ -70,7 +70,7 @@ func getArtistCount(app *pocketbase.PocketBase) (string, error) {
 	err := app.Dao().DB().NewQuery("SELECT COUNT(*) as c FROM artists WHERE published IS true").One(&c)
 
 	if err != nil {
-		app.Logger().Error("Error getting artist count", err)
+		app.Logger().Error("Error getting artist count", "error", err.Error())
 		return "0", err
 	}
 
@@ -102,7 +102,7 @@ func getArtworkCount(app *pocketbase.PocketBase) (string, error) {
 	err := app.Dao().DB().NewQuery("SELECT COUNT(*) as c FROM artworks WHERE published IS true").One(&c)
 
 	if err != nil {
-		app.Logger().Error("Error getting artwork count", err)
+		app.Logger().Error("Error getting artwork count", "error", err.Error())
 		return "0", err
 	}
 
@@ -124,21 +124,21 @@ func registerHome(app *pocketbase.PocketBase) {
 			welcomeText, err := getWelcomeContent(app)
 
 			if err != nil {
-				app.Logger().Error("Error getting welcome content", err)
+				app.Logger().Error("Error getting welcome content", "error", err.Error())
 				return utils.ServerFaultError(c)
 			}
 
 			artistCount, err := getArtistCount(app)
 
 			if err != nil {
-				app.Logger().Error("Error getting artist count for home page", err)
+				app.Logger().Error("Error getting artist count for home page", "error", err.Error())
 				return utils.ServerFaultError(c)
 			}
 
 			artworkCount, err := getArtworkCount(app)
 
 			if err != nil {
-				app.Logger().Error("Error getting artwork count for home page", err)
+				app.Logger().Error("Error getting artwork count for home page", "error", err.Error())
 				return utils.ServerFaultError(c)
 			}
 
@@ -156,7 +156,7 @@ func registerHome(app *pocketbase.PocketBase) {
 			err = pages.HomePageWrapped(content).Render(ctx, c.Response().Writer)
 
 			if err != nil {
-				app.Logger().Error("Error rendering home page", err)
+				app.Logger().Error("Error rendering home page", "error", err.Error())
 				return utils.ServerFaultError(c)
 			}
 

@@ -2,13 +2,8 @@ package handlers
 
 import (
 	"context"
-	"embed"
-	"errors"
-	"fmt"
-	"net/url"
+	"io/fs"
 	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/blackfyre/wga/assets"
 	"github.com/blackfyre/wga/assets/templ/error_pages"
@@ -22,6 +17,16 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
+func getFilePublicSystem() fs.FS {
+	fsys, err := fs.Sub(assets.PublicFiles, "public")
+
+	if err != nil {
+		panic(err)
+	}
+
+	return fsys
+}
+
 // registerStatic registers the static routes for the application.
 // It adds a middleware to serve static assets and a handler to serve static pages.
 // The static pages are retrieved from the database based on the slug parameter in the URL.
@@ -30,7 +35,7 @@ import (
 func registerStatic(app *pocketbase.PocketBase) {
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 		// Assets
-		e.Router.GET("/assets/*", staticEmbeddedHandler(assets.PublicFiles))
+		e.Router.GET("/assets/*", apis.StaticDirectoryHandler(getFilePublicSystem(), false))
 
 		// Sitemap
 		e.Router.GET("/sitemap/*", apis.StaticDirectoryHandler(os.DirFS("./wga_sitemap"), false))
@@ -44,7 +49,7 @@ func registerStatic(app *pocketbase.PocketBase) {
 			page, err := models.FindStaticPageBySlug(app.Dao(), slug)
 
 			if err != nil {
-				app.Logger().Error("Error retrieving static page", "page", slug, err)
+				app.Logger().Error("Error retrieving static page", "page", slug, "error", err)
 
 				return utils.NotFoundError(c)
 			}
@@ -71,31 +76,4 @@ func registerStatic(app *pocketbase.PocketBase) {
 
 		return nil
 	})
-}
-
-// staticEmbeddedHandler returns an echo.HandlerFunc that serves static files embedded in the given embed.FS.
-// The function takes a context object and returns an error. It first unescapes the URL path and then constructs
-// the file path by cleaning and trimming the path parameter. If the file exists, it is served using the echo.Context's
-// FileFS method. If the file does not exist, the function serves the 404.html file from the public directory.
-func staticEmbeddedHandler(embedded embed.FS) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		p := c.PathParam("*")
-
-		// escape url path
-		tmpPath, err := url.PathUnescape(p)
-		if err != nil {
-			return fmt.Errorf("failed to unescape path variable: %w", err)
-		}
-		p = tmpPath
-
-		name := "public/" + filepath.ToSlash(filepath.Clean(strings.TrimPrefix(p, "/")))
-
-		fileErr := c.FileFS(name, embedded)
-
-		if fileErr != nil && errors.Is(fileErr, echo.ErrNotFound) {
-			return c.Redirect(404, "/error_404")
-		}
-
-		return fileErr
-	}
 }
