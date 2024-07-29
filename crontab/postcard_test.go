@@ -17,7 +17,6 @@ func TestSendMail(t *testing.T) {
 
 	mailClient := app.NewMailClient()
 
-	fmt.Printf("Mail client: %v\n", mailClient)
 
 	message := &mailer.Message{
 		From: mail.Address{
