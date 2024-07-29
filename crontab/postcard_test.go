@@ -3,9 +3,6 @@ package crontab
 import (
 	"net/mail"
 	"testing"
-)
-	"net/mail"
-	"testing"
 
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/tools/mailer"
@@ -18,7 +15,6 @@ func TestSendMail(t *testing.T) {
 	})
 
 	mailClient := app.NewMailClient()
-
 
 	message := &mailer.Message{
 		From: mail.Address{
