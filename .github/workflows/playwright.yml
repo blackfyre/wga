@@ -47,7 +47,7 @@ jobs:
         run: go build -o wga
       - run: ls -lah
       - name: Prepare data directory
-        run: wga migrate
+        run: ./wga migrate
         env:
           WGA_PROTOCOL: ${{ vars.WGA_PROTOCOL }}
           WGA_HOSTNAME: ${{ vars.WGA_HOSTNAME }}
