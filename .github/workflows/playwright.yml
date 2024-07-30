@@ -7,6 +7,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: playwright
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -40,6 +41,31 @@ jobs:
         run: bun install
       - name: Transpile Frontend
         run: bun run build
+      - name: Download Mailpit
+        run: wget https://github.com/axllent/mailpit/releases/download/v1.14.4/mailpit-linux-amd64.tar.gz
+      - name: Install Mailpit
+        run: tar -xvf mailpit-linux-amd64.tar.gz
+      - name: Run Mailpit
+        run: ./mailpit > mailpit.log &
+      - name: Run Go Tests
+        run: go test ./...
+        env:
+          WGA_PROTOCOL: ${{ vars.WGA_PROTOCOL }}
+          WGA_HOSTNAME: ${{ vars.WGA_HOSTNAME }}
+          WGA_ADMIN_EMAIL: ${{ secrets.WGA_ADMIN_EMAIL }}
+          WGA_ADMIN_PASSWORD: ${{ secrets.WGA_ADMIN_PASSWORD }}
+          WGA_S3_ENDPOINT: ${{ vars.WGA_S3_ENDPOINT }}
+          WGA_S3_BUCKET: ${{ vars.WGA_S3_BUCKET }}
+          WGA_S3_REGION: ""
+          WGA_S3_ACCESS_KEY: ${{ secrets.WGA_S3_ACCESS_KEY }}
+          WGA_S3_ACCESS_SECRET: ${{ secrets.WGA_S3_ACCESS_SECRET }}
+          WGA_SMTP_HOST: ${{ vars.WGA_SMTP_HOST }}
+          WGA_SMTP_PORT: ${{ vars.WGA_SMTP_PORT }}
+          WGA_SMTP_USERNAME: ""
+          WGA_SMTP_PASSWORD: ""
+          WGA_SENDER_ADDRESS: ${{ vars.WGA_SENDER_ADDRESS }}
+          WGA_SENDER_NAME: ${{ vars.WGA_SENDER_NAME }}
+          MAILPIT_URL: ${{ vars.MAILPIT_URL }}
       - name: Build the application
         run: go build -o wga
       - uses: actions/upload-artifact@v4
@@ -68,31 +94,6 @@ jobs:
         with:
           name: wga_exec
           path: ./wga_tmp
-      - name: Download Mailpit
-        run: wget https://github.com/axllent/mailpit/releases/download/v1.14.4/mailpit-linux-amd64.tar.gz
-      - name: Install Mailpit
-        run: tar -xvf mailpit-linux-amd64.tar.gz
-      - name: Run Mailpit
-        run: ./mailpit > mailpit.log &
-      - name: Run Go Tests
-        run: go test ./...
-        env:
-          WGA_PROTOCOL: ${{ vars.WGA_PROTOCOL }}
-          WGA_HOSTNAME: ${{ vars.WGA_HOSTNAME }}
-          WGA_ADMIN_EMAIL: ${{ secrets.WGA_ADMIN_EMAIL }}
-          WGA_ADMIN_PASSWORD: ${{ secrets.WGA_ADMIN_PASSWORD }}
-          WGA_S3_ENDPOINT: ${{ vars.WGA_S3_ENDPOINT }}
-          WGA_S3_BUCKET: ${{ vars.WGA_S3_BUCKET }}
-          WGA_S3_REGION: ""
-          WGA_S3_ACCESS_KEY: ${{ secrets.WGA_S3_ACCESS_KEY }}
-          WGA_S3_ACCESS_SECRET: ${{ secrets.WGA_S3_ACCESS_SECRET }}
-          WGA_SMTP_HOST: ${{ vars.WGA_SMTP_HOST }}
-          WGA_SMTP_PORT: ${{ vars.WGA_SMTP_PORT }}
-          WGA_SMTP_USERNAME: ""
-          WGA_SMTP_PASSWORD: ""
-          WGA_SENDER_ADDRESS: ${{ vars.WGA_SENDER_ADDRESS }}
-          WGA_SENDER_NAME: ${{ vars.WGA_SENDER_NAME }}
-          MAILPIT_URL: ${{ vars.MAILPIT_URL }}
       - name: Install NPM dependencies
         run: bun install
       - name: Get installed Playwright version
