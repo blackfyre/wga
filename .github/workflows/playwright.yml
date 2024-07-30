@@ -44,50 +44,10 @@ jobs:
       - name: Download Mailpit
         run: wget https://github.com/axllent/mailpit/releases/download/v1.14.4/mailpit-linux-amd64.tar.gz
       - name: Build the application
-        run: go build -o wga
+        run: go build -v -race -o wga
       - run: ls -lah
-      - name: Prepare data directory
-        run: ./wga migrate
-        env:
-          WGA_PROTOCOL: ${{ vars.WGA_PROTOCOL }}
-          WGA_HOSTNAME: ${{ vars.WGA_HOSTNAME }}
-          WGA_ADMIN_EMAIL: ${{ secrets.WGA_ADMIN_EMAIL }}
-          WGA_ADMIN_PASSWORD: ${{ secrets.WGA_ADMIN_PASSWORD }}
-          WGA_S3_ENDPOINT: ${{ vars.WGA_S3_ENDPOINT }}
-          WGA_S3_BUCKET: ${{ vars.WGA_S3_BUCKET }}
-          WGA_S3_REGION: ""
-          WGA_S3_ACCESS_KEY: ${{ secrets.WGA_S3_ACCESS_KEY }}
-          WGA_S3_ACCESS_SECRET: ${{ secrets.WGA_S3_ACCESS_SECRET }}
-          WGA_SMTP_HOST: ${{ vars.WGA_SMTP_HOST }}
-          WGA_SMTP_PORT: ${{ vars.WGA_SMTP_PORT }}
-          WGA_SMTP_USERNAME: ""
-          WGA_SMTP_PASSWORD: ""
-          WGA_SENDER_ADDRESS: ${{ vars.WGA_SENDER_ADDRESS }}
-          WGA_SENDER_NAME: ${{ vars.WGA_SENDER_NAME }}
-          MAILPIT_URL: ${{ vars.MAILPIT_URL }}
-      - name: Install Mailpit
-        run: tar -xvf mailpit-linux-amd64.tar.gz
-      - name: Run Mailpit
-        run: ./mailpit > mailpit.log &
       - name: Run Go Tests
         run: go test ./...
-        env:
-          WGA_PROTOCOL: ${{ vars.WGA_PROTOCOL }}
-          WGA_HOSTNAME: ${{ vars.WGA_HOSTNAME }}
-          WGA_ADMIN_EMAIL: ${{ secrets.WGA_ADMIN_EMAIL }}
-          WGA_ADMIN_PASSWORD: ${{ secrets.WGA_ADMIN_PASSWORD }}
-          WGA_S3_ENDPOINT: ${{ vars.WGA_S3_ENDPOINT }}
-          WGA_S3_BUCKET: ${{ vars.WGA_S3_BUCKET }}
-          WGA_S3_REGION: ""
-          WGA_S3_ACCESS_KEY: ${{ secrets.WGA_S3_ACCESS_KEY }}
-          WGA_S3_ACCESS_SECRET: ${{ secrets.WGA_S3_ACCESS_SECRET }}
-          WGA_SMTP_HOST: ${{ vars.WGA_SMTP_HOST }}
-          WGA_SMTP_PORT: ${{ vars.WGA_SMTP_PORT }}
-          WGA_SMTP_USERNAME: ""
-          WGA_SMTP_PASSWORD: ""
-          WGA_SENDER_ADDRESS: ${{ vars.WGA_SENDER_ADDRESS }}
-          WGA_SENDER_NAME: ${{ vars.WGA_SENDER_NAME }}
-          MAILPIT_URL: ${{ vars.MAILPIT_URL }}
       - uses: actions/upload-artifact@v4
         with:
           name: wga_exec
@@ -114,6 +74,10 @@ jobs:
         with:
           name: wga_exec
           path: ./wga_tmp
+      - name: Install Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: "go.mod"
       - name: Install NPM dependencies
         run: bun install
       - name: Get installed Playwright version
@@ -153,26 +117,13 @@ jobs:
           WGA_SENDER_ADDRESS: ${{ vars.WGA_SENDER_ADDRESS }}
           WGA_SENDER_NAME: ${{ vars.WGA_SENDER_NAME }}
           MAILPIT_URL: ${{ vars.MAILPIT_URL }}
+      - name: Run Go Tests
+        run: go test ./...
       - run: ls -lah ./wga_tmp
       - run: ls -lah
       - name: Run Playwright tests
         run: bunx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
         env:
-          WGA_PROTOCOL: ${{ vars.WGA_PROTOCOL }}
-          WGA_HOSTNAME: ${{ vars.WGA_HOSTNAME }}
-          WGA_ADMIN_EMAIL: ${{ secrets.WGA_ADMIN_EMAIL }}
-          WGA_ADMIN_PASSWORD: ${{ secrets.WGA_ADMIN_PASSWORD }}
-          WGA_S3_ENDPOINT: ${{ vars.WGA_S3_ENDPOINT }}
-          WGA_S3_BUCKET: ${{ vars.WGA_S3_BUCKET }}
-          WGA_S3_REGION: ""
-          WGA_S3_ACCESS_KEY: ${{ secrets.WGA_S3_ACCESS_KEY }}
-          WGA_S3_ACCESS_SECRET: ${{ secrets.WGA_S3_ACCESS_SECRET }}
-          WGA_SMTP_HOST: ${{ vars.WGA_SMTP_HOST }}
-          WGA_SMTP_PORT: ${{ vars.WGA_SMTP_PORT }}
-          WGA_SMTP_USERNAME: ""
-          WGA_SMTP_PASSWORD: ""
-          WGA_SENDER_ADDRESS: ${{ vars.WGA_SENDER_ADDRESS }}
-          WGA_SENDER_NAME: ${{ vars.WGA_SENDER_NAME }}
           MAILPIT_URL: ${{ vars.MAILPIT_URL }}
       - uses: actions/upload-artifact@v4
         if: always()
