@@ -43,6 +43,8 @@ jobs:
         run: bun run build
       - name: Build the application
         run: go build -v -race -o ./out/wga
+      - run: ls -la
+        working-directory: ./out
       - name: Run migrations
         run: wga migrate
         working-directory: ./out
