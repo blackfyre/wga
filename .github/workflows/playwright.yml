@@ -167,12 +167,6 @@ jobs:
           name: wga-log-${{ matrix.shardIndex }}
           path: wga.log
           retention-days: 1
-      - uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: wga-data-${{ matrix.shardIndex }}
-          path: wga_data
-          retention-days: 1
   merge-reports:
     # Merge reports after playwright-tests, even if some shards have failed
     if: always()
