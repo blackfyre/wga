@@ -89,10 +89,10 @@ jobs:
         uses: oven-sh/setup-bun@v1
         with:
           bun-version: latest
-      - name: Fetch the executable
+      - name: Fetch the build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: wga_exec
+          name: wga
           path: ./wga_tmp
       - run: ls -la ./wga_tmp
       - name: Install Go
