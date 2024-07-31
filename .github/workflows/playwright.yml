@@ -122,6 +122,8 @@ jobs:
         run: bunx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
         env:
           MAILPIT_URL: ${{ vars.MAILPIT_URL }}
+          WGA_PROTOCOL: ${{ vars.WGA_PROTOCOL }}
+          WGA_HOSTNAME: ${{ vars.WGA_HOSTNAME }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
