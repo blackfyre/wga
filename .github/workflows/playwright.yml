@@ -118,6 +118,8 @@ jobs:
           WGA_SENDER_ADDRESS: ${{ vars.WGA_SENDER_ADDRESS }}
           WGA_SENDER_NAME: ${{ vars.WGA_SENDER_NAME }}
           MAILPIT_URL: ${{ vars.MAILPIT_URL }}
+      - name: Wait for the application to start
+        run: sleep 20
       - name: Run Playwright tests
         run: bunx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
         env:
