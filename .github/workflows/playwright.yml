@@ -41,8 +41,6 @@ jobs:
         run: bun install
       - name: Transpile Frontend
         run: bun run build
-      - name: Download Mailpit
-        run: wget https://github.com/axllent/mailpit/releases/download/v1.14.4/mailpit-linux-amd64.tar.gz
       - name: Build the application
         run: go build -v -race -o wga
       - uses: actions/upload-artifact@v4
@@ -75,11 +73,17 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: "go.mod"
-      - name: Install NPM dependencies
+      - name: Download Mailpit
+        run: wget https://github.com/axllent/mailpit/releases/download/v1.14.4/mailpit-linux-amd64.tar.gz
+      - name: Extract Mailpit
+        run: tar -xvf mailpit-linux-amd64.tar.gz
+      - name: Run Mailpit
+        run: ./mailpit -v > mailpit.log &
+      - name: Install Bun dependencies
         run: bun install
       - name: Get installed Playwright version
         id: playwright-version
-        run: echo "PLAYWRIGHT_VERSION=$(node -e "console.log(require('./package-lock.json').packages['node_modules/@playwright/test'].version)")" >> $GITHUB_ENV
+        run: echo "PLAYWRIGHT_VERSION=$(bun -e "console.log(require('./package-lock.json').packages['node_modules/@playwright/test'].version)")" >> $GITHUB_ENV
       - name: Cache playwright binaries
         uses: actions/cache@v4
         id: playwright-cache
