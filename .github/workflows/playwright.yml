@@ -124,7 +124,8 @@ jobs:
         name: Install Playwright dependencies
         # if: steps.playwright-cache.outputs.cache-hit != 'true'
       - name: Run the application
-        run: ./wga_tmp/wga serve --dev > wga.log &
+        run: ./wga serve --dev > wga.log &
+        working-directory: ./wga_tmp
         env:
           WGA_PROTOCOL: ${{ vars.WGA_PROTOCOL }}
           WGA_HOSTNAME: ${{ vars.WGA_HOSTNAME }}
