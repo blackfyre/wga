@@ -118,6 +118,7 @@ jobs:
           WGA_SENDER_NAME: ${{ vars.WGA_SENDER_NAME }}
           MAILPIT_URL: ${{ vars.MAILPIT_URL }}
       - run: ls -lah
+      - run: ls -lah ./wga_tmp
       - name: Run Go Tests
         run: go test -v ./...
       - run: ls -lah
