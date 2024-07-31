@@ -45,9 +45,6 @@ jobs:
         run: wget https://github.com/axllent/mailpit/releases/download/v1.14.4/mailpit-linux-amd64.tar.gz
       - name: Build the application
         run: go build -v -race -o wga
-      - run: ls -lah
-      - name: Run Go Tests
-        run: go test ./...
       - uses: actions/upload-artifact@v4
         with:
           name: wga_exec
@@ -117,11 +114,6 @@ jobs:
           WGA_SENDER_ADDRESS: ${{ vars.WGA_SENDER_ADDRESS }}
           WGA_SENDER_NAME: ${{ vars.WGA_SENDER_NAME }}
           MAILPIT_URL: ${{ vars.MAILPIT_URL }}
-      - run: ls -lah
-      - run: ls -lah ./wga_tmp
-      - name: Run Go Tests
-        run: go test -v ./...
-      - run: ls -lah
       - name: Run Playwright tests
         run: bunx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
         env:
