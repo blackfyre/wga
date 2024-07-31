@@ -42,11 +42,31 @@ jobs:
       - name: Transpile Frontend
         run: bun run build
       - name: Build the application
-        run: go build -v -race -o wga
+        run: go build -v -race -o ./out/wga
+      - name: Run migrations
+        run: wga migrate
+        working-directory: ./out
+        env:
+          WGA_PROTOCOL: ${{ vars.WGA_PROTOCOL }}
+          WGA_HOSTNAME: ${{ vars.WGA_HOSTNAME }}
+          WGA_ADMIN_EMAIL: ${{ secrets.WGA_ADMIN_EMAIL }}
+          WGA_ADMIN_PASSWORD: ${{ secrets.WGA_ADMIN_PASSWORD }}
+          WGA_S3_ENDPOINT: ${{ vars.WGA_S3_ENDPOINT }}
+          WGA_S3_BUCKET: ${{ vars.WGA_S3_BUCKET }}
+          WGA_S3_REGION: ""
+          WGA_S3_ACCESS_KEY: ${{ secrets.WGA_S3_ACCESS_KEY }}
+          WGA_S3_ACCESS_SECRET: ${{ secrets.WGA_S3_ACCESS_SECRET }}
+          WGA_SMTP_HOST: ${{ vars.WGA_SMTP_HOST }}
+          WGA_SMTP_PORT: ${{ vars.WGA_SMTP_PORT }}
+          WGA_SMTP_USERNAME: ""
+          WGA_SMTP_PASSWORD: ""
+          WGA_SENDER_ADDRESS: ${{ vars.WGA_SENDER_ADDRESS }}
+          WGA_SENDER_NAME: ${{ vars.WGA_SENDER_NAME }}
+          MAILPIT_URL: ${{ vars.MAILPIT_URL }}
       - uses: actions/upload-artifact@v4
         with:
-          name: wga_exec
-          path: wga
+          name: wga
+          path: out
           retention-days: 1
   playwright-tests:
     needs: build
@@ -69,6 +89,7 @@ jobs:
         with:
           name: wga_exec
           path: ./wga_tmp
+      - run: ls -la ./wga_tmp
       - name: Install Go
         uses: actions/setup-go@v5
         with:
@@ -99,25 +120,6 @@ jobs:
         # if: steps.playwright-cache.outputs.cache-hit != 'true'
       - name: Add executable permissions
         run: chmod +x ./wga_tmp/wga
-      - name: Run the migrations
-        run: ./wga_tmp/wga migrate
-        env:
-          WGA_PROTOCOL: ${{ vars.WGA_PROTOCOL }}
-          WGA_HOSTNAME: ${{ vars.WGA_HOSTNAME }}
-          WGA_ADMIN_EMAIL: ${{ secrets.WGA_ADMIN_EMAIL }}
-          WGA_ADMIN_PASSWORD: ${{ secrets.WGA_ADMIN_PASSWORD }}
-          WGA_S3_ENDPOINT: ${{ vars.WGA_S3_ENDPOINT }}
-          WGA_S3_BUCKET: ${{ vars.WGA_S3_BUCKET }}
-          WGA_S3_REGION: ""
-          WGA_S3_ACCESS_KEY: ${{ secrets.WGA_S3_ACCESS_KEY }}
-          WGA_S3_ACCESS_SECRET: ${{ secrets.WGA_S3_ACCESS_SECRET }}
-          WGA_SMTP_HOST: ${{ vars.WGA_SMTP_HOST }}
-          WGA_SMTP_PORT: ${{ vars.WGA_SMTP_PORT }}
-          WGA_SMTP_USERNAME: ""
-          WGA_SMTP_PASSWORD: ""
-          WGA_SENDER_ADDRESS: ${{ vars.WGA_SENDER_ADDRESS }}
-          WGA_SENDER_NAME: ${{ vars.WGA_SENDER_NAME }}
-          MAILPIT_URL: ${{ vars.MAILPIT_URL }}
       - name: Run the application
         run: ./wga_tmp/wga serve --dev > wga.log &
         env:
@@ -138,7 +140,7 @@ jobs:
           WGA_SENDER_NAME: ${{ vars.WGA_SENDER_NAME }}
           MAILPIT_URL: ${{ vars.MAILPIT_URL }}
       - name: Wait for the application to start
-        run: sleep 20
+        run: sleep 5
       - name: Run Playwright tests
         run: bunx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
         env:
