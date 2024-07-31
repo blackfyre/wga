@@ -47,6 +47,10 @@ test("send postcard", async ({ page }) => {
     throw new Error("Postcard link not found");
   }
 
+  console.log("Postcard link: ", postcardLink);
+
   await page.goto(postcardLink);
-  await expect(page.locator("#mc-area")).toHaveText(/I am testing your site/);
+  await expect(page.locator("#mc-area")).toContainText([
+    "I am testing your site",
+  ]);
 });
