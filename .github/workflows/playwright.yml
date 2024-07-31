@@ -94,11 +94,6 @@ jobs:
         with:
           name: wga
           path: ./wga_tmp
-      - run: ls -la ./wga_tmp
-      - name: Install Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: "go.mod"
       - name: Download Mailpit
         run: wget https://github.com/axllent/mailpit/releases/download/v1.14.4/mailpit-linux-amd64.tar.gz
       - name: Extract Mailpit
