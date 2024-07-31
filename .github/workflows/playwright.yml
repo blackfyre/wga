@@ -45,6 +45,9 @@ jobs:
         run: go build -v -race -o ./out/wga
       - run: ls -la
         working-directory: ./out
+      - name: Set executable permissions
+        run: chmod +x ./wga
+        working-directory: ./out
       - name: Run migrations
         run: wga migrate
         working-directory: ./out
@@ -120,8 +123,6 @@ jobs:
       - run: bunx playwright install-deps
         name: Install Playwright dependencies
         # if: steps.playwright-cache.outputs.cache-hit != 'true'
-      - name: Add executable permissions
-        run: chmod +x ./wga_tmp/wga
       - name: Run the application
         run: ./wga_tmp/wga serve --dev > wga.log &
         env:
