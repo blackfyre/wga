@@ -1,14 +1,13 @@
 package handlers
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"net/http"
 	"strings"
 
 	"github.com/blackfyre/wga/assets/templ/components"
 	"github.com/blackfyre/wga/assets/templ/pages"
+	tmplUtils "github.com/blackfyre/wga/assets/templ/utils"
 	"github.com/blackfyre/wga/utils"
 	"github.com/blackfyre/wga/utils/url"
 	"github.com/labstack/echo/v5"
@@ -66,37 +65,23 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 
 		e.Router.GET("postcards", func(c echo.Context) error {
 
-			isHtmx := utils.IsHtmxRequest(c)
-
 			postCardId := c.QueryParamDefault("p", "nope")
 
 			if postCardId == "nope" {
 				app.Logger().Error(fmt.Sprintf("Invalid postcard id: %s", postCardId))
-				return apis.NewBadRequestError("Invalid postcard id", nil)
+				return utils.NotFoundError(c)
 			}
 
-			cacheKey := fmt.Sprintf("postcard-%s", postCardId)
-
-			if isHtmx {
-				cacheKey = cacheKey + ":htmx"
-			}
-
-			if app.Store().Has(cacheKey) {
-				return c.HTML(http.StatusOK, app.Store().Get(cacheKey).(string))
-			}
-
-			var cacheBuffer bytes.Buffer
-
-			r, err := app.Dao().FindRecordById("postcards", postCardId)
+			r, err := app.Dao().FindRecordById("Postcards", postCardId)
 
 			if err != nil {
 				app.Logger().Error("Failed to find postcard", "id", postCardId, "error", err.Error())
-				return apis.NewNotFoundError("", err)
+				return utils.NotFoundError(c)
 			}
 
 			if errs := app.Dao().ExpandRecord(r, []string{"image_id"}, nil); len(errs) > 0 {
 				app.Logger().Error("Failed to expand record", "id", postCardId, "errors", errs)
-				return fmt.Errorf("failed to expand: %v", errs)
+				return utils.ServerFaultError(c)
 			}
 
 			aw := r.ExpandedOne("image_id")
@@ -110,25 +95,23 @@ func registerPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 				Technique:  aw.GetString("technique"),
 			}
 
-			ctx := context.Background()
+			ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, "Postcard")
 
-			if isHtmx {
-				err = pages.PostcardBlock(content).Render(ctx, &cacheBuffer)
-			} else {
-				err = pages.PostcardPage(content).Render(ctx, &cacheBuffer)
-			}
+			//c.Response().Header().Set("HX-Push-Url", fullUrl)
+			err = pages.PostcardPage(content).Render(ctx, c.Response().Writer)
 
 			if err != nil {
-				app.Logger().Error("Failed to render the postcard", "error", err.Error())
+				app.Logger().Error("Error rendering artwork page", "error", err.Error())
 				return utils.ServerFaultError(c)
 			}
 
-			app.Store().Set(cacheKey, cacheBuffer.String())
+			return nil
 
-			return c.HTML(http.StatusOK, cacheBuffer.String())
 		})
 
 		e.Router.POST("postcards", func(c echo.Context) error {
+
+			e.Router.Use(utils.IsHtmxRequestMiddleware)
 
 			postData := struct {
 				SenderName           string   `json:"sender_name" form:"sender_name" query:"sender_name" validate:"required"`
