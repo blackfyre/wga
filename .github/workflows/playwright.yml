@@ -117,9 +117,9 @@ jobs:
           WGA_SENDER_ADDRESS: ${{ vars.WGA_SENDER_ADDRESS }}
           WGA_SENDER_NAME: ${{ vars.WGA_SENDER_NAME }}
           MAILPIT_URL: ${{ vars.MAILPIT_URL }}
+      - run: ls -lah
       - name: Run Go Tests
-        run: go test ./...
-      - run: ls -lah ./wga_tmp
+        run: go test -v ./...
       - run: ls -lah
       - name: Run Playwright tests
         run: bunx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
