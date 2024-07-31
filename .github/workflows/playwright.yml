@@ -49,7 +49,7 @@ jobs:
         run: chmod +x ./wga
         working-directory: ./out
       - name: Run migrations
-        run: wga migrate
+        run: ./wga migrate
         working-directory: ./out
         env:
           WGA_PROTOCOL: ${{ vars.WGA_PROTOCOL }}
