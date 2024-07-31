@@ -118,6 +118,9 @@ jobs:
       - run: bunx playwright install-deps
         name: Install Playwright dependencies
         # if: steps.playwright-cache.outputs.cache-hit != 'true'
+      - name: Add executable permissions
+        run: chmod +x ./wga
+        working-directory: ./wga_tmp
       - name: Run the application
         run: ./wga serve --dev > wga.log &
         working-directory: ./wga_tmp
