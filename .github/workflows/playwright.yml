@@ -175,7 +175,7 @@ jobs:
           retention-days: 1
   merge-reports:
     # Merge reports after playwright-tests, even if some shards have failed
-    if: always()
+    if: success() || failure()
     needs: [playwright-tests]
     environment: playwright
     runs-on: ubuntu-latest
