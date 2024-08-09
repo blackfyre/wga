@@ -11,11 +11,8 @@ import (
 func RegisterPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) {
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 		e.Router.GET("postcard/send", func(c echo.Context) error {
-
-			e.Router.Use(utils.IsHtmxRequestMiddleware)
-
 			return sendPostcard(app, c)
-		})
+		}, utils.IsHtmxRequestMiddleware)
 
 		e.Router.GET("postcards", func(c echo.Context) error {
 
@@ -23,11 +20,8 @@ func RegisterPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 		})
 
 		e.Router.POST("postcards", func(c echo.Context) error {
-
-			e.Router.Use(utils.IsHtmxRequestMiddleware)
-
 			return savePostcard(app, c, p)
-		})
+		}, utils.IsHtmxRequestMiddleware)
 		return nil
 	})
 }
