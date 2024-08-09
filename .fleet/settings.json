@@ -1,4 +1,22 @@
 {
   "backend.maxHeapSizeMb": 1487,
-  "editor.formatOnSave": true
+  "editor.formatOnSave": true,
+  "plugins": [
+    {
+      "type": "add",
+      "pluginName": "fleet.go"
+    },
+    {
+      "type": "add",
+      "pluginName": "fleet.git.frontend"
+    },
+    {
+      "type": "add",
+      "pluginName": "fleet.grazie"
+    },
+    {
+      "type": "add",
+      "pluginName": "fleet.xml"
+    }
+  ]
 }
