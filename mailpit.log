@@ -1,0 +1,4 @@
+time="2024/07/31 06:28:33" level=debug msg="[db] using temporary database: /tmp/nix-shell.g5ysBe/mailpit-1722400113006046905.db"
+time="2024/07/31 06:28:33" level=debug msg="[db] opening database /tmp/nix-shell.g5ysBe/mailpit-1722400113006046905.db"
+time="2024/07/31 06:28:33" level=info msg="[smtpd] starting on [::]:1025 (no encryption)"
+time="2024/07/31 06:28:33" level=error msg="listen tcp 0.0.0.0:1025: bind: address already in use"

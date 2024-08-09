@@ -11,7 +11,7 @@ templ FeedbackForm() {
 		</button>
 		<form
 			hx-post="/feedback"
-			enctype="multipart/form-data"
+			hx-encoding="multipart/form-data"
 			hx-target="#d"
 			id="feedback_send_form"
 			hx-select="section.container"

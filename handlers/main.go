@@ -3,6 +3,7 @@ package handlers
 import (
 	"github.com/blackfyre/wga/handlers/artworks"
 	"github.com/blackfyre/wga/handlers/inspire"
+	"github.com/blackfyre/wga/handlers/postcards"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/pocketbase/pocketbase"
 )
@@ -20,7 +21,7 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 	registerGuestbookHandlers(app)
 	registerArtist(app)
 	registerArtists(app)
-	registerPostcardHandlers(app, p)
+	postcards.RegisterPostcardHandlers(app, p)
 	registerContributors(app)
 	registerStatic(app)
 	artworks.RegisterArtworksHandlers(app)

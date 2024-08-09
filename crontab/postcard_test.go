@@ -16,6 +16,8 @@ func TestSendMail(t *testing.T) {
 
 	mailClient := app.NewMailClient()
 
+	t.Logf("mailClient: %v", mailClient)
+
 	message := &mailer.Message{
 		From: mail.Address{
 			Name:    "sender",

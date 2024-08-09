@@ -53,13 +53,10 @@ func registerFeedbackHandlers(app *pocketbase.PocketBase) {
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 		e.Router.GET("/feedback", func(c echo.Context) error {
-			e.Router.Use(utils.IsHtmxRequestMiddleware)
 			return presentFeedbackForm(c, app)
-		})
+		}, utils.IsHtmxRequestMiddleware)
 
 		e.Router.POST("/feedback", func(c echo.Context) error {
-
-			e.Router.Use(utils.IsHtmxRequestMiddleware)
 
 			postData := feedbackForm{
 				ReferTo: c.Request().Header.Get("Referer"),
@@ -123,7 +120,7 @@ func registerFeedbackHandlers(app *pocketbase.PocketBase) {
 			utils.SendToastMessage("Thank you! Your feedback is valuable to us!", "success", true, c, "")
 
 			return nil
-		})
+		}, utils.IsHtmxRequestMiddleware)
 
 		return nil
 	})
