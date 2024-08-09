@@ -176,7 +176,7 @@ jobs:
   merge-reports:
     # Merge reports after playwright-tests, even if some shards have failed
     if: success() || failure()
-    needs: [build, playwright-tests]
+    needs: [playwright-tests]
     environment: playwright
     runs-on: ubuntu-latest
     steps:
