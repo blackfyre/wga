@@ -26,6 +26,7 @@ func savePostcard(app *pocketbase.PocketBase, c echo.Context, p *bluemonday.Poli
 	}{}
 
 	if err := c.Bind(&postData); err != nil {
+		app.Logger().Error("Failed to parse form", "error", err.Error())
 		utils.SendToastMessage("Failed to parse form", "error", true, c, "")
 		return utils.ServerFaultError(c)
 	}
