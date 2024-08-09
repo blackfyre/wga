@@ -1,13 +1,10 @@
 package postcards
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
-	"github.com/blackfyre/wga/assets/templ/components"
 	"github.com/blackfyre/wga/utils"
-	"github.com/blackfyre/wga/utils/url"
 	"github.com/labstack/echo/v5"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/pocketbase/pocketbase"
@@ -36,14 +33,12 @@ func savePostcard(app *pocketbase.PocketBase, c echo.Context, p *bluemonday.Poli
 	if postData.HoneyPotEmail != "" || postData.HoneyPotName != "" {
 		// this is probably a bot
 		app.Logger().Warn("Honey pot triggered", "data", fmt.Sprintf("+%v", postData))
-		utils.SendToastMessage("Failed to find postcard collection", "error", true, c, "")
-		return nil
+		return utils.ServerFaultError(c)
 	}
 
 	collection, err := app.Dao().FindCollectionByNameOrId("postcards")
 	if err != nil {
 		app.Logger().Error("Failed to find postcard collection", "error", err.Error())
-		utils.SendToastMessage("Failed to find postcard collection", "error", true, c, "")
 		return utils.NotFoundError(c)
 	}
 
@@ -60,36 +55,16 @@ func savePostcard(app *pocketbase.PocketBase, c echo.Context, p *bluemonday.Poli
 		"image_id":      postData.ImageId,
 		"notify_sender": postData.NotificationRequired,
 	})
+
 	if err != nil {
 		app.Logger().Error("Failed to process postcard form", "error", err.Error())
 		utils.SendToastMessage("Failed to find postcard collection", "error", true, c, "")
 		return utils.ServerFaultError(c)
 	}
 
-	ctx := context.Background()
-
 	if err := form.Submit(); err != nil {
 
-		r, err := app.Dao().FindRecordById("artworks", postData.ImageId)
-
-		if err != nil {
-			app.Logger().Error("Failed to find artwork "+postData.ImageId, "error", err.Error())
-			return utils.NotFoundError(c)
-		}
-
-		err = components.PostcardEditor(components.PostcardEditorDTO{
-			Image:     url.GenerateFileUrl("artworks", postData.ImageId, r.GetString("image"), ""),
-			ImageId:   postData.ImageId,
-			Title:     r.GetString("title"),
-			Comment:   r.GetString("comment"),
-			Technique: r.GetString("technique"),
-		}).Render(ctx, c.Response().Writer)
-
-		app.Logger().Error(fmt.Sprintf("Failed to store the postcard with image_id %s", postData.ImageId), "error", err.Error())
-
-		utils.SendToastMessage("Failed to store the postcard", "error", false, c, "")
-
-		return nil
+		return renderForm(postData.ImageId, app, c)
 	}
 
 	utils.SendToastMessage("Thank you! Your postcard has been queued for sending!", "success", true, c, "")
