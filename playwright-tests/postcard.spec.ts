@@ -29,12 +29,23 @@ test("send postcard", async ({ page }) => {
   }
   await page.goto(mailpitUrl);
 
-  await page
-    .getByRole("link", { name: "WGA playwright.tester@local." })
-    .nth(0)
-    .click({
-      timeout: 90 * 60 * 1000,
-    });
+  try {
+    await page
+      .getByRole("link", { name: "WGA playwright.tester@local." })
+      .nth(0)
+      .click({
+        timeout: 90 * 60 * 1000,
+      });
+  } catch (e) {
+    console.error("Error: ", e);
+    page.reload();
+    await page
+      .getByRole("link", { name: "WGA playwright.tester@local." })
+      .nth(0)
+      .click({
+        timeout: 90 * 60 * 1000,
+      });
+  }
 
   const postcardLink = await page
     .frameLocator("#preview-html")
