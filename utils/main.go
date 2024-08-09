@@ -305,3 +305,7 @@ func NotFoundError(c echo.Context) error {
 func ServerFaultError(c echo.Context) error {
 	return error_pages.ServerFaultPage().Render(context.Background(), c.Response().Writer)
 }
+
+func BadRequestError(c echo.Context) error {
+	return error_pages.BadRequestPage().Render(context.Background(), c.Response().Writer)
+}

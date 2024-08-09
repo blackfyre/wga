@@ -1,0 +1,29 @@
+package error_pages
+
+import "github.com/blackfyre/wga/assets/templ/layouts"
+
+templ BadRequestPage() {
+	@layouts.LayoutMain() {
+		<head>
+			<title>400 - Server Fault</title>
+		</head>
+		@ServerFaultBlock()
+	}
+}
+
+templ BadRequestBlock() {
+	<div class="container">
+		<div class="lg:px-24 lg:py-24 md:py-20 md:px-44 px-4 py-24 items-center flex justify-center flex-col-reverse lg:flex-row md:gap-28 gap-16">
+			<div class="xl:pt-24 w-full xl:w-1/2 relative pb-12 lg:pb-0">
+				<h1 class="my-2 font-bold text-2xl">
+					Looks like you've wanted something that's not supported!
+				</h1>
+				<p class="my-2">Sorry about that!</p>
+				<p class="my-2">Please try again a couple more times to drive the point home!</p>
+			</div>
+			<div>
+				<img src="https://i.ibb.co/ck1SGFJ/Group.png"/>
+			</div>
+		</div>
+	</div>
+}
