@@ -65,7 +65,7 @@ func GetRequiredQueryParam(c echo.Context, param string) (string, error) {
 	p := c.QueryParam(param)
 
 	if p == "" {
-		return "", fmt.Errorf(fmt.Sprintf("Missing required query parameter: %v", param))
+		return "", fmt.Errorf("Missing required query parameter: %v", param)
 	}
 
 	return p, nil
