@@ -58,7 +58,7 @@ func savePostcard(app *pocketbase.PocketBase, c echo.Context, p *bluemonday.Poli
 
 	if err != nil {
 		app.Logger().Error("Failed to process postcard form", "error", err.Error())
-		utils.SendToastMessage("Failed to find postcard collection", "error", true, c, "")
+		utils.SendToastMessage("Failed to process postcard form", "error", true, c, "")
 		return utils.ServerFaultError(c)
 	}
 
