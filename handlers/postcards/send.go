@@ -20,6 +20,10 @@ func sendPostcard(app *pocketbase.PocketBase, c echo.Context) error {
 		return utils.BadRequestError(c)
 	}
 
+	return renderForm(artworkId, app, c)
+}
+
+func renderForm(artworkId string, app *pocketbase.PocketBase, c echo.Context) error {
 	ctx := context.Background()
 
 	r, err := app.Dao().FindRecordById("artworks", artworkId)
