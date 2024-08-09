@@ -32,7 +32,7 @@ func savePostcard(app *pocketbase.PocketBase, c echo.Context, p *bluemonday.Poli
 
 	if postData.HoneyPotEmail != "" || postData.HoneyPotName != "" {
 		// this is probably a bot
-		app.Logger().Warn("Honey pot triggered", "data", fmt.Sprintf("+%v", postData))
+		app.Logger().Warn("Honey pot triggered", "data", fmt.Sprintf("%+v", postData), "ip", c.RealIP())
 		return utils.ServerFaultError(c)
 	}
 
