@@ -141,7 +141,7 @@ Nix is a package manager for the whole system/development environment, not just 
 
 ### Install Nix package manager
 
-For both Linux and MacOS you can use the installer from determinate systems. On the site [Zero to nix](https://zero-to-nix.com/start) you can find more info to get started.
+For both Linux and macOS, you can use the installer from determinate systems. On the site [Zero to nix](https://zero-to-nix.com/start) you can find more info to get started.
 
 ```sh
 curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
