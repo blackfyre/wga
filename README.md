@@ -147,7 +147,7 @@ For both Linux and MacOS you can use the installer from determinate systems. On 
 curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
 ```
 
-If you installed Nix in a different way, make sure that you **[enable flakes](https://nixos.wiki/wiki/Flakes)**. [Flake concepts explained](https://zero-to-nix.com/concepts/flakes). Flakes are experimental, but highly recommended and included with Nix for years.
+If you installed Nix differently, make sure that you **[enable flakes](https://nixos.wiki/wiki/Flakes)**. [Flake concepts explained](https://zero-to-nix.com/concepts/flakes). Flakes are experimental, but highly recommended and included with Nix for years.
 
 ## License
 
