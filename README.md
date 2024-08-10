@@ -137,7 +137,7 @@ If you want to start the development environment automatically when entering the
 ### First time installing Nix
 
 With Nix installed, you do not need to install Go, ASDF, node, npm, bun or other development tools. **Nix package manager** will handle it for you, and makes sure the versions are correct for this project. This has been tested on both Linux and MacOS.
-Nix is a package manager for the whole system/development environment, not just 1 part of it, like NPM is for Node. There is also NixOS, which works in the same way but for the whole OS, making it declarative and versioned. The config in this project works for both. With the Nix Flake in this project you are using Nix only to manage the development environment.
+Nix is a package manager for the whole system/development environment, not just 1 part of it, like NPM is for Node. There is also NixOS, which works in the same way but for the whole OS, making it declarative and versioned. The config in this project works for both. With the Nix Flake in this project, you are using Nix only to manage the development environment.
 
 ### Install Nix package manager
 
