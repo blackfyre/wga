@@ -123,6 +123,32 @@ The database is populated on first start, and if you want to have images availab
 
 This will go through the contents of the database and will use placeholder images to "generate" the necessary images to the designated S3 compatible file hosting solution designated in the `.env` file.
 
+## With Nix
+
+This project has a Nix `flake.nix` with the full development environment configuration in it. Start it with:
+
+```sh
+nix develop
+```
+
+If you want to start the development environment automatically when entering the directory, [install direnv](https://direnv.net/docs/installation.html) and run `direnv allow` in this directory.
+
+
+### First time installing Nix
+
+With Nix installed, you do not need to install Go, ASDF, node, npm, bun or other development tools. **Nix package manager** will handle it for you, and makes sure the versions are correct for this project. This has been tested on both Linux and macOS.
+Nix is a package manager for the whole system/development environment, not just 1 part of it, like NPM is for Node. There is also NixOS, which works in the same way but for the whole OS, making it declarative and versioned. The config in this project works for both. With the Nix Flake in this project, you are using Nix only to manage the development environment.
+
+### Install Nix package manager
+
+For both Linux and macOS, you can use the installer from determinate systems. On the site [Zero to nix](https://zero-to-nix.com/start) you can find more info to get started.
+
+```sh
+curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
+```
+
+If you installed Nix differently, make sure that you **[enable flakes](https://nixos.wiki/wiki/Flakes)**. [Flake concepts explained](https://zero-to-nix.com/concepts/flakes). Flakes are experimental, but highly recommended and included with Nix for years.
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
