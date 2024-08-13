@@ -1,3 +1,9 @@
+version: 2
+
+project_name: Web Gallery of Art
+
+report_sizes: true
+
 before:
   hooks:
     - bun install
