@@ -2,9 +2,10 @@ package feedback
 
 import (
 	"context"
-	"fmt"
+	"errors"
 
 	"github.com/blackfyre/wga/assets/templ/components"
+	"github.com/blackfyre/wga/errs"
 	"github.com/blackfyre/wga/utils"
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
@@ -27,8 +28,12 @@ type feedbackForm struct {
 // It also checks if the email and message fields are empty and returns an error if they are.
 // If all validations pass, it returns nil.
 func validateFeedbackForm(form feedbackForm) error {
+	if form.HoneyPotName != "" || form.HoneyPotEmail != "" {
+		return errs.ErrHoneypotTriggered
+	}
+
 	if form.Message == "" {
-		return fmt.Errorf("message is required")
+		return errs.ErrMessageRequired
 	}
 
 	return nil
@@ -73,7 +78,7 @@ func processFeedbackForm(c echo.Context, app *pocketbase.PocketBase) error {
 		app.Logger().Error("Failed to validate form data", "error", err.Error())
 		utils.SendToastMessage(err.Error(), "error", true, c, "")
 
-		if err == fmt.Errorf("failed to parse form") {
+		if errors.Is(err, errs.ErrHoneypotTriggered) {
 			app.Logger().Error("Bot caught in honeypot", "error", err.Error())
 		}
 
