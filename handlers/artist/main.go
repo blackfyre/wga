@@ -1,4 +1,4 @@
-package handlers
+package artist
 
 import (
 	"context"
@@ -80,34 +80,13 @@ func findArtworksByAuthorId(app *pocketbase.PocketBase, authorId string) ([]*mod
 	return app.Dao().FindRecordsByFilter("artworks", "author = '"+authorId+"'", "+title", 100, 0)
 }
 
-// renderSchoolNames takes an instance of PocketBase and a slice of school IDs,
-// and returns a string containing the names of the schools corresponding to the given IDs.
-// If a school is not found, it logs an error and continues to the next ID.
-func renderSchoolNames(app *pocketbase.PocketBase, schoolIds []string) string {
-	var schoolCollector []string
-
-	for _, s := range schoolIds {
-		r, err := app.Dao().FindRecordById("schools", s)
-
-		if err != nil {
-			app.Logger().Error("school not found", "error", err.Error())
-			continue
-		}
-
-		schoolCollector = append(schoolCollector, r.GetString("name"))
-
-	}
-
-	return strings.Join(schoolCollector, ", ")
-}
-
 // renderArtistContent renders the content of an artist by generating a DTO (Data Transfer Object) that contains
 // information about the artist, their works, and JSON-LD metadata. It takes the PocketBase application instance,
 // the Echo context, and the artist record as input parameters. It returns the DTO representing the artist content
 // and an error if any occurred during the process.
-func renderArtistContent(app *pocketbase.PocketBase, c echo.Context, artist *models.Record) (dto.Artist, error) {
+func RenderArtistContent(app *pocketbase.PocketBase, c echo.Context, artist *models.Record) (dto.Artist, error) {
 	id := artist.GetId()
-	expectedSlug := generateArtistSlug(artist)
+	expectedSlug := utils.GenerateArtistSlug(artist)
 
 	works, err := findArtworksByAuthorId(app, id)
 
@@ -117,7 +96,7 @@ func renderArtistContent(app *pocketbase.PocketBase, c echo.Context, artist *mod
 		return dto.Artist{}, utils.NotFoundError(c)
 	}
 
-	schools := renderSchoolNames(app, artist.GetStringSlice("school"))
+	schools := utils.RenderSchoolNames(app, artist.GetStringSlice("school"))
 
 	content := dto.Artist{
 		Name: artist.GetString("name"),
@@ -198,7 +177,7 @@ func processArtist(c echo.Context, app *pocketbase.PocketBase) error {
 
 	id := utils.ExtractIdFromString(slug)
 
-	fullUrl := generateCurrentPageUrl(c)
+	fullUrl := utils.GenerateCurrentPageUrl(c)
 	artist, err := app.Dao().FindRecordById("artists", id)
 
 	if err != nil {
@@ -206,13 +185,13 @@ func processArtist(c echo.Context, app *pocketbase.PocketBase) error {
 		return utils.NotFoundError(c)
 	}
 
-	expectedSlug := generateArtistSlug(artist)
+	expectedSlug := utils.GenerateArtistSlug(artist)
 
 	if slug != expectedSlug {
 		return c.Redirect(http.StatusMovedPermanently, "/artists/"+expectedSlug)
 	}
 
-	content, err := renderArtistContent(app, c, artist)
+	content, err := RenderArtistContent(app, c, artist)
 
 	if err != nil {
 		return err
@@ -373,12 +352,12 @@ func processArtwork(c echo.Context, app *pocketbase.PocketBase) error {
 	return nil
 }
 
-// registerArtist registers the artist routes to the PocketBase app.
+// RegisterHandlers registers the artist routes to the PocketBase app.
 // It adds two routes to the app router:
 // 1. GET /artists/:name - returns the artist page with the given name
 // 2. GET /artists/:name/:awid - returns the artwork page with the given name and artwork id
 // It also caches the HTML response for each route to improve performance.
-func registerArtist(app *pocketbase.PocketBase) {
+func RegisterHandlers(app *pocketbase.PocketBase) {
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 
