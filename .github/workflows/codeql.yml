@@ -89,10 +89,14 @@ jobs:
         echo '  make release'
         exit 1
 
-    - name: Run templ install
+    - if: matrix.language == 'go'
+      shell : bash
+      name: Run templ install
       run: go install github.com/a-h/templ/cmd/templ@latest
 
-    - name: Run templ generate
+    - if: matrix.language == 'go'
+      shell : bash
+      name: Run templ generate
       run: templ generate
 
     - name: Perform CodeQL Analysis
