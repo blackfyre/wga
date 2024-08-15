@@ -1,0 +1,43 @@
+package pages
+
+import "github.com/blackfyre/wga/assets/templ/layouts"
+
+type DualViewDto struct {
+	Left  string
+	Right string
+}
+
+templ DualPage(c DualViewDto) {
+	@layouts.LayoutBase("") {
+		<main id="dual-area" class="grid grid-cols-2 grid-rows-[1fr_100px] gap-0 h-screen">
+			<div id="left" class="w-full overflow-y-auto py-10 pl-10">
+				@templ.Raw(c.Left)
+			</div>
+			<div id="right" class="w-full overflow-y-auto py-10 pl-10">
+				@templ.Raw(c.Right)
+			</div>
+			<aside id="dual-nav" class="col-span-2 row-start-2">
+				<nav class="flex flex-col"></nav>
+			</aside>
+		</main>
+	}
+}
+
+templ RightSideDefault() {
+	<div class="p-4">
+		<ul>
+			<li>
+				viewing simultaneously two images related to each other
+				<ul>
+					<li>by the influence one exerted to the other (<a href="/html/c/caravagg/03/17judit.html" target="LEFT" onclick="parent.frames['LEFT'].location.href='/html/c/caravagg/03/17judit.html';parent.frames['RIGHT'].location.href='/html/g/gentiles/artemisi/judit.html'">example)</a></li>
+					<li>by being companion-pieces (<a href="/html/h/hals/frans/08-1658/68geraer.html" target="LEFT" onclick="parent.frames['LEFT'].location.href='/html/h/hals/frans/08-1658/68geraer.html';parent.frames['RIGHT'].location.href='/html/h/hals/frans/08-1658/69coyman.html'">example)</a></li>
+					<li>by representing the same subject (<a href="/html/l/lorenzet/pietro/2/15birth.html" target="LEFT" onclick="parent.frames['LEFT'].location.href='/html/l/lorenzet/pietro/2/15birth.html';parent.frames['RIGHT'].location.href='/html/g/ghirland/domenico/6tornab/61tornab/2birth.html'">example)</a></li>
+					<li>by displaying different views of a three-dimensional sculpture (<a href="/html/m/michelan/1sculptu/david/david.html" target="LEFT" onclick="parent.frames['LEFT'].location.href='/html/m/michelan/1sculptu/david/david.html';parent.frames['RIGHT'].location.href='/html/m/michelan/1sculptu/david/david_r.html'">example)</a></li>
+					<li>and so on.</li>
+				</ul>
+			</li>
+			<li>viewing simultaneously a biography and the pages of an artist (<a href="/bio/g/greco_el/biograph.html" target="LEFT" onclick="parent.frames['LEFT'].location.href='/bio/g/greco_el/biograph.html';parent.frames['RIGHT'].location.href='/html/g/greco_el/10/index.html'">example)</a></li>
+			<li>printing to the same sheet two pages (e.g. one of the above examples).</li>
+		</ul>
+	</div>
+}
