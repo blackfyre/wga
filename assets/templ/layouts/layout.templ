@@ -5,7 +5,7 @@ import (
 	"github.com/blackfyre/wga/assets/templ/utils"
 )
 
-templ layout_base() {
+templ LayoutBase(bodyClasses string) {
 	<!DOCTYPE html>
 	<html class="has-navbar-fixed-top" style="height: 100%;">
 		<head>
@@ -37,7 +37,7 @@ templ layout_base() {
 			<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.0.0/animate.min.css"/>
 			<link rel="stylesheet" href="/assets/css/vendor/cookieconsent.css"/>
 		</head>
-		<body class="customBody pt-20" hx-indicator=".progress-indicator" hx-target="#mc-area" hx-select="#mc-area" hx-swap="outerHTML">
+		<body class={ bodyClasses } hx-indicator=".progress-indicator" hx-target="#mc-area" hx-select="#mc-area" hx-swap="outerHTML">
 			<div class="progress-indicator" style="height: 3px;">
 				<div class="indeterminate" style="background-color: #489393;"></div>
 			</div>
@@ -61,7 +61,7 @@ templ layout_base() {
 }
 
 templ LayoutMain() {
-	@layout_base() {
+	@LayoutBase("pt-20") {
 		@components.TopNav()
 		if utils.GetEnvironment(ctx) != "production" {
 			<section class="container my-6">
@@ -89,7 +89,7 @@ templ LayoutMain() {
 }
 
 templ LayoutSlim() {
-	@layout_base() {
+	@LayoutBase("pt-20") {
 		<main id="mc-area">
 			{ children... }
 		</main>
