@@ -187,6 +187,16 @@ function InitEventListeners() {
     createToast("Request timed out!", "danger");
   });
 
+  document.body.addEventListener('htmx:responseError', function(evt: any) {
+    console.error(evt);
+
+
+    if (evt.detail.xhr.status === 403) {
+        const response = JSON.parse(evt.detail.xhr.response);
+        createToast(response.error, "danger");
+    }
+});
+
   // document.body.addEventListener("htmx:configRequest", (event) => {
   //   const evt = event as CustomEvent;
   //   //get the value of the _csrf cookie

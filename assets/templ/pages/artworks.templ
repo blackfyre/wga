@@ -5,16 +5,17 @@ import (
 	"github.com/blackfyre/wga/assets/templ/layouts"
 	// "github.com/blackfyre/wga/assets/templ/utils"
 	"github.com/blackfyre/wga/assets/templ/components"
+	"github.com/blackfyre/wga/middleware"
 )
 
 // ArtistPage is the template for the artist page
-templ ArtworkSearchPage(s dto.ArtworkSearchDTO) {
+templ ArtworkSearchPage(s dto.ArtworkSearchDTO, csrfToken string) {
 	@layouts.LayoutMain() {
-		@ArtworkSearchBlock(s)
+		@ArtworkSearchBlock(s, csrfToken)
 	}
 }
 
-templ ArtworkSeachFilterBlock(b dto.ArtworkSearchDTO) {
+templ ArtworkSeachFilterBlock(b dto.ArtworkSearchDTO, csrfToken string) {
 	<form
 		action="/artworks/results"
 		hx-get="/artworks/results"
@@ -22,6 +23,7 @@ templ ArtworkSeachFilterBlock(b dto.ArtworkSearchDTO) {
 		method="GET"
 		class="flex flex-col gap-4"
 	>
+		<input type="hidden" name={ middleware.CSRF_IDENTIFIER } value={ csrfToken } />
 		<label class="form-control w-full">
 			Artforms
 			<select name="art_form" id="art_form_select" title="Artforms" class="select select-bordered">
@@ -147,12 +149,12 @@ templ ArtworkSearchResults(r dto.ArtworkSearchResultDTO) {
 	</div>
 }
 
-templ ArtworkSearchBlock(s dto.ArtworkSearchDTO) {
+templ ArtworkSearchBlock(s dto.ArtworkSearchDTO, csrfToken string) {
 	<section class="section px-4">
 		<h1 class="text-2xl font-bold mb-4">Artwork search</h1>
 		<div class="flex flex-col md:flex-row gap-4">
 			<div class="w-full md:w-1/4 lg:w-1/5">
-				@ArtworkSeachFilterBlock(s)
+				@ArtworkSeachFilterBlock(s, csrfToken)
 			</div>
 			<div class="w-full" id="search-result-container">
 				@ArtworkSearchResults(s.Results)

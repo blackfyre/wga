@@ -7,6 +7,7 @@ import (
 	"github.com/blackfyre/wga/crontab"
 	"github.com/blackfyre/wga/handlers"
 	"github.com/blackfyre/wga/hooks"
+	"github.com/blackfyre/wga/middleware"
 	_ "github.com/blackfyre/wga/migrations"
 
 	"github.com/blackfyre/wga/utils"
@@ -14,6 +15,7 @@ import (
 	"github.com/blackfyre/wga/utils/sitemap"
 	"github.com/joho/godotenv"
 	"github.com/pocketbase/pocketbase"
+	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/plugins/migratecmd"
 	"github.com/spf13/cobra"
 )
@@ -26,13 +28,11 @@ func main() {
 		DefaultDataDir: "./wga_data",
 	})
 
-	// app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
-	// 	e.Router.Use(middleware.CSRFWithConfig(middleware.CSRFConfig{
-	// 		TokenLookup: "header:X-XSRF-TOKEN",
-	// 	}))
+	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
+		e.Router.Use(middleware.CSRF)
 
-	// 	return nil
-	// })
+		return nil
+	})
 
 	handlers.RegisterHandlers(app)
 	hooks.RegisterHooks(app)

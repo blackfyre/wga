@@ -1,6 +1,8 @@
 package postcards
 
 import (
+	"log"
+
 	"github.com/blackfyre/wga/utils"
 	"github.com/labstack/echo/v5"
 	"github.com/microcosm-cc/bluemonday"
@@ -15,7 +17,7 @@ func RegisterPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 		}, utils.IsHtmxRequestMiddleware)
 
 		e.Router.GET("postcards", func(c echo.Context) error {
-
+			log.Println("postcards")
 			return viewPostcard(app, c)
 		})
 
