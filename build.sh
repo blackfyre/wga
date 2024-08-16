@@ -22,10 +22,12 @@ fi
 # determine go path and set it
 export GO_PATH=$(which go)
 
-echo $GO_PATH
+# templ is at $GO_PATH/../packages/bin/templ
+export TEMPL_PATH=$(dirname $GO_PATH)/../packages/bin/templ
 
-echo "Generating from templ files"
-templ generate
+# Run templ to generate the code
+echo "Generating code"
+$TEMPL_PATH generate
 
 echo "Fetching dependencies"
 go mod tidy
