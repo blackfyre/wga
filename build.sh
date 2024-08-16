@@ -11,9 +11,6 @@ handle_error() {
 # Set the error trap
 trap 'handle_error' ERR
 
-echo "Fetching dependencies"
-go mod tidy
-
 if command -v templ &> /dev/null; then
     echo "templ command found!"
 else
@@ -22,10 +19,20 @@ else
     echo "templ installed successfully!"
 fi
 
-echo "Generating from templ files"
+go env
+
+GOPATH_BIN=$(go env GOPATH)/bin
+export PATH=${PATH}:${GOPATH_BIN}
+
+# Run templ to generate the code
+echo "Generating code"
 templ generate
+
+echo "Fetching dependencies"
+go mod tidy
+
 echo "Building the app"
-go build
+go build -v -race ./...
 
 # If the build is successful, execute the following code
 echo "App built successfully!"
