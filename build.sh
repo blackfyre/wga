@@ -21,7 +21,8 @@ fi
 
 go env
 
-export PATH=${PATH}:`go env GOPATH`/bin
+GOPATH_BIN=$(go env GOPATH)/bin
+export PATH=${PATH}:${GOPATH_BIN}
 
 # Run templ to generate the code
 echo "Generating code"
