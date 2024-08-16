@@ -89,10 +89,7 @@ jobs:
         name: Build
         shell: bash
         run: |
-          go install github.com/a-h/templ/cmd/templ@latest
-          templ generate
-          go mod tidy
-          go build -v ./...
+          ./build.sh
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3

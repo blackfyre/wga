@@ -25,7 +25,7 @@ fi
 echo "Generating from templ files"
 templ generate
 echo "Building the app"
-go build
+go build -v -race ./...
 
 # If the build is successful, execute the following code
 echo "App built successfully!"
