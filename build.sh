@@ -21,9 +21,11 @@ fi
 
 go env
 
+export PATH=${PATH}:`go env GOPATH`/bin
+
 # Run templ to generate the code
 echo "Generating code"
-$TEMPL_PATH generate
+templ generate
 
 echo "Fetching dependencies"
 go mod tidy
