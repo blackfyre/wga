@@ -5,11 +5,13 @@ on:
     paths:
       - "**/*.go"
       - "**/*.js"
+      - "**/*.templ"
   pull_request:
     branches: [main]
     paths:
       - "**/*.go"
       - "**/*.js"
+      - "**/*.templ"
 jobs:
   build:
     runs-on: ubuntu-latest
