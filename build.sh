@@ -19,11 +19,12 @@ else
     echo "templ installed successfully!"
 fi
 
+echo "Generating from templ files"
+templ generate
+
 echo "Fetching dependencies"
 go mod tidy
 
-echo "Generating from templ files"
-templ generate
 echo "Building the app"
 go build -v -race ./...
 
