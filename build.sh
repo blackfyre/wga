@@ -11,9 +11,6 @@ handle_error() {
 # Set the error trap
 trap 'handle_error' ERR
 
-echo "Fetching dependencies"
-go mod tidy
-
 if command -v templ &> /dev/null; then
     echo "templ command found!"
 else
@@ -21,6 +18,9 @@ else
     go install github.com/a-h/templ/cmd/templ@latest
     echo "templ installed successfully!"
 fi
+
+echo "Fetching dependencies"
+go mod tidy
 
 echo "Generating from templ files"
 templ generate
