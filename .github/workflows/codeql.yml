@@ -86,11 +86,12 @@ jobs:
       # ℹ️ Command-line programs to run using the OS shell.
       # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
       - if: matrix.build-mode == 'manual'
+        name: Build
         shell: bash
         run: |
           go install github.com/a-h/templ/cmd/templ@latest
-          go mod tidy
           templ generate
+          go mod tidy
           go build -v ./...
 
       - name: Perform CodeQL Analysis
