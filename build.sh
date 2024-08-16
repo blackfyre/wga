@@ -19,11 +19,10 @@ else
     echo "templ installed successfully!"
 fi
 
-# determine go path
-if [ -z "$GOPATH" ]; then
-    echo "GOPATH is not set. Exiting..."
-    exit 1
-fi
+# determine go path and set it
+export GO_PATH=$(which go)
+
+echo $GO_PATH
 
 echo "Generating from templ files"
 templ generate
