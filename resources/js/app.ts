@@ -192,8 +192,14 @@ function InitEventListeners() {
 
 
     if (evt.detail.xhr.status === 403) {
+      // could be returned from CSRF middleware in case of missing or not-matching token
+      try {
         const response = JSON.parse(evt.detail.xhr.response);
         createToast(response.error, "danger");
+      } catch (e) {
+        console.error("Failed to parse JSON response", e);
+        createToast("An unexpected error occurred.", "danger");
+      }
     }
 });
 
