@@ -58,6 +58,7 @@ func generateCSRFCookie(requestId string) *http.Cookie {
 	cookie.Expires = time.Now().Add(24 * time.Hour)
 	cookie.HttpOnly = true
 	cookie.SameSite = http.SameSiteStrictMode
+	cookie.Secure = os.Getenv("ENV") == "production"
 	return cookie
 }
 
