@@ -19,7 +19,7 @@ func CSRF(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		// Get CSRF token from the session
 		csrfCookie, err := c.Cookie(CSRF_IDENTIFIER)
-		if err != nil {
+		if err != nil && err == http.ErrNoCookie {
 			// then the cookie is not preset
 			// e.g. on first request of user session, or after cookie expiration
 			requestId := c.Response().Header().Get(echo.HeaderXRequestID)
@@ -59,6 +59,7 @@ func generateCSRFCookie(requestId string) *http.Cookie {
 	cookie.HttpOnly = true
 	cookie.SameSite = http.SameSiteStrictMode
 	cookie.Secure = os.Getenv("ENV") == "production"
+	cookie.Path = "/"
 	return cookie
 }
 
