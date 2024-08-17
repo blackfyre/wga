@@ -22,7 +22,8 @@ func CSRF(next echo.HandlerFunc) echo.HandlerFunc {
 		if err != nil {
 			// then the cookie is not preset
 			// e.g. on first request of user session, or after cookie expiration
-			csrfCookie = generateCSRFCookie() // generates a new token
+			requestId := c.Response().Header().Get(echo.HeaderXRequestID)
+			csrfCookie = generateCSRFCookie(requestId) // generates a new token
 			// only set the cookie when a new token has been generated
 			c.SetCookie(csrfCookie)
 		}
@@ -50,20 +51,19 @@ func CSRF(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
-func generateCSRFCookie() *http.Cookie {
+func generateCSRFCookie(requestId string) *http.Cookie {
 	cookie := new(http.Cookie)
 	cookie.Name = CSRF_IDENTIFIER
-	cookie.Value = generateCSRFToken()
+	cookie.Value = generateCSRFToken(requestId)
 	cookie.Expires = time.Now().Add(24 * time.Hour)
 	cookie.HttpOnly = true
 	cookie.SameSite = http.SameSiteStrictMode
 	return cookie
 }
 
-func generateCSRFToken() string {
+func generateCSRFToken(requestId string) string {
 	secretKey := []byte(CSRF_HMAC_SECRET)
-	// message should be something unpredictable - like a request id (e.g. by echo requeset id middleware)
-	message := []byte(time.Now().String())
+	message := []byte(requestId)
 	hash := hmac.New(sha256.New, secretKey)
 	hash.Write(message)
 	return hex.EncodeToString(hash.Sum(nil))

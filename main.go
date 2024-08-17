@@ -14,6 +14,7 @@ import (
 	"github.com/blackfyre/wga/utils/seed"
 	"github.com/blackfyre/wga/utils/sitemap"
 	"github.com/joho/godotenv"
+	echoMiddleware "github.com/labstack/echo/v5/middleware"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/plugins/migratecmd"
@@ -29,6 +30,7 @@ func main() {
 	})
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
+		e.Router.Use(echoMiddleware.RequestID())
 		e.Router.Use(middleware.CSRF)
 
 		return nil
