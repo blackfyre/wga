@@ -2,7 +2,6 @@ package postcards
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/blackfyre/wga/assets/templ/components"
@@ -37,7 +36,8 @@ func renderForm(artworkId string, app *pocketbase.PocketBase, c echo.Context) er
 
 	csrfToken, ok := c.Get(middleware.CSRF_IDENTIFIER).(string)
 	if !ok {
-		return errors.New("error while getting CSRF token from request context")
+		app.Logger().Error("CSRF token retrieval failed", "error", "Token not found in request context")
+		return utils.BadRequestError(c)
 	}
 
 	err = components.PostcardEditor(components.PostcardEditorDTO{
