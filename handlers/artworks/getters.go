@@ -2,6 +2,7 @@ package artworks
 
 import (
 	"github.com/blackfyre/wga/models"
+	"github.com/blackfyre/wga/utils/url"
 	"github.com/pocketbase/pocketbase"
 )
 
@@ -61,8 +62,8 @@ func getArtSchoolOptions(app *pocketbase.PocketBase) (map[string]string, error) 
 	return options, nil
 }
 
-func getArtistNameList(app *pocketbase.PocketBase) ([]string, error) {
-	var names []string
+func GetArtistNameList(app *pocketbase.PocketBase) (map[string]string, error) {
+	names := make(map[string]string) // Initialize the names map
 	c, err := app.Dao().FindRecordsByFilter(
 		"artists",
 		"published = true",
@@ -76,7 +77,10 @@ func getArtistNameList(app *pocketbase.PocketBase) ([]string, error) {
 	}
 
 	for _, v := range c {
-		names = append(names, v.GetString("name"))
+		names[url.GenerateArtistUrl(url.ArtistUrlDTO{
+			ArtistId:   v.GetId(),
+			ArtistName: v.GetString("name"),
+		})] = v.GetString("name")
 	}
 
 	return names, nil
