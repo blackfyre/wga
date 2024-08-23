@@ -61,6 +61,12 @@ func GenerateArtistUrl(d ArtistUrlDTO) string {
 	return fmt.Sprintf("%v/artists/%v-%v", d.BaseUrl, utils.Slugify(d.ArtistName), d.ArtistId)
 }
 
+func GenerateDualModeUrl() url.URL {
+	return url.URL{
+		Path: "/dual-mode",
+	}
+}
+
 func GetRequiredQueryParam(c echo.Context, param string) (string, error) {
 	p := c.QueryParam(param)
 

@@ -45,5 +45,8 @@
   },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown"
+  },
+  "dependencies": {
+    "animate.css": "^4.1.1"
   }
 }
