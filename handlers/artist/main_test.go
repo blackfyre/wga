@@ -1,4 +1,4 @@
-package artists
+package artist
 
 import (
 	"testing"
