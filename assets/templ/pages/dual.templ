@@ -1,25 +1,81 @@
 package pages
 
-import "github.com/blackfyre/wga/assets/templ/layouts"
+import (
+	"github.com/blackfyre/wga/assets/templ/dto"
+	"github.com/blackfyre/wga/assets/templ/layouts"
+)
 
-type DualViewDto struct {
-	Left  string
-	Right string
-}
-
-templ DualPage(c DualViewDto) {
+templ DualPage(c dto.DualViewDto) {
 	@layouts.LayoutBase("") {
-		<main id="dual-area" class="grid grid-cols-2 grid-rows-[1fr_100px] gap-0 h-screen">
+		<div class="p-4 md:hidden">
+			<div role="alert" class="alert alert-warning">
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					class="h-6 w-6 shrink-0 stroke-current"
+					fill="none"
+					viewBox="0 0 24 24"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+					></path>
+				</svg>
+				<span>The Dual Mode is not supported on mobile screens.<br/>Minimum viable screen width is 768px</span>
+			</div>
+		</div>
+		<main id="dual-area" class="hidden md:grid grid-cols-2 grid-rows-[1fr_100px] gap-0 h-screen">
 			<div id="left" class="w-full overflow-y-auto py-10 pl-10">
 				@templ.Raw(c.Left)
 			</div>
 			<div id="right" class="w-full overflow-y-auto py-10 pl-10">
 				@templ.Raw(c.Right)
 			</div>
-			<aside id="dual-nav" class="col-span-2 row-start-2">
-				<nav class="flex flex-col"></nav>
-			</aside>
+			<div id="dual-nav" class="col-span-2 row-start-2 flex flex-row justify-center">
+				<nav>
+					<label class="input input-bordered flex items-center gap-2">
+						Artist
+						<input
+							class="grow"
+							type="search"
+							list="artist_dlist"
+							id="artist_name_left"
+							autocomplete="artist_name"
+							name="artist"
+						/>
+					</label>
+				</nav>
+				<nav class="mx-4">
+					<ul class="flex flex-row justify-center">
+						<li>
+							<a href="#" class="p-2">Previous</a>
+						</li>
+						<li>
+							<a href="#" class="p-2">Next</a>
+						</li>
+					</ul>
+				</nav>
+				<nav>
+					<label class="input input-bordered flex items-center gap-2">
+						Artist
+						<input
+							class="grow"
+							type="search"
+							list="artist_dlist"
+							id="artist_list_right"
+							autocomplete="artist_name"
+							name="artist"
+						/>
+					</label>
+				</nav>
+			</div>
 		</main>
+		<datalist id="artist_dlist">
+			for k, v := range c.ArtistNameList {
+				<option value={ k }>{ v }</option>
+			}
+		</datalist>
 	}
 }
 
