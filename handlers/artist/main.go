@@ -80,11 +80,11 @@ func findArtworksByAuthorId(app *pocketbase.PocketBase, authorId string) ([]*mod
 	return app.Dao().FindRecordsByFilter("artworks", "author = '"+authorId+"'", "+title", 100, 0)
 }
 
-// renderArtistContent renders the content of an artist by generating a DTO (Data Transfer Object) that contains
+// RenderArtistContent renders the content of an artist by generating a DTO (Data Transfer Object) that contains
 // information about the artist, their works, and JSON-LD metadata. It takes the PocketBase application instance,
 // the Echo context, and the artist record as input parameters. It returns the DTO representing the artist content
 // and an error if any occurred during the process.
-func RenderArtistContent(app *pocketbase.PocketBase, c echo.Context, artist *models.Record) (dto.Artist, error) {
+func RenderArtistContent(app *pocketbase.PocketBase, c echo.Context, artist *models.Record, hxTarget string) (dto.Artist, error) {
 	id := artist.GetId()
 	expectedSlug := utils.GenerateArtistSlug(artist)
 
@@ -115,6 +115,7 @@ func RenderArtistContent(app *pocketbase.PocketBase, c echo.Context, artist *mod
 		Profession: artist.GetString("profession"),
 		Works:      dto.ImageGrid{},
 		Url:        "/artists/" + expectedSlug,
+		HxTarget:   hxTarget,
 	}
 
 	artistReferenceModel := &wgaModels.Artist{
@@ -160,6 +161,7 @@ func RenderArtistContent(app *pocketbase.PocketBase, c echo.Context, artist *mod
 			Thumb:     url.GenerateThumbUrl("artworks", w.GetString("id"), w.GetString("image"), "320x240", ""),
 			Url:       c.Request().URL.String() + "/" + utils.Slugify(w.GetString("title")) + "-" + w.GetString("id"),
 			Jsonld:    fmt.Sprintf(`<script type="application/ld+json">%s</script>`, marshalled),
+			HxTarget:  hxTarget,
 		})
 	}
 
@@ -191,7 +193,7 @@ func processArtist(c echo.Context, app *pocketbase.PocketBase) error {
 		return c.Redirect(http.StatusMovedPermanently, "/artists/"+expectedSlug)
 	}
 
-	content, err := RenderArtistContent(app, c, artist)
+	content, err := RenderArtistContent(app, c, artist, "#mc-area")
 
 	if err != nil {
 		return err
