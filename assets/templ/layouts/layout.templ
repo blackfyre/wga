@@ -44,7 +44,7 @@ templ LayoutBase(bodyClasses string) {
 			<a
 				href="#"
 				hx-get="/feedback"
-				hx-on:htmx:after-request="wga.openDialog()"
+				hx-on:htmx:after-request="wga.dialog.open()"
 				hx-target="#d"
 				hx-select="section.container"
 				class="btn btn-primary is-feedback no-animation"
