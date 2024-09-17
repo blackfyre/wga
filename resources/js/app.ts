@@ -250,7 +250,13 @@ const wgaInternal: wgaInternals = {
       wgaInternal.eventListeners.forEach((listener) => listener());
     },
     augmentSelects() {
-      new Choices("[data-choices]");
+      // find all the elements with data-choices attribute
+      const choices = document.querySelectorAll("[data-choices]");
+      choices.forEach((c) => {
+        const choices = c as HTMLSelectElement;
+        // create a new Choices instance
+        new Choices(choices);
+      });
     },
   },
 
