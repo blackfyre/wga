@@ -300,3 +300,20 @@ a[href]:not(:where(
 .sample-transition {
   view-transition-name: slide-it;
 }
+
+.choices[data-type*="select-multiple"] .choices__inner,
+.choices[data-type*="text"] .choices__inner {
+  @apply cursor-text inline-table;
+}
+
+.choices__list--multiple .choices__item {
+  @apply badge badge-primary rounded-lg mr-1 break-all box-border inline-flex inline-table;
+}
+
+.choices:has(select[multiple]) .choices__input {
+  @apply px-0 py-0;
+}
+
+.choices__list {
+  @apply m-0 pl-0 list-none bg-base-100;
+}
