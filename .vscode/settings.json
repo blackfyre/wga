@@ -10,6 +10,9 @@
   "emmet.includeLanguages": {
     "templ": "html"
   },
+  "tailwindCSS.includeLanguages": {
+    "templ": "html"
+  },
   "cSpell.words": [
     "Artform",
     "Automigrate",
