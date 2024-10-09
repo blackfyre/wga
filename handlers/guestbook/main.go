@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/blackfyre/wga/assets/templ/pages"
+	"github.com/blackfyre/wga/middleware"
 	wgaModels "github.com/blackfyre/wga/models"
 	"github.com/blackfyre/wga/utils"
 	"github.com/labstack/echo/v5"
@@ -69,8 +70,8 @@ func EntriesHandler(app *pocketbase.PocketBase, c echo.Context) error {
 }
 
 func StoreEntryViewHandler(app *pocketbase.PocketBase, c echo.Context) error {
-
-	err := pages.GuestbookEntryForm().Render(context.Background(), c.Response().Writer)
+	csrfToken := c.Get(middleware.CSRF_IDENTIFIER).(string)
+	err := pages.GuestbookEntryForm(csrfToken).Render(context.Background(), c.Response().Writer)
 
 	if err != nil {
 		return utils.ServerFaultError(c)
@@ -123,8 +124,8 @@ func StoreEntryHandler(app *pocketbase.PocketBase, c echo.Context) error {
 	})
 
 	if err := form.Submit(); err != nil {
-
-		e := pages.GuestbookEntryForm().Render(context.Background(), c.Response().Writer)
+		csrfToken := c.Get(middleware.CSRF_IDENTIFIER).(string)
+		e := pages.GuestbookEntryForm(csrfToken).Render(context.Background(), c.Response().Writer)
 
 		if e != nil {
 			app.Logger().Error("Failed to render the guestbook entry form after form submission error", "error", e.Error())

@@ -8,6 +8,7 @@ import (
 	"github.com/blackfyre/wga/assets/templ/dto"
 	"github.com/blackfyre/wga/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/assets/templ/utils"
+	"github.com/blackfyre/wga/middleware"
 	"github.com/blackfyre/wga/models"
 	"github.com/blackfyre/wga/utils"
 	"github.com/blackfyre/wga/utils/url"
@@ -48,7 +49,8 @@ func searchPage(app *pocketbase.PocketBase, c echo.Context) error {
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgUrlKey, fullUrl)
 
 	c.Response().Header().Set("HX-Push-Url", fullUrl)
-	err := pages.ArtworkSearchPage(content).Render(ctx, c.Response().Writer)
+	csrfToken := c.Get(middleware.CSRF_IDENTIFIER).(string)
+	err := pages.ArtworkSearchPage(content, csrfToken).Render(ctx, c.Response().Writer)
 
 	if err != nil {
 		app.Logger().Error("Error rendering artwork search page", "error", err.Error())
@@ -183,7 +185,8 @@ func search(app *pocketbase.PocketBase, c echo.Context) error {
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgUrlKey, pHtmxUrl)
 
 	c.Response().Header().Set("HX-Push-Url", pHtmxUrl)
-	err = pages.ArtworkSearchPage(content).Render(ctx, c.Response().Writer)
+	csrfToken := c.Get(middleware.CSRF_IDENTIFIER).(string)
+	err = pages.ArtworkSearchPage(content, csrfToken).Render(ctx, c.Response().Writer)
 
 	if err != nil {
 		app.Logger().Error("Error rendering artwork search page", "error", err.Error())

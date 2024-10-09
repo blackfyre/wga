@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/blackfyre/wga/assets/templ/components"
+	"github.com/blackfyre/wga/middleware"
 	"github.com/blackfyre/wga/utils"
 	"github.com/blackfyre/wga/utils/url"
 	"github.com/labstack/echo/v5"
@@ -33,13 +34,19 @@ func renderForm(artworkId string, app *pocketbase.PocketBase, c echo.Context) er
 		return utils.NotFoundError(c)
 	}
 
+	csrfToken, ok := c.Get(middleware.CSRF_IDENTIFIER).(string)
+	if !ok {
+		app.Logger().Error("CSRF token retrieval failed", "error", "Token not found in request context")
+		return utils.BadRequestError(c)
+	}
+
 	err = components.PostcardEditor(components.PostcardEditorDTO{
 		Image:     url.GenerateFileUrl("artworks", artworkId, r.GetString("image"), ""),
 		ImageId:   artworkId,
 		Title:     r.GetString("title"),
 		Comment:   r.GetString("comment"),
 		Technique: r.GetString("technique"),
-	}).Render(ctx, c.Response().Writer)
+	}, csrfToken).Render(ctx, c.Response().Writer)
 
 	if err != nil {
 		app.Logger().Error(fmt.Sprintf("Failed to render the postcard editor with image_id %s", artworkId), "error", err.Error())
