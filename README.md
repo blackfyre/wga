@@ -6,6 +6,10 @@
 
 This repository contains the code for the Web Gallery of Art project. The project is a web application that allows users to browse through a collection of paintings, sculptures and other forms of Art. This project is intended to shave off the 3 decades of tech debt on the original website and provide a modern, responsive and user friendly experience with the same content.
 
+## Activity
+
+![Alt](https://repobeats.axiom.co/api/embed/9fd42cf5a4d13bf67b6ad9e58fe817130ebbf64f.svg "Repobeats analytics image")
+
 ## Technologies
 
 The project is built using the following technologies:
