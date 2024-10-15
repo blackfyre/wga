@@ -6,6 +6,7 @@ import (
 
 	"github.com/blackfyre/wga/assets/templ/components"
 	"github.com/blackfyre/wga/errs"
+	"github.com/blackfyre/wga/middleware"
 	"github.com/blackfyre/wga/utils"
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
@@ -45,7 +46,8 @@ func validateFeedbackForm(form feedbackForm) error {
 // If there is an error during rendering, it logs the error and returns a server fault error.
 // Otherwise, it returns nil.
 func presentFeedbackForm(c echo.Context, app *pocketbase.PocketBase) error {
-	err := components.FeedbackForm().Render(context.Background(), c.Response().Writer)
+	csrfToken := c.Get(middleware.CSRF_IDENTIFIER).(string)
+	err := components.FeedbackForm(csrfToken).Render(context.Background(), c.Response().Writer)
 
 	if err != nil {
 		app.Logger().Error("Failed to render the feedback form", "error", err.Error())
@@ -89,7 +91,8 @@ func processFeedbackForm(c echo.Context, app *pocketbase.PocketBase) error {
 
 		app.Logger().Error("Failed to store the feedback", "error", err.Error())
 
-		err := components.FeedbackForm().Render(context.Background(), c.Response().Writer)
+		csrfToken := c.Get(middleware.CSRF_IDENTIFIER).(string)
+		err := components.FeedbackForm(csrfToken).Render(context.Background(), c.Response().Writer)
 
 		if err != nil {
 			app.Logger().Error("Failed to render the feedback form after form submission error", "error", err.Error())

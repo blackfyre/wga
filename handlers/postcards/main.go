@@ -15,7 +15,6 @@ func RegisterPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy) 
 		}, utils.IsHtmxRequestMiddleware)
 
 		e.Router.GET("postcards", func(c echo.Context) error {
-
 			return viewPostcard(app, c)
 		})
 
