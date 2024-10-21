@@ -38,7 +38,7 @@ func inspirationHandler(app *pocketbase.PocketBase, c echo.Context) error {
 		}
 
 		content = append(content, dto.Image{
-			Url: url.GenerateArtworkUrl(url.ArtworkUrlDTO{
+			Url: url.GenerateFullArtworkUrl(url.ArtworkUrlDTO{
 				ArtistId:     artist.Id,
 				ArtistName:   artist.Name,
 				ArtworkTitle: item.Author,

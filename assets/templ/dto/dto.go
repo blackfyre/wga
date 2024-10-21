@@ -76,8 +76,13 @@ type ArtworkSearchResultDTO struct {
 	HxTarget        string
 }
 
+type ArtistNameListEntry struct {
+	Url   string `json:"url"`
+	Label string `json:"label"`
+}
+
 type DualViewDto struct {
 	Left           string
 	Right          string
-	ArtistNameList map[string]string
+	ArtistNameList []ArtistNameListEntry
 }

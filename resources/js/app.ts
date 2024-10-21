@@ -9,6 +9,20 @@ declare global {
   }
 }
 
+type popUpWindow = {
+  url: string;
+  title: string;
+  position: {
+    x: number;
+    y: number;
+  };
+  size: {
+    width: number;
+    height: number;
+  };
+  scrollbars?: boolean;
+};
+
 type wgaWindow = {
   dialog: {
     open: () => void;
@@ -17,9 +31,10 @@ type wgaWindow = {
   window: {
     historyBack: () => void;
     close: () => void;
+    openPopUp: (w: popUpWindow) => boolean | void;
   };
   music: {
-    openMusicWindow: () => void;
+    openPopUp: () => void;
   };
 };
 
@@ -253,9 +268,24 @@ const wgaInternal: wgaInternals = {
       // find all the elements with data-choices attribute
       const choices = document.querySelectorAll("[data-choices]");
       choices.forEach((c) => {
-        const choices = c as HTMLSelectElement;
+        const selector = c as HTMLSelectElement;
+        const listId = selector.dataset.choices;
+
+        if (!listId) {
+          console.error("data-choices attribute is required");
+          return;
+        }
+
         // create a new Choices instance
-        new Choices(choices);
+        const i = new Choices(selector);
+
+        const list = JSON.parse(
+          document.getElementById(listId)?.textContent || "",
+        );
+
+        console.log(list);
+
+        i.setChoices(list, "url", "label", true);
       });
     },
   },
@@ -315,22 +345,36 @@ window.wga = {
     close() {
       window.close();
     },
-  },
-  music: {
-    openMusicWindow() {
-      let w = window.open(
-        `/musics`,
-        `newWin`,
-        `scrollbars=yes,status=no,dependent=no,screenX=0,screenY=0,width=420,height=300`,
+    openPopUp(w: popUpWindow) {
+      let newWin = window.open(
+        w.url,
+        w.title,
+        `width=${w.size.width},height=${w.size.height},left=${w.position.x},top=${w.position.y},scrollbars=${w.scrollbars ? "yes" : "no"}, resizable=yes, dependent=yes, toolbar=no, menubar=no, location=no, directories=no, status=no, popup=yes`,
       );
 
-      if (!w) {
+      if (!newWin) {
         return false;
       }
 
-      w.opener = this;
-      w.focus();
-      return false;
+      newWin.opener = this;
+      newWin.focus();
+      return;
+    },
+  },
+  music: {
+    openPopUp() {
+      window.wga.window.openPopUp({
+        url: "/music",
+        title: "Music",
+        position: {
+          x: 0,
+          y: 0,
+        },
+        size: {
+          width: 300,
+          height: 400,
+        },
+      });
     },
   },
 };

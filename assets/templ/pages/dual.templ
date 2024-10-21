@@ -34,16 +34,13 @@ templ DualPage(c dto.DualViewDto) {
 			</div>
 			<div id="dual-nav" class="col-span-2 row-start-2 flex flex-row justify-center">
 				<nav>
-					<label class="input input-bordered flex items-center gap-2">
-						Artist
-						<input
-							class="grow"
-							type="search"
-							list="artist_dlist"
-							id="artist_name_left"
-							autocomplete="artist_name"
-							name="artist"
-						/>
+					<label class="form-control w-full max-w-xs">
+						<div class="label">
+							<span class="label-text">Artists</span>
+						</div>
+						<select class="select select-bordered" data-choices="artistList">
+							<option disabled selected>Pick one</option>
+						</select>
 					</label>
 				</nav>
 				<nav class="mx-4">
@@ -57,25 +54,19 @@ templ DualPage(c dto.DualViewDto) {
 					</ul>
 				</nav>
 				<nav>
-					<label class="input input-bordered flex items-center gap-2">
-						Artist
-						<input
-							class="grow"
-							type="search"
-							list="artist_dlist"
-							id="artist_list_right"
-							autocomplete="artist_name"
-							name="artist"
-						/>
+					<label class="form-control w-full max-w-xs">
+						<div class="label">
+							<span class="label-text">Artists</span>
+						</div>
+						<select class="select select-bordered" data-choices="artistList">
+							<option disabled selected>Pick one</option>
+						</select>
 					</label>
 				</nav>
 			</div>
 		</main>
-		<datalist id="artist_dlist">
-			for k, v := range c.ArtistNameList {
-				<option value={ k }>{ v }</option>
-			}
-		</datalist>
+		<datalist id="artist_dlist"></datalist>
+		@templ.JSONScript("artistList", c.ArtistNameList)
 	}
 }
 
@@ -85,14 +76,14 @@ templ RightSideDefault() {
 			<li>
 				viewing simultaneously two images related to each other
 				<ul>
-					<li>by the influence one exerted to the other (<a href="/html/c/caravagg/03/17judit.html" target="LEFT" onclick="parent.frames['LEFT'].location.href='/html/c/caravagg/03/17judit.html';parent.frames['RIGHT'].location.href='/html/g/gentiles/artemisi/judit.html'">example)</a></li>
-					<li>by being companion-pieces (<a href="/html/h/hals/frans/08-1658/68geraer.html" target="LEFT" onclick="parent.frames['LEFT'].location.href='/html/h/hals/frans/08-1658/68geraer.html';parent.frames['RIGHT'].location.href='/html/h/hals/frans/08-1658/69coyman.html'">example)</a></li>
-					<li>by representing the same subject (<a href="/html/l/lorenzet/pietro/2/15birth.html" target="LEFT" onclick="parent.frames['LEFT'].location.href='/html/l/lorenzet/pietro/2/15birth.html';parent.frames['RIGHT'].location.href='/html/g/ghirland/domenico/6tornab/61tornab/2birth.html'">example)</a></li>
-					<li>by displaying different views of a three-dimensional sculpture (<a href="/html/m/michelan/1sculptu/david/david.html" target="LEFT" onclick="parent.frames['LEFT'].location.href='/html/m/michelan/1sculptu/david/david.html';parent.frames['RIGHT'].location.href='/html/m/michelan/1sculptu/david/david_r.html'">example)</a></li>
+					<li>by the influence one exerted to the other (<a href="/dual-mode?left=artists/aachen-hans-von-139ac2dff50d65c">example)</a></li>
+					<li>by being companion-pieces (<a href="/html/h/hals/frans/08-1658/68geraer.html">example)</a></li>
+					<li>by representing the same subject (<a href="/html/l/lorenzet/pietro/2/15birth.html">example)</a></li>
+					<li>by displaying different views of a three-dimensional sculpture (<a href="/html/m/michelan/1sculptu/david/david.html">example)</a></li>
 					<li>and so on.</li>
 				</ul>
 			</li>
-			<li>viewing simultaneously a biography and the pages of an artist (<a href="/bio/g/greco_el/biograph.html" target="LEFT" onclick="parent.frames['LEFT'].location.href='/bio/g/greco_el/biograph.html';parent.frames['RIGHT'].location.href='/html/g/greco_el/10/index.html'">example)</a></li>
+			<li>viewing simultaneously a biography and the pages of an artist (<a href="/bio/g/greco_el/biograph.html">example)</a></li>
 			<li>printing to the same sheet two pages (e.g. one of the above examples).</li>
 		</ul>
 	</div>

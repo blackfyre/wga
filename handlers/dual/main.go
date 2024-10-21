@@ -2,6 +2,7 @@ package dual
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"strings"
 
@@ -24,6 +25,23 @@ type renderPaneDto struct {
 	RelPath string
 }
 
+// renderDualModePage renders the dual mode page.
+// It takes an instance of pocketbase.PocketBase and an echo.Context as parameters.
+// It returns an error if there is any issue during the rendering process.
+//
+// The function first decorates the context with title and description keys.
+// Then it initializes a contentDto variable of type dto.DualViewDto.
+// It calls the renderPane function twice to render the left and right panes.
+// If there is an error during the rendering process, it logs the error and returns a server fault error.
+// It retrieves the artist name list using the GetArtistNameList function from the artworks package.
+// If there is an error getting the artist name list, it logs the error and returns a server fault error.
+// It formats the artist name list using the formatArtistNameList function.
+// It generates the relative path for the dual mode URL using the GenerateDualModeUrl function from the url package.
+// It adds query parameters to the relative path for left pane, right pane, left render to, and right render to.
+// It sets the "HX-Push-Url" header of the response with the generated relative path.
+// It renders the dual page using the contentDto and writes the response to the context's writer.
+// If there is an error during the rendering process, it logs the error and returns a server fault error.
+// Finally, it returns nil if the rendering process is successful.
 func renderDualModePage(app *pocketbase.PocketBase, c echo.Context) error {
 	ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, "Dual View")
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "On this page you can search for artworks by title, artist, art form, art type and art school!")
@@ -45,12 +63,14 @@ func renderDualModePage(app *pocketbase.PocketBase, c echo.Context) error {
 
 	contentDto.Left = leftPane.Content
 	contentDto.Right = rightPane.Content
-	contentDto.ArtistNameList, err = artworks.GetArtistNameList(app)
+	ArtistNameList, err := artworks.GetArtistNameList(app)
 
 	if err != nil {
 		app.Logger().Error("Error getting artist name list", "error", err.Error())
 		return utils.ServerFaultError(c)
 	}
+
+	contentDto.ArtistNameList = formatArtistNameList(ArtistNameList)
 
 	relPath := url.GenerateDualModeUrl()
 
@@ -70,6 +90,23 @@ func renderDualModePage(app *pocketbase.PocketBase, c echo.Context) error {
 	return nil
 }
 
+// formatArtistNameList formats the artist name list.
+// It takes a map of artist names as a parameter.
+// It returns a slice of dto.ArtistNameListEntry.
+func formatArtistNameList(artistNameList map[string]string) []dto.ArtistNameListEntry {
+	var artistNameListEntries []dto.ArtistNameListEntry
+
+	for url, label := range artistNameList {
+		artistNameListEntries = append(artistNameListEntries, dto.ArtistNameListEntry{
+			Url:   url,
+			Label: label,
+		})
+	}
+
+	return artistNameListEntries
+}
+
+// reverseSide returns the opposite side of the given side.
 func reverseSide(side string) string {
 	if side == "left" {
 		return "right"
@@ -82,8 +119,8 @@ func reverseSide(side string) string {
 
 func renderPane(side string, app *pocketbase.PocketBase, c echo.Context) (renderPaneDto, error) {
 
-	queryParam := c.QueryParamDefault(side, "default")
-	renderTo := c.QueryParamDefault(side+"_render_to", reverseSide(side))
+	queryParam := cmp.Or(c.QueryParam(side))
+	renderTo := cmp.Or(c.QueryParam(side+"_render_to"), reverseSide(side))
 
 	pane := renderPaneDto{
 		Side: side,
@@ -114,7 +151,7 @@ func renderPane(side string, app *pocketbase.PocketBase, c echo.Context) (render
 	// split the query param into parts
 	parts := strings.Split(queryParam, "/")
 
-	if len(parts) < 2 {
+	if len(parts) > 3 {
 		return pane, errs.ErrTooManyParts
 	}
 
@@ -122,41 +159,90 @@ func renderPane(side string, app *pocketbase.PocketBase, c echo.Context) (render
 
 	switch paneType {
 	case "artists":
-		slug := parts[1]
-		artistId := utils.ExtractIdFromString(slug)
+		if len(parts) == 3 {
+			slug := parts[2]
+			artworkId := utils.ExtractIdFromString(slug)
 
-		artistModel, err := app.Dao().FindRecordById("artists", artistId)
+			artworkDto, err := renderArtworkPane(app, c, artworkId, renderTo, buf)
 
-		if err != nil {
-			app.Logger().Error("Error finding artist", "error", err.Error())
-			return pane, err
+			if err != nil {
+				return pane, err
+			}
+
+			pane.RelPath = artworkDto.Url
+
+		} else {
+			slug := parts[1]
+			artistId := utils.ExtractIdFromString(slug)
+
+			artistDto, err := renderArtistPane(app, c, artistId, renderTo, buf)
+
+			if err != nil {
+				return pane, err
+			}
+
+			pane.RelPath = artistDto.Url
 		}
 
-		artistDto, err := artist.RenderArtistContent(app, c, artistModel, "#"+renderTo)
-
-		if err != nil {
-			app.Logger().Error("Error rendering artist content", "error", err.Error())
-			return pane, err
-		}
-
-		err = pages.ArtistBlock(artistDto).Render(context.Background(), buf)
-
-		if err != nil {
-			app.Logger().Error("Error rendering artist page", "error", err.Error())
-			return pane, err
-		}
-
-		pane.RelPath = artistDto.Url
 	case "artworks":
 		paneContent = "Artworks"
 	default:
 		return pane, errs.ErrUnknownDualPane
-
 	}
 
 	pane.Content = buf.String()
 
 	return pane, nil
+}
+
+func renderArtistPane(app *pocketbase.PocketBase, c echo.Context, artistId string, renderTo string, buf *bytes.Buffer) (dto.Artist, error) {
+	artistModel, err := app.Dao().FindRecordById("artists", artistId)
+
+	if err != nil {
+		app.Logger().Error("Error finding artist", "error", err.Error())
+		return dto.Artist{}, err
+	}
+
+	artistDto, err := artist.RenderArtistContent(app, c, artistModel, "#"+renderTo)
+
+	if err != nil {
+		app.Logger().Error("Error rendering artist content", "error", err.Error())
+		return dto.Artist{}, err
+	}
+
+	err = pages.ArtistBlock(artistDto).Render(context.Background(), buf)
+
+	if err != nil {
+		app.Logger().Error("Error rendering artist page", "error", err.Error())
+		return artistDto, err
+	}
+
+	return artistDto, nil
+}
+
+func renderArtworkPane(app *pocketbase.PocketBase, c echo.Context, artworkId string, renderTo string, buf *bytes.Buffer) (dto.Artwork, error) {
+	artworkModel, err := app.Dao().FindRecordById("artworks", artworkId)
+
+	if err != nil {
+		app.Logger().Error("Error finding artwork", "error", err.Error())
+		return dto.Artwork{}, err
+	}
+
+	artworkDto, err := artist.RenderArtworkContent(app, c, artworkModel, "#"+renderTo)
+
+	if err != nil {
+		app.Logger().Error("Error rendering artwork content", "error", err.Error())
+		return dto.Artwork{}, err
+	}
+
+	err = pages.ArtworkBlock(artworkDto).Render(context.Background(), buf)
+
+	if err != nil {
+		app.Logger().Error("Error rendering artwork page", "error", err.Error())
+		return artworkDto, err
+	}
+
+	return artworkDto, nil
 }
 
 func RegisterHandlers(app *pocketbase.PocketBase) {
