@@ -301,19 +301,283 @@ a[href]:not(:where(
   view-transition-name: slide-it;
 }
 
+.choices {
+  @apply relative overflow-hidden;
+}
+
+.choices:focus {
+  @apply outline-0;
+}
+
+.choices:last-child {
+  @apply mb-0;
+}
+
+.choices.is-open {
+  @apply overflow-visible;
+}
+
+.choices.is-disabled .choices__inner,
+.choices.is-disabled .choices__input {
+  @apply bg-base-200 cursor-not-allowed select-none;
+}
+
+.choices.is-disabled .choices__item {
+  @apply cursor-not-allowed;
+}
+
+.choices [hidden] {
+  @apply !hidden;
+}
+
+.choices[data-type*="select-one"] {
+  @apply cursor-pointer;
+}
+
+.choices[data-type*="select-one"] .choices__input {
+  @apply w-full ring-transparent ring-0 border-0 border-b border-b-base-300;
+}
+
+.choices[data-type*="select-one"] .choices__button {
+  @apply w-2 ml-0 p-2 bg-center;
+
+  background-image: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjEiIGhlaWdodD0iMjEiIHZpZXdCb3g9IjAgMCAyMSAyMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSIjMDAwIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0yLjU5Mi4wNDRsMTguMzY0IDE4LjM2NC0yLjU0OCAyLjU0OEwuMDQ0IDIuNTkyeiIvPjxwYXRoIGQ9Ik0wIDE4LjM2NEwxOC4zNjQgMGwyLjU0OCAyLjU0OEwyLjU0OCAyMC45MTJ6Ii8+PC9nPjwvc3ZnPg==);
+  background-size: 8px;
+}
+
+.choices[data-type*="select-one"] .choices__button:focus,
+.choices[data-type*="select-one"] .choices__button:hover {
+  @apply opacity-100;
+}
+
+.choices[data-type*="select-one"] .choices__button:focus {
+  box-shadow: 0 0 0 2px #00bcd4;
+}
+
+.choices[data-type*="select-one"]
+  .choices__item[data-value=""]
+  .choices__button {
+  @apply hidden;
+}
+
+.choices[data-type*="select-one"].is-open::after {
+  border-color: transparent transparent #333;
+  margin-top: -7.5px;
+}
+
+.choices[data-type*="select-one"][dir="rtl"]::after {
+  @apply left-3 right-auto;
+}
+
+.choices[data-type*="select-one"][dir="rtl"] .choices__button {
+  @apply left-0 right-auto ml-6 mr-0;
+}
+
 .choices[data-type*="select-multiple"] .choices__inner,
 .choices[data-type*="text"] .choices__inner {
   @apply cursor-text inline-table;
 }
 
-.choices__list--multiple .choices__item {
-  @apply badge badge-primary rounded-lg mr-1 break-all box-border inline-flex inline-table;
+.choices[data-type*="select-multiple"] .choices__button,
+.choices[data-type*="text"] .choices__button {
+  @apply relative inline-block w-2;
+
+  background-image: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjEiIGhlaWdodD0iMjEiIHZpZXdCb3g9IjAgMCAyMSAyMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSIjRkZGIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0yLjU5Mi4wNDRsMTguMzY0IDE4LjM2NC0yLjU0OCAyLjU0OEwuMDQ0IDIuNTkyeiIvPjxwYXRoIGQ9Ik0wIDE4LjM2NEwxOC4zNjQgMGwyLjU0OCAyLjU0OEwyLjU0OCAyMC45MTJ6Ii8+PC9nPjwvc3ZnPg==);
+  background-size: 8px;
+}
+
+.choices[data-type*="select-multiple"] .choices__button:focus,
+.choices[data-type*="select-multiple"] .choices__button:hover,
+.choices[data-type*="text"] .choices__button:focus,
+.choices[data-type*="text"] .choices__button:hover {
+  @apply opacity-100;
+}
+
+.choices__inner {
+  @apply border px-3 py-2 rounded-lg border-base-300;
+}
+
+.choices__inner:has(select) {
+  @apply select select-bordered w-full;
+}
+
+.choices:has(select) .choices__input {
+  @apply inline-block text-sm border-0 px-3 ring-0 border-base-300 py-2 !ring-transparent;
 }
 
 .choices:has(select[multiple]) .choices__input {
   @apply px-0 py-0;
 }
 
+.is-open .choices__inner {
+  @apply border rounded-t-lg rounded-b-none;
+}
+
+.is-flipped.is-open .choices__inner {
+  @apply rounded-b-lg;
+}
+
 .choices__list {
   @apply m-0 pl-0 list-none bg-base-100;
+}
+
+.choices__list--single {
+  @apply flex flex-col justify-center w-full;
+}
+
+[dir="rtl"] .choices__list--single {
+  @apply pl-4 pr-2;
+}
+
+.choices__list--single .choices__item {
+  @apply w-full flex items-center justify-between;
+}
+
+.choices__list--multiple {
+  @apply inline;
+}
+
+.choices__list--multiple .choices__item {
+  @apply badge badge-primary rounded-lg mr-1 break-all box-border inline-flex inline-table;
+}
+
+.choices__list--multiple .choices__item[data-deletable] {
+  @apply pr-2;
+}
+
+[dir="rtl"] .choices__list--multiple .choices__item {
+  @apply mr-0 ml-1;
+}
+
+.choices__list--multiple .choices__item.is-highlighted {
+  @apply badge-secondary;
+}
+
+.is-disabled .choices__list--multiple .choices__item {
+  @apply opacity-50;
+}
+
+.choices__list--dropdown,
+.choices__list[aria-expanded] {
+  @apply invisible z-[1] absolute w-full border top-full -mt-px overflow-hidden break-all will-change-auto;
+}
+
+.is-open .choices__list--dropdown,
+.is-open .choices__list[aria-expanded] {
+  @apply border-base-300;
+}
+
+.is-active.choices__list--dropdown,
+.is-active.choices__list[aria-expanded] {
+  @apply visible;
+}
+
+.is-open .choices__list--dropdown,
+.is-open .choices__list[aria-expanded] {
+  @apply border-base-300 rounded-b-lg;
+}
+
+.is-flipped .choices__list--dropdown,
+.is-flipped .choices__list[aria-expanded] {
+  @apply bottom-full mt-0 -mb-px;
+}
+
+.choices__list--dropdown .choices__list,
+.choices__list[aria-expanded] .choices__list {
+  @apply relative max-h-[300px] overflow-auto will-change-auto;
+}
+
+.choices__item--choice.is-selected {
+  @apply bg-base-200;
+}
+
+.choices__list--dropdown .choices__item,
+.choices__list[aria-expanded] .choices__item {
+  @apply transition duration-300 ease-in-out text-sm px-4 py-2 hover:bg-base-200;
+}
+
+[dir="rtl"] .choices__list--dropdown .choices__item,
+[dir="rtl"] .choices__list[aria-expanded] .choices__item {
+  @apply text-right;
+}
+
+@media (min-width: 640px) {
+  .choices__list--dropdown .choices__item--selectable,
+  .choices__list[aria-expanded] .choices__item--selectable {
+    /* @apply pr-[100px]; */
+  }
+
+  .choices__list--dropdown .choices__item--selectable::after,
+  .choices__list[aria-expanded] .choices__item--selectable::after {
+    @apply text-xs opacity-0 absolute right-2 top-1/2 -translate-y-1/2;
+  }
+
+  [dir="rtl"] .choices__list--dropdown .choices__item--selectable,
+  [dir="rtl"] .choices__list[aria-expanded] .choices__item--selectable {
+    @apply text-right pl-[100px] pr-2;
+  }
+
+  [dir="rtl"] .choices__list--dropdown .choices__item--selectable::after,
+  [dir="rtl"] .choices__list[aria-expanded] .choices__item--selectable::after {
+    @apply right-auto left-2;
+  }
+}
+
+.choices__input {
+  @apply inline-block text-sm border-0 px-1 ring-0 border-base-300 py-[0.315rem] !ring-transparent;
+}
+
+.choices__list--dropdown .choices__item--selectable.is-highlighted,
+.choices__list[aria-expanded] .choices__item--selectable.is-highlighted {
+  @apply bg-base-200;
+}
+
+.choices__list--dropdown .choices__item--selectable.is-highlighted::after,
+.choices__list[aria-expanded] .choices__item--selectable.is-highlighted::after {
+  @apply opacity-50;
+}
+
+.choices__item {
+  @apply cursor-default;
+}
+
+.choices__item--selectable {
+  @apply cursor-pointer;
+}
+
+.choices__item--disabled {
+  @apply cursor-not-allowed select-none opacity-50;
+}
+
+.choices__heading {
+  @apply font-medium text-xs p-2 border-b border-base-300;
+}
+
+.choices__button {
+  @apply -indent-[9999px] appearance-none border-0 bg-transparent cursor-pointer bg-no-repeat h-2 ml-2;
+}
+
+.choices__button:focus,
+.choices__input:focus {
+  @apply outline-0;
+}
+
+.choices__input::-webkit-search-cancel-button,
+.choices__input::-webkit-search-decoration,
+.choices__input::-webkit-search-results-button,
+.choices__input::-webkit-search-results-decoration {
+  @apply hidden;
+}
+
+.choices__input::-ms-clear,
+.choices__input::-ms-reveal {
+  @apply hidden w-0 h-0;
+}
+
+[dir="rtl"] .choices__input {
+  @apply pr-1 pl-0;
+}
+
+.choices__placeholder {
+  @apply opacity-50;
 }

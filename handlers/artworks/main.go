@@ -147,7 +147,7 @@ func search(app *pocketbase.PocketBase, c echo.Context) error {
 		}
 
 		content.Results.Artworks = append(content.Results.Artworks, dto.Image{
-			Url: url.GenerateArtworkUrl(url.ArtworkUrlDTO{
+			Url: url.GenerateFullArtworkUrl(url.ArtworkUrlDTO{
 				ArtistName:   artist.Name,
 				ArtistId:     artist.Id,
 				ArtworkTitle: v.GetString("title"),

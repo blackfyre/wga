@@ -2,10 +2,11 @@ package sitemap
 
 import (
 	"fmt"
-    "github.com/blackfyre/wga/utils/url"
-    "log"
+	"log"
 	"os"
 	"time"
+
+	"github.com/blackfyre/wga/utils/url"
 
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/models"
@@ -125,10 +126,10 @@ func generateArtworksMap(app *pocketbase.PocketBase, index *smg.SitemapIndex) {
 		updatedAtTime := m.GetUpdated().Time()
 
 		err := sitemap.Add(&smg.SitemapLoc{
-			Loc: url.GenerateArtworkUrl(url.ArtworkUrlDTO{
-				ArtistName: author.GetString("name"),
-				ArtistId: author.GetId(),
-				ArtworkId: m.GetId(),
+			Loc: url.GenerateFullArtworkUrl(url.ArtworkUrlDTO{
+				ArtistName:   author.GetString("name"),
+				ArtistId:     author.GetId(),
+				ArtworkId:    m.GetId(),
 				ArtworkTitle: m.GetString("title"),
 			}),
 			LastMod:    &updatedAtTime,

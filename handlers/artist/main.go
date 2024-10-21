@@ -1,6 +1,7 @@
 package artist
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -272,7 +273,7 @@ func processArtwork(c echo.Context, app *pocketbase.PocketBase) error {
 		Title:     aw.GetString("title"),
 		Comment:   aw.GetString("comment"),
 		Technique: aw.GetString("technique"),
-		Url: url.GenerateArtworkUrl(url.ArtworkUrlDTO{
+		Url: url.GenerateFullArtworkUrl(url.ArtworkUrlDTO{
 			ArtistName:   artist.GetString("name"),
 			ArtistId:     artist.Id,
 			ArtworkId:    aw.GetId(),
@@ -352,6 +353,67 @@ func processArtwork(c echo.Context, app *pocketbase.PocketBase) error {
 	}
 
 	return nil
+}
+
+func RenderArtworkContent(app *pocketbase.PocketBase, c echo.Context, artwork *models.Record, hxTarget string) (dto.Artwork, error) {
+
+	artistId := cmp.Or(artwork.GetStringSlice("author")[0], "")
+
+	var artworkUrl string
+	var artist *models.Record
+
+	if artistId != "" {
+		artist, err := app.Dao().FindRecordById("Artists", artistId)
+
+		if err != nil {
+			app.Logger().Error("Error finding artist: "+artistId, "error", err.Error())
+		}
+
+		artworkUrl = url.GenerateFullArtworkUrl(url.ArtworkUrlDTO{
+			ArtistName:   artist.GetString("name"),
+			ArtistId:     artist.GetId(),
+			ArtworkId:    artwork.GetId(),
+			ArtworkTitle: artwork.GetString("title"),
+		})
+
+	} else {
+		artworkUrl = url.GenerateArtworkUrl(url.ArtworkUrlDTO{
+			ArtworkId:    artwork.GetId(),
+			ArtworkTitle: artwork.GetString("title"),
+		})
+	}
+
+	content := dto.Artwork{
+		Id:        artwork.GetId(),
+		Title:     artwork.GetString("title"),
+		Comment:   artwork.GetString("comment"),
+		Technique: artwork.GetString("technique"),
+		Url:       artworkUrl,
+		Image: dto.Image{
+			Id:        artwork.GetString("id"),
+			Title:     artwork.GetString("title"),
+			Comment:   artwork.GetString("comment"),
+			Technique: artwork.GetString("technique"),
+			Image:     url.GenerateFileUrl("artworks", artwork.GetString("id"), artwork.GetString("image"), ""),
+		},
+		HxTarget: hxTarget,
+	}
+
+	// Check if artist pointer is nil
+	if artist != nil {
+		content.Artist = dto.Artist{
+			Id:         artist.GetId(),
+			Name:       artist.GetString("name"),
+			Bio:        artist.GetString("bio"),
+			Profession: artist.GetString("profession"),
+			Url: url.GenerateArtistUrl(url.ArtistUrlDTO{
+				ArtistId:   artist.GetId(),
+				ArtistName: artist.GetString("name"),
+			}),
+		}
+	}
+
+	return content, nil
 }
 
 // RegisterHandlers registers the artist routes to the PocketBase app.
