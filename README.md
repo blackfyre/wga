@@ -132,7 +132,17 @@ This will go through the contents of the database and will use placeholder image
 Devenv is a Nix based development environment that's more easily accessible than a pure nix based approach.  
 You can check [devenv.sh](https://devenv.sh/getting-started/) for installation and usage details.
 
+For first-time setup:
+
+1. Install Devenv following the [getting started guide](https://devenv.sh/getting-started/)
+2. Run `devenv up` to start the development environment
+
 Checking the [/devenv.nix](devenv.nix) file for more details is also recommended.
+This file contains:
+
+- Development dependencies
+- Environment variables
+- Service configurations
 
 ## License
 
