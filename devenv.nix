@@ -5,9 +5,10 @@
   # https://devenv.sh/packages/
   packages = [
     pkgs.git
-    pkgs.nil
     pkgs.templ
+  ]  ++ lib.optionals (!config.container.isBuilding) [
     pkgs.flyctl
+    pkgs.nil
   ];
 
   # https://devenv.sh/languages/
@@ -16,8 +17,13 @@
   languages.go.enable = true;
   languages.go.enableHardeningWorkaround = true;
 
-  languages.javascript.enable = true;
-  languages.javascript.bun.enable = true;
+  languages.javascript = {
+    enable = true;
+    bun = {
+      enable = true;
+      install.enable = true;
+    };
+  };
 
   services.mailhog.enable = true;
 
@@ -25,8 +31,6 @@
   services.minio.buckets = [
     "wga"
   ];
-  services.minio.accessKey = "minio";
-  services.minio.secretKey = "minio123";
 
   enterShell = ''
     bun --version
@@ -34,10 +38,12 @@
     go version
   '';
 
+  scripts.generate-templates.exec = "templ generate";
+  scripts.tidy-modules.exec = "go mod tidy";
   scripts.tidy.exec = ''
-    templ generate && go mod tidy
+    devenv shell generate-templates
+    devenv shell tidy-modules
   '';
-
   pre-commit.hooks = {
     govet = {
       enable = true;

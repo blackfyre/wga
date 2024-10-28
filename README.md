@@ -135,7 +135,8 @@ You can check [devenv.sh](https://devenv.sh/getting-started/) for installation a
 For first-time setup:
 
 1. Install Devenv following the [getting started guide](https://devenv.sh/getting-started/)
-2. Run `devenv up` to start the development environment
+2. (optional) copy the `devenv.local.stub.nix` file to `devenv.local.nix`
+3. Run `devenv up` to start the development environment
 
 Checking the [/devenv.nix](devenv.nix) file for more details is also recommended.
 This file contains:
