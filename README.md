@@ -6,6 +6,10 @@
 
 This repository contains the code for the Web Gallery of Art project. The project is a web application that allows users to browse through a collection of paintings, sculptures and other forms of Art. This project is intended to shave off the 3 decades of tech debt on the original website and provide a modern, responsive and user friendly experience with the same content.
 
+## Activity
+
+![Alt](https://repobeats.axiom.co/api/embed/9fd42cf5a4d13bf67b6ad9e58fe817130ebbf64f.svg "Repobeats analytics image")
+
 ## Technologies
 
 The project is built using the following technologies:
@@ -123,31 +127,23 @@ The database is populated on first start, and if you want to have images availab
 
 This will go through the contents of the database and will use placeholder images to "generate" the necessary images to the designated S3 compatible file hosting solution designated in the `.env` file.
 
-## With Nix
+## With DevEnv
 
-This project has a Nix `flake.nix` with the full development environment configuration in it. Start it with:
+Devenv is a Nix based development environment that's more easily accessible than a pure nix based approach.  
+You can check [devenv.sh](https://devenv.sh/getting-started/) for installation and usage details.
 
-```sh
-nix develop
-```
+For first-time setup:
 
-If you want to start the development environment automatically when entering the directory, [install direnv](https://direnv.net/docs/installation.html) and run `direnv allow` in this directory.
+1. Install Devenv following the [getting started guide](https://devenv.sh/getting-started/)
+2. (optional) copy the `devenv.local.stub.nix` file to `devenv.local.nix`
+3. Run `devenv up` to start the development environment
 
+Checking the [/devenv.nix](devenv.nix) file for more details is also recommended.
+This file contains:
 
-### First time installing Nix
-
-With Nix installed, you do not need to install Go, ASDF, node, npm, bun or other development tools. **Nix package manager** will handle it for you, and makes sure the versions are correct for this project. This has been tested on both Linux and macOS.
-Nix is a package manager for the whole system/development environment, not just 1 part of it, like NPM is for Node. There is also NixOS, which works in the same way but for the whole OS, making it declarative and versioned. The config in this project works for both. With the Nix Flake in this project, you are using Nix only to manage the development environment.
-
-### Install Nix package manager
-
-For both Linux and macOS, you can use the installer from determinate systems. On the site [Zero to nix](https://zero-to-nix.com/start) you can find more info to get started.
-
-```sh
-curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
-```
-
-If you installed Nix differently, make sure that you **[enable flakes](https://nixos.wiki/wiki/Flakes)**. [Flake concepts explained](https://zero-to-nix.com/concepts/flakes). Flakes are experimental, but highly recommended and included with Nix for years.
+- Development dependencies
+- Environment variables
+- Service configurations
 
 ## License
 
