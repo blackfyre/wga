@@ -45,4 +45,12 @@ meta.json
 /blob-report/
 /playwright/.cache/
 
+.direnv# Devenv
+.devenv*
+devenv.local.nix
+
+# direnv
 .direnv
+
+# pre-commit
+.pre-commit-config.yaml
