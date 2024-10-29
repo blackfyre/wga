@@ -16,10 +16,12 @@
     "awid",
     "bluemonday",
     "bulma",
+    "cachix",
     "Cloners",
     "cssnano",
     "daisyui",
     "daos",
+    "devenv",
     "esbuild",
     "fontawesome",
     "fsys",
@@ -37,6 +39,8 @@
     "metafile",
     "migratecmd",
     "Miklós",
+    "nixos",
+    "nixpkgs",
     "onclick",
     "outbase",
     "outdir",
@@ -50,5 +54,6 @@
     "trix",
     "Upsert",
     "viewerjs"
-  ]
+  ],
+  "codeQL.githubDatabase.download": "never"
 }
