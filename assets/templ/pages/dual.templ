@@ -32,42 +32,45 @@ templ DualPage(c dto.DualViewDto) {
 			<div id="right" class="w-full overflow-y-auto py-10 pl-10">
 				@templ.Raw(c.Right)
 			</div>
-			<div id="dual-nav" class="col-span-2 row-start-2 flex flex-row justify-center">
-				<nav>
-					<label class="form-control w-full max-w-xs">
-						<div class="label">
-							<span class="label-text">Artists</span>
-						</div>
-						<select class="select select-bordered" data-choices="artistList">
-							<option disabled selected>Pick one</option>
-						</select>
-					</label>
-				</nav>
-				<nav class="mx-4">
-					<ul class="flex flex-row justify-center">
-						<li>
-							<a href="#" class="p-2">Previous</a>
-						</li>
-						<li>
-							<a href="#" class="p-2">Next</a>
-						</li>
-					</ul>
-				</nav>
-				<nav>
-					<label class="form-control w-full max-w-xs">
-						<div class="label">
-							<span class="label-text">Artists</span>
-						</div>
-						<select class="select select-bordered" data-choices="artistList">
-							<option disabled selected>Pick one</option>
-						</select>
-					</label>
-				</nav>
-			</div>
+			@DualNav(c)
 		</main>
-		<datalist id="artist_dlist"></datalist>
-		@templ.JSONScript("artistList", c.ArtistNameList)
 	}
+}
+
+templ DualNav(c dto.DualViewDto) {
+	<div id="dual-nav" class="col-span-2 row-start-2 flex flex-row justify-center">
+		<nav>
+			<label class="form-control w-full max-w-xs">
+				<div class="label">
+					<span class="label-text">Artists</span>
+				</div>
+				<select class="select select-bordered" data-choices="artistList">
+					<option disabled selected>Pick one</option>
+				</select>
+			</label>
+		</nav>
+		<nav class="mx-4">
+			<ul class="flex flex-row justify-center">
+				<li>
+					<a href="#" class="p-2">Previous</a>
+				</li>
+				<li>
+					<a href="#" class="p-2">Next</a>
+				</li>
+			</ul>
+		</nav>
+		<nav>
+			<label class="form-control w-full max-w-xs">
+				<div class="label">
+					<span class="label-text">Artists</span>
+				</div>
+				<select class="select select-bordered" data-choices="artistList">
+					<option disabled selected>Pick one</option>
+				</select>
+			</label>
+		</nav>
+	</div>
+	@templ.JSONScript("artistList", c.ArtistNameList)
 }
 
 templ RightSideDefault() {
