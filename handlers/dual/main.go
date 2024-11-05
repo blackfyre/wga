@@ -94,7 +94,7 @@ func renderDualModePage(app *pocketbase.PocketBase, c echo.Context) error {
 // It takes a map of artist names as a parameter.
 // It returns a slice of dto.ArtistNameListEntry.
 func formatArtistNameList(artistNameList map[string]string) []dto.ArtistNameListEntry {
-	var artistNameListEntries []dto.ArtistNameListEntry
+	artistNameListEntries := make([]dto.ArtistNameListEntry, 0)
 
 	for url, label := range artistNameList {
 		artistNameListEntries = append(artistNameListEntries, dto.ArtistNameListEntry{
@@ -119,7 +119,7 @@ func reverseSide(side string) string {
 
 func renderPane(side string, app *pocketbase.PocketBase, c echo.Context) (renderPaneDto, error) {
 
-	queryParam := cmp.Or(c.QueryParam(side))
+	queryParam := cmp.Or(c.QueryParam(side), "default")
 	renderTo := cmp.Or(c.QueryParam(side+"_render_to"), reverseSide(side))
 
 	pane := renderPaneDto{
