@@ -292,9 +292,7 @@ const wgaInternal: wgaInternals = {
 
   setup: {
     htmx: () => {
-      htmx.config.globalViewTransitions = true;
-      htmx.config.selfRequestsOnly = true;
-      htmx.config.allowScriptTags = false;
+      // Setup htmx
     },
     elements: () => {
       wgaInternal.els.dialog = document.getElementById(
