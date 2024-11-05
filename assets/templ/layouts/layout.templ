@@ -3,7 +3,19 @@ package layouts
 import (
 	"github.com/blackfyre/wga/assets/templ/components"
 	"github.com/blackfyre/wga/assets/templ/utils"
+	"encoding/json"
 )
+
+func htmxDefaults() string {
+	settings := map[string]interface{}{
+		"globalViewTransitions": true,
+		"selfRequestsOnly":      true,
+		"allowScriptTags":       false,
+	}
+
+	bytes, _ := json.Marshal(settings)
+	return string(bytes)
+}
 
 templ LayoutBase(bodyClasses string) {
 	<!DOCTYPE html>
@@ -13,6 +25,7 @@ templ LayoutBase(bodyClasses string) {
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
 			<title>{ utils.GetTitle(ctx) } </title>
 			<meta name="description" content={ utils.GetDescription(ctx) }/>
+			<meta name="htmx-config" content={ htmxDefaults() }/>
 			for key, content := range utils.GetOpenGraphTags(ctx) {
 				<meta name={ key } content={ content }/>
 			}
