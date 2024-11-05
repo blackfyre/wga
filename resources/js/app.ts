@@ -1,4 +1,3 @@
-import htmx from "htmx.org";
 import Viewer from "viewerjs";
 import Trix from "trix";
 import Choices from "choices.js";
