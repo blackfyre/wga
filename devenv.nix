@@ -6,6 +6,7 @@
   packages = [
     pkgs.git
     pkgs.templ
+    pkgs.air
   ]  ++ lib.optionals (!config.container.isBuilding) [
     pkgs.flyctl
     pkgs.nil
