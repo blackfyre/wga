@@ -9,7 +9,8 @@
     "build:css": "postcss ./resources/css/style.pcss -o ./assets/public/css/style.css",
     "build:watch:css": "bun run build:css -- --watch",
     "build:watch:js": "bun run build:js -- --watch",
-    "dev": "concurrently -n \"templ,serve,tailwind,ts,docker\" -c \"red,magenta,yellow,blue,cyan\" \"templ generate --watch\" \"air serve --dev\" \"bun run build:watch:css\" \"bun run build:js\" \"docker compose up\""
+    "dev": "concurrently -n \"templ,serve,tailwind,ts,docker\" -c \"red,magenta,yellow,blue,cyan\" \"templ generate --watch\" \"air serve --dev\" \"bun run build:watch:css\" \"bun run build:js\" \"docker compose up\"",
+    "devenv": "concurrently -n \"templ,serve,tailwind,ts\" -c \"red,magenta,yellow,blue,cyan\" \"templ generate --watch\" \"air serve --dev\" \"bun run build:watch:css\" \"bun run build:js\""
   },
   "repository": {
     "type": "git",
