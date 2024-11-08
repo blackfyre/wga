@@ -44,9 +44,7 @@ templ DualNav(c dto.DualViewDto) {
 				<div class="label">
 					<span class="label-text">Artists</span>
 				</div>
-				<select class="select select-bordered" data-choices="artistList">
-					<option disabled selected>Pick one</option>
-				</select>
+				<div data-combobox data-choices="artistList" data-label="label" data-value="url"></div>
 			</label>
 		</nav>
 		<nav class="mx-4">
@@ -59,14 +57,13 @@ templ DualNav(c dto.DualViewDto) {
 				</li>
 			</ul>
 		</nav>
+		<!-- mehh -->
 		<nav>
 			<label class="form-control w-full max-w-xs">
 				<div class="label">
 					<span class="label-text">Artists</span>
 				</div>
-				<select class="select select-bordered" data-choices="artistList">
-					<option disabled selected>Pick one</option>
-				</select>
+				<div data-combobox data-choices="artistList" data-label="label" data-value="url"></div>
 			</label>
 		</nav>
 	</div>
