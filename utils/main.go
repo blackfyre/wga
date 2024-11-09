@@ -16,6 +16,8 @@ import (
 	"github.com/blackfyre/wga/assets/templ/error_pages"
 	strip "github.com/grokify/html-strip-tags-go"
 	"github.com/labstack/echo/v5"
+	"github.com/pocketbase/pocketbase"
+	"github.com/pocketbase/pocketbase/models"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 )
@@ -308,4 +310,46 @@ func ServerFaultError(c echo.Context) error {
 
 func BadRequestError(c echo.Context) error {
 	return error_pages.BadRequestPage().Render(context.Background(), c.Response().Writer)
+}
+
+func NormalizedBirthDeathActivity(record *models.Record) string {
+	Start := record.GetInt("year_of_birth")
+	End := record.GetInt("year_of_death")
+
+	return fmt.Sprintf("%d-%d", Start, End)
+}
+
+func GenerateArtistSlug(artist *models.Record) string {
+	if artist == nil {
+		return ""
+	}
+	return artist.GetString("slug") + "-" + artist.GetString("id")
+}
+
+func GenerateCurrentPageUrl(c echo.Context) string {
+	if c == nil || c.Request() == nil {
+		return ""
+	}
+	return c.Scheme() + "://" + c.Request().Host + c.Request().URL.String()
+}
+
+// renderSchoolNames takes an instance of PocketBase and a slice of school IDs,
+// and returns a string containing the names of the schools corresponding to the given IDs.
+// If a school is not found, it logs an error and continues to the next ID.
+func RenderSchoolNames(app *pocketbase.PocketBase, schoolIds []string) string {
+	var schoolCollector []string
+
+	for _, s := range schoolIds {
+		r, err := app.Dao().FindRecordById("schools", s)
+
+		if err != nil {
+			app.Logger().Error("school not found", "error", err.Error())
+			continue
+		}
+
+		schoolCollector = append(schoolCollector, r.GetString("name"))
+
+	}
+
+	return strings.Join(schoolCollector, ", ")
 }

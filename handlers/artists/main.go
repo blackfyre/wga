@@ -1,4 +1,4 @@
-package handlers
+package artists
 
 import (
 	"context"
@@ -109,13 +109,13 @@ func processArtists(app *pocketbase.PocketBase, c echo.Context) error {
 
 		// TODO: handle a.k.a. names
 
-		schools := renderSchoolNames(app, m.GetStringSlice("school"))
+		schools := utils.RenderSchoolNames(app, m.GetStringSlice("school"))
 
 		content.Artists = append(content.Artists, dto.Artist{
 			Name:       m.GetString("name"),
 			Url:        url.GenerateArtistUrlFromRecord(m),
 			Profession: m.GetString("profession"),
-			BornDied:   normalizedBirthDeathActivity(m),
+			BornDied:   utils.NormalizedBirthDeathActivity(m),
 			Schools:    schools,
 		})
 
@@ -166,7 +166,7 @@ func processArtists(app *pocketbase.PocketBase, c echo.Context) error {
 
 // registerArtists registers the "/artists" route in the provided PocketBase application.
 // It adds a GET handler for the "/artists" route that calls the processArtists function.
-func registerArtists(app *pocketbase.PocketBase) {
+func RegisterHandlers(app *pocketbase.PocketBase) {
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 

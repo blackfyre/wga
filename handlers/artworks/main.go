@@ -40,7 +40,7 @@ func searchPage(app *pocketbase.PocketBase, c echo.Context) error {
 	content.ArtFormOptions, _ = getArtFormOptions(app)
 	content.ArtTypeOptions, _ = getArtTypesOptions(app)
 	content.ArtSchoolOptions, _ = getArtSchoolOptions(app)
-	content.ArtistNameList, _ = getArtistNameList(app)
+	content.ArtistNameList, _ = GetArtistNameList(app)
 	content.NewFilterValues = filters.BuildFilterString()
 
 	ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, "Artworks Search")
@@ -126,7 +126,7 @@ func search(app *pocketbase.PocketBase, c echo.Context) error {
 	content.ArtFormOptions, _ = getArtFormOptions(app)
 	content.ArtTypeOptions, _ = getArtTypesOptions(app)
 	content.ArtSchoolOptions, _ = getArtSchoolOptions(app)
-	content.ArtistNameList, _ = getArtistNameList(app)
+	content.ArtistNameList, _ = GetArtistNameList(app)
 	content.NewFilterValues = filters.BuildFilterString()
 	content.Results.ActiveFiltering = filters.AnyFilterActive()
 
@@ -147,7 +147,7 @@ func search(app *pocketbase.PocketBase, c echo.Context) error {
 		}
 
 		content.Results.Artworks = append(content.Results.Artworks, dto.Image{
-			Url: url.GenerateArtworkUrl(url.ArtworkUrlDTO{
+			Url: url.GenerateFullArtworkUrl(url.ArtworkUrlDTO{
 				ArtistName:   artist.Name,
 				ArtistId:     artist.Id,
 				ArtworkTitle: v.GetString("title"),

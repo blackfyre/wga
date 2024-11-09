@@ -10,6 +10,9 @@
   "emmet.includeLanguages": {
     "templ": "html"
   },
+  "tailwindCSS.includeLanguages": {
+    "templ": "html"
+  },
   "cSpell.words": [
     "Artform",
     "Automigrate",
@@ -18,6 +21,7 @@
     "bulma",
     "cachix",
     "Cloners",
+    "combobox",
     "cssnano",
     "daisyui",
     "daos",
