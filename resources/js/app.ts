@@ -1,5 +1,6 @@
 import Viewer from "viewerjs";
 import Trix from "trix";
+import Htmx from "htmx.org";
 
 declare global {
   interface Window {
@@ -143,6 +144,39 @@ const deepMerge = (target: object, source: object): object => {
   return target;
 };
 
+const paneToTarget = (side: string): string => {
+  if (side === "left") {
+    return "right";
+  }
+
+  return "left";
+};
+
+const dualNavAction = (side: string, url: string) => {
+  console.log("Side", side);
+  console.log("URL", url);
+  console.log("Base URL", window.location.href.split("?")[0]);
+  // Get the current url base
+  const baseUrl = window.location.href.split("?")[0];
+
+  let newUrl = new URL("/dual-mode", baseUrl);
+
+  // inherit the search params
+  const searchParams = new URLSearchParams(window.location.search);
+  searchParams.forEach((value, key) => {
+    newUrl.searchParams.set(key, value);
+  });
+
+  // Set the search params
+  newUrl.searchParams.set(side, url);
+
+  // Create an anchor element
+  Htmx.ajax("get", newUrl.href, {
+    target: `#${paneToTarget(side)}`,
+    select: `#${paneToTarget(side)}`,
+  });
+};
+
 const wgaInternal: wgaInternals = {
   els: {
     dialog: null,
@@ -161,13 +195,13 @@ const wgaInternal: wgaInternals = {
         wgaInternal.func.toast(event.detail.message, event.detail.type);
       });
     },
-    () => {
-      document.addEventListener("DOMContentLoaded", function (event) {
-        wgaInternal.func.viewer();
-        wgaInternal.func.cloner();
-        wgaInternal.func.augmentSelects();
-      });
-    },
+    // () => {
+    //   document.addEventListener("DOMContentLoaded", function (event) {
+    //     wgaInternal.func.viewer();
+    //     wgaInternal.func.cloner();
+    //     wgaInternal.func.augmentSelects();
+    //   });
+    // },
     () => {
       document.body.addEventListener("htmx:load", function (evt) {
         wgaInternal.func.viewer();
@@ -349,6 +383,15 @@ const wgaInternal: wgaInternals = {
         rootElement: HTMLElement,
         configObject: wgaComboBoxConfig,
       ) => {
+        if (!rootElement) {
+          throw "Element not found";
+        }
+
+        //If root element has `data-working` attribute, return
+        if (rootElement.hasAttribute("data-working")) {
+          return;
+        }
+
         const defaults: wgaComboBox = {
           input: {
             style:
@@ -358,7 +401,7 @@ const wgaInternal: wgaInternals = {
           },
           list: {
             style:
-              "absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded shadow max-h-48 overflow-y-auto hidden",
+              "absolute z-10 w-full mb-1 bg-white border border-gray-300 rounded shadow max-h-48 overflow-y-auto hidden",
           },
           moreAvailable: {
             style: "px-4 py-2 text-gray-500 hidden",
@@ -383,6 +426,17 @@ const wgaInternal: wgaInternals = {
 
         let label = rootElement.getAttribute("data-label") || "label";
         let value = rootElement.getAttribute("data-value") || "value";
+
+        let openDirection =
+          rootElement.getAttribute("data-open-direction") || "bottom";
+
+        if (openDirection !== "bottom" && openDirection !== "top") {
+          throw "Invalid open direction";
+        }
+
+        if (openDirection === "top") {
+          c.list.style += " bottom-full";
+        }
 
         if (!Array.isArray(c.options)) {
           throw "Options is not an array";
@@ -553,17 +607,19 @@ const wgaInternal: wgaInternals = {
             c.hooks.onSelected(item.getAttribute("data-value") || "");
           }
         }
+
+        // Set the `data-working` attribute to prevent multiple instances
+        rootElement.setAttribute("data-working", "true");
       };
 
-      // Find all the elements with data-choices attribute
-      const choices = document.querySelectorAll("[data-combobox]");
-      console.log(choices);
-      choices.forEach((c) => {
-        const selector = c as HTMLDivElement;
+      const targetComboBox = (id: string, config: wgaComboBoxConfig) => {
+        const rootElement = document.getElementById(id);
+        if (!rootElement) {
+          console.error("Element not found");
+          return;
+        }
 
-        console.log(selector);
-
-        const listId = selector.dataset.choices;
+        const listId = rootElement.dataset.choices;
 
         if (!listId) {
           console.error("data-choices attribute is required");
@@ -580,17 +636,34 @@ const wgaInternal: wgaInternals = {
         // parse the list
         const list = JSON.parse(rawList.innerHTML);
 
-        console.log(list);
+        let c = deepMerge(config, { options: list }) as wgaComboBoxConfig;
 
-        CreateSelector(selector, {
-          options: list,
+        CreateSelector(rootElement, c);
+      };
+
+      let dualLeftNav = document.getElementById("dual-nav-combo-left");
+      let dualRightNav = document.getElementById("dual-nav-combo-right");
+
+      if (dualLeftNav) {
+        targetComboBox("dual-nav-combo-left", {
           hooks: {
             onSelected: (v) => {
-              console.log(v);
+              console.log("Left selected", v);
+              dualNavAction("left", v);
             },
           },
         });
-      });
+      }
+
+      if (dualRightNav) {
+        targetComboBox("dual-nav-combo-right", {
+          hooks: {
+            onSelected: (v) => {
+              dualNavAction("right", v);
+            },
+          },
+        });
+      }
     },
   },
 
