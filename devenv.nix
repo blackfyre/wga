@@ -57,5 +57,12 @@
     };
   };
 
+   processes = {
+    watch-js.exec = "bun run build:watch:js";
+    templ.exec = "templ generate --watch";
+    air.exec = "air serve --dev";
+    watch-css.exec = "bun run build:watch:css";
+  };
+
   # See full reference at https://devenv.sh/reference/options/
 }
