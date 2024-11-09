@@ -6,7 +6,7 @@ import (
 )
 
 templ DualPage(c dto.DualViewDto) {
-	@layouts.LayoutBase("") {
+	@layouts.LayoutBase("", "#dual-area") {
 		<div class="p-4 md:hidden">
 			<div role="alert" class="alert alert-warning">
 				<svg
@@ -44,7 +44,7 @@ templ DualNav(c dto.DualViewDto) {
 				<div class="label">
 					<span class="label-text">Artists</span>
 				</div>
-				<div data-combobox data-choices="artistList" data-label="label" data-value="url"></div>
+				<div class="relative w-64" id="dual-nav-combo-left" data-choices="artistList" data-label="label" data-value="url" data-open-direction="top"></div>
 			</label>
 		</nav>
 		<nav class="mx-4">
@@ -63,7 +63,7 @@ templ DualNav(c dto.DualViewDto) {
 				<div class="label">
 					<span class="label-text">Artists</span>
 				</div>
-				<div data-combobox data-choices="artistList" data-label="label" data-value="url"></div>
+				<div class="relative w-64" id="dual-nav-combo-right" data-choices="artistList" data-label="label" data-value="url" data-open-direction="top"></div>
 			</label>
 		</nav>
 	</div>
