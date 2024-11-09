@@ -17,7 +17,14 @@ func htmxDefaults() string {
 	return string(bytes)
 }
 
-templ LayoutBase(bodyClasses string) {
+func getHtmxDefaultArea(target string) string {
+	if target == "" {
+		return "#mc-area"
+	}
+	return target
+}
+
+templ LayoutBase(bodyClasses string, HtmxTargetArea string) {
 	<!DOCTYPE html>
 	<html class="has-navbar-fixed-top" style="height: 100%;">
 		<head>
@@ -48,7 +55,7 @@ templ LayoutBase(bodyClasses string) {
 			<meta name="theme-color" content="#013365"/>
 			<link rel="stylesheet" href="/assets/css/vendor/cookieconsent.css"/>
 		</head>
-		<body class={ bodyClasses } hx-indicator=".progress-indicator" hx-target="#mc-area" hx-select="#mc-area" hx-swap="outerHTML">
+		<body class={ bodyClasses } hx-indicator=".progress-indicator" hx-target={ getHtmxDefaultArea(HtmxTargetArea) } hx-select={ getHtmxDefaultArea(HtmxTargetArea) } hx-swap="outerHTML">
 			<div class="progress-indicator" style="height: 3px;">
 				<div class="indeterminate" style="background-color: #489393;"></div>
 			</div>
@@ -72,7 +79,7 @@ templ LayoutBase(bodyClasses string) {
 }
 
 templ LayoutMain() {
-	@LayoutBase("pt-20") {
+	@LayoutBase("pt-20", "") {
 		@components.TopNav()
 		if utils.GetEnvironment(ctx) != "production" {
 			<section class="container my-6">
@@ -100,7 +107,7 @@ templ LayoutMain() {
 }
 
 templ LayoutSlim() {
-	@LayoutBase("pt-20") {
+	@LayoutBase("pt-20", "") {
 		<main id="mc-area">
 			{ children... }
 		</main>
