@@ -3,7 +3,7 @@ package components
 import "github.com/blackfyre/wga/assets/templ/dto"
 
 templ ImageBase(i dto.Image) {
-	<figure class="aspect-square hidden-caption">
+	<figure class="aspect-square hidden-caption skeleton">
 		<picture>
 			<source media="(max-width: 768px)" srcset={ i.Thumb }/>
 			<source media="(min-width: 769px)" srcset={ i.Thumb }/>
