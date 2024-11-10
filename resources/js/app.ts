@@ -125,6 +125,7 @@ interface ToastEvent extends Event {
 const deepMerge = (target: object, source: object): object => {
   // Iterate over keys in the source object
   for (const key in source) {
+    if (key === "__proto__" || key === "constructor") continue;
     if (source.hasOwnProperty(key)) {
       // Check if the current key's value is an object and exists in the target
       if (typeof source[key] === "object" && source[key] !== null) {
@@ -161,7 +162,7 @@ const dualNavAction = (side: string, url: string) => {
 
   let newUrl = new URL("/dual-mode", baseUrl);
 
-  // inherit the search params
+  // Inherit the search params
   const searchParams = new URLSearchParams(window.location.search);
   searchParams.forEach((value, key) => {
     newUrl.searchParams.set(key, value);
@@ -174,6 +175,7 @@ const dualNavAction = (side: string, url: string) => {
   Htmx.ajax("get", newUrl.href, {
     target: `#${paneToTarget(side)}`,
     select: `#${paneToTarget(side)}`,
+    swap: "outerHTML",
   });
 };
 
@@ -616,6 +618,11 @@ const wgaInternal: wgaInternals = {
         const rootElement = document.getElementById(id);
         if (!rootElement) {
           console.error("Element not found");
+          return;
+        }
+
+        //If root element has `data-working` attribute, return
+        if (rootElement.hasAttribute("data-working")) {
           return;
         }
 
