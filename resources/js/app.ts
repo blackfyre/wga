@@ -49,7 +49,7 @@ type wgaInternals = {
     cloner: () => void;
     viewer: () => void;
     toast: (message: string, type: string) => void;
-    augmentSelects: () => void;
+    artistSearchModal: () => void;
     init: () => void;
   };
 
@@ -162,13 +162,13 @@ const dualNavAction = (side: string, url: string) => {
 
   let newUrl = new URL("/dual-mode", baseUrl);
 
-  // Inherit the search params
+  // Inherit the search parameters
   const searchParams = new URLSearchParams(window.location.search);
   searchParams.forEach((value, key) => {
     newUrl.searchParams.set(key, value);
   });
 
-  // Set the search params
+  // Set the search parameters
   newUrl.searchParams.set(side, url);
 
   // Create an anchor element
@@ -188,6 +188,7 @@ const wgaInternal: wgaInternals = {
   dialogDefaultContent: "",
   eventListeners: [
     () => {
+      // Toast event listener
       document.body.addEventListener("notification:toast", function (evt) {
         const event = evt as ToastEvent;
         if (event.detail.closeDialog) {
@@ -205,10 +206,11 @@ const wgaInternal: wgaInternals = {
     //   });
     // },
     () => {
+      // htmx event listeners
       document.body.addEventListener("htmx:load", function (evt) {
         wgaInternal.func.viewer();
         wgaInternal.func.cloner();
-        wgaInternal.func.augmentSelects();
+        wgaInternal.func.artistSearchModal();
       });
 
       document.body.addEventListener("htmx:swapError", function (evt) {
@@ -242,6 +244,7 @@ const wgaInternal: wgaInternals = {
       });
     },
     () => {
+      // Trix initialization
       document.addEventListener("trix-before-initialize", () => {
         Trix.config.toolbar.getDefaultHTML = () => {
           return `
@@ -262,6 +265,7 @@ const wgaInternal: wgaInternals = {
       });
     },
     () => {
+      // Back to top button
       const jumpToTop = document.querySelector(".jump.back-to-top");
       if (jumpToTop) {
         jumpToTop.addEventListener("click", () => {
@@ -371,6 +375,7 @@ const wgaInternal: wgaInternals = {
       }, 5000);
     },
     init() {
+      console.info("WGA Internal Functions Initialized");
       // Run all internal functions
       wgaInternal.setup.htmx();
       wgaInternal.setup.elements();
@@ -378,299 +383,45 @@ const wgaInternal: wgaInternals = {
       // Run all event listeners
       wgaInternal.eventListeners.forEach((listener) => listener());
     },
-    augmentSelects() {
-      console.log("Augmenting selects");
+    artistSearchModal() {
+      const artistSearchModal = document.getElementById("artist_lookup");
 
-      let CreateSelector = (
-        rootElement: HTMLElement,
-        configObject: wgaComboBoxConfig,
-      ) => {
-        if (!rootElement) {
-          throw "Element not found";
-        }
-
-        //If root element has `data-working` attribute, return
-        if (rootElement.hasAttribute("data-working")) {
-          return;
-        }
-
-        const defaults: wgaComboBox = {
-          input: {
-            style:
-              "w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500",
-            placeholder: "Search...",
-            type: "search",
-          },
-          list: {
-            style:
-              "absolute z-10 w-full mb-1 bg-white border border-gray-300 rounded shadow max-h-48 overflow-y-auto hidden",
-          },
-          moreAvailable: {
-            style: "px-4 py-2 text-gray-500 hidden",
-            content: "...",
-          },
-          noResults: {
-            style: "px-4 py-2 text-gray-500 hidden",
-            content: "No results found",
-          },
-          item: {
-            style: "dropdown-item px-4 py-2 cursor-pointer hover:bg-blue-100",
-          },
-          options: [],
-          hooks: {
-            onSelected: function (v) {
-              console.info(v);
-            },
-          },
-        };
-
-        const c = deepMerge(defaults, configObject) as wgaComboBox;
-
-        let label = rootElement.getAttribute("data-label") || "label";
-        let value = rootElement.getAttribute("data-value") || "value";
-
-        let openDirection =
-          rootElement.getAttribute("data-open-direction") || "bottom";
-
-        if (openDirection !== "bottom" && openDirection !== "top") {
-          throw "Invalid open direction";
-        }
-
-        if (openDirection === "top") {
-          c.list.style += " bottom-full";
-        }
-
-        if (!Array.isArray(c.options)) {
-          throw "Options is not an array";
-        }
-
-        if (c.options.length === 0) {
-          throw "No options supplied";
-        }
-
-        // Create input and attach it to the container element
-        const input = document.createElement("input");
-        input.className += c.input.style;
-        input.setAttribute("placeholder", c.input.placeholder);
-        input.setAttribute("type", c.input.type);
-
-        rootElement.appendChild(input);
-
-        // Create the dropdown list element and attach it to the container element
-        const dropdownList = document.createElement("div");
-        rootElement.appendChild(dropdownList);
-        dropdownList.className += c.list.style;
-
-        // Create the list items and attach them to the list
-        const dropdownItems: HTMLDivElement[] = [];
-
-        for (var i = 0; i < defaults.options.length; i++) {
-          let o = c.options[i];
-
-          let listItem = document.createElement("div");
-          listItem.className += c.item.style;
-          listItem.setAttribute("data-value", o[value] || "");
-          listItem.setAttribute("data-label", o[label] || "");
-
-          listItem.innerHTML = o[label] || "";
-
-          dropdownItems.push(listItem);
-          dropdownList.appendChild(listItem);
-          //Do something
-        }
-
-        // Create the "No results" message and attach it the list
-        const noResults = document.createElement("div");
-        noResults.innerHTML = c.noResults.content;
-        noResults.className += c.noResults.style;
-
-        dropdownList.appendChild(noResults);
-
-        // Create the "More options available" message and attach it the list
-        const moreOptions = document.createElement("div");
-        moreOptions.className += c.moreAvailable.style;
-        moreOptions.innerHTML = c.moreAvailable.content;
-        dropdownList.appendChild(moreOptions);
-
-        let selectedIndex = -1;
-
-        // Show dropdown and filter items on input focus or type
-        input.addEventListener("focus", showDropdown);
-        input.addEventListener("input", showDropdown);
-
-        // Clear search on reset (using native clear button on search type input)
-        input.addEventListener("search", showDropdown);
-
-        function showDropdown() {
-          const query = input.value.toLowerCase();
-          let visibleCount = 0;
-          const maxVisibleOptions = 5;
-
-          dropdownItems.forEach((item: HTMLElement) => {
-            const text = item.getAttribute("data-label");
-            const highlightedText = highlightMatches(text, query);
-
-            if (query === "" || highlightedText !== text) {
-              item.innerHTML = highlightedText;
-              if (visibleCount < maxVisibleOptions) {
-                item.style.display = "block";
-                visibleCount++;
-              } else {
-                item.style.display = "none";
-              }
-            } else {
-              item.style.display = "none";
-            }
-          });
-
-          // Show or hide "No results" and ellipsis for additional options
-          noResults.style.display = visibleCount === 0 ? "block" : "none";
-          moreOptions.style.display =
-            visibleCount === maxVisibleOptions &&
-            dropdownItems.length > maxVisibleOptions
-              ? "block"
-              : "none";
-
-          dropdownList.style.display = "block";
-          selectedIndex = -1;
-          setActiveItem(selectedIndex);
-        }
-
-        // Function to highlight all matches in a string
-        function highlightMatches(text, query) {
-          if (!query) return text;
-
-          const regex = new RegExp(`(${query})`, "gi");
-          return text.replace(regex, '<span class="bg-yellow-200">$1</span>');
-        }
-
-        // Hide dropdown when clicking outside
-        document.addEventListener("click", (e: MouseEvent) => {
-          if (!e.target) {
-            return;
-          }
-
-          if (!(e.target as HTMLElement).closest(".relative")) {
-            dropdownList.style.display = "none";
-          }
-        });
-
-        // Select an option
-        dropdownItems.forEach((item: HTMLElement) => {
-          item.addEventListener("click", () => selectItem(item));
-        });
-
-        // Handle keyboard navigation
-        input.addEventListener("keydown", function (e: KeyboardEvent) {
-          const visibleItems = dropdownItems.filter(
-            (item: HTMLElement) => item.style.display !== "none",
-          );
-
-          if (e.key === "ArrowDown") {
-            e.preventDefault();
-            selectedIndex = (selectedIndex + 1) % visibleItems.length;
-            setActiveItem(selectedIndex, visibleItems);
-          } else if (e.key === "ArrowUp") {
-            e.preventDefault();
-            selectedIndex =
-              (selectedIndex - 1 + visibleItems.length) % visibleItems.length;
-            setActiveItem(selectedIndex, visibleItems);
-          } else if (e.key === "Enter") {
-            e.preventDefault();
-            if (selectedIndex > -1) {
-              selectItem(visibleItems[selectedIndex]);
-            }
-          } else if (e.key === "Escape") {
-            dropdownList.style.display = "none";
-          }
-        });
-
-        // Set active item visually
-        function setActiveItem(index: number, visibleItems = dropdownItems) {
-          dropdownItems.forEach((item: HTMLElement) =>
-            item.classList.remove("bg-blue-100"),
-          );
-          if (index > -1) {
-            (visibleItems[index] as HTMLElement).classList.add("bg-blue-100");
-          }
-        }
-
-        // Select item and close dropdown
-        function selectItem(item: HTMLElement) {
-          let v = item.getAttribute("data-label");
-          input.value = v || "";
-          dropdownList.style.display = "none";
-
-          if (
-            c.hooks &&
-            c.hooks.onSelected &&
-            typeof c.hooks.onSelected === "function"
-          ) {
-            c.hooks.onSelected(item.getAttribute("data-value") || "");
-          }
-        }
-
-        // Set the `data-working` attribute to prevent multiple instances
-        rootElement.setAttribute("data-working", "true");
-      };
-
-      const targetComboBox = (id: string, config: wgaComboBoxConfig) => {
-        const rootElement = document.getElementById(id);
-        if (!rootElement) {
-          console.error("Element not found");
-          return;
-        }
-
-        //If root element has `data-working` attribute, return
-        if (rootElement.hasAttribute("data-working")) {
-          return;
-        }
-
-        const listId = rootElement.dataset.choices;
-
-        if (!listId) {
-          console.error("data-choices attribute is required");
-          return;
-        }
-
-        const rawList = document.getElementById(listId);
-
-        if (!rawList) {
-          console.error("List not found");
-          return;
-        }
-
-        // parse the list
-        const list = JSON.parse(rawList.innerHTML);
-
-        let c = deepMerge(config, { options: list }) as wgaComboBoxConfig;
-
-        CreateSelector(rootElement, c);
-      };
-
-      let dualLeftNav = document.getElementById("dual-nav-combo-left");
-      let dualRightNav = document.getElementById("dual-nav-combo-right");
-
-      if (dualLeftNav) {
-        targetComboBox("dual-nav-combo-left", {
-          hooks: {
-            onSelected: (v) => {
-              console.log("Left selected", v);
-              dualNavAction("left", v);
-            },
-          },
-        });
+      if (!artistSearchModal) {
+        return;
       }
 
-      if (dualRightNav) {
-        targetComboBox("dual-nav-combo-right", {
-          hooks: {
-            onSelected: (v) => {
-              dualNavAction("right", v);
-            },
-          },
-        });
+      // get the contents of #artistList and parse it as json
+      const artistList = document.getElementById("artistList");
+      if (!artistList) {
+        return;
       }
+
+      const artists = JSON.parse(artistList.innerHTML);
+
+      // create a table within the modal from the json which has label and url keys
+      const tableContainer = document.createElement("div");
+      tableContainer.className = "overflow-x-auto";
+      const table = document.createElement("table");
+      table.className = "table";
+
+      tableContainer.appendChild(table);
+
+      artists.forEach((artist: { label: string; url: string }) => {
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        const a = document.createElement("a");
+
+        a.href = artist.url;
+        a.textContent = artist.label;
+
+        td.appendChild(a);
+        tr.appendChild(td);
+        table.appendChild(tr);
+      });
+
+      // replace the contents of the dialog with the table
+      artistSearchModal.innerHTML = "";
+      artistSearchModal.appendChild(tableContainer);
     },
   },
 
