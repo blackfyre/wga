@@ -35,7 +35,11 @@ func getFilePublicSystem() fs.FS {
 func registerStatic(app *pocketbase.PocketBase) {
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 		// Assets
-		e.Router.GET("/assets/*", apis.StaticDirectoryHandler(getFilePublicSystem(), false))
+		if app.IsDev() {
+			e.Router.GET("/assets/*", apis.StaticDirectoryHandler(os.DirFS("./assets/public"), false))
+		} else {
+			e.Router.GET("/assets/*", apis.StaticDirectoryHandler(getFilePublicSystem(), false))
+		}
 
 		// Sitemap
 		e.Router.GET("/sitemap/*", apis.StaticDirectoryHandler(os.DirFS("./wga_sitemap"), false))
