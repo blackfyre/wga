@@ -1,9 +1,11 @@
 module github.com/blackfyre/wga
 
-go 1.22.1
+go 1.23
+
+toolchain go1.23.3
 
 require (
-	github.com/a-h/templ v0.2.778
+	github.com/a-h/templ v0.3.819
 	github.com/google/uuid v1.6.0
 	github.com/grokify/html-strip-tags-go v0.1.0
 	github.com/joho/godotenv v1.5.1
@@ -14,7 +16,7 @@ require (
 	github.com/pocketbase/pocketbase v0.22.22
 	github.com/sabloger/sitemap-generator v1.3.0
 	github.com/spf13/cobra v1.8.1
-	golang.org/x/text v0.19.0
+	golang.org/x/text v0.21.0
 )
 
 require (
@@ -73,14 +75,14 @@ require (
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	gocloud.dev v0.40.0 // indirect
-	golang.org/x/crypto v0.28.0 // indirect
+	golang.org/x/crypto v0.31.0 // indirect
 	golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c // indirect
 	golang.org/x/image v0.21.0 // indirect
-	golang.org/x/net v0.30.0 // indirect
+	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/oauth2 v0.23.0 // indirect
-	golang.org/x/sync v0.8.0 // indirect
-	golang.org/x/sys v0.26.0 // indirect
-	golang.org/x/term v0.25.0 // indirect
+	golang.org/x/sync v0.10.0 // indirect
+	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/term v0.27.0 // indirect
 	golang.org/x/time v0.7.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	google.golang.org/api v0.203.0 // indirect
