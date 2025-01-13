@@ -40,12 +40,7 @@ templ DualPage(c dto.DualViewDto) {
 templ DualNav(c dto.DualViewDto) {
 	<div id="dual-nav" class="col-span-2 row-start-2 flex flex-row justify-center">
 		<nav>
-			<label class="form-control w-full max-w-xs">
-				<div class="label">
-					<span class="label-text">Artists</span>
-				</div>
-				<div class="relative w-64" id="dual-nav-combo-left" data-choices="artistList" data-label="label" data-value="url" data-open-direction="top"></div>
-			</label>
+			<button class="btn" onclick="artist_lookup.showModal()">open modal</button>
 		</nav>
 		<nav class="mx-4">
 			<ul class="flex flex-row justify-center">
@@ -59,14 +54,18 @@ templ DualNav(c dto.DualViewDto) {
 		</nav>
 		<!-- mehh -->
 		<nav>
-			<label class="form-control w-full max-w-xs">
-				<div class="label">
-					<span class="label-text">Artists</span>
-				</div>
-				<div class="relative w-64" id="dual-nav-combo-right" data-choices="artistList" data-label="label" data-value="url" data-open-direction="top"></div>
-			</label>
+			<button class="btn" onclick="artist_lookup.showModal()">open modal</button>
 		</nav>
 	</div>
+	<dialog id="artist_lookup" class="modal">
+		<div class="modal-box">
+			<h3 class="text-lg font-bold">Hello!</h3>
+			<p class="py-4">Press ESC key or click outside to close</p>
+		</div>
+		<form method="dialog" class="modal-backdrop">
+			<button>close</button>
+		</form>
+	</dialog>
 	@templ.JSONScript("artistList", c.ArtistNameList)
 }
 
