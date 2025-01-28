@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"io/fs"
 	"os"
@@ -11,7 +12,6 @@ import (
 	tmplUtils "github.com/blackfyre/wga/assets/templ/utils"
 	"github.com/blackfyre/wga/models"
 	"github.com/blackfyre/wga/utils"
-	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
@@ -33,22 +33,22 @@ func getFilePublicSystem() fs.FS {
 // If the request is an Htmx request, only the content block is rendered, otherwise the entire page is rendered.
 // The function returns an error if there was a problem registering the routes.
 func registerStatic(app *pocketbase.PocketBase) {
-	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
+	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
 		// Assets
 		if app.IsDev() {
-			e.Router.GET("/assets/*", apis.StaticDirectoryHandler(os.DirFS("./assets/public"), false))
+			e.Router.GET("/assets/*", apis.Static(os.DirFS("./assets/public"), false))
 		} else {
-			e.Router.GET("/assets/*", apis.StaticDirectoryHandler(getFilePublicSystem(), false))
+			e.Router.GET("/assets/*", apis.Static(getFilePublicSystem(), false))
 		}
 
 		// Sitemap
-		e.Router.GET("/sitemap/*", apis.StaticDirectoryHandler(os.DirFS("./wga_sitemap"), false))
+		e.Router.GET("/sitemap/*", apis.Static(os.DirFS("./wga_sitemap"), false))
 
 		// "Static" pages
-		e.Router.GET("/pages/:slug", func(c echo.Context) error {
+		e.Router.GET("/pages/:slug", func(c *core.RequestEvent) error {
 
-			slug := c.PathParam("slug")
-			fullUrl := c.Scheme() + "://" + c.Request().Host + c.Request().URL.String()
+			slug := c.Request.PathValue("slug")
+			fullUrl := tmplUtils.AssetUrl("/pages/" + slug)
 
 			page, err := models.FindStaticPageBySlug(app.Dao(), slug)
 
@@ -73,9 +73,19 @@ func registerStatic(app *pocketbase.PocketBase) {
 
 		})
 
-		e.Router.GET("/error_404", func(c echo.Context) error {
-			c.Response().Header().Set("HX-Push-Url", "/error_404")
-			return error_pages.NotFoundPage().Render(context.Background(), c.Response().Writer)
+		e.Router.GET("/error_404", func(c *core.RequestEvent) error {
+			c.Response.Header().Set("HX-Push-Url", "/error_404")
+
+			var buffer bytes.Buffer
+
+			err := error_pages.NotFoundPage().Render(context.Background(), &buffer)
+
+			if err != nil {
+				app.Logger().Error("Error rendering error page", "error", err)
+				return c.HTML(500, "Internal server error")
+			}
+
+			return c.HTML(404, buffer.String())
 		})
 
 		return nil

@@ -4,11 +4,8 @@ import (
 	"encoding/json"
 
 	"github.com/blackfyre/wga/assets"
-	"github.com/pocketbase/dbx"
-	"github.com/pocketbase/pocketbase/daos"
+	"github.com/pocketbase/pocketbase/core"
 	m "github.com/pocketbase/pocketbase/migrations"
-	"github.com/pocketbase/pocketbase/models"
-	"github.com/pocketbase/pocketbase/models/schema"
 )
 
 type PublicString struct {
@@ -17,33 +14,30 @@ type PublicString struct {
 }
 
 func init() {
-	m.Register(func(db dbx.Builder) error {
-		dao := daos.New(db)
+	m.Register(func(app core.App) error {
 
-		collection := &models.Collection{}
+		collection := core.NewBaseCollection("Strings")
 
 		collection.Name = "Strings"
-		collection.Type = models.CollectionTypeBase
 		collection.System = false
 		collection.Id = "strings"
 		collection.MarkAsNew()
-		collection.Schema = schema.NewSchema(
-			&schema.SchemaField{
+
+		collection.Fields.Add(
+			&core.TextField{
 				Id:          "strings_name",
 				Name:        "name",
-				Type:        schema.FieldTypeText,
-				Options:     &schema.TextOptions{},
+				Required:    true,
 				Presentable: true,
 			},
-			&schema.SchemaField{
-				Id:      "strings_content",
-				Name:    "content",
-				Type:    schema.FieldTypeEditor,
-				Options: &schema.EditorOptions{},
+			&core.EditorField{
+				Id:       "strings_content",
+				Name:     "content",
+				Required: true,
 			},
 		)
 
-		err := dao.SaveCollection(collection)
+		err := app.Save(collection)
 
 		if err != nil {
 			return err
@@ -64,17 +58,15 @@ func init() {
 		}
 
 		for _, i := range c {
-			q := db.Insert("strings", dbx.Params{
-				"name":    i.Name,
-				"content": i.Content,
-			})
+			r := core.NewRecord(collection)
+			r.Set("name", i.Name)
+			r.Set("content", i.Content)
 
-			_, err = q.Execute()
+			err = app.Save(r)
 
 			if err != nil {
 				return err
 			}
-
 		}
 
 		return nil
@@ -92,11 +84,18 @@ func init() {
 		// _, err := q.Execute()
 
 		// return err
-	}, func(db dbx.Builder) error {
+	}, func(app core.App) error {
 
-		q := db.DropTable("strings")
-		_, err := q.Execute()
+		c, err := app.FindCollectionByNameOrId("strings")
 
-		return err
+		if err != nil {
+			return err
+		}
+
+		if c == nil {
+			return nil
+		}
+
+		return app.Delete(c)
 	})
 }

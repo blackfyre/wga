@@ -7,6 +7,7 @@
     pkgs.git
     pkgs.templ
     pkgs.air
+    pkgs.nixd
   ]  ++ lib.optionals (!config.container.isBuilding) [
     pkgs.flyctl
     pkgs.nil
@@ -57,7 +58,7 @@
     };
   };
 
-   processes = {
+  processes = {
     watch-js.exec = "bun run build:watch:js";
     templ.exec = "templ generate --watch";
     # air.exec = "air serve --dev";

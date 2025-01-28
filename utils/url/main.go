@@ -6,7 +6,7 @@ import (
 
 	"github.com/blackfyre/wga/utils"
 	"github.com/labstack/echo/v5"
-	"github.com/pocketbase/pocketbase/models"
+	"github.com/pocketbase/pocketbase/core"
 )
 
 func GenerateFileUrl(collection string, collectionId string, fileName string, token string) string {
@@ -47,10 +47,10 @@ func GenerateArtworkUrl(d ArtworkUrlDTO) string {
 	return fmt.Sprintf("/artworks/%v-%v", utils.Slugify(d.ArtworkTitle), d.ArtworkId)
 }
 
-func GenerateArtistUrlFromRecord(r *models.Record) string {
+func GenerateArtistUrlFromRecord(r *core.Record) string {
 	return GenerateArtistUrl(ArtistUrlDTO{
 		ArtistName: r.GetString("name"),
-		ArtistId:   r.Id,
+		ArtistId:   r.GetString("id"),
 	})
 }
 

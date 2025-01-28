@@ -5,11 +5,8 @@ import (
 
 	"github.com/blackfyre/wga/assets"
 	"github.com/blackfyre/wga/utils"
-	"github.com/pocketbase/dbx"
-	"github.com/pocketbase/pocketbase/daos"
+	"github.com/pocketbase/pocketbase/core"
 	m "github.com/pocketbase/pocketbase/migrations"
-	"github.com/pocketbase/pocketbase/models"
-	"github.com/pocketbase/pocketbase/models/schema"
 )
 
 type ArtForm struct {
@@ -20,33 +17,27 @@ type ArtForm struct {
 func init() {
 	tName := "Art_forms"
 	tId := "art_forms"
-	m.Register(func(db dbx.Builder) error {
-		dao := daos.New(db)
-
-		collection := &models.Collection{}
+	m.Register(func(app core.App) error {
+		collection := core.NewBaseCollection(tName)
 
 		collection.Name = tName
 		collection.Id = tId
-		collection.Type = models.CollectionTypeBase
 		collection.System = false
 		collection.MarkAsNew()
-		collection.Schema = schema.NewSchema(
-			&schema.SchemaField{
+
+		collection.Fields.Add(
+			&core.TextField{
 				Id:          tId + "_name",
 				Name:        "name",
-				Type:        schema.FieldTypeText,
-				Options:     &schema.TextOptions{},
 				Presentable: true,
 			},
-			&schema.SchemaField{
-				Id:      "schools_slug",
-				Name:    "slug",
-				Type:    schema.FieldTypeText,
-				Options: &schema.TextOptions{},
+			&core.TextField{
+				Id:   tId + "_slug",
+				Name: "slug",
 			},
 		)
 
-		err := dao.SaveCollection(collection)
+		err := app.Save(collection)
 
 		if err != nil {
 			return err
@@ -67,13 +58,13 @@ func init() {
 		}
 
 		for _, g := range c {
-			q := db.Insert(tId, dbx.Params{
-				"id":   g.ID,
-				"name": g.Name,
-				"slug": utils.Slugify(g.Name),
-			})
 
-			_, err = q.Execute()
+			record := core.NewRecord(collection)
+			record.Set("id", g.ID)
+			record.Set("name", g.Name)
+			record.Set("slug", utils.Slugify(g.Name))
+
+			err := app.Save(record)
 
 			if err != nil {
 				return err
@@ -82,10 +73,13 @@ func init() {
 		}
 
 		return nil
-	}, func(db dbx.Builder) error {
-		q := db.DropTable(tId)
-		_, err := q.Execute()
+	}, func(app core.App) error {
+		collection, err := app.FindCollectionByNameOrId(tName)
 
-		return err
+		if err != nil {
+			return err
+		}
+
+		return app.Delete(collection)
 	})
 }

@@ -4,11 +4,8 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/pocketbase/dbx"
-	"github.com/pocketbase/pocketbase/daos"
+	"github.com/pocketbase/pocketbase/core"
 	m "github.com/pocketbase/pocketbase/migrations"
-	"github.com/pocketbase/pocketbase/models"
-	"github.com/pocketbase/pocketbase/models/schema"
 )
 
 type GuestbookRecord struct {
@@ -21,54 +18,44 @@ type GuestbookRecord struct {
 }
 
 func init() {
-	m.Register(func(db dbx.Builder) error {
-		dao := daos.New(db)
-
-		collection := &models.Collection{}
+	m.Register(func(app core.App) error {
+		collection := core.NewBaseCollection("Guestbook")
 
 		collection.Name = "Guestbook"
 		collection.Id = "guestbook"
-		collection.Type = models.CollectionTypeBase
 		collection.System = false
 		collection.MarkAsNew()
-		collection.Schema = schema.NewSchema(
-			&schema.SchemaField{
-				Id:      "guestbooks_message",
-				Name:    "message",
-				Type:    schema.FieldTypeText,
-				Options: &schema.TextOptions{},
+
+		collection.Fields.Add(
+			&core.TextField{
+				Id:   "guestbooks_message",
+				Name: "message",
 			},
-			&schema.SchemaField{
-				Id:          "guestbooks_name",
-				Name:        "name",
-				Type:        schema.FieldTypeText,
-				Options:     &schema.TextOptions{},
-				Presentable: true,
+			&core.TextField{
+				Id:   "guestbooks_name",
+				Name: "name",
 			},
-			&schema.SchemaField{
-				Id:          "guestbooks_email",
-				Name:        "email",
-				Type:        schema.FieldTypeEmail,
-				Options:     &schema.EmailOptions{},
-				Presentable: true,
+			&core.TextField{
+				Id:   "guestbooks_email",
+				Name: "email",
 			},
-			&schema.SchemaField{
-				Id:      "guestbooks_location",
-				Name:    "location",
-				Type:    schema.FieldTypeText,
-				Options: &schema.TextOptions{},
+			&core.TextField{
+				Id:   "guestbooks_location",
+				Name: "location",
 			},
 		)
 
-		err := dao.SaveCollection(collection)
+		err := app.Save(collection)
 
 		if err != nil {
 			return err
 		}
 
 		data, err := os.ReadFile("./guestbook.json")
+
 		if err != nil {
-			return dao.SaveCollection(collection)
+			// no data to import
+			return nil
 		} else {
 			var c []GuestbookRecord
 
@@ -79,16 +66,17 @@ func init() {
 			}
 
 			for _, g := range c {
-				q := db.Insert("guestbook", dbx.Params{
-					"message":  g.Message,
-					"name":     g.Name,
-					"email":    g.Email,
-					"location": g.Location,
-					"created":  g.Created,
-					"updated":  g.Updated,
-				})
 
-				_, err = q.Execute()
+				r := core.NewRecord(collection)
+
+				r.Set("message", g.Message)
+				r.Set("name", g.Name)
+				r.Set("email", g.Email)
+				r.Set("location", g.Location)
+				r.Set("created", g.Created)
+				r.Set("updated", g.Updated)
+
+				err = app.Save(r)
 
 				if err != nil {
 					return err
@@ -98,12 +86,13 @@ func init() {
 
 			return nil
 		}
-	}, func(db dbx.Builder) error {
-		// add down queries...
+	}, func(app core.App) error {
+		c, err := app.FindCollectionByNameOrId("guestbook")
 
-		q := db.DropTable("guestbook")
-		_, err := q.Execute()
+		if err != nil {
+			return err
+		}
 
-		return err
+		return app.Delete(c)
 	})
 }

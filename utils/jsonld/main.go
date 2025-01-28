@@ -6,6 +6,7 @@ import (
 	wgaModels "github.com/blackfyre/wga/models"
 	"github.com/blackfyre/wga/utils"
 	"github.com/labstack/echo/v5"
+	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/models"
 )
 
@@ -14,7 +15,7 @@ import (
 // The returned map contains the JSON-LD content for the artist record, including the artist's name, URL, profession,
 // birth and death dates, and birth and death places (if available).
 // Deprecated: Use ArtistJsonLd instead.
-func GenerateArtistJsonLdContent(r *wgaModels.Artist, c echo.Context) map[string]any {
+func GenerateArtistJsonLdContent(r *core.Record, c echo.Context) map[string]any {
 
 	fullUrl := c.Scheme() + "://" + c.Request().Host + "/artists/" + r.Slug + "-" + r.Id
 
