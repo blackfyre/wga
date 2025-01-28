@@ -5,11 +5,8 @@ import (
 
 	"github.com/blackfyre/wga/assets"
 	"github.com/blackfyre/wga/utils"
-	"github.com/pocketbase/dbx"
-	"github.com/pocketbase/pocketbase/daos"
+	"github.com/pocketbase/pocketbase/core"
 	m "github.com/pocketbase/pocketbase/migrations"
-	"github.com/pocketbase/pocketbase/models"
-	"github.com/pocketbase/pocketbase/models/schema"
 )
 
 type School struct {
@@ -18,33 +15,29 @@ type School struct {
 }
 
 func init() {
-	m.Register(func(db dbx.Builder) error {
-		dao := daos.New(db)
-
-		collection := &models.Collection{}
+	m.Register(func(app core.App) error {
+		collection := core.NewBaseCollection("Schools")
 
 		collection.Name = "Schools"
 		collection.Id = "schools"
-		collection.Type = models.CollectionTypeBase
 		collection.System = false
 		collection.MarkAsNew()
-		collection.Schema = schema.NewSchema(
-			&schema.SchemaField{
+
+		collection.Fields.Add(
+			&core.TextField{
 				Id:          "schools_name",
 				Name:        "name",
-				Type:        schema.FieldTypeText,
-				Options:     &schema.TextOptions{},
+				Required:    true,
 				Presentable: true,
 			},
-			&schema.SchemaField{
-				Id:      "schools_slug",
-				Name:    "slug",
-				Type:    schema.FieldTypeText,
-				Options: &schema.TextOptions{},
+			&core.TextField{
+				Id:       "schools_slug",
+				Name:     "slug",
+				Required: true,
 			},
 		)
 
-		err := dao.SaveCollection(collection)
+		err := app.Save(collection)
 
 		if err != nil {
 			return err
@@ -65,13 +58,10 @@ func init() {
 		}
 
 		for _, i := range c {
-			q := db.Insert("schools", dbx.Params{
-				"id":   i.Id,
-				"name": i.Name,
-				"slug": utils.Slugify(i.Name),
-			})
-
-			_, err = q.Execute()
+			r := core.NewRecord(collection)
+			r.Set("name", i.Name)
+			r.Set("slug", utils.Slugify(i.Name))
+			err = app.Save(r)
 
 			if err != nil {
 				return err
@@ -80,9 +70,16 @@ func init() {
 		}
 
 		return nil
-	}, func(db dbx.Builder) error {
-		// add down queries...
+	}, func(app core.App) error {
+		c, err := app.FindCollectionByNameOrId("schools")
 
-		return nil
+		if err != nil {
+			return err
+		}
+
+		if c == nil {
+			return nil
+		}
+		return app.Delete(c)
 	})
 }

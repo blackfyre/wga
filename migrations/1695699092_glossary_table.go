@@ -4,11 +4,8 @@ import (
 	"encoding/json"
 
 	"github.com/blackfyre/wga/assets"
-	"github.com/pocketbase/dbx"
-	"github.com/pocketbase/pocketbase/daos"
+	"github.com/pocketbase/pocketbase/core"
 	m "github.com/pocketbase/pocketbase/migrations"
-	"github.com/pocketbase/pocketbase/models"
-	"github.com/pocketbase/pocketbase/models/schema"
 )
 
 type Glossary struct {
@@ -18,43 +15,33 @@ type Glossary struct {
 }
 
 func init() {
-	m.Register(func(db dbx.Builder) error {
-		dao := daos.New(db)
-
-		collection := &models.Collection{}
+	m.Register(func(app core.App) error {
+		collection := core.NewBaseCollection("Glossary")
 
 		collection.Name = "Glossary"
-		collection.Type = models.CollectionTypeBase
 		collection.Id = "glossary"
-		collection.System = false
+
 		collection.MarkAsNew()
-		collection.Schema = schema.NewSchema(
-			&schema.SchemaField{
+
+		collection.Fields.Add(
+			&core.TextField{
 				Id:          "glossary_expression",
 				Name:        "expression",
-				Type:        schema.FieldTypeText,
-				Options:     &schema.TextOptions{},
+				Required:    true,
 				Presentable: true,
 			},
-			&schema.SchemaField{
-				Id:      "glorssary_definition",
-				Name:    "definition",
-				Type:    schema.FieldTypeText,
-				Options: &schema.TextOptions{},
+			&core.TextField{
+				Id:       "glossary_definition",
+				Name:     "definition",
+				Required: true,
 			},
 		)
 
-		err := dao.SaveCollection(collection)
+		err := app.Save(collection)
 
 		if err != nil {
 			return err
 		}
-
-		// read the file at ../reference/glossary_stage_1.json
-		// unmarshal the json into a []Glossary
-		// loop through the []Glossary
-		// create a up query for each Glossary
-		// execute the up query
 
 		data, err := assets.InternalFiles.ReadFile("reference/glossary_stage_1.json")
 
@@ -71,24 +58,24 @@ func init() {
 		}
 
 		for _, g := range glossary {
-			q := db.Insert("glossary", dbx.Params{
-				"id":         g.Id,
-				"expression": g.Expression,
-				"definition": g.Definition,
-			})
-
-			_, err = q.Execute()
-
+			r := core.NewRecord(collection)
+			r.Set("expression", g.Expression)
+			r.Set("definition", g.Definition)
+			err = app.Save(r)
 			if err != nil {
 				return err
 			}
-
 		}
 
 		return nil
-	}, func(db dbx.Builder) error {
-		q := db.DropTable("glossary")
-		_, err := q.Execute()
+	}, func(app core.App) error {
+		collection, err := app.FindCollectionByNameOrId("glossary")
+
+		if err != nil {
+			return err
+		}
+
+		err = app.Delete(collection)
 
 		return err
 	})

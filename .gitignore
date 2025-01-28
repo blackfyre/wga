@@ -31,7 +31,7 @@ guestbook.json
 # this file is used for cache only
 contributors.json
 
-# Dependecies shouldn't be a part of the source code
+# Dependencies shouldn't be a part of the source code
 node_modules
 meta.json
 

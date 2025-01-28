@@ -5,11 +5,8 @@ import (
 
 	"github.com/blackfyre/wga/assets"
 	"github.com/blackfyre/wga/utils"
-	"github.com/pocketbase/dbx"
-	"github.com/pocketbase/pocketbase/daos"
+	"github.com/pocketbase/pocketbase/core"
 	m "github.com/pocketbase/pocketbase/migrations"
-	"github.com/pocketbase/pocketbase/models"
-	"github.com/pocketbase/pocketbase/models/schema"
 )
 
 type ArtPeriod struct {
@@ -23,51 +20,39 @@ type ArtPeriod struct {
 func init() {
 	tName := "Art_periods"
 	tId := "art_periods"
-	m.Register(func(db dbx.Builder) error {
-		dao := daos.New(db)
-
-		collection := &models.Collection{}
+	m.Register(func(app core.App) error {
+		collection := core.NewBaseCollection(tName)
 
 		collection.Name = tName
 		collection.Id = tId
-		collection.Type = models.CollectionTypeBase
 		collection.System = false
 		collection.MarkAsNew()
-		collection.Schema = schema.NewSchema(
-			&schema.SchemaField{
+
+		collection.Fields.Add(
+			&core.TextField{
 				Id:          tId + "_name",
 				Name:        "name",
-				Type:        schema.FieldTypeText,
-				Options:     &schema.TextOptions{},
 				Presentable: true,
 			},
-			&schema.SchemaField{
-				Id:      "schools_slug",
-				Name:    "slug",
-				Type:    schema.FieldTypeText,
-				Options: &schema.TextOptions{},
+			&core.TextField{
+				Id:   tId + "_slug",
+				Name: "slug",
 			},
-			&schema.SchemaField{
-				Id:      tId + "_start",
-				Name:    "start",
-				Type:    schema.FieldTypeNumber,
-				Options: &schema.NumberOptions{},
+			&core.NumberField{
+				Id:   tId + "_start",
+				Name: "start",
 			},
-			&schema.SchemaField{
-				Id:      tId + "_end",
-				Name:    "end",
-				Type:    schema.FieldTypeNumber,
-				Options: &schema.NumberOptions{},
+			&core.NumberField{
+				Id:   tId + "_end",
+				Name: "end",
 			},
-			&schema.SchemaField{
-				Id:      tId + "_description",
-				Name:    "description",
-				Type:    schema.FieldTypeText,
-				Options: &schema.TextOptions{},
+			&core.TextField{
+				Id:   tId + "_description",
+				Name: "description",
 			},
 		)
 
-		err := dao.SaveCollection(collection)
+		err := app.Save(collection)
 
 		if err != nil {
 			return err
@@ -88,16 +73,16 @@ func init() {
 		}
 
 		for _, g := range c {
-			q := db.Insert(tId, dbx.Params{
-				"id":          g.ID,
-				"start":       g.Start,
-				"end":         g.End,
-				"name":        g.Name,
-				"description": g.Description,
-				"slug":        utils.Slugify(g.Name),
-			})
+			r := core.NewRecord(collection)
 
-			_, err = q.Execute()
+			r.Set("id", g.ID)
+			r.Set("start", g.Start)
+			r.Set("end", g.End)
+			r.Set("name", g.Name)
+			r.Set("description", g.Description)
+			r.Set("slug", utils.Slugify(g.Name))
+
+			err = app.Save(r)
 
 			if err != nil {
 				return err
@@ -106,10 +91,13 @@ func init() {
 		}
 
 		return nil
-	}, func(db dbx.Builder) error {
-		q := db.DropTable(tId)
-		_, err := q.Execute()
+	}, func(app core.App) error {
+		collection, err := app.FindCollectionByNameOrId("art_periods")
 
-		return err
+		if err != nil {
+			return err
+		}
+
+		return app.Delete(collection)
 	})
 }

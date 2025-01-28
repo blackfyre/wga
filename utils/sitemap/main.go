@@ -9,7 +9,7 @@ import (
 	"github.com/blackfyre/wga/utils/url"
 
 	"github.com/pocketbase/pocketbase"
-	"github.com/pocketbase/pocketbase/models"
+	"github.com/pocketbase/pocketbase/core"
 	"github.com/sabloger/sitemap-generator/smg"
 )
 
@@ -55,8 +55,8 @@ func setupSitemap(name string, index *smg.SitemapIndex) *smg.Sitemap {
 	return sitemap
 }
 
-func fetchArtistsForSitemap(app *pocketbase.PocketBase) ([]*models.Record, error) {
-	return app.Dao().FindRecordsByFilter(
+func fetchArtistsForSitemap(app *pocketbase.PocketBase) ([]*core.Record, error) {
+	return app.FindRecordsByFilter(
 		"artists",
 		"published = true",
 		"+name",
@@ -76,7 +76,7 @@ func generateArtistMap(app *pocketbase.PocketBase, index *smg.SitemapIndex) {
 
 	for _, m := range records {
 
-		updatedAtTime := m.GetUpdated().Time()
+		updatedAtTime := m.GetDateTime("updated").Time()
 
 		err := sitemap.Add(&smg.SitemapLoc{
 			Loc:        url.GenerateArtistUrlFromRecord(m),
@@ -94,7 +94,7 @@ func generateArtistMap(app *pocketbase.PocketBase, index *smg.SitemapIndex) {
 func generateArtworksMap(app *pocketbase.PocketBase, index *smg.SitemapIndex) {
 	sitemap := setupSitemap("artworks", index)
 
-	records, err := app.Dao().FindRecordsByFilter(
+	records, err := app.FindRecordsByFilter(
 		"artworks",
 		"published = true",
 		"+title",
@@ -108,7 +108,7 @@ func generateArtworksMap(app *pocketbase.PocketBase, index *smg.SitemapIndex) {
 
 	for _, m := range records {
 
-		if errs := app.Dao().ExpandRecord(m, []string{"author"}, nil); len(errs) > 0 {
+		if errs := app.ExpandRecord(m, []string{"author"}, nil); len(errs) > 0 {
 			app.Logger().Error("Error expanding record", "err", errs)
 			// we should log the failed items, still waiting for pb logs
 			continue // we're skipping failed items
@@ -119,20 +119,21 @@ func generateArtworksMap(app *pocketbase.PocketBase, index *smg.SitemapIndex) {
 		if author == nil {
 			//every item in the db should have an author
 			// log those items which don't for fixing
-			app.Logger().Error("Error expanding record, no author found", "id", m.GetId())
+			app.Logger().Error("Error expanding record, no author found", "id", m.Get("id"))
 			continue
 		}
 
-		updatedAtTime := m.GetUpdated().Time()
+		updatedAtTime := m.GetDateTime("updated")
+		lastMod := updatedAtTime.Time()
 
 		err := sitemap.Add(&smg.SitemapLoc{
 			Loc: url.GenerateFullArtworkUrl(url.ArtworkUrlDTO{
 				ArtistName:   author.GetString("name"),
-				ArtistId:     author.GetId(),
-				ArtworkId:    m.GetId(),
+				ArtistId:     author.GetString("id"),
+				ArtworkId:    m.GetString("id"),
 				ArtworkTitle: m.GetString("title"),
 			}),
-			LastMod:    &updatedAtTime,
+			LastMod:    &lastMod,
 			ChangeFreq: smg.Monthly,
 			Priority:   0.8,
 		})

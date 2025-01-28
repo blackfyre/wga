@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/blackfyre/wga/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/assets/templ/utils"
-	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
@@ -109,11 +109,11 @@ func readStoredContributors(app *pocketbase.PocketBase) ([]pages.GithubContribut
 }
 
 func registerContributors(app *pocketbase.PocketBase) {
-	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
-		e.Router.GET("/contributors", func(c echo.Context) error {
+	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
+		e.Router.GET("/contributors", func(c *core.RequestEvent) error {
 
 			cacheKey := "contributors"
-			fullUrl := c.Scheme() + "://" + c.Request().Host + c.Request().URL.String()
+			fullUrl := tmplUtils.AssetUrl("/contributors")
 
 			contributors, err := getContributorsFromGithub(app)
 
@@ -137,15 +137,19 @@ func registerContributors(app *pocketbase.PocketBase) {
 			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "The people who have contributed to the Web Gallery of Art.")
 			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, fullUrl)
 
-			c.Response().Header().Set("HX-Push-Url", fullUrl)
-			err = pages.ContributorsPage(content).Render(ctx, c.Response().Writer)
+			c.Response.Header().Set("HX-Push-Url", fullUrl)
+
+			// Create a bytes buffer to write the response to
+			var buf bytes.Buffer
+
+			err = pages.ContributorsPage(content).Render(ctx, &buf)
 
 			if err != nil {
 				app.Logger().Error("Error rendering artwork page", "error", err.Error())
-				return c.String(http.StatusInternalServerError, "failed to render response template")
+				return c.Error(http.StatusInternalServerError, "failed to render response template", err)
 			}
 
-			return nil
+			return c.HTML(http.StatusOK, buf.String())
 
 		})
 

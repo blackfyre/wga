@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/blackfyre/wga/assets"
-	"github.com/blackfyre/wga/models"
 	"github.com/pocketbase/pocketbase"
+	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/filesystem"
 )
 
@@ -43,7 +43,13 @@ func SeedImages(app *pocketbase.PocketBase) error {
 		}
 	}()
 
-	artworks, err := models.GetArtworks(app.Dao())
+	artworks, err := app.FindRecordsByFilter(
+		"artworks",
+		"",
+		"+title",
+		0,
+		0,
+	)
 
 	if err != nil {
 		return err
@@ -63,7 +69,7 @@ func SeedImages(app *pocketbase.PocketBase) error {
 		// timer start here
 		jobStart := time.Now()
 
-		uploadKey := fmt.Sprintf("artworks/%s/%s", artwork.Id, artwork.Image)
+		uploadKey := fmt.Sprintf("artworks/%s/%s", artwork.GetString("id"), artwork.GetString("image"))
 
 		var img []byte
 
@@ -136,11 +142,11 @@ func SeedImages(app *pocketbase.PocketBase) error {
 // The thumbnail is saved with a filename that includes the size and original image name.
 // If an error occurs during the thumbnail generation, it is printed and returned.
 // Otherwise, nil is returned.
-func generateThumbnail(aw *models.Artwork, rfs *filesystem.System, size string) error {
+func generateThumbnail(aw *core.Record, rfs *filesystem.System, size string) error {
 
-	uploadKey := fmt.Sprintf("artworks/%s/%s", aw.Id, aw.Image)
+	uploadKey := fmt.Sprintf("artworks/%s/%s", aw.GetString("id"), aw.GetString("image"))
 
-	err := rfs.CreateThumb(uploadKey, fmt.Sprintf("artworks/%s/thumb_%s/%s_%s", aw.Id, aw.Image, size, aw.Image), size)
+	err := rfs.CreateThumb(uploadKey, fmt.Sprintf("artworks/%s/thumb_%s/%s_%s", aw.Id, aw.GetString("image"), size, aw.GetString("image")), size)
 
 	if err != nil {
 		fmt.Println(err.Error())
