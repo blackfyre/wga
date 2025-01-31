@@ -1,9 +1,11 @@
 package artists
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/blackfyre/wga/utils/url"
@@ -11,10 +13,8 @@ import (
 	"github.com/blackfyre/wga/assets/templ/dto"
 	"github.com/blackfyre/wga/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/assets/templ/utils"
-	wgaModels "github.com/blackfyre/wga/models"
 	"github.com/blackfyre/wga/utils"
 	"github.com/blackfyre/wga/utils/jsonld"
-	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
@@ -26,31 +26,33 @@ import (
 // The function retrieves artists based on the provided search expression and pagination parameters.
 // It then renders the artists' information in different views based on the request type (HTML or HTMX).
 // The function returns an error if there is any issue with retrieving or rendering the artists' information.
-func processArtists(app *pocketbase.PocketBase, c echo.Context) error {
+func processArtists(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 	limit := 30
 	page := 1
 	searchExpression := ""
 	searchExpressionPresent := false
-	currentUrl := c.Request().URL.String()
-	c.Response().Header().Set("HX-Push-Url", currentUrl)
+	currentUrl := c.Request.URL.String()
+	c.Response.Header().Set("HX-Push-Url", currentUrl)
 
-	if c.QueryParam("page") != "" {
+	queryParams := c.Request.URL.Query()
+
+	if c.Request.URL.Query().Get("page") != "" {
 		err := error(nil)
-		page, err = strconv.Atoi(c.QueryParam("page"))
+		page, err = strconv.Atoi(queryParams.Get("page"))
 
 		if err != nil {
-			app.Logger().Error("Invalid page: ", c.QueryParam("page"), err)
+			app.Logger().Error("Invalid page: ", queryParams.Get("page"), err)
 			return apis.NewBadRequestError("Invalid page", err)
 		}
 	}
 
-	if c.QueryParams().Has("q") {
+	if queryParams.Has("q") {
 		searchExpressionPresent = true
 	}
 
-	if c.QueryParam("q") != "" {
-		searchExpression = c.QueryParam("q")
+	if queryParams.Get("q") != "" {
+		searchExpression = queryParams.Get("q")
 	}
 
 	offset := (page - 1) * limit
@@ -61,7 +63,7 @@ func processArtists(app *pocketbase.PocketBase, c echo.Context) error {
 		filter = filter + " && name ~ {:searchExpression}"
 	}
 
-	records, err := app.Dao().FindRecordsByFilter(
+	records, err := app.FindRecordsByFilter(
 		"artists",
 		filter,
 		"+name",
@@ -77,7 +79,7 @@ func processArtists(app *pocketbase.PocketBase, c echo.Context) error {
 		return utils.ServerFaultError(c)
 	}
 
-	totalRecords, err := app.Dao().FindRecordsByFilter(
+	totalRecords, err := app.FindRecordsByFilter(
 		"artists",
 		filter,
 		"+name",
@@ -119,19 +121,7 @@ func processArtists(app *pocketbase.PocketBase, c echo.Context) error {
 			Schools:    schools,
 		})
 
-		jsonLdCollector = append(jsonLdCollector, jsonld.ArtistJsonLd(&wgaModels.Artist{
-			Id:           m.GetId(),
-			Name:         m.GetString("name"),
-			Slug:         m.GetString("slug"),
-			Bio:          m.GetString("bio"),
-			YearOfBirth:  m.GetInt("year_of_birth"),
-			YearOfDeath:  m.GetInt("year_of_death"),
-			PlaceOfBirth: m.GetString("place_of_birth"),
-			PlaceOfDeath: m.GetString("place_of_death"),
-			Published:    m.GetBool("published"),
-			School:       schools,
-			Profession:   m.GetString("profession"),
-		}, c))
+		jsonLdCollector = append(jsonLdCollector, jsonld.ArtistJsonLd(m))
 
 	}
 
@@ -150,17 +140,19 @@ func processArtists(app *pocketbase.PocketBase, c echo.Context) error {
 
 	ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, "Artists")
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "Check out the artists in the gallery.")
-	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgUrlKey, c.Scheme()+"://"+c.Request().Host+c.Request().URL.String())
+	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgUrlKey, utils.AssetUrl(c.Request.URL.String()))
 
-	c.Response().Header().Set("HX-Push-Url", currentUrl)
-	err = pages.ArtistsPageFull(content).Render(ctx, c.Response().Writer)
+	var buff bytes.Buffer
+
+	c.Response.Header().Set("HX-Push-Url", currentUrl)
+	err = pages.ArtistsPageFull(content).Render(ctx, &buff)
 
 	if err != nil {
 		app.Logger().Error("Error rendering artists", "error", err.Error())
 		return utils.ServerFaultError(c)
 	}
 
-	return nil
+	return c.HTML(http.StatusOK, buff.String())
 
 }
 
@@ -168,9 +160,9 @@ func processArtists(app *pocketbase.PocketBase, c echo.Context) error {
 // It adds a GET handler for the "/artists" route that calls the processArtists function.
 func RegisterHandlers(app *pocketbase.PocketBase) {
 
-	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
+	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
 
-		e.Router.GET("/artists", func(c echo.Context) error {
+		e.Router.GET("/artists", func(c *core.RequestEvent) error {
 
 			return processArtists(app, c)
 
