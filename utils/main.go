@@ -17,7 +17,6 @@ import (
 	strip "github.com/grokify/html-strip-tags-go"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
-	"github.com/pocketbase/pocketbase/models"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 )
@@ -318,7 +317,7 @@ func BadRequestError(c *core.RequestEvent) error {
 	return c.HTML(400, buf.String())
 }
 
-func NormalizedBirthDeathActivity(record *models.Record) string {
+func NormalizedBirthDeathActivity(record *core.Record) string {
 	Start := record.GetInt("year_of_birth")
 	End := record.GetInt("year_of_death")
 
