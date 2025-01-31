@@ -40,3 +40,19 @@ func init() {
 		return app.Save(settings)
 	}, nil)
 }
+
+func deleteCollection(app core.App, name string) error {
+	collection, err := app.FindCollectionByNameOrId(name)
+
+	if err != nil {
+		return nil
+	}
+
+	err = app.Delete(collection)
+
+	if err != nil {
+		app.Logger().Error("Error deleting collection %s: %v", name, err)
+	}
+
+	return nil
+}
