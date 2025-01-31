@@ -55,22 +55,22 @@ func GenerateArtistJsonLdContent(r *core.Record, c echo.Context) map[string]any 
 // ArtistJsonLd generates a JSON-LD representation of an artist.
 // It takes an instance of wgaModels.Artist and an echo.Context as input.
 // It returns a Person struct representing the artist in JSON-LD format.
-func ArtistJsonLd(r *wgaModels.Artist, c echo.Context) Person {
+func ArtistJsonLd(r *core.Record, c echo.Context) Person {
 	return newPerson(Person{
-		Name:      r.Name,
-		Url:       c.Scheme() + "://" + c.Request().Host + "/artists/" + r.Slug + "-" + r.Id,
-		BirthDate: fmt.Sprint(r.YearOfBirth),
-		DeathDate: fmt.Sprint(r.YearOfDeath),
+		Name:      r.GetString("name"),
+		Url:       c.Scheme() + "://" + c.Request().Host + "/artists/" + r.GetString("slug") + "-" + r.GetString("id"),
+		BirthDate: fmt.Sprint(r.GetString("yob")),
+		DeathDate: fmt.Sprint(r.GetString("yod")),
 		PlaceOfBirth: newPlace(Place{
-			Name: r.PlaceOfBirth,
+			Name: r.GetString("place_of_birth"),
 		}),
 		PlaceOfDeath: newPlace(Place{
-			Name: r.PlaceOfDeath,
+			Name: r.GetString("place_of_death"),
 		}),
 		HasOccupation: newOccupation(Occupation{
-			Name: r.Profession,
+			Name: r.GetString("profession"),
 		}),
-		Description: utils.StrippedHTML(r.Bio),
+		Description: utils.StrippedHTML(r.GetString("bio")),
 	})
 }
 

@@ -222,14 +222,6 @@ func init() {
 
 		return nil
 	}, func(app core.App) error {
-		collection, err := app.FindCollectionByNameOrId("artists")
-
-		if err != nil {
-			return err
-		}
-
-		err = app.Delete(collection)
-
-		return nil
+		return deleteCollection(app, "artists")
 	})
 }

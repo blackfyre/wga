@@ -71,15 +71,6 @@ func init() {
 
 		return nil
 	}, func(app core.App) error {
-		c, err := app.FindCollectionByNameOrId("schools")
-
-		if err != nil {
-			return err
-		}
-
-		if c == nil {
-			return nil
-		}
-		return app.Delete(c)
+		return deleteCollection(app, "schools")
 	})
 }

@@ -92,12 +92,6 @@ func init() {
 
 		return nil
 	}, func(app core.App) error {
-		collection, err := app.FindCollectionByNameOrId("art_periods")
-
-		if err != nil {
-			return err
-		}
-
-		return app.Delete(collection)
+		return deleteCollection(app, tId)
 	})
 }
