@@ -1,7 +1,6 @@
 package artworks
 
 import (
-	"github.com/blackfyre/wga/models"
 	"github.com/blackfyre/wga/utils/url"
 	"github.com/pocketbase/pocketbase"
 )
@@ -12,14 +11,14 @@ func getArtTypesOptions(app *pocketbase.PocketBase) (map[string]string, error) {
 	options := map[string]string{
 		"": "Any",
 	}
-	c, err := models.GetArtTypes(app.Dao())
+	c, err := app.FindRecordsByFilter("art_types", "", "+name", 0, 0)
 
 	if err != nil {
 		return options, err
 	}
 
 	for _, v := range c {
-		options[v.Slug] = v.Name
+		options[v.GetString("slug")] = v.GetString("name")
 	}
 
 	return options, nil
@@ -31,14 +30,14 @@ func getArtFormOptions(app *pocketbase.PocketBase) (map[string]string, error) {
 	options := map[string]string{
 		"": "Any",
 	}
-	c, err := models.GetArtForms(app.Dao())
+	c, err := app.FindRecordsByFilter("art_forms", "", "+name", 0, 0)
 
 	if err != nil {
 		return options, err
 	}
 
 	for _, v := range c {
-		options[v.Slug] = v.Name
+		options[v.GetString("slug")] = v.GetString("name")
 	}
 
 	return options, nil
@@ -49,14 +48,14 @@ func getArtSchoolOptions(app *pocketbase.PocketBase) (map[string]string, error) 
 	options := map[string]string{
 		"": "Any",
 	}
-	c, err := models.GetSchools(app.Dao())
+	c, err := app.FindRecordsByFilter("schools", "", "+name", 0, 0)
 
 	if err != nil {
 		return options, err
 	}
 
 	for _, v := range c {
-		options[v.Slug] = v.Name
+		options[v.GetString("slug")] = v.GetString("name")
 	}
 
 	return options, nil
@@ -64,7 +63,7 @@ func getArtSchoolOptions(app *pocketbase.PocketBase) (map[string]string, error) 
 
 func GetArtistNameList(app *pocketbase.PocketBase) (map[string]string, error) {
 	names := make(map[string]string) // Initialize the names map
-	c, err := app.Dao().FindRecordsByFilter(
+	c, err := app.FindRecordsByFilter(
 		"artists",
 		"published = true",
 		"+name",
@@ -78,7 +77,7 @@ func GetArtistNameList(app *pocketbase.PocketBase) (map[string]string, error) {
 
 	for _, v := range c {
 		names[url.GenerateArtistUrl(url.ArtistUrlDTO{
-			ArtistId:   v.GetId(),
+			ArtistId:   v.GetString("id"),
 			ArtistName: v.GetString("name"),
 		})] = v.GetString("name")
 	}
