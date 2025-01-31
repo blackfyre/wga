@@ -15,9 +15,9 @@ func init() {
 
 		collection.Fields.Add(
 			&core.TextField{
-				Id:       "postcard_sender_name",
-				Name:     "sender_name",
-				Required: true,
+				Id:          "postcard_sender_name",
+				Name:        "sender_name",
+				Required:    true,
 				Presentable: true,
 			},
 			&core.EmailField{
@@ -40,38 +40,29 @@ func init() {
 				Name:         "image_id",
 				CollectionId: "artworks",
 				MinSelect:    1,
-				MaxSelect: 1,
+				MaxSelect:    1,
 			},
 			&core.BoolField{
-				Id:       "postcard_notify_sender",
-				Name:     "notify_sender",
+				Id:   "postcard_notify_sender",
+				Name: "notify_sender",
 			},
 			&core.SelectField{
-				Id:       "postcard_status",
-				Name:     "status",
-				Values: []string{"queued", "sent", "received"},
-				MaxSelect: 1,
-				Required: true,
+				Id:          "postcard_status",
+				Name:        "status",
+				Values:      []string{"queued", "sent", "received"},
+				MaxSelect:   1,
+				Required:    true,
 				Presentable: true,
 			},
 			&core.DateField{
-				Id:       "postcard_sent_at",
-				Name:     "sent_at",
+				Id:   "postcard_sent_at",
+				Name: "sent_at",
 			},
 		)
 
 		return app.Save(collection)
 
 	}, func(app core.App) error {
-		collection, err := app.FindCollectionByNameOrId("postcards")
-
-		if err != nil {
-			// collection not found, probably already deleted
-			// so nothing to do
-			return nil
-		}
-
-		return app.Delete(collection)
-
+		return deleteCollection(app, "postcards")
 	})
 }

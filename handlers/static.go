@@ -10,7 +10,6 @@ import (
 	"github.com/blackfyre/wga/assets/templ/error_pages"
 	"github.com/blackfyre/wga/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/assets/templ/utils"
-	"github.com/blackfyre/wga/models"
 	"github.com/blackfyre/wga/utils"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
@@ -50,7 +49,7 @@ func registerStatic(app *pocketbase.PocketBase) {
 			slug := c.Request.PathValue("slug")
 			fullUrl := tmplUtils.AssetUrl("/pages/" + slug)
 
-			page, err := models.FindStaticPageBySlug(app.Dao(), slug)
+			page, err := app.FindFirstRecordByData("static_pages", "slug", slug)
 
 			if err != nil {
 				app.Logger().Error("Error retrieving static page", "page", slug, "error", err)
@@ -59,17 +58,22 @@ func registerStatic(app *pocketbase.PocketBase) {
 			}
 
 			content := pages.StaticPageDTO{
-				Title:   page.Title,
-				Content: page.Content,
-				Url:     "/pages/" + page.Slug,
+				Title:   page.GetString("title"),
+				Content: page.GetString("content"),
+				Url:     "/pages/" + page.GetString("slug"),
 			}
 
-			ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, page.Title)
-			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, page.Content)
+			ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, page.GetString("title"))
+			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, page.GetString("content"))
 			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, fullUrl)
 
-			c.Response().Header().Set("HX-Push-Url", fullUrl)
-			return pages.StaticPage(content).Render(ctx, c.Response().Writer)
+			c.Response.Header().Set("HX-Push-Url", fullUrl)
+
+			var buf bytes.Buffer
+
+			pages.StaticPage(content).Render(ctx, &buf)
+
+			return c.HTML(200, buf.String())
 
 		})
 
