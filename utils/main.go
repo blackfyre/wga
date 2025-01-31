@@ -325,7 +325,7 @@ func NormalizedBirthDeathActivity(record *models.Record) string {
 	return fmt.Sprintf("%d-%d", Start, End)
 }
 
-func GenerateArtistSlug(artist *models.Record) string {
+func GenerateArtistSlug(artist *core.Record) string {
 	if artist == nil {
 		return ""
 	}
@@ -337,7 +337,7 @@ func GenerateCurrentPageUrl(c *core.RequestEvent) string {
 		return ""
 	}
 
-	return c.Request.Scheme + "://" + c.Request.Host + c.Request.URL.String()
+	return c.Request.URL.Scheme + "://" + c.Request.Host + c.Request.URL.String()
 }
 
 // renderSchoolNames takes an instance of PocketBase and a slice of school IDs,
