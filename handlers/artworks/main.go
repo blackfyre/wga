@@ -17,9 +17,9 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
-func searchPage(app *pocketbase.PocketBase, c echo.Context) error {
+func searchPage(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
-	fullUrl := c.Scheme() + "://" + c.Request().Host + c.Request().URL.String()
+	fullUrl := utils.AssetUrl(c.Request.URL.String())
 	filters := buildFilters(c)
 
 	if filters.AnyFilterActive() {
@@ -195,12 +195,12 @@ func search(app *pocketbase.PocketBase, c echo.Context) error {
 
 // RegisterArtworksHandlers registers search handlers to the given PocketBase app.
 func RegisterArtworksHandlers(app *pocketbase.PocketBase) {
-	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
-		e.Router.GET("/artworks", func(c echo.Context) error {
+	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
+		e.Router.GET("/artworks", func(*core.RequestEvent) error {
 			return searchPage(app, c)
 		})
 
-		e.Router.GET("/artworks/results", func(c echo.Context) error {
+		e.Router.GET("/artworks/results", func(*core.RequestEvent) error {
 			return search(app, c)
 		})
 		return nil
