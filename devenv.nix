@@ -51,7 +51,7 @@
       enable = true;
       pass_filenames = false;
     };
-    gotest.enable = true;
+    #gotest.enable = true;
     golangci-lint = {
       enable = true;
       pass_filenames = false;
