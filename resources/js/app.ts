@@ -390,13 +390,30 @@ const wgaInternal: wgaInternals = {
         return;
       }
 
+      //find .modal-box in the modal
+      const modalBox = artistSearchModal.querySelector(".modal-box");
+
+      if (!modalBox) {
+        console.error("Modal box not found");
+        return;
+      }
+
       // get the contents of #artistList and parse it as json
       const artistList = document.getElementById("artistList");
       if (!artistList) {
+        console.error("Artist list not found");
         return;
       }
 
       const artists = JSON.parse(artistList.innerHTML);
+
+      const label = document.createElement("label");
+
+      const searchInput = document.createElement("input");
+
+      searchInput.type = "search";
+
+      label.appendChild(searchInput);
 
       // create a table within the modal from the json which has label and url keys
       const tableContainer = document.createElement("div");
@@ -406,22 +423,29 @@ const wgaInternal: wgaInternals = {
 
       tableContainer.appendChild(table);
 
-      artists.forEach((artist: { label: string; url: string }) => {
-        const tr = document.createElement("tr");
-        const td = document.createElement("td");
-        const a = document.createElement("a");
+      // artists.forEach((artist: { label: string; url: string }) => {
+      //   const tr = document.createElement("tr");
+      //   const td = document.createElement("td");
+      //   const a = document.createElement("a");
 
-        a.href = artist.url;
-        a.textContent = artist.label;
+      //   a.href = artist.url;
+      //   a.textContent = artist.label;
 
-        td.appendChild(a);
-        tr.appendChild(td);
-        table.appendChild(tr);
-      });
+      //   td.appendChild(a);
+      //   tr.appendChild(td);
+      //   table.appendChild(tr);
+      // });
 
       // replace the contents of the dialog with the table
-      artistSearchModal.innerHTML = "";
-      artistSearchModal.appendChild(tableContainer);
+      modalBox.innerHTML = "";
+
+      const modalTitle = document.createElement("h2");
+      modalTitle.textContent = "Artist Lookup";
+      modalBox.appendChild(modalTitle);
+      modalBox.appendChild(document.createElement("hr"));
+
+      modalBox.appendChild(label);
+      modalBox.appendChild(tableContainer);
     },
   },
 
