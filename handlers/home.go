@@ -7,7 +7,6 @@ import (
 	"github.com/blackfyre/wga/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/assets/templ/utils"
 	"github.com/blackfyre/wga/utils"
-	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 )
@@ -119,7 +118,7 @@ func registerHome(app *pocketbase.PocketBase) {
 		// this is safe to be used by multiple goroutines
 		// (it acts as store for the parsed templates)
 
-		e.Router.GET("/", func(c echo.Context) error {
+		e.Router.GET("/", func(c *core.RequestEvent) error {
 
 			welcomeText, err := getWelcomeContent(app)
 

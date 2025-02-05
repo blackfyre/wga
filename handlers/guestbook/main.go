@@ -36,7 +36,7 @@ func yearOptions() []string {
 	return years
 }
 
-func EntriesHandler(app *pocketbase.PocketBase, c echo.Context) error {
+func EntriesHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 	fullUrl := c.Scheme() + "://" + c.Request().Host + c.Request().URL.String()
 	year := c.QueryParamDefault("year", fmt.Sprintf("%d", time.Now().Year()))
@@ -68,7 +68,7 @@ func EntriesHandler(app *pocketbase.PocketBase, c echo.Context) error {
 	return nil
 }
 
-func StoreEntryViewHandler(app *pocketbase.PocketBase, c echo.Context) error {
+func StoreEntryViewHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 	err := pages.GuestbookEntryForm().Render(context.Background(), c.Response().Writer)
 
@@ -79,7 +79,7 @@ func StoreEntryViewHandler(app *pocketbase.PocketBase, c echo.Context) error {
 	return nil
 }
 
-func StoreEntryHandler(app *pocketbase.PocketBase, c echo.Context) error {
+func StoreEntryHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 	data := apis.RequestInfo(c).Data
 
@@ -117,7 +117,7 @@ func StoreEntryHandler(app *pocketbase.PocketBase, c echo.Context) error {
 
 	form.LoadData(map[string]any{
 		"email":    postData.Email,
-		"name":     postData.Name,
+		"name":     postData.GetString("name")
 		"message":  postData.Message,
 		"location": postData.Location,
 	})

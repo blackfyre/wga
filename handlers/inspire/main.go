@@ -15,7 +15,7 @@ import (
 	tmplUtils "github.com/blackfyre/wga/assets/templ/utils"
 )
 
-func inspirationHandler(app *pocketbase.PocketBase, c echo.Context) error {
+func inspirationHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 	items, err := models.GetRandomArtworks(app.Dao(), 20)
 
@@ -28,19 +28,19 @@ func inspirationHandler(app *pocketbase.PocketBase, c echo.Context) error {
 
 	for _, item := range items {
 
-		artworkId := item.GetId()
+		artworkId := item.GetString("id")
 
 		artist, err := models.GetArtistById(app.Dao(), item.Author)
 
 		if err != nil {
-			app.Logger().Error("Error getting artist for artwork %s: %v", item.GetId(), err)
+			app.Logger().Error("Error getting artist for artwork %s: %v", item.GetString("id"), err)
 			return utils.ServerFaultError(c)
 		}
 
 		content = append(content, dto.Image{
 			Url: url.GenerateFullArtworkUrl(url.ArtworkUrlDTO{
 				ArtistId:     artist.Id,
-				ArtistName:   artist.Name,
+				ArtistName:   artist.GetString("name")
 				ArtworkTitle: item.Author,
 				ArtworkId:    item.Id,
 			}),
@@ -52,10 +52,10 @@ func inspirationHandler(app *pocketbase.PocketBase, c echo.Context) error {
 			Id:        artworkId,
 			Artist: dto.Artist{
 				Id:   artist.Id,
-				Name: artist.Name,
+				Name: artist.GetString("name")
 				Url: url.GenerateArtistUrl(url.ArtistUrlDTO{
 					ArtistId:   artist.Id,
-					ArtistName: artist.Name,
+					ArtistName: artist.GetString("name")
 				}),
 				Profession: artist.Profession,
 			},
@@ -76,7 +76,7 @@ func inspirationHandler(app *pocketbase.PocketBase, c echo.Context) error {
 
 func RegisterHandlers(app *pocketbase.PocketBase) {
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
-		e.Router.GET("/inspire", func(c echo.Context) error {
+		e.Router.GET("/inspire", func(c *core.RequestEvent) error {
 			return inspirationHandler(app, c)
 		})
 		return nil

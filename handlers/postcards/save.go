@@ -12,7 +12,7 @@ import (
 	"github.com/pocketbase/pocketbase/models"
 )
 
-func savePostcard(app *pocketbase.PocketBase, c echo.Context, p *bluemonday.Policy) error {
+func savePostcard(app *pocketbase.PocketBase, c *core.RequestEvent, p *bluemonday.Policy) error {
 	postData := struct {
 		SenderName           string   `json:"sender_name" form:"sender_name" query:"sender_name" validate:"required"`
 		SenderEmail          string   `json:"sender_email" form:"sender_email" query:"sender_email" validate:"required,email"`

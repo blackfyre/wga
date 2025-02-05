@@ -1,6 +1,7 @@
 package artworks
 
 import (
+	"bytes"
 	"context"
 	"net/http"
 	"strconv"
@@ -8,12 +9,9 @@ import (
 	"github.com/blackfyre/wga/assets/templ/dto"
 	"github.com/blackfyre/wga/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/assets/templ/utils"
-	"github.com/blackfyre/wga/models"
 	"github.com/blackfyre/wga/utils"
 	"github.com/blackfyre/wga/utils/url"
-	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
-	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 )
 
@@ -47,30 +45,36 @@ func searchPage(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "On this page you can search for artworks by title, artist, art form, art type and art school!")
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgUrlKey, fullUrl)
 
-	c.Response().Header().Set("HX-Push-Url", fullUrl)
-	err := pages.ArtworkSearchPage(content).Render(ctx, c.Response().Writer)
+	c.Response.Header().Set("HX-Push-Url", fullUrl)
+
+	var buff bytes.Buffer
+
+	err := pages.ArtworkSearchPage(content).Render(ctx, &buff)
 
 	if err != nil {
 		app.Logger().Error("Error rendering artwork search page", "error", err.Error())
 		return utils.ServerFaultError(c)
 	}
 
-	return nil
+	return c.HTML(http.StatusOK, buff.String())
 
 }
 
-func search(app *pocketbase.PocketBase, c echo.Context) error {
+func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 	limit := 16
 	page := 1
 	offset := 0
 
-	if c.QueryParam("page") != "" {
+	queryParams := c.Request.URL.Query()
+
+	if queryParams.Has("page") {
 		err := error(nil)
-		page, err = strconv.Atoi(c.QueryParam("page"))
+		page, err = strconv.Atoi(queryParams.Get("page"))
 
 		if err != nil {
-			return apis.NewBadRequestError("Invalid page", err)
+			app.Logger().Error("Failed to parse page number", "error", err.Error())
+			return utils.BadRequestError(c)
 		}
 	}
 
@@ -81,7 +85,7 @@ func search(app *pocketbase.PocketBase, c echo.Context) error {
 
 	filterString, filterParams := filters.BuildFilter()
 
-	records, err := app.Dao().FindRecordsByFilter(
+	records, err := app.FindRecordsByFilter(
 		"artworks",
 		filterString,
 		"+title",
@@ -91,11 +95,12 @@ func search(app *pocketbase.PocketBase, c echo.Context) error {
 	)
 
 	if err != nil {
-		return apis.NewBadRequestError("Invalid page", err)
+		app.Logger().Error("Failed to get artwork records", "error", err.Error())
+		return utils.ServerFaultError(c)
 	}
 
-	// this could be replaced with a dedicated sql query, but this is more convinient
-	totalRecords, err := app.Dao().FindRecordsByFilter(
+	// this could be replaced with a dedicated SQL query, but this is more convinient
+	totalRecords, err := app.FindRecordsByFilter(
 		"artworks",
 		filterString,
 		"",
@@ -105,7 +110,8 @@ func search(app *pocketbase.PocketBase, c echo.Context) error {
 	)
 
 	if err != nil {
-		return apis.NewBadRequestError("Invalid page", err)
+		app.Logger().Error("Failed to count artwork records", "error", err.Error())
+		return utils.ServerFaultError(c)
 	}
 
 	recordsCount := len(totalRecords)
@@ -139,7 +145,7 @@ func search(app *pocketbase.PocketBase, c echo.Context) error {
 			continue
 		}
 
-		artist, err := models.GetArtistById(app.Dao(), artistIds[0])
+		artist, err := app.FindRecordById("artists", artistIds[0])
 
 		if err != nil {
 			// waiting for the promised logging system by @pocketbase
@@ -148,25 +154,25 @@ func search(app *pocketbase.PocketBase, c echo.Context) error {
 
 		content.Results.Artworks = append(content.Results.Artworks, dto.Image{
 			Url: url.GenerateFullArtworkUrl(url.ArtworkUrlDTO{
-				ArtistName:   artist.Name,
-				ArtistId:     artist.Id,
+				ArtistName:   artist.GetString("name"),
+				ArtistId:     artist.GetString("id"),
 				ArtworkTitle: v.GetString("title"),
-				ArtworkId:    v.GetId(),
+				ArtworkId:    v.GetString("id"),
 			}),
 			Image:     url.GenerateFileUrl("artworks", v.GetString("id"), v.GetString("image"), ""),
 			Thumb:     url.GenerateThumbUrl("artworks", v.GetString("id"), v.GetString("image"), "320x240", ""),
 			Comment:   v.GetString("comment"),
 			Title:     v.GetString("title"),
 			Technique: v.GetString("technique"),
-			Id:        v.GetId(),
+			Id:        v.GetString("id"),
 			Artist: dto.Artist{
-				Id:   artist.Id,
-				Name: artist.Name,
+				Id:   artist.GetString("id"),
+				Name: artist.GetString("name"),
 				Url: url.GenerateArtistUrl(url.ArtistUrlDTO{
 					ArtistId:   artist.Id,
-					ArtistName: artist.Name,
+					ArtistName: artist.GetString("name"),
 				}),
-				Profession: artist.Profession,
+				Profession: artist.GetString("profession"),
 			},
 		})
 	}
@@ -182,25 +188,28 @@ func search(app *pocketbase.PocketBase, c echo.Context) error {
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "On this page you can search for artworks by title, artist, art form, art type and art school!")
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgUrlKey, pHtmxUrl)
 
-	c.Response().Header().Set("HX-Push-Url", pHtmxUrl)
-	err = pages.ArtworkSearchPage(content).Render(ctx, c.Response().Writer)
+	c.Response.Header().Set("HX-Push-Url", pHtmxUrl)
+
+	var buff bytes.Buffer
+
+	err = pages.ArtworkSearchPage(content).Render(ctx, &buff)
 
 	if err != nil {
 		app.Logger().Error("Error rendering artwork search page", "error", err.Error())
 		return utils.ServerFaultError(c)
 	}
 
-	return nil
+	return c.HTML(http.StatusOK, buff.String())
 }
 
 // RegisterArtworksHandlers registers search handlers to the given PocketBase app.
 func RegisterArtworksHandlers(app *pocketbase.PocketBase) {
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
-		e.Router.GET("/artworks", func(*core.RequestEvent) error {
+		e.Router.GET("/artworks", func(c *core.RequestEvent) error {
 			return searchPage(app, c)
 		})
 
-		e.Router.GET("/artworks/results", func(*core.RequestEvent) error {
+		e.Router.GET("/artworks/results", func(c *core.RequestEvent) error {
 			return search(app, c)
 		})
 		return nil

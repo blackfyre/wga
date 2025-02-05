@@ -129,7 +129,7 @@ func processArtists(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 	if err != nil {
 		app.Logger().Error("Failed to marshal Artist JSON-LD", "error", err.Error())
-		return apis.NewBadRequestError("Invalid page", err)
+		return utils.BadRequestError(c)
 	}
 
 	content.Jsonld = fmt.Sprintf(`<script type="application/ld+json">%s</script>`, marshalledJsonLd)

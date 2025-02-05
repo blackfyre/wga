@@ -14,7 +14,6 @@ import (
 	"github.com/blackfyre/wga/handlers/artworks"
 	"github.com/blackfyre/wga/utils"
 	"github.com/blackfyre/wga/utils/url"
-	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 )
@@ -42,7 +41,7 @@ type renderPaneDto struct {
 // It renders the dual page using the contentDto and writes the response to the context's writer.
 // If there is an error during the rendering process, it logs the error and returns a server fault error.
 // Finally, it returns nil if the rendering process is successful.
-func renderDualModePage(app *pocketbase.PocketBase, c echo.Context) error {
+func renderDualModePage(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, "Dual View")
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "On this page you can search for artworks by title, artist, art form, art type and art school!")
 	// ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgUrlKey, pHtmxUrl)
@@ -79,15 +78,18 @@ func renderDualModePage(app *pocketbase.PocketBase, c echo.Context) error {
 	relPath.Query().Add("left_render_to", rightPane.Side)
 	relPath.Query().Add("right_render_to", leftPane.Side)
 
-	c.Response().Header().Set("HX-Push-Url", relPath.String())
-	err = pages.DualPage(contentDto).Render(ctx, c.Response().Writer)
+	c.Response.Header().Set("HX-Push-Url", relPath.String())
+
+	var buff bytes.Buffer
+
+	err = pages.DualPage(contentDto).Render(ctx, &buff)
 
 	if err != nil {
 		app.Logger().Error("Error rendering artwork search page", "error", err.Error())
 		return utils.ServerFaultError(c)
 	}
 
-	return nil
+	return c.HTML(200, buff.String())
 }
 
 // formatArtistNameList formats the artist name list.
@@ -117,10 +119,12 @@ func reverseSide(side string) string {
 	return ""
 }
 
-func renderPane(side string, app *pocketbase.PocketBase, c echo.Context) (renderPaneDto, error) {
+func renderPane(side string, app *pocketbase.PocketBase, c *core.RequestEvent) (renderPaneDto, error) {
 
-	queryParam := cmp.Or(c.QueryParam(side), "default")
-	renderTo := cmp.Or(c.QueryParam(side+"_render_to"), reverseSide(side))
+	rawQParams := c.Request.URL.Query()
+
+	queryParam := cmp.Or(rawQParams.Get(side), "default")
+	renderTo := cmp.Or(rawQParams.Get(side+"_render_to"), reverseSide(side))
 
 	pane := renderPaneDto{
 		Side: side,
@@ -195,8 +199,8 @@ func renderPane(side string, app *pocketbase.PocketBase, c echo.Context) (render
 	return pane, nil
 }
 
-func renderArtistPane(app *pocketbase.PocketBase, c echo.Context, artistId string, renderTo string, buf *bytes.Buffer) (dto.Artist, error) {
-	artistModel, err := app.Dao().FindRecordById("artists", artistId)
+func renderArtistPane(app *pocketbase.PocketBase, c *core.RequestEvent, artistId string, renderTo string, buf *bytes.Buffer) (dto.Artist, error) {
+	artistModel, err := app.FindRecordById("artists", artistId)
 
 	if err != nil {
 		app.Logger().Error("Error finding artist", "error", err.Error())
@@ -220,8 +224,8 @@ func renderArtistPane(app *pocketbase.PocketBase, c echo.Context, artistId strin
 	return artistDto, nil
 }
 
-func renderArtworkPane(app *pocketbase.PocketBase, c echo.Context, artworkId string, renderTo string, buf *bytes.Buffer) (dto.Artwork, error) {
-	artworkModel, err := app.Dao().FindRecordById("artworks", artworkId)
+func renderArtworkPane(app *pocketbase.PocketBase, c *core.RequestEvent, artworkId string, renderTo string, buf *bytes.Buffer) (dto.Artwork, error) {
+	artworkModel, err := app.FindRecordById("artworks", artworkId)
 
 	if err != nil {
 		app.Logger().Error("Error finding artwork", "error", err.Error())
@@ -246,8 +250,8 @@ func renderArtworkPane(app *pocketbase.PocketBase, c echo.Context, artworkId str
 }
 
 func RegisterHandlers(app *pocketbase.PocketBase) {
-	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
-		e.Router.GET("/dual-mode", func(c echo.Context) error {
+	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
+		e.Router.GET("/dual-mode", func(c *core.RequestEvent) error {
 			return renderDualModePage(app, c)
 		})
 		return nil

@@ -12,7 +12,6 @@ import (
 	shape "github.com/blackfyre/wga/models"
 	"github.com/blackfyre/wga/utils"
 	"github.com/google/uuid"
-	"github.com/labstack/echo/v5"
 
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
@@ -65,7 +64,7 @@ type Grouped_music_list struct {
 func registerMusicHandlers(app *pocketbase.PocketBase) {
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 
-		e.Router.GET("musics", func(c echo.Context) error {
+		e.Router.GET("musics", func(c *core.RequestEvent) error {
 			html, err := "", error(nil)
 			isHtmx := utils.IsHtmxRequest(c)
 			cacheKey := "musics"
@@ -120,7 +119,7 @@ func registerMusicHandlers(app *pocketbase.PocketBase) {
 			return c.HTML(http.StatusOK, html)
 		})
 
-		e.Router.GET("musics/:name", func(c echo.Context) error {
+		e.Router.GET("musics/:name", func(c *core.RequestEvent) error {
 			isHtmx := utils.IsHtmxRequest(c)
 			slug := c.PathParam("name")
 			cacheKey := "music:" + slug
@@ -207,7 +206,7 @@ func GetParsedMusics() []Composer_seed {
 
 			composers = append(composers, Composer_seed{
 				ID:       id,
-				Name:     composer.Name,
+				Name:     composer.GetString("name")
 				Date:     composer.Date,
 				Language: composer.Language,
 				Century:  century.Century,
