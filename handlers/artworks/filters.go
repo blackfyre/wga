@@ -1,6 +1,8 @@
 package artworks
 
 import (
+	"cmp"
+
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
 )
@@ -95,13 +97,16 @@ func (f *filters) BuildFilterString() string {
 }
 
 func buildFilters(c *core.RequestEvent) *filters {
+
+	q := c.Request.URL.Query()
+
 	f := &filters{
-		Title:         c.Quer("title", ""),
-		SchoolString:  c.QueryParamDefault("art_school", ""),
-		ArtFormString: c.QueryParamDefault("art_form", ""),
-		ArtTypeString: c.QueryParamDefault("art_type", ""),
-		ArtistString:  c.QueryParamDefault("artist", ""),
-		Page:          c.QueryParamDefault("page", ""),
+		Title:         cmp.Or(q.Get("title"), ""),
+		SchoolString:  cmp.Or(q.Get("art_school"), ""),
+		ArtFormString: cmp.Or(q.Get("art_form"), ""),
+		ArtTypeString: cmp.Or(q.Get("art_type"), ""),
+		ArtistString:  cmp.Or(q.Get("artist"), ""),
+		Page:          cmp.Or(q.Get("page"), ""),
 	}
 
 	return f

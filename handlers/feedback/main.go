@@ -1,17 +1,16 @@
 package feedback
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"net/http"
 
 	"github.com/blackfyre/wga/assets/templ/components"
 	"github.com/blackfyre/wga/errs"
 	"github.com/blackfyre/wga/utils"
-	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
-	"github.com/pocketbase/pocketbase/forms"
-	"github.com/pocketbase/pocketbase/models"
 )
 
 type feedbackForm struct {
@@ -44,15 +43,18 @@ func validateFeedbackForm(form feedbackForm) error {
 // It renders the feedback form using the components.FeedbackForm() function.
 // If there is an error during rendering, it logs the error and returns a server fault error.
 // Otherwise, it returns nil.
-func presentFeedbackForm(c echo.Context, app *pocketbase.PocketBase) error {
-	err := components.FeedbackForm().Render(context.Background(), c.Response().Writer)
+func presentFeedbackForm(c *core.RequestEvent, app *pocketbase.PocketBase) error {
+
+	var buff bytes.Buffer
+
+	err := components.FeedbackForm().Render(context.Background(), &buff)
 
 	if err != nil {
 		app.Logger().Error("Failed to render the feedback form", "error", err.Error())
 		return utils.ServerFaultError(c)
 	}
 
-	return err
+	return c.HTML(http.StatusOK, buff.String())
 }
 
 // processFeedbackForm processes the feedback form submitted by the user.
@@ -63,12 +65,12 @@ func presentFeedbackForm(c echo.Context, app *pocketbase.PocketBase) error {
 // If there is an error while saving the feedback, the feedback form is rendered again and a server fault error is returned.
 // If the feedback is successfully saved, a success toast message is sent to the user.
 // The function returns nil if there are no errors.
-func processFeedbackForm(c echo.Context, app *pocketbase.PocketBase) error {
+func processFeedbackForm(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 	postData := feedbackForm{
-		ReferTo: c.Request().Header.Get("Referer"),
+		ReferTo: c.Request.Header.Get("Referer"),
 	}
 
-	if err := c.Bind(&postData); err != nil {
+	if err := c.BindBody(&postData); err != nil {
 		app.Logger().Error("Failed to parse form data", "error", err.Error())
 		utils.SendToastMessage("Failed to parse form", "error", true, c, "")
 		return utils.ServerFaultError(c)
@@ -89,7 +91,9 @@ func processFeedbackForm(c echo.Context, app *pocketbase.PocketBase) error {
 
 		app.Logger().Error("Failed to store the feedback", "error", err.Error())
 
-		err := components.FeedbackForm().Render(context.Background(), c.Response().Writer)
+		var buff bytes.Buffer
+
+		err := components.FeedbackForm().Render(context.Background(), &buff)
 
 		if err != nil {
 			app.Logger().Error("Failed to render the feedback form after form submission error", "error", err.Error())
@@ -98,7 +102,7 @@ func processFeedbackForm(c echo.Context, app *pocketbase.PocketBase) error {
 
 		utils.SendToastMessage("Failed to store the feedback", "error", false, c, "")
 
-		return utils.ServerFaultError(c)
+		return c.HTML(http.StatusOK, buff.String())
 	}
 
 	utils.SendToastMessage("Thank you! Your feedback is valuable to us!", "success", true, c, "")
@@ -110,7 +114,7 @@ func processFeedbackForm(c echo.Context, app *pocketbase.PocketBase) error {
 // It takes the PocketBase app instance, the echo.Context c, and the postData feedbackForm as parameters.
 // It returns an error if there is any issue with saving the feedback.
 //
-// The function first attempts to find the "feedbacks" collection in the database using the app.Dao().FindCollectionByNameOrId method.
+// The function first attempts to find the "feedbacks" collection in the database using the app.FindCollectionByNameOrId method.
 // If the collection is not found, it logs an error and sends a toast message to the user indicating the issue.
 // It then returns a server fault error using the utils.ServerFaultError function.
 //
@@ -122,30 +126,28 @@ func processFeedbackForm(c echo.Context, app *pocketbase.PocketBase) error {
 // If there is an error during the data loading process, it logs an error and returns the error.
 //
 // Finally, it submits the form using the form.Submit method and returns the result.
-func saveFeedback(app *pocketbase.PocketBase, c echo.Context, postData feedbackForm) error {
-	collection, err := app.Dao().FindCollectionByNameOrId("feedbacks")
+func saveFeedback(app *pocketbase.PocketBase, c *core.RequestEvent, postData feedbackForm) error {
+	collection, err := app.FindCollectionByNameOrId("feedbacks")
 	if err != nil {
 		app.Logger().Error("Database table not found", "error", err.Error())
 		utils.SendToastMessage("Database table not found", "error", true, c, "")
 		return utils.ServerFaultError(c)
 	}
 
-	record := models.NewRecord(collection)
+	r := core.NewRecord(collection)
 
-	form := forms.NewRecordUpsert(app, record)
+	r.Set("email", postData.Email)
+	r.Set("name", postData.Name)
+	r.Set("message", postData.Message)
+	r.Set("refer_to", postData.ReferTo)
 
-	err = form.LoadData(map[string]any{
-		"email":    postData.Email,
-		"name":     postData.Name,
-		"message":  postData.Message,
-		"refer_to": postData.ReferTo,
-	})
+	err = app.Save(r)
 	if err != nil {
 		app.Logger().Error("Failed to process the feedback", "error", err.Error())
 		return err
 	}
 
-	return form.Submit()
+	return nil
 }
 
 // RegisterHandlers registers the feedback handlers to the provided PocketBase application.
@@ -154,14 +156,14 @@ func saveFeedback(app *pocketbase.PocketBase, c echo.Context, postData feedbackF
 // The handlers also utilize the IsHtmxRequestMiddleware from the utils package.
 // This function should be called before serving the application.
 func RegisterHandlers(app *pocketbase.PocketBase) {
-	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
-		e.Router.GET("/feedback", func(c echo.Context) error {
+	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
+		e.Router.GET("/feedback", func(c *core.RequestEvent) error {
 			return presentFeedbackForm(c, app)
-		}, utils.IsHtmxRequestMiddleware)
+		}).BindFunc(utils.IsHtmxRequestMiddleware)
 
-		e.Router.POST("/feedback", func(c echo.Context) error {
+		e.Router.POST("/feedback", func(c *core.RequestEvent) error {
 			return processFeedbackForm(c, app)
-		}, utils.IsHtmxRequestMiddleware)
+		}).BindFunc(utils.IsHtmxRequestMiddleware)
 
 		return nil
 	})

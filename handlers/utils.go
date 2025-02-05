@@ -3,7 +3,6 @@ package handlers
 import (
 	"fmt"
 
-	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase/core"
 )
 
@@ -21,7 +20,7 @@ func generateArtistSlug(artist *core.Record) string {
 	return artist.GetString("slug") + "-" + artist.GetString("id")
 }
 
-func generateCurrentPageUrl(c echo.Context) string {
+func generateCurrentPageUrl(c *core.RequestEvent) string {
 	if c == nil || c.Request() == nil {
 		return ""
 	}

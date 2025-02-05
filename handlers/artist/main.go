@@ -17,7 +17,6 @@ import (
 	"github.com/blackfyre/wga/utils"
 	"github.com/blackfyre/wga/utils/jsonld"
 	"github.com/blackfyre/wga/utils/url"
-	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 )
@@ -334,7 +333,7 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 	return c.HTML(http.StatusOK, buff.String())
 }
 
-func RenderArtworkContent(app *pocketbase.PocketBase, c echo.Context, artwork *core.Record, hxTarget string) (dto.Artwork, error) {
+func RenderArtworkContent(app *pocketbase.PocketBase, c *core.RequestEvent, artwork *core.Record, hxTarget string) (dto.Artwork, error) {
 
 	artistId := cmp.Or(artwork.GetStringSlice("author")[0], "")
 
