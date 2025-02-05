@@ -3,14 +3,14 @@ package pages
 import (
 	"crypto/md5"
 	"fmt"
+	"github.com/blackfyre/wga/assets/templ/dto"
 	"github.com/blackfyre/wga/assets/templ/layouts"
-	"github.com/blackfyre/wga/models"
 )
 
 type GuestbookView struct {
 	SelectedYear string
 	YearOptions  []string
-	Entries      []*models.GuestbookEntry
+	Entries      dto.GuestbookEntries
 }
 
 templ GuestbookPage(v GuestbookView) {
@@ -97,7 +97,7 @@ templ GuestbookEntryForm() {
 				<path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"></path>
 			</svg>
 		</button>
-		<h1 class="text-2xl mb-4">Leave an enty!</h1>
+		<h1 class="text-2xl mb-4">Leave an entry!</h1>
 		<p>Leave your mark in the guestbook!</p>
 		<p>Be kind and respectful to others.</p>
 		<p>Messages are moderated and will be reviewed before being published.</p>
@@ -166,7 +166,7 @@ templ GuestbookEntryForm() {
 	</section>
 }
 
-templ GuestbookEntries(entries []*models.GuestbookEntry) {
+templ GuestbookEntries(entries dto.GuestbookEntries) {
 	<div class="flow-root">
 		<div class="divide-y divide-gray-200 gb-entries">
 			for _, entry := range entries {
@@ -176,7 +176,7 @@ templ GuestbookEntries(entries []*models.GuestbookEntry) {
 	</div>
 }
 
-templ GuestbookEntry(entry *models.GuestbookEntry) {
+templ GuestbookEntry(entry dto.GuestbookEntry) {
 	if (entry.Message == "") {
 		return
 	}
