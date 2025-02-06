@@ -19,10 +19,3 @@ func generateArtistSlug(artist *core.Record) string {
 	}
 	return artist.GetString("slug") + "-" + artist.GetString("id")
 }
-
-func generateCurrentPageUrl(c *core.RequestEvent) string {
-	if c == nil || c.Request() == nil {
-		return ""
-	}
-	return c.Scheme() + "://" + c.Request().Host + c.Request().URL.String()
-}
