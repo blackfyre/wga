@@ -1,14 +1,13 @@
 package inspire
 
 import (
+	"bytes"
 	"context"
 
 	"github.com/blackfyre/wga/assets/templ/dto"
 	"github.com/blackfyre/wga/assets/templ/pages"
-	"github.com/blackfyre/wga/models"
 	"github.com/blackfyre/wga/utils"
 	"github.com/blackfyre/wga/utils/url"
-	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 
@@ -17,7 +16,7 @@ import (
 
 func inspirationHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
-	items, err := models.GetRandomArtworks(app.Dao(), 20)
+	artPieces, err := app.FindRecordsByFilter("artists", "random", "", 10, 0)
 
 	if err != nil {
 		app.Logger().Error("Error getting random artworks", "error", err.Error())
@@ -26,46 +25,48 @@ func inspirationHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error 
 
 	content := dto.ImageGrid{}
 
-	for _, item := range items {
+	for _, artPiece := range artPieces {
 
-		artworkId := item.GetString("id")
+		artworkId := artPiece.GetString("id")
 
-		artist, err := models.GetArtistById(app.Dao(), item.Author)
+		artist, err := app.FindRecordById("artists", artPiece.GetString("author"))
 
 		if err != nil {
-			app.Logger().Error("Error getting artist for artwork %s: %v", item.GetString("id"), err)
+			app.Logger().Error("Error getting artist for artwork %s: %v", artPiece.GetString("id"), err)
 			return utils.ServerFaultError(c)
 		}
 
 		content = append(content, dto.Image{
 			Url: url.GenerateFullArtworkUrl(url.ArtworkUrlDTO{
-				ArtistId:     artist.Id,
-				ArtistName:   artist.GetString("name")
-				ArtworkTitle: item.Author,
-				ArtworkId:    item.Id,
+				ArtistId:     artist.GetString("id"),
+				ArtistName:   artist.GetString("name"),
+				ArtworkTitle: artPiece.GetString("title"),
+				ArtworkId:    artPiece.GetString("id"),
 			}),
-			Image:     url.GenerateFileUrl("artworks", artworkId, item.Image, ""),
-			Thumb:     url.GenerateThumbUrl("artworks", artworkId, item.Image, "320x240", ""),
-			Comment:   item.Comment,
-			Title:     item.Title,
-			Technique: item.Technique,
+			// Image:     url.GenerateFileUrl("artworks", artworkId, artPiece.Image, ""),
+			// Thumb:     url.GenerateThumbUrl("artworks", artworkId, artPiece.Image, "320x240", ""),
+			Comment:   artPiece.GetString("comment"),
+			Title:     artPiece.GetString("title"),
+			Technique: artPiece.GetString("technique"),
 			Id:        artworkId,
 			Artist: dto.Artist{
 				Id:   artist.Id,
-				Name: artist.GetString("name")
+				Name: artist.GetString("name"),
 				Url: url.GenerateArtistUrl(url.ArtistUrlDTO{
 					ArtistId:   artist.Id,
-					ArtistName: artist.GetString("name")
+					ArtistName: artist.GetString("name"),
 				}),
-				Profession: artist.Profession,
+				Profession: artist.GetString("profession"),
 			},
 		})
 	}
 
 	ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, "Inspiration")
 
-	c.Response().Header().Set("HX-Push-Url", "/inspire")
-	err = pages.InspirePage(content).Render(ctx, c.Response().Writer)
+	var buff bytes.Buffer
+
+	c.Response.Header().Set("HX-Push-Url", "/inspire")
+	err = pages.InspirePage(content).Render(ctx, &buff)
 
 	if err != nil {
 		return utils.ServerFaultError(c)
@@ -74,8 +75,14 @@ func inspirationHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error 
 	return nil
 }
 
+// RegisterHandlers registers the HTTP handlers for the PocketBase application.
+// It binds a function to the OnServe event, which sets up a GET route for "/inspire".
+// When the "/inspire" route is accessed, the inspirationHandler function is called.
+//
+// Parameters:
+//   - app: A pointer to the PocketBase application instance.
 func RegisterHandlers(app *pocketbase.PocketBase) {
-	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
+	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
 		e.Router.GET("/inspire", func(c *core.RequestEvent) error {
 			return inspirationHandler(app, c)
 		})
