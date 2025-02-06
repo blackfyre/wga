@@ -35,6 +35,15 @@ func init() {
 				Name:     "definition",
 				Required: true,
 			},
+			&core.AutodateField{
+				Name:     "created",
+				OnCreate: true,
+			},
+			&core.AutodateField{
+				Name:     "updated",
+				OnCreate: true,
+				OnUpdate: true,
+			},
 		)
 
 		err := app.Save(collection)

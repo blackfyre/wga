@@ -26,19 +26,27 @@ func init() {
 				Presentable: true,
 			},
 			&core.SelectField{
-				Id:       "music_composer_century",
-				Name:     "century",
-				Values:   []string{"12", "13", "14", "15", "16", "17", "18", "19", "20", "21"},
+				Id:        "music_composer_century",
+				Name:      "century",
+				Values:    []string{"12", "13", "14", "15", "16", "17", "18", "19", "20", "21"},
 				MaxSelect: 1,
-				Required: true,
+				Required:  true,
 			},
 			&core.TextField{
-				Id: "music_composer_language",
-				Name: "language",
+				Id:          "music_composer_language",
+				Name:        "language",
 				Presentable: true,
 			},
+			&core.AutodateField{
+				Name:     "created",
+				OnCreate: true,
+			},
+			&core.AutodateField{
+				Name:     "updated",
+				OnCreate: true,
+				OnUpdate: true,
+			},
 		)
-
 
 		err := app.Save(composerCollection)
 		if err != nil {
@@ -68,11 +76,20 @@ func init() {
 				MinSelect:    1,
 			},
 			&core.FileField{
-				Id:          "music_song_source",
-				Name:        "source",
-				MimeTypes:   []string{"audio/mpeg", "audio/mp3"},
-				MaxSize:     1024 * 1024 * 5,
-				Required: true,
+				Id:        "music_song_source",
+				Name:      "source",
+				MimeTypes: []string{"audio/mpeg", "audio/mp3"},
+				MaxSize:   1024 * 1024 * 5,
+				Required:  true,
+			},
+			&core.AutodateField{
+				Name:     "created",
+				OnCreate: true,
+			},
+			&core.AutodateField{
+				Name:     "updated",
+				OnCreate: true,
+				OnUpdate: true,
 			},
 		)
 
@@ -90,7 +107,6 @@ func init() {
 			composerRecord.Set("name", composer.Name)
 			composerRecord.Set("century", composer.Century)
 			composerRecord.Set("language", composer.Language)
-
 
 			err = app.Save(composerRecord)
 

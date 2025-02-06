@@ -30,20 +30,29 @@ func init() {
 
 		collection.Fields.Add(
 			&core.TextField{
-				Id:       tId + "_title",
-				Name:     "title",
-				Required: true,
+				Id:          tId + "_title",
+				Name:        "title",
+				Required:    true,
 				Presentable: true,
 			},
 			&core.TextField{
-				Id:       tId + "_slug",
-				Name:     "slug",
+				Id:   tId + "_slug",
+				Name: "slug",
 			},
 			&core.EditorField{
-				Id:       tId + "_content",
-				Name:     "content",
-				Required: true,
+				Id:          tId + "_content",
+				Name:        "content",
+				Required:    true,
 				ConvertURLs: true,
+			},
+			&core.AutodateField{
+				Name:     "created",
+				OnCreate: true,
+			},
+			&core.AutodateField{
+				Name:     "updated",
+				OnCreate: true,
+				OnUpdate: true,
 			},
 		)
 

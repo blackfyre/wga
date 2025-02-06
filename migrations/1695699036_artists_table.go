@@ -158,6 +158,15 @@ func init() {
 				Name:     "published",
 				Required: true,
 			},
+			&core.AutodateField{
+				Name:     "created",
+				OnCreate: true,
+			},
+			&core.AutodateField{
+				Name:     "updated",
+				OnCreate: true,
+				OnUpdate: true,
+			},
 		)
 
 		collection.AddIndex("pbx_artist_slug", true, "slug", "")

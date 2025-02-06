@@ -58,6 +58,15 @@ func init() {
 				Id:   "postcard_sent_at",
 				Name: "sent_at",
 			},
+			&core.AutodateField{
+				Name:     "created",
+				OnCreate: true,
+			},
+			&core.AutodateField{
+				Name:     "updated",
+				OnCreate: true,
+				OnUpdate: true,
+			},
 		)
 
 		return app.Save(collection)

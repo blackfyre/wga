@@ -14,7 +14,6 @@ func init() {
 
 	m.Register(func(app core.App) error {
 
-
 		collection := core.NewBaseCollection(tName)
 
 		collection.Name = tName
@@ -41,15 +40,24 @@ func init() {
 				Required:    true,
 			},
 			&core.EditorField{
-				Id:       tId + "_message",
-				Name:     "message",
-				Required: true,
+				Id:          tId + "_message",
+				Name:        "message",
+				Required:    true,
 				ConvertURLs: true,
 			},
 			&core.BoolField{
-				Id:   tId + "_handled",
-				Name: "handled",
+				Id:          tId + "_handled",
+				Name:        "handled",
 				Presentable: true,
+			},
+			&core.AutodateField{
+				Name:     "created",
+				OnCreate: true,
+			},
+			&core.AutodateField{
+				Name:     "updated",
+				OnCreate: true,
+				OnUpdate: true,
 			},
 		)
 
