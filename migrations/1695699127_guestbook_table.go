@@ -43,6 +43,15 @@ func init() {
 				Id:   "guestbooks_location",
 				Name: "location",
 			},
+			&core.AutodateField{
+				Name:     "created",
+				OnCreate: true,
+			},
+			&core.AutodateField{
+				Name:     "updated",
+				OnCreate: true,
+				OnUpdate: true,
+			},
 		)
 
 		err := app.Save(collection)

@@ -106,6 +106,15 @@ func init() {
 				MaxSize: 1024 * 1024 * 5,
 				Thumbs:  []string{"100x100", "320x240"},
 			},
+			&core.AutodateField{
+				Name:     "created",
+				OnCreate: true,
+			},
+			&core.AutodateField{
+				Name:     "updated",
+				OnCreate: true,
+				OnUpdate: true,
+			},
 		)
 
 		err := app.Save(collection)
