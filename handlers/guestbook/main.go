@@ -1,16 +1,20 @@
 package guestbook
 
 import (
+	"bytes"
+	"cmp"
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/blackfyre/wga/assets/templ/pages"
 	wgaModels "github.com/blackfyre/wga/models"
 	"github.com/blackfyre/wga/utils"
-	"github.com/labstack/echo/v5"
+	"github.com/blackfyre/wga/utils/url"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
+	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/forms"
 	"github.com/pocketbase/pocketbase/models"
 
@@ -36,12 +40,29 @@ func yearOptions() []string {
 	return years
 }
 
+func convertRawEntriesToGuestbookEntries(entries []*core.Record) []wgaModels.GuestbookEntry {
+	var guestbookEntries []wgaModels.GuestbookEntry
+
+	for _, entry := range entries {
+		guestbookEntries = append(guestbookEntries, wgaModels.GuestbookEntry{
+			Name:     entry.GetString("name"),
+			Email:    entry.GetString("email"),
+			Location: entry.GetString("location"),
+			Message:  entry.GetString("message"),
+			Year:     entry.GetString("year"),
+		})
+	}
+
+	return guestbookEntries
+}
+
 func EntriesHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
-	fullUrl := c.Scheme() + "://" + c.Request().Host + c.Request().URL.String()
-	year := c.QueryParamDefault("year", fmt.Sprintf("%d", time.Now().Year()))
+	fullUrl := url.GenerateCurrentPageUrl(c)
+	year := cmp.Or(c.Request.URL.Query().Get("year"), fmt.Sprintf("%d", time.Now().Year()))
 
-	entries, err := wgaModels.FindEntriesForYear(app.Dao(), year)
+	// entries, err := wgaModels.FindEntriesForYear(app.Dao(), year)
+	entries, err := app.FindRecordsByFilter("Guestbook", "year", year, 0, 0)
 
 	if err != nil {
 		app.Logger().Error("Failed to get guestbook entries", "error", err)
@@ -51,21 +72,24 @@ func EntriesHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	content := pages.GuestbookView{
 		SelectedYear: year,
 		YearOptions:  yearOptions(),
-		Entries:      entries,
+		Entries:      convertRawEntriesToGuestbookEntries(entries),
 	}
 
 	ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, "Guestbook")
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "This is the guestbook of the Web Gallery of Art. Please feel free to leave a message.")
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, fullUrl)
 
-	c.Response().Header().Set("HX-Push-Url", fullUrl)
-	err = pages.GuestbookPage(content).Render(ctx, c.Response().Writer)
+	c.Response.Header().Set("HX-Push-Url", fullUrl)
+
+	var buff bytes.Buffer
+
+	err = pages.GuestbookPage(content).Render(ctx, &buff)
 
 	if err != nil {
 		return utils.ServerFaultError(c)
 	}
 
-	return nil
+	return c.HTML(http.StatusOK, buff.String())
 }
 
 func StoreEntryViewHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error {
@@ -104,7 +128,7 @@ func StoreEntryHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 		return c.NoContent(204)
 	}
 
-	collection, err := app.Dao().FindCollectionByNameOrId("Guestbook")
+	collection, err := app.FindCollectionByNameOrId("Guestbook")
 	if err != nil {
 		app.Logger().Error("Database table not found", "error", err.Error())
 		utils.SendToastMessage("Something went wrong!", "error", true, c, "")
@@ -117,7 +141,7 @@ func StoreEntryHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 	form.LoadData(map[string]any{
 		"email":    postData.Email,
-		"name":     postData.GetString("name")
+		"name":     postData.GetString("name"),
 		"message":  postData.Message,
 		"location": postData.Location,
 	})

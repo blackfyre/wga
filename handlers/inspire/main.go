@@ -3,6 +3,7 @@ package inspire
 import (
 	"bytes"
 	"context"
+	"net/http"
 
 	"github.com/blackfyre/wga/assets/templ/dto"
 	"github.com/blackfyre/wga/assets/templ/pages"
@@ -72,7 +73,7 @@ func inspirationHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error 
 		return utils.ServerFaultError(c)
 	}
 
-	return nil
+	return c.HTML(http.StatusOK, buff.String())
 }
 
 // RegisterHandlers registers the HTTP handlers for the PocketBase application.

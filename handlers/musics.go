@@ -206,7 +206,7 @@ func GetParsedMusics() []Composer_seed {
 
 			composers = append(composers, Composer_seed{
 				ID:       id,
-				Name:     composer.GetString("name")
+				Name:     composer.GetString("name"),
 				Date:     composer.Date,
 				Language: composer.Language,
 				Century:  century.Century,
@@ -220,7 +220,7 @@ func GetParsedMusics() []Composer_seed {
 
 func getComposers(app *pocketbase.PocketBase) ([]shape.Music_composer, error) {
 	composers := []shape.Music_composer{}
-	err := app.Dao().DB().NewQuery("SELECT * FROM music_composer").All(&composers)
+	err := app.DB().NewQuery("SELECT * FROM music_composer").All(&composers)
 	if err != nil {
 		app.Logger().Error("failed to get music composers", "error", err.Error())
 		return nil, fmt.Errorf("failed to get music composers: %w", err)
@@ -230,7 +230,7 @@ func getComposers(app *pocketbase.PocketBase) ([]shape.Music_composer, error) {
 		songs := []shape.Music_song{}
 
 		query := "SELECT * FROM music_song WHERE composer_id = {:id}"
-		err := app.Dao().DB().NewQuery(query).Bind(dbx.Params{"id": composer.ID}).All(&songs)
+		err := app.DB().NewQuery(query).Bind(dbx.Params{"id": composer.ID}).All(&songs)
 		if err != nil {
 			app.Logger().Error("failed to get music song by composer", "error", err.Error())
 			return nil, fmt.Errorf("failed to get music song by composer: %w", err)

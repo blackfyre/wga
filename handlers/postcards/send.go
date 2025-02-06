@@ -26,7 +26,7 @@ func sendPostcard(app *pocketbase.PocketBase, c echo.Context) error {
 func renderForm(artworkId string, app *pocketbase.PocketBase, c echo.Context) error {
 	ctx := context.Background()
 
-	r, err := app.Dao().FindRecordById("artworks", artworkId)
+	r, err := app.FindRecordById("artworks", artworkId)
 
 	if err != nil {
 		app.Logger().Error("Failed to find artwork "+artworkId, "error", err.Error())

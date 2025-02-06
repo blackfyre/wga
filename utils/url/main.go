@@ -79,3 +79,10 @@ func GetRequiredQueryParam(c echo.Context, param string) (string, error) {
 
 	return p, nil
 }
+
+func GenerateCurrentPageUrl(c *core.RequestEvent) string {
+	if c == nil || c.Request == nil {
+		return ""
+	}
+	return c.Request.URL.Scheme + "://" + c.Request.URL.Host + c.Request.URL.String()
+}

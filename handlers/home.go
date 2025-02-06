@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/blackfyre/wga/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/assets/templ/utils"
@@ -34,7 +36,7 @@ func getWelcomeContent(app *pocketbase.PocketBase) (string, error) {
 		return app.Store().Get("strings:welcome").(string), nil
 	}
 
-	record, err := app.Dao().FindFirstRecordByData("strings", "name", "welcome")
+	record, err := app.FindFirstRecordByData("strings", "name", "welcome")
 
 	if err != nil {
 		app.Logger().Error("Error getting welcome content", "error", err.Error())
@@ -66,7 +68,7 @@ func getArtistCount(app *pocketbase.PocketBase) (string, error) {
 
 	c := counter{}
 
-	err := app.Dao().DB().NewQuery("SELECT COUNT(*) as c FROM artists WHERE published IS true").One(&c)
+	err := app.DB().NewQuery("SELECT COUNT(*) as c FROM artists WHERE published IS true").One(&c)
 
 	if err != nil {
 		app.Logger().Error("Error getting artist count", "error", err.Error())
@@ -98,7 +100,7 @@ func getArtworkCount(app *pocketbase.PocketBase) (string, error) {
 
 	c := counter{}
 
-	err := app.Dao().DB().NewQuery("SELECT COUNT(*) as c FROM artworks WHERE published IS true").One(&c)
+	err := app.DB().NewQuery("SELECT COUNT(*) as c FROM artworks WHERE published IS true").One(&c)
 
 	if err != nil {
 		app.Logger().Error("Error getting artwork count", "error", err.Error())
@@ -114,8 +116,8 @@ func getArtworkCount(app *pocketbase.PocketBase) (string, error) {
 }
 
 func registerHome(app *pocketbase.PocketBase) {
-	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
-		// this is safe to be used by multiple goroutines
+	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
+		// This is safe to be used by multiple goroutines
 		// (it acts as store for the parsed templates)
 
 		e.Router.GET("/", func(c *core.RequestEvent) error {
@@ -149,17 +151,22 @@ func registerHome(app *pocketbase.PocketBase) {
 
 			ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, "Welcome to the Gallery")
 			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "Welcome to the Gallery")
-			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgUrlKey, c.Scheme()+"://"+c.Request().Host+c.Request().URL.String())
 
-			c.Response().Header().Set("HX-Push-Url", "/")
-			err = pages.HomePageWrapped(content).Render(ctx, c.Response().Writer)
+			//TODO: Fix this
+			// ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgUrlKey, c.Scheme()+"://"+c.Request().Host+c.Request().URL.String())
+
+			c.Response.Header().Set("HX-Push-Url", "/")
+
+			var buff bytes.Buffer
+
+			err = pages.HomePageWrapped(content).Render(ctx, &buff)
 
 			if err != nil {
 				app.Logger().Error("Error rendering home page", "error", err.Error())
 				return utils.ServerFaultError(c)
 			}
 
-			return nil
+			return c.HTML(http.StatusOK, buff.String())
 		})
 
 		return nil
