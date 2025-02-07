@@ -2,6 +2,7 @@ package migrations
 
 import (
 	"bytes"
+	"cmp"
 	"encoding/json"
 	"fmt"
 
@@ -229,13 +230,14 @@ func init() {
 			r.Set("exact_year_of_death", i.Meta.ExactYearOfDeath)
 			r.Set("school", i.School)
 			r.Set("published", true)
-			r.Set("known_place_of_birth", i.Meta.KnownPlaceOfBirth)
-			r.Set("known_place_of_death", i.Meta.KnownPlaceOfDeath)
+			r.Set("known_place_of_birth", cmp.Or(i.Meta.KnownPlaceOfBirth, NotApplicable))
+			r.Set("known_place_of_death", cmp.Or(i.Meta.KnownPlaceOfDeath, NotApplicable))
 
 			err = app.Save(r)
 
 			if err != nil {
-				fmt.Printf("Source data: %v\n", i)
+				app.Logger().Error("Error saving record", err)
+				fmt.Printf("Record data: %+v", i)
 				return err
 			}
 
