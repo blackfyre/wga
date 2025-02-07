@@ -8,15 +8,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/blackfyre/wga/assets/templ/dto"
 	"github.com/blackfyre/wga/assets/templ/pages"
-	wgaModels "github.com/blackfyre/wga/models"
 	"github.com/blackfyre/wga/utils"
 	"github.com/blackfyre/wga/utils/url"
 	"github.com/pocketbase/pocketbase"
-	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
-	"github.com/pocketbase/pocketbase/forms"
-	"github.com/pocketbase/pocketbase/models"
 
 	tmplUtils "github.com/blackfyre/wga/assets/templ/utils"
 )
@@ -26,8 +23,8 @@ type GuestBookMessage struct {
 	Email         string `json:"email" form:"email" query:"email" validate:"required"`
 	Location      string `json:"location" form:"location" query:"location" validate:"required"`
 	Message       string `json:"message" form:"message" query:"message" validate:"required"`
-	HoneyPotName  string `json:"honey_pot_name" query:"honey_pot_name"`
-	HoneyPotEmail string `json:"honey_pot_email" query:"honey_pot_email"`
+	HoneyPotName  string `json:"honey_pot_name" form:"honey_pot_name" query:"honey_pot_name"`
+	HoneyPotEmail string `json:"honey_pot_email" form:"honey_pot_email" query:"honey_pot_email"`
 }
 
 func yearOptions() []string {
@@ -40,16 +37,15 @@ func yearOptions() []string {
 	return years
 }
 
-func convertRawEntriesToGuestbookEntries(entries []*core.Record) []wgaModels.GuestbookEntry {
-	var guestbookEntries []wgaModels.GuestbookEntry
+func convertRawEntriesToGuestbookEntries(entries []*core.Record) []dto.GuestbookEntry {
+	var guestbookEntries []dto.GuestbookEntry
 
 	for _, entry := range entries {
-		guestbookEntries = append(guestbookEntries, wgaModels.GuestbookEntry{
+		guestbookEntries = append(guestbookEntries, dto.GuestbookEntry{
 			Name:     entry.GetString("name"),
 			Email:    entry.GetString("email"),
 			Location: entry.GetString("location"),
 			Message:  entry.GetString("message"),
-			Year:     entry.GetString("year"),
 		})
 	}
 
@@ -94,34 +90,26 @@ func EntriesHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 func StoreEntryViewHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
-	err := pages.GuestbookEntryForm().Render(context.Background(), c.Response().Writer)
+	var buff bytes.Buffer
+	err := pages.GuestbookEntryForm().Render(context.Background(), &buff)
 
 	if err != nil {
 		return utils.ServerFaultError(c)
 	}
 
-	return nil
+	return c.HTML(http.StatusOK, buff.String())
 }
 
 func StoreEntryHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
-	data := apis.RequestInfo(c).Data
+	inputStruct := GuestBookMessage{}
 
-	if err := c.Bind(&data); err != nil {
+	if err := c.BindBody(&inputStruct); err != nil {
 		utils.SendToastMessage("Failed to create message, please try again later.", "error", true, c, "")
-		return apis.NewBadRequestError("Failed to parse form data", err)
+		return utils.BadRequestError(c)
 	}
 
-	postData := GuestBookMessage{
-		Name:          c.FormValue("sender_name"),
-		Email:         c.FormValue("sender_email"),
-		Location:      c.FormValue("location"),
-		Message:       c.FormValue("message"),
-		HoneyPotName:  c.FormValue("name"),
-		HoneyPotEmail: c.FormValue("email"),
-	}
-
-	if postData.HoneyPotEmail != "" || postData.HoneyPotName != "" {
+	if inputStruct.HoneyPotEmail != "" || inputStruct.HoneyPotName != "" {
 		// this is probably a bot
 		app.Logger().Error("Guestbook HoneyPot triggered", "ip", c.RealIP())
 		utils.SendToastMessage("Failed to create message, please try again later.", "error", true, c, "")
@@ -135,31 +123,29 @@ func StoreEntryHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 		return utils.ServerFaultError(c)
 	}
 
-	record := models.NewRecord(collection)
+	record := core.NewRecord(collection)
 
-	form := forms.NewRecordUpsert(app, record)
+	record.Set("name", inputStruct.Name)
+	record.Set("email", inputStruct.Email)
+	record.Set("location", inputStruct.Location)
+	record.Set("message", inputStruct.Message)
 
-	form.LoadData(map[string]any{
-		"email":    postData.Email,
-		"name":     postData.GetString("name"),
-		"message":  postData.Message,
-		"location": postData.Location,
-	})
+	if err := app.Save(record); err != nil {
 
-	if err := form.Submit(); err != nil {
+		var buff bytes.Buffer
 
-		e := pages.GuestbookEntryForm().Render(context.Background(), c.Response().Writer)
+		e := pages.GuestbookEntryForm().Render(context.Background(), &buff)
 
 		if e != nil {
 			app.Logger().Error("Failed to render the guestbook entry form after form submission error", "error", e.Error())
 			return utils.ServerFaultError(c)
 		}
 
-		app.Logger().Error("Failed to store the entry", "error", err.Error(), "data", postData)
+		app.Logger().Error("Failed to store the entry", "error", err.Error(), "data", inputStruct)
 
 		utils.SendToastMessage("Failed to store the entry", "error", false, c, "")
 
-		return err
+		return c.HTML(http.StatusOK, buff.String())
 	}
 
 	utils.SendToastMessage("Message added successfully", "success", true, c, "guestbook-updated")
