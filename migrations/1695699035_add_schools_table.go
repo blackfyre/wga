@@ -68,6 +68,7 @@ func init() {
 
 		for _, i := range c {
 			r := core.NewRecord(collection)
+			r.Set("id", i.Id)
 			r.Set("name", i.Name)
 			r.Set("slug", utils.Slugify(i.Name))
 			err = app.Save(r)

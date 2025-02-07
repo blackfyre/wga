@@ -3,6 +3,7 @@ package migrations
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 
 	"github.com/blackfyre/wga/assets"
 	"github.com/blackfyre/wga/utils"
@@ -81,44 +82,36 @@ func init() {
 				Required: true,
 			},
 			&core.EditorField{
-				Id:       "artist_bio",
-				Name:     "bio",
-				Required: true,
+				Id:   "artist_bio",
+				Name: "bio",
 			},
 			&core.NumberField{
-				Id:       "artist_yob",
-				Name:     "year_of_birth",
-				Required: true,
+				Id:   "artist_yob",
+				Name: "year_of_birth",
 			},
 			&core.NumberField{
-				Id:       "artist_yod",
-				Name:     "year_of_death",
-				Required: true,
+				Id:   "artist_yod",
+				Name: "year_of_death",
 			},
 			&core.TextField{
-				Id:       "artist_place_of_birth",
-				Name:     "place_of_birth",
-				Required: true,
+				Id:   "artist_place_of_birth",
+				Name: "place_of_birth",
 			},
 			&core.TextField{
-				Id:       "artist_place_of_death",
-				Name:     "place_of_death",
-				Required: true,
+				Id:   "artist_place_of_death",
+				Name: "place_of_death",
 			},
 			&core.BoolField{
-				Id:       "artist_exact_year_of_birth",
-				Name:     "exact_year_of_birth",
-				Required: true,
+				Id:   "artist_exact_year_of_birth",
+				Name: "exact_year_of_birth",
 			},
 			&core.BoolField{
-				Id:       "artist_exact_year_of_death",
-				Name:     "exact_year_of_death",
-				Required: true,
+				Id:   "artist_exact_year_of_death",
+				Name: "exact_year_of_death",
 			},
 			&core.TextField{
-				Id:       "artist_profession",
-				Name:     "profession",
-				Required: true,
+				Id:   "artist_profession",
+				Name: "profession",
 			},
 			&core.SelectField{
 				Id:        "artist_known_place_of_birth",
@@ -145,13 +138,7 @@ func init() {
 				CollectionId: "schools",
 				Presentable:  true,
 				MinSelect:    1,
-			},
-			&core.RelationField{
-				Id:           "artist_aka",
-				Name:         "also_known_as",
-				Required:     true,
-				CollectionId: "artists",
-				Presentable:  true,
+				MaxSelect:    10,
 			},
 			&core.BoolField{
 				Id:       "artist_published",
@@ -172,6 +159,28 @@ func init() {
 		collection.AddIndex("pbx_artist_slug", true, "slug", "")
 
 		err := app.Save(collection)
+
+		if err != nil {
+			return err
+		}
+
+		collection, err = app.FindCollectionByNameOrId("artists")
+
+		if err != nil {
+			return err
+		}
+
+		collection.Fields.Add(
+
+			&core.RelationField{
+				Id:           "artist_aka",
+				Name:         "also_known_as",
+				CollectionId: "artists",
+				Presentable:  true,
+			},
+		)
+
+		err = app.Save(collection)
 
 		if err != nil {
 			return err
@@ -220,10 +229,13 @@ func init() {
 			r.Set("exact_year_of_death", i.Meta.ExactYearOfDeath)
 			r.Set("school", i.School)
 			r.Set("published", true)
+			r.Set("known_place_of_birth", i.Meta.KnownPlaceOfBirth)
+			r.Set("known_place_of_death", i.Meta.KnownPlaceOfDeath)
 
 			err = app.Save(r)
 
 			if err != nil {
+				fmt.Printf("Source data: %v\n", i)
 				return err
 			}
 
