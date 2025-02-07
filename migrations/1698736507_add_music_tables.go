@@ -3,7 +3,6 @@ package migrations
 import (
 	"log"
 
-	"github.com/blackfyre/wga/handlers"
 	"github.com/pocketbase/pocketbase/core"
 	m "github.com/pocketbase/pocketbase/migrations"
 )
@@ -99,21 +98,21 @@ func init() {
 			return err
 		}
 
-		composers := handlers.GetParsedMusics()
+		// composers := handlers.GetParsedMusics()
 
-		for _, composer := range composers {
+		// for _, composer := range composers {
 
-			composerRecord := core.NewRecord(composerCollection)
-			composerRecord.Set("name", composer.Name)
-			composerRecord.Set("century", composer.Century)
-			composerRecord.Set("language", composer.Language)
+		// 	composerRecord := core.NewRecord(composerCollection)
+		// 	composerRecord.Set("name", composer.Name)
+		// 	composerRecord.Set("century", composer.Century)
+		// 	composerRecord.Set("language", composer.Language)
 
-			err = app.Save(composerRecord)
+		// 	err = app.Save(composerRecord)
 
-			if err != nil {
-				app.Logger().Error("Error saving composer record: %v", err)
-			}
-		}
+		// 	if err != nil {
+		// 		app.Logger().Error("Error saving composer record: %v", err)
+		// 	}
+		// }
 
 		return nil
 	}, func(app core.App) error {

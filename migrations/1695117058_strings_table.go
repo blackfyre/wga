@@ -2,6 +2,7 @@ package migrations
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/blackfyre/wga/assets"
 	"github.com/pocketbase/pocketbase/core"
@@ -31,9 +32,8 @@ func init() {
 				Presentable: true,
 			},
 			&core.EditorField{
-				Id:       "strings_content",
-				Name:     "content",
-				Required: true,
+				Id:   "strings_content",
+				Name: "content",
 			},
 			&core.AutodateField{
 				Name:     "created",
@@ -68,12 +68,15 @@ func init() {
 
 		for _, i := range c {
 			r := core.NewRecord(collection)
+
 			r.Set("name", i.Name)
 			r.Set("content", i.Content)
 
 			err = app.Save(r)
 
 			if err != nil {
+				fmt.Println("Error saving record", err)
+				fmt.Printf("Record data: %+v\n", i)
 				return err
 			}
 		}
