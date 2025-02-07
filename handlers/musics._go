@@ -62,7 +62,7 @@ type Grouped_music_list struct {
 }
 
 func registerMusicHandlers(app *pocketbase.PocketBase) {
-	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
+	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
 
 		e.Router.GET("musics", func(c *core.RequestEvent) error {
 			html, err := "", error(nil)
