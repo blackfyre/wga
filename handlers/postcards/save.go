@@ -2,14 +2,11 @@ package postcards
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/blackfyre/wga/utils"
-	"github.com/labstack/echo/v5"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/pocketbase/pocketbase"
-	"github.com/pocketbase/pocketbase/forms"
-	"github.com/pocketbase/pocketbase/models"
+	"github.com/pocketbase/pocketbase/core"
 )
 
 func savePostcard(app *pocketbase.PocketBase, c *core.RequestEvent, p *bluemonday.Policy) error {
@@ -25,7 +22,7 @@ func savePostcard(app *pocketbase.PocketBase, c *core.RequestEvent, p *bluemonda
 		HoneyPotEmail        string   `json:"honey_pot_email" form:"email" query:"honey_pot_email"`
 	}{}
 
-	if err := c.Bind(&postData); err != nil {
+	if err := c.BindBody(&postData); err != nil {
 		app.Logger().Error("Failed to parse form", "error", err.Error())
 		utils.SendToastMessage("Failed to parse form", "error", true, c, "")
 		return utils.ServerFaultError(c)
@@ -37,33 +34,23 @@ func savePostcard(app *pocketbase.PocketBase, c *core.RequestEvent, p *bluemonda
 		return utils.ServerFaultError(c)
 	}
 
-	collection, err := app.Dao().FindCollectionByNameOrId("postcards")
+	collection, err := app.FindCollectionByNameOrId("postcards")
 	if err != nil {
 		app.Logger().Error("Failed to find postcard collection", "error", err.Error())
 		return utils.NotFoundError(c)
 	}
 
-	record := models.NewRecord(collection)
+	record := core.NewRecord(collection)
 
-	form := forms.NewRecordUpsert(app, record)
+	record.Set("status", "queued")
+	record.Set("sender_name", postData.SenderName)
+	record.Set("sender_email", postData.SenderEmail)
+	record.Set("recipients", postData.Recipients)
+	record.Set("message", p.Sanitize(postData.Message))
+	record.Set("image_id", postData.ImageId)
+	record.Set("notify_sender", postData.NotificationRequired)
 
-	err = form.LoadData(map[string]any{
-		"status":        "queued",
-		"sender_name":   postData.SenderName,
-		"sender_email":  postData.SenderEmail,
-		"recipients":    strings.Join(postData.Recipients, ","),
-		"message":       p.Sanitize(postData.Message),
-		"image_id":      postData.ImageId,
-		"notify_sender": postData.NotificationRequired,
-	})
-
-	if err != nil {
-		app.Logger().Error("Failed to process postcard form", "error", err.Error())
-		utils.SendToastMessage("Failed to process postcard form", "error", true, c, "")
-		return utils.ServerFaultError(c)
-	}
-
-	if err := form.Submit(); err != nil {
+	if err := app.Save(record); err != nil {
 
 		return renderForm(postData.ImageId, app, c)
 	}
