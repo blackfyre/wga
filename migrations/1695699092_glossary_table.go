@@ -34,6 +34,7 @@ func init() {
 				Id:       "glossary_definition",
 				Name:     "definition",
 				Required: true,
+				Max:      10_000,
 			},
 			&core.AutodateField{
 				Name:     "created",
@@ -68,6 +69,7 @@ func init() {
 
 		for _, g := range glossary {
 			r := core.NewRecord(collection)
+			r.Set("id", g.Id)
 			r.Set("expression", g.Expression)
 			r.Set("definition", g.Definition)
 			err = app.Save(r)

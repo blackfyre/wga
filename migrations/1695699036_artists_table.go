@@ -135,7 +135,6 @@ func init() {
 			&core.RelationField{
 				Id:           "artist_school",
 				Name:         "school",
-				Required:     true,
 				CollectionId: "schools",
 				Presentable:  true,
 				MinSelect:    1,
@@ -215,7 +214,10 @@ func init() {
 			return err
 		}
 
+		failedInserts := 0
+
 		for _, i := range c {
+
 			r := core.NewRecord(collection)
 			r.Set("id", i.Id)
 			r.Set("name", i.Name)
@@ -236,11 +238,14 @@ func init() {
 			err = app.Save(r)
 
 			if err != nil {
-				app.Logger().Error("Error saving record", err)
-				fmt.Printf("Record data: %+v", i)
-				return err
+				app.Logger().Error("Error saving record", err.Error(), i)
+				failedInserts++
 			}
 
+		}
+
+		if failedInserts > 0 {
+			fmt.Println("Failed artist inserts", failedInserts)
 		}
 
 		return nil
