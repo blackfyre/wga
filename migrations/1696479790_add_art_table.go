@@ -3,6 +3,7 @@ package migrations
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 
 	"github.com/blackfyre/wga/assets"
 	"github.com/blackfyre/wga/utils"
@@ -66,18 +67,21 @@ func init() {
 				Name:         "author",
 				CollectionId: "artists",
 				MinSelect:    1,
+				MaxSelect:    10,
 			},
 			&core.RelationField{
 				Id:           tId + "_form",
 				Name:         "form",
 				CollectionId: "art_forms",
 				MinSelect:    1,
+				MaxSelect:    20,
 			},
 			&core.RelationField{
 				Id:           tId + "_type",
 				Name:         "type",
 				CollectionId: "art_types",
 				MinSelect:    1,
+				MaxSelect:    20,
 			},
 			&core.TextField{
 				Id:   tId + "_technique",
@@ -88,6 +92,7 @@ func init() {
 				Name:         "school",
 				CollectionId: "schools",
 				MinSelect:    1,
+				MaxSelect:    10,
 			},
 			&core.EditorField{
 				Id:   tId + "_comment",
@@ -145,6 +150,8 @@ func init() {
 			return err
 		}
 
+		errorCounter := 0
+
 		for _, g := range c {
 
 			record := core.NewRecord(collection)
@@ -157,15 +164,19 @@ func init() {
 			record.Set("school", g.SchoolId)
 			record.Set("comment", g.Comment)
 			record.Set("published", true)
-			record.Set("image", g.Image)
+			// record.Set("image", g.Image)
 			record.Set("type", g.TypeId)
 
 			err = app.Save(record)
 
 			if err != nil {
-				return err
+				errorCounter++
 			}
 
+		}
+
+		if errorCounter > 0 {
+			fmt.Println("Failed to insert", errorCounter, "artworks")
 		}
 
 		return nil

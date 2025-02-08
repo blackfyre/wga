@@ -1,6 +1,7 @@
 package migrations
 
 import (
+	"cmp"
 	"encoding/json"
 	"strings"
 
@@ -48,6 +49,8 @@ func init() {
 			record.Set("published", true)
 			record.Set("exact_year_of_birth", i.Meta.ExactYearOfBirth)
 			record.Set("exact_year_of_death", i.Meta.ExactYearOfDeath)
+			record.Set("known_place_of_birth", cmp.Or(i.Meta.KnownPlaceOfBirth, NotApplicable))
+			record.Set("known_place_of_death", cmp.Or(i.Meta.KnownPlaceOfDeath, NotApplicable))
 
 			err = app.Save(record)
 
@@ -57,7 +60,7 @@ func init() {
 				// if errString contains "UNIQUE constraint failed: artists.slug" then ignore
 				// otherwise return error
 
-				if !strings.Contains(errString, "UNIQUE constraint failed: Artists.slug") {
+				if !strings.Contains(errString, "slug: Value must be unique.") {
 					app.Logger().Error(errString)
 					return err
 				}
