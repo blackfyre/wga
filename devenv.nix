@@ -46,6 +46,7 @@
     devenv shell generate-templates
     devenv shell tidy-modules
   '';
+  scripts.init-devenv.exec = "cp devenv.local.stub.nix devenv.local.nix";
   pre-commit.hooks = {
     govet = {
       enable = true;
