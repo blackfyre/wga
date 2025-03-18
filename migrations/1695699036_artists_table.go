@@ -2,16 +2,14 @@ package migrations
 
 import (
 	"bytes"
+	"cmp"
 	"encoding/json"
+	"fmt"
 
 	"github.com/blackfyre/wga/assets"
 	"github.com/blackfyre/wga/utils"
-	"github.com/pocketbase/dbx"
-	"github.com/pocketbase/pocketbase/daos"
+	"github.com/pocketbase/pocketbase/core"
 	m "github.com/pocketbase/pocketbase/migrations"
-	"github.com/pocketbase/pocketbase/models"
-	"github.com/pocketbase/pocketbase/models/schema"
-	"github.com/pocketbase/pocketbase/tools/types"
 )
 
 type Artist struct {
@@ -64,124 +62,125 @@ const (
 )
 
 func init() {
-	m.Register(func(db dbx.Builder) error {
-		dao := daos.New(db)
+	m.Register(func(app core.App) error {
 
-		collection := &models.Collection{}
+		collection := core.NewBaseCollection("Artists")
 
 		collection.Name = "Artists"
 		collection.Id = "artists"
-		collection.Type = models.CollectionTypeBase
-		collection.System = false
 		collection.MarkAsNew()
-		collection.Schema = schema.NewSchema(
-			&schema.SchemaField{
-				Id:          "artiust_name",
+
+		collection.Fields.Add(
+			&core.TextField{
+				Id:          "artist_name",
 				Name:        "name",
-				Type:        schema.FieldTypeText,
-				Options:     &schema.TextOptions{},
+				Required:    true,
 				Presentable: true,
 			},
-			&schema.SchemaField{
-				Id:      "artist_slug",
-				Name:    "slug",
-				Type:    schema.FieldTypeText,
-				Options: &schema.TextOptions{},
-			},
-			&schema.SchemaField{
-				Id:      "artist_bio",
-				Name:    "bio",
-				Type:    schema.FieldTypeEditor,
-				Options: &schema.EditorOptions{},
-			},
-			&schema.SchemaField{
-				Id:      "artist_yob",
-				Name:    "year_of_birth",
-				Type:    schema.FieldTypeNumber,
-				Options: &schema.NumberOptions{},
-			},
-			&schema.SchemaField{
-				Id:      "artist_yod",
-				Name:    "year_of_death",
-				Type:    schema.FieldTypeNumber,
-				Options: &schema.NumberOptions{},
-			},
-			&schema.SchemaField{
-				Id:      "artist_place_of_birth",
-				Name:    "place_of_birth",
-				Type:    schema.FieldTypeText,
-				Options: &schema.TextOptions{},
-			},
-			&schema.SchemaField{
-				Id:      "artist_place_of_death",
-				Name:    "place_of_death",
-				Type:    schema.FieldTypeText,
-				Options: &schema.TextOptions{},
-			},
-			&schema.SchemaField{
-				Id:       "artist_exact_year_of_birth",
-				Name:     "exact_year_of_birth",
-				Type:     schema.FieldTypeSelect,
-				Options:  &schema.SelectOptions{Values: []string{Yes, No, NotApplicable}, MaxSelect: 1},
+			&core.TextField{
+				Id:       "artist_slug",
+				Name:     "slug",
 				Required: true,
 			},
-			&schema.SchemaField{
-				Id:       "artist_exact_year_of_death",
-				Name:     "exact_year_of_death",
-				Type:     schema.FieldTypeSelect,
-				Options:  &schema.SelectOptions{Values: []string{Yes, No, NotApplicable}, MaxSelect: 1},
+			&core.EditorField{
+				Id:   "artist_bio",
+				Name: "bio",
+			},
+			&core.NumberField{
+				Id:   "artist_yob",
+				Name: "year_of_birth",
+			},
+			&core.NumberField{
+				Id:   "artist_yod",
+				Name: "year_of_death",
+			},
+			&core.TextField{
+				Id:   "artist_place_of_birth",
+				Name: "place_of_birth",
+			},
+			&core.TextField{
+				Id:   "artist_place_of_death",
+				Name: "place_of_death",
+			},
+			&core.BoolField{
+				Id:   "artist_exact_year_of_birth",
+				Name: "exact_year_of_birth",
+			},
+			&core.BoolField{
+				Id:   "artist_exact_year_of_death",
+				Name: "exact_year_of_death",
+			},
+			&core.TextField{
+				Id:   "artist_profession",
+				Name: "profession",
+			},
+			&core.SelectField{
+				Id:        "artist_known_place_of_birth",
+				Name:      "known_place_of_birth",
+				Values:    []string{Yes, No, NotApplicable},
+				Required:  true,
+				MaxSelect: 1,
+			},
+			&core.SelectField{
+				Id:        "artist_known_place_of_death",
+				Name:      "known_place_of_death",
+				Values:    []string{Yes, No, NotApplicable},
+				Required:  true,
+				MaxSelect: 1,
+			},
+			&core.TextField{
+				Id:   "artist_profession",
+				Name: "profession",
+			},
+			&core.RelationField{
+				Id:           "artist_school",
+				Name:         "school",
+				CollectionId: "schools",
+				Presentable:  true,
+				MinSelect:    1,
+				MaxSelect:    10,
+			},
+			&core.BoolField{
+				Id:       "artist_published",
+				Name:     "published",
 				Required: true,
 			},
-			&schema.SchemaField{
-				Id:       "artist_known_place_of_birth",
-				Name:     "known_place_of_birth",
-				Type:     schema.FieldTypeSelect,
-				Options:  &schema.SelectOptions{Values: []string{Yes, No, NotApplicable}, MaxSelect: 1},
-				Required: true,
+			&core.AutodateField{
+				Name:     "created",
+				OnCreate: true,
 			},
-			&schema.SchemaField{
-				Id:       "artist_known_place_of_death",
-				Name:     "known_place_of_death",
-				Type:     schema.FieldTypeSelect,
-				Options:  &schema.SelectOptions{Values: []string{Yes, No, NotApplicable}, MaxSelect: 1},
-				Required: true,
-			},
-			&schema.SchemaField{
-				Id:      "artist_profession",
-				Name:    "profession",
-				Type:    schema.FieldTypeText,
-				Options: &schema.TextOptions{},
-			},
-			&schema.SchemaField{
-				Id:   "artist_school",
-				Name: "school",
-				Type: schema.FieldTypeRelation,
-				Options: &schema.RelationOptions{
-					CollectionId: "schools",
-					MinSelect:    Ptr(1),
-				},
-			},
-			&schema.SchemaField{
-				Id:   "artist_aka",
-				Name: "also_known_as",
-				Type: schema.FieldTypeRelation,
-				Options: &schema.RelationOptions{
-					CollectionId: "artists",
-				},
-			},
-			&schema.SchemaField{
-				Id:      "artist_published",
-				Name:    "published",
-				Type:    schema.FieldTypeBool,
-				Options: &schema.BoolOptions{},
+			&core.AutodateField{
+				Name:     "updated",
+				OnCreate: true,
+				OnUpdate: true,
 			},
 		)
 
-		collection.Indexes = types.JsonArray[string]{
-			"CREATE UNIQUE INDEX `pbx_artist_slug` ON `artists` (`slug`)",
+		collection.AddIndex("pbx_artist_slug", true, "slug", "")
+
+		err := app.Save(collection)
+
+		if err != nil {
+			return err
 		}
 
-		err := dao.SaveCollection(collection)
+		collection, err = app.FindCollectionByNameOrId("artists")
+
+		if err != nil {
+			return err
+		}
+
+		collection.Fields.Add(
+
+			&core.RelationField{
+				Id:           "artist_aka",
+				Name:         "also_known_as",
+				CollectionId: "artists",
+				Presentable:  true,
+			},
+		)
+
+		err = app.Save(collection)
 
 		if err != nil {
 			return err
@@ -215,35 +214,42 @@ func init() {
 			return err
 		}
 
-		for _, i := range c {
-			q := db.Insert("artists", dbx.Params{
-				"id":                  i.Id,
-				"name":                i.Name,
-				"bio":                 i.Bio,
-				"slug":                i.Slug,
-				"year_of_birth":       i.Meta.YearOfBirth,
-				"year_of_death":       i.Meta.YearOfDeath,
-				"place_of_birth":      i.Meta.PlaceOfBirth,
-				"place_of_death":      i.Meta.PlaceOfDeath,
-				"profession":          i.Source.Profession,
-				"exact_year_of_birth": i.Meta.ExactYearOfBirth,
-				"exact_year_of_death": i.Meta.ExactYearOfDeath,
-				"school":              i.School,
-				"published":           true,
-			})
+		failedInserts := 0
 
-			_, err = q.Execute()
+		for _, i := range c {
+
+			r := core.NewRecord(collection)
+			r.Set("id", i.Id)
+			r.Set("name", i.Name)
+			r.Set("bio", i.Bio)
+			r.Set("slug", i.Slug)
+			r.Set("year_of_birth", i.Meta.YearOfBirth)
+			r.Set("year_of_death", i.Meta.YearOfDeath)
+			r.Set("place_of_birth", i.Meta.PlaceOfBirth)
+			r.Set("place_of_death", i.Meta.PlaceOfDeath)
+			r.Set("profession", i.Source.Profession)
+			r.Set("exact_year_of_birth", i.Meta.ExactYearOfBirth)
+			r.Set("exact_year_of_death", i.Meta.ExactYearOfDeath)
+			r.Set("school", i.School)
+			r.Set("published", true)
+			r.Set("known_place_of_birth", cmp.Or(i.Meta.KnownPlaceOfBirth, NotApplicable))
+			r.Set("known_place_of_death", cmp.Or(i.Meta.KnownPlaceOfDeath, NotApplicable))
+
+			err = app.Save(r)
 
 			if err != nil {
-				return err
+				app.Logger().Error("Error saving record", err.Error(), i)
+				failedInserts++
 			}
 
 		}
 
-		return nil
-	}, func(db dbx.Builder) error {
-		// add down queries...
+		if failedInserts > 0 {
+			fmt.Println("Failed artist inserts", failedInserts)
+		}
 
 		return nil
+	}, func(app core.App) error {
+		return deleteCollection(app, "artists")
 	})
 }

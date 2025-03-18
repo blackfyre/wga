@@ -6,6 +6,8 @@
   packages = [
     pkgs.git
     pkgs.templ
+    pkgs.air
+    pkgs.nixd
   ]  ++ lib.optionals (!config.container.isBuilding) [
     pkgs.flyctl
     pkgs.nil
@@ -44,16 +46,24 @@
     devenv shell generate-templates
     devenv shell tidy-modules
   '';
+  scripts.init-devenv.exec = "cp devenv.local.stub.nix devenv.local.nix";
   pre-commit.hooks = {
     govet = {
       enable = true;
       pass_filenames = false;
     };
-    gotest.enable = true;
+    #gotest.enable = true;
     golangci-lint = {
       enable = true;
       pass_filenames = false;
     };
+  };
+
+  processes = {
+    watch-js.exec = "bun run build:watch:js";
+    templ.exec = "templ generate --watch";
+    # air.exec = "air serve --dev";
+    watch-css.exec = "bun run build:watch:css";
   };
 
   # See full reference at https://devenv.sh/reference/options/

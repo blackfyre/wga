@@ -15,7 +15,8 @@ import (
 
 	"github.com/blackfyre/wga/assets/templ/error_pages"
 	strip "github.com/grokify/html-strip-tags-go"
-	"github.com/labstack/echo/v5"
+	"github.com/pocketbase/pocketbase"
+	"github.com/pocketbase/pocketbase/core"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 )
@@ -293,19 +294,68 @@ func GetFileNameFromUrl(url string, extension bool) string {
 }
 
 // IsHtmxRequest checks if the request is an htmx request by checking the value of the "HX-Request" header.
-func IsHtmxRequest(c echo.Context) bool {
-	return c.Request().Header.Get("HX-Request") == "true"
+func IsHtmxRequest(c *core.RequestEvent) bool {
+	return c.Request.Header.Get("HX-Request") == "true"
 }
 
 // NotFoundError is a handler that returns a 404 error page.
-func NotFoundError(c echo.Context) error {
-	return error_pages.NotFoundPage().Render(context.Background(), c.Response().Writer)
+func NotFoundError(c *core.RequestEvent) error {
+	var buf bytes.Buffer
+	error_pages.NotFoundPage().Render(context.Background(), &buf)
+	return c.HTML(404, buf.String())
 }
 
-func ServerFaultError(c echo.Context) error {
-	return error_pages.ServerFaultPage().Render(context.Background(), c.Response().Writer)
+func ServerFaultError(c *core.RequestEvent) error {
+	var buf bytes.Buffer
+	error_pages.ServerFaultPage().Render(context.Background(), &buf)
+	return c.HTML(500, buf.String())
 }
 
-func BadRequestError(c echo.Context) error {
-	return error_pages.BadRequestPage().Render(context.Background(), c.Response().Writer)
+func BadRequestError(c *core.RequestEvent) error {
+	var buf bytes.Buffer
+	error_pages.BadRequestPage().Render(context.Background(), &buf)
+	return c.HTML(400, buf.String())
+}
+
+func NormalizedBirthDeathActivity(record *core.Record) string {
+	Start := record.GetInt("year_of_birth")
+	End := record.GetInt("year_of_death")
+
+	return fmt.Sprintf("%d-%d", Start, End)
+}
+
+func GenerateArtistSlug(artist *core.Record) string {
+	if artist == nil {
+		return ""
+	}
+	return artist.GetString("slug") + "-" + artist.GetString("id")
+}
+
+func GenerateCurrentPageUrl(c *core.RequestEvent) string {
+	if c == nil || c.Request == nil {
+		return ""
+	}
+
+	return c.Request.URL.Scheme + "://" + c.Request.Host + c.Request.URL.String()
+}
+
+// renderSchoolNames takes an instance of PocketBase and a slice of school IDs,
+// and returns a string containing the names of the schools corresponding to the given IDs.
+// If a school is not found, it logs an error and continues to the next ID.
+func RenderSchoolNames(app *pocketbase.PocketBase, schoolIds []string) string {
+	var schoolCollector []string
+
+	for _, s := range schoolIds {
+		r, err := app.FindRecordById("schools", s)
+
+		if err != nil {
+			app.Logger().Error("school not found", "error", err.Error())
+			continue
+		}
+
+		schoolCollector = append(schoolCollector, r.GetString("name"))
+
+	}
+
+	return strings.Join(schoolCollector, ", ")
 }

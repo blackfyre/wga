@@ -3,10 +3,8 @@ package migrations
 import (
 	"os"
 
-	"github.com/pocketbase/dbx"
-	"github.com/pocketbase/pocketbase/daos"
+	"github.com/pocketbase/pocketbase/core"
 	m "github.com/pocketbase/pocketbase/migrations"
-	"github.com/pocketbase/pocketbase/models"
 )
 
 func init() {
@@ -14,31 +12,33 @@ func init() {
 	email := os.Getenv("WGA_ADMIN_EMAIL")
 	password := os.Getenv("WGA_ADMIN_PASSWORD")
 
-	m.Register(func(db dbx.Builder) error {
+	m.Register(func(app core.App) error {
 
 		if email != "" && password != "" {
-			dao := daos.New(db)
 
-			admin := &models.Admin{}
-			admin.Email = email
-			admin.SetPassword(password)
-
-			return dao.SaveAdmin(admin)
-		}
-
-		return nil
-
-	}, func(db dbx.Builder) error {
-		if email != "" {
-			dao := daos.New(db)
-
-			admin, _ := dao.FindAdminByEmail(email)
-			if admin != nil {
-				return dao.DeleteAdmin(admin)
+			superusers, err := app.FindCollectionByNameOrId(core.CollectionNameSuperusers)
+			if err != nil {
+				return err
 			}
+
+			record := core.NewRecord(superusers)
+
+			// note: the values can be eventually loaded via os.Getenv(key)
+			// or from a special local config file
+			record.Set("email", email)
+			record.Set("password", password)
+
+			return app.Save(record)
 		}
 
-		// already deleted
 		return nil
+
+	}, func(app core.App) error {
+		record, _ := app.FindAuthRecordByEmail(core.CollectionNameSuperusers, email)
+		if record == nil {
+			return nil // probably already deleted
+		}
+
+		return app.Delete(record)
 	})
 }
