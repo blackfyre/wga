@@ -1,4 +1,4 @@
-ARG GO_VERSION=1.22.2
+ARG GO_VERSION=1.24.2
 FROM oven/bun:alpine as bun-builder
 
 RUN apk add git
