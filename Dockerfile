@@ -22,4 +22,5 @@ RUN go build -v -o /run-app .
 FROM alpine:latest
 
 COPY --from=go-builder /run-app /usr/local/bin/
+EXPOSE 8090
 CMD ["run-app", "serve", "--http", "0.0.0.0:8090"]
