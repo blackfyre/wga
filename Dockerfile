@@ -1,5 +1,5 @@
 ARG GO_VERSION=1.24.2
-FROM oven/bun:alpine as bun-builder
+FROM oven/bun:alpine AS bun-builder
 
 RUN apk add git
 WORKDIR /app/src
@@ -7,7 +7,7 @@ COPY . .
 RUN bun install
 RUN bun run build
 
-FROM golang:${GO_VERSION}-alpine as go-builder
+FROM golang:${GO_VERSION}-alpine AS go-builder
 
 RUN echo "Building with Go version ${GO_VERSION}"
 
