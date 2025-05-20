@@ -1,7 +1,10 @@
 package handlers
 
 import (
+	"github.com/blackfyre/wga/handlers/artist"
+	"github.com/blackfyre/wga/handlers/artists"
 	"github.com/blackfyre/wga/handlers/artworks"
+	"github.com/blackfyre/wga/handlers/dual"
 	"github.com/blackfyre/wga/handlers/feedback"
 	"github.com/blackfyre/wga/handlers/inspire"
 	"github.com/blackfyre/wga/handlers/postcards"
@@ -18,14 +21,15 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 	p := bluemonday.NewPolicy()
 
 	feedback.RegisterHandlers(app)
-	registerMusicHandlers(app)
+	// registerMusicHandlers(app)
 	registerGuestbookHandlers(app)
-	registerArtist(app)
-	registerArtists(app)
+	artist.RegisterHandlers(app)
+	artists.RegisterHandlers(app)
 	postcards.RegisterPostcardHandlers(app, p)
 	registerContributors(app)
 	registerStatic(app)
 	artworks.RegisterArtworksHandlers(app)
 	inspire.RegisterHandlers(app)
 	registerHome(app)
+	dual.RegisterHandlers(app)
 }

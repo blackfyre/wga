@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"io/fs"
 	"os"
@@ -9,9 +10,7 @@ import (
 	"github.com/blackfyre/wga/assets/templ/error_pages"
 	"github.com/blackfyre/wga/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/assets/templ/utils"
-	"github.com/blackfyre/wga/models"
 	"github.com/blackfyre/wga/utils"
-	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
@@ -33,20 +32,24 @@ func getFilePublicSystem() fs.FS {
 // If the request is an Htmx request, only the content block is rendered, otherwise the entire page is rendered.
 // The function returns an error if there was a problem registering the routes.
 func registerStatic(app *pocketbase.PocketBase) {
-	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
+	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
 		// Assets
-		e.Router.GET("/assets/*", apis.StaticDirectoryHandler(getFilePublicSystem(), false))
+		if app.IsDev() {
+			e.Router.GET("/assets/*", apis.Static(os.DirFS("./assets/public"), false))
+		} else {
+			e.Router.GET("/assets/*", apis.Static(getFilePublicSystem(), false))
+		}
 
 		// Sitemap
-		e.Router.GET("/sitemap/*", apis.StaticDirectoryHandler(os.DirFS("./wga_sitemap"), false))
+		e.Router.GET("/sitemap/*", apis.Static(os.DirFS("./wga_sitemap"), false))
 
 		// "Static" pages
-		e.Router.GET("/pages/:slug", func(c echo.Context) error {
+		e.Router.GET("/pages/:slug", func(c *core.RequestEvent) error {
 
-			slug := c.PathParam("slug")
-			fullUrl := c.Scheme() + "://" + c.Request().Host + c.Request().URL.String()
+			slug := c.Request.PathValue("slug")
+			fullUrl := tmplUtils.AssetUrl("/pages/" + slug)
 
-			page, err := models.FindStaticPageBySlug(app.Dao(), slug)
+			page, err := app.FindFirstRecordByData("static_pages", "slug", slug)
 
 			if err != nil {
 				app.Logger().Error("Error retrieving static page", "page", slug, "error", err)
@@ -55,23 +58,38 @@ func registerStatic(app *pocketbase.PocketBase) {
 			}
 
 			content := pages.StaticPageDTO{
-				Title:   page.Title,
-				Content: page.Content,
-				Url:     "/pages/" + page.Slug,
+				Title:   page.GetString("title"),
+				Content: page.GetString("content"),
+				Url:     "/pages/" + page.GetString("slug"),
 			}
 
-			ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, page.Title)
-			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, page.Content)
+			ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, page.GetString("title"))
+			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, page.GetString("content"))
 			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, fullUrl)
 
-			c.Response().Header().Set("HX-Push-Url", fullUrl)
-			return pages.StaticPage(content).Render(ctx, c.Response().Writer)
+			c.Response.Header().Set("HX-Push-Url", fullUrl)
+
+			var buf bytes.Buffer
+
+			pages.StaticPage(content).Render(ctx, &buf)
+
+			return c.HTML(200, buf.String())
 
 		})
 
-		e.Router.GET("/error_404", func(c echo.Context) error {
-			c.Response().Header().Set("HX-Push-Url", "/error_404")
-			return error_pages.NotFoundPage().Render(context.Background(), c.Response().Writer)
+		e.Router.GET("/error_404", func(c *core.RequestEvent) error {
+			c.Response.Header().Set("HX-Push-Url", "/error_404")
+
+			var buffer bytes.Buffer
+
+			err := error_pages.NotFoundPage().Render(context.Background(), &buffer)
+
+			if err != nil {
+				app.Logger().Error("Error rendering error page", "error", err)
+				return c.HTML(500, "Internal server error")
+			}
+
+			return c.HTML(404, buffer.String())
 		})
 
 		return nil

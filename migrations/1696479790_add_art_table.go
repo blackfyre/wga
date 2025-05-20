@@ -3,14 +3,12 @@ package migrations
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 
 	"github.com/blackfyre/wga/assets"
 	"github.com/blackfyre/wga/utils"
-	"github.com/pocketbase/dbx"
-	"github.com/pocketbase/pocketbase/daos"
+	"github.com/pocketbase/pocketbase/core"
 	m "github.com/pocketbase/pocketbase/migrations"
-	"github.com/pocketbase/pocketbase/models"
-	"github.com/pocketbase/pocketbase/models/schema"
 )
 
 type ArtworkStage0 struct {
@@ -49,94 +47,82 @@ type ArtworkStage1Meta struct {
 func init() {
 	tId := "artworks"
 	tName := "Artworks"
-	m.Register(func(db dbx.Builder) error {
-		dao := daos.New(db)
-
-		collection := &models.Collection{}
+	m.Register(func(app core.App) error {
+		collection := core.NewBaseCollection(tName)
 
 		collection.Name = tName
 		collection.Id = tId
-		collection.Type = models.CollectionTypeBase
 		collection.System = false
 		collection.MarkAsNew()
-		collection.Schema = schema.NewSchema(
-			&schema.SchemaField{
+
+		collection.Fields.Add(
+			&core.TextField{
 				Id:          tId + "_title",
 				Name:        "title",
-				Type:        schema.FieldTypeText,
-				Options:     &schema.TextOptions{},
 				Presentable: true,
 				Required:    true,
 			},
-			&schema.SchemaField{
-				Id:   tId + "_author",
-				Name: "author",
-				Type: schema.FieldTypeRelation,
-				Options: &schema.RelationOptions{
-					CollectionId: "artists",
-					MinSelect:    Ptr(1),
-				},
+			&core.RelationField{
+				Id:           tId + "_author",
+				Name:         "author",
+				CollectionId: "artists",
+				MinSelect:    1,
+				MaxSelect:    10,
 			},
-			&schema.SchemaField{
-				Id:   tId + "_form",
-				Name: "form",
-				Type: schema.FieldTypeRelation,
-				Options: &schema.RelationOptions{
-					CollectionId: "art_forms",
-					MinSelect:    Ptr(1),
-				},
+			&core.RelationField{
+				Id:           tId + "_form",
+				Name:         "form",
+				CollectionId: "art_forms",
+				MinSelect:    1,
+				MaxSelect:    20,
 			},
-			&schema.SchemaField{
-				Id:   tId + "_type",
-				Name: "type",
-				Type: schema.FieldTypeRelation,
-				Options: &schema.RelationOptions{
-					CollectionId: "art_types",
-					MinSelect:    Ptr(1),
-				},
+			&core.RelationField{
+				Id:           tId + "_type",
+				Name:         "type",
+				CollectionId: "art_types",
+				MinSelect:    1,
+				MaxSelect:    20,
 			},
-			&schema.SchemaField{
-				Id:      tId + "_technique",
-				Name:    "technique",
-				Type:    schema.FieldTypeText,
-				Options: &schema.TextOptions{},
+			&core.TextField{
+				Id:   tId + "_technique",
+				Name: "technique",
 			},
-			&schema.SchemaField{
-				Id:   tId + "_school",
-				Name: "school",
-				Type: schema.FieldTypeRelation,
-				Options: &schema.RelationOptions{
-					CollectionId: "schools",
-					MinSelect:    Ptr(1),
-				},
+			&core.RelationField{
+				Id:           tId + "_school",
+				Name:         "school",
+				CollectionId: "schools",
+				MinSelect:    1,
+				MaxSelect:    10,
 			},
-			&schema.SchemaField{
-				Id:      tId + "_comment",
-				Name:    "comment",
-				Type:    schema.FieldTypeEditor,
-				Options: &schema.EditorOptions{},
+			&core.EditorField{
+				Id:   tId + "_comment",
+				Name: "comment",
 			},
-			&schema.SchemaField{
+			&core.BoolField{
 				Id:   tId + "_published",
 				Name: "published",
-				Type: schema.FieldTypeBool,
 			},
-			&schema.SchemaField{
+			&core.FileField{
 				Id:   tId + "_image",
 				Name: "image",
-				Type: schema.FieldTypeFile,
-				Options: &schema.FileOptions{
-					MimeTypes: []string{
-						"image/jpeg", "image/png",
-					},
-					Thumbs:  []string{"100x100", "320x240"},
-					MaxSize: 1024 * 1024 * 5,
+				MimeTypes: []string{
+					"image/jpeg", "image/png",
 				},
-				Required: true,
+				MaxSize: 1024 * 1024 * 5,
+				Thumbs:  []string{"100x100", "320x240"},
+			},
+			&core.AutodateField{
+				Name:     "created",
+				OnCreate: true,
+			},
+			&core.AutodateField{
+				Name:     "updated",
+				OnCreate: true,
+				OnUpdate: true,
 			},
 		)
 
-		err := dao.SaveCollection(collection)
+		err := app.Save(collection)
 
 		if err != nil {
 			return err
@@ -164,33 +150,37 @@ func init() {
 			return err
 		}
 
-		for _, g := range c {
-			q := db.Insert(tId, dbx.Params{
-				"id":        g.Id,
-				"title":     g.Title,
-				"author":    g.AuthorId,
-				"form":      g.FormId,
-				"technique": g.Technique,
-				"school":    g.SchoolId,
-				"comment":   g.Comment,
-				"published": true,
-				"image":     g.Image,
-				"type":      g.TypeId,
-			})
+		errorCounter := 0
 
-			_, err = q.Execute()
+		for _, g := range c {
+
+			record := core.NewRecord(collection)
+
+			record.Set("id", g.Id)
+			record.Set("title", g.Title)
+			record.Set("author", g.AuthorId)
+			record.Set("form", g.FormId)
+			record.Set("technique", g.Technique)
+			record.Set("school", g.SchoolId)
+			record.Set("comment", g.Comment)
+			record.Set("published", true)
+			// record.Set("image", g.Image)
+			record.Set("type", g.TypeId)
+
+			err = app.Save(record)
 
 			if err != nil {
-				return err
+				errorCounter++
 			}
 
 		}
 
-		return nil
-	}, func(db dbx.Builder) error {
-		q := db.DropTable(tId)
-		_, err := q.Execute()
+		if errorCounter > 0 {
+			fmt.Println("Failed to insert", errorCounter, "artworks")
+		}
 
-		return err
+		return nil
+	}, func(app core.App) error {
+		return deleteCollection(app, "artworks")
 	})
 }

@@ -9,8 +9,7 @@ import (
 	"github.com/blackfyre/wga/assets"
 	"github.com/blackfyre/wga/utils"
 	"github.com/pocketbase/pocketbase"
-	"github.com/pocketbase/pocketbase/models"
-	"github.com/pocketbase/pocketbase/tools/cron"
+	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/mailer"
 )
 
@@ -21,7 +20,7 @@ import (
 // The message is then sent using the mailClient.
 // If there is an error sending the postcard, an error message is logged and the function returns.
 // Finally, the postcard record is updated using the updatePostcardRecord function.
-func sendPostcard(r *models.Record, app *pocketbase.PocketBase, mailClient mailer.Mailer) {
+func sendPostcard(r *core.Record, app *pocketbase.PocketBase, mailClient mailer.Mailer) {
 
 	recipients := convertCommaSeparatedEmailsToMailAddresses(r.GetString("recipients"))
 
@@ -54,7 +53,7 @@ func convertCommaSeparatedEmailsToMailAddresses(emails string) []mail.Address {
 // renderMessage renders the email message for a postcard notification.
 // It takes a pointer to a models.Record, a mail.Address, and a pointer to a pocketbase.PocketBase as input.
 // It returns a pointer to a mailer.Message.
-func renderMessage(r *models.Record, rec mail.Address, app *pocketbase.PocketBase) *mailer.Message {
+func renderMessage(r *core.Record, rec mail.Address, app *pocketbase.PocketBase) *mailer.Message {
 	html, err := assets.RenderEmail("postcard:notification", map[string]any{
 		"SenderName": r.GetString("sender_name"),
 		"PickUpUrl":  utils.AssetUrl("/postcards?p=" + r.GetString("id")),
@@ -85,12 +84,12 @@ func renderMessage(r *models.Record, rec mail.Address, app *pocketbase.PocketBas
 // The function sets the "status" field of the record to "sent" and the "sent_at" field to the current Unix timestamp.
 // It then saves the updated record using the SaveRecord method of the pocketbase.PocketBase object.
 // If there is an error during the update, it logs the error using the Logger method of the pocketbase.PocketBase object.
-func updatePostcardRecord(r *models.Record, app *pocketbase.PocketBase) {
+func updatePostcardRecord(r *core.Record, app *pocketbase.PocketBase) {
 	r.Set("status", "sent")
 	r.Set("sent_at", time.Now().Unix())
 
-	if err := app.Dao().SaveRecord(r); err != nil {
-		app.Logger().Error("Error updating postcard record", "record_id", r.GetId(), "error", err.Error())
+	if err := app.Save(r); err != nil {
+		app.Logger().Error("Error updating postcard record", "record_id", r.Get("id"), "error", err.Error())
 	}
 }
 
@@ -109,7 +108,7 @@ func updatePostcardRecord(r *models.Record, app *pocketbase.PocketBase) {
 //	sendPostcards(app, scheduler)
 //
 // Note: The sendPostcards function assumes that the necessary dependencies are already imported.
-func sendPostcards(app *pocketbase.PocketBase, scheduler *cron.Cron) {
+func sendPostcards(app *pocketbase.PocketBase) {
 
 	var frequency = os.Getenv("WGA_POSTCARD_FREQUENCY")
 
@@ -117,8 +116,8 @@ func sendPostcards(app *pocketbase.PocketBase, scheduler *cron.Cron) {
 		frequency = "*/1 * * * *"
 	}
 
-	scheduler.MustAdd("postcards", frequency, func() {
-		records, err := app.Dao().FindRecordsByFilter(
+	app.Cron().MustAdd("postcards", frequency, func() {
+		records, err := app.FindRecordsByFilter(
 			"postcards",         // collection
 			"status = 'queued'", // filter
 			"",                  // sort
