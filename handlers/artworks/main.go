@@ -204,14 +204,14 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 // RegisterArtworksHandlers registers search handlers to the given PocketBase app.
 func RegisterArtworksHandlers(app *pocketbase.PocketBase) {
-	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
-		e.Router.GET("/artworks", func(c *core.RequestEvent) error {
+	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
+		se.Router.GET("/artworks", func(c *core.RequestEvent) error {
 			return searchPage(app, c)
 		})
 
-		e.Router.GET("/artworks/results", func(c *core.RequestEvent) error {
+		se.Router.GET("/artworks/results", func(c *core.RequestEvent) error {
 			return search(app, c)
 		})
-		return nil
+		return se.Next()
 	})
 }

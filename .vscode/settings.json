@@ -77,5 +77,10 @@
     "Upsert",
     "viewerjs"
   ],
-  "codeQL.githubDatabase.download": "never"
+  "codeQL.githubDatabase.download": "never",
+  "github.copilot.chat.codeGeneration.instructions": [
+    {
+      "file": "./.vscode/daisyui.md"
+    }
+  ]
 }

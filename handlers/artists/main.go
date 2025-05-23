@@ -160,14 +160,14 @@ func processArtists(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 // It adds a GET handler for the "/artists" route that calls the processArtists function.
 func RegisterHandlers(app *pocketbase.PocketBase) {
 
-	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
+	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 
-		e.Router.GET("/artists", func(c *core.RequestEvent) error {
+		se.Router.GET("/artists", func(c *core.RequestEvent) error {
 
 			return processArtists(app, c)
 
 		})
 
-		return nil
+		return se.Next()
 	})
 }

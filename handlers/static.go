@@ -32,19 +32,19 @@ func getFilePublicSystem() fs.FS {
 // If the request is an Htmx request, only the content block is rendered, otherwise the entire page is rendered.
 // The function returns an error if there was a problem registering the routes.
 func registerStatic(app *pocketbase.PocketBase) {
-	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
+	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		// Assets
 		if app.IsDev() {
-			e.Router.GET("/assets/*", apis.Static(os.DirFS("./assets/public"), false))
+			se.Router.GET("/assets/{path...}", apis.Static(os.DirFS("./assets/public"), false))
 		} else {
-			e.Router.GET("/assets/*", apis.Static(getFilePublicSystem(), false))
+			se.Router.GET("/assets/{path...}", apis.Static(getFilePublicSystem(), false))
 		}
 
 		// Sitemap
-		e.Router.GET("/sitemap/*", apis.Static(os.DirFS("./wga_sitemap"), false))
+		se.Router.GET("/sitemap/*", apis.Static(os.DirFS("./wga_sitemap"), false))
 
 		// "Static" pages
-		e.Router.GET("/pages/:slug", func(c *core.RequestEvent) error {
+		se.Router.GET("/pages/:slug", func(c *core.RequestEvent) error {
 
 			slug := c.Request.PathValue("slug")
 			fullUrl := tmplUtils.AssetUrl("/pages/" + slug)
@@ -77,7 +77,7 @@ func registerStatic(app *pocketbase.PocketBase) {
 
 		})
 
-		e.Router.GET("/error_404", func(c *core.RequestEvent) error {
+		se.Router.GET("/error_404", func(c *core.RequestEvent) error {
 			c.Response.Header().Set("HX-Push-Url", "/error_404")
 
 			var buffer bytes.Buffer
@@ -92,6 +92,6 @@ func registerStatic(app *pocketbase.PocketBase) {
 			return c.HTML(404, buffer.String())
 		})
 
-		return nil
+		return se.Next()
 	})
 }

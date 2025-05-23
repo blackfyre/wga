@@ -250,10 +250,10 @@ func renderArtworkPane(app *pocketbase.PocketBase, c *core.RequestEvent, artwork
 }
 
 func RegisterHandlers(app *pocketbase.PocketBase) {
-	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
-		e.Router.GET("/dual-mode", func(c *core.RequestEvent) error {
+	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
+		se.Router.GET("/dual-mode", func(c *core.RequestEvent) error {
 			return renderDualModePage(app, c)
 		})
-		return nil
+		return se.Next()
 	})
 }

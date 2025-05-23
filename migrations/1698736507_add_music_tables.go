@@ -25,11 +25,12 @@ func init() {
 				Presentable: true,
 			},
 			&core.SelectField{
-				Id:        "music_composer_century",
-				Name:      "century",
-				Values:    []string{"12", "13", "14", "15", "16", "17", "18", "19", "20", "21"},
-				MaxSelect: 1,
-				Required:  true,
+				Id:          "music_composer_century",
+				Name:        "century",
+				Values:      []string{"12", "13", "14", "15", "16", "17", "18", "19", "20", "21"},
+				Required:    true,
+				MaxSelect:   1,
+				Presentable: true,
 			},
 			&core.TextField{
 				Id:          "music_composer_language",
@@ -73,6 +74,7 @@ func init() {
 				Name:         "composer",
 				CollectionId: "music_composer",
 				MinSelect:    1,
+				MaxSelect:    20,
 			},
 			&core.FileField{
 				Id:        "music_song_source",

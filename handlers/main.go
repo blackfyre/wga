@@ -7,8 +7,9 @@ import (
 	"github.com/blackfyre/wga/handlers/dual"
 	"github.com/blackfyre/wga/handlers/feedback"
 	"github.com/blackfyre/wga/handlers/inspire"
-	"github.com/blackfyre/wga/handlers/postcards"
-	"github.com/microcosm-cc/bluemonday"
+
+	// "github.com/blackfyre/wga/handlers/postcards"
+	// "github.com/microcosm-cc/bluemonday"
 	"github.com/pocketbase/pocketbase"
 )
 
@@ -18,14 +19,14 @@ import (
 // The cache is automatically cleaned up every 30 minutes.
 func RegisterHandlers(app *pocketbase.PocketBase) {
 
-	p := bluemonday.NewPolicy()
+	// p := bluemonday.NewPolicy()
 
 	feedback.RegisterHandlers(app)
 	// registerMusicHandlers(app)
 	registerGuestbookHandlers(app)
 	artist.RegisterHandlers(app)
 	artists.RegisterHandlers(app)
-	postcards.RegisterPostcardHandlers(app, p)
+	// postcards.RegisterPostcardHandlers(app, p)
 	registerContributors(app)
 	registerStatic(app)
 	artworks.RegisterArtworksHandlers(app)

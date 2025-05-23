@@ -1,10 +1,12 @@
+@charset "UTF-8";
+@import "tailwindcss" source(none);
+@source "./resources/{css,js}/*.{html,js,ts}";
+@source "./assets/templ/**/*.templ";
+@source "utils/**/*.go";
+@import "animate.css";
 @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Lexend:wght@100..900&family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700;1,900&display=swap");
 @import "../../node_modules/trix/dist/trix.css";
-@import "animate.css";
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@plugin "daisyui";
 
 .btn.is-feedback {
   position: fixed;
@@ -397,9 +399,9 @@ a[href]:not(:where(
   @apply border px-3 py-2 rounded-lg border-base-300;
 }
 
-.choices__inner:has(select) {
+/* .choices__inner:has(select) {
   @apply select select-bordered w-full;
-}
+} */
 
 .choices:has(select) .choices__input {
   @apply inline-block text-sm border-0 px-3 ring-0 border-base-300 py-2 !ring-transparent;
