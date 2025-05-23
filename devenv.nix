@@ -43,11 +43,27 @@
   scripts.generate-templates.exec = "templ generate";
   scripts.tidy-modules.exec = "go mod tidy";
   scripts.tidy.exec = ''
-    devenv shell generate-templates
-    devenv shell tidy-modules
+    generate-templates
+    tidy-modules
   '';
+  scripts."app:build".exec = "
+    mkdir -p dist;
+    rm -rf dist/app;
+    bun install;
+    bun run build;
+    tidy;
+    go build -v -o dist/app .;";
+
+  scripts."app:run".exec = "./dist/app serve";
+
+  scripts."app:reboot".exec = ''
+    app:build;
+    rm -rf wga_data;
+    app:run;
+  '';
+  
   scripts.init-devenv.exec = "cp devenv.local.stub.nix devenv.local.nix";
-  pre-commit.hooks = {
+  git-hooks.hooks = {
     govet = {
       enable = true;
       pass_filenames = false;

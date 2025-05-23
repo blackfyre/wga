@@ -156,15 +156,15 @@ func saveFeedback(app *pocketbase.PocketBase, c *core.RequestEvent, postData fee
 // The handlers also utilize the IsHtmxRequestMiddleware from the utils package.
 // This function should be called before serving the application.
 func RegisterHandlers(app *pocketbase.PocketBase) {
-	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
-		e.Router.GET("/feedback", func(c *core.RequestEvent) error {
+	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
+		se.Router.GET("/feedback", func(c *core.RequestEvent) error {
 			return presentFeedbackForm(c, app)
 		}).BindFunc(utils.IsHtmxRequestMiddleware)
 
-		e.Router.POST("/feedback", func(c *core.RequestEvent) error {
+		se.Router.POST("/feedback", func(c *core.RequestEvent) error {
 			return processFeedbackForm(c, app)
 		}).BindFunc(utils.IsHtmxRequestMiddleware)
 
-		return nil
+		return se.Next()
 	})
 }

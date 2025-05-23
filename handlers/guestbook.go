@@ -14,21 +14,21 @@ import (
 // for displaying and adding messages to the guestbook.
 func registerGuestbookHandlers(app *pocketbase.PocketBase) {
 
-	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
+	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 
-		e.Router.GET("/guestbook", func(c *core.RequestEvent) error {
+		se.Router.GET("/guestbook", func(c *core.RequestEvent) error {
 			return guestbook.EntriesHandler(app, c)
 		})
 
-		e.Router.GET("/guestbook/add", func(c *core.RequestEvent) error {
+		se.Router.GET("/guestbook/add", func(c *core.RequestEvent) error {
 			return guestbook.StoreEntryViewHandler(app, c)
 		}).BindFunc(utils.IsHtmxRequestMiddleware)
 
-		e.Router.POST("/guestbook/add", func(c *core.RequestEvent) error {
+		se.Router.POST("/guestbook/add", func(c *core.RequestEvent) error {
 			return guestbook.StoreEntryHandler(app, c)
 		}).BindFunc(utils.IsHtmxRequestMiddleware)
 
-		return nil
+		return se.Next()
 
 	})
 }

@@ -1,8 +1,6 @@
 package migrations
 
 import (
-	"os"
-
 	"github.com/pocketbase/pocketbase/core"
 	m "github.com/pocketbase/pocketbase/migrations"
 )
@@ -34,10 +32,10 @@ func init() {
 				Required: true,
 			},
 			&core.URLField{
-				Id:          tId + "_refer_to",
-				Name:        "refer_to",
-				OnlyDomains: []string{os.Getenv("WGA_HOSTNAME")},
-				Required:    true,
+				Id:   tId + "_refer_to",
+				Name: "refer_to",
+				// OnlyDomains: []string{hostname},
+				Required: true,
 			},
 			&core.EditorField{
 				Id:          tId + "_message",

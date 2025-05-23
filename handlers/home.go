@@ -116,11 +116,11 @@ func getArtworkCount(app *pocketbase.PocketBase) (string, error) {
 }
 
 func registerHome(app *pocketbase.PocketBase) {
-	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
+	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		// This is safe to be used by multiple goroutines
 		// (it acts as store for the parsed templates)
 
-		e.Router.GET("/", func(c *core.RequestEvent) error {
+		se.Router.GET("/", func(c *core.RequestEvent) error {
 
 			welcomeText, err := getWelcomeContent(app)
 
@@ -169,6 +169,6 @@ func registerHome(app *pocketbase.PocketBase) {
 			return c.HTML(http.StatusOK, buff.String())
 		})
 
-		return nil
+		return se.Next()
 	})
 }

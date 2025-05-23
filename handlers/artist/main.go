@@ -412,6 +412,6 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 		ag.GET("/:name/:awid", func(e *core.RequestEvent) error {
 			return processArtwork(e, app)
 		})
-		return nil
+		return se.Next()
 	})
 }

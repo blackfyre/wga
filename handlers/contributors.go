@@ -109,8 +109,8 @@ func readStoredContributors(app *pocketbase.PocketBase) ([]pages.GithubContribut
 }
 
 func registerContributors(app *pocketbase.PocketBase) {
-	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
-		e.Router.GET("/contributors", func(c *core.RequestEvent) error {
+	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
+		se.Router.GET("/contributors", func(c *core.RequestEvent) error {
 
 			cacheKey := "contributors"
 			fullUrl := tmplUtils.AssetUrl("/contributors")
@@ -153,6 +153,6 @@ func registerContributors(app *pocketbase.PocketBase) {
 
 		})
 
-		return nil
+		return se.Next()
 	})
 }

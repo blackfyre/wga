@@ -12,7 +12,8 @@ import (
 	"github.com/blackfyre/wga/utils"
 	"github.com/blackfyre/wga/utils/seed"
 	"github.com/blackfyre/wga/utils/sitemap"
-	"github.com/joho/godotenv"
+
+	// "github.com/joho/godotenv"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/plugins/migratecmd"
 	"github.com/spf13/cobra"
@@ -20,7 +21,7 @@ import (
 
 func main() {
 
-	_ = godotenv.Load()
+	// _ = godotenv.Load()
 
 	app := pocketbase.NewWithConfig(pocketbase.Config{
 		DefaultDataDir: "./wga_data",

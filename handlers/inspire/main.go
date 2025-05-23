@@ -83,10 +83,10 @@ func inspirationHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error 
 // Parameters:
 //   - app: A pointer to the PocketBase application instance.
 func RegisterHandlers(app *pocketbase.PocketBase) {
-	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
-		e.Router.GET("/inspire", func(c *core.RequestEvent) error {
+	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
+		se.Router.GET("/inspire", func(c *core.RequestEvent) error {
 			return inspirationHandler(app, c)
 		})
-		return nil
+		return se.Next()
 	})
 }
