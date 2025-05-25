@@ -13,15 +13,12 @@ import (
 	"github.com/blackfyre/wga/utils/seed"
 	"github.com/blackfyre/wga/utils/sitemap"
 
-	// "github.com/joho/godotenv"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/plugins/migratecmd"
 	"github.com/spf13/cobra"
 )
 
 func main() {
-
-	// _ = godotenv.Load()
 
 	app := pocketbase.NewWithConfig(pocketbase.Config{
 		DefaultDataDir: "./wga_data",
