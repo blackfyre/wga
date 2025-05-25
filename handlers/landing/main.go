@@ -1,4 +1,4 @@
-package handlers
+package landing
 
 import (
 	"bytes"
@@ -115,7 +115,7 @@ func getArtworkCount(app *pocketbase.PocketBase) (string, error) {
 
 }
 
-func registerHome(app *pocketbase.PocketBase) {
+func RegisterHandlers(app *pocketbase.PocketBase) {
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		// This is safe to be used by multiple goroutines
 		// (it acts as store for the parsed templates)
