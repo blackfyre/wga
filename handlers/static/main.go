@@ -1,4 +1,4 @@
-package handlers
+package static
 
 import (
 	"bytes"
@@ -26,12 +26,12 @@ func getFilePublicSystem() fs.FS {
 	return fsys
 }
 
-// registerStatic registers the static routes for the application.
+// RegisterHandlers registers the static routes for the application.
 // It adds a middleware to serve static assets and a handler to serve static pages.
 // The static pages are retrieved from the database based on the slug parameter in the URL.
 // If the request is an Htmx request, only the content block is rendered, otherwise the entire page is rendered.
 // The function returns an error if there was a problem registering the routes.
-func registerStatic(app *pocketbase.PocketBase) {
+func RegisterHandlers(app *pocketbase.PocketBase) {
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		// Assets
 		if app.IsDev() {
