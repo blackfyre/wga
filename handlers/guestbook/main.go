@@ -152,3 +152,25 @@ func StoreEntryHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 	return nil
 }
+
+func RegisterHandlers(app *pocketbase.PocketBase) {
+
+	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
+
+		ag := se.Router.Group("guestook")
+
+		ag.GET("/", func(c *core.RequestEvent) error {
+			return EntriesHandler(app, c)
+		})
+
+		ag.GET("/add", func(c *core.RequestEvent) error {
+			return StoreEntryViewHandler(app, c)
+		}).BindFunc(utils.IsHtmxRequestMiddleware)
+
+		ag.POST("/add", func(c *core.RequestEvent) error {
+			return StoreEntryHandler(app, c)
+		}).BindFunc(utils.IsHtmxRequestMiddleware)
+
+		return se.Next()
+	})
+}
