@@ -1,4 +1,4 @@
-package handlers
+package contributors
 
 import (
 	"bytes"
@@ -108,7 +108,7 @@ func readStoredContributors(app *pocketbase.PocketBase) ([]pages.GithubContribut
 	return contributors, nil
 }
 
-func registerContributors(app *pocketbase.PocketBase) {
+func RegisterHandlers(app *pocketbase.PocketBase) {
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		se.Router.GET("/contributors", func(c *core.RequestEvent) error {
 
