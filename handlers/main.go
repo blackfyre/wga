@@ -4,9 +4,13 @@ import (
 	"github.com/blackfyre/wga/handlers/artist"
 	"github.com/blackfyre/wga/handlers/artists"
 	"github.com/blackfyre/wga/handlers/artworks"
+	"github.com/blackfyre/wga/handlers/contributors"
 	"github.com/blackfyre/wga/handlers/dual"
 	"github.com/blackfyre/wga/handlers/feedback"
+	"github.com/blackfyre/wga/handlers/guestbook"
 	"github.com/blackfyre/wga/handlers/inspire"
+	"github.com/blackfyre/wga/handlers/landing"
+	"github.com/blackfyre/wga/handlers/static"
 
 	// "github.com/blackfyre/wga/handlers/postcards"
 	// "github.com/microcosm-cc/bluemonday"
@@ -23,14 +27,14 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 
 	feedback.RegisterHandlers(app)
 	// registerMusicHandlers(app)
-	registerGuestbookHandlers(app)
+	guestbook.RegisterHandlers(app)
 	artist.RegisterHandlers(app)
 	artists.RegisterHandlers(app)
 	// postcards.RegisterPostcardHandlers(app, p)
-	registerContributors(app)
-	registerStatic(app)
+	contributors.RegisterHandlers(app)
+	static.RegisterHandlers(app)
 	artworks.RegisterArtworksHandlers(app)
 	inspire.RegisterHandlers(app)
-	registerHome(app)
+	landing.RegisterHandlers(app)
 	dual.RegisterHandlers(app)
 }
