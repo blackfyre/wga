@@ -54,7 +54,7 @@
     tidy;
     go build -v -o dist/app .;";
 
-  scripts."app:run".exec = "./dist/app serve";
+  scripts."app:run".exec = "./dist/app serve --dev";
 
   scripts."app:reboot".exec = ''
     app:build;
@@ -76,10 +76,31 @@
   };
 
   processes = {
-    watch-js.exec = "bun run build:watch:js";
+    watch_js.exec = "bun run build:watch:js";
     templ.exec = "templ generate --watch";
-    air.exec = "air serve --dev";
-    watch-css.exec = "bun run build:watch:css";
+    air = {
+      exec = "air serve --dev";
+      process-compose = {
+        depends_on = {
+          watch_js = {
+            condition = "process_started";
+          };
+          templ = {
+            condition = "process_started";
+          };
+          mailhog = {
+            condition = "process_started";
+          };
+          minio = {
+            condition = "process_started";
+          };
+          watch_css = {
+            condition = "process_started";
+          };
+        };
+      };
+    };
+    watch_css.exec = "bun run build:watch:css";
   };
 
   # See full reference at https://devenv.sh/reference/options/
