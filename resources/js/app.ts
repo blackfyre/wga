@@ -48,10 +48,7 @@ type wgaInternals = {
   func: {
     cloner: () => void;
     viewer: () => void;
-    toast: (
-      message: string,
-      type: "info" | "alert" | "warning" | "error",
-    ) => void;
+    toast: (message: string, type: ToastEvent["detail"]["type"]) => void;
     artistSearchModal: () => void;
     combobox: () => void;
     init: () => void;
@@ -122,7 +119,7 @@ interface ToastEvent extends Event {
   detail: {
     closeDialog: boolean;
     message: string;
-    type: "info" | "alert" | "warning" | "error";
+    type: "info" | "alert" | "warning" | "error" | "success";
   };
 }
 
@@ -363,11 +360,13 @@ const wgaInternal: wgaInternals = {
       }
     },
     toast: (message, type) => {
+      // Define variants for color, title, and icon
       const colorVariants = {
         info: "alert alert-info cursor-pointer sm:alert-horizontal",
         alert: "alert cursor-pointer sm:alert-horizontal",
         warning: "alert alert-warning cursor-pointer sm:alert-horizontal",
         error: "alert alert-error cursor-pointer sm:alert-horizontal",
+        success: "alert alert-success cursor-pointer sm:alert-horizontal",
       };
 
       const titleVariants = {
@@ -375,48 +374,59 @@ const wgaInternal: wgaInternals = {
         alert: "Alert",
         warning: "Warning",
         error: "Error",
+        success: "Success",
       };
 
       const iconVariants = {
         info: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
-    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-  </svg>`,
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>`,
         alert: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-info h-6 w-6 shrink-0">
-    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-  </svg>`,
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>`,
         warning: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
-    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-  </svg>`,
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>`,
         error: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
-    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>`,
+        success: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
   </svg>`,
       };
 
+      // Create elements
       const toast = document.createElement("div");
-      const toastMessage = document.createElement("span");
       const mb = document.createElement("div");
       const title = document.createElement("h3");
+      const toastMessage = document.createElement("span");
 
+      // Set icon and content
       toast.innerHTML = iconVariants[type] || iconVariants.info;
-
       title.textContent = titleVariants[type] || "Notification";
       title.className = "font-bold";
-      mb.appendChild(title);
+      toastMessage.textContent = message;
+
+      // Set classes and attributes
       toast.className =
         colorVariants[type] ||
         "alert alert-info cursor-pointer sm:alert-horizontal";
       toast.setAttribute("role", "alert");
-      toastMessage.textContent = message;
 
+      // Compose toast content
+      mb.appendChild(title);
       mb.appendChild(toastMessage);
       toast.appendChild(mb);
 
+      // Add close on click
       toast.addEventListener("click", () => {
         toast.remove();
       });
 
+      // Show toast
       wgaInternal.els.toastContainer?.appendChild(toast);
 
+      // Auto-remove after 5 seconds
       setTimeout(() => {
         toast.remove();
       }, 5000);
