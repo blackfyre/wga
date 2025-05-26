@@ -1,8 +1,8 @@
 package pages
 
 import (
-	"github.com/blackfyre/wga/assets/templ/layouts"
 	"fmt"
+	"github.com/blackfyre/wga/assets/templ/layouts"
 )
 
 type ContributorsPageDTO struct {
@@ -54,7 +54,7 @@ templ Contributor(contributor GithubContributor) {
 }
 
 templ ContributorsBlock(c ContributorsPageDTO) {
-	<section class="container">
+	<section class="container mx-auto">
 		<article class="mb-8 px-4 md:px-0">
 			<h1 class="text-2xl font-bold mb-6">
 				Code Contributors
