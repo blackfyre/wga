@@ -156,18 +156,25 @@ func processArtists(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 }
 
-// registerArtists registers the "/artists" route in the provided PocketBase application.
-// It adds a GET handler for the "/artists" route that calls the processArtists function.
 func RegisterHandlers(app *pocketbase.PocketBase) {
 
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 
-		se.Router.GET("/artists", func(c *core.RequestEvent) error {
+		ag := se.Router.Group("/artists")
+
+		ag.GET("", func(c *core.RequestEvent) error {
 
 			return processArtists(app, c)
 
 		})
 
+		ag.GET("/{name}", func(e *core.RequestEvent) error {
+			return processArtist(e, app)
+		})
+
+		ag.GET("/{name}/{awid}", func(e *core.RequestEvent) error {
+			return processArtwork(e, app)
+		})
 		return se.Next()
 	})
 }

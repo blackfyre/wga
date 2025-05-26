@@ -10,7 +10,7 @@ import (
 	"github.com/blackfyre/wga/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/assets/templ/utils"
 	"github.com/blackfyre/wga/errs"
-	"github.com/blackfyre/wga/handlers/artist"
+	"github.com/blackfyre/wga/handlers/artists"
 	"github.com/blackfyre/wga/handlers/artworks"
 	"github.com/blackfyre/wga/utils"
 	"github.com/blackfyre/wga/utils/url"
@@ -207,7 +207,7 @@ func renderArtistPane(app *pocketbase.PocketBase, c *core.RequestEvent, artistId
 		return dto.Artist{}, err
 	}
 
-	artistDto, err := artist.RenderArtistContent(app, c, artistModel, "#"+renderTo)
+	artistDto, err := artists.RenderArtistContent(app, c, artistModel, "#"+renderTo)
 
 	if err != nil {
 		app.Logger().Error("Error rendering artist content", "error", err.Error())
@@ -232,7 +232,7 @@ func renderArtworkPane(app *pocketbase.PocketBase, c *core.RequestEvent, artwork
 		return dto.Artwork{}, err
 	}
 
-	artworkDto, err := artist.RenderArtworkContent(app, c, artworkModel, "#"+renderTo)
+	artworkDto, err := artists.RenderArtworkContent(app, c, artworkModel, "#"+renderTo)
 
 	if err != nil {
 		app.Logger().Error("Error rendering artwork content", "error", err.Error())
