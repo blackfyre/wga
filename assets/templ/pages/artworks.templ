@@ -4,7 +4,6 @@ import (
 	"github.com/blackfyre/wga/assets/templ/components"
 	"github.com/blackfyre/wga/assets/templ/dto"
 	"github.com/blackfyre/wga/assets/templ/layouts"
-	"github.com/blackfyre/wga/assets/templ/utils"
 )
 
 // ArtistPage is the template for the artist page
@@ -35,15 +34,6 @@ templ ArtworkSeachFilterBlock(b dto.ArtworkSearchDTO) {
 					>{ v }</option>
 				}
 			</select>
-			@components.Combobox(dto.ComboboxProps{
-				ID:          "art_form_select",
-				Name:        "art_form",
-				Placeholder: "Select an art form...",
-				Options:     utils.ConvertMapToComboboxOptions(b.ArtFormOptions),
-				Value:       b.ActiveFilterValues.ArtFormString,
-				Size:        "md",
-				Color:       "bordered",
-			})
 		</label>
 		<label class="form-control w-full ">
 			Artforms
@@ -99,18 +89,6 @@ templ ArtworkSeachFilterBlock(b dto.ArtworkSearchDTO) {
 				}
 			</datalist>
 		</label>
-		@components.Combobox(dto.ComboboxProps{
-			ID:          "artist_select",
-			Name:        "artist",
-			Placeholder: "Search for an artist...",
-			Options:     utils.ConvertArtistMapToComboboxOptions(b.ArtistNameList),
-			Value:       b.ActiveFilterValues.ArtistString,
-			Size:        "md",
-			Color:       "bordered",
-			HxGet:       "/artworks/results",
-			HxTarget:    b.HxTarget,
-			HxTrigger:   "change delay:300ms",
-		})
 		<button type="submit" class="btn btn-primary">Search</button>
 	</form>
 }

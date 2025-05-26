@@ -21,7 +21,7 @@ templ HomePageContent(c HomePage) {
 	<head>
 		<title>{ utils.GetTitle(ctx) }</title>
 	</head>
-	<section class="container">
+	<section class="container mx-auto">
 		<div class="prose mx-auto">
 			@templ.Raw(c.Content)
 		</div>

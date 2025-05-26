@@ -2,6 +2,13 @@ import Viewer from "viewerjs";
 import Trix from "trix";
 import "htmx.org";
 import htmx from "htmx.org";
+import warningSign from "../assets/warning-sign.svg";
+import logger from "./logger";
+
+logger.setNamespace("WGA");
+logger.setLevel("debug");
+
+// const debugMode = import.meta.env.VITE_DEBUG_MODE === "true";
 
 declare global {
 	interface Window {
@@ -55,7 +62,6 @@ type wgaInternals = {
 		viewer: () => void;
 		toast: (message: string, type: ToastEvent["detail"]["type"]) => void;
 		artistSearchModal: () => void;
-		combobox: () => void;
 		init: () => void;
 	};
 
@@ -160,9 +166,9 @@ const paneToTarget = (side: string): string => {
 };
 
 const dualNavAction = (side: string, url: string) => {
-	console.log("Side", side);
-	console.log("URL", url);
-	console.log("Base URL", window.location.href.split("?")[0]);
+	logger.debug("Side", side);
+	logger.debug("URL", url);
+	logger.debug("Base URL", window.location.href.split("?")[0]);
 	// Get the current url base
 	const baseUrl = window.location.href.split("?")[0];
 
@@ -194,6 +200,7 @@ const wgaInternal: wgaInternals = {
 	dialogDefaultContent: "",
 	eventListeners: [
 		() => {
+			logger.debug("Setting up toast event listener");
 			// Toast event listener
 			document.body.addEventListener("notification:toast", (evt) => {
 				const event = evt as ToastEvent;
@@ -212,16 +219,16 @@ const wgaInternal: wgaInternals = {
 		//   });
 		// },
 		() => {
+			logger.debug("Setting up HTMX event listeners");
 			// htmx event listeners
 			document.body.addEventListener("htmx:load", () => {
 				wgaInternal.func.viewer();
 				wgaInternal.func.cloner();
 				wgaInternal.func.artistSearchModal();
-				wgaInternal.func.combobox();
 			});
 
 			document.body.addEventListener("htmx:swapError", (evt) => {
-				console.error(evt);
+				logger.error("HTMX swap error", evt);
 				wgaInternal.func.toast(
 					"An error occurred while processing your request.",
 					"error",
@@ -229,7 +236,7 @@ const wgaInternal: wgaInternals = {
 			});
 
 			document.body.addEventListener("htmx:targetError", (evt) => {
-				console.error(evt);
+				logger.error("HTMX target error", evt);
 				wgaInternal.func.toast(
 					"An error occurred while processing your request.",
 					"error",
@@ -237,19 +244,21 @@ const wgaInternal: wgaInternals = {
 			});
 
 			document.body.addEventListener("htmx:timeout", (evt) => {
-				console.error(evt);
+				logger.error("HTMX request timed out", evt);
 				wgaInternal.func.toast("Request timed out!", "error");
 			});
 
 			document.body.addEventListener("htmx:validateUrl", (evt) => {
+				logger.debug("HTMX validateUrl event", evt);
 				const event = evt as HtmxValidateUrlEvent;
-				// only allow requests to the current server
+				// Only allow requests to the current server
 				if (!event.detail.sameHost) {
 					evt.preventDefault();
 				}
 			});
 		},
 		() => {
+			logger.debug("Setting up HTMX beforeHistorySave event listener");
 			//! This is a workaround, has to be removed when htmx fixes the issue
 			addEventListener("htmx:beforeHistorySave", () => {
 				for (const el of document.querySelectorAll(":disabled")) {
@@ -259,6 +268,7 @@ const wgaInternal: wgaInternals = {
 			});
 		},
 		() => {
+			logger.debug("Setting up Trix event listeners");
 			// Trix initialization
 			document.addEventListener("trix-before-initialize", () => {
 				Trix.config.toolbar.getDefaultHTML = () => {
@@ -280,6 +290,7 @@ const wgaInternal: wgaInternals = {
 			});
 		},
 		() => {
+			logger.debug("Setting up jumpToTop event listener");
 			// Back to top button
 			const jumpToTop = document.querySelector(".jump.back-to-top");
 			if (jumpToTop) {
@@ -291,6 +302,7 @@ const wgaInternal: wgaInternals = {
 	],
 	func: {
 		cloner: () => {
+			logger.debug("Setting up cloner functionality");
 			// Find all the elements with data-cloner-target attribute
 			const cloners = document.querySelectorAll("[data-cloner-target]");
 
@@ -299,8 +311,9 @@ const wgaInternal: wgaInternals = {
 				document.body.contains(el),
 			);
 
-			cloners.forEach((c) => {
+			for (const c of cloners) {
 				const cloner = c as HTMLElement;
+				logger.debug("Processing cloner", cloner);
 				// Get the target element
 				const target = document.querySelector(
 					cloner.dataset.clonerTarget as string,
@@ -328,7 +341,7 @@ const wgaInternal: wgaInternals = {
 
 						// Loop through each removeMe
 
-						removeMe.forEach((el) => {
+						for (const el of removeMe) {
 							const removeMe = () => {
 								// Find the closest .field element
 								const field = el.closest("label.input");
@@ -341,15 +354,16 @@ const wgaInternal: wgaInternals = {
 
 							// Add click event listener
 							el.addEventListener("click", removeMe);
-						});
+						}
 					});
 				}
-			});
+			}
 		},
 		viewer: () => {
+			logger.debug("Setting up ViewerJS functionality");
 			const elements = document.querySelectorAll("[data-viewer]");
 			if (elements.length > 0) {
-				elements.forEach((element) => {
+				for (const element of elements) {
 					const e = element as HTMLElement;
 					new Viewer(e, {
 						toolbar: {
@@ -369,10 +383,11 @@ const wgaInternal: wgaInternals = {
 							flipVertical: 0,
 						},
 					});
-				});
+				}
 			}
 		},
 		toast: (message, type) => {
+			logger.debug("Toast creation started", { message, type });
 			// Define variants for color, title, and icon
 			const colorVariants = {
 				info: "alert alert-info cursor-pointer sm:alert-horizontal",
@@ -397,9 +412,7 @@ const wgaInternal: wgaInternals = {
 				alert: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-info h-6 w-6 shrink-0">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
       </svg>`,
-				warning: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-      </svg>`,
+				warning: warningSign,
 				error: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>`,
@@ -436,25 +449,28 @@ const wgaInternal: wgaInternals = {
 				toast.remove();
 			});
 
+			logger.debug("Toast presenting");
 			// Show toast
 			wgaInternal.els.toastContainer?.appendChild(toast);
 
 			// Auto-remove after 5 seconds
 			setTimeout(() => {
+				logger.debug("Removing toast after 5 seconds");
 				toast.remove();
 			}, 5000);
 		},
 		init() {
-			console.info("WGA Internal Functions Initialized");
+			logger.debug("WGA Internal Functions Initialized");
 			// Run all internal functions
+			logger.debug("Setting up HTMX and elements");
 			wgaInternal.setup.htmx();
 			wgaInternal.setup.elements();
 
-			// Initialize components
-			wgaInternal.func.combobox();
-
 			// Run all event listeners
-			wgaInternal.eventListeners.forEach((listener) => listener());
+			logger.debug("Running event listeners");
+			for (const listener of wgaInternal.eventListeners) {
+				listener();
+			}
 		},
 		artistSearchModal() {
 			const artistSearchModal = document.getElementById("artist_lookup");
@@ -467,14 +483,14 @@ const wgaInternal: wgaInternals = {
 			const modalBox = artistSearchModal.querySelector(".modal-box");
 
 			if (!modalBox) {
-				console.error("Modal box not found");
+				logger.error("Modal box not found");
 				return;
 			}
 
 			// get the contents of #artistList and parse it as json
 			const artistList = document.getElementById("artistList");
 			if (!artistList) {
-				console.error("Artist list not found");
+				logger.error("Artist list not found");
 				return;
 			}
 
@@ -488,7 +504,7 @@ const wgaInternal: wgaInternals = {
 
 			label.appendChild(searchInput);
 
-			// create a table within the modal from the json which has label and url keys
+			// Create a table within the modal from the json which has label and url keys
 			const tableContainer = document.createElement("div");
 			tableContainer.className = "overflow-x-auto";
 			const table = document.createElement("table");
@@ -520,177 +536,6 @@ const wgaInternal: wgaInternals = {
 			modalBox.appendChild(label);
 			modalBox.appendChild(tableContainer);
 		},
-		combobox: () => {
-			// Initialize all combobox components
-			const comboboxContainers = document.querySelectorAll("[data-combobox]");
-
-			for (const container of comboboxContainers) {
-				const comboboxId = container.getAttribute("data-combobox");
-				if (!comboboxId) return;
-
-				const displayInput = container.querySelector(
-					`[data-combobox-input="${comboboxId}"]`,
-				) as HTMLInputElement;
-				const valueInput = container.querySelector(
-					`[data-combobox-value="${comboboxId}"]`,
-				) as HTMLInputElement;
-				const dropdown = container.querySelector(
-					`[data-combobox-dropdown="${comboboxId}"]`,
-				) as HTMLElement;
-				const searchInput = container.querySelector(
-					`[data-combobox-search="${comboboxId}"]`,
-				) as HTMLInputElement;
-				const optionsList = container.querySelector(
-					`[data-combobox-options="${comboboxId}"]`,
-				) as HTMLElement;
-				const arrow = container.querySelector(
-					`[data-combobox-arrow="${comboboxId}"]`,
-				) as HTMLElement;
-
-				if (
-					!displayInput ||
-					!valueInput ||
-					!dropdown ||
-					!searchInput ||
-					!optionsList
-				)
-					return;
-
-				let isOpen = false;
-				const allOptions: {
-					value: string;
-					label: string;
-					element: HTMLElement;
-				}[] = [];
-
-				// Collect all options
-				const optionElements = optionsList.querySelectorAll("li[data-value]");
-				for (const li of optionElements) {
-					const value = li.getAttribute("data-value") || "";
-					const label = li.getAttribute("data-label") || "";
-					allOptions.push({ value, label, element: li as HTMLElement });
-				}
-
-				// Set initial display value if there's a selected value
-				if (valueInput.value) {
-					const selectedOption = allOptions.find(
-						(opt) => opt.value === valueInput.value,
-					);
-					if (selectedOption) {
-						displayInput.value = selectedOption.label;
-					}
-				}
-
-				// Toggle dropdown
-				const toggleDropdown = () => {
-					isOpen = !isOpen;
-					dropdown.classList.toggle("hidden", !isOpen);
-					if (arrow) {
-						arrow.style.transform = isOpen ? "rotate(180deg)" : "rotate(0deg)";
-					}
-
-					if (isOpen) {
-						searchInput.focus();
-						searchInput.value = "";
-						filterOptions("");
-					}
-				};
-
-				// Filter options based on search
-				const filterOptions = (searchTerm: string) => {
-					const filtered = allOptions.filter((option) =>
-						option.label.toLowerCase().includes(searchTerm.toLowerCase()),
-					);
-
-					// Hide all options first
-					for (const option of allOptions) {
-						option.element.style.display = "none";
-					}
-
-					// Show filtered options
-					for (const option of filtered) {
-						option.element.style.display = "block";
-					}
-
-					// Show no results message if needed
-					const noResultsDiv = dropdown.querySelector(".no-results-message");
-					if (filtered.length === 0 && searchTerm) {
-						if (!noResultsDiv) {
-							const div = document.createElement("div");
-							div.className =
-								"p-4 text-center text-base-content/60 no-results-message";
-							div.textContent = "No results found";
-							dropdown.appendChild(div);
-						}
-					} else if (noResultsDiv) {
-						noResultsDiv.remove();
-					}
-				};
-
-				// Select option
-				const selectOption = (option: { value: string; label: string }) => {
-					valueInput.value = option.value;
-					displayInput.value = option.label;
-					isOpen = false;
-					dropdown.classList.add("hidden");
-					if (arrow) {
-						arrow.style.transform = "rotate(0deg)";
-					}
-
-					// Trigger change event on the hidden input
-					valueInput.dispatchEvent(new Event("change", { bubbles: true }));
-				};
-
-				// Event listeners
-				displayInput.addEventListener("click", (e) => {
-					e.preventDefault();
-					toggleDropdown();
-				});
-
-				displayInput.addEventListener("focus", (e) => {
-					e.preventDefault();
-					if (!isOpen) toggleDropdown();
-				});
-
-				searchInput.addEventListener("input", (e) => {
-					const target = e.target as HTMLInputElement;
-					filterOptions(target.value);
-				});
-
-				searchInput.addEventListener("keydown", (e) => {
-					if (e.key === "Escape") {
-						isOpen = false;
-						dropdown.classList.add("hidden");
-						if (arrow) {
-							arrow.style.transform = "rotate(0deg)";
-						}
-						displayInput.focus();
-					}
-				});
-
-				// Add click listeners to options
-				for (const option of allOptions) {
-					const link = option.element.querySelector("a");
-					if (link) {
-						link.addEventListener("click", (e) => {
-							e.preventDefault();
-							selectOption(option);
-						});
-					}
-				}
-
-				// Close dropdown when clicking outside
-				document.addEventListener("click", (e) => {
-					if (!container.contains(e.target as Node)) {
-						isOpen = false;
-						dropdown.classList.add("hidden");
-						if (arrow) {
-							arrow.style.transform = "rotate(0deg)";
-						}
-					}
-				});
-			}
-		},
 	},
 
 	setup: {
@@ -711,6 +556,7 @@ const wgaInternal: wgaInternals = {
 };
 
 (() => {
+	logger.debug("Initializing WGA");
 	wgaInternal.func.init();
 })();
 
@@ -722,6 +568,7 @@ window.wga = {
 		open() {
 			// Open the dialog
 			setTimeout(() => {
+				logger.debug("Opening dialog");
 				wgaInternal.els.dialog?.showModal();
 			}, 500);
 		},
@@ -729,11 +576,13 @@ window.wga = {
 		 * Closes the dialog and resets its content.
 		 */
 		close() {
+			logger.debug("Closing dialog");
 			// Close the dialog
 			wgaInternal.els.dialog?.close();
 			// Reset the dialog content
 			setTimeout(() => {
 				if (wgaInternal.els.dialog) {
+					logger.debug("Resetting dialog content");
 					wgaInternal.els.dialog.innerHTML = wgaInternal.dialogDefaultContent;
 				}
 			}, 500);
@@ -747,7 +596,8 @@ window.wga = {
 			window.close();
 		},
 		openPopUp(w: popUpWindow) {
-			let newWin = window.open(
+			logger.debug("Opening pop-up window", w);
+			const newWin = window.open(
 				w.url,
 				w.title,
 				`width=${w.size.width},height=${w.size.height},left=${w.position.x},top=${w.position.y},scrollbars=${w.scrollbars ? "yes" : "no"}, resizable=yes, dependent=yes, toolbar=no, menubar=no, location=no, directories=no, status=no, popup=yes`,
