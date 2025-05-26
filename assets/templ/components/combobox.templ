@@ -1,0 +1,106 @@
+package components
+
+import "github.com/blackfyre/wga/assets/templ/dto"
+
+// Combobox creates a filterable single select dropdown that returns values instead of labels
+templ Combobox(props dto.ComboboxProps) {
+	<div class={ "combobox-container", "relative", "w-full", props.Class } data-combobox={ props.ID }>
+		<!-- Hidden input to store the actual value -->
+		<input
+			type="hidden"
+			name={ props.Name }
+			value={ props.Value }
+			data-combobox-value={ props.ID }
+		/>
+		<!-- Display input for filtering and showing selected label -->
+		<label class={ "input", "input-bordered", getSizeClass(props.Size), getColorClass(props.Color), "flex", "items-center", "gap-2", "cursor-pointer" }>
+			<input
+				type="text"
+				id={ props.ID }
+				placeholder={ props.Placeholder }
+				autocomplete="off"
+				readonly={ props.Disabled }
+				disabled?={ props.Disabled }
+				required?={ props.Required }
+				class="grow cursor-pointer"
+				data-combobox-input={ props.ID }
+				if props.HxGet != "" {
+					hx-get={ props.HxGet }
+				}
+				if props.HxTarget != "" {
+					hx-target={ props.HxTarget }
+				}
+				if props.HxTrigger != "" {
+					hx-trigger={ props.HxTrigger }
+				}
+			/>
+			<svg class="w-4 h-4 opacity-70 transition-transform duration-200" data-combobox-arrow={ props.ID } xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+			</svg>
+		</label>
+		<!-- Dropdown menu -->
+		<div
+			class="absolute z-50 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-60 overflow-auto hidden"
+			data-combobox-dropdown={ props.ID }
+		>
+			<div class="p-2">
+				<input
+					type="search"
+					placeholder="Search..."
+					class="input input-sm w-full"
+					data-combobox-search={ props.ID }
+				/>
+			</div>
+			<ul class="menu menu-sm p-0" data-combobox-options={ props.ID }>
+				for _, option := range props.Options {
+					<li data-value={ option.Value } data-label={ option.Label }>
+						<a class="px-4 py-2 hover:bg-base-200 cursor-pointer">{ option.Label }</a>
+					</li>
+				}
+			</ul>
+			if len(props.Options) == 0 {
+				<div class="p-4 text-center text-base-content/60">
+					No options available
+				</div>
+			}
+		</div>
+	</div>
+}
+
+func getSizeClass(size string) string {
+	switch size {
+	case "xs":
+		return "input-xs"
+	case "sm":
+		return "input-sm"
+	case "lg":
+		return "input-lg"
+	case "xl":
+		return "input-xl"
+	default:
+		return "input-md"
+	}
+}
+
+func getColorClass(color string) string {
+	switch color {
+	case "primary":
+		return "input-primary"
+	case "secondary":
+		return "input-secondary"
+	case "accent":
+		return "input-accent"
+	case "info":
+		return "input-info"
+	case "success":
+		return "input-success"
+	case "warning":
+		return "input-warning"
+	case "error":
+		return "input-error"
+	case "neutral":
+		return "input-neutral"
+	default:
+		return ""
+	}
+}
