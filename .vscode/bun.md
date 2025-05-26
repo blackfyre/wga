@@ -520,8 +520,8 @@ Bun supports things like top-level await, JSX, and extensioned `.ts` imports, wh
     // Some stricter flags (disabled by default)
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "noPropertyAccessFromIndexSignature": false
-  }
+    "noPropertyAccessFromIndexSignature": false,
+  },
 }
 ```
 
@@ -1413,7 +1413,7 @@ How JSX constructs are transformed into vanilla JavaScript internally. The table
     undefined,
     false,
     undefined,
-    this
+    this,
   );
   ```
 
@@ -1515,7 +1515,7 @@ The module from which the component factory function (`createElement`, `jsx`, `j
 
 - ```jsonc
   {
-    "jsx": "react"
+    "jsx": "react",
     // jsxImportSource is not defined
     // default to "react"
   }
@@ -1531,7 +1531,7 @@ The module from which the component factory function (`createElement`, `jsx`, `j
 - ```jsonc
   {
     "jsx": "react-jsx",
-    "jsxImportSource": "preact"
+    "jsxImportSource": "preact",
   }
   ```
 
@@ -1545,7 +1545,7 @@ The module from which the component factory function (`createElement`, `jsx`, `j
 - ```jsonc
   {
     "jsx": "react-jsxdev",
-    "jsxImportSource": "preact"
+    "jsxImportSource": "preact",
   }
   ```
 
@@ -1558,7 +1558,7 @@ The module from which the component factory function (`createElement`, `jsx`, `j
     undefined,
     false,
     undefined,
-    this
+    this,
   );
   ```
 
@@ -1581,7 +1581,7 @@ All of these values can be set on a per-file basis using _pragmas_. A pragma is 
 
 - ```jsonc
   {
-    "jsxFactory": "h"
+    "jsxFactory": "h",
   }
   ```
 
@@ -1592,7 +1592,7 @@ All of these values can be set on a per-file basis using _pragmas_. A pragma is 
   ```
 - ```jsonc
   {
-    "jsxFragmentFactory": "MyFragment"
+    "jsxFragmentFactory": "MyFragment",
   }
   ```
 
@@ -1603,7 +1603,7 @@ All of these values can be set on a per-file basis using _pragmas_. A pragma is 
   ```
 - ```jsonc
   {
-    "jsxImportSource": "preact"
+    "jsxImportSource": "preact",
   }
   ```
 
@@ -3031,7 +3031,7 @@ import fooPlugin from "bun-plugin-foo";
 plugin(
   fooPlugin({
     // configuration
-  })
+  }),
 );
 ```
 
@@ -3233,7 +3233,7 @@ plugin({
           contents: "console.log('hello world!')",
           loader: "js",
         };
-      }
+      },
     );
 
     build.module("my-object-virtual-module", () => {
@@ -3370,7 +3370,7 @@ type PluginBuilder = {
     callback: (args: { path: string; importer: string }) => {
       path: string;
       namespace?: string;
-    } | void
+    } | void,
   ) => void;
   onLoad: (
     args: { filter: RegExp; namespace?: string },
@@ -3378,7 +3378,7 @@ type PluginBuilder = {
       loader?: Loader;
       contents?: string;
       exports?: Record<string, any>;
-    }
+    },
   ) => void;
   config: BuildConfig;
 };
@@ -5215,8 +5215,8 @@ This will add the following to your `package.json`:
     "react": "^18.2.0", // this matches >= 18.2.0 < 19.0.0
 
     // with --exact
-    "react": "18.2.0" // this matches only 18.2.0 exactly
-  }
+    "react": "18.2.0", // this matches only 18.2.0 exactly
+  },
 }
 ```
 
@@ -7038,15 +7038,11 @@ For browsers that don't support this feature yet, Bun's CSS bundler converts it 
 }
 
 .themed-component {
-  background-color: var(--lightningcss-light, #ffffff) var(
-      --lightningcss-dark,
-      #121212
-    );
+  background-color: var(--lightningcss-light, #ffffff)
+    var(--lightningcss-dark, #121212);
   color: var(--lightningcss-light, #333333) var(--lightningcss-dark, #eeeeee);
-  border-color: var(--lightningcss-light, #dddddd) var(
-      --lightningcss-dark,
-      #555555
-    );
+  border-color: var(--lightningcss-light, #dddddd)
+    var(--lightningcss-dark, #555555);
 }
 ```
 
@@ -7548,14 +7544,31 @@ For browsers that don't support `system-ui`, Bun's CSS bundler automatically exp
 ```css
 .native-interface {
   /* Expanded to support all major platforms */
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    "Noto Sans", Ubuntu, Cantarell, "Helvetica Neue";
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    "Noto Sans",
+    Ubuntu,
+    Cantarell,
+    "Helvetica Neue";
 }
 
 .fallback-aware {
   /* Preserves the original fallback after the expanded stack */
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    "Noto Sans", Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    "Noto Sans",
+    Ubuntu,
+    Cantarell,
+    "Helvetica Neue",
+    sans-serif;
 }
 ```
 
@@ -8672,7 +8685,7 @@ type PluginBuilder = {
     callback: (args: { path: string; importer: string }) => {
       path: string;
       namespace?: string;
-    } | void
+    } | void,
   ) => void;
   onLoad: (
     args: { filter: RegExp; namespace?: string },
@@ -8681,7 +8694,7 @@ type PluginBuilder = {
       loader?: Loader;
       contents?: string;
       exports?: Record<string, any>;
-    }
+    },
   ) => void;
   config: BuildConfig;
 };
@@ -9024,7 +9037,7 @@ Bun.build({
             napiModule: myNativeAddon,
             symbol: "replace_foo_with_bar",
             // external: myNativeAddon.getSharedState()
-          }
+          },
         );
       },
     },
@@ -10284,7 +10297,7 @@ const myPlugin: BunPlugin = {
         return {
           /* onResolve.results */
         };
-      }
+      },
     );
     builder.onLoad(
       {
@@ -10294,7 +10307,7 @@ const myPlugin: BunPlugin = {
         return {
           /* onLoad.results */
         };
-      }
+      },
     );
   },
 };
@@ -12064,7 +12077,7 @@ test("Welcome to California!", () => {
   process.env.TZ = "America/Los_Angeles";
   expect(new Date().getTimezoneOffset()).toBe(420);
   expect(new Intl.DateTimeFormat().resolvedOptions().timeZone).toBe(
-    "America/Los_Angeles"
+    "America/Los_Angeles",
   );
 });
 
@@ -12073,7 +12086,7 @@ test("Welcome to New York!", () => {
   process.env.TZ = "America/New_York";
   expect(new Date().getTimezoneOffset()).toBe(240);
   expect(new Intl.DateTimeFormat().resolvedOptions().timeZone).toBe(
-    "America/New_York"
+    "America/New_York",
   );
 });
 ```
@@ -12862,7 +12875,7 @@ Bun.serve({
 
     "/orgs/:orgId/repos/:repoId/settings": (
       // optional: you can explicitly pass a type to BunRequest:
-      req: BunRequest<"/orgs/:orgId/repos/:repoId/settings">
+      req: BunRequest<"/orgs/:orgId/repos/:repoId/settings">,
     ) => {
       const { orgId, repoId } = req.params;
       return Response.json({ orgId, repoId });
@@ -13632,7 +13645,7 @@ const server = Bun.serve({
     const address = server.requestIP(req);
     if (address) {
       return new Response(
-        `Client IP: ${address.address}, Port: ${address.port}`
+        `Client IP: ${address.address}, Port: ${address.port}`,
       );
     }
     return new Response("Unknown client");
@@ -13730,7 +13743,7 @@ const server = Bun.serve({
   fetch(req, server) {
     return new Response(
       `Active requests: ${server.pendingRequests}\n` +
-        `Active WebSockets: ${server.pendingWebSockets}`
+        `Active WebSockets: ${server.pendingWebSockets}`,
     );
   },
 });
@@ -13902,7 +13915,7 @@ interface Server extends Disposable {
     options?: {
       headers?: Bun.HeadersInit;
       data?: T;
-    }
+    },
   ): boolean;
 
   /**
@@ -13912,7 +13925,7 @@ interface Server extends Disposable {
   publish(
     topic: string,
     data: string | ArrayBufferView | ArrayBuffer | SharedArrayBuffer,
-    compress?: boolean
+    compress?: boolean,
   ): ServerWebSocketSendStatus;
 
   /**
@@ -14000,14 +14013,14 @@ interface WebSocketHandler<T = undefined> {
   /** Called when message received */
   message(
     ws: ServerWebSocket<T>,
-    message: string | Buffer
+    message: string | Buffer,
   ): void | Promise<void>;
 
   /** Called when connection closed */
   close?(
     ws: ServerWebSocket<T>,
     code: number,
-    reason: string
+    reason: string,
   ): void | Promise<void>;
 
   /** Called when ping frame received */
@@ -14838,7 +14851,7 @@ namespace Bun {
     websocket?: {
       message: (
         ws: ServerWebSocket,
-        message: string | ArrayBuffer | Uint8Array
+        message: string | ArrayBuffer | Uint8Array,
       ) => void;
       open?: (ws: ServerWebSocket) => void;
       close?: (ws: ServerWebSocket, code: number, reason: string) => void;
@@ -14880,14 +14893,14 @@ interface Server {
   publish(
     topic: string,
     data: string | ArrayBufferView | ArrayBuffer,
-    compress?: boolean
+    compress?: boolean,
   ): number;
   upgrade(
     req: Request,
     options?: {
       headers?: HeadersInit;
       data?: any;
-    }
+    },
   ): boolean;
 }
 
@@ -14995,7 +15008,7 @@ const blob = new Blob(
   ],
   {
     type: "application/typescript",
-  }
+  },
 );
 const url = URL.createObjectURL(blob);
 const worker = new Worker(url);
@@ -15009,7 +15022,7 @@ const file = new File(
     `
   self.onmessage = (event: MessageEvent) => postMessage(event.data)`,
   ],
-  "worker.ts"
+  "worker.ts",
 );
 const url = URL.createObjectURL(file);
 const worker = new Worker(url);
@@ -16217,7 +16230,7 @@ const response = new Response(
   (async function* () {
     yield "hello";
     yield "world";
-  })()
+  })(),
 );
 
 await response.text(); // "helloworld"
@@ -16349,7 +16362,7 @@ export class ArrayBufferSink {
   }): void;
 
   write(
-    chunk: string | ArrayBufferView | ArrayBuffer | SharedArrayBuffer
+    chunk: string | ArrayBufferView | ArrayBuffer | SharedArrayBuffer,
   ): number;
   /**
    * Flush the internal buffer
@@ -16477,9 +16490,9 @@ await sql`INSERT INTO users ${sql(user, "name", "email")}`;
 
 By default, Bun's SQL client returns query results as arrays of objects, where each object represents a row with column names as keys. However, there are cases where you might want the data in a different format. The client provides two additional methods for this purpose.
 
-### ` sql``.values() ` format
+### `sql``.values()` format
 
-The ` sql``.values() ` method returns rows as arrays of values rather than objects. Each row becomes an array where the values are in the same order as the columns in your query.
+The `sql``.values()` method returns rows as arrays of values rather than objects. Each row becomes an array where the values are in the same order as the columns in your query.
 
 ```ts
 const rows = await sql`SELECT * FROM users`.values();
@@ -16495,9 +16508,9 @@ This returns something like:
 ];
 ```
 
-` sql``.values() ` is especially useful if duplicate column names are returned in the query results. When using objects (the default), the last column name is used as the key in the object, which means duplicate column names overwrite each other &mdash; but when using ` sql``.values() `, each column is present in the array so you can access the values of duplicate columns by index.
+`sql``.values()` is especially useful if duplicate column names are returned in the query results. When using objects (the default), the last column name is used as the key in the object, which means duplicate column names overwrite each other &mdash; but when using `sql``.values()`, each column is present in the array so you can access the values of duplicate columns by index.
 
-### ` sql``.raw() ` format
+### `sql``.raw()` format
 
 The `.raw()` method returns rows as arrays of `Buffer` objects. This can be useful for working with binary data or for performance reasons.
 
@@ -16563,11 +16576,11 @@ const users = [
 await sql`SELECT * FROM users WHERE id IN ${sql(users, "id")}`;
 ```
 
-## ` sql``.simple() `
+## `sql``.simple()`
 
 The PostgreSQL wire protocol supports two types of queries: "simple" and "extended". Simple queries can contain multiple statements but don't support parameters, while extended queries (the default) support parameters but only allow one statement.
 
-To run multiple statements in a single query, use ` sql``.simple() `:
+To run multiple statements in a single query, use `sql``.simple()`:
 
 ```ts
 // Multiple statements in one query
@@ -16603,7 +16616,7 @@ const result = await sql.unsafe(`
 // Using parameters (only one command is allowed)
 const result = await sql.unsafe(
   "SELECT " + dangerous + " FROM users WHERE id = $1",
-  [id]
+  [id],
 );
 ```
 
@@ -16819,7 +16832,7 @@ const sql = new SQL("postgres://user:password@localhost/mydb?sslmode=prefer");
 
 // Using verify-full mode
 const sql = new SQL(
-  "postgres://user:password@localhost/mydb?sslmode=verify-full"
+  "postgres://user:password@localhost/mydb?sslmode=verify-full",
 );
 ```
 
@@ -16902,7 +16915,7 @@ You might want to use `prepare: false` when:
 - Using PGBouncer in transaction mode (though since PGBouncer 1.21.0, protocol-level named prepared statements are supported when configured properly)
 - Debugging query execution plans
 - Working with dynamic SQL where query plans need to be regenerated frequently
-- More than one command per query will not be supported (unless you use ` sql``.simple() `)
+- More than one command per query will not be supported (unless you use `sql``.simple()`)
 
 Note that disabling prepared statements may impact performance for queries that are executed frequently with different parameters, as the server needs to parse and plan each query from scratch.
 
@@ -17595,7 +17608,7 @@ interface S3File extends Blob {
       | ReadableStream
       | Response
       | Request,
-    options?: BlobPropertyBag
+    options?: BlobPropertyBag,
   ): Promise<number>;
 
   exists(options?: S3Options): Promise<boolean>;
@@ -18241,7 +18254,7 @@ interface Bun {
       | ArrayBuffer
       | SharedArrayBuffer
       | TypedArray
-      | Response
+      | Response,
   ): Promise<number>;
 }
 
@@ -18259,7 +18272,7 @@ interface BunFile {
 
 export interface FileSink {
   write(
-    chunk: string | ArrayBufferView | ArrayBuffer | SharedArrayBuffer
+    chunk: string | ArrayBufferView | ArrayBuffer | SharedArrayBuffer,
   ): number;
   flush(): number | Promise<number>;
   end(error?: Error): number | Promise<number>;
@@ -18934,7 +18947,7 @@ notStrict.query("SELECT $message;").all({ message: "Hello world" });
 You can also use an import attribute to load a database.
 
 ```ts
-import db from "./mydb.sqlite" with { "type": "sqlite" };
+import db from "./mydb.sqlite" with { type: "sqlite" };
 
 console.log(db.query("select * from users LIMIT 1").get());
 ```
@@ -19294,7 +19307,7 @@ import { Database } from "bun:sqlite";
 
 const db = new Database(":memory:", { safeIntegers: true });
 const query = db.query(
-  `SELECT ${BigInt(Number.MAX_SAFE_INTEGER) + 102n} as max_int`
+  `SELECT ${BigInt(Number.MAX_SAFE_INTEGER) + 102n} as max_int`,
 );
 const result = query.get();
 console.log(result.max_int); // => 9007199254741093n
@@ -19326,7 +19339,7 @@ import { Database } from "bun:sqlite";
 
 const db = new Database(":memory:", { safeIntegers: false });
 const query = db.query(
-  `SELECT ${BigInt(Number.MAX_SAFE_INTEGER) + 102n} as max_int`
+  `SELECT ${BigInt(Number.MAX_SAFE_INTEGER) + 102n} as max_int`,
 );
 const result = query.get();
 console.log(result.max_int); // => 9007199254741092
@@ -19375,13 +19388,13 @@ The driver will automatically [`begin`](https://www.sqlite.org/lang_transaction.
 import { Database } from "bun:sqlite";
 const db = Database.open(":memory:");
 db.run(
-  "CREATE TABLE expenses (id INTEGER PRIMARY KEY AUTOINCREMENT, note TEXT, dollars INTEGER);"
+  "CREATE TABLE expenses (id INTEGER PRIMARY KEY AUTOINCREMENT, note TEXT, dollars INTEGER);",
 );
 db.run(
-  "CREATE TABLE cats (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE, age INTEGER)"
+  "CREATE TABLE cats (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE, age INTEGER)",
 );
 const insertExpense = db.prepare(
-  "INSERT INTO expenses (note, dollars) VALUES (?, ?)"
+  "INSERT INTO expenses (note, dollars) VALUES (?, ?)",
 );
 const insert = db.prepare("INSERT INTO cats (name, age) VALUES ($name, $age)");
 const insertCats = db.transaction((cats) => {
@@ -19475,13 +19488,13 @@ class Database {
           readonly?: boolean;
           create?: boolean;
           readwrite?: boolean;
-        }
+        },
   );
 
   query<Params, ReturnType>(sql: string): Statement<Params, ReturnType>;
   run(
     sql: string,
-    params?: SQLQueryBindings
+    params?: SQLQueryBindings,
   ): { lastInsertRowid: number; changes: number };
   exec = this.run;
 }
@@ -20968,7 +20981,7 @@ By default, the input stream of the subprocess is undefined; it can be configure
 ```ts
 const proc = Bun.spawn(["cat"], {
   stdin: await fetch(
-    "https://raw.githubusercontent.com/oven-sh/bun/main/examples/hashing.js"
+    "https://raw.githubusercontent.com/oven-sh/bun/main/examples/hashing.js",
   ),
 });
 
@@ -21343,12 +21356,12 @@ interface Bun {
   spawn(command: string[], options?: SpawnOptions.OptionsObject): Subprocess;
   spawnSync(
     command: string[],
-    options?: SpawnOptions.OptionsObject
+    options?: SpawnOptions.OptionsObject,
   ): SyncSubprocess;
 
   spawn(options: { cmd: string[] } & SpawnOptions.OptionsObject): Subprocess;
   spawnSync(
-    options: { cmd: string[] } & SpawnOptions.OptionsObject
+    options: { cmd: string[] } & SpawnOptions.OptionsObject,
   ): SyncSubprocess;
 }
 
@@ -21364,7 +21377,7 @@ namespace SpawnOptions {
       subprocess: Subprocess,
       exitCode: number | null,
       signalCode: number | null,
-      error?: ErrorLike
+      error?: ErrorLike,
     ): void | Promise<void>;
     ipc?(message: any, subprocess: Subprocess): void;
     serialization?: "json" | "advanced";
@@ -21516,13 +21529,13 @@ const rewriter = new HTMLRewriter().on("img", {
     // Famous rickroll video thumbnail
     img.setAttribute(
       "src",
-      "https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg"
+      "https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
     );
 
     // Wrap the image in a link to the video
     img.before(
       '<a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank">',
-      { html: true }
+      { html: true },
     );
     img.after("</a>", { html: true });
 
@@ -22690,7 +22703,7 @@ const {
       args: [],
       returns: FFIType.cstring,
     },
-  }
+  },
 );
 
 console.log(`SQLite 3 version: ${sqlite3_libversion()}`);
@@ -22947,7 +22960,7 @@ const searchIterator = new JSCallback(
   {
     returns: "bool",
     args: ["ptr", "usize"],
-  }
+  },
 );
 
 const str = Buffer.from("wwutwutwutwutwutwutwutwutwutwutut\0", "utf8");
@@ -22977,7 +22990,7 @@ const searchIterator = new JSCallback(
     returns: "bool",
     args: ["ptr", "usize"],
     threadsafe: true, // Optional. Defaults to `false`
-  }
+  },
 );
 ```
 
@@ -23045,7 +23058,7 @@ console.log(
   myDataView.getUint8(0, true),
   myDataView.getUint8(1, true),
   myDataView.getUint8(2, true),
-  myDataView.getUint8(3, true)
+  myDataView.getUint8(3, true),
 );
 ```
 
@@ -23059,7 +23072,7 @@ console.log(
   read.u8(myPtr, 0),
   read.u8(myPtr, 1),
   read.u8(myPtr, 2),
-  read.u8(myPtr, 3)
+  read.u8(myPtr, 3),
 );
 ```
 
@@ -23111,7 +23124,7 @@ toArrayBuffer(
   deallocatorContext,
 
   // this is a pointer to a function
-  jsTypedArrayBytesDeallocator
+  jsTypedArrayBytesDeallocator,
 );
 
 // without a deallocatorContext:
@@ -23122,7 +23135,7 @@ toArrayBuffer(
   byteLength,
 
   // this is a pointer to a function
-  jsTypedArrayBytesDeallocator
+  jsTypedArrayBytesDeallocator,
 );
 ```
 
@@ -23160,7 +23173,7 @@ const out = encode_png(
   pixels,
 
   128,
-  128
+  128,
 );
 ```
 
@@ -23194,7 +23207,7 @@ const out = encode_png(
 
   // dimensions:
   128,
-  128
+  128,
 );
 ```
 
@@ -23209,7 +23222,7 @@ const out = encode_png(
 
   // dimensions:
   128,
-  128
+  128,
 );
 
 // assuming it is 0-terminated, it can be read like this:
@@ -23562,14 +23575,14 @@ The final 8 bytes of the UUID are a cryptographically secure random value. It us
 namespace Bun {
   function randomUUIDv7(
     encoding?: "hex" | "base64" | "base64url" = "hex",
-    timestamp?: number = Date.now()
+    timestamp?: number = Date.now(),
   ): string;
   /**
    * If you pass "buffer", you get a 16-byte buffer instead of a string.
    */
   function randomUUIDv7(
     encoding: "buffer",
-    timestamp?: number = Date.now()
+    timestamp?: number = Date.now(),
   ): Buffer;
 
   // If you only pass a timestamp, you get a hex string
@@ -23634,7 +23647,7 @@ test("peek", () => {
   // - returns the error
   // - does not mark the promise as handled
   const rejected = Promise.reject(
-    new Error("Successfully tested promise rejection")
+    new Error("Successfully tested promise rejection"),
   );
   expect(peek(rejected).message).toBe("Successfully tested promise rejection");
 });
@@ -23877,7 +23890,7 @@ namespace Bun {
        * @default true
        */
       ambiguousIsNarrow?: boolean;
-    }
+    },
   ): number;
 }
 ```
@@ -24070,7 +24083,7 @@ console.log(
     { a: 1, b: 2, c: 3 },
     { a: 4, b: 5, c: 6 },
     { a: 7, b: 8, c: 9 },
-  ])
+  ]),
 );
 //
 // ┌───┬───┬───┬───┐
@@ -24091,8 +24104,8 @@ console.log(
       { a: 1, b: 2, c: 3 },
       { a: 4, b: 5, c: 6 },
     ],
-    ["a", "c"]
-  )
+    ["a", "c"],
+  ),
 );
 //
 // ┌───┬───┬───┐
@@ -24114,8 +24127,8 @@ console.log(
     ],
     {
       colors: true,
-    }
-  )
+    },
+  ),
 );
 ```
 
@@ -25948,7 +25961,7 @@ An example of `stringEnum` as used in `fmt.zig` / `bun:internal-for-testing`
 ```ts
 export const Formatter = t.stringEnum(
   "highlight-javascript",
-  "escape-powershell"
+  "escape-powershell",
 );
 
 export const fmtString = fn({
@@ -26677,13 +26690,13 @@ const privateKeyClone = structuredClone(privateKey);
 console.log(
   publicKey.equals(publicKeyClone), // true
   privateKey.equals(privateKeyClone), // true
-  secretKey.equals(secretKeyClone) // true
+  secretKey.equals(secretKeyClone), // true
 );
 
 console.log(
   publicKey.constructor.name, // PublicKeyObjet
   privateKey.constructor.name, // PrivateKeyObject
-  secretKey.constructor.name // SecretKeyObject
+  secretKey.constructor.name, // SecretKeyObject
 );
 ```
 
@@ -26776,7 +26789,7 @@ client.request(
   {
     silent: "yes", // Error: options.silent must be a boolean
     weight: "high", // Error: options.weight must be a number
-  }
+  },
 );
 ```
 
@@ -26961,7 +26974,7 @@ test.failing(
   "test.failing passes when done() is called with an error",
   (done) => {
     done(new Error("test error"));
-  }
+  },
 );
 
 // This test will fail because it doesn't throw or pass an error
@@ -26969,7 +26982,7 @@ test.failing(
   "test.failing fails when done is called without an error",
   (done) => {
     done();
-  }
+  },
 );
 ```
 
@@ -28888,7 +28901,7 @@ function Component(props: { message: string }) {
 }
 
 const stream = await renderToReadableStream(
-  <Component message="Hello from server!" />
+  <Component message="Hello from server!" />,
 );
 ```
 
@@ -28900,7 +28913,7 @@ Combining this with `Bun.serve()`, we get a simple SSR HTTP server:
 Bun.serve({
   async fetch() {
     const stream = await renderToReadableStream(
-      <Component message="Hello from server!" />
+      <Component message="Hello from server!" />,
     );
     return new Response(stream, {
       headers: { "Content-Type": "text/html" },
@@ -32465,7 +32478,7 @@ const watcher = watch(
   { recursive: true },
   (event, filename) => {
     console.log(`Detected ${event} in ${filename}`);
-  }
+  },
 );
 ```
 
@@ -33415,8 +33428,8 @@ Below is the full set of recommended `compilerOptions` for a Bun project. With t
     // Some stricter flags (disabled by default)
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "noPropertyAccessFromIndexSignature": false
-  }
+    "noPropertyAccessFromIndexSignature": false,
+  },
 }
 ```
 
@@ -34202,7 +34215,7 @@ Bun.serve({
         // you can also yield a TypedArray or Buffer
         yield new Uint8Array(["\n".charCodeAt(0)]);
       },
-      { headers: { "Content-Type": "text/plain" } }
+      { headers: { "Content-Type": "text/plain" } },
     );
   },
 });
@@ -34224,7 +34237,7 @@ Bun.serve({
           yield "world!";
         },
       },
-      { headers: { "Content-Type": "text/plain" } }
+      { headers: { "Content-Type": "text/plain" } },
     );
   },
 });
