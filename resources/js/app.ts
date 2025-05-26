@@ -48,8 +48,12 @@ type wgaInternals = {
   func: {
     cloner: () => void;
     viewer: () => void;
-    toast: (message: string, type: string) => void;
+    toast: (
+      message: string,
+      type: "info" | "alert" | "warning" | "error",
+    ) => void;
     artistSearchModal: () => void;
+    combobox: () => void;
     init: () => void;
   };
 
@@ -118,7 +122,7 @@ interface ToastEvent extends Event {
   detail: {
     closeDialog: boolean;
     message: string;
-    type: string;
+    type: "info" | "alert" | "warning" | "error";
   };
 }
 
@@ -211,13 +215,14 @@ const wgaInternal: wgaInternals = {
         wgaInternal.func.viewer();
         wgaInternal.func.cloner();
         wgaInternal.func.artistSearchModal();
+        wgaInternal.func.combobox();
       });
 
       document.body.addEventListener("htmx:swapError", function (evt) {
         console.error(evt);
         wgaInternal.func.toast(
           "An error occurred while processing your request.",
-          "danger",
+          "error",
         );
       });
 
@@ -225,13 +230,13 @@ const wgaInternal: wgaInternals = {
         console.error(evt);
         wgaInternal.func.toast(
           "An error occurred while processing your request.",
-          "danger",
+          "error",
         );
       });
 
       document.body.addEventListener("htmx:timeout", function (evt) {
         console.error(evt);
-        wgaInternal.func.toast("Request timed out!", "danger");
+        wgaInternal.func.toast("Request timed out!", "error");
       });
     },
     () => {
@@ -357,12 +362,54 @@ const wgaInternal: wgaInternals = {
         });
       }
     },
-    toast: (message: string, type: string) => {
+    toast: (message, type) => {
+      const colorVariants = {
+        info: "alert alert-info cursor-pointer sm:alert-horizontal",
+        alert: "alert cursor-pointer sm:alert-horizontal",
+        warning: "alert alert-warning cursor-pointer sm:alert-horizontal",
+        error: "alert alert-error cursor-pointer sm:alert-horizontal",
+      };
+
+      const titleVariants = {
+        info: "Info",
+        alert: "Alert",
+        warning: "Warning",
+        error: "Error",
+      };
+
+      const iconVariants = {
+        info: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>`,
+        alert: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-info h-6 w-6 shrink-0">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+  </svg>`,
+        warning: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+  </svg>`,
+        error: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>`,
+      };
+
       const toast = document.createElement("div");
       const toastMessage = document.createElement("span");
-      toast.className = `alert alert-${type} cursor-pointer`;
+      const mb = document.createElement("div");
+      const title = document.createElement("h3");
+
+      toast.innerHTML = iconVariants[type] || iconVariants.info;
+
+      title.textContent = titleVariants[type] || "Notification";
+      title.className = "font-bold";
+      mb.appendChild(title);
+      toast.className =
+        colorVariants[type] ||
+        "alert alert-info cursor-pointer sm:alert-horizontal";
+      toast.setAttribute("role", "alert");
       toastMessage.textContent = message;
-      toast.appendChild(toastMessage);
+
+      mb.appendChild(toastMessage);
+      toast.appendChild(mb);
 
       toast.addEventListener("click", () => {
         toast.remove();
@@ -379,6 +426,9 @@ const wgaInternal: wgaInternals = {
       // Run all internal functions
       wgaInternal.setup.htmx();
       wgaInternal.setup.elements();
+
+      // Initialize components
+      wgaInternal.func.combobox();
 
       // Run all event listeners
       wgaInternal.eventListeners.forEach((listener) => listener());
@@ -446,6 +496,177 @@ const wgaInternal: wgaInternals = {
 
       modalBox.appendChild(label);
       modalBox.appendChild(tableContainer);
+    },
+    combobox: () => {
+      // Initialize all combobox components
+      const comboboxContainers = document.querySelectorAll("[data-combobox]");
+
+      comboboxContainers.forEach((container) => {
+        const comboboxId = container.getAttribute("data-combobox");
+        if (!comboboxId) return;
+
+        const displayInput = container.querySelector(
+          `[data-combobox-input="${comboboxId}"]`,
+        ) as HTMLInputElement;
+        const valueInput = container.querySelector(
+          `[data-combobox-value="${comboboxId}"]`,
+        ) as HTMLInputElement;
+        const dropdown = container.querySelector(
+          `[data-combobox-dropdown="${comboboxId}"]`,
+        ) as HTMLElement;
+        const searchInput = container.querySelector(
+          `[data-combobox-search="${comboboxId}"]`,
+        ) as HTMLInputElement;
+        const optionsList = container.querySelector(
+          `[data-combobox-options="${comboboxId}"]`,
+        ) as HTMLElement;
+        const arrow = container.querySelector(
+          `[data-combobox-arrow="${comboboxId}"]`,
+        ) as HTMLElement;
+
+        if (
+          !displayInput ||
+          !valueInput ||
+          !dropdown ||
+          !searchInput ||
+          !optionsList
+        )
+          return;
+
+        let isOpen = false;
+        let allOptions: {
+          value: string;
+          label: string;
+          element: HTMLElement;
+        }[] = [];
+
+        // Collect all options
+        const optionElements = optionsList.querySelectorAll("li[data-value]");
+        optionElements.forEach((li) => {
+          const value = li.getAttribute("data-value") || "";
+          const label = li.getAttribute("data-label") || "";
+          allOptions.push({ value, label, element: li as HTMLElement });
+        });
+
+        // Set initial display value if there's a selected value
+        if (valueInput.value) {
+          const selectedOption = allOptions.find(
+            (opt) => opt.value === valueInput.value,
+          );
+          if (selectedOption) {
+            displayInput.value = selectedOption.label;
+          }
+        }
+
+        // Toggle dropdown
+        const toggleDropdown = () => {
+          isOpen = !isOpen;
+          dropdown.classList.toggle("hidden", !isOpen);
+          if (arrow) {
+            arrow.style.transform = isOpen ? "rotate(180deg)" : "rotate(0deg)";
+          }
+
+          if (isOpen) {
+            searchInput.focus();
+            searchInput.value = "";
+            filterOptions("");
+          }
+        };
+
+        // Filter options based on search
+        const filterOptions = (searchTerm: string) => {
+          const filtered = allOptions.filter((option) =>
+            option.label.toLowerCase().includes(searchTerm.toLowerCase()),
+          );
+
+          // Hide all options first
+          allOptions.forEach((option) => {
+            option.element.style.display = "none";
+          });
+
+          // Show filtered options
+          filtered.forEach((option) => {
+            option.element.style.display = "block";
+          });
+
+          // Show no results message if needed
+          const noResultsDiv = dropdown.querySelector(".no-results-message");
+          if (filtered.length === 0 && searchTerm) {
+            if (!noResultsDiv) {
+              const div = document.createElement("div");
+              div.className =
+                "p-4 text-center text-base-content/60 no-results-message";
+              div.textContent = "No results found";
+              dropdown.appendChild(div);
+            }
+          } else if (noResultsDiv) {
+            noResultsDiv.remove();
+          }
+        };
+
+        // Select option
+        const selectOption = (option: { value: string; label: string }) => {
+          valueInput.value = option.value;
+          displayInput.value = option.label;
+          isOpen = false;
+          dropdown.classList.add("hidden");
+          if (arrow) {
+            arrow.style.transform = "rotate(0deg)";
+          }
+
+          // Trigger change event on the hidden input
+          valueInput.dispatchEvent(new Event("change", { bubbles: true }));
+        };
+
+        // Event listeners
+        displayInput.addEventListener("click", (e) => {
+          e.preventDefault();
+          toggleDropdown();
+        });
+
+        displayInput.addEventListener("focus", (e) => {
+          e.preventDefault();
+          if (!isOpen) toggleDropdown();
+        });
+
+        searchInput.addEventListener("input", (e) => {
+          const target = e.target as HTMLInputElement;
+          filterOptions(target.value);
+        });
+
+        searchInput.addEventListener("keydown", (e) => {
+          if (e.key === "Escape") {
+            isOpen = false;
+            dropdown.classList.add("hidden");
+            if (arrow) {
+              arrow.style.transform = "rotate(0deg)";
+            }
+            displayInput.focus();
+          }
+        });
+
+        // Add click listeners to options
+        allOptions.forEach((option) => {
+          const link = option.element.querySelector("a");
+          if (link) {
+            link.addEventListener("click", (e) => {
+              e.preventDefault();
+              selectOption(option);
+            });
+          }
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener("click", (e) => {
+          if (!container.contains(e.target as Node)) {
+            isOpen = false;
+            dropdown.classList.add("hidden");
+            if (arrow) {
+              arrow.style.transform = "rotate(0deg)";
+            }
+          }
+        });
+      });
     },
   },
 
