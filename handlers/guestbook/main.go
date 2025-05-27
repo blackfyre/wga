@@ -12,6 +12,7 @@ import (
 	"github.com/blackfyre/wga/assets/templ/pages"
 	"github.com/blackfyre/wga/utils"
 	"github.com/blackfyre/wga/utils/url"
+	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 
@@ -54,11 +55,17 @@ func convertRawEntriesToGuestbookEntries(entries []*core.Record) []dto.Guestbook
 
 func EntriesHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
+	app.Logger().Debug("Guestbook entries request received", "url", c.Request.URL)
+
 	fullUrl := url.GenerateCurrentPageUrl(c)
 	year := cmp.Or(c.Request.URL.Query().Get("year"), fmt.Sprintf("%d", time.Now().Year()))
 
+	app.Logger().Debug("Guestbook entries request", "year", year, "fullUrl", fullUrl)
+
 	// entries, err := wgaModels.FindEntriesForYear(app.Dao(), year)
-	entries, err := app.FindRecordsByFilter("Guestbook", "year", year, 0, 0)
+	entries, err := app.FindRecordsByFilter("Guestbook", "created ~ {:year}", "-created", 0, 0, dbx.Params{
+		"year": year,
+	})
 
 	if err != nil {
 		app.Logger().Error("Failed to get guestbook entries", "error", err)
@@ -150,14 +157,16 @@ func StoreEntryHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 	utils.SendToastMessage("Message added successfully", "success", true, c, "guestbook-updated")
 
-	return nil
+	c.Response.Header().Set("HX-Push-Url", "/guestbook")
+
+	return c.NoContent(http.StatusNoContent)
 }
 
 func RegisterHandlers(app *pocketbase.PocketBase) {
 
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 
-		ag := se.Router.Group("/guestook")
+		ag := se.Router.Group("/guestbook")
 
 		ag.GET("", func(c *core.RequestEvent) error {
 			return EntriesHandler(app, c)

@@ -3,6 +3,7 @@ package url
 import (
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/blackfyre/wga/utils"
 	"github.com/labstack/echo/v5"
@@ -74,7 +75,7 @@ func GetRequiredQueryParam(c echo.Context, param string) (string, error) {
 	p := c.QueryParam(param)
 
 	if p == "" {
-		return "", fmt.Errorf("Missing required query parameter: %v", param)
+		return "", fmt.Errorf("missing required query parameter: %v", param)
 	}
 
 	return p, nil
@@ -84,5 +85,21 @@ func GenerateCurrentPageUrl(c *core.RequestEvent) string {
 	if c == nil || c.Request == nil {
 		return ""
 	}
-	return c.Request.URL.Scheme + "://" + c.Request.URL.Host + c.Request.URL.String()
+
+	var urlParts []string
+
+	if c.Request.URL.Scheme != "" && c.Request.URL.Host != "" {
+		urlParts = append(urlParts, c.Request.URL.Scheme+"://"+c.Request.URL.Host)
+	}
+	if c.Request.URL.Path != "" {
+		urlParts = append(urlParts, c.Request.URL.Path)
+	}
+	if c.Request.URL.Fragment != "" {
+		urlParts = append(urlParts, "#"+c.Request.URL.Fragment)
+	}
+	if c.Request.URL.RawQuery != "" {
+		urlParts = append(urlParts, "?"+c.Request.URL.RawQuery)
+	}
+
+	return strings.Join(urlParts, "")
 }
