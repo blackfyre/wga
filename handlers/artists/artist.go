@@ -103,8 +103,6 @@ func processArtist(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 	slug := c.Request.PathValue("name")
 
 	id := utils.ExtractIdFromString(slug)
-
-	fullUrl := utils.GenerateCurrentPageUrl(c)
 	artist, err := app.FindRecordById("artists", id)
 
 	app.Logger().Info("Processing artist", "slug", slug)
@@ -115,9 +113,10 @@ func processArtist(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 	}
 
 	expectedSlug := utils.GenerateArtistSlug(artist)
+	fullUrl := "/artists/" + expectedSlug
 
 	if slug != expectedSlug {
-		return c.Redirect(http.StatusMovedPermanently, "/artists/"+expectedSlug)
+		return c.Redirect(http.StatusMovedPermanently, fullUrl)
 	}
 
 	content, err := RenderArtistContent(app, c, artist, "#mc-area")
@@ -133,7 +132,7 @@ func processArtist(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 		ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgImageKey, utils.AssetUrl(content.Works[0].Image))
 	}
 
-	// c.Response.Header().Set("HX-Push-Url", fullUrl)
+	c.Response.Header().Set("HX-Push-Url", fullUrl)
 
 	var buff bytes.Buffer
 
