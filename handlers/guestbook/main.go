@@ -157,9 +157,9 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 
-		ag := se.Router.Group("guestook")
+		ag := se.Router.Group("/guestook")
 
-		ag.GET("/", func(c *core.RequestEvent) error {
+		ag.GET("", func(c *core.RequestEvent) error {
 			return EntriesHandler(app, c)
 		})
 
