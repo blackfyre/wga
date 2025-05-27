@@ -84,7 +84,7 @@ func RenderArtistContent(app *pocketbase.PocketBase, c *core.RequestEvent, artis
 			Technique: w.GetString("technique"),
 			Image:     url.GenerateFileUrl("artworks", w.GetString("id"), w.GetString("image"), ""),
 			Thumb:     url.GenerateThumbUrl("artworks", w.GetString("id"), w.GetString("image"), "320x240", ""),
-			Url:       utils.AssetUrl(utils.Slugify(w.GetString("title")) + "-" + w.GetString("id")),
+			Url:       "/artists/" + expectedSlug + "/" + utils.Slugify(w.GetString("title")) + "-" + w.GetString("id"),
 			Jsonld:    fmt.Sprintf(`<script type="application/ld+json">%s</script>`, marshalled),
 			HxTarget:  hxTarget,
 		})
