@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 )
@@ -64,5 +65,7 @@ func normalizedBioExcerpt(d BioExcerptDTO) string {
 // It uses the provided PocketBase instance to query the database and returns
 // a slice of Record pointers and an error, if any.
 func findArtworksByAuthorId(app *pocketbase.PocketBase, authorId string) ([]*core.Record, error) {
-	return app.FindRecordsByFilter("artworks", "author = '"+authorId+"'", "+title", 100, 0)
+	return app.FindRecordsByFilter("artworks", "author ?~ {:authorId}", "+title", 0, 0, dbx.Params{
+		"authorId": authorId,
+	})
 }

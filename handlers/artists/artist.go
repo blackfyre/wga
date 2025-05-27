@@ -65,6 +65,8 @@ func RenderArtistContent(app *pocketbase.PocketBase, c *core.RequestEvent, artis
 
 	content.Jsonld = fmt.Sprintf(`<script type="application/ld+json">%s</script>`, marshalled)
 
+	app.Logger().Debug("Rendering artist content", "artistId", id, "artistName", artist.GetString("name"), "worksCount", len(works))
+
 	for _, w := range works {
 
 		artJsonLd := jsonld.ArtworkJsonLd(w, artist)
