@@ -77,7 +77,12 @@
 
   processes = {
     watch_js.exec = "bun run build:watch:js";
-    templ.exec = "templ generate --watch";
+    templ = {
+      exec = "templ generate --watch";
+      process-compose = {
+        ready_log_line = "(✓) Watching files";
+      };
+    };
     air = {
       exec = "air serve --dev";
       process-compose = {
@@ -86,7 +91,7 @@
             condition = "process_started";
           };
           templ = {
-            condition = "process_started";
+            condition = "process_log_ready";
           };
           mailhog = {
             condition = "process_started";
