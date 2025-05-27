@@ -152,35 +152,12 @@ func RenderArtworkContent(app *pocketbase.PocketBase, c *core.RequestEvent, artw
 	artistId := cmp.Or(artwork.GetStringSlice("author")[0], "")
 
 	var artworkUrl string
-	var artist *core.Record
-
-	if artistId != "" {
-		artist, err := app.FindRecordById("Artists", artistId)
-
-		if err != nil {
-			app.Logger().Error(fmt.Sprintf("Error finding artist (%s) related to artwork (%s)", artistId, &artwork.Id), "error", err.Error())
-		}
-
-		artworkUrl = url.GenerateFullArtworkUrl(url.ArtworkUrlDTO{
-			ArtistName:   artist.GetString("name"),
-			ArtistId:     artist.GetString("id"),
-			ArtworkId:    artwork.GetString("id"),
-			ArtworkTitle: artwork.GetString("title"),
-		})
-
-	} else {
-		artworkUrl = url.GenerateArtworkUrl(url.ArtworkUrlDTO{
-			ArtworkId:    artwork.GetString("id"),
-			ArtworkTitle: artwork.GetString("title"),
-		})
-	}
 
 	content := dto.Artwork{
 		Id:        artwork.GetString("id"),
 		Title:     artwork.GetString("title"),
 		Comment:   artwork.GetString("comment"),
 		Technique: artwork.GetString("technique"),
-		Url:       artworkUrl,
 		Image: dto.Image{
 			Id:        artwork.GetString("id"),
 			Title:     artwork.GetString("title"),
@@ -191,8 +168,22 @@ func RenderArtworkContent(app *pocketbase.PocketBase, c *core.RequestEvent, artw
 		HxTarget: hxTarget,
 	}
 
-	// Check if artist pointer is nil
-	if artist != nil {
+	if artistId != "" {
+		var artist *core.Record
+
+		artist, err := app.FindRecordById("Artists", artistId)
+
+		if err != nil {
+			app.Logger().Error(fmt.Sprintf("Error finding artist (%s) related to artwork (%s)", artistId, artwork.Id), "error", err.Error())
+		}
+
+		artworkUrl = url.GenerateFullArtworkUrl(url.ArtworkUrlDTO{
+			ArtistName:   artist.GetString("name"),
+			ArtistId:     artist.GetString("id"),
+			ArtworkId:    artwork.GetString("id"),
+			ArtworkTitle: artwork.GetString("title"),
+		})
+
 		content.Artist = dto.Artist{
 			Id:         artist.GetString("id"),
 			Name:       artist.GetString("name"),
@@ -203,7 +194,16 @@ func RenderArtworkContent(app *pocketbase.PocketBase, c *core.RequestEvent, artw
 				ArtistName: artist.GetString("name"),
 			}),
 		}
+
+	} else {
+		artworkUrl = url.GenerateArtworkUrl(url.ArtworkUrlDTO{
+			ArtworkId:    artwork.GetString("id"),
+			ArtworkTitle: artwork.GetString("title"),
+		})
 	}
+
+	// Set the URL for the artwork
+	content.Url = artworkUrl
 
 	return content, nil
 }
