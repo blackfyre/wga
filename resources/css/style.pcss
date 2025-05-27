@@ -264,8 +264,8 @@ figure.hidden-caption {
 
 /* Dialog */
 
-dialog {
-  @apply z-50 border-0 shadow-2xl bg-base-100 p-4 rounded max-w-screen-lg;
+/* dialog {
+  @apply z-50;
   display: block;
   inset: 0;
   transition: opacity 0.5s;
@@ -290,7 +290,7 @@ dialog {
     right: 1rem;
     top: 1rem;
   }
-}
+} */
 
 @keyframes slide-in-up {
   0% {
@@ -355,13 +355,11 @@ a[href]:not(:where(
 
 /* define animations for the old and new content */
 ::view-transition-old(slide-it) {
-  animation:
-    180ms cubic-bezier(0.4, 0, 1, 1) both fade-out,
+  animation: 180ms cubic-bezier(0.4, 0, 1, 1) both fade-out,
     600ms cubic-bezier(0.4, 0, 0.2, 1) both slide-to-left;
 }
 ::view-transition-new(slide-it) {
-  animation:
-    420ms cubic-bezier(0, 0, 0.2, 1) 90ms both fade-in,
+  animation: 420ms cubic-bezier(0, 0, 0.2, 1) 90ms both fade-in,
     600ms cubic-bezier(0.4, 0, 0.2, 1) both slide-from-right;
 }
 

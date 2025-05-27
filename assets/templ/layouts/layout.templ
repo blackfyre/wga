@@ -60,13 +60,13 @@ templ LayoutBase(bodyClasses string, HtmxTargetArea string) {
 				<div class="indeterminate" style="background-color: #489393;"></div>
 			</div>
 			{ children... }
-			<dialog id="d"></dialog>
+			<dialog id="d" class="modal modal-bottom sm:modal-middle"></dialog>
 			<a
 				href="#"
 				hx-get="/feedback"
-				hx-on:htmx:after-request="wga.dialog.open()"
+				hx-on:click="wga.dialog.open()"
 				hx-target="#d"
-				hx-select="section.container"
+				hx-select=".modal-box, form[method=dialog].modal-backdrop"
 				class="btn btn-primary is-feedback no-animation"
 				hx-swap="innerHTML"
 			>Feedback</a>

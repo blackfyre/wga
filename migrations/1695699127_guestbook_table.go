@@ -35,7 +35,7 @@ func init() {
 				Id:   "guestbooks_name",
 				Name: "name",
 			},
-			&core.TextField{
+			&core.EmailField{
 				Id:   "guestbooks_email",
 				Name: "email",
 			},
