@@ -20,12 +20,12 @@ import (
 )
 
 type GuestBookMessage struct {
-	Name          string `json:"name" form:"name" query:"name" validate:"required"`
-	Email         string `json:"email" form:"email" query:"email" validate:"required"`
+	Name          string `json:"name" form:"sender_name" query:"name" validate:"required"`
+	Email         string `json:"email" form:"sender_email" query:"email" validate:"required"`
 	Location      string `json:"location" form:"location" query:"location" validate:"required"`
 	Message       string `json:"message" form:"message" query:"message" validate:"required"`
-	HoneyPotName  string `json:"honey_pot_name" form:"honey_pot_name" query:"honey_pot_name"`
-	HoneyPotEmail string `json:"honey_pot_email" form:"honey_pot_email" query:"honey_pot_email"`
+	HoneyPotName  string `json:"honey_pot_name" form:"name" query:"honey_pot_name"`
+	HoneyPotEmail string `json:"honey_pot_email" form:"email" query:"honey_pot_email"`
 }
 
 func yearOptions() []string {
