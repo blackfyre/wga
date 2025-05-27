@@ -44,7 +44,7 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 		se.Router.GET("/sitemap/*", apis.Static(os.DirFS("./wga_sitemap"), false))
 
 		// "Static" pages
-		se.Router.GET("/pages/:slug", func(c *core.RequestEvent) error {
+		se.Router.GET("/pages/{slug}", func(c *core.RequestEvent) error {
 
 			slug := c.Request.PathValue("slug")
 			fullUrl := tmplUtils.AssetUrl("/pages/" + slug)
