@@ -34,22 +34,22 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 	artistSlug := c.Request.PathValue("name")
 	artworkSlug := c.Request.PathValue("awid")
 
-	// split the slug on the last dash and use the last part as the artist id
+	// Split the slug on the last dash and use the last part as the artist id
 	artistSlugParts := strings.Split(artistSlug, "-")
 	artistId := artistSlugParts[len(artistSlugParts)-1]
 
 	artist, err := app.FindRecordById("artists", artistId)
 
-	// if the artist is not found, return a not found error
+	// If the artist is not found, return a not found error
 	if err != nil {
 		app.Logger().Error("Artist not found: ", artistSlug, err)
 		return errs.ErrArtistNotFound
 	}
 
-	// generate the expected slug for the artist
+	// Generate the expected slug for the artist
 	expectedArtistSlug := artist.GetString("slug") + "-" + artist.GetString("id")
 
-	// split the slug on the last dash and use the last part as the artwork id
+	// Split the slug on the last dash and use the last part as the artwork id
 	artworkSlugParts := strings.Split(artworkSlug, "-")
 	artworkId := artworkSlugParts[len(artworkSlugParts)-1]
 
@@ -61,10 +61,10 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 		return errs.ErrArtworkNotFound
 	}
 
-	// generate the expected slug for the artwork
+	// Generate the expected slug for the artwork
 	expectedArtworkSlug := utils.Slugify(aw.GetString("title")) + "-" + aw.GetString("id")
 
-	// redirect to the correct URL if either slug is not correct
+	// Redirect to the correct URL if either slug is not correct
 	if artistSlug != expectedArtistSlug || artworkSlug != expectedArtworkSlug {
 		return c.Redirect(http.StatusMovedPermanently, "/artists/"+expectedArtistSlug+"/"+expectedArtworkSlug)
 	}
@@ -115,6 +115,8 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 		}
 
 		schoolCollector = append(schoolCollector, r.GetString("name"))
+
+		content.Artist.Schools = strings.Join(schoolCollector, ", ")
 
 	}
 
