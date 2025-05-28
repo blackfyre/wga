@@ -24,21 +24,13 @@ func main() {
 		DefaultDataDir: "./wga_data",
 	})
 
-	// app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
-	// 	e.Router.Use(middleware.CSRFWithConfig(middleware.CSRFConfig{
-	// 		TokenLookup: "header:X-XSRF-TOKEN",
-	// 	}))
-
-	// 	return nil
-	// })
-
 	handlers.RegisterHandlers(app)
 	hooks.RegisterHooks(app)
 	crontab.RegisterCronJobs(app)
 
 	migratecmd.MustRegister(app, app.RootCmd, migratecmd.Config{
-		// enable auto creation of migration files when making collection changes in the Admin UI
-		// (the isGoRun check is to enable it only during development)
+		// Enable auto creation of migration files when making collection changes in the Admin UI
+		// (the `isGoRun` check is to enable it only during development)
 		Automigrate: false,
 	})
 

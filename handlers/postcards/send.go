@@ -37,14 +37,19 @@ func renderForm(artworkId string, app *pocketbase.PocketBase, c *core.RequestEve
 	}
 
 	var buf bytes.Buffer
+	var editor components.PostcardEditorDTO
 
-	err = components.PostcardEditor(components.PostcardEditorDTO{
-		Image:     url.GenerateFileUrl("artworks", artworkId, r.GetString("image"), ""),
-		ImageId:   artworkId,
-		Title:     r.GetString("title"),
-		Comment:   r.GetString("comment"),
-		Technique: r.GetString("technique"),
-	}).Render(ctx, &buf)
+	editor.ImageId = artworkId
+	if r.GetString("image") == "" {
+		editor.Image = utils.AssetUrl("/assets/images/no-image.png")
+	} else {
+		editor.Image = url.GenerateFileUrl("artworks", artworkId, r.GetString("image"), "")
+	}
+	editor.Title = r.GetString("title")
+	editor.Comment = r.GetString("comment")
+	editor.Technique = r.GetString("technique")
+
+	err = components.PostcardEditor(editor).Render(ctx, &buf)
 
 	if err != nil {
 		app.Logger().Error(fmt.Sprintf("Failed to render the postcard editor with image_id %s", artworkId), "error", err.Error())

@@ -17,7 +17,7 @@ The project is built using the following technologies:
 - [htmx](https://htmx.org) - A javascript library for building web applications
 - [TailwindCSS](https://tailwindcss.com/) - A utility-first CSS framework
   - [DaisyUI](https://daisyui.com/) - A component library for TailwindCSS
-- [Go](https://go.dev/) 1.21+ - A programming language for building web applications
+- [Go](https://go.dev/) 1.24+ - A programming language for building web applications
   - [PocketBase](https://pocketbase.io) - A Go based SaaS platform for building web applications
   - [Goreleaser](https://goreleaser.com/) - A tool for building and releasing Go applications
 
@@ -88,8 +88,8 @@ The application will start on port 8090 by default. You can access it by going t
 
 To build the application you will need to have the following installed:
 
-- [Go](https://go.dev/) 1.21+
-- [Bun](https://bun.sh/) v1.1+
+- [Go](https://go.dev/) 1.24+
+- [Bun](https://bun.sh/) v1.2+
 - [Goreleaser](https://goreleaser.com/)
 - [Templ](https://templ.guide/)
 

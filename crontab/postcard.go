@@ -110,6 +110,8 @@ func updatePostcardRecord(r *core.Record, app *pocketbase.PocketBase) {
 // Note: The sendPostcards function assumes that the necessary dependencies are already imported.
 func sendPostcards(app *pocketbase.PocketBase) {
 
+	app.Logger().Info("Starting postcard cron job...")
+
 	var frequency = os.Getenv("WGA_POSTCARD_FREQUENCY")
 
 	if frequency == "" {

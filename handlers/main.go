@@ -22,6 +22,7 @@ import (
 // The cache is automatically cleaned up every 30 minutes.
 func RegisterHandlers(app *pocketbase.PocketBase) {
 
+	app.Logger().Debug("Registering route handlers...")
 	p := bluemonday.NewPolicy()
 
 	feedback.RegisterHandlers(app)
