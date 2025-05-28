@@ -1,19 +1,5 @@
 package dto
 
-type Image struct {
-	Thumb     string
-	Image     string
-	Title     string
-	Technique string
-	Comment   string
-	Url       string
-	Id        string
-	Jsonld interface{}
-	Artist
-}
-
-type ImageGrid []Image
-
 type Artist struct {
 	Id         string
 	Name       string
@@ -25,6 +11,7 @@ type Artist struct {
 	Jsonld     string
 	Bio        string
 	Works      ImageGrid
+	HxTarget   string
 }
 
 type ArtistsView struct {
@@ -33,6 +20,7 @@ type ArtistsView struct {
 	Pagination string
 	Jsonld     string
 	QueryStr   string
+	HxTarget   string
 }
 
 type Artwork struct {
@@ -42,6 +30,7 @@ type Artwork struct {
 	Technique string
 	Jsonld    string
 	Url       string
+	HxTarget  string
 	Image
 	Artist
 }
@@ -51,9 +40,10 @@ type ArtworkSearchDTO struct {
 	ArtTypeOptions     map[string]string
 	ArtSchoolOptions   map[string]string
 	ActiveFilterValues *ArtworkSearchFilterValues
-	ArtistNameList     []string
+	ArtistNameList     map[string]string
 	NewFilterValues    string
 	Results            ArtworkSearchResultDTO
+	HxTarget           string
 }
 
 type ArtworkSearchFilterValues struct {
@@ -68,4 +58,16 @@ type ArtworkSearchResultDTO struct {
 	ActiveFiltering bool
 	Artworks        ImageGrid
 	Pagination      string
+	HxTarget        string
+}
+
+type ArtistNameListEntry struct {
+	Url   string `json:"url"`
+	Label string `json:"label"`
+}
+
+type DualViewDto struct {
+	Left           string
+	Right          string
+	ArtistNameList []ArtistNameListEntry
 }

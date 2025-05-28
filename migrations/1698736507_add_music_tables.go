@@ -3,166 +3,134 @@ package migrations
 import (
 	"log"
 
-	"github.com/blackfyre/wga/handlers"
-	"github.com/pocketbase/dbx"
-	"github.com/pocketbase/pocketbase/daos"
+	"github.com/pocketbase/pocketbase/core"
 	m "github.com/pocketbase/pocketbase/migrations"
-	"github.com/pocketbase/pocketbase/models"
-	"github.com/pocketbase/pocketbase/models/schema"
 )
 
 func init() {
-	m.Register(func(db dbx.Builder) error {
-		dao := daos.New(db)
+	m.Register(func(app core.App) error {
 
-		collection := &models.Collection{}
+		composerCollection := core.NewBaseCollection("Music_composer")
 
-		collection.Name = "Music_composer"
-		collection.Type = models.CollectionTypeBase
-		collection.System = false
-		collection.Id = "music_composer"
-		collection.MarkAsNew()
-		collection.Schema = schema.NewSchema(
-			&schema.SchemaField{
-				Id:      "music_composer_id",
-				Name:    "id",
-				Type:    schema.FieldTypeText,
-				Options: &schema.TextOptions{},
-			},
-			&schema.SchemaField{
+		composerCollection.Name = "Music_composer"
+		composerCollection.System = false
+		composerCollection.Id = "music_composer"
+		composerCollection.MarkAsNew()
+
+		composerCollection.Fields.Add(
+			&core.TextField{
 				Id:          "music_composer_name",
 				Name:        "name",
-				Type:        schema.FieldTypeText,
-				Options:     &schema.TextOptions{},
+				Required:    true,
 				Presentable: true,
 			},
-			&schema.SchemaField{
-				Id:   "music_composer_century",
-				Name: "century",
-				Type: schema.FieldTypeSelect,
-				Options: &schema.SelectOptions{
-					Values:    []string{"12", "13", "14", "15", "16", "17", "18", "19", "20", "21"},
-					MaxSelect: 1,
-				},
+			&core.SelectField{
+				Id:          "music_composer_century",
+				Name:        "century",
+				Values:      []string{"12", "13", "14", "15", "16", "17", "18", "19", "20", "21"},
+				Required:    true,
+				MaxSelect:   1,
 				Presentable: true,
 			},
-			&schema.SchemaField{
-				Id:          "music_composer_date",
-				Name:        "date",
-				Type:        schema.FieldTypeText,
-				Options:     &schema.TextOptions{},
-				Presentable: true,
-			},
-			&schema.SchemaField{
+			&core.TextField{
 				Id:          "music_composer_language",
 				Name:        "language",
-				Type:        schema.FieldTypeText,
-				Options:     &schema.TextOptions{},
 				Presentable: true,
+			},
+			&core.AutodateField{
+				Name:     "created",
+				OnCreate: true,
+			},
+			&core.AutodateField{
+				Name:     "updated",
+				OnCreate: true,
+				OnUpdate: true,
 			},
 		)
 
-		err := dao.SaveCollection(collection)
+		err := app.Save(composerCollection)
 		if err != nil {
 			// Handle the error, for example log it and return
 			log.Printf("Error saving collection: %v", err)
 			return err
 		}
 
-		collection.Name = "Music_song"
-		collection.Type = models.CollectionTypeBase
-		collection.System = false
-		collection.Id = "music_song"
-		collection.MarkAsNew()
-		collection.Schema = schema.NewSchema(
-			&schema.SchemaField{
-				Id:          "composer_id",
-				Name:        "composer_id",
-				Type:        schema.FieldTypeText,
-				Options:     &schema.TextOptions{},
-				Presentable: true,
-			},
-			&schema.SchemaField{
+		songCollection := core.NewBaseCollection("Music_song")
+
+		songCollection.Name = "Music_song"
+		songCollection.System = false
+		songCollection.Id = "music_song"
+		songCollection.MarkAsNew()
+
+		songCollection.Fields.Add(
+			&core.TextField{
 				Id:          "music_song_title",
 				Name:        "title",
-				Type:        schema.FieldTypeText,
-				Options:     &schema.TextOptions{},
+				Required:    true,
 				Presentable: true,
 			},
-			&schema.SchemaField{
-				Id:      "music_song_url",
-				Name:    "url",
-				Type:    schema.FieldTypeText,
-				Options: &schema.TextOptions{},
+			&core.RelationField{
+				Id:           "music_song_composer",
+				Name:         "composer",
+				CollectionId: "music_composer",
+				MinSelect:    1,
+				MaxSelect:    20,
 			},
-			&schema.SchemaField{
-				Id:          "music_song_source",
-				Name:        "source",
-				Type:        schema.FieldTypeFile,
-				Options:     &schema.FileOptions{},
-				Presentable: true,
+			&core.FileField{
+				Id:        "music_song_source",
+				Name:      "source",
+				MimeTypes: []string{"audio/mpeg", "audio/mp3"},
+				MaxSize:   1024 * 1024 * 5,
+				Required:  true,
+			},
+			&core.AutodateField{
+				Name:     "created",
+				OnCreate: true,
+			},
+			&core.AutodateField{
+				Name:     "updated",
+				OnCreate: true,
+				OnUpdate: true,
 			},
 		)
 
-		err = dao.SaveCollection(collection)
+		err = app.Save(songCollection)
 
 		if err != nil {
 			return err
 		}
 
-		composers := handlers.GetParsedMusics()
+		// composers := handlers.GetParsedMusics()
 
-		for _, composer := range composers {
+		// for _, composer := range composers {
 
-			q := db.Insert("music_composer", dbx.Params{
-				"id":       composer.ID,
-				"name":     composer.Name,
-				"date":     composer.Date,
-				"century":  composer.Century,
-				"language": composer.Language,
-			})
+		// 	composerRecord := core.NewRecord(composerCollection)
+		// 	composerRecord.Set("name", composer.Name)
+		// 	composerRecord.Set("century", composer.Century)
+		// 	composerRecord.Set("language", composer.Language)
 
-			_, err = q.Execute()
+		// 	err = app.Save(composerRecord)
 
-			if err != nil {
-				return err
-			}
+		// 	if err != nil {
+		// 		app.Logger().Error("Error saving composer record: %v", err)
+		// 	}
+		// }
 
-			for _, song := range composer.Songs {
-				q := db.Insert("music_song", dbx.Params{
-					"composer_id": song.ComposerID,
-					"title":       song.Title,
-					"url":         song.URL,
-					"source":      song.Source,
-				})
+		return nil
+	}, func(app core.App) error {
 
-				_, err = q.Execute()
+		err := deleteCollection(app, "Music_composer")
 
-				if err != nil {
-					return err
-				}
-			}
+		if err != nil {
+			return err
+		}
 
+		err = deleteCollection(app, "Music_song")
+
+		if err != nil {
+			return err
 		}
 
 		return nil
-	}, func(db dbx.Builder) error {
-		q := db.DropTable("music_song")
-		_, err := q.Execute()
-
-		if err != nil {
-			log.Printf("Error executing drop music_song query: %v", err)
-			return err
-		}
-
-		q = db.DropTable("music_composer")
-		_, err = q.Execute()
-
-		if err != nil {
-			log.Printf("Error executing drop music_composer query: %v", err)
-			return err
-		}
-
-		return err
 	})
 }

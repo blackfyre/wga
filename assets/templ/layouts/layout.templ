@@ -1,11 +1,30 @@
 package layouts
 
 import (
+	"encoding/json"
 	"github.com/blackfyre/wga/assets/templ/components"
 	"github.com/blackfyre/wga/assets/templ/utils"
 )
 
-templ layout_base() {
+func htmxDefaults() string {
+	settings := map[string]interface{}{
+		"globalViewTransitions": true,
+		"selfRequestsOnly":      true,
+		"allowScriptTags":       false,
+	}
+
+	bytes, _ := json.Marshal(settings)
+	return string(bytes)
+}
+
+func getHtmxDefaultArea(target string) string {
+	if target == "" {
+		return "#mc-area"
+	}
+	return target
+}
+
+templ LayoutBase(bodyClasses string, HtmxTargetArea string) {
 	<!DOCTYPE html>
 	<html class="has-navbar-fixed-top" style="height: 100%;">
 		<head>
@@ -13,6 +32,7 @@ templ layout_base() {
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
 			<title>{ utils.GetTitle(ctx) } </title>
 			<meta name="description" content={ utils.GetDescription(ctx) }/>
+			<meta name="htmx-config" content={ htmxDefaults() }/>
 			for key, content := range utils.GetOpenGraphTags(ctx) {
 				<meta name={ key } content={ content }/>
 			}
@@ -33,22 +53,20 @@ templ layout_base() {
 			<meta name="msapplication-TileColor" content="#013365"/>
 			<meta name="msapplication-config" content="/assets/browserconfig.xml"/>
 			<meta name="theme-color" content="#013365"/>
-			<link rel="stylesheet" type="text/css" href="https://unpkg.com/trix@2.0.0/dist/trix.css"/>
-			<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.0.0/animate.min.css"/>
 			<link rel="stylesheet" href="/assets/css/vendor/cookieconsent.css"/>
 		</head>
-		<body class="customBody pt-20" hx-indicator=".progress-indicator" hx-target="#mc-area" hx-select="#mc-area" hx-swap="outerHTML">
+		<body class={ bodyClasses } hx-indicator=".progress-indicator" hx-target={ getHtmxDefaultArea(HtmxTargetArea) } hx-select={ getHtmxDefaultArea(HtmxTargetArea) } hx-swap="outerHTML">
 			<div class="progress-indicator" style="height: 3px;">
 				<div class="indeterminate" style="background-color: #489393;"></div>
 			</div>
 			{ children... }
-			<dialog id="d"></dialog>
+			<dialog id="d" class="modal modal-bottom sm:modal-middle"></dialog>
 			<a
 				href="#"
 				hx-get="/feedback"
-				hx-on:htmx:after-request="wga.openDialog()"
+				hx-on:click="wga.dialog.open()"
 				hx-target="#d"
-				hx-select="section.container"
+				hx-select=".modal-box, form[method=dialog].modal-backdrop"
 				class="btn btn-primary is-feedback no-animation"
 				hx-swap="innerHTML"
 			>Feedback</a>
@@ -61,10 +79,10 @@ templ layout_base() {
 }
 
 templ LayoutMain() {
-	@layout_base() {
+	@LayoutBase("pt-20", "") {
 		@components.TopNav()
 		if utils.GetEnvironment(ctx) != "production" {
-			<section class="container my-6">
+			<section class="container my-6 mx-auto">
 				<div role="alert" class="alert alert-warning">
 					<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
 					<span>
@@ -89,7 +107,7 @@ templ LayoutMain() {
 }
 
 templ LayoutSlim() {
-	@layout_base() {
+	@LayoutBase("pt-20", "") {
 		<main id="mc-area">
 			{ children... }
 		</main>

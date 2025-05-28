@@ -10,44 +10,67 @@
   "emmet.includeLanguages": {
     "templ": "html"
   },
+  "tailwindCSS.includeLanguages": {
+    "templ": "html"
+  },
   "cSpell.words": [
     "Artform",
+    "Autodate",
     "Automigrate",
     "awid",
     "bluemonday",
     "bulma",
     "cachix",
     "Cloners",
+    "combobox",
     "cssnano",
     "daisyui",
     "daos",
     "devenv",
+    "direnv",
+    "enctype",
     "esbuild",
+    "evenodd",
+    "flyctl",
     "fontawesome",
     "fsys",
     "Galicz",
     "goarch",
     "godotenv",
+    "golangci",
     "Goreleaser",
+    "gotest",
+    "govet",
+    "grokify",
+    "guestook",
     "Htmx",
     "isaack",
     "joho",
+    "klauspost",
     "koedijck",
     "labstack",
+    "lazygit",
     "Lexend",
+    "linecap",
+    "linejoin",
+    "mailhog",
     "Mailpit",
     "metafile",
     "migratecmd",
     "Miklós",
+    "mjml",
     "nixos",
     "nixpkgs",
     "onclick",
     "outbase",
     "outdir",
     "pcss",
+    "pkgs",
     "pocketbase",
     "Recaptcha",
     "sabloger",
+    "sitebuild",
+    "Sprintf",
     "tailwindcss",
     "templ",
     "tmpl",
@@ -55,5 +78,13 @@
     "Upsert",
     "viewerjs"
   ],
-  "codeQL.githubDatabase.download": "never"
+  "codeQL.githubDatabase.download": "never",
+  "github.copilot.chat.codeGeneration.instructions": [
+    {
+      "file": "./.vscode/daisyui.md"
+    },
+    {
+      "file": "./.vscode/bun.md"
+    }
+  ]
 }

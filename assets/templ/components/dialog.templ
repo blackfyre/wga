@@ -1,0 +1,25 @@
+package components
+
+templ DialogBody() {
+	<div class="modal-box w-auto max-w-5xl">
+		<form method="dialog">
+			<button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+		</form>
+		{ children... }
+	</div>
+	<form method="dialog" class="modal-backdrop">
+		<button>close</button>
+	</form>
+}
+
+templ DialogButton(href string, text string) {
+	<a
+		hx-get={ href }
+		hx-target="#d"
+		hx-select=".modal-box, form[method=dialog].modal-backdrop"
+		class="btn btn-primary no-animation"
+		hx-swap="innerHTML"
+	>
+		{ text }
+	</a>
+}

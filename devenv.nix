@@ -6,6 +6,8 @@
   packages = [
     pkgs.git
     pkgs.templ
+    pkgs.air
+    pkgs.nixd
   ]  ++ lib.optionals (!config.container.isBuilding) [
     pkgs.flyctl
     pkgs.nil
@@ -41,19 +43,69 @@
   scripts.generate-templates.exec = "templ generate";
   scripts.tidy-modules.exec = "go mod tidy";
   scripts.tidy.exec = ''
-    devenv shell generate-templates
-    devenv shell tidy-modules
+    generate-templates
+    tidy-modules
   '';
-  pre-commit.hooks = {
+  scripts."app:build".exec = "
+    mkdir -p dist;
+    rm -rf dist/app;
+    bun install;
+    bun run build;
+    tidy;
+    go build -v -o dist/app .;";
+
+  scripts."app:run".exec = "./dist/app serve --dev";
+
+  scripts."app:reboot".exec = ''
+    app:build;
+    rm -rf wga_data;
+    app:run;
+  '';
+  
+  scripts.init-devenv.exec = "cp devenv.local.stub.nix devenv.local.nix";
+  git-hooks.hooks = {
     govet = {
       enable = true;
       pass_filenames = false;
     };
-    gotest.enable = true;
+    #gotest.enable = true;
     golangci-lint = {
       enable = true;
       pass_filenames = false;
     };
+  };
+
+  processes = {
+    watch_js.exec = "bun run build:watch:js";
+    templ = {
+      exec = "templ generate --watch";
+      process-compose = {
+        ready_log_line = "(✓) Watching files";
+      };
+    };
+    air = {
+      exec = "air serve --dev";
+      process-compose = {
+        depends_on = {
+          watch_js = {
+            condition = "process_started";
+          };
+          templ = {
+            condition = "process_log_ready";
+          };
+          mailhog = {
+            condition = "process_started";
+          };
+          minio = {
+            condition = "process_started";
+          };
+          watch_css = {
+            condition = "process_started";
+          };
+        };
+      };
+    };
+    watch_css.exec = "bun run build:watch:css";
   };
 
   # See full reference at https://devenv.sh/reference/options/

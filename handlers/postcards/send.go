@@ -1,50 +1,60 @@
 package postcards
 
 import (
+	"bytes"
+	"cmp"
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/blackfyre/wga/assets/templ/components"
 	"github.com/blackfyre/wga/utils"
 	"github.com/blackfyre/wga/utils/url"
-	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
+	"github.com/pocketbase/pocketbase/core"
 )
 
-func sendPostcard(app *pocketbase.PocketBase, c echo.Context) error {
+func sendPostcard(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
-	artworkId, err := url.GetRequiredQueryParam(c, "awid")
+	artworkId := cmp.Or(c.Request.URL.Query().Get("awid"), "")
 
-	if err != nil {
-		app.Logger().Error("Failed to get required query param", "error", err.Error())
+	if artworkId == "" {
+		app.Logger().Error("No artwork id provided for postcard", "ip", c.RealIP())
 		return utils.BadRequestError(c)
 	}
 
 	return renderForm(artworkId, app, c)
 }
 
-func renderForm(artworkId string, app *pocketbase.PocketBase, c echo.Context) error {
+func renderForm(artworkId string, app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	ctx := context.Background()
 
-	r, err := app.Dao().FindRecordById("artworks", artworkId)
+	r, err := app.FindRecordById("artworks", artworkId)
 
 	if err != nil {
 		app.Logger().Error("Failed to find artwork "+artworkId, "error", err.Error())
 		return utils.NotFoundError(c)
 	}
 
-	err = components.PostcardEditor(components.PostcardEditorDTO{
-		Image:     url.GenerateFileUrl("artworks", artworkId, r.GetString("image"), ""),
-		ImageId:   artworkId,
-		Title:     r.GetString("title"),
-		Comment:   r.GetString("comment"),
-		Technique: r.GetString("technique"),
-	}).Render(ctx, c.Response().Writer)
+	var buf bytes.Buffer
+	var editor components.PostcardEditorDTO
+
+	editor.ImageId = artworkId
+	if r.GetString("image") == "" {
+		editor.Image = utils.AssetUrl("/assets/images/no-image.png")
+	} else {
+		editor.Image = url.GenerateFileUrl("artworks", artworkId, r.GetString("image"), "")
+	}
+	editor.Title = r.GetString("title")
+	editor.Comment = r.GetString("comment")
+	editor.Technique = r.GetString("technique")
+
+	err = components.PostcardEditor(editor).Render(ctx, &buf)
 
 	if err != nil {
 		app.Logger().Error(fmt.Sprintf("Failed to render the postcard editor with image_id %s", artworkId), "error", err.Error())
 		return utils.ServerFaultError(c)
 	}
 
-	return nil
+	return c.HTML(http.StatusOK, buf.String())
 }

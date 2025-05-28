@@ -3,14 +3,15 @@ package pages
 import (
 	"crypto/md5"
 	"fmt"
+	"github.com/blackfyre/wga/assets/templ/components"
+	"github.com/blackfyre/wga/assets/templ/dto"
 	"github.com/blackfyre/wga/assets/templ/layouts"
-	"github.com/blackfyre/wga/models"
 )
 
 type GuestbookView struct {
 	SelectedYear string
 	YearOptions  []string
-	Entries      []*models.GuestbookEntry
+	Entries      dto.GuestbookEntries
 }
 
 templ GuestbookPage(v GuestbookView) {
@@ -20,7 +21,7 @@ templ GuestbookPage(v GuestbookView) {
 }
 
 templ GuestbookBlock(v GuestbookView) {
-	<section class="container">
+	<section class="container mx-auto">
 		<nav class="flex mb-6" aria-label="Breadcrumb">
 			<ol role="list" class="flex items-center space-x-4">
 				<li>
@@ -58,9 +59,9 @@ templ GuestbookBlock(v GuestbookView) {
 				<a
 					href="#"
 					hx-get="/guestbook/add"
-					hx-on:click="wga.openDialog()"
+					hx-on:click="wga.dialog.open()"
 					hx-target="#d"
-					hx-select="section.container"
+					hx-select=".modal-box, form[method=dialog].modal-backdrop"
 					hx-swap="innerHTML"
 					class="btn btn-primary"
 				>Add Entry</a>
@@ -91,13 +92,8 @@ templ GuestbookBlock(v GuestbookView) {
 }
 
 templ GuestbookEntryForm() {
-	<section class="container">
-		<button class="btn btn-ghost close-dialog" hx-on:click="wga.closeDialog();">
-			<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-				<path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"></path>
-			</svg>
-		</button>
-		<h1 class="text-2xl mb-4">Leave an enty!</h1>
+	@components.DialogBody() {
+		<h1 class="text-2xl mb-4">Leave an entry!</h1>
 		<p>Leave your mark in the guestbook!</p>
 		<p>Be kind and respectful to others.</p>
 		<p>Messages are moderated and will be reviewed before being published.</p>
@@ -158,15 +154,15 @@ templ GuestbookEntryForm() {
 				<button class="btn btn-primary" type="submit">
 					Leave entry
 				</button>
-				<button type="button" class="btn btn-neutral" hx-on:click="wga.closeDialog();">
+				<button type="button" class="btn btn-neutral" hx-on:click="wga.dialog.close();">
 					Cancel
 				</button>
 			</div>
 		</form>
-	</section>
+	}
 }
 
-templ GuestbookEntries(entries []*models.GuestbookEntry) {
+templ GuestbookEntries(entries dto.GuestbookEntries) {
 	<div class="flow-root">
 		<div class="divide-y divide-gray-200 gb-entries">
 			for _, entry := range entries {
@@ -176,7 +172,7 @@ templ GuestbookEntries(entries []*models.GuestbookEntry) {
 	</div>
 }
 
-templ GuestbookEntry(entry *models.GuestbookEntry) {
+templ GuestbookEntry(entry dto.GuestbookEntry) {
 	if (entry.Message == "") {
 		return
 	}

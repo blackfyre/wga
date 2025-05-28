@@ -3,33 +3,44 @@ package url
 import (
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/blackfyre/wga/utils"
 	"github.com/labstack/echo/v5"
-	"github.com/pocketbase/pocketbase/models"
+	"github.com/pocketbase/pocketbase/core"
 )
 
 func GenerateFileUrl(collection string, collectionId string, fileName string, token string) string {
 
-	return fmt.Sprintf(
-		"/api/files/%s/%s/%s?token=%s",
+	url := fmt.Sprintf(
+		"/api/files/%s/%s/%s",
 		collection,
 		collectionId,
 		fileName,
-		url.QueryEscape(token),
 	)
+
+	if token != "" {
+		url += fmt.Sprintf("?token=%s", token)
+	}
+
+	return url
 }
 
 func GenerateThumbUrl(collection string, collectionId string, fileName string, thumbSize string, token string) string {
 
-	return fmt.Sprintf(
-		"/api/files/%s/%s/%s?token=%s&thumb=%s",
+	url := fmt.Sprintf(
+		"/api/files/%s/%s/%s?thumb=%s",
 		collection,
 		collectionId,
 		fileName,
-		url.QueryEscape(token),
 		thumbSize,
 	)
+
+	if token != "" {
+		url += fmt.Sprintf("&token=%s", token)
+	}
+
+	return url
 }
 
 type ArtworkUrlDTO struct {
@@ -37,17 +48,20 @@ type ArtworkUrlDTO struct {
 	ArtistId     string
 	ArtworkTitle string
 	ArtworkId    string
-	BaseUrl      string
+}
+
+func GenerateFullArtworkUrl(d ArtworkUrlDTO) string {
+	return fmt.Sprintf("/artists/%v-%v/artworks/%v-%v", utils.Slugify(d.ArtistName), d.ArtistId, utils.Slugify(d.ArtistName), d.ArtworkId)
 }
 
 func GenerateArtworkUrl(d ArtworkUrlDTO) string {
-	return fmt.Sprintf("%v/artists/%v-%v/artworks/%v-%v", d.BaseUrl, utils.Slugify(d.ArtistName), d.ArtistId, utils.Slugify(d.ArtistName), d.ArtworkId)
+	return fmt.Sprintf("/artworks/%v-%v", utils.Slugify(d.ArtworkTitle), d.ArtworkId)
 }
 
-func GenerateArtistUrlFromRecord(r *models.Record) string {
+func GenerateArtistUrlFromRecord(r *core.Record) string {
 	return GenerateArtistUrl(ArtistUrlDTO{
 		ArtistName: r.GetString("name"),
-		ArtistId:   r.Id,
+		ArtistId:   r.GetString("id"),
 	})
 }
 
@@ -61,12 +75,41 @@ func GenerateArtistUrl(d ArtistUrlDTO) string {
 	return fmt.Sprintf("%v/artists/%v-%v", d.BaseUrl, utils.Slugify(d.ArtistName), d.ArtistId)
 }
 
+func GenerateDualModeUrl() url.URL {
+	return url.URL{
+		Path: "/dual-mode",
+	}
+}
+
 func GetRequiredQueryParam(c echo.Context, param string) (string, error) {
 	p := c.QueryParam(param)
 
 	if p == "" {
-		return "", fmt.Errorf("Missing required query parameter: %v", param)
+		return "", fmt.Errorf("missing required query parameter: %v", param)
 	}
 
 	return p, nil
+}
+
+func GenerateCurrentPageUrl(c *core.RequestEvent) string {
+	if c == nil || c.Request == nil {
+		return ""
+	}
+
+	var urlParts []string
+
+	if c.Request.URL.Scheme != "" && c.Request.URL.Host != "" {
+		urlParts = append(urlParts, c.Request.URL.Scheme+"://"+c.Request.URL.Host)
+	}
+	if c.Request.URL.Path != "" {
+		urlParts = append(urlParts, c.Request.URL.Path)
+	}
+	if c.Request.URL.Fragment != "" {
+		urlParts = append(urlParts, "#"+c.Request.URL.Fragment)
+	}
+	if c.Request.URL.RawQuery != "" {
+		urlParts = append(urlParts, "?"+c.Request.URL.RawQuery)
+	}
+
+	return strings.Join(urlParts, "")
 }

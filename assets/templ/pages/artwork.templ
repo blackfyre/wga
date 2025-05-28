@@ -13,12 +13,45 @@ templ ArtworkPage(aw dto.Artwork) {
 	}
 }
 
+templ ArtistListBreadcrumb(aw dto.Artwork) {
+	<li>
+		<div class="flex items-center">
+			<svg class="h-5 w-5 flex-shrink-0 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+				<path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"></path>
+			</svg>
+			<a href="/artists" hx-get="/artists" hx-target={ aw.HxTarget } class="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700">Artists</a>
+		</div>
+	</li>
+}
+
+templ ArtworksBreadcrumb(aw dto.Artwork) {
+	<li>
+		<div class="flex items-center">
+			<svg class="h-5 w-5 flex-shrink-0 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+				<path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"></path>
+			</svg>
+			<a href="/artworks" hx-get="/artworks" hx-target={ aw.HxTarget } class="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700">Artworks</a>
+		</div>
+	</li>
+}
+
+templ ArtistBreadcrumbItem(aw dto.Artwork) {
+	<li>
+		<div class="flex items-center">
+			<svg class="h-5 w-5 flex-shrink-0 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+				<path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"></path>
+			</svg>
+			<a href={ templ.URL(aw.Artist.Url) } hx-get={ aw.Artist.Url } hx-target={ aw.HxTarget } class="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700">{ aw.Artist.Name }</a>
+		</div>
+	</li>
+}
+
 templ ArtworkBlock(aw dto.Artwork) {
 	<head>
 		<title>{ utils.GetTitle(ctx) }</title>
 	</head>
 	<section class="section">
-		<div class="container">
+		<div class="container mx-auto">
 			<nav class="flex mb-6" aria-label="Breadcrumb">
 				<ol role="list" class="flex items-center space-x-4">
 					<li>
@@ -31,28 +64,18 @@ templ ArtworkBlock(aw dto.Artwork) {
 							</a>
 						</div>
 					</li>
+					if aw.Artist.Url != "" {
+						@ArtistListBreadcrumb(aw)
+						@ArtistBreadcrumbItem(aw)
+					} else {
+						@ArtworksBreadcrumb(aw)
+					}
 					<li>
 						<div class="flex items-center">
 							<svg class="h-5 w-5 flex-shrink-0 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
 								<path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"></path>
 							</svg>
-							<a href="/artists" hx-get="/artists" class="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700">Artists</a>
-						</div>
-					</li>
-					<li>
-						<div class="flex items-center">
-							<svg class="h-5 w-5 flex-shrink-0 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-								<path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"></path>
-							</svg>
-							<a href={ templ.URL(aw.Artist.Url) } hx-get={ aw.Artist.Url } class="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700">{ aw.Artist.Name }</a>
-						</div>
-					</li>
-					<li>
-						<div class="flex items-center">
-							<svg class="h-5 w-5 flex-shrink-0 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-								<path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"></path>
-							</svg>
-							<a href={ templ.URL(aw.Url) } hx-get={ aw.Url } class="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700" aria-current="page">{ aw.Title }</a>
+							<a href={ templ.URL(aw.Url) } hx-get={ aw.Url } hx-target={ aw.HxTarget } class="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700" aria-current="page">{ aw.Title }</a>
 						</div>
 					</li>
 				</ol>
@@ -68,6 +91,7 @@ templ ArtworkBlock(aw dto.Artwork) {
 							by <a
 	href={ templ.SafeURL(aw.Artist.Url) }
 	hx-get={ aw.Artist.Url }
+	hx-target={ aw.HxTarget }
 >{ aw.Artist.Name }</a>, { aw.Technique }
 						</h2>
 						<div class="prose mb-6">
@@ -75,10 +99,12 @@ templ ArtworkBlock(aw dto.Artwork) {
 						</div>
 						<a
 							href="#"
-							hx-on:click="document.getElementById('d').showModal();"
-							hx-get={ "/postcard/send?awid=" + aw.Id }
+							hx-on:click="wga.dialog.open();"
+							hx-get={ `/postcard/send?awid=` + aw.Id }
 							hx-target="#d"
 							class="btn btn-primary"
+							hx-swap="innerHTML"
+							hx-select=".modal-box, form[method=dialog].modal-backdrop"
 						>
 							Send
 							Postcard

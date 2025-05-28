@@ -1,8 +1,10 @@
 package artworks
 
 import (
-	"github.com/labstack/echo/v5"
+	"cmp"
+
 	"github.com/pocketbase/dbx"
+	"github.com/pocketbase/pocketbase/core"
 )
 
 type filters struct {
@@ -94,14 +96,17 @@ func (f *filters) BuildFilterString() string {
 	return filterString
 }
 
-func buildFilters(c echo.Context) *filters {
+func buildFilters(c *core.RequestEvent) *filters {
+
+	q := c.Request.URL.Query()
+
 	f := &filters{
-		Title:         c.QueryParamDefault("title", ""),
-		SchoolString:  c.QueryParamDefault("art_school", ""),
-		ArtFormString: c.QueryParamDefault("art_form", ""),
-		ArtTypeString: c.QueryParamDefault("art_type", ""),
-		ArtistString:  c.QueryParamDefault("artist", ""),
-		Page:          c.QueryParamDefault("page", ""),
+		Title:         cmp.Or(q.Get("title"), ""),
+		SchoolString:  cmp.Or(q.Get("art_school"), ""),
+		ArtFormString: cmp.Or(q.Get("art_form"), ""),
+		ArtTypeString: cmp.Or(q.Get("art_type"), ""),
+		ArtistString:  cmp.Or(q.Get("artist"), ""),
+		Page:          cmp.Or(q.Get("page"), ""),
 	}
 
 	return f

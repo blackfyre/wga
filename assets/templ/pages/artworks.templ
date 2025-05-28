@@ -1,10 +1,9 @@
 package pages
 
 import (
+	"github.com/blackfyre/wga/assets/templ/components"
 	"github.com/blackfyre/wga/assets/templ/dto"
 	"github.com/blackfyre/wga/assets/templ/layouts"
-	// "github.com/blackfyre/wga/assets/templ/utils"
-	"github.com/blackfyre/wga/assets/templ/components"
 )
 
 // ArtistPage is the template for the artist page
@@ -19,6 +18,7 @@ templ ArtworkSeachFilterBlock(b dto.ArtworkSearchDTO) {
 		action="/artworks/results"
 		hx-get="/artworks/results"
 		hx-disabled-elt="input,button,select"
+		hx-target={ b.HxTarget }
 		method="GET"
 		class="flex flex-col gap-4"
 	>

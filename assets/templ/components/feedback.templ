@@ -1,14 +1,9 @@
 package components
 
 templ FeedbackForm() {
-	<section class="container">
+	@DialogBody() {
 		<h1 class="mb-4 text-xl">Are we doing good?</h1>
 		<p class="mb-4">Please, share your observations with us!</p>
-		<button class="btn btn-ghost close-dialog" hx-on:click="wga.closeDialog();">
-			<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-				<path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"></path>
-			</svg>
-		</button>
 		<form
 			hx-post="/feedback"
 			hx-encoding="multipart/form-data"
@@ -54,10 +49,10 @@ templ FeedbackForm() {
 				<button class="btn btn-primary" type="submit">
 					Send feedback
 				</button>
-				<button type="button" class="btn btn-neutral" hx:on:click="wga.closeDialog();">
+				<button type="button" class="btn btn-neutral" hx:on:click="wga.dialog.close();">
 					Cancel
 				</button>
 			</div>
 		</form>
-	</section>
+	}
 }

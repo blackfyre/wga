@@ -3,7 +3,7 @@ package components
 import "github.com/blackfyre/wga/assets/templ/dto"
 
 templ ImageBase(i dto.Image) {
-	<figure class="aspect-square hidden-caption">
+	<figure class="aspect-square hidden-caption skeleton">
 		<picture>
 			<source media="(max-width: 768px)" srcset={ i.Thumb }/>
 			<source media="(min-width: 769px)" srcset={ i.Thumb }/>
@@ -36,12 +36,12 @@ templ ImageCard(i dto.Image, hasLearnMore bool) {
 			<div class="card-actions">
 				<a
 					href="#"
-					hx-on:click="wga.openDialog();"
+					hx-on:click="wga.dialog.open();"
 					hx-get={ `/postcard/send?awid=` + i.Id }
 					hx-target="#d"
 					class="btn btn-secondary"
 					hx-swap="innerHTML"
-					hx-select="section.postcard-editor"
+					hx-select=".modal-box, form[method=dialog].modal-backdrop"
 				>
 					Send
 					Postcard
