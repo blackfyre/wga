@@ -12,25 +12,35 @@ import (
 
 func GenerateFileUrl(collection string, collectionId string, fileName string, token string) string {
 
-	return fmt.Sprintf(
-		"/api/files/%s/%s/%s?token=%s",
+	url := fmt.Sprintf(
+		"/api/files/%s/%s/%s",
 		collection,
 		collectionId,
 		fileName,
-		url.QueryEscape(token),
 	)
+
+	if token != "" {
+		url += fmt.Sprintf("?token=%s", token)
+	}
+
+	return url
 }
 
 func GenerateThumbUrl(collection string, collectionId string, fileName string, thumbSize string, token string) string {
 
-	return fmt.Sprintf(
-		"/api/files/%s/%s/%s?token=%s&thumb=%s",
+	url := fmt.Sprintf(
+		"/api/files/%s/%s/%s?thumb=%s",
 		collection,
 		collectionId,
 		fileName,
-		url.QueryEscape(token),
 		thumbSize,
 	)
+
+	if token != "" {
+		url += fmt.Sprintf("&token=%s", token)
+	}
+
+	return url
 }
 
 type ArtworkUrlDTO struct {

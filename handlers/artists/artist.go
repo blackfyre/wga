@@ -77,17 +77,26 @@ func RenderArtistContent(app *pocketbase.PocketBase, c *core.RequestEvent, artis
 			app.Logger().Error("Error marshalling artwork jsonld for"+w.GetString("id"), "error", err.Error())
 		}
 
-		content.Works = append(content.Works, dto.Image{
-			Id:        w.GetString("id"),
-			Title:     w.GetString("title"),
-			Comment:   w.GetString("comment"),
-			Technique: w.GetString("technique"),
-			Image:     url.GenerateFileUrl("artworks", w.GetString("id"), w.GetString("image"), ""),
-			Thumb:     url.GenerateThumbUrl("artworks", w.GetString("id"), w.GetString("image"), "320x240", ""),
-			Url:       "/artists/" + expectedSlug + "/" + utils.Slugify(w.GetString("title")) + "-" + w.GetString("id"),
-			Jsonld:    fmt.Sprintf(`<script type="application/ld+json">%s</script>`, marshalled),
-			HxTarget:  hxTarget,
-		})
+		var img dto.Image
+
+		img.Id = w.GetString("id")
+		img.Title = w.GetString("title")
+		img.Comment = w.GetString("comment")
+		img.Technique = w.GetString("technique")
+
+		if w.GetString("image") != "" {
+			img.Image = url.GenerateFileUrl("artworks", w.GetString("id"), w.GetString("image"), "")
+			img.Thumb = url.GenerateThumbUrl("artworks", w.GetString("id"), w.GetString("image"), "320x240", "")
+		} else {
+			img.Image = utils.AssetUrl("/assets/images/no-image.png")
+			img.Thumb = utils.AssetUrl("/assets/images/no-image.png")
+		}
+
+		img.Url = "/artists/" + expectedSlug + "/" + utils.Slugify(w.GetString("title")) + "-" + w.GetString("id")
+		img.Jsonld = fmt.Sprintf(`<script type="application/ld+json">%s</script>`, marshalled)
+		img.HxTarget = hxTarget
+
+		content.Works = append(content.Works, img)
 	}
 
 	return content, nil

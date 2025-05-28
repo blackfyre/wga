@@ -71,6 +71,20 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 		return c.Redirect(http.StatusMovedPermanently, expectedPageUrl)
 	}
 
+	var img dto.Image
+
+	img.Id = aw.GetString("id")
+	img.Title = aw.GetString("title")
+	img.Comment = aw.GetString("comment")
+	img.Technique = aw.GetString("technique")
+	if aw.GetString("image") != "" {
+		img.Image = url.GenerateFileUrl("artworks", aw.GetString("id"), aw.GetString("image"), "")
+		img.Thumb = url.GenerateThumbUrl("artworks", aw.GetString("id"), aw.GetString("image"), "320x240", "")
+	} else {
+		img.Image = utils.AssetUrl("/assets/images/no-image.png")
+		img.Thumb = utils.AssetUrl("/assets/images/no-image.png")
+	}
+
 	content := dto.Artwork{
 		Id:        aw.GetString("id"),
 		Title:     aw.GetString("title"),
@@ -82,14 +96,7 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 			ArtworkId:    aw.GetString("id"),
 			ArtworkTitle: aw.GetString("title"),
 		}),
-		Image: dto.Image{
-			Id:        aw.GetString("id"),
-			Title:     aw.GetString("title"),
-			Comment:   aw.GetString("comment"),
-			Technique: aw.GetString("technique"),
-			Image:     url.GenerateFileUrl("artworks", aw.GetString("id"), aw.GetString("image"), ""),
-			Thumb:     url.GenerateThumbUrl("artworks", aw.GetString("id"), aw.GetString("image"), "320x240", ""),
-		},
+		Image: img,
 		Artist: dto.Artist{
 			Id:         artist.GetString("id"),
 			Name:       artist.GetString("name"),
