@@ -99,10 +99,12 @@ templ ArtworkBlock(aw dto.Artwork) {
 						</div>
 						<a
 							href="#"
-							hx-on:click="document.getElementById('d').showModal();"
-							hx-get={ "/postcard/send?awid=" + aw.Id }
+							hx-on:click="wga.dialog.open();"
+							hx-get={ `/postcard/send?awid=` + aw.Id }
 							hx-target="#d"
 							class="btn btn-primary"
+							hx-swap="innerHTML"
+							hx-select=".modal-box, form[method=dialog].modal-backdrop"
 						>
 							Send
 							Postcard
