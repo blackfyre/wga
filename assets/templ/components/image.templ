@@ -41,7 +41,7 @@ templ ImageCard(i dto.Image, hasLearnMore bool) {
 					hx-target="#d"
 					class="btn btn-secondary"
 					hx-swap="innerHTML"
-					hx-select="section.postcard-editor"
+					hx-select=".modal-box, form[method=dialog].modal-backdrop"
 				>
 					Send
 					Postcard

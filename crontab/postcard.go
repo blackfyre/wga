@@ -56,7 +56,7 @@ func convertCommaSeparatedEmailsToMailAddresses(emails string) []mail.Address {
 func renderMessage(r *core.Record, rec mail.Address, app *pocketbase.PocketBase) *mailer.Message {
 	html, err := assets.RenderEmail("postcard:notification", map[string]any{
 		"SenderName": r.GetString("sender_name"),
-		"PickUpUrl":  utils.AssetUrl("/postcards?p=" + r.GetString("id")),
+		"PickUpUrl":  utils.AssetUrl("/postcard?p=" + r.GetString("id")),
 		"Title":      "",
 		"LogoUrl":    utils.AssetUrl("/assets/images/logo.png"),
 	})

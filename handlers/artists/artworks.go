@@ -64,9 +64,11 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 	// Generate the expected slug for the artwork
 	expectedArtworkSlug := utils.Slugify(aw.GetString("title")) + "-" + aw.GetString("id")
 
+	expectedPageUrl := "/artists/" + expectedArtistSlug + "/" + expectedArtworkSlug
+
 	// Redirect to the correct URL if either slug is not correct
 	if artistSlug != expectedArtistSlug || artworkSlug != expectedArtworkSlug {
-		return c.Redirect(http.StatusMovedPermanently, "/artists/"+expectedArtistSlug+"/"+expectedArtworkSlug)
+		return c.Redirect(http.StatusMovedPermanently, expectedPageUrl)
 	}
 
 	content := dto.Artwork{
@@ -100,8 +102,6 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 		},
 	}
 
-	fullUrl := c.Request.URL.Scheme + "://" + c.Request.URL.Host + c.Request.URL.String()
-
 	school := artist.GetStringSlice("school")
 
 	var schoolCollector []string
@@ -132,10 +132,10 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 
 	ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", content.Title, content.Artist.Name))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, content.Comment)
-	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, fullUrl)
+	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, expectedPageUrl)
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgImageKey, utils.AssetUrl(content.Image.Image))
 
-	c.Response.Header().Set("HX-Push-Url", fullUrl)
+	c.Response.Header().Set("HX-Push-Url", expectedPageUrl)
 
 	var buff bytes.Buffer
 
