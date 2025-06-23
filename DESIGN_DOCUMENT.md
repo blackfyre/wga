@@ -34,8 +34,8 @@ The system follows a client-server architecture:
 
 ```mermaid
 graph LR
-    Client[Client (Web Browser)] -->|HTTP Requests| WebServer[Web Server (Go/PocketBase)]
-    WebServer -->|SQL Queries| Database[Database (SQLite)]
+    Client[Client] -->|HTTP Requests| WebServer[Web Server]
+    WebServer -->|SQL Queries| Database[Database]
     WebServer -->|File Operations| S3Storage[S3-compatible Storage]
     Admin[PocketBase Admin UI] -->|Manages| Database
     Client -->|User Interaction| Admin
