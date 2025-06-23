@@ -32,19 +32,13 @@ The project leverages the following core technologies:
 
 The system follows a client-server architecture:
 
-```
-+-------------------+      +--------------------------------+      +-------------------+
-|     Client        |----->|      Web Server (Go/PocketBase)  |<---->| Database (SQLite) |
-| (Web Browser)     |      |                                |      +-------------------+
-+-------------------+      +--------------------------------+                ^
-        ^                                  |                                 |
-        |                                  |                                 | (PocketBase Admin UI)
-        |                                  V                                 |
-        |                      +------------------------+                    |
-        |                      | S3-compatible Storage  |                    |
-        |                      +------------------------+                    |
-        |                                                                    |
-        +--------------------------------------------------------------------+
+```mermaid
+graph LR
+    Client[Client (Web Browser)] -->|HTTP Requests| WebServer[Web Server (Go/PocketBase)]
+    WebServer -->|SQL Queries| Database[Database (SQLite)]
+    WebServer -->|File Operations| S3Storage[S3-compatible Storage]
+    Admin[PocketBase Admin UI] -->|Manages| Database
+    Client -->|User Interaction| Admin
 ```
 
 *   **Client (Web Browser):** Renders HTML pages served by the backend. Uses htmx for dynamic updates and JavaScript for enhancements.
