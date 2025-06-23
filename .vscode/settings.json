@@ -10,6 +10,9 @@
   "emmet.includeLanguages": {
     "templ": "html"
   },
+  "github.copilot.chat.codeGeneration.instructions": {
+    "DESIGN_DOCUMENT.md": "file-type"
+  },
   "cSpell.words": [
     "Artform",
     "Automigrate",
