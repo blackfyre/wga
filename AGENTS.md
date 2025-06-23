@@ -107,6 +107,17 @@ The Web Gallery of Art is a web application aimed at providing a modern, respons
 
 ## General Guidelines
 
+*   **Commit Messages & Pull Request Titles:**
+    *   Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) for all commit messages and Pull Request titles. Since PRs are squashed, the PR title will become the commit message.
+    *   Examples:
+        *   `feat: add user authentication module`
+        *   `fix: resolve issue with image uploads`
+        *   `docs: update README with setup instructions`
+        *   `style: format code with gofmt`
+        *   `refactor: simplify database query logic`
+        *   `test: add unit tests for payment processing`
+        *   `chore: update build dependencies`
+
 *   **Dependencies:**
     *   Go dependencies are managed with Go Modules (`go.mod`, `go.sum`). Run `go mod tidy` after adding/removing dependencies.
     *   Frontend dependencies are managed with Bun (`bun.lockb`, `package.json`).
