@@ -161,20 +161,25 @@ func RenderArtworkContent(app *pocketbase.PocketBase, c *core.RequestEvent, artw
 	artistId := cmp.Or(artwork.GetStringSlice("author")[0], "")
 
 	var artworkUrl string
+	var img dto.Image
+
+	img.Id = artwork.GetString("id")
+	img.Title = artwork.GetString("title")
+	img.Comment = artwork.GetString("comment")
+	img.Technique = artwork.GetString("technique")
+	if artwork.GetString("image") != "" {
+		img.Image = url.GenerateFileUrl("artworks", artwork.GetString("id"), artwork.GetString("image"), "")
+	} else {
+		img.Image = utils.AssetUrl("/assets/images/no-image.png")
+	}
 
 	content := dto.Artwork{
 		Id:        artwork.GetString("id"),
 		Title:     artwork.GetString("title"),
 		Comment:   artwork.GetString("comment"),
 		Technique: artwork.GetString("technique"),
-		Image: dto.Image{
-			Id:        artwork.GetString("id"),
-			Title:     artwork.GetString("title"),
-			Comment:   artwork.GetString("comment"),
-			Technique: artwork.GetString("technique"),
-			Image:     url.GenerateFileUrl("artworks", artwork.GetString("id"), artwork.GetString("image"), ""),
-		},
-		HxTarget: hxTarget,
+		Image:     img,
+		HxTarget:  hxTarget,
 	}
 
 	if artistId != "" {
