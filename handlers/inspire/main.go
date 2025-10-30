@@ -9,6 +9,7 @@ import (
 	"github.com/blackfyre/wga/assets/templ/pages"
 	"github.com/blackfyre/wga/utils"
 	"github.com/blackfyre/wga/utils/url"
+	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 
@@ -17,7 +18,7 @@ import (
 
 func inspirationHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
-	artPieces, err := app.FindRecordsByFilter("artists", "random", "", 10, 0)
+	artPieces, err := app.FindRecordsByFilter("artists", "", "@random", 10, 0, dbx.Params{})
 
 	if err != nil {
 		app.Logger().Error("Error getting random artworks", "error", err.Error())
@@ -30,11 +31,11 @@ func inspirationHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error 
 
 		artworkId := artPiece.GetString("id")
 
-		artist, err := app.FindRecordById("artists", artPiece.GetString("author"))
+		artist, err := app.FindRecordById("Artists", artPiece.GetString("author"))
 
 		if err != nil {
-			app.Logger().Error("Error getting artist for artwork %s: %v", artPiece.GetString("id"), err)
-			return utils.ServerFaultError(c)
+			app.Logger().Error("Error getting artist for artwork", artPiece.GetString("id"), err)
+			continue
 		}
 
 		content = append(content, dto.Image{
