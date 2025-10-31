@@ -1,0 +1,162 @@
+package pages
+
+import (
+	"github.com/blackfyre/wga/internal/assets/templ/components"
+	"github.com/blackfyre/wga/internal/assets/templ/dto"
+	"github.com/blackfyre/wga/internal/assets/templ/layouts"
+)
+
+// ArtistPage is the template for the artist page
+templ ArtworkSearchPage(s dto.ArtworkSearchDTO) {
+	@layouts.LayoutMain() {
+		@ArtworkSearchBlock(s)
+	}
+}
+
+templ ArtworkSeachFilterBlock(b dto.ArtworkSearchDTO) {
+	<form
+		action="/artworks/results"
+		hx-get="/artworks/results"
+		hx-disabled-elt="input,button,select"
+		hx-target={ b.HxTarget }
+		method="GET"
+		class="flex flex-col gap-4"
+	>
+		<label class="form-control w-full">
+			Artforms
+			<select name="art_form" id="art_form_select" title="Artforms" class="select select-bordered">
+				for k, v := range b.ArtFormOptions {
+					<option
+						value={ k }
+						if b.ActiveFilterValues.ArtFormString == k {
+							selected
+						}
+					>{ v }</option>
+				}
+			</select>
+		</label>
+		<label class="form-control w-full ">
+			Artforms
+			<select name="art_type" id="art_type_select" title="Art types" class="select select-bordered">
+				for k, v := range b.ArtTypeOptions {
+					<option
+						value={ k }
+						if b.ActiveFilterValues.ArtTypeString == k {
+							selected
+						}
+					>{ v }</option>
+				}
+			</select>
+		</label>
+		<label class="form-control w-full">
+			Art school
+			<select name="art_school" id="art_school_select" title="Art school" class="select select-bordered">
+				for k, v := range b.ArtSchoolOptions {
+					<option
+						value={ k }
+						if b.ActiveFilterValues.SchoolString == k {
+							selected
+						}
+					>{ v }</option>
+				}
+			</select>
+		</label>
+		<label class="input input-bordered flex items-center gap-2">
+			Title
+			<input
+				class="grow"
+				type="search"
+				name="title"
+				id="title"
+				autocomplete="title"
+				value={ b.ActiveFilterValues.Title }
+			/>
+		</label>
+		<label class="input input-bordered flex items-center gap-2">
+			Artist
+			<input
+				class="grow"
+				type="search"
+				list="artist_list"
+				id="artist_name"
+				autocomplete="artist_name"
+				name="artist"
+				value={ b.ActiveFilterValues.ArtistString }
+			/>
+			<datalist id="artist_list">
+				for _, v := range b.ArtistNameList {
+					<option value={ v }></option>
+				}
+			</datalist>
+		</label>
+		<button type="submit" class="btn btn-primary">Search</button>
+	</form>
+}
+
+templ searchIndicator() {
+	<article class="message is-warning htmx-indicator-show">
+		<div class="message-body">
+			Search in progress... 
+			<span class="icon">
+				<i class="fas fa-spinner fa-pulse"></i>
+			</span>
+		</div>
+	</article>
+}
+
+templ loadIndicator() {
+	<div id="artwork-search-results" class="card-search">
+		<div class="columns is-multiline works-listing">
+			<div class="column">
+				<div class="notification is-warning">
+					Loading artworks...
+					<span class="icon">
+						<i class="fas fa-spinner fa-pulse"></i>
+					</span>
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
+templ ArtworkSearchResults(r dto.ArtworkSearchResultDTO) {
+	<div id="artwork-search-results">
+		// @loadIndicator()
+		if len(r.Artworks) > 0 {
+			@components.ImageGridComponent(r.Artworks, true)
+		} else if !r.ActiveFiltering {
+			<div role="alert" class="alert alert-info">
+				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 rotate-90 md:rotate-0">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"></path>
+				</svg>
+				<span>Use the filters to find artworks you are looking for in our database.</span>
+			</div>
+		} else {
+			<div role="alert" class="alert alert-warning">
+				<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+				<span>
+					Sorry, no matching artworks found.
+				</span>
+			</div>
+		}
+		if len(r.Pagination) > 10 {
+			<nav class="pagination box" role="navigation" aria-label="pagination">
+				@templ.Raw(r.Pagination)
+			</nav>
+		}
+	</div>
+}
+
+templ ArtworkSearchBlock(s dto.ArtworkSearchDTO) {
+	<section class="section px-4">
+		<h1 class="text-2xl font-bold mb-4">Artwork search</h1>
+		<div class="flex flex-col md:flex-row gap-4">
+			<div class="w-full md:w-1/4 lg:w-1/5">
+				@ArtworkSeachFilterBlock(s)
+			</div>
+			<div class="w-full" id="search-result-container">
+				@ArtworkSearchResults(s.Results)
+			</div>
+		</div>
+	</section>
+}
