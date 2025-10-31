@@ -2,7 +2,6 @@
   pkgs,
   lib,
   config,
-  inputs,
   ...
 }:
 
@@ -34,16 +33,19 @@ in
   env.WGA_S3_ENDPOINT = "${minioEndpoint}";
 
   # https://devenv.sh/languages/
-  # languages.rust.enable = true;
-
-  languages.go.enable = true;
-  languages.go.enableHardeningWorkaround = true;
-
-  languages.javascript = {
-    enable = true;
-    bun = {
+  languages = {
+    # rust.enable = true;
+    go = {
       enable = true;
-      install.enable = true;
+      enableHardeningWorkaround = true;
+    };
+
+    javascript = {
+      enable = true;
+      bun = {
+        enable = true;
+        install.enable = true;
+      };
     };
   };
 
@@ -71,34 +73,58 @@ in
     go version
   '';
 
-  scripts.generate-templates.exec = "templ generate";
-  scripts.tidy-modules.exec = "go mod tidy";
-  scripts.tidy.exec = ''
-    generate-templates
-    tidy-modules
-  '';
-  scripts."app:build".exec =
-    "
-    mkdir -p dist;
-    rm -rf dist/app;
-    bun install;
-    bun run build;
-    tidy;
-    go build -v -o dist/wga ./cmd/wga;";
-
-  scripts."app:run".exec = ''
-    pushd dist;
-    ./wga serve --dev;
-    popd;
-  '';
-
-  scripts."app:reboot".exec = ''
-    app:build;
-    rm -rf wga_data;
-    app:run;
-  '';
-
-  scripts.init-devenv.exec = "cp devenv.local.stub.nix devenv.local.nix";
+  scripts = {
+    "app:generate-templates" = {
+      description = "Generate Go templates from templ sources.";
+      exec = "templ generate";
+    };
+    "app:tidy-modules" = {
+      description = "Run go mod tidy to sync module dependencies.";
+      exec = "go mod tidy";
+    };
+    "app:tidy" = {
+      description = "Regenerate templates and tidy Go modules.";
+      exec = ''
+        app:generate-templates
+        app:tidy-modules
+      '';
+    };
+    "app:build" = {
+      description = "Produce the dist binary with fresh assets and dependencies.";
+      exec = ''
+        mkdir -p dist
+        rm -rf dist/*
+        bun install
+        bun run build
+        app:tidy
+        go build -v -o dist/wga ./cmd/wga
+      '';
+    };
+    "app:run" = {
+      description = "Run the built server binary in development mode.";
+      exec = ''
+        pushd dist
+        ./wga serve --dev
+        popd
+      '';
+    };
+    "app:reboot" = {
+      description = "Rebuild, reset local data, and restart the development server.";
+      exec = ''
+        app:build
+        rm -rf wga_data
+        app:run
+      '';
+    };
+    "app:init-devenv" = {
+      description = "Bootstrap a local devenv configuration from the stub.";
+      exec = "cp devenv.local.stub.nix devenv.local.nix";
+    };
+    "code:run" = {
+      exec = "go run ./cmd/wga --dev";
+      description = "Run the application in development mode without building.";
+    };
+  };
   git-hooks.hooks = {
     govet = {
       enable = true;

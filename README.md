@@ -109,10 +109,6 @@ Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) for mo
 
 ### Development quick start
 
-#### Docker
-
-The supplied `docker-compose.yml` file will bring up a configured `minio` and `mailpit` instance to simulate the services used in production.
-
 #### Frontend
 
 All frontend assets (templ, postcss) can be built with `bun run dev` (this command will start a dev server as well) and the JS dependencies with `bun run build:js`.
