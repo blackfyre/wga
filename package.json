@@ -5,12 +5,10 @@
   "private": "true",
   "scripts": {
     "build": "bun run build:css && bun run build:js",
-    "build:js": "bun build ./resources/js/app.ts --outdir ./assets/public/js --target=browser --minify --sourcemap --splitting",
-    "build:css": "postcss ./resources/css/style.pcss -o ./assets/public/css/style.css",
+    "build:js": "bun build ./resources/js/app.ts --outdir ./internal/assets/public/js --target=browser --minify --sourcemap --splitting",
+    "build:css": "postcss ./resources/css/style.pcss -o ./internal/assets/public/css/style.css",
     "build:watch:css": "bun run build:css --watch",
-    "build:watch:js": "bun run build:js --watch",
-    "dev": "concurrently -n \"templ,serve,tailwind,ts,docker\" -c \"red,magenta,yellow,blue,cyan\" \"templ generate --watch\" \"air serve --dev\" \"bun run build:watch:css\" \"bun run build:js\" \"docker compose up\"",
-    "devenv": "concurrently -n \"templ,serve,tailwind,ts\" -c \"red,magenta,yellow,blue,cyan\" \"templ generate --watch\" \"air serve --dev\" \"bun run build:watch:css\" \"bun run build:watch:js\""
+    "build:watch:js": "bun run build:js --watch"
   },
   "repository": {
     "type": "git",
@@ -24,33 +22,32 @@
   "homepage": "https://github.com/blackfyre/wga#readme",
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
-    "@playwright/test": "^1.52.0",
-    "@tailwindcss/postcss": "^4.1.7",
-    "@tailwindcss/typography": "^0.5.16",
-    "@types/node": "^20.17.48",
+    "@playwright/test": "^1.56.1",
+    "@tailwindcss/postcss": "^4.1.16",
+    "@tailwindcss/typography": "^0.5.19",
+    "@types/node": "^20.19.24",
     "autoprefixer": "^10.4.21",
     "concurrently": "^8.2.2",
     "cssnano": "^6.1.2",
-    "daisyui": "^5.0.37",
-    "dotenv": "^16.5.0",
+    "daisyui": "^5.3.10",
+    "dotenv": "^16.6.1",
     "esbuild": "0.20.1",
     "esbuild-plugin-copy": "^2.1.1",
     "htmx.org": "2.0.4",
     "lint-staged": "^15.5.2",
-    "postcss": "^8.5.3",
+    "postcss": "^8.5.6",
     "postcss-cli": "^11.0.1",
-    "postcss-import": "^16.1.0",
-    "postcss-nesting": "^13.0.1",
+    "postcss-import": "^16.1.1",
+    "postcss-nesting": "^13.0.2",
     "tailwind": "^4.0.0",
-    "tailwindcss": "^4.1.7",
+    "tailwindcss": "^4.1.16",
     "trix": "^2.1.15",
-    "viewerjs": "^1.11.7"
+    "viewerjs": "^1.11.7",
+    "animate.css": "^4.1.1",
+    "choices.js": "^11.1.0"
   },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown"
   },
-  "dependencies": {
-    "animate.css": "^4.1.1",
-    "choices.js": "^11.1.0"
-  }
+  "dependencies": {}
 }

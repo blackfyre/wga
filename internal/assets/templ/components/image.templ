@@ -1,0 +1,64 @@
+package components
+
+import "github.com/blackfyre/wga/internal/assets/templ/dto"
+
+templ ImageBase(i dto.Image) {
+	<figure class="aspect-square hidden-caption skeleton">
+		<picture>
+			<source media="(max-width: 768px)" srcset={ i.Thumb }/>
+			<source media="(min-width: 769px)" srcset={ i.Thumb }/>
+			<source media="(min-width: 1024px)" srcset={ i.Thumb }/>
+			<img src={ i.Image } alt={ i.Title } loading="lazy" alt={ i.Title + " by" + i.Artist.Name }/>
+		</picture>
+		<figcaption>{ i.Title } by { i.Artist.Name } </figcaption>
+	</figure>
+}
+
+// image_big is a template that renders a big image with its title and artist.
+// It takes three parameters: ImageUrl (string) - the URL of the image,
+// Title (string) - the title of the image, and Artist (string) - the artist of the image.
+templ ImageBig(ImageUrl string, Title string, Artist string) {
+	<figure class="image hidden-caption shadow">
+		<img src={ ImageUrl } alt={ Title + " by " + Artist }/>
+		<figcaption>{ Title } by { Artist }</figcaption>
+	</figure>
+}
+
+templ ImageCard(i dto.Image, hasLearnMore bool) {
+	<div class="card w-full bg-base-100  m-4 sm:m-0">
+		@ImageBase(i)
+		<div class="card-body justify-between pl-0">
+			<h2 class="card-title line-clamp-1" title={ i.Title + "by" + i.Artist.Name }>{ i.Title }</h2>
+			<h3>{ i.Artist.Name }</h3>
+			<div class="prose line-clamp-3">
+				@templ.Raw(i.Comment)
+			</div>
+			<div class="card-actions">
+				<a
+					href="#"
+					hx-on:click="wga.dialog.open();"
+					hx-get={ `/postcard/send?awid=` + i.Id }
+					hx-target="#d"
+					class="btn btn-secondary"
+					hx-swap="innerHTML"
+					hx-select=".modal-box, form[method=dialog].modal-backdrop"
+				>
+					Send
+					Postcard
+				</a>
+				<a class="btn btn-primary" href={ templ.SafeURL(i.Url) } hx-get={ i.Url }>
+					Learn
+					More
+				</a>
+			</div>
+		</div>
+	</div>
+}
+
+templ ImageGridComponent(i dto.ImageGrid, hasLearnMore bool) {
+	<div class="grid gird-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4" data-viewer>
+		for _, img := range i {
+			@ImageCard(img, hasLearnMore)
+		}
+	</div>
+}
