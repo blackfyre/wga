@@ -10,6 +10,7 @@ import (
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
+	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/errs"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/blackfyre/wga/internal/utils/jsonld"
@@ -85,8 +86,8 @@ func RenderArtistContent(app *pocketbase.PocketBase, c *core.RequestEvent, artis
 		img.Technique = w.GetString("technique")
 
 		if w.GetString("image") != "" {
-			img.Image = url.GenerateFileUrl("artworks", w.GetString("id"), w.GetString("image"), "")
-			img.Thumb = url.GenerateThumbUrl("artworks", w.GetString("id"), w.GetString("image"), "320x240", "")
+			img.Image = url.GenerateFileUrl(constants.CollectionArtworks, w.GetString("id"), w.GetString("image"), "")
+			img.Thumb = url.GenerateThumbUrl(constants.CollectionArtworks, w.GetString("id"), w.GetString("image"), "320x240", "")
 		} else {
 			img.Image = utils.AssetUrl("/assets/images/no-image.png")
 			img.Thumb = utils.AssetUrl("/assets/images/no-image.png")
@@ -112,7 +113,7 @@ func processArtist(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 	slug := c.Request.PathValue("name")
 
 	id := utils.ExtractIdFromString(slug)
-	artist, err := app.FindRecordById("artists", id)
+	artist, err := app.FindRecordById(constants.CollectionArtists, id)
 
 	app.Logger().Info("Processing artist", "slug", slug)
 
