@@ -38,12 +38,33 @@ The codebase does not require a rewrite. It requires disciplined hardening in th
 - Fixed `HX-Push-Url` query parameter construction.
 - Fixed default left pane rendering behavior and added regression tests.
 
+5. Centralized form validation:
+
+- Added shared validation helpers in `internal/validation/forms.go`.
+- Migrated `guestbook`, `feedback`, and `postcards` handlers to shared validation checks.
+
+6. Cache safety and TTL strategy:
+
+- Added typed cache helpers with TTL support in `internal/utils/cache.go`.
+- Migrated landing and contributors cache access away from unsafe type assertions.
+
+7. Repository/service boundary extraction (initial):
+
+- Added `internal/repositories/landing.go` and refactored landing handler data access.
+- Added `internal/repositories/contributors.go` and refactored contributors handler data flow.
+
+8. Fallback observability:
+
+- Added contributors source tracking (`cache`, `api`, `file_fallback`).
+- Exposed runtime source in `X-WGA-Contributors-Source` response header.
+
 ### Remaining from the full 90-day plan
 
-1. Centralized validation middleware.
-2. Broader N+1/query optimization sweep.
-3. Cache TTL/invalidation strategy.
+1. Broader N+1/query optimization sweep.
+2. Dev workflow/documentation alignment (`bun run dev` and local workflow consistency).
+3. Deeper repository extraction for high-churn handlers (especially artworks search).
 4. Expanded package-level unit test coverage beyond current critical-path additions.
+5. Baseline KPIs/SLO instrumentation beyond contributors fallback source metadata.
 
 ## 2. Current State Snapshot
 
@@ -58,15 +79,18 @@ The codebase does not require a rewrite. It requires disciplined hardening in th
 ### Key Gaps
 
 1. Query inefficiencies (count via full fetch, known N+1 patterns).
-2. Cache strategy lacks TTL/invalidation discipline and uses unsafe type assertions.
-3. Dev UX drift between docs and scripts (`bun run dev` documented but missing).
-4. Validation and anti-bot controls are still duplicated across handlers and should be centralized.
+2. Dev UX drift between docs and scripts (`bun run dev` documented but missing).
+3. Architecture split is still partial; large handlers (notably artworks) remain mixed-responsibility.
+4. Automated test depth remains shallow in many backend domains.
 
 ### Recently Mitigated
 
 1. Backend CI quality gates are now in place (`go vet` + `go test`).
 2. reCAPTCHA server-side verification is implemented for postcard submission.
 3. Runtime collection identifier drift has been standardized via `internal/constants/collections.go`.
+4. Shared validation checks now replace duplicated honeypot/message/captcha-required logic.
+5. Typed cache access + TTLs now protect against panic-prone store assertions.
+6. Contributors fallback behavior is now visible in logs and response metadata.
 
 ## 3. System Overview
 
@@ -107,12 +131,12 @@ quadrantChart
     quadrant-2 Monitor
     quadrant-3 Backlog
     quadrant-4 Act Now
-    "Missing Go CI gates": [0.92, 0.9]
-    "Recaptcha not verified": [0.88, 0.94]
-    "Collection naming inconsistency": [0.7, 0.78]
-    "N+1 and count inefficiency": [0.79, 0.72]
-    "Unsafe cache assertions": [0.69, 0.66]
-    "Dev script/docs mismatch": [0.45, 0.58]
+    "N+1 and count inefficiency": [0.84, 0.78]
+    "Artworks handler complexity": [0.72, 0.74]
+    "Test coverage depth": [0.76, 0.7]
+    "Dev script/docs mismatch": [0.52, 0.61]
+    "Fallback observability breadth": [0.4, 0.45]
+    "CI gate regressions": [0.3, 0.32]
 ```
 
 ## 5. Findings and Recommendations
@@ -121,30 +145,29 @@ quadrantChart
 
 **Observed**
 
-- `.github/workflows/playwright.yml` focuses on build + E2E but does not run `go test ./...` or `go vet ./...`.
-- `.github/workflows/pr-validation.yml` validates PR title only.
-- Only 3 Go unit test files currently exist.
+- Backend quality gates (`go vet`, `go test`) are now integrated into CI workflows.
+- PR title validation remains in place as a lightweight policy gate.
+- Unit test footprint is improving but remains thin in multiple business-critical handler packages.
 
 **Recommendation**
 
-1. Add mandatory backend quality gates on PR: `go test ./...`, `go vet ./...`, and coverage reporting.
+1. Maintain mandatory backend gates and add coverage trend reporting.
 2. Keep Playwright as integration gate; add a small smoke subset for fast PR feedback.
-3. Add failure policy: merge blocked unless backend + frontend checks pass.
+3. Add explicit merge policy requiring both backend and frontend checks.
 
 ### 5.2 Security and Data Integrity
 
 **Observed**
 
-- `internal/handlers/postcards/save.go` captures `RecaptchaToken`, but no server-side verification call is present.
-- Repeated anti-bot checks are handler-local instead of centralized.
-- Collection IDs are not uniformly managed.
+- `postcards` now enforces server-side reCAPTCHA verification.
+- Core anti-bot/message/captcha-required validation checks are centralized.
+- Runtime collection IDs are standardized through constants.
 
 **Recommendation**
 
-1. Implement server-side reCAPTCHA verification before save.
-2. Centralize validation middleware (honeypot + email/form rules).
-3. Introduce collection constants package to eliminate string drift.
-4. Standardize user-safe error responses and internal structured logging.
+1. Extend centralized validation to future/new form endpoints by default.
+2. Continue to standardize user-safe error responses and internal structured logging.
+3. Add periodic audit checks to ensure new handlers use shared validation and constants.
 
 ### 5.3 Performance and Scalability
 
@@ -152,25 +175,25 @@ quadrantChart
 
 - Record counts in list pages use full record retrieval patterns.
 - Known N+1 concerns are already documented in `docs/go-code-review.md`.
-- Cache entries are stored without TTL and rely on direct type assertions.
+- Cache entries in critical paths now use typed helper access and TTL metadata.
 
 **Recommendation**
 
 1. Replace full-fetch counting with aggregate count query strategy.
 2. Remove N+1 via prefetch/join-style data loading where applicable.
-3. Add cache helper functions with safe type retrieval and TTL semantics.
+3. Expand cache helper adoption to additional read-heavy paths where appropriate.
 4. Add baseline metrics: request latency, DB query counts, cron failures.
 
 ### 5.4 Architecture and Maintainability
 
 **Observed**
 
-- Handlers are clear but some contain mixed responsibilities (query parsing, data access, DTO assembly, render).
-- Utility package responsibilities are broad and somewhat overlapping.
+- Handlers are clear but some remain mixed-responsibility (query parsing, data access, DTO assembly, render).
+- Initial repository boundaries are now in place for landing and contributors.
 
 **Recommendation**
 
-1. Introduce a thin repository/service layer for frequently reused data access logic.
+1. Continue repository/service extraction for high-churn handlers (especially artworks search).
 2. Split large handlers into focused components:
    - request parsing/validation
    - data retrieval
@@ -187,14 +210,14 @@ gantt
     axisFormat  %m/%d
 
     section Phase 1 - Stabilize (0-30 days)
-    Add Go CI gates (test/vet/coverage)      :p1a, 2026-03-08, 10d
-    Implement recaptcha verification          :p1b, 2026-03-10, 7d
-    Fix top review defects + regression tests :p1c, 2026-03-12, 14d
-    Standardize collection constants          :p1d, 2026-03-15, 8d
+    Add Go CI gates (test/vet/coverage)      :done, p1a, 2026-03-08, 10d
+    Implement recaptcha verification          :done, p1b, 2026-03-10, 7d
+    Fix top review defects + regression tests :done, p1c, 2026-03-12, 14d
+    Standardize collection constants          :done, p1d, 2026-03-15, 8d
 
     section Phase 2 - Harden (30-60 days)
-    Centralized validation middleware         :p2a, 2026-04-07, 12d
-    Cache TTL + safe access helpers           :p2b, 2026-04-10, 10d
+    Centralized validation middleware         :done, p2a, 2026-04-07, 12d
+    Cache TTL + safe access helpers           :done, p2b, 2026-04-10, 10d
     Cron reliability (retry/idempotency)      :p2c, 2026-04-12, 14d
 
     section Phase 3 - Scale (60-90 days)
