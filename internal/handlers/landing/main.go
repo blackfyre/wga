@@ -5,10 +5,11 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
-	"github.com/blackfyre/wga/internal/constants"
+	"github.com/blackfyre/wga/internal/repositories"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
@@ -19,9 +20,7 @@ type Content struct {
 	Content   string `db:"content" json:"content"`
 }
 
-type counter struct {
-	C int `db:"c" json:"c"`
-}
+const landingCacheTTL = 15 * time.Minute
 
 // getWelcomeContent retrieves the welcome content from the application.
 // It checks if the content is already stored in the application's store.
@@ -29,26 +28,21 @@ type counter struct {
 // If not found, it queries the application's DAO to find the content by name.
 // If an error occurs during the retrieval process, it logs the error and returns an empty string.
 // Finally, it stores the retrieved content in the application's store for future use.
-func getWelcomeContent(app *pocketbase.PocketBase) (string, error) {
+func getWelcomeContent(app *pocketbase.PocketBase, repo *repositories.LandingRepository) (string, error) {
 
-	found := app.Store().Has("strings:welcome")
-
-	if found {
-		return app.Store().Get("strings:welcome").(string), nil
+	if cached, ok := utils.GetCachedValue[string](app, "strings:welcome"); ok {
+		return cached, nil
 	}
 
-	record, err := app.FindFirstRecordByData(constants.CollectionStrings, "name", "welcome")
-
+	content, err := repo.GetWelcomeContent()
 	if err != nil {
 		app.Logger().Error("Error getting welcome content", "error", err.Error())
 		return "", err
 	}
 
-	result := record.Get("content")
+	utils.SetCachedValue(app, "strings:welcome", content, landingCacheTTL)
 
-	app.Store().Set("strings:welcome", result.(string))
-
-	return result.(string), nil
+	return content, nil
 
 }
 
@@ -57,28 +51,23 @@ func getWelcomeContent(app *pocketbase.PocketBase) (string, error) {
 // If found, it returns the stored count. Otherwise, it queries the database
 // to get the count and stores it in the app's store for future use.
 // It returns the count as a string and any error encountered during the process.
-func getArtistCount(app *pocketbase.PocketBase) (string, error) {
+func getArtistCount(app *pocketbase.PocketBase, repo *repositories.LandingRepository) (string, error) {
 
 	key := "count:artists"
 
-	found := app.Store().Has(key)
-
-	if found {
-		return app.Store().Get(key).(string), nil
+	if cached, ok := utils.GetCachedValue[string](app, key); ok {
+		return cached, nil
 	}
 
-	c := counter{}
-
-	err := app.DB().NewQuery("SELECT COUNT(*) as c FROM artists WHERE published IS true").One(&c)
-
+	count, err := repo.CountPublishedArtists()
 	if err != nil {
 		app.Logger().Error("Error getting artist count", "error", err.Error())
 		return "0", err
 	}
 
-	result := fmt.Sprintf("%d", c.C)
+	result := fmt.Sprintf("%d", count)
 
-	app.Store().Set(key, result)
+	utils.SetCachedValue(app, key, result, landingCacheTTL)
 
 	return result, nil
 
@@ -89,28 +78,23 @@ func getArtistCount(app *pocketbase.PocketBase) (string, error) {
 // Otherwise, it queries the database to get the count of artworks where published is true.
 // The count is then stored in the app's store for future use.
 // If an error occurs during the retrieval or storage process, it returns an error along with the count "0".
-func getArtworkCount(app *pocketbase.PocketBase) (string, error) {
+func getArtworkCount(app *pocketbase.PocketBase, repo *repositories.LandingRepository) (string, error) {
 
 	key := "count:artworks"
 
-	found := app.Store().Has(key)
-
-	if found {
-		return app.Store().Get(key).(string), nil
+	if cached, ok := utils.GetCachedValue[string](app, key); ok {
+		return cached, nil
 	}
 
-	c := counter{}
-
-	err := app.DB().NewQuery("SELECT COUNT(*) as c FROM artworks WHERE published IS true").One(&c)
-
+	count, err := repo.CountPublishedArtworks()
 	if err != nil {
 		app.Logger().Error("Error getting artwork count", "error", err.Error())
 		return "0", err
 	}
 
-	result := fmt.Sprintf("%d", c.C)
+	result := fmt.Sprintf("%d", count)
 
-	app.Store().Set(key, result)
+	utils.SetCachedValue(app, key, result, landingCacheTTL)
 
 	return result, nil
 
@@ -122,22 +106,23 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 		// (it acts as store for the parsed templates)
 
 		se.Router.GET("/", func(c *core.RequestEvent) error {
+			repo := repositories.NewLandingRepository(app)
 
-			welcomeText, err := getWelcomeContent(app)
+			welcomeText, err := getWelcomeContent(app, repo)
 
 			if err != nil {
 				app.Logger().Error("Error getting welcome content", "error", err.Error())
 				return utils.ServerFaultError(c)
 			}
 
-			artistCount, err := getArtistCount(app)
+			artistCount, err := getArtistCount(app, repo)
 
 			if err != nil {
 				app.Logger().Error("Error getting artist count for home page", "error", err.Error())
 				return utils.ServerFaultError(c)
 			}
 
-			artworkCount, err := getArtworkCount(app)
+			artworkCount, err := getArtworkCount(app, repo)
 
 			if err != nil {
 				app.Logger().Error("Error getting artwork count for home page", "error", err.Error())
