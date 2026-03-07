@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"cmp"
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -11,8 +12,10 @@ import (
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	"github.com/blackfyre/wga/internal/constants"
+	"github.com/blackfyre/wga/internal/errs"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/blackfyre/wga/internal/utils/url"
+	"github.com/blackfyre/wga/internal/validation"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
@@ -117,11 +120,14 @@ func StoreEntryHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 		return utils.BadRequestError(c)
 	}
 
-	if inputStruct.HoneyPotEmail != "" || inputStruct.HoneyPotName != "" {
-		// this is probably a bot
-		app.Logger().Error("Guestbook HoneyPot triggered", "ip", c.RealIP())
-		utils.SendToastMessage("Failed to create message, please try again later.", "error", true, c, "")
-		return c.NoContent(204)
+	if err := validation.ValidateHoneypot(inputStruct.HoneyPotName, inputStruct.HoneyPotEmail); err != nil {
+		if errors.Is(err, errs.ErrHoneypotTriggered) {
+			app.Logger().Error("Guestbook HoneyPot triggered", "ip", c.RealIP())
+			utils.SendToastMessage("Failed to create message, please try again later.", "error", true, c, "")
+			return c.NoContent(204)
+		}
+
+		return utils.ServerFaultError(c)
 	}
 
 	collection, err := app.FindCollectionByNameOrId(constants.CollectionGuestbook)

@@ -1,12 +1,15 @@
 package postcards
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
 
 	"github.com/blackfyre/wga/internal/constants"
+	"github.com/blackfyre/wga/internal/errs"
 	"github.com/blackfyre/wga/internal/utils"
+	"github.com/blackfyre/wga/internal/validation"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
@@ -31,13 +34,16 @@ func savePostcard(app *pocketbase.PocketBase, c *core.RequestEvent, p *bluemonda
 		return utils.ServerFaultError(c)
 	}
 
-	if postData.HoneyPotEmail != "" || postData.HoneyPotName != "" {
-		// this is probably a bot
-		app.Logger().Warn("Honey pot triggered", "data", fmt.Sprintf("%+v", postData), "ip", c.RealIP())
+	if err := validation.ValidateHoneypot(postData.HoneyPotName, postData.HoneyPotEmail); err != nil {
+		if errors.Is(err, errs.ErrHoneypotTriggered) {
+			app.Logger().Warn("Honey pot triggered", "data", fmt.Sprintf("%+v", postData), "ip", c.RealIP())
+			return utils.ServerFaultError(c)
+		}
+
 		return utils.ServerFaultError(c)
 	}
 
-	if postData.RecaptchaToken == "" {
+	if err := validation.ValidateRecaptchaToken(postData.RecaptchaToken); err != nil {
 		utils.SendToastMessage("Captcha verification failed", "error", true, c, "")
 		return utils.BadRequestError(c)
 	}
