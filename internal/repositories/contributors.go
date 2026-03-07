@@ -28,6 +28,14 @@ type ContributorsRepository struct {
 	cacheFile string
 }
 
+type ContributorsSource string
+
+const (
+	ContributorsSourceCache        ContributorsSource = "cache"
+	ContributorsSourceAPI          ContributorsSource = "api"
+	ContributorsSourceFileFallback ContributorsSource = "file_fallback"
+)
+
 func NewContributorsRepository(app *pocketbase.PocketBase) *ContributorsRepository {
 	return &ContributorsRepository{
 		app:       app,
@@ -51,30 +59,35 @@ func newContributorsRepositoryWithConfig(app *pocketbase.PocketBase, client *htt
 }
 
 func (r *ContributorsRepository) GetContributors() ([]pages.GithubContributor, error) {
+	contributors, _, err := r.GetContributorsWithSource()
+	return contributors, err
+}
+
+func (r *ContributorsRepository) GetContributorsWithSource() ([]pages.GithubContributor, ContributorsSource, error) {
 	if cached, ok := utils.GetCachedValue[[]pages.GithubContributor](r.app, r.cacheKey); ok {
-		return cached, nil
+		return cached, ContributorsSourceCache, nil
 	}
 
 	contributors, err := r.fetchContributorsFromAPI()
 	if err == nil {
 		if err := r.persistContributors(contributors); err != nil {
-			return nil, err
+			return nil, "", err
 		}
 
 		utils.SetCachedValue(r.app, r.cacheKey, contributors, r.cacheTTL)
-		return contributors, nil
+		return contributors, ContributorsSourceAPI, nil
 	}
 
 	r.app.Logger().Warn("Contributors API fetch failed; trying local fallback", "error", err)
 
 	fallbackContributors, fallbackErr := r.readStoredContributors()
 	if fallbackErr != nil {
-		return nil, fmt.Errorf("failed to fetch contributors from api and fallback file: api=%v fallback=%v", err, fallbackErr)
+		return nil, "", fmt.Errorf("failed to fetch contributors from api and fallback file: api=%v fallback=%v", err, fallbackErr)
 	}
 
 	utils.SetCachedValue(r.app, r.cacheKey, fallbackContributors, r.cacheTTL)
 
-	return fallbackContributors, nil
+	return fallbackContributors, ContributorsSourceFileFallback, nil
 }
 
 func (r *ContributorsRepository) fetchContributorsFromAPI() ([]pages.GithubContributor, error) {

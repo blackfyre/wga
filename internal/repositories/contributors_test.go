@@ -30,9 +30,13 @@ func TestContributorsRepositoryGetContributors(t *testing.T) {
 			time.Hour,
 		)
 
-		contributors, err := repo.GetContributors()
+		contributors, source, err := repo.GetContributorsWithSource()
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
+		}
+
+		if source != ContributorsSourceCache {
+			t.Fatalf("expected source %q, got %q", ContributorsSourceCache, source)
 		}
 
 		if len(contributors) != 1 || contributors[0].Login != "cached-user" {
@@ -60,9 +64,13 @@ func TestContributorsRepositoryGetContributors(t *testing.T) {
 			time.Hour,
 		)
 
-		contributors, err := repo.GetContributors()
+		contributors, source, err := repo.GetContributorsWithSource()
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
+		}
+
+		if source != ContributorsSourceAPI {
+			t.Fatalf("expected source %q, got %q", ContributorsSourceAPI, source)
 		}
 
 		if len(contributors) != 1 || contributors[0].Login != "api-user" {
@@ -99,9 +107,13 @@ func TestContributorsRepositoryGetContributors(t *testing.T) {
 			time.Hour,
 		)
 
-		contributors, err := repo.GetContributors()
+		contributors, source, err := repo.GetContributorsWithSource()
 		if err != nil {
 			t.Fatalf("expected fallback to succeed, got %v", err)
+		}
+
+		if source != ContributorsSourceFileFallback {
+			t.Fatalf("expected source %q, got %q", ContributorsSourceFileFallback, source)
 		}
 
 		if len(contributors) != 1 || contributors[0].Login != "file-user" {
