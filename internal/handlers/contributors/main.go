@@ -3,133 +3,26 @@ package contributors
 import (
 	"bytes"
 	"context"
-	"encoding/json"
-	"io"
 	"net/http"
-	"os"
-	"time"
 
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
-	"github.com/blackfyre/wga/internal/utils"
+	"github.com/blackfyre/wga/internal/repositories"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 )
 
-const contributorsCacheTTL = 6 * time.Hour
-
-func getContributorsFromGithub(app *pocketbase.PocketBase) ([]pages.GithubContributor, error) {
-
-	ghContribCacheKey := "gh_contributors"
-
-	if cached, ok := utils.GetCachedValue[[]pages.GithubContributor](app, ghContribCacheKey); ok {
-		return cached, nil
-	}
-
-	client := &http.Client{
-		Timeout: 10 * time.Second,
-	}
-
-	req, err := http.NewRequest("GET", "https://api.github.com/repos/blackfyre/wga/contributors", nil)
-
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("Accept", "application/vnd.github.v3+json")
-	req.Header.Set("User-Agent", "blackfyre/wga")
-
-	resp, err := client.Do(req)
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			app.Logger().Error("Error closing response body", "error", err)
-		}
-	}(resp.Body)
-
-	var contributors []pages.GithubContributor
-
-	err = json.NewDecoder(resp.Body).Decode(&contributors)
-
-	if err != nil {
-		return nil, err
-	}
-
-	// write to file
-	f, err := os.Create("contributors.json")
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer func(f *os.File) {
-		err := f.Close()
-		if err != nil {
-			app.Logger().Error("Error closing file", "error", err)
-		}
-	}(f)
-
-	err = json.NewEncoder(f).Encode(contributors)
-
-	if err != nil {
-		return nil, err
-	}
-
-	utils.SetCachedValue(app, ghContribCacheKey, contributors, contributorsCacheTTL)
-
-	return contributors, nil
-}
-
-func readStoredContributors(app *pocketbase.PocketBase) ([]pages.GithubContributor, error) {
-	f, err := os.Open("contributors.json")
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer func(f *os.File) {
-		err := f.Close()
-		if err != nil {
-			app.Logger().Error("Error closing file", "error", err)
-		}
-	}(f)
-
-	var contributors []pages.GithubContributor
-
-	err = json.NewDecoder(f).Decode(&contributors)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return contributors, nil
-}
-
 func RegisterHandlers(app *pocketbase.PocketBase) {
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		se.Router.GET("/contributors", func(c *core.RequestEvent) error {
-
-			cacheKey := "contributors"
 			fullUrl := tmplUtils.AssetUrl("/contributors")
+			repo := repositories.NewContributorsRepository(app)
 
-			contributors, err := getContributorsFromGithub(app)
-
+			contributors, err := repo.GetContributors()
 			if err != nil {
-
-				app.Logger().Error("Error getting contributors from Github", "cacheKey", cacheKey, "error", err)
-
-				contributors, err = readStoredContributors(app)
-
-				if err != nil {
-					app.Logger().Error("Error reading stored contributors", "cacheKey", cacheKey, "error", err)
-					return apis.NewApiError(500, err.Error(), err)
-				}
+				app.Logger().Error("Error getting contributors", "error", err)
+				return apis.NewApiError(500, err.Error(), err)
 			}
 
 			content := pages.ContributorsPageDTO{
