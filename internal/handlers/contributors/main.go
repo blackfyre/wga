@@ -19,10 +19,14 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 			fullUrl := tmplUtils.AssetUrl("/contributors")
 			repo := repositories.NewContributorsRepository(app)
 
-			contributors, err := repo.GetContributors()
+			contributors, source, err := repo.GetContributorsWithSource()
 			if err != nil {
 				app.Logger().Error("Error getting contributors", "error", err)
 				return apis.NewApiError(500, err.Error(), err)
+			}
+
+			if source == repositories.ContributorsSourceFileFallback {
+				app.Logger().Warn("Contributors endpoint served fallback data", "source", source)
 			}
 
 			content := pages.ContributorsPageDTO{
@@ -34,6 +38,7 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, fullUrl)
 
 			c.Response.Header().Set("HX-Push-Url", fullUrl)
+			c.Response.Header().Set("X-WGA-Contributors-Source", string(source))
 
 			// Create a bytes buffer to write the response to
 			var buf bytes.Buffer
