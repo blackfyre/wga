@@ -11,17 +11,20 @@ import (
 
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
+	"github.com/blackfyre/wga/internal/utils"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 )
 
+const contributorsCacheTTL = 6 * time.Hour
+
 func getContributorsFromGithub(app *pocketbase.PocketBase) ([]pages.GithubContributor, error) {
 
 	ghContribCacheKey := "gh_contributors"
 
-	if app.Store().Has(ghContribCacheKey) {
-		return app.Store().Get(ghContribCacheKey).([]pages.GithubContributor), nil
+	if cached, ok := utils.GetCachedValue[[]pages.GithubContributor](app, ghContribCacheKey); ok {
+		return cached, nil
 	}
 
 	client := &http.Client{
@@ -78,7 +81,7 @@ func getContributorsFromGithub(app *pocketbase.PocketBase) ([]pages.GithubContri
 		return nil, err
 	}
 
-	app.Store().Set(ghContribCacheKey, contributors)
+	utils.SetCachedValue(app, ghContribCacheKey, contributors, contributorsCacheTTL)
 
 	return contributors, nil
 }
