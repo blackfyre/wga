@@ -79,4 +79,8 @@
     "viewerjs"
   ],
   "codeQL.githubDatabase.download": "never",
+  "chat.tools.terminal.autoApprove": {
+    "go": true,
+    "gofmt": true
+  }
 }

@@ -10,6 +10,7 @@ import (
 
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
+	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/blackfyre/wga/internal/utils/url"
 	"github.com/pocketbase/dbx"
@@ -63,7 +64,7 @@ func EntriesHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	app.Logger().Debug("Guestbook entries request", "year", year, "fullUrl", fullUrl)
 
 	// entries, err := wgaModels.FindEntriesForYear(app.Dao(), year)
-	entries, err := app.FindRecordsByFilter("Guestbook", "created ~ {:year}", "-created", 0, 0, dbx.Params{
+	entries, err := app.FindRecordsByFilter(constants.CollectionGuestbook, "created ~ {:year}", "-created", 0, 0, dbx.Params{
 		"year": year,
 	})
 
@@ -123,7 +124,7 @@ func StoreEntryHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 		return c.NoContent(204)
 	}
 
-	collection, err := app.FindCollectionByNameOrId("Guestbook")
+	collection, err := app.FindCollectionByNameOrId(constants.CollectionGuestbook)
 	if err != nil {
 		app.Logger().Error("Database table not found", "error", err.Error())
 		utils.SendToastMessage("Something went wrong!", "error", true, c, "")

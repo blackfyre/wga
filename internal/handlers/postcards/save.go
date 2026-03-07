@@ -2,7 +2,10 @@ package postcards
 
 import (
 	"fmt"
+	"net/http"
+	"os"
 
+	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/pocketbase/pocketbase"
@@ -34,7 +37,30 @@ func savePostcard(app *pocketbase.PocketBase, c *core.RequestEvent, p *bluemonda
 		return utils.ServerFaultError(c)
 	}
 
-	collection, err := app.FindCollectionByNameOrId("postcards")
+	if postData.RecaptchaToken == "" {
+		utils.SendToastMessage("Captcha verification failed", "error", true, c, "")
+		return utils.BadRequestError(c)
+	}
+
+	if recaptchaSecret := os.Getenv("WGA_RECAPTCHA_SECRET"); recaptchaSecret != "" {
+		verified, err := verifyRecaptchaToken(c.Request.Context(), http.DefaultClient, recaptchaSecret, postData.RecaptchaToken, c.RealIP())
+		if err != nil {
+			app.Logger().Error("Failed to verify recaptcha token", "error", err.Error())
+			utils.SendToastMessage("Failed to verify captcha", "error", true, c, "")
+			return utils.ServerFaultError(c)
+		}
+
+		if !verified {
+			app.Logger().Warn("Recaptcha validation failed", "ip", c.RealIP())
+			utils.SendToastMessage("Captcha verification failed", "error", true, c, "")
+			return utils.BadRequestError(c)
+		}
+	} else {
+		// Keep local/dev workflows functional when captcha secret isn't configured.
+		app.Logger().Warn("WGA_RECAPTCHA_SECRET is not set; skipping captcha verification")
+	}
+
+	collection, err := app.FindCollectionByNameOrId(constants.CollectionPostcards)
 	if err != nil {
 		app.Logger().Error("Failed to find postcard collection", "error", err.Error())
 		return utils.NotFoundError(c)
