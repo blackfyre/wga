@@ -62,23 +62,16 @@ func renderDualModePage(app *pocketbase.PocketBase, c *core.RequestEvent) error 
 
 	contentDto.Left = leftPane.Content
 	contentDto.Right = rightPane.Content
-	ArtistNameList, err := artworks.GetArtistNameList(app)
+	artistNameList, err := artworks.GetArtistNameList(app)
 
 	if err != nil {
 		app.Logger().Error("Error getting artist name list", "error", err.Error())
 		return utils.ServerFaultError(c)
 	}
 
-	contentDto.ArtistNameList = formatArtistNameList(ArtistNameList)
+	contentDto.ArtistNameList = formatArtistNameList(artistNameList)
 
-	relPath := url.GenerateDualModeUrl()
-
-	relPath.Query().Add("left", leftPane.RelPath)
-	relPath.Query().Add("right", rightPane.RelPath)
-	relPath.Query().Add("left_render_to", rightPane.Side)
-	relPath.Query().Add("right_render_to", leftPane.Side)
-
-	c.Response.Header().Set("HX-Push-Url", relPath.String())
+	c.Response.Header().Set("HX-Push-Url", buildDualModePushURL(leftPane, rightPane))
 
 	var buff bytes.Buffer
 
@@ -90,6 +83,20 @@ func renderDualModePage(app *pocketbase.PocketBase, c *core.RequestEvent) error 
 	}
 
 	return c.HTML(200, buff.String())
+}
+
+func buildDualModePushURL(leftPane renderPaneDto, rightPane renderPaneDto) string {
+	relPath := url.GenerateDualModeUrl()
+	queryValues := relPath.Query()
+
+	queryValues.Set("left", leftPane.RelPath)
+	queryValues.Set("right", rightPane.RelPath)
+	queryValues.Set("left_render_to", rightPane.Side)
+	queryValues.Set("right_render_to", leftPane.Side)
+
+	relPath.RawQuery = queryValues.Encode()
+
+	return relPath.String()
 }
 
 // formatArtistNameList formats the artist name list.
@@ -133,15 +140,12 @@ func renderPane(side string, app *pocketbase.PocketBase, c *core.RequestEvent) (
 	buf := new(bytes.Buffer)
 
 	if queryParam == "default" {
-		if side == "left" {
-			paneContent = "Left pane"
-		} else if side == "right" {
-			pages.RightSideDefault().Render(context.Background(), buf)
-		} else {
-			return pane, errs.ErrUnsupportedPaneType
+		defaultContent, err := defaultPaneContent(side)
+		if err != nil {
+			return pane, err
 		}
 
-		paneContent = buf.String()
+		paneContent = defaultContent
 
 		return renderPaneDto{
 			Side:    side,
@@ -197,6 +201,23 @@ func renderPane(side string, app *pocketbase.PocketBase, c *core.RequestEvent) (
 	pane.Content = buf.String()
 
 	return pane, nil
+}
+
+func defaultPaneContent(side string) (string, error) {
+	if side == "left" {
+		return "Left pane", nil
+	}
+
+	if side == "right" {
+		buf := new(bytes.Buffer)
+		if err := pages.RightSideDefault().Render(context.Background(), buf); err != nil {
+			return "", err
+		}
+
+		return buf.String(), nil
+	}
+
+	return "", errs.ErrUnsupportedPaneType
 }
 
 func renderArtistPane(app *pocketbase.PocketBase, c *core.RequestEvent, artistId string, renderTo string, buf *bytes.Buffer) (dto.Artist, error) {

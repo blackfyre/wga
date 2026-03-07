@@ -1,6 +1,7 @@
 package dual
 
 import (
+	"net/url"
 	"reflect"
 	"testing"
 
@@ -65,5 +66,52 @@ func TestReverseSide(t *testing.T) {
 	result = reverseSide(input)
 	if result != expected {
 		t.Errorf("Expected %v, but got %v", expected, result)
+	}
+}
+
+func TestBuildDualModePushURL(t *testing.T) {
+	left := renderPaneDto{Side: "left", RelPath: "/artists/example-123"}
+	right := renderPaneDto{Side: "right", RelPath: "/artists/example-123/artwork-777"}
+
+	pushURL := buildDualModePushURL(left, right)
+
+	parsed, err := url.Parse(pushURL)
+	if err != nil {
+		t.Fatalf("expected valid push url, got error: %v", err)
+	}
+
+	if parsed.Path != "/dual-mode" {
+		t.Fatalf("expected /dual-mode path, got %s", parsed.Path)
+	}
+
+	if got := parsed.Query().Get("left"); got != left.RelPath {
+		t.Fatalf("expected left=%s, got %s", left.RelPath, got)
+	}
+
+	if got := parsed.Query().Get("right"); got != right.RelPath {
+		t.Fatalf("expected right=%s, got %s", right.RelPath, got)
+	}
+
+	if got := parsed.Query().Get("left_render_to"); got != right.Side {
+		t.Fatalf("expected left_render_to=%s, got %s", right.Side, got)
+	}
+
+	if got := parsed.Query().Get("right_render_to"); got != left.Side {
+		t.Fatalf("expected right_render_to=%s, got %s", left.Side, got)
+	}
+}
+
+func TestDefaultPaneContentLeft(t *testing.T) {
+	content, err := defaultPaneContent("left")
+	if err != nil {
+		t.Fatalf("unexpected error while rendering default left pane content: %v", err)
+	}
+
+	if content == "" {
+		t.Fatalf("expected non-empty default left pane content")
+	}
+
+	if content != "Left pane" {
+		t.Fatalf("expected default left pane marker text, got %q", content)
 	}
 }

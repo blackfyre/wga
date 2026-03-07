@@ -39,7 +39,7 @@ func GenerateSiteMap(app *pocketbase.PocketBase) {
 	// Save func saves the xml files and returns more than one filename in case of split large files.
 	filenames, err := index.Save()
 	if err != nil {
-		app.Logger().Error("Unable to Save Sitemap:", err)
+		app.Logger().Error("Unable to save sitemap", "error", err)
 		return
 	}
 	for _, filename := range filenames {
@@ -71,7 +71,7 @@ func generateArtistMap(app *pocketbase.PocketBase, index *smg.SitemapIndex) {
 	records, err := fetchArtistsForSitemap(app)
 
 	if err != nil {
-		app.Logger().Error("Error fetching artists for sitemap", err)
+		app.Logger().Error("Error fetching artists for sitemap", "error", err)
 	}
 
 	for _, m := range records {
@@ -139,7 +139,7 @@ func generateArtworksMap(app *pocketbase.PocketBase, index *smg.SitemapIndex) {
 		})
 
 		if err != nil {
-			app.Logger().Error("Unable to Save Sitemap:", err)
+			app.Logger().Error("Unable to save sitemap", "error", err)
 			return
 		}
 	}

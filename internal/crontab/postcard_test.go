@@ -2,6 +2,7 @@ package crontab
 
 import (
 	"net/mail"
+	"strings"
 	"testing"
 
 	"github.com/pocketbase/pocketbase"
@@ -35,6 +36,10 @@ func TestSendMail(t *testing.T) {
 
 	err := mailClient.Send(message)
 	if err != nil {
+		if strings.Contains(err.Error(), "failed to locate a sendmail executable path") {
+			t.Skip("sendmail is unavailable in this environment")
+		}
+
 		t.Errorf("sendMail returned an error: %v", err)
 	}
 

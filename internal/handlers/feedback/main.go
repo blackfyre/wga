@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/blackfyre/wga/internal/assets/templ/components"
+	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/errs"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/pocketbase/pocketbase"
@@ -127,7 +128,7 @@ func processFeedbackForm(c *core.RequestEvent, app *pocketbase.PocketBase) error
 //
 // Finally, it submits the form using the form.Submit method and returns the result.
 func saveFeedback(app *pocketbase.PocketBase, c *core.RequestEvent, postData feedbackForm) error {
-	collection, err := app.FindCollectionByNameOrId("feedbacks")
+	collection, err := app.FindCollectionByNameOrId(constants.CollectionFeedbacks)
 	if err != nil {
 		app.Logger().Error("Database table not found", "error", err.Error())
 		utils.SendToastMessage("Database table not found", "error", true, c, "")
