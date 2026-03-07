@@ -10,6 +10,7 @@ import (
 	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/errs"
 	"github.com/blackfyre/wga/internal/utils"
+	"github.com/blackfyre/wga/internal/validation"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 )
@@ -28,12 +29,12 @@ type feedbackForm struct {
 // It also checks if the email and message fields are empty and returns an error if they are.
 // If all validations pass, it returns nil.
 func validateFeedbackForm(form feedbackForm) error {
-	if form.HoneyPotName != "" || form.HoneyPotEmail != "" {
-		return errs.ErrHoneypotTriggered
+	if err := validation.ValidateHoneypot(form.HoneyPotName, form.HoneyPotEmail); err != nil {
+		return err
 	}
 
-	if form.Message == "" {
-		return errs.ErrMessageRequired
+	if err := validation.ValidateMessage(form.Message); err != nil {
+		return err
 	}
 
 	return nil
