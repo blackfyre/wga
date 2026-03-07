@@ -9,6 +9,7 @@ import (
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
+	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/blackfyre/wga/internal/utils/url"
 	"github.com/pocketbase/pocketbase"
@@ -86,7 +87,7 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	filterString, filterParams := filters.BuildFilter()
 
 	records, err := app.FindRecordsByFilter(
-		"artworks",
+		constants.CollectionArtworks,
 		filterString,
 		"+title",
 		limit,
@@ -101,7 +102,7 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 	// this could be replaced with a dedicated SQL query, but this is more convinient
 	totalRecords, err := app.FindRecordsByFilter(
-		"artworks",
+		constants.CollectionArtworks,
 		filterString,
 		"",
 		0,
@@ -145,7 +146,7 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 			continue
 		}
 
-		artist, err := app.FindRecordById("artists", artistIds[0])
+		artist, err := app.FindRecordById(constants.CollectionArtists, artistIds[0])
 
 		if err != nil {
 			// waiting for the promised logging system by @pocketbase
@@ -159,8 +160,8 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 				ArtworkTitle: v.GetString("title"),
 				ArtworkId:    v.GetString("id"),
 			}),
-			Image:     url.GenerateFileUrl("artworks", v.GetString("id"), v.GetString("image"), ""),
-			Thumb:     url.GenerateThumbUrl("artworks", v.GetString("id"), v.GetString("image"), "320x240", ""),
+			Image:     url.GenerateFileUrl(constants.CollectionArtworks, v.GetString("id"), v.GetString("image"), ""),
+			Thumb:     url.GenerateThumbUrl(constants.CollectionArtworks, v.GetString("id"), v.GetString("image"), "320x240", ""),
 			Comment:   v.GetString("comment"),
 			Title:     v.GetString("title"),
 			Technique: v.GetString("technique"),

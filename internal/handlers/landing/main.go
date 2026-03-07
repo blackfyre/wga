@@ -8,6 +8,7 @@ import (
 
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
+	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
@@ -36,7 +37,7 @@ func getWelcomeContent(app *pocketbase.PocketBase) (string, error) {
 		return app.Store().Get("strings:welcome").(string), nil
 	}
 
-	record, err := app.FindFirstRecordByData("strings", "name", "welcome")
+	record, err := app.FindFirstRecordByData(constants.CollectionStrings, "name", "welcome")
 
 	if err != nil {
 		app.Logger().Error("Error getting welcome content", "error", err.Error())

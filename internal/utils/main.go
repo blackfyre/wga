@@ -14,6 +14,7 @@ import (
 	"unicode"
 
 	"github.com/blackfyre/wga/internal/assets/templ/error_pages"
+	"github.com/blackfyre/wga/internal/constants"
 	strip "github.com/grokify/html-strip-tags-go"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
@@ -346,7 +347,7 @@ func RenderSchoolNames(app *pocketbase.PocketBase, schoolIds []string) string {
 	var schoolCollector []string
 
 	for _, s := range schoolIds {
-		r, err := app.FindRecordById("schools", s)
+		r, err := app.FindRecordById(constants.CollectionSchools, s)
 
 		if err != nil {
 			app.Logger().Error("school not found", "error", err.Error())

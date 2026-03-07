@@ -9,6 +9,7 @@ import (
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
+	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/errs"
 	"github.com/blackfyre/wga/internal/handlers/artists"
 	"github.com/blackfyre/wga/internal/handlers/artworks"
@@ -221,7 +222,7 @@ func defaultPaneContent(side string) (string, error) {
 }
 
 func renderArtistPane(app *pocketbase.PocketBase, c *core.RequestEvent, artistId string, renderTo string, buf *bytes.Buffer) (dto.Artist, error) {
-	artistModel, err := app.FindRecordById("artists", artistId)
+	artistModel, err := app.FindRecordById(constants.CollectionArtists, artistId)
 
 	if err != nil {
 		app.Logger().Error("Error finding artist", "error", err.Error())
@@ -246,7 +247,7 @@ func renderArtistPane(app *pocketbase.PocketBase, c *core.RequestEvent, artistId
 }
 
 func renderArtworkPane(app *pocketbase.PocketBase, c *core.RequestEvent, artworkId string, renderTo string, buf *bytes.Buffer) (dto.Artwork, error) {
-	artworkModel, err := app.FindRecordById("artworks", artworkId)
+	artworkModel, err := app.FindRecordById(constants.CollectionArtworks, artworkId)
 
 	if err != nil {
 		app.Logger().Error("Error finding artwork", "error", err.Error())

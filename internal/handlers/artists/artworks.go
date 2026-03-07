@@ -12,6 +12,7 @@ import (
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
+	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/errs"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/blackfyre/wga/internal/utils/jsonld"
@@ -38,7 +39,7 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 	artistSlugParts := strings.Split(artistSlug, "-")
 	artistId := artistSlugParts[len(artistSlugParts)-1]
 
-	artist, err := app.FindRecordById("artists", artistId)
+	artist, err := app.FindRecordById(constants.CollectionArtists, artistId)
 
 	// If the artist is not found, return a not found error
 	if err != nil {
@@ -54,7 +55,7 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 	artworkId := artworkSlugParts[len(artworkSlugParts)-1]
 
 	// find the artwork by id
-	aw, err := app.FindRecordById("artworks", artworkId)
+	aw, err := app.FindRecordById(constants.CollectionArtworks, artworkId)
 
 	if err != nil {
 		app.Logger().Error("Error finding artwork: ", artworkSlug, err)
@@ -78,8 +79,8 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 	img.Comment = aw.GetString("comment")
 	img.Technique = aw.GetString("technique")
 	if aw.GetString("image") != "" {
-		img.Image = url.GenerateFileUrl("artworks", aw.GetString("id"), aw.GetString("image"), "")
-		img.Thumb = url.GenerateThumbUrl("artworks", aw.GetString("id"), aw.GetString("image"), "320x240", "")
+		img.Image = url.GenerateFileUrl(constants.CollectionArtworks, aw.GetString("id"), aw.GetString("image"), "")
+		img.Thumb = url.GenerateThumbUrl(constants.CollectionArtworks, aw.GetString("id"), aw.GetString("image"), "320x240", "")
 	} else {
 		img.Image = utils.AssetUrl("/assets/images/no-image.png")
 		img.Thumb = utils.AssetUrl("/assets/images/no-image.png")
@@ -114,7 +115,7 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 	var schoolCollector []string
 
 	for _, s := range school {
-		r, err := app.FindRecordById("schools", s)
+		r, err := app.FindRecordById(constants.CollectionSchools, s)
 
 		if err != nil {
 			app.Logger().Error("school not found", "error", err.Error())
@@ -185,7 +186,7 @@ func RenderArtworkContent(app *pocketbase.PocketBase, c *core.RequestEvent, artw
 	if artistId != "" {
 		var artist *core.Record
 
-		artist, err := app.FindRecordById("Artists", artistId)
+		artist, err := app.FindRecordById(constants.CollectionArtists, artistId)
 
 		if err != nil {
 			app.Logger().Error(fmt.Sprintf("Error finding artist (%s) related to artwork (%s)", artistId, artwork.Id), "error", err.Error())

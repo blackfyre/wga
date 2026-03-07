@@ -57,12 +57,16 @@ The codebase does not require a rewrite. It requires disciplined hardening in th
 
 ### Key Gaps
 
-1. CI does not gate backend quality with `go test`/`go vet`.
-2. Security control incomplete: reCAPTCHA token collected but not server-verified.
-3. Inconsistent collection identifiers (e.g. `Guestbook` vs lowercase conventions).
-4. Query inefficiencies (count via full fetch, known N+1 patterns).
-5. Cache strategy lacks TTL/invalidation discipline and uses unsafe type assertions.
-6. Dev UX drift between docs and scripts (`bun run dev` documented but missing).
+1. Query inefficiencies (count via full fetch, known N+1 patterns).
+2. Cache strategy lacks TTL/invalidation discipline and uses unsafe type assertions.
+3. Dev UX drift between docs and scripts (`bun run dev` documented but missing).
+4. Validation and anti-bot controls are still duplicated across handlers and should be centralized.
+
+### Recently Mitigated
+
+1. Backend CI quality gates are now in place (`go vet` + `go test`).
+2. reCAPTCHA server-side verification is implemented for postcard submission.
+3. Runtime collection identifier drift has been standardized via `internal/constants/collections.go`.
 
 ## 3. System Overview
 

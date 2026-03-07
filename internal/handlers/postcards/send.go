@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/blackfyre/wga/internal/assets/templ/components"
+	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/blackfyre/wga/internal/utils/url"
 	"github.com/pocketbase/pocketbase"
@@ -29,7 +30,7 @@ func sendPostcard(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 func renderForm(artworkId string, app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	ctx := context.Background()
 
-	r, err := app.FindRecordById("artworks", artworkId)
+	r, err := app.FindRecordById(constants.CollectionArtworks, artworkId)
 
 	if err != nil {
 		app.Logger().Error("Failed to find artwork "+artworkId, "error", err.Error())
@@ -43,7 +44,7 @@ func renderForm(artworkId string, app *pocketbase.PocketBase, c *core.RequestEve
 	if r.GetString("image") == "" {
 		editor.Image = utils.AssetUrl("/assets/images/no-image.png")
 	} else {
-		editor.Image = url.GenerateFileUrl("artworks", artworkId, r.GetString("image"), "")
+		editor.Image = url.GenerateFileUrl(constants.CollectionArtworks, artworkId, r.GetString("image"), "")
 	}
 	editor.Title = r.GetString("title")
 	editor.Comment = r.GetString("comment")

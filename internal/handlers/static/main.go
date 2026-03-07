@@ -10,6 +10,7 @@ import (
 	"github.com/blackfyre/wga/internal/assets/templ/error_pages"
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
+	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
@@ -49,7 +50,7 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 			slug := c.Request.PathValue("slug")
 			fullUrl := tmplUtils.AssetUrl("/pages/" + slug)
 
-			page, err := app.FindFirstRecordByData("static_pages", "slug", slug)
+			page, err := app.FindFirstRecordByData(constants.CollectionStaticPages, "slug", slug)
 
 			if err != nil {
 				app.Logger().Error("Error retrieving static page", "page", slug, "error", err)

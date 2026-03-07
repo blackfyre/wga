@@ -1,6 +1,7 @@
 package artworks
 
 import (
+	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/utils/url"
 	"github.com/pocketbase/pocketbase"
 )
@@ -11,7 +12,7 @@ func getArtTypesOptions(app *pocketbase.PocketBase) (map[string]string, error) {
 	options := map[string]string{
 		"": "Any",
 	}
-	c, err := app.FindRecordsByFilter("art_types", "", "+name", 0, 0)
+	c, err := app.FindRecordsByFilter(constants.CollectionArtTypes, "", "+name", 0, 0)
 
 	if err != nil {
 		return options, err
@@ -30,7 +31,7 @@ func getArtFormOptions(app *pocketbase.PocketBase) (map[string]string, error) {
 	options := map[string]string{
 		"": "Any",
 	}
-	c, err := app.FindRecordsByFilter("art_forms", "", "+name", 0, 0)
+	c, err := app.FindRecordsByFilter(constants.CollectionArtForms, "", "+name", 0, 0)
 
 	if err != nil {
 		return options, err
@@ -48,7 +49,7 @@ func getArtSchoolOptions(app *pocketbase.PocketBase) (map[string]string, error) 
 	options := map[string]string{
 		"": "Any",
 	}
-	c, err := app.FindRecordsByFilter("schools", "", "+name", 0, 0)
+	c, err := app.FindRecordsByFilter(constants.CollectionSchools, "", "+name", 0, 0)
 
 	if err != nil {
 		return options, err
@@ -64,7 +65,7 @@ func getArtSchoolOptions(app *pocketbase.PocketBase) (map[string]string, error) 
 func GetArtistNameList(app *pocketbase.PocketBase) (map[string]string, error) {
 	names := make(map[string]string) // Initialize the names map
 	c, err := app.FindRecordsByFilter(
-		"artists",
+		constants.CollectionArtists,
 		"published = true",
 		"+name",
 		0,

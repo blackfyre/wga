@@ -9,6 +9,7 @@ import (
 
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
+	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/blackfyre/wga/internal/utils/url"
 	"github.com/pocketbase/pocketbase"
@@ -24,7 +25,7 @@ func viewPostcard(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 		return utils.NotFoundError(c)
 	}
 
-	r, err := app.FindRecordById("Postcards", postCardId)
+	r, err := app.FindRecordById(constants.CollectionPostcards, postCardId)
 
 	if err != nil {
 		app.Logger().Error("Failed to find postcard", "id", postCardId, "error", err.Error())
@@ -41,7 +42,7 @@ func viewPostcard(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	content := pages.PostcardView{
 		SenderName: r.GetString("sender_name"),
 		Message:    r.GetString("message"),
-		Image:      url.GenerateFileUrl("artworks", aw.GetString("id"), aw.GetString("image"), ""),
+		Image:      url.GenerateFileUrl(constants.CollectionArtworks, aw.GetString("id"), aw.GetString("image"), ""),
 		Title:      aw.GetString("title"),
 		Comment:    aw.GetString("comment"),
 		Technique:  aw.GetString("technique"),
