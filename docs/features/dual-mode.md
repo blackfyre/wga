@@ -1,179 +1,110 @@
-# WGA Dual-Mode Architecture Spec (Public + Admin)
+# WGA Dual Mode Feature Spec
 
-> Extension of: WGA Artist Directory Spec  
-> Backend: PocketBase  
-> Frontend: HTMX  
-> Modes:  
-> • Public — read-only browsing  
-> • Admin — authenticated editorial mode  
+> Target: Provide a desktop-only split-pane browsing experience for comparing and studying artist and artwork content side by side. Current route: `/dual-mode`.
 
 ---
 
-## 1. Modes Overview
+## 1. Summary
 
-| Mode | Audience | Access | Purpose |
-|------|-----------|---------|----------|
-| **Public** | Visitors | Anonymous | Browse artists, artworks, and metadata |
-| **Admin** | Curators | Authenticated (PocketBase Auth) | Manage, import, and curate data |
+Dual Mode lets visitors open two related pieces of content in parallel within a single desktop browsing view. It is intended for study, comparison, and cross-reference workflows where a user benefits from keeping two pages visible at the same time.
 
-Both modes share the same codebase but use distinct routes and permission rules.
+This feature applies to:
 
----
+- artist pages
+- artwork pages
+- artist biography content shown within artist pages
 
-## 2. Mode Switching
-
-### Requirements
-- Shared PocketBase backend; routes split logically:
-  - `/` → Public browsing
-  - `/admin` → Admin dashboard
-- Authentication: PocketBase Auth (email/password or OAuth)
-- Role-based visibility for UI elements
-- Persistent session tokens scoped to `/admin`
-- Graceful fallback to login on timeout
-
-### Acceptance Criteria
-- [ ] `/admin` redirects to login if not authenticated
-- [ ] Public users never see edit/import controls
-- [ ] Switching between modes clears state correctly
-- [ ] Sessions expire and redirect to login without errors
+Dual Mode is not intended for mobile use. Small screens do not provide enough space for two usable panes.
 
 ---
 
-## 3. Shared Components
+## 2. Audience and Use Cases
 
-### Common Layout
-- Header, footer, breadcrumbs shared across both modes
-- Unified design system (responsive grid, dark/light)
-- Notification system (success, warning, error)
+**Audience**
 
-### Data API
-- Shared PocketBase API endpoints
-- Public: read-only (GET)
-- Admin: CRUD via authenticated requests
+- visitors exploring related artists
+- visitors comparing artworks
+- visitors reading an artist biography while viewing artworks or another artist
 
-### Acceptance
-- [ ] Templates consistent between modes
-- [ ] Data endpoints identical except access control
+**Primary use cases**
 
----
-
-## 4. Admin Dashboard Structure
-
-| Route | Description |
-|--------|--------------|
-| `/admin` | Overview of key metrics and recent imports |
-| `/admin/artists` | Artist table with CRUD |
-| `/admin/artworks` | Artwork table and image upload |
-| `/admin/imports` | Import manager (upload + logs) |
-| `/admin/duplicates` | Duplicate review and merge interface |
-| `/admin/images` | Image integrity dashboard |
+- compare two artists side by side
+- compare two artworks side by side
+- read an artist biography while keeping an artwork visible
+- keep one pane on an artist page while the other pane follows related artwork navigation
 
 ---
 
-## 5. Admin UI Components (HTMX)
+## 3. Supported Content
 
-### Artist Table
-- Server-rendered table with sortable columns
-- Modal for details and edit
-- Tabs for Bio, Works, Metadata
+### Supported pane content
 
-### Artwork Table
-- Filters by artist, year, medium
-- Inline image preview and upload
+- artist detail pages
+- artwork detail pages
+- biography content that is part of an artist page
 
-### Import Manager
-- Upload form with progress polling (`hx-trigger="every 5s"`)
-- Log area auto-updates
+### Not in scope
 
-### Duplicate Review
-- Diff panel comparing two records
-- Merge and dismiss buttons trigger PB functions
-
-### Acceptance Criteria
-- [ ] CRUD modals submit via HTMX and refresh in place
-- [ ] Imports auto-refresh while running
-- [ ] Merges create consolidated record and archive dupes
+- a separate standalone bio-page route
+- mobile split-pane layouts
+- admin or editorial workflows
+- list pages, search result pages, or unrelated static pages unless added later by a separate feature decision
 
 ---
 
-## 6. Public vs Admin Feature Matrix
+## 4. Experience Rules
 
-| Feature | Public | Admin |
-|----------|---------|-------|
-| A–Z navigation | ✅ | ✅ |
-| Artist listings | ✅ | ✅ |
-| CRUD actions | ❌ | ✅ |
-| Image upload | ❌ | ✅ |
-| Import jobs | ❌ | ✅ |
-| Duplicate handling | ❌ | ✅ |
-| Search | ✅ | ✅ |
-| Caching | ✅ (1h TTL) | ❌ |
-| Logging | minimal | verbose |
+### Layout
 
----
+- Dual Mode presents two panes in a single desktop viewport.
+- Each pane can render supported content independently of the other pane.
+- The page should support left/right pane combinations of any supported content type.
 
-## 7. Backend Access Rules (PocketBase)
+### Entry and navigation
 
-### Example Rule: `artists`
-```json
-{
-  "listRule": "true",
-  "viewRule": "true",
-  "createRule": "@request.auth.role='admin'",
-  "updateRule": "@request.auth.role='admin'",
-  "deleteRule": "@request.auth.role='admin'"
-}
-```
+- Users can open Dual Mode from the dedicated `/dual-mode` route.
+- The view should preserve which content is loaded in the left and right panes through the URL so the state can be reloaded or shared.
+- If one pane is missing content, Dual Mode should still render a usable default state rather than failing the entire page.
 
-### Acceptance
-- [ ] Admin API token grants CRUD access
-- [ ] Public requests restricted to GET
-- [ ] Access failures logged with user and timestamp
+### Desktop-only behavior
+
+- Dual Mode is available only on desktop-sized screens.
+- On screens below the supported breakpoint, users should see a clear unsupported-state message instead of an active split-pane layout.
+- The current minimum supported width should align with the existing desktop breakpoint in the UI unless changed by a later product decision.
+
+### Content behavior
+
+- Artist biography content counts as supported Dual Mode content when shown inside the artist page.
+- Dual Mode should prioritize readable browsing and comparison, not editing or complex multi-step workflows.
+- Pane content should remain visually independent so users can scroll and inspect each side separately.
 
 ---
 
-## 8. Deployment Strategy
+## 5. Acceptance Criteria
 
-- Single PocketBase + HTMX instance  
-- Reverse proxy: `/admin` requires auth, `/api` public cached  
-- Optional: separate subdomains (e.g., `wga.hu` vs `edit.wga.hu`)
-
-### Acceptance
-- [ ] Cache headers applied for public endpoints
-- [ ] Admin served via authenticated route
-- [ ] Admin pages excluded from sitemap
-
----
-
-## 9. Dual-Mode Testing
-
-| Area | Type | Validation |
-|------|------|-------------|
-| Auth | Unit | Login/logout works |
-| Routing | Integration | `/admin` locked; `/artists` open |
-| CRUD | E2E | Admin edits succeed; public blocked |
-| Imports | Integration | Upload + polling OK |
-| Duplicates | Unit | Merge/dismiss logic correct |
-| Cache | Functional | Public cache invalidates after edits |
+- [ ] Visiting `/dual-mode` on a desktop-sized screen renders a two-pane browsing layout.
+- [ ] A user can load an artist page into either pane.
+- [ ] A user can load an artwork page into either pane.
+- [ ] A user can view artist biography content as part of an artist page in either pane.
+- [ ] Left/right combinations of supported content types work without forcing both panes to be the same type.
+- [ ] Reloading or sharing the Dual Mode URL preserves the pane state.
+- [ ] If one pane has no selected content, the page still renders with a valid default state for that pane.
+- [ ] On screens below the supported desktop breakpoint, the split-pane interface is not shown.
+- [ ] On unsupported small screens, the user sees a clear message explaining that Dual Mode is desktop-only.
 
 ---
 
-## 10. Definition of Done
+## 6. Non-Goals
 
-- [ ] Full admin CRUD via web UI
-- [ ] Public pages unaffected by admin actions
-- [ ] Cache headers active and verifiable
-- [ ] Access control tested for each collection
-- [ ] End-to-end import/edit cycle passes QA
-
----
-
-## 11. Optional Add-ons
-
-- Editor role with partial write rights
-- Audit trail collection (`changes`)
-- Activity feed (`recent edits`, `imports`)
-- Diff-based change viewer
-- WebSocket progress updates for imports
+- building a mobile version of Dual Mode
+- defining a separate biography route outside the artist page
+- introducing admin-only Dual Mode behavior
+- expanding Dual Mode to every content type in the site without a separate product decision
 
 ---
+
+## 7. Notes for Future Follow-Up
+
+- If the product later adds dedicated entry points into Dual Mode from artist or artwork pages, that should be captured as a follow-up enhancement.
+- If tablet support is ever desired, it should be treated as a new scope decision rather than implied by this spec.
+- If additional content types become eligible for split-pane browsing, the supported-content section and acceptance criteria should be expanded together.

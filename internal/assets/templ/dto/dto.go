@@ -1,17 +1,18 @@
 package dto
 
 type Artist struct {
-	Id         string
-	Name       string
-	BornDied   string
-	Schools    string
-	Profession string
-	Url        string
-	BioExcerpt string
-	Jsonld     string
-	Bio        string
-	Works      ImageGrid
-	HxTarget   string
+	Id              string
+	Name            string
+	BornDied        string
+	Schools         string
+	Profession      string
+	Url             string
+	BioExcerpt      string
+	Jsonld          string
+	Bio             string
+	Works           ImageGrid
+	HxTarget        string
+	ShowBreadcrumbs bool
 }
 
 type ArtistsView struct {
@@ -24,13 +25,14 @@ type ArtistsView struct {
 }
 
 type Artwork struct {
-	Id        string
-	Title     string
-	Comment   string
-	Technique string
-	Jsonld    string
-	Url       string
-	HxTarget  string
+	Id              string
+	Title           string
+	Comment         string
+	Technique       string
+	Jsonld          string
+	Url             string
+	HxTarget        string
+	ShowBreadcrumbs bool
 	Image
 	Artist
 }

@@ -23,7 +23,7 @@ import (
 // information about the artist, their works, and JSON-LD metadata. It takes the PocketBase application instance,
 // the Echo context, and the artist record as input parameters. It returns the DTO representing the artist content
 // and an error if any occurred during the process.
-func RenderArtistContent(app *pocketbase.PocketBase, c *core.RequestEvent, artist *core.Record, hxTarget string) (dto.Artist, error) {
+func RenderArtistContent(app *pocketbase.PocketBase, c *core.RequestEvent, artist *core.Record, hxTarget string, showBreadcrumbs bool) (dto.Artist, error) {
 	id := artist.GetString("id")
 	expectedSlug := utils.GenerateArtistSlug(artist)
 
@@ -49,11 +49,12 @@ func RenderArtistContent(app *pocketbase.PocketBase, c *core.RequestEvent, artis
 			PlaceOfDeath:      artist.GetString("place_of_death"),
 			KnownPlaceOfDeath: artist.GetString("known_place_of_death"),
 		}),
-		Schools:    schools,
-		Profession: artist.GetString("profession"),
-		Works:      dto.ImageGrid{},
-		Url:        "/artists/" + expectedSlug,
-		HxTarget:   hxTarget,
+		Schools:         schools,
+		Profession:      artist.GetString("profession"),
+		Works:           dto.ImageGrid{},
+		Url:             "/artists/" + expectedSlug,
+		HxTarget:        hxTarget,
+		ShowBreadcrumbs: showBreadcrumbs,
 	}
 
 	JsonLd := jsonld.ArtistJsonLd(artist)
@@ -129,7 +130,7 @@ func processArtist(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 		return c.Redirect(http.StatusMovedPermanently, fullUrl)
 	}
 
-	content, err := RenderArtistContent(app, c, artist, "#mc-area")
+	content, err := RenderArtistContent(app, c, artist, "#mc-area", true)
 
 	if err != nil {
 		return err

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"cmp"
 	"context"
+	"slices"
 	"strings"
 
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
@@ -22,6 +23,12 @@ import (
 type renderPaneDto struct {
 	Side    string
 	Content string
+	RelPath string
+}
+
+type panePathDto struct {
+	Kind    string
+	Id      string
 	RelPath string
 }
 
@@ -100,6 +107,46 @@ func buildDualModePushURL(leftPane renderPaneDto, rightPane renderPaneDto) strin
 	return relPath.String()
 }
 
+func parsePanePath(raw string) (panePathDto, error) {
+	normalized := cmp.Or(strings.TrimSpace(raw), "default")
+
+	if normalized == "default" {
+		return panePathDto{Kind: "default", RelPath: "default"}, nil
+	}
+
+	normalized = "/" + strings.Trim(normalized, "/")
+	parts := strings.Split(strings.Trim(normalized, "/"), "/")
+
+	switch {
+	case len(parts) == 2 && parts[0] == "artists":
+		return panePathDto{
+			Kind:    "artist",
+			Id:      utils.ExtractIdFromString(parts[1]),
+			RelPath: normalized,
+		}, nil
+	case len(parts) == 3 && parts[0] == "artists":
+		return panePathDto{
+			Kind:    "artwork",
+			Id:      utils.ExtractIdFromString(parts[2]),
+			RelPath: normalized,
+		}, nil
+	case len(parts) == 4 && parts[0] == "artists" && parts[2] == "artworks":
+		return panePathDto{
+			Kind:    "artwork",
+			Id:      utils.ExtractIdFromString(parts[3]),
+			RelPath: normalized,
+		}, nil
+	case len(parts) == 2 && parts[0] == "artworks":
+		return panePathDto{
+			Kind:    "artwork",
+			Id:      utils.ExtractIdFromString(parts[1]),
+			RelPath: normalized,
+		}, nil
+	default:
+		return panePathDto{}, errs.ErrUnknownDualPane
+	}
+}
+
 // formatArtistNameList formats the artist name list.
 // It takes a map of artist names as a parameter.
 // It returns a slice of dto.ArtistNameListEntry.
@@ -112,6 +159,14 @@ func formatArtistNameList(artistNameList map[string]string) []dto.ArtistNameList
 			Label: label,
 		})
 	}
+
+	slices.SortFunc(artistNameListEntries, func(a dto.ArtistNameListEntry, b dto.ArtistNameListEntry) int {
+		if diff := strings.Compare(a.Label, b.Label); diff != 0 {
+			return diff
+		}
+
+		return strings.Compare(a.Url, b.Url)
+	})
 
 	return artistNameListEntries
 }
@@ -137,66 +192,43 @@ func renderPane(side string, app *pocketbase.PocketBase, c *core.RequestEvent) (
 	pane := renderPaneDto{
 		Side: side,
 	}
-	var paneContent string
 	buf := new(bytes.Buffer)
 
-	if queryParam == "default" {
-		defaultContent, err := defaultPaneContent(side)
-		if err != nil {
-			return pane, err
-		}
+	parsedPath, err := parsePanePath(queryParam)
+	if err != nil {
+		return pane, err
+	}
 
-		paneContent = defaultContent
+	if parsedPath.Kind == "default" {
+		defaultContent, defaultErr := defaultPaneContent(side)
+		if defaultErr != nil {
+			return pane, defaultErr
+		}
 
 		return renderPaneDto{
 			Side:    side,
-			Content: paneContent,
+			Content: defaultContent,
+			RelPath: parsedPath.RelPath,
 		}, nil
 	}
 
-	// remove any leading / or trailing /
-	queryParam = strings.Trim(queryParam, "/")
-
-	// split the query param into parts
-	parts := strings.Split(queryParam, "/")
-
-	if len(parts) > 3 {
-		return pane, errs.ErrTooManyParts
-	}
-
-	paneType := parts[0]
-
-	switch paneType {
-	case "artists":
-		if len(parts) == 3 {
-			slug := parts[2]
-			artworkId := utils.ExtractIdFromString(slug)
-
-			artworkDto, err := renderArtworkPane(app, c, artworkId, renderTo, buf)
-
-			if err != nil {
-				return pane, err
-			}
-
-			pane.RelPath = artworkDto.Url
-
-		} else {
-			slug := parts[1]
-			artistId := utils.ExtractIdFromString(slug)
-
-			artistDto, err := renderArtistPane(app, c, artistId, renderTo, buf)
-
-			if err != nil {
-				return pane, err
-			}
-
-			pane.RelPath = artistDto.Url
+	switch parsedPath.Kind {
+	case "artist":
+		artistDto, renderErr := renderArtistPane(app, c, parsedPath.Id, renderTo, buf)
+		if renderErr != nil {
+			return pane, renderErr
 		}
 
-	case "artworks":
-		paneContent = "Artworks"
+		pane.RelPath = artistDto.Url
+	case "artwork":
+		artworkDto, renderErr := renderArtworkPane(app, c, parsedPath.Id, renderTo, buf)
+		if renderErr != nil {
+			return pane, renderErr
+		}
+
+		pane.RelPath = artworkDto.Url
 	default:
-		return pane, errs.ErrUnknownDualPane
+		return pane, errs.ErrUnsupportedPaneType
 	}
 
 	pane.Content = buf.String()
@@ -205,20 +237,16 @@ func renderPane(side string, app *pocketbase.PocketBase, c *core.RequestEvent) (
 }
 
 func defaultPaneContent(side string) (string, error) {
-	if side == "left" {
-		return "Left pane", nil
+	if side != "left" && side != "right" {
+		return "", errs.ErrUnsupportedPaneType
 	}
 
-	if side == "right" {
-		buf := new(bytes.Buffer)
-		if err := pages.RightSideDefault().Render(context.Background(), buf); err != nil {
-			return "", err
-		}
-
-		return buf.String(), nil
+	buf := new(bytes.Buffer)
+	if err := pages.DualPaneDefault(side).Render(context.Background(), buf); err != nil {
+		return "", err
 	}
 
-	return "", errs.ErrUnsupportedPaneType
+	return buf.String(), nil
 }
 
 func renderArtistPane(app *pocketbase.PocketBase, c *core.RequestEvent, artistId string, renderTo string, buf *bytes.Buffer) (dto.Artist, error) {
@@ -229,7 +257,7 @@ func renderArtistPane(app *pocketbase.PocketBase, c *core.RequestEvent, artistId
 		return dto.Artist{}, err
 	}
 
-	artistDto, err := artists.RenderArtistContent(app, c, artistModel, "#"+renderTo)
+	artistDto, err := artists.RenderArtistContent(app, c, artistModel, "#"+renderTo, false)
 
 	if err != nil {
 		app.Logger().Error("Error rendering artist content", "error", err.Error())
@@ -254,7 +282,7 @@ func renderArtworkPane(app *pocketbase.PocketBase, c *core.RequestEvent, artwork
 		return dto.Artwork{}, err
 	}
 
-	artworkDto, err := artists.RenderArtworkContent(app, c, artworkModel, "#"+renderTo)
+	artworkDto, err := artists.RenderArtworkContent(app, c, artworkModel, "#"+renderTo, false)
 
 	if err != nil {
 		app.Logger().Error("Error rendering artwork content", "error", err.Error())

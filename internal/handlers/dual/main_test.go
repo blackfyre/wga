@@ -3,6 +3,7 @@ package dual
 import (
 	"net/url"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
@@ -43,6 +44,7 @@ func TestFormatArtistNameList(t *testing.T) {
 		t.Errorf("Expected %v, but got %v", expected, result)
 	}
 }
+
 func TestReverseSide(t *testing.T) {
 	// Test case 1: Input is "left"
 	input := "left"
@@ -66,6 +68,67 @@ func TestReverseSide(t *testing.T) {
 	result = reverseSide(input)
 	if result != expected {
 		t.Errorf("Expected %v, but got %v", expected, result)
+	}
+}
+
+func TestParsePanePath(t *testing.T) {
+	tests := []struct {
+		name    string
+		input   string
+		want    panePathDto
+		wantErr bool
+	}{
+		{
+			name:  "default pane",
+			input: "default",
+			want:  panePathDto{Kind: "default", RelPath: "default"},
+		},
+		{
+			name:  "artist canonical path",
+			input: "/artists/example-123",
+			want:  panePathDto{Kind: "artist", Id: "123", RelPath: "/artists/example-123"},
+		},
+		{
+			name:  "artist artwork canonical path",
+			input: "/artists/example-123/artwork-777",
+			want:  panePathDto{Kind: "artwork", Id: "777", RelPath: "/artists/example-123/artwork-777"},
+		},
+		{
+			name:  "legacy broken artwork path",
+			input: "/artists/example-123/artworks/artwork-777",
+			want:  panePathDto{Kind: "artwork", Id: "777", RelPath: "/artists/example-123/artworks/artwork-777"},
+		},
+		{
+			name:  "artworks route path",
+			input: "/artworks/artwork-777",
+			want:  panePathDto{Kind: "artwork", Id: "777", RelPath: "/artworks/artwork-777"},
+		},
+		{
+			name:    "invalid path",
+			input:   "/pages/privacy-policy",
+			wantErr: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := parsePanePath(test.input)
+			if test.wantErr {
+				if err == nil {
+					t.Fatalf("expected error for %q", test.input)
+				}
+
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("unexpected error for %q: %v", test.input, err)
+			}
+
+			if !reflect.DeepEqual(got, test.want) {
+				t.Fatalf("expected %+v, got %+v", test.want, got)
+			}
+		})
 	}
 }
 
@@ -111,7 +174,13 @@ func TestDefaultPaneContentLeft(t *testing.T) {
 		t.Fatalf("expected non-empty default left pane content")
 	}
 
-	if content != "Left pane" {
-		t.Fatalf("expected default left pane marker text, got %q", content)
+	if !strings.Contains(content, "Choose content for comparison") {
+		t.Fatalf("expected default left pane UI, got %q", content)
+	}
+}
+
+func TestDefaultPaneContentUnsupported(t *testing.T) {
+	if _, err := defaultPaneContent("center"); err == nil {
+		t.Fatalf("expected unsupported pane type error")
 	}
 }
