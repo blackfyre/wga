@@ -108,11 +108,19 @@ func buildDualModePushURL(leftPane renderPaneDto, rightPane renderPaneDto) strin
 }
 
 func buildDualModePaneURL(side string, currentRelPath string, destinationRelPath string, queryValues map[string][]string) string {
+	return buildDualModeTargetPaneURL(side, currentRelPath, destinationRelPath, "right", queryValues)
+}
+
+func buildDualModeOppositePaneURL(side string, currentRelPath string, destinationRelPath string, queryValues map[string][]string) string {
 	targetSide := cmp.Or(strings.TrimSpace(firstQueryValue(queryValues, side+"_render_to")), reverseSide(side))
 	if targetSide == "" {
 		targetSide = reverseSide(side)
 	}
 
+	return buildDualModeTargetPaneURL(side, currentRelPath, destinationRelPath, targetSide, queryValues)
+}
+
+func buildDualModeTargetPaneURL(side string, currentRelPath string, destinationRelPath string, targetSide string, queryValues map[string][]string) string {
 	relPath := url.GenerateDualModeUrl()
 	nextQueryValues := make(map[string][]string, len(queryValues))
 	for key, values := range queryValues {
@@ -121,8 +129,8 @@ func buildDualModePaneURL(side string, currentRelPath string, destinationRelPath
 
 	setQueryValue(nextQueryValues, side, currentRelPath)
 	setQueryValue(nextQueryValues, targetSide, destinationRelPath)
-	setQueryValue(nextQueryValues, side+"_render_to", targetSide)
-	setQueryValue(nextQueryValues, targetSide+"_render_to", cmp.Or(strings.TrimSpace(firstQueryValue(nextQueryValues, targetSide+"_render_to")), side))
+	setQueryValue(nextQueryValues, "left_render_to", "right")
+	setQueryValue(nextQueryValues, "right_render_to", "left")
 
 	encodedQuery := relPath.Query()
 	for key, values := range nextQueryValues {
@@ -260,14 +268,14 @@ func renderPane(side string, app *pocketbase.PocketBase, c *core.RequestEvent) (
 			return pane, renderErr
 		}
 
-		pane.RelPath = artistDto.Url
+		pane.RelPath = resolvePaneRelPath(parsedPath.RelPath, artistDto.Url)
 	case "artwork":
-		artworkDto, renderErr := renderArtworkPane(app, c, parsedPath.Id, renderTo, buf)
+		artworkDto, renderErr := renderArtworkPane(app, c, side, parsedPath.RelPath, parsedPath.Id, renderTo, buf)
 		if renderErr != nil {
 			return pane, renderErr
 		}
 
-		pane.RelPath = artworkDto.Url
+		pane.RelPath = resolvePaneRelPath(parsedPath.RelPath, artworkDto.Url)
 	default:
 		return pane, errs.ErrUnsupportedPaneType
 	}
@@ -275,6 +283,18 @@ func renderPane(side string, app *pocketbase.PocketBase, c *core.RequestEvent) (
 	pane.Content = buf.String()
 
 	return pane, nil
+}
+
+func resolvePaneRelPath(requestedRelPath string, renderedRelPath string) string {
+	if strings.TrimSpace(renderedRelPath) == "" {
+		return requestedRelPath
+	}
+
+	if strings.HasPrefix(renderedRelPath, "/dual-mode") {
+		return requestedRelPath
+	}
+
+	return renderedRelPath
 }
 
 func defaultPaneContent(side string) (string, error) {
@@ -322,7 +342,7 @@ func renderArtistPane(app *pocketbase.PocketBase, c *core.RequestEvent, side str
 	return artistDto, nil
 }
 
-func renderArtworkPane(app *pocketbase.PocketBase, c *core.RequestEvent, artworkId string, renderTo string, buf *bytes.Buffer) (dto.Artwork, error) {
+func renderArtworkPane(app *pocketbase.PocketBase, c *core.RequestEvent, side string, currentRelPath string, artworkId string, renderTo string, buf *bytes.Buffer) (dto.Artwork, error) {
 	artworkModel, err := app.FindRecordById(constants.CollectionArtworks, artworkId)
 
 	if err != nil {
@@ -335,6 +355,14 @@ func renderArtworkPane(app *pocketbase.PocketBase, c *core.RequestEvent, artwork
 	if err != nil {
 		app.Logger().Error("Error rendering artwork content", "error", err.Error())
 		return dto.Artwork{}, err
+	}
+
+	if c.Request != nil && c.Request.URL != nil && c.Request.URL.Path == "/dual-mode" {
+		currentQueryValues := c.Request.URL.Query()
+		artworkDto.Url = buildDualModeOppositePaneURL(side, currentRelPath, artworkDto.Url, currentQueryValues)
+		if artworkDto.Artist.Url != "" {
+			artworkDto.Artist.Url = buildDualModeOppositePaneURL(side, currentRelPath, artworkDto.Artist.Url, currentQueryValues)
+		}
 	}
 
 	err = pages.ArtworkBlock(artworkDto).Render(context.Background(), buf)
