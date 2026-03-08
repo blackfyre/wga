@@ -81,6 +81,8 @@
   "codeQL.githubDatabase.download": "never",
   "chat.tools.terminal.autoApprove": {
     "go": true,
-    "gofmt": true
+    "gofmt": true,
+    "templ": true,
+    "bun": true
   }
 }
