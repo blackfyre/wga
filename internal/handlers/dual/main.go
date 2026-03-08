@@ -107,6 +107,47 @@ func buildDualModePushURL(leftPane renderPaneDto, rightPane renderPaneDto) strin
 	return relPath.String()
 }
 
+func buildDualModePaneURL(side string, currentRelPath string, destinationRelPath string, queryValues map[string][]string) string {
+	targetSide := cmp.Or(strings.TrimSpace(firstQueryValue(queryValues, side+"_render_to")), reverseSide(side))
+	if targetSide == "" {
+		targetSide = reverseSide(side)
+	}
+
+	relPath := url.GenerateDualModeUrl()
+	nextQueryValues := make(map[string][]string, len(queryValues))
+	for key, values := range queryValues {
+		nextQueryValues[key] = append([]string(nil), values...)
+	}
+
+	setQueryValue(nextQueryValues, side, currentRelPath)
+	setQueryValue(nextQueryValues, targetSide, destinationRelPath)
+	setQueryValue(nextQueryValues, side+"_render_to", targetSide)
+	setQueryValue(nextQueryValues, targetSide+"_render_to", cmp.Or(strings.TrimSpace(firstQueryValue(nextQueryValues, targetSide+"_render_to")), side))
+
+	encodedQuery := relPath.Query()
+	for key, values := range nextQueryValues {
+		for _, value := range values {
+			encodedQuery.Add(key, value)
+		}
+	}
+
+	relPath.RawQuery = encodedQuery.Encode()
+
+	return relPath.String()
+}
+
+func firstQueryValue(queryValues map[string][]string, key string) string {
+	if len(queryValues[key]) == 0 {
+		return ""
+	}
+
+	return queryValues[key][0]
+}
+
+func setQueryValue(queryValues map[string][]string, key string, value string) {
+	queryValues[key] = []string{value}
+}
+
 func parsePanePath(raw string) (panePathDto, error) {
 	normalized := cmp.Or(strings.TrimSpace(raw), "default")
 
@@ -214,7 +255,7 @@ func renderPane(side string, app *pocketbase.PocketBase, c *core.RequestEvent) (
 
 	switch parsedPath.Kind {
 	case "artist":
-		artistDto, renderErr := renderArtistPane(app, c, parsedPath.Id, renderTo, buf)
+		artistDto, renderErr := renderArtistPane(app, c, side, parsedPath.RelPath, parsedPath.Id, renderTo, buf)
 		if renderErr != nil {
 			return pane, renderErr
 		}
@@ -249,7 +290,7 @@ func defaultPaneContent(side string) (string, error) {
 	return buf.String(), nil
 }
 
-func renderArtistPane(app *pocketbase.PocketBase, c *core.RequestEvent, artistId string, renderTo string, buf *bytes.Buffer) (dto.Artist, error) {
+func renderArtistPane(app *pocketbase.PocketBase, c *core.RequestEvent, side string, currentRelPath string, artistId string, renderTo string, buf *bytes.Buffer) (dto.Artist, error) {
 	artistModel, err := app.FindRecordById(constants.CollectionArtists, artistId)
 
 	if err != nil {
@@ -262,6 +303,13 @@ func renderArtistPane(app *pocketbase.PocketBase, c *core.RequestEvent, artistId
 	if err != nil {
 		app.Logger().Error("Error rendering artist content", "error", err.Error())
 		return dto.Artist{}, err
+	}
+
+	if c.Request != nil && c.Request.URL != nil && c.Request.URL.Path == "/dual-mode" {
+		currentQueryValues := c.Request.URL.Query()
+		for idx := range artistDto.Works {
+			artistDto.Works[idx].Url = buildDualModePaneURL(side, currentRelPath, artistDto.Works[idx].Url, currentQueryValues)
+		}
 	}
 
 	err = pages.ArtistBlock(artistDto).Render(context.Background(), buf)

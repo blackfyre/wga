@@ -1,6 +1,7 @@
 package dual
 
 import (
+	"cmp"
 	"net/url"
 	"reflect"
 	"strings"
@@ -161,6 +162,51 @@ func TestBuildDualModePushURL(t *testing.T) {
 
 	if got := parsed.Query().Get("right_render_to"); got != left.Side {
 		t.Fatalf("expected right_render_to=%s, got %s", left.Side, got)
+	}
+}
+
+func TestBuildDualModePaneURL(t *testing.T) {
+	queryValues := map[string][]string{
+		"left":            {"/artists/aagaard-carl-frederik-f2540d7a3fe99f9"},
+		"left_render_to":  {"right"},
+		"right":           {"default"},
+		"right_render_to": {"left"},
+	}
+
+	linkURL := buildDualModePaneURL(
+		"left",
+		"/artists/aagaard-carl-frederik-f2540d7a3fe99f9",
+		"/artists/aagaard-carl-frederik-f2540d7a3fe99f9/deer-beside-a-lake-a6aab5e26c30056",
+		queryValues,
+	)
+
+	parsed, err := url.Parse(linkURL)
+	if err != nil {
+		t.Fatalf("expected valid pane url, got error: %v", err)
+	}
+
+	if parsed.Path != "/dual-mode" {
+		t.Fatalf("expected /dual-mode path, got %s", parsed.Path)
+	}
+
+	if got := parsed.Query().Get("left"); got != "/artists/aagaard-carl-frederik-f2540d7a3fe99f9" {
+		t.Fatalf("expected left artist path to be preserved, got %s", got)
+	}
+
+	if got := parsed.Query().Get("right"); got != "/artists/aagaard-carl-frederik-f2540d7a3fe99f9/deer-beside-a-lake-a6aab5e26c30056" {
+		t.Fatalf("expected right artwork path, got %s", got)
+	}
+
+	if got := parsed.Query().Get("left_render_to"); got != "right" {
+		t.Fatalf("expected left_render_to=right, got %s", got)
+	}
+
+	if got := parsed.Query().Get("right_render_to"); got != "left" {
+		t.Fatalf("expected right_render_to=left, got %s", got)
+	}
+
+	if got := cmp.Or(queryValues["right"][0], ""); got != "default" {
+		t.Fatalf("expected original query values to remain unchanged, got %s", got)
 	}
 }
 
