@@ -99,15 +99,17 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 		}),
 		Image: img,
 		Artist: dto.Artist{
-			Id:         artist.GetString("id"),
-			Name:       artist.GetString("name"),
-			Bio:        artist.GetString("bio"),
-			Profession: artist.GetString("profession"),
+			Id:              artist.GetString("id"),
+			Name:            artist.GetString("name"),
+			Bio:             artist.GetString("bio"),
+			Profession:      artist.GetString("profession"),
+			ShowBreadcrumbs: true,
 			Url: url.GenerateArtistUrl(url.ArtistUrlDTO{
 				ArtistId:   artist.GetString("id"),
 				ArtistName: artist.GetString("name"),
 			}),
 		},
+		ShowBreadcrumbs: true,
 	}
 
 	school := artist.GetStringSlice("school")
@@ -157,7 +159,7 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 	return c.HTML(http.StatusOK, buff.String())
 }
 
-func RenderArtworkContent(app *pocketbase.PocketBase, c *core.RequestEvent, artwork *core.Record, hxTarget string) (dto.Artwork, error) {
+func RenderArtworkContent(app *pocketbase.PocketBase, c *core.RequestEvent, artwork *core.Record, hxTarget string, showBreadcrumbs bool) (dto.Artwork, error) {
 
 	artistId := cmp.Or(artwork.GetStringSlice("author")[0], "")
 
@@ -175,12 +177,13 @@ func RenderArtworkContent(app *pocketbase.PocketBase, c *core.RequestEvent, artw
 	}
 
 	content := dto.Artwork{
-		Id:        artwork.GetString("id"),
-		Title:     artwork.GetString("title"),
-		Comment:   artwork.GetString("comment"),
-		Technique: artwork.GetString("technique"),
-		Image:     img,
-		HxTarget:  hxTarget,
+		Id:              artwork.GetString("id"),
+		Title:           artwork.GetString("title"),
+		Comment:         artwork.GetString("comment"),
+		Technique:       artwork.GetString("technique"),
+		Image:           img,
+		HxTarget:        hxTarget,
+		ShowBreadcrumbs: showBreadcrumbs,
 	}
 
 	if artistId != "" {
@@ -200,10 +203,11 @@ func RenderArtworkContent(app *pocketbase.PocketBase, c *core.RequestEvent, artw
 		})
 
 		content.Artist = dto.Artist{
-			Id:         artist.GetString("id"),
-			Name:       artist.GetString("name"),
-			Bio:        artist.GetString("bio"),
-			Profession: artist.GetString("profession"),
+			Id:              artist.GetString("id"),
+			Name:            artist.GetString("name"),
+			Bio:             artist.GetString("bio"),
+			Profession:      artist.GetString("profession"),
+			ShowBreadcrumbs: showBreadcrumbs,
 			Url: url.GenerateArtistUrl(url.ArtistUrlDTO{
 				ArtistId:   artist.GetString("id"),
 				ArtistName: artist.GetString("name"),

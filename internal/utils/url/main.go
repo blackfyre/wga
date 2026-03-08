@@ -51,7 +51,7 @@ type ArtworkUrlDTO struct {
 }
 
 func GenerateFullArtworkUrl(d ArtworkUrlDTO) string {
-	return fmt.Sprintf("/artists/%v-%v/artworks/%v-%v", utils.Slugify(d.ArtistName), d.ArtistId, utils.Slugify(d.ArtistName), d.ArtworkId)
+	return fmt.Sprintf("/artists/%v-%v/%v-%v", utils.Slugify(d.ArtistName), d.ArtistId, utils.Slugify(d.ArtworkTitle), d.ArtworkId)
 }
 
 func GenerateArtworkUrl(d ArtworkUrlDTO) string {

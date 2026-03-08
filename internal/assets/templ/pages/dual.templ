@@ -22,11 +22,11 @@ templ DualPage(c dto.DualViewDto) {
 						d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
 					></path>
 				</svg>
-				<span>The Dual Mode is not supported on mobile screens.<br/>Minimum viable screen width is 768px</span>
+				<span>Dual Mode is desktop-only. Use a screen width of at least 768px to compare two panes side by side.</span>
 			</div>
 		</div>
 		<main id="dual-area" class="hidden md:grid grid-cols-2 grid-rows-[1fr_100px] gap-0 h-screen">
-			<div id="left" class="w-full overflow-y-auto py-10 pl-10 pr-5">
+			<div id="left" class="w-full overflow-y-auto border-r border-base-300 py-10 pl-10 pr-5">
 				@templ.Raw(c.Left)
 			</div>
 			<div id="right" class="w-full overflow-y-auto py-10 pl-5 pr-10">
@@ -37,53 +37,79 @@ templ DualPage(c dto.DualViewDto) {
 	}
 }
 
+templ DualPaneDefault(side string) {
+	<div class="mx-auto max-w-2xl px-4">
+		<div class="rounded-box border border-base-300 bg-base-100 p-6 shadow-sm">
+			<div class="mb-4 flex items-center justify-between gap-4">
+				<div>
+					<p class="text-sm uppercase tracking-[0.2em] text-base-content/60">{ side } pane</p>
+					<h2 class="text-2xl font-semibold">Choose content for comparison</h2>
+				</div>
+				if side == "left" {
+					<button type="button" class="btn btn-primary btn-sm" onclick="window.wga.dual.openLookup('left')">Browse artists</button>
+				} else {
+					<button type="button" class="btn btn-primary btn-sm" onclick="window.wga.dual.openLookup('right')">Browse artists</button>
+				}
+			</div>
+			<p class="mb-4 text-base-content/80">Load an artist page or an artwork page into this pane. The other pane stays active, so you can compare content side by side.</p>
+			<div class="grid gap-3 md:grid-cols-2">
+				<div class="rounded-box bg-base-200 p-4">
+					<h3 class="mb-2 font-medium">Supported here</h3>
+					<ul class="list-inside list-disc space-y-1 text-sm text-base-content/80">
+						<li>Artist detail pages</li>
+						<li>Artwork detail pages</li>
+						<li>Artist biography content inside artist pages</li>
+					</ul>
+				</div>
+				<div class="rounded-box bg-base-200 p-4">
+					<h3 class="mb-2 font-medium">Useful actions</h3>
+					<ul class="list-inside list-disc space-y-1 text-sm text-base-content/80">
+						<li>Browse artists from the footer lookup</li>
+						<li>Paste a canonical artist or artwork path</li>
+						<li>Copy or reverse panes from the footer controls</li>
+					</ul>
+				</div>
+			</div>
+			if side == "right" {
+				<div class="mt-6 rounded-box bg-base-200 p-4">
+					<h3 class="mb-2 font-medium">Dual Mode works well for</h3>
+					<ul class="list-inside list-disc space-y-1 text-sm text-base-content/80">
+						<li>Comparing two related artists or artworks</li>
+						<li>Reading an artist biography while keeping an artwork visible</li>
+						<li>Following links in one pane without losing the other pane</li>
+					</ul>
+				</div>
+			}
+		</div>
+	</div>
+}
+
 templ DualNav(c dto.DualViewDto) {
-	<div id="dual-nav" class="col-span-2 row-start-2 flex flex-row justify-center">
-		<nav>
-			<button class="btn" onclick="artist_lookup.showModal()">open modal</button>
-		</nav>
-		<nav class="mx-4">
-			<ul class="flex flex-row justify-center">
-				<li>
-					<a href="#" class="p-2">Previous</a>
-				</li>
-				<li>
-					<a href="#" class="p-2">Next</a>
-				</li>
-			</ul>
-		</nav>
-		<!-- mehh -->
-		<nav>
-			<button class="btn" onclick="artist_lookup.showModal()">open modal</button>
-		</nav>
+	<div id="dual-nav" class="col-span-2 row-start-2 border-t border-base-300 bg-base-100/95 px-6 py-4 backdrop-blur">
+		<div class="flex flex-wrap items-center justify-between gap-4">
+			<nav class="flex items-center gap-2" aria-label="Left pane controls">
+				<button type="button" class="btn btn-sm" onclick="window.wga.dual.openLookup('left')">Choose left</button>
+				<button type="button" class="btn btn-ghost btn-sm" onclick="window.wga.dual.clearPane('left')">Clear left</button>
+			</nav>
+			<nav class="flex items-center gap-2" aria-label="Shared pane controls">
+				<button type="button" class="btn btn-outline btn-sm" onclick="window.wga.dual.copyPane('left', 'right')">Copy to right</button>
+				<button type="button" class="btn btn-primary btn-sm" onclick="window.wga.dual.reversePanes()">Reverse</button>
+				<button type="button" class="btn btn-outline btn-sm" onclick="window.wga.dual.copyPane('right', 'left')">Copy to left</button>
+			</nav>
+			<nav class="flex items-center gap-2" aria-label="Right pane controls">
+				<button type="button" class="btn btn-sm" onclick="window.wga.dual.openLookup('right')">Choose right</button>
+				<button type="button" class="btn btn-ghost btn-sm" onclick="window.wga.dual.clearPane('right')">Clear right</button>
+			</nav>
+		</div>
 	</div>
 	<dialog id="artist_lookup" class="modal">
 		<div class="modal-box">
-			<h3 class="text-lg font-bold">Hello!</h3>
-			<p class="py-4">Press ESC key or click outside to close</p>
+			<h3 class="text-lg font-bold">Load pane</h3>
+			<p class="py-4">Choose an artist or paste a canonical path.</p>
 		</div>
 		<form method="dialog" class="modal-backdrop">
 			<button>close</button>
 		</form>
 	</dialog>
 	@templ.JSONScript("artistList", c.ArtistNameList)
-}
-
-templ RightSideDefault() {
-	<div class="p-4">
-		<ul>
-			<li>
-				viewing simultaneously two images related to each other
-				<ul>
-					<li>by the influence one exerted to the other (<a href="/dual-mode?left=artists/aachen-hans-von-139ac2dff50d65c">example)</a></li>
-					<li>by being companion-pieces (<a href="/html/h/hals/frans/08-1658/68geraer.html">example)</a></li>
-					<li>by representing the same subject (<a href="/html/l/lorenzet/pietro/2/15birth.html">example)</a></li>
-					<li>by displaying different views of a three-dimensional sculpture (<a href="/html/m/michelan/1sculptu/david/david.html">example)</a></li>
-					<li>and so on.</li>
-				</ul>
-			</li>
-			<li>viewing simultaneously a biography and the pages of an artist (<a href="/bio/g/greco_el/biograph.html">example)</a></li>
-			<li>printing to the same sheet two pages (e.g. one of the above examples).</li>
-		</ul>
-	</div>
 }

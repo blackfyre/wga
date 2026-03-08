@@ -39,6 +39,12 @@ type wgaWindow = {
 		open: () => void;
 		close: () => void;
 	};
+	dual: {
+		clearPane: (side: string) => void;
+		copyPane: (source: string, target: string) => void;
+		openLookup: (side: string) => void;
+		reversePanes: () => void;
+	};
 	window: {
 		historyBack: () => void;
 		close: () => void;
@@ -163,6 +169,58 @@ const paneToTarget = (side: string): string => {
 	}
 
 	return "left";
+};
+
+const normalizeDualPathInput = (value: string): string | null => {
+	const normalizedValue = value.trim();
+
+	if (!normalizedValue) {
+		return null;
+	}
+
+	if (
+		normalizedValue.startsWith("http://") ||
+		normalizedValue.startsWith("https://")
+	) {
+		const parsed = new URL(normalizedValue);
+		return `${parsed.pathname}${parsed.search}`;
+	}
+
+	if (
+		normalizedValue.startsWith("/artists/") ||
+		normalizedValue.startsWith("/artworks/")
+	) {
+		return normalizedValue;
+	}
+
+	if (
+		normalizedValue.startsWith("artists/") ||
+		normalizedValue.startsWith("artworks/")
+	) {
+		return `/${normalizedValue}`;
+	}
+
+	return null;
+};
+
+const updateDualMode = (mutateUrl: (url: URL) => void) => {
+	const nextUrl = new URL(window.location.href);
+	nextUrl.pathname = "/dual-mode";
+
+	mutateUrl(nextUrl);
+
+	htmx.ajax("get", nextUrl.toString(), {
+		target: "#dual-area",
+		select: "#dual-area",
+		swap: "outerHTML",
+	});
+};
+
+const setDualPane = (side: string, value: string) => {
+	updateDualMode((nextUrl) => {
+		nextUrl.searchParams.set(side, value);
+		nextUrl.searchParams.set(`${side}_render_to`, paneToTarget(side));
+	});
 };
 
 const dualNavAction = (side: string, url: string) => {
@@ -496,45 +554,96 @@ const wgaInternal: wgaInternals = {
 
 			const artists = JSON.parse(artistList.innerHTML);
 
-			const label = document.createElement("label");
+			const side = artistSearchModal.getAttribute("data-side") || "left";
 
 			const searchInput = document.createElement("input");
-
 			searchInput.type = "search";
+			searchInput.placeholder = "Filter artists";
+			searchInput.className = "input input-bordered w-full";
 
-			label.appendChild(searchInput);
+			const pathInput = document.createElement("input");
+			pathInput.type = "text";
+			pathInput.placeholder = "/artists/... or /artworks/...";
+			pathInput.className = "input input-bordered w-full";
 
-			// Create a table within the modal from the json which has label and url keys
-			const tableContainer = document.createElement("div");
-			tableContainer.className = "overflow-x-auto";
-			const table = document.createElement("table");
-			table.className = "table";
+			const pathButton = document.createElement("button");
+			pathButton.type = "button";
+			pathButton.className = "btn btn-secondary btn-sm";
+			pathButton.textContent = `Load ${side} pane`;
 
-			tableContainer.appendChild(table);
+			const resultList = document.createElement("div");
+			resultList.className =
+				"mt-4 max-h-80 overflow-y-auto rounded-box border border-base-300";
 
-			// artists.forEach((artist: { label: string; url: string }) => {
-			//   const tr = document.createElement("tr");
-			//   const td = document.createElement("td");
-			//   const a = document.createElement("a");
+			const renderArtistButtons = (filterValue: string) => {
+				resultList.innerHTML = "";
 
-			//   a.href = artist.url;
-			//   a.textContent = artist.label;
+				const filteredArtists = artists.filter(
+					(artist: { label: string; url: string }) =>
+						artist.label.toLowerCase().includes(filterValue.toLowerCase()),
+				);
 
-			//   td.appendChild(a);
-			//   tr.appendChild(td);
-			//   table.appendChild(tr);
-			// });
+				if (filteredArtists.length === 0) {
+					const emptyState = document.createElement("p");
+					emptyState.className = "p-4 text-sm text-base-content/70";
+					emptyState.textContent = "No artists match that filter.";
+					resultList.appendChild(emptyState);
+					return;
+				}
+
+				for (const artist of filteredArtists) {
+					const button = document.createElement("button");
+					button.type = "button";
+					button.className =
+						"btn btn-ghost h-auto w-full justify-start rounded-none px-4 py-3 text-left";
+					button.textContent = artist.label;
+					button.addEventListener("click", () => {
+						setDualPane(side, artist.url);
+						(artistSearchModal as HTMLDialogElement).close();
+					});
+					resultList.appendChild(button);
+				}
+			};
+
+			searchInput.addEventListener("input", () => {
+				renderArtistButtons(searchInput.value);
+			});
+
+			pathButton.addEventListener("click", () => {
+				const normalizedPath = normalizeDualPathInput(pathInput.value);
+
+				if (!normalizedPath) {
+					wgaInternal.func.toast(
+						"Use a canonical /artists/... or /artworks/... path.",
+						"warning",
+					);
+					return;
+				}
+
+				setDualPane(side, normalizedPath);
+				(artistSearchModal as HTMLDialogElement).close();
+			});
 
 			// replace the contents of the dialog with the table
 			modalBox.innerHTML = "";
 
 			const modalTitle = document.createElement("h2");
-			modalTitle.textContent = "Artist Lookup";
+			modalTitle.className = "mb-2 text-xl font-semibold";
+			modalTitle.textContent = `Load ${side} pane`;
+			const modalText = document.createElement("p");
+			modalText.className = "mb-4 text-sm text-base-content/70";
+			modalText.textContent =
+				"Pick an artist from the list or paste a canonical artist or artwork path.";
 			modalBox.appendChild(modalTitle);
-			modalBox.appendChild(document.createElement("hr"));
+			modalBox.appendChild(modalText);
+			modalBox.appendChild(searchInput);
+			modalBox.appendChild(document.createElement("div")).className = "h-3";
+			modalBox.appendChild(pathInput);
+			modalBox.appendChild(document.createElement("div")).className = "h-3";
+			modalBox.appendChild(pathButton);
+			modalBox.appendChild(resultList);
 
-			modalBox.appendChild(label);
-			modalBox.appendChild(tableContainer);
+			renderArtistButtons("");
 		},
 	},
 
@@ -586,6 +695,39 @@ window.wga = {
 					wgaInternal.els.dialog.innerHTML = wgaInternal.dialogDefaultContent;
 				}
 			}, 500);
+		},
+	},
+	dual: {
+		clearPane(side: string) {
+			setDualPane(side, "default");
+		},
+		copyPane(source: string, target: string) {
+			const currentUrl = new URL(window.location.href);
+			const sourcePath = currentUrl.searchParams.get(source) || "default";
+			setDualPane(target, sourcePath);
+		},
+		openLookup(side: string) {
+			const modal = document.getElementById(
+				"artist_lookup",
+			) as HTMLDialogElement | null;
+			if (!modal) {
+				return;
+			}
+
+			modal.setAttribute("data-side", side);
+			wgaInternal.func.artistSearchModal();
+			modal.showModal();
+		},
+		reversePanes() {
+			updateDualMode((nextUrl) => {
+				const left = nextUrl.searchParams.get("left") || "default";
+				const right = nextUrl.searchParams.get("right") || "default";
+
+				nextUrl.searchParams.set("left", right);
+				nextUrl.searchParams.set("right", left);
+				nextUrl.searchParams.set("left_render_to", "right");
+				nextUrl.searchParams.set("right_render_to", "left");
+			});
 		},
 	},
 	window: {
