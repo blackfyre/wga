@@ -210,6 +210,118 @@ func TestBuildDualModePaneURL(t *testing.T) {
 	}
 }
 
+func TestBuildDualModePaneURLFromRightPaneStillTargetsRight(t *testing.T) {
+	queryValues := map[string][]string{
+		"left":            {"default"},
+		"left_render_to":  {"right"},
+		"right":           {"/artists/aachen-hans-von-139ac2dff50d65c"},
+		"right_render_to": {"left"},
+	}
+
+	linkURL := buildDualModePaneURL(
+		"right",
+		"/artists/aachen-hans-von-139ac2dff50d65c",
+		"/artists/aachen-hans-von-139ac2dff50d65c/a-couple-in-a-tavern-4035847eedfacc4",
+		queryValues,
+	)
+
+	parsed, err := url.Parse(linkURL)
+	if err != nil {
+		t.Fatalf("expected valid pane url, got error: %v", err)
+	}
+
+	if got := parsed.Query().Get("left"); got != "default" {
+		t.Fatalf("expected left pane to remain unchanged, got %s", got)
+	}
+
+	if got := parsed.Query().Get("right"); got != "/artists/aachen-hans-von-139ac2dff50d65c/a-couple-in-a-tavern-4035847eedfacc4" {
+		t.Fatalf("expected artwork in right pane, got %s", got)
+	}
+
+	if got := parsed.Query().Get("left_render_to"); got != "right" {
+		t.Fatalf("expected left_render_to=right, got %s", got)
+	}
+
+	if got := parsed.Query().Get("right_render_to"); got != "left" {
+		t.Fatalf("expected right_render_to=left, got %s", got)
+	}
+}
+
+func TestBuildDualModeOppositePaneURLFromLeftPaneTargetsRight(t *testing.T) {
+	queryValues := map[string][]string{
+		"left":            {"/artists/aachen-hans-von-139ac2dff50d65c/a-couple-in-a-tavern-4035847eedfacc4"},
+		"left_render_to":  {"right"},
+		"right":           {"default"},
+		"right_render_to": {"left"},
+	}
+
+	linkURL := buildDualModeOppositePaneURL(
+		"left",
+		"/artists/aachen-hans-von-139ac2dff50d65c/a-couple-in-a-tavern-4035847eedfacc4",
+		"/artists/aachen-hans-von-139ac2dff50d65c",
+		queryValues,
+	)
+
+	parsed, err := url.Parse(linkURL)
+	if err != nil {
+		t.Fatalf("expected valid pane url, got error: %v", err)
+	}
+
+	if got := parsed.Query().Get("left"); got != "/artists/aachen-hans-von-139ac2dff50d65c/a-couple-in-a-tavern-4035847eedfacc4" {
+		t.Fatalf("expected left artwork path to be preserved, got %s", got)
+	}
+
+	if got := parsed.Query().Get("right"); got != "/artists/aachen-hans-von-139ac2dff50d65c" {
+		t.Fatalf("expected artist path in right pane, got %s", got)
+	}
+}
+
+func TestBuildDualModeOppositePaneURLFromRightPaneTargetsLeft(t *testing.T) {
+	queryValues := map[string][]string{
+		"left":            {"default"},
+		"left_render_to":  {"right"},
+		"right":           {"/artists/aachen-hans-von-139ac2dff50d65c/a-couple-in-a-tavern-4035847eedfacc4"},
+		"right_render_to": {"left"},
+	}
+
+	linkURL := buildDualModeOppositePaneURL(
+		"right",
+		"/artists/aachen-hans-von-139ac2dff50d65c/a-couple-in-a-tavern-4035847eedfacc4",
+		"/artists/aachen-hans-von-139ac2dff50d65c",
+		queryValues,
+	)
+
+	parsed, err := url.Parse(linkURL)
+	if err != nil {
+		t.Fatalf("expected valid pane url, got error: %v", err)
+	}
+
+	if got := parsed.Query().Get("left"); got != "/artists/aachen-hans-von-139ac2dff50d65c" {
+		t.Fatalf("expected artist path in left pane, got %s", got)
+	}
+
+	if got := parsed.Query().Get("right"); got != "/artists/aachen-hans-von-139ac2dff50d65c/a-couple-in-a-tavern-4035847eedfacc4" {
+		t.Fatalf("expected right artwork path to be preserved, got %s", got)
+	}
+}
+
+func TestResolvePaneRelPathUsesRenderedCanonicalPath(t *testing.T) {
+	got := resolvePaneRelPath("/artists/requested-123", "/artists/canonical-123")
+	if got != "/artists/canonical-123" {
+		t.Fatalf("expected canonical rendered path, got %s", got)
+	}
+}
+
+func TestResolvePaneRelPathRejectsNestedDualModeURL(t *testing.T) {
+	got := resolvePaneRelPath(
+		"/artists/aachen-hans-von-139ac2dff50d65c",
+		"/dual-mode?left=%2Fartists%2Faachen-hans-von-139ac2dff50d65c&right=%2Fartists%2Faachen-hans-von-139ac2dff50d65c%2Fa-couple-in-a-tavern-4035847eedfacc4",
+	)
+	if got != "/artists/aachen-hans-von-139ac2dff50d65c" {
+		t.Fatalf("expected requested pane path when rendered path is nested dual mode, got %s", got)
+	}
+}
+
 func TestDefaultPaneContentLeft(t *testing.T) {
 	content, err := defaultPaneContent("left")
 	if err != nil {
