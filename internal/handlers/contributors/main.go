@@ -8,6 +8,7 @@ import (
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
 	"github.com/blackfyre/wga/internal/repositories"
+	"github.com/blackfyre/wga/internal/utils"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
@@ -17,6 +18,7 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		se.Router.GET("/contributors", func(c *core.RequestEvent) error {
 			fullUrl := tmplUtils.AssetUrl("/contributors")
+			pushUrl := utils.GenerateCurrentRelativePageUrl(c)
 			repo := repositories.NewContributorsRepository(app)
 
 			contributors, source, err := repo.GetContributorsWithSource()
@@ -37,7 +39,7 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "The people who have contributed to the Web Gallery of Art.")
 			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, fullUrl)
 
-			c.Response.Header().Set("HX-Push-Url", fullUrl)
+			c.Response.Header().Set("HX-Push-Url", pushUrl)
 			c.Response.Header().Set("X-WGA-Contributors-Source", string(source))
 
 			// Create a bytes buffer to write the response to

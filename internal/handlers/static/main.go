@@ -49,6 +49,7 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 
 			slug := c.Request.PathValue("slug")
 			fullUrl := tmplUtils.AssetUrl("/pages/" + slug)
+			pushUrl := utils.GenerateCurrentRelativePageUrl(c)
 
 			page, err := app.FindFirstRecordByData(constants.CollectionStaticPages, "slug", slug)
 
@@ -68,7 +69,7 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, page.GetString("content"))
 			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, fullUrl)
 
-			c.Response.Header().Set("HX-Push-Url", fullUrl)
+			c.Response.Header().Set("HX-Push-Url", pushUrl)
 
 			var buf bytes.Buffer
 

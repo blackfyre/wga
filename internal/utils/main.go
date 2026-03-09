@@ -340,6 +340,18 @@ func GenerateCurrentPageUrl(c *core.RequestEvent) string {
 	return c.Request.URL.Scheme + "://" + c.Request.Host + c.Request.URL.String()
 }
 
+func GenerateCurrentRelativePageUrl(c *core.RequestEvent) string {
+	if c == nil || c.Request == nil {
+		return ""
+	}
+
+	if c.Request.URL.RawQuery == "" {
+		return c.Request.URL.Path
+	}
+
+	return c.Request.URL.Path + "?" + c.Request.URL.RawQuery
+}
+
 // renderSchoolNames takes an instance of PocketBase and a slice of school IDs,
 // and returns a string containing the names of the schools corresponding to the given IDs.
 // If a school is not found, it logs an error and continues to the next ID.
