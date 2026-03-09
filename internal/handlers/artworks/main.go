@@ -171,6 +171,14 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 			continue
 		}
 
+		imageURL := utils.AssetUrl("/assets/images/no-image.png")
+		thumbURL := imageURL
+
+		if imageName := v.GetString("image"); imageName != "" {
+			imageURL = url.GenerateFileUrl(constants.CollectionArtworks, v.GetString("id"), imageName, "")
+			thumbURL = url.GenerateThumbUrl(constants.CollectionArtworks, v.GetString("id"), imageName, "320x240", "")
+		}
+
 		content.Results.Artworks = append(content.Results.Artworks, dto.Image{
 			Url: url.GenerateFullArtworkUrl(url.ArtworkUrlDTO{
 				ArtistName:   artist.GetString("name"),
@@ -178,8 +186,8 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 				ArtworkTitle: v.GetString("title"),
 				ArtworkId:    v.GetString("id"),
 			}),
-			Image:     url.GenerateFileUrl(constants.CollectionArtworks, v.GetString("id"), v.GetString("image"), ""),
-			Thumb:     url.GenerateThumbUrl(constants.CollectionArtworks, v.GetString("id"), v.GetString("image"), "320x240", ""),
+			Image:     imageURL,
+			Thumb:     thumbURL,
 			Comment:   v.GetString("comment"),
 			Title:     v.GetString("title"),
 			Technique: v.GetString("technique"),
