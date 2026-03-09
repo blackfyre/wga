@@ -27,7 +27,7 @@ func RenderArtistContent(app *pocketbase.PocketBase, c *core.RequestEvent, artis
 	id := artist.GetString("id")
 	expectedSlug := utils.GenerateArtistSlug(artist)
 
-	works, err := findArtworksByAuthorId(app, id)
+	works, err := utils.FindArtworksByAuthorID(app, id)
 
 	if err != nil {
 		app.Logger().Error("Error finding artworks: ", "error", err.Error())
@@ -39,7 +39,7 @@ func RenderArtistContent(app *pocketbase.PocketBase, c *core.RequestEvent, artis
 	content := dto.Artist{
 		Name: artist.GetString("name"),
 		Bio:  artist.GetString("bio"),
-		BioExcerpt: normalizedBioExcerpt(BioExcerptDTO{
+		BioExcerpt: utils.NormalizedBioExcerpt(utils.BioExcerptDTO{
 			YearOfBirth:       artist.GetInt("year_of_birth"),
 			ExactYearOfBirth:  artist.GetString("exact_year_of_birth"),
 			PlaceOfBirth:      artist.GetString("place_of_birth"),
