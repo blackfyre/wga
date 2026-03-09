@@ -19,7 +19,7 @@ import (
 
 func inspirationHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
-	artPieces, err := app.FindRecordsByFilter(constants.CollectionArtists, "", "@random", 10, 0, dbx.Params{})
+	artPieces, err := app.FindRecordsByFilter(constants.CollectionArtworks, "published = true", "@random", 50, 0, dbx.Params{})
 
 	if err != nil {
 		app.Logger().Error("Error getting random artworks", "error", err.Error())
@@ -29,14 +29,40 @@ func inspirationHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error 
 	content := dto.ImageGrid{}
 
 	for _, artPiece := range artPieces {
+		if len(content) == 10 {
+			break
+		}
 
 		artworkId := artPiece.GetString("id")
+		authorIds := artPiece.GetStringSlice("author")
+		authorId := ""
 
-		artist, err := app.FindRecordById(constants.CollectionArtists, artPiece.GetString("author"))
+		for _, id := range authorIds {
+			if id != "" {
+				authorId = id
+				break
+			}
+		}
+
+		if authorId == "" {
+			app.Logger().Warn("Skipping artwork without author", "artworkId", artworkId)
+			continue
+		}
+
+		artist, err := app.FindRecordById(constants.CollectionArtists, authorId)
 
 		if err != nil {
-			app.Logger().Error("Error getting artist for artwork", artPiece.GetString("id"), err)
+			app.Logger().Error("Error getting artist for artwork", "artworkId", artworkId, "error", err.Error())
 			continue
+		}
+
+		imageUrl := utils.AssetUrl("/assets/images/no-image.png")
+		thumbUrl := imageUrl
+		imageName := artPiece.GetString("image")
+
+		if imageName != "" {
+			imageUrl = url.GenerateFileUrl(constants.CollectionArtworks, artworkId, imageName, "")
+			thumbUrl = url.GenerateThumbUrl(constants.CollectionArtworks, artworkId, imageName, "320x240", "")
 		}
 
 		content = append(content, dto.Image{
@@ -46,8 +72,8 @@ func inspirationHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error 
 				ArtworkTitle: artPiece.GetString("title"),
 				ArtworkId:    artPiece.GetString("id"),
 			}),
-			// Image:     url.GenerateFileUrl("artworks", artworkId, artPiece.Image, ""),
-			// Thumb:     url.GenerateThumbUrl("artworks", artworkId, artPiece.Image, "320x240", ""),
+			Image:     imageUrl,
+			Thumb:     thumbUrl,
 			Comment:   artPiece.GetString("comment"),
 			Title:     artPiece.GetString("title"),
 			Technique: artPiece.GetString("technique"),
