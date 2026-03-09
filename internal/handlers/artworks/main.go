@@ -19,6 +19,7 @@ import (
 func searchPage(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 	fullUrl := utils.AssetUrl(c.Request.URL.String())
+	pushUrl := utils.GenerateCurrentRelativePageUrl(c)
 	filters := buildFilters(c)
 
 	if filters.AnyFilterActive() {
@@ -46,7 +47,7 @@ func searchPage(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "On this page you can search for artworks by title, artist, art form, art type and art school!")
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgUrlKey, fullUrl)
 
-	c.Response.Header().Set("HX-Push-Url", fullUrl)
+	c.Response.Header().Set("HX-Push-Url", pushUrl)
 
 	var buff bytes.Buffer
 
