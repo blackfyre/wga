@@ -3,8 +3,10 @@ package artworks
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
@@ -12,6 +14,7 @@ import (
 	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/blackfyre/wga/internal/utils/url"
+	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 )
@@ -24,7 +27,7 @@ func searchPage(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 	if filters.AnyFilterActive() {
 		// redirect to the search results page
-		return c.Redirect(http.StatusFound, "/artworks/results?"+filters.BuildFilterString())
+		return c.Redirect(http.StatusFound, filters.BuildPath("/artworks/results"))
 	}
 
 	content := dto.ArtworkSearchDTO{
@@ -34,6 +37,10 @@ func searchPage(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 			ArtFormString: filters.ArtFormString,
 			ArtTypeString: filters.ArtTypeString,
 			ArtistString:  filters.ArtistString,
+		},
+		HxTarget: "#artwork-search-results",
+		Results: dto.ArtworkSearchResultDTO{
+			ResultSummary: "Use the filters below, then run a search to browse matching artworks.",
 		},
 	}
 
@@ -119,6 +126,7 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	recordsCount := len(totalRecords)
 
 	content := dto.ArtworkSearchDTO{
+		HxTarget: "#artwork-search-results",
 		Results: dto.ArtworkSearchResultDTO{
 			Artworks: dto.ImageGrid{},
 		},
@@ -137,6 +145,15 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	content.ArtistNameList, _ = GetArtistNameList(app)
 	content.NewFilterValues = filters.BuildFilterString()
 	content.Results.ActiveFiltering = filters.AnyFilterActive()
+	content.Results.ResultCount = recordsCount
+	content.Results.ResultSummary = buildResultsSummary(recordsCount, filters.AnyFilterActive())
+
+	artistsByID, err := getArtistsByIDs(app, records)
+
+	if err != nil {
+		app.Logger().Error("Failed to batch load artists", "error", err.Error())
+		return utils.ServerFaultError(c)
+	}
 
 	for _, v := range records {
 
@@ -147,9 +164,9 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 			continue
 		}
 
-		artist, err := app.FindRecordById(constants.CollectionArtists, artistIds[0])
+		artist, ok := artistsByID[artistIds[0]]
 
-		if err != nil {
+		if !ok {
 			// waiting for the promised logging system by @pocketbase
 			continue
 		}
@@ -179,10 +196,10 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 		})
 	}
 
-	pUrl := "/artworks?" + filters.BuildFilterString()
-	pHtmxUrl := "/artworks/results?" + filters.BuildFilterString()
+	pUrl := filters.BuildPath("/artworks")
+	pHtmxUrl := filters.BuildPath("/artworks/results")
 
-	pagination := utils.NewPagination(recordsCount, limit, page, pUrl, "", pHtmxUrl)
+	pagination := utils.NewPagination(recordsCount, limit, page, pUrl, "artwork-search-results", pHtmxUrl)
 
 	content.Results.Pagination = string(pagination.Render())
 
@@ -194,7 +211,11 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 	var buff bytes.Buffer
 
-	err = pages.ArtworkSearchPage(content).Render(ctx, &buff)
+	if utils.IsHtmxRequest(c) {
+		err = pages.ArtworkSearchResults(content.Results).Render(ctx, &buff)
+	} else {
+		err = pages.ArtworkSearchPage(content).Render(ctx, &buff)
+	}
 
 	if err != nil {
 		app.Logger().Error("Error rendering artwork search page", "error", err.Error())
@@ -202,6 +223,78 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	}
 
 	return c.HTML(http.StatusOK, buff.String())
+}
+
+func buildResultsSummary(recordsCount int, hasActiveFilters bool) string {
+	if !hasActiveFilters {
+		if recordsCount == 1 {
+			return "Showing 1 artwork from the collection."
+		}
+
+		return fmt.Sprintf("Showing %d artworks from the collection.", recordsCount)
+	}
+
+	if recordsCount == 1 {
+		return "1 artwork found."
+	}
+
+	return fmt.Sprintf("%d artworks found.", recordsCount)
+}
+
+func getArtistsByIDs(app *pocketbase.PocketBase, artworks []*core.Record) (map[string]*core.Record, error) {
+	artistIDs := uniqueArtistIDs(artworks)
+
+	if len(artistIDs) == 0 {
+		return map[string]*core.Record{}, nil
+	}
+
+	params := dbx.Params{}
+	conditions := make([]string, 0, len(artistIDs))
+
+	for index, artistID := range artistIDs {
+		key := fmt.Sprintf("artist_id_%d", index)
+		conditions = append(conditions, fmt.Sprintf("id = {:%s}", key))
+		params[key] = artistID
+	}
+
+	artists, err := app.FindRecordsByFilter(
+		constants.CollectionArtists,
+		strings.Join(conditions, " || "),
+		"+name",
+		0,
+		0,
+		params,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	artistsByID := make(map[string]*core.Record, len(artists))
+
+	for _, artist := range artists {
+		artistsByID[artist.Id] = artist
+	}
+
+	return artistsByID, nil
+}
+
+func uniqueArtistIDs(artworks []*core.Record) []string {
+	seen := map[string]struct{}{}
+	artistIDs := make([]string, 0, len(artworks))
+
+	for _, artwork := range artworks {
+		for _, artistID := range artwork.GetStringSlice("author") {
+			if _, exists := seen[artistID]; exists {
+				continue
+			}
+
+			seen[artistID] = struct{}{}
+			artistIDs = append(artistIDs, artistID)
+		}
+	}
+
+	return artistIDs
 }
 
 // RegisterArtworksHandlers registers search handlers to the given PocketBase app.

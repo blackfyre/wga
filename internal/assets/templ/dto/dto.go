@@ -59,6 +59,8 @@ type ArtworkSearchFilterValues struct {
 type ArtworkSearchResultDTO struct {
 	ActiveFiltering bool
 	Artworks        ImageGrid
+	ResultCount     int
+	ResultSummary   string
 	Pagination      string
 	HxTarget        string
 }

@@ -17,65 +17,22 @@ templ ArtworkSeachFilterBlock(b dto.ArtworkSearchDTO) {
 	<form
 		action="/artworks/results"
 		hx-get="/artworks/results"
-		hx-disabled-elt="input,button,select"
+		hx-disabled-elt="button"
 		hx-target={ b.HxTarget }
+		hx-select={ b.HxTarget }
+		hx-swap="outerHTML"
+		hx-indicator="#artwork-search-indicator"
 		method="GET"
-		class="flex flex-col gap-4"
+		class="flex flex-col gap-4 rounded-box border border-base-300 bg-base-100 p-4 shadow-sm"
 	>
+		<div class="space-y-1">
+			<h2 class="text-lg font-semibold">Search the collection</h2>
+			<p class="text-sm text-base-content/70">Combine keywords and dropdown filters, then run a search when you are ready.</p>
+		</div>
 		<label class="form-control w-full">
-			Artforms
-			<select name="art_form" id="art_form_select" title="Artforms" class="select select-bordered">
-				for k, v := range b.ArtFormOptions {
-					<option
-						value={ k }
-						if b.ActiveFilterValues.ArtFormString == k {
-							selected
-						}
-					>{ v }</option>
-				}
-			</select>
-		</label>
-		<label class="form-control w-full ">
-			Artforms
-			<select name="art_type" id="art_type_select" title="Art types" class="select select-bordered">
-				for k, v := range b.ArtTypeOptions {
-					<option
-						value={ k }
-						if b.ActiveFilterValues.ArtTypeString == k {
-							selected
-						}
-					>{ v }</option>
-				}
-			</select>
-		</label>
-		<label class="form-control w-full">
-			Art school
-			<select name="art_school" id="art_school_select" title="Art school" class="select select-bordered">
-				for k, v := range b.ArtSchoolOptions {
-					<option
-						value={ k }
-						if b.ActiveFilterValues.SchoolString == k {
-							selected
-						}
-					>{ v }</option>
-				}
-			</select>
-		</label>
-		<label class="input input-bordered flex items-center gap-2">
-			Title
+			Author
 			<input
-				class="grow"
-				type="search"
-				name="title"
-				id="title"
-				autocomplete="title"
-				value={ b.ActiveFilterValues.Title }
-			/>
-		</label>
-		<label class="input input-bordered flex items-center gap-2">
-			Artist
-			<input
-				class="grow"
+				class="input input-bordered w-full"
 				type="search"
 				list="artist_list"
 				id="artist_name"
@@ -89,7 +46,63 @@ templ ArtworkSeachFilterBlock(b dto.ArtworkSearchDTO) {
 				}
 			</datalist>
 		</label>
-		<button type="submit" class="btn btn-primary">Search</button>
+		<label class="form-control w-full">
+			Title
+			<input
+				class="input input-bordered w-full"
+				type="search"
+				name="title"
+				id="title"
+				autocomplete="title"
+				value={ b.ActiveFilterValues.Title }
+			/>
+		</label>
+		<label class="form-control w-full">
+			School
+			<select name="art_school" id="art_school_select" title="Art school" class="select select-bordered">
+				for k, v := range b.ArtSchoolOptions {
+					<option
+						value={ k }
+						if b.ActiveFilterValues.SchoolString == k {
+							selected
+						}
+					>{ v }</option>
+				}
+			</select>
+		</label>
+		<label class="form-control w-full">
+			Form
+			<select name="art_form" id="art_form_select" title="Art form" class="select select-bordered">
+				for k, v := range b.ArtFormOptions {
+					<option
+						value={ k }
+						if b.ActiveFilterValues.ArtFormString == k {
+							selected
+						}
+					>{ v }</option>
+				}
+			</select>
+		</label>
+		<label class="form-control w-full ">
+			Type
+			<select name="art_type" id="art_type_select" title="Art types" class="select select-bordered">
+				for k, v := range b.ArtTypeOptions {
+					<option
+						value={ k }
+						if b.ActiveFilterValues.ArtTypeString == k {
+							selected
+						}
+					>{ v }</option>
+				}
+			</select>
+		</label>
+		<div class="flex flex-wrap gap-2 pt-2">
+			<button type="submit" class="btn btn-primary">Search</button>
+			<a class="btn btn-ghost" href="/artworks" hx-get="/artworks" hx-target="#mc-area" hx-select="#mc-area" hx-swap="outerHTML">Clear</a>
+		</div>
+		<div id="artwork-search-indicator" class="htmx-indicator rounded-box border border-base-300 bg-base-200/70 p-3 text-sm text-base-content/80">
+			Searching the collection...
+		</div>
 	</form>
 }
 
@@ -121,7 +134,11 @@ templ loadIndicator() {
 
 templ ArtworkSearchResults(r dto.ArtworkSearchResultDTO) {
 	<div id="artwork-search-results">
-		// @loadIndicator()
+		if len(r.ResultSummary) > 0 {
+			<div class="mb-4 rounded-box border border-base-300 bg-base-100 px-4 py-3 text-sm text-base-content/80" aria-live="polite">
+				{ r.ResultSummary }
+			</div>
+		}
 		if len(r.Artworks) > 0 {
 			@components.ImageGridComponent(r.Artworks, true)
 		} else if !r.ActiveFiltering {
@@ -129,13 +146,13 @@ templ ArtworkSearchResults(r dto.ArtworkSearchResultDTO) {
 				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 rotate-90 md:rotate-0">
 					<path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"></path>
 				</svg>
-				<span>Use the filters to find artworks you are looking for in our database.</span>
+				<span>Combine filters, then press Search to browse matching artworks in the collection.</span>
 			</div>
 		} else {
 			<div role="alert" class="alert alert-warning">
 				<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
 				<span>
-					Sorry, no matching artworks found.
+					No artworks matched the current filters. Try clearing one or two conditions and search again.
 				</span>
 			</div>
 		}
@@ -154,7 +171,7 @@ templ ArtworkSearchBlock(s dto.ArtworkSearchDTO) {
 			<div class="w-full md:w-1/4 lg:w-1/5">
 				@ArtworkSeachFilterBlock(s)
 			</div>
-			<div class="w-full" id="search-result-container">
+			<div class="w-full min-h-48" id="search-result-container">
 				@ArtworkSearchResults(s.Results)
 			</div>
 		</div>
