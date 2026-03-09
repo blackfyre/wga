@@ -2,6 +2,7 @@ package artworks
 
 import (
 	"cmp"
+	"net/url"
 
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
@@ -67,33 +68,47 @@ func (f *filters) BuildFilter() (string, dbx.Params) {
 // BuildFilterString builds a filter string based on the values of the filters struct.
 // It concatenates the filter parameters with their corresponding values and returns the resulting filter string.
 func (f *filters) BuildFilterString() string {
-	filterString := ""
+	return f.queryValues().Encode()
+}
+
+func (f *filters) BuildPath(basePath string) string {
+	filterString := f.BuildFilterString()
+
+	if filterString == "" {
+		return basePath
+	}
+
+	return basePath + "?" + filterString
+}
+
+func (f *filters) queryValues() url.Values {
+	values := url.Values{}
 
 	if f.Title != "" {
-		filterString = filterString + "&title=" + f.Title
+		values.Set("title", f.Title)
 	}
 
 	if f.SchoolString != "" {
-		filterString = filterString + "&art_school=" + f.SchoolString
+		values.Set("art_school", f.SchoolString)
 	}
 
 	if f.ArtFormString != "" {
-		filterString = filterString + "&art_form=" + f.ArtFormString
+		values.Set("art_form", f.ArtFormString)
 	}
 
 	if f.ArtTypeString != "" {
-		filterString = filterString + "&art_type=" + f.ArtTypeString
+		values.Set("art_type", f.ArtTypeString)
 	}
 
 	if f.ArtistString != "" {
-		filterString = filterString + "&artist=" + f.ArtistString
+		values.Set("artist", f.ArtistString)
 	}
 
 	if f.Page != "" {
-		filterString = filterString + "&page=" + f.Page
+		values.Set("page", f.Page)
 	}
 
-	return filterString
+	return values
 }
 
 func buildFilters(c *core.RequestEvent) *filters {

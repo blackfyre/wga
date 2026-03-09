@@ -164,23 +164,17 @@ func (p *Pagination) getUrl(page int, text string) string {
 		baseUrl, _ := url.Parse(p.baseUrl)
 		params := baseUrl.Query()
 		delete(params, "page")
-		strParam := ""
-		for k, v := range params {
-			strParam = strParam + "&" + k + "=" + v[0] // TODO
-		}
+		params.Set("page", strPage)
 
-		href := baseUrl.Path + "?page=" + strPage + strParam
+		href := baseUrl.Path + "?" + params.Encode()
 
 		htmxBase, _ := url.Parse(p.htmxBaseUrl)
 
 		htmxParams := htmxBase.Query()
 		delete(htmxParams, "page")
-		htmxStrParam := ""
-		for k, v := range htmxParams {
-			htmxStrParam = htmxStrParam + "&" + k + "=" + v[0] // TODO
-		}
+		htmxParams.Set("page", strPage)
 
-		htmxUrl := htmxBase.Path + "?page=" + strPage + htmxStrParam
+		htmxUrl := htmxBase.Path + "?" + htmxParams.Encode()
 
 		return p.GetAvailablePageWrapper(href, text, htmxUrl)
 	}
@@ -207,7 +201,7 @@ func (p *Pagination) GetAvailablePageWrapper(href, page, htmxUrl string) string 
 	str := "<a class='inline-flex items-center border-t-2 border-transparent pr-1 pt-4 text-sm font-medium text-gray-500 hover:border-secondary hover:text-secondary' aria-label='Goto page " + page + "' hx-get='" + htmxUrl + "' href='" + href
 
 	if p.htmxTarget != "" {
-		str = str + "' hx-target='#" + p.htmxTarget
+		str = str + "' hx-target='#" + p.htmxTarget + "' hx-select='#" + p.htmxTarget + "' hx-swap='outerHTML"
 	}
 
 	str = str + "'>" + page + "</a>"

@@ -108,11 +108,18 @@ in
         popd
       '';
     };
-    "app:reboot" = {
+    "app:reset" = {
       description = "Rebuild, reset local data, and restart the development server.";
       exec = ''
         app:build
         rm -rf wga_data
+        app:run
+      '';
+    };
+    "app:reboot" = {
+      description = "Rebuild, and restart the development server.";
+      exec = ''
+        app:build
         app:run
       '';
     };

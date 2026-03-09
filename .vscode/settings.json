@@ -83,6 +83,15 @@
     "go": true,
     "gofmt": true,
     "templ": true,
-    "bun": true
+    "bun": true,
+    "devenv": true,
+    "/^bunx playwright test playwright-tests/artwork-search\\.spec\\.ts --reporter=line$/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "/^time curl -s -H 'HX-Request: true' http://localhost:8090/artworks/results > /dev/null$/": {
+      "approve": true,
+      "matchCommandLine": true
+    }
   }
 }
