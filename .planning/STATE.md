@@ -13,8 +13,8 @@ See: `.planning/PROJECT.md` (updated 2026-03-16)
 - Roadmap created: yes
 - Requirements defined: yes
 - Research completed: yes
-- Current phase: 8 complete
-- Current phase name: Retro-Verify Residual Cleanup
+- Current phase: 9 in progress
+- Current phase name: Reconcile Traceability and Re-Audit
 - Current mode: yolo
 - Planning docs committed: no
 
@@ -44,11 +44,12 @@ See: `.planning/PROJECT.md` (updated 2026-03-16)
 - Executed Phase 6 plan 01 to create `.planning/phases/02-correct-contributor-docs/02-VERIFICATION.md` and independently verify `DOCS-01`, `DOCS-02`, and `DOCS-03`
 - Executed Phase 7 plan 01 to create `.planning/phases/03-align-planning-docs/03-VERIFICATION.md` and independently verify `PLAN-01` and `PLAN-02`
 - Executed Phase 8 plan 01 to create `.planning/phases/04-remove-residual-mismatches/04-VERIFICATION.md` and independently verify `CLNP-01` and `CLNP-02`
+- Executed Phase 9 plan 01 to reconcile `.planning/REQUIREMENTS.md` so the top-level v1 checklist matches the complete traceability table before the final audit rerun
 
 ## Next Action
 
-- Plan and execute Phase 9 to reconcile traceability and rerun the milestone audit with all retro-verification artifacts present
-- Close the remaining checklist and integration gaps before archiving v1.0
+- Execute Phase 9 plan 02 to rerun the milestone audit from the reconciled requirements file and full Phase 1 through 8 evidence set
+- If the refreshed audit passes, route directly to `$gsd-complete-milestone v1.0`
 
 ---
-*Last updated: 2026-03-17 after Phase 8 execution*
+*Last updated: 2026-03-17 after Phase 9 plan 01*

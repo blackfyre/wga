@@ -176,7 +176,7 @@ This roadmap restores trust in repository guidance before further feature work. 
 | 6 | ✓ | 1/1 | 100% |
 | 7 | ✓ | 1/1 | 100% |
 | 8 | ✓ | 1/1 | 100% |
-| 9 | ○ | 0/0 | 0% |
+| 9 | ◆ | 1/2 | 50% |
 
 ---
 *Roadmap created: 2026-03-16*
