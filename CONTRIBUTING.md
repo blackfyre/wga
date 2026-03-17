@@ -52,7 +52,11 @@ Document any manual QA that matters for reviewers.
 
 Repository docs should follow code and configuration truth. If a command in docs conflicts with `devenv.nix`, `package.json`, or the current code layout, update the docs as part of the same change.
 
+Before editing repo docs, read [docs/documentation-maintenance.md](docs/documentation-maintenance.md). It lists the current source of truth files and the checklist for validating path, command, and environment wording.
+
 Use the same canonical workflow terms across contributor docs: `devenv shell`, `devenv up`, `app:build`, `app:run`, `code:run`, `go test ./... -cover`, and `bunx playwright test`.
+
+If docs conflict with code or config, the source of truth is the executable repo state described in that checklist.
 
 When editing UI-related files, keep these boundaries clear:
 

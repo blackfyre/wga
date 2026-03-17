@@ -9,6 +9,7 @@
 
 - Phase 2 corrected the contributor-facing docs so they now point at `cmd/wga/main.go`, `internal/*`, and the current development commands.
 - Documentation drift is still a regression risk if future edits stop checking `cmd/wga/main.go`, `internal/*`, `devenv.nix`, `package.json`, and `playwright.config.ts` before changing repo guidance.
+- `docs/documentation-maintenance.md` is the standing mitigation for reintroducing stale path or command terminology.
 - The maintenance risk is no longer stale contributor docs today; it is reintroducing stale path or command terminology later.
 
 ## Generated and Built Files in Repo
@@ -54,6 +55,7 @@
 ## Recommended Attention Areas
 
 - Guard against reintroducing stale path or command terminology.
+- Use `docs/documentation-maintenance.md` before changing contributor or maintenance docs.
 - Expand request/route tests around critical forms and cron side effects.
 - Review dead or oddly named files.
 - Audit platform-specific coupling before any major PocketBase upgrade.
