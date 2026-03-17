@@ -12,9 +12,9 @@
 
 ### Contributor Guidance
 
-- [x] **DOCS-01**: Contributor can read repository guidance that uses the current directory structure, including `cmd/wga`, `internal/*`, `resources/*`, and `playwright-tests/*`
-- [x] **DOCS-02**: Contributor can follow a canonical set of run, build, test, and generation commands that matches the repo's actual workflow definitions
-- [x] **DOCS-03**: Contributor can tell which template and asset files are source files and which files are generated outputs that should be regenerated
+- [ ] **DOCS-01**: Contributor can read repository guidance that uses the current directory structure, including `cmd/wga`, `internal/*`, `resources/*`, and `playwright-tests/*`
+- [ ] **DOCS-02**: Contributor can follow a canonical set of run, build, test, and generation commands that matches the repo's actual workflow definitions
+- [ ] **DOCS-03**: Contributor can tell which template and asset files are source files and which files are generated outputs that should be regenerated
 
 ### Planning and Internal Docs
 
@@ -23,8 +23,8 @@
 
 ### Corrective Cleanup
 
-- [x] **CLNP-01**: Maintainer can remove or rewrite obsolete guidance rather than keeping misleading historical wording in active docs
-- [x] **CLNP-02**: Maintainer can make small adjacent code or naming fixes when they are the cleanest low-risk way to eliminate documentation drift
+- [ ] **CLNP-01**: Maintainer can remove or rewrite obsolete guidance rather than keeping misleading historical wording in active docs
+- [ ] **CLNP-02**: Maintainer can make small adjacent code or naming fixes when they are the cleanest low-risk way to eliminate documentation drift
 
 ### Verification and Guardrails
 
@@ -53,13 +53,13 @@
 |-------------|-------|--------|
 | AUDT-01 | Phase 1 | Complete |
 | AUDT-02 | Phase 1 | Complete |
-| DOCS-01 | Phase 2 | Complete |
-| DOCS-02 | Phase 2 | Complete |
-| DOCS-03 | Phase 2 | Complete |
-| PLAN-01 | Phase 3 | Complete |
-| PLAN-02 | Phase 3 | Complete |
-| CLNP-01 | Phase 4 | Complete |
-| CLNP-02 | Phase 4 | Complete |
+| DOCS-01 | Phase 6 | Pending |
+| DOCS-02 | Phase 6 | Pending |
+| DOCS-03 | Phase 6 | Pending |
+| PLAN-01 | Phase 7 | Pending |
+| PLAN-02 | Phase 7 | Pending |
+| CLNP-01 | Phase 8 | Pending |
+| CLNP-02 | Phase 8 | Pending |
 | VERI-01 | Phase 5 | Complete |
 | VERI-02 | Phase 5 | Complete |
 
@@ -70,4 +70,4 @@
 
 ---
 *Requirements defined: 2026-03-16*
-*Last updated: 2026-03-17 after Phase 5 execution*
+*Last updated: 2026-03-17 after milestone gap planning*
