@@ -96,6 +96,8 @@ This roadmap restores trust in repository guidance before further feature work. 
 
 **Requirements:** DOCS-01, DOCS-02, DOCS-03
 
+**Plans:** 1/1 plans complete
+
 **Gap Closure:** Closes audit gaps for missing Phase 2 verification evidence.
 
 **Success criteria:**
@@ -110,6 +112,8 @@ This roadmap restores trust in repository guidance before further feature work. 
 
 **Requirements:** PLAN-01, PLAN-02
 
+**Plans:** 1/1 plans complete
+
 **Gap Closure:** Closes audit gaps for missing Phase 3 verification evidence.
 
 **Success criteria:**
@@ -123,6 +127,8 @@ This roadmap restores trust in repository guidance before further feature work. 
 **Goal:** Produce independent verification evidence for the residual cleanup and narrow corrective fixes shipped in Phase 4.
 
 **Requirements:** CLNP-01, CLNP-02
+
+**Plans:** 1/1 plans complete
 
 **Gap Closure:** Closes audit gaps for missing Phase 4 verification evidence.
 
@@ -167,9 +173,9 @@ This roadmap restores trust in repository guidance before further feature work. 
 | 3 | ✓ | 2/2 | 100% |
 | 4 | ✓ | 2/2 | 100% |
 | 5 | ✓ | 2/2 | 100% |
-| 6 | ○ | 0/0 | 0% |
-| 7 | ○ | 0/0 | 0% |
-| 8 | ○ | 0/0 | 0% |
+| 6 | ✓ | 1/1 | 100% |
+| 7 | ✓ | 1/1 | 100% |
+| 8 | ✓ | 1/1 | 100% |
 | 9 | ○ | 0/0 | 0% |
 
 ---

@@ -13,8 +13,8 @@ See: `.planning/PROJECT.md` (updated 2026-03-16)
 - Roadmap created: yes
 - Requirements defined: yes
 - Research completed: yes
-- Current phase: 5 complete
-- Current phase name: Verify and Guard
+- Current phase: 8 complete
+- Current phase name: Retro-Verify Residual Cleanup
 - Current mode: yolo
 - Planning docs committed: no
 
@@ -41,11 +41,14 @@ See: `.planning/PROJECT.md` (updated 2026-03-16)
 - Executed Phase 4 plan 02 to align `.planning/codebase/*` reference docs and the commented Playwright `webServer` example to the same corrected baseline
 - Executed Phase 5 plan 01 to create `05-VERIFICATION.md`, verify the corrected command/path baseline against repo truth, and record a successful `go test ./... -cover` result
 - Executed Phase 5 plan 02 to add `docs/documentation-maintenance.md` and wire the anti-drift checklist into contributor and maintainer guidance
+- Executed Phase 6 plan 01 to create `.planning/phases/02-correct-contributor-docs/02-VERIFICATION.md` and independently verify `DOCS-01`, `DOCS-02`, and `DOCS-03`
+- Executed Phase 7 plan 01 to create `.planning/phases/03-align-planning-docs/03-VERIFICATION.md` and independently verify `PLAN-01` and `PLAN-02`
+- Executed Phase 8 plan 01 to create `.planning/phases/04-remove-residual-mismatches/04-VERIFICATION.md` and independently verify `CLNP-01` and `CLNP-02`
 
 ## Next Action
 
-- Complete or archive the documentation-alignment milestone now that all five phases are finished
-- Guard against reintroducing stale path or command terminology in later documentation updates
+- Plan and execute Phase 9 to reconcile traceability and rerun the milestone audit with all retro-verification artifacts present
+- Close the remaining checklist and integration gaps before archiving v1.0
 
 ---
-*Last updated: 2026-03-17 after Phase 5 execution*
+*Last updated: 2026-03-17 after Phase 8 execution*
