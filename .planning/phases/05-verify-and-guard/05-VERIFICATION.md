@@ -1,19 +1,21 @@
 ---
 phase: 05-verify-and-guard
 verified: 2026-03-17T08:11:40Z
-status: in_progress
-score: pending
+status: passed
+score: 4/4 truths verified
 ---
 
 # Phase 5: Verify and Guard Verification Report
 
 **Phase Goal:** Confirm the cleanup against executable repo truth and add lightweight anti-drift guardrails.
 **Verified:** 2026-03-17T08:11:40Z
-**Status:** in_progress
+**Status:** passed
 
 ## Goal Achievement
 
 This report verifies that the corrected contributor and maintenance docs still match the current repository structure, command surface, and environment model before the anti-drift checklist is added in the next wave.
+
+The cleanup milestone meets its verification target for the current repo state: corrected docs point to the right path and command model, the core Go quality gate runs successfully, and the heavier local flows are explicitly classified as config-verified rather than silently assumed.
 
 ## Observable Truths
 
@@ -38,7 +40,7 @@ This report verifies that the corrected contributor and maintenance docs still m
 
 | Command | Status | Evidence | Notes |
 |---------|--------|----------|-------|
-| `go test ./... -cover` | pending | pending execution | Will be updated after the command runs |
+| `go test ./... -cover` | executed | local execution on 2026-03-17 plus `.github/workflows/pr-validation.yml` and `.github/workflows/playwright.yml` | Passed after rerunning outside the sandbox so Go could use the normal build cache |
 | `devenv shell` | config-verified | `devenv.nix`, `AGENTS.md`, `README.md`, `CONTRIBUTING.md` | Canonical local entrypoint is documented consistently but not executed in this plan |
 | `app:build` | config-verified | `devenv.nix`, `README.md`, `AGENTS.md`, `CONTRIBUTING.md` | Script definition and docs agree on `dist/wga` output |
 | `app:run` | config-verified | `devenv.nix`, `README.md`, `CONTRIBUTING.md` | Script runs the built binary from `dist/` with `./wga serve --dev` |
@@ -49,17 +51,17 @@ This report verifies that the corrected contributor and maintenance docs still m
 
 | Requirement | Status | Evidence |
 |-------------|--------|----------|
-| `VERI-01`: Maintainer can verify documentation changes against the repo's actual commands, file structure, and relevant configuration files before considering the cleanup complete | ◆ IN PROGRESS | This report ties corrected docs to `devenv.nix`, `package.json`, `.env.example`, `playwright.config.ts`, and CI workflows; executable command status will be finalized after `go test ./... -cover` runs |
+| `VERI-01`: Maintainer can verify documentation changes against the repo's actual commands, file structure, and relevant configuration files before considering the cleanup complete | ✓ SATISFIED | This report ties corrected docs to `devenv.nix`, `package.json`, `.env.example`, `playwright.config.ts`, and CI workflows, and includes a successful `go test ./... -cover` run |
 
 ## Remaining Limitations
 
-- `go test ./... -cover` has not been recorded yet; the command matrix remains incomplete until it runs.
-- Local Playwright execution is intentionally deferred in this report unless the environment proves ready with browsers, a running app, and a reachable `MAILPIT_URL` endpoint.
+- Local Playwright execution was not run in this verification report because it requires browser installation, a running app instance, and a reachable `MAILPIT_URL` endpoint; the workflow is instead validated through repo config and CI definitions.
+- `devenv shell`, `app:build`, `app:run`, and `code:run` were not executed in this phase because the plan scope only required one direct quality-gate command and explicit config-backed confirmation of the remaining command surface.
 
 ## Verification Metadata
 
 **Verification approach:** Goal-backward from Phase 5 requirement `VERI-01`  
 **Evidence sources:** contributor docs, phase summaries, local config files, and CI workflows  
-**Automated checks:** pending  
-**Human checks required:** 0 so far  
+**Automated checks:** `go test ./... -cover` passed; file and config evidence cross-checks completed  
+**Human checks required:** 0  
 **Verifier:** Codex
