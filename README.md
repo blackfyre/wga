@@ -84,24 +84,26 @@ The application will start on port 8090 by default. You can access it by going t
 
 ### Build from source
 
-#### Prerequisites
-
-To build the application you will need to have the following installed:
-
-- [Go](https://go.dev/) 1.24+
-- [Bun](https://bun.sh/) v1.2+
-- [Goreleaser](https://goreleaser.com/)
-- [Templ](https://templ.guide/)
-
-#### Building the application
-
-To build the application simply run:
+The canonical build path uses `devenv`:
 
 ```bash
-templ generate && go build -o wga
+devenv shell
+app:build
 ```
 
-This will build the application and place the binary in the `./dist` folder.
+This produces the server binary at `dist/wga`.
+
+If you need the raw commands outside `devenv`, run:
+
+```bash
+mkdir -p dist
+bun install
+bun run build
+templ generate
+go build -o dist/wga ./cmd/wga
+```
+
+Template sources live in `internal/assets/templ/`, generated `*_templ.go` files live beside those sources, and built frontend assets land in `internal/assets/public/`.
 
 ## Contributing
 
@@ -109,9 +111,21 @@ Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) for mo
 
 ### Development quick start
 
-#### Frontend
+Use `devenv` for the normal development loop:
 
-All frontend assets (templ, postcss) can be built with `bun run dev` (this command will start a dev server as well) and the JS dependencies with `bun run build:js`.
+```bash
+devenv shell
+devenv up
+```
+
+`devenv up` starts the frontend watchers, template watcher, MailHog, and MinIO. To run the application server, either build and launch the binary with `app:run` or start it directly with `code:run`.
+
+If you only need asset watchers, use the package scripts directly:
+
+```bash
+bun run build:watch:css
+bun run build:watch:js
+```
 
 #### Seeding
 
