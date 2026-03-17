@@ -32,9 +32,9 @@ The repository's documentation must describe the code and workflows that actuall
 
 ## Context
 
-The application is a monolithic PocketBase-backed Go service rooted at `cmd/wga/main.go`, with feature handlers under `internal/handlers/`, templates under `internal/assets/templ/`, compiled assets under `internal/assets/public/`, migrations under `internal/migrations/`, and frontend source under `resources/`. Existing repo guidance still references older top-level paths such as `handlers/`, `utils/`, `assets/templ/`, and `migrations/`, which no longer reflect the actual layout.
+The application is a monolithic PocketBase-backed Go service rooted at `cmd/wga/main.go`, with feature handlers under `internal/handlers/`, templates under `internal/assets/templ/`, compiled assets under `internal/assets/public/`, migrations under `internal/migrations/`, and frontend source under `resources/`. Phase 2 corrected the contributor-facing docs, and future planning work should preserve the current `cmd/wga` plus `internal/*` model instead of reintroducing older top-level path terminology.
 
-The repository already has working development commands in `devenv.nix`, frontend tooling in `package.json`, and browser tests in `playwright-tests/`. The maintenance goal is to align instructions with those real commands and structures, and to prefer fixing small mismatches in code or naming where that is more durable than documenting around them.
+The repository already has working development commands in `devenv.nix`, frontend tooling in `package.json`, and browser tests configured through `playwright.config.ts`. The maintenance goal is to align instructions with those real commands and structures, and to prefer fixing small mismatches in code or naming where that is more durable than documenting around them.
 
 ## Constraints
 
@@ -42,6 +42,17 @@ The repository already has working development commands in `devenv.nix`, fronten
 - **Brownfield**: Existing functionality must remain intact — this work is maintenance on a live codebase, not a reset
 - **Scope Control**: Adjacent fixes are allowed only when they directly remove drift — avoid feature creep
 - **Contributor Usability**: The result should help maintainers start the next phase of feature work without re-learning inaccurate paths or commands
+
+## Source of Truth
+
+The rule is simple: code and working repo configuration override stale prose. Planning and contributor docs should be updated against the current implementation rather than preserving historical wording that no longer matches the repository.
+
+Canonical evidence files for documentation decisions:
+- `cmd/wga/main.go`
+- `internal/*`
+- `devenv.nix`
+- `package.json`
+- `playwright.config.ts`
 
 ## Key Decisions
 
