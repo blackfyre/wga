@@ -12,14 +12,14 @@ This repository contains the code for the Web Gallery of Art project. The projec
 
 ## Technologies
 
-The project is built using the following technologies:
+The project is built around the following active technologies and workflows:
 
-- [htmx](https://htmx.org) - A javascript library for building web applications
-- [TailwindCSS](https://tailwindcss.com/) - A utility-first CSS framework
-  - [DaisyUI](https://daisyui.com/) - A component library for TailwindCSS
-- [Go](https://go.dev/) 1.24+ - A programming language for building web applications
-  - [PocketBase](https://pocketbase.io) - A Go based SaaS platform for building web applications
-  - [Goreleaser](https://goreleaser.com/) - A tool for building and releasing Go applications
+- [Go](https://go.dev/) 1.24+ with [PocketBase](https://pocketbase.io) for the application server, data layer, hooks, and cron jobs
+- [Templ](https://templ.guide/) for server-rendered UI fragments and page composition
+- [Bun](https://bun.sh/) scripts for frontend dependency management and asset builds
+- [PostCSS](https://postcss.org/) plus Tailwind tooling for stylesheet compilation
+- [htmx](https://htmx.org) for incremental browser interactions
+- [Playwright](https://playwright.dev/) for browser end-to-end coverage
 
 ## Getting Started
 
@@ -48,6 +48,7 @@ WGA_SMTP_USERNAME=
 WGA_SMTP_PASSWORD=
 WGA_SENDER_ADDRESS=
 WGA_SENDER_NAME=
+WGA_RECAPTCHA_SECRET=
 
 MAILPIT_URL=
 ```
@@ -70,14 +71,15 @@ MAILPIT_URL=
 | `WGA_SMTP_PASSWORD`    | The password for the SMTP service                                                                      |
 | `WGA_SENDER_ADDRESS`   | The sending email address                                                                              |
 | `WGA_SENDER_NAME`      | The name of the email sender                                                                           |
-| `MAILPIT_URL`          | For testing only!                                                                                      |
+| `WGA_RECAPTCHA_SECRET` | The reCAPTCHA secret used to verify postcard submissions                                               |
+| `MAILPIT_URL`          | The local mail UI endpoint that Playwright checks during end-to-end tests                              |
 
 ### Running the application
 
 To run the application simply download the release for your platform and run it with:
 
 ```bash
-./wga serve
+./dist/wga serve
 ```
 
 The application will start on port 8090 by default. You can access it by going to <http://localhost:8090>
@@ -118,7 +120,7 @@ devenv shell
 devenv up
 ```
 
-`devenv up` starts the frontend watchers, template watcher, MailHog, and MinIO. To run the application server, either build and launch the binary with `app:run` or start it directly with `code:run`.
+`devenv up` starts the frontend watchers, template watcher, the local `mailhog` service, and MinIO. Playwright reads `MAILPIT_URL` as the browser endpoint for inspecting those captured messages. To run the application server, either build and launch the binary with `app:run` or start it directly with `code:run`.
 
 If you only need asset watchers, use the package scripts directly:
 
@@ -132,7 +134,7 @@ bun run build:watch:js
 The database is populated on first start, and if you want to have images available, make sure that your `WGA_ENV=development` is set and then you can execute:
 
 ```bash
-./wga seed:images
+./dist/wga seed:images
 ```
 
 This will go through the contents of the database and will use placeholder images to "generate" the necessary images to the designated S3 compatible file hosting solution designated in the `.env` file.
