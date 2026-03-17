@@ -5,7 +5,7 @@
 See: `.planning/PROJECT.md` (updated 2026-03-16)
 
 **Core value:** The repository's documentation must describe the code and workflows that actually exist, so maintainers can move quickly without being misled.
-**Current focus:** Phase 4 - Remove Residual Mismatches
+**Current focus:** Phase 5 - Verify and Guard
 
 ## Status
 
@@ -13,8 +13,8 @@ See: `.planning/PROJECT.md` (updated 2026-03-16)
 - Roadmap created: yes
 - Requirements defined: yes
 - Research completed: yes
-- Current phase: 4
-- Current phase name: Remove Residual Mismatches
+- Current phase: 5
+- Current phase name: Verify and Guard
 - Current mode: yolo
 - Planning docs committed: no
 
@@ -38,11 +38,12 @@ See: `.planning/PROJECT.md` (updated 2026-03-16)
 - Executed Phase 3 plan 01 to align `.planning/PROJECT.md`, `.planning/REQUIREMENTS.md`, and `.planning/ROADMAP.md` to the explicit source-of-truth model
 - Executed Phase 3 plan 02 to align `.planning/STATE.md` and `.planning/codebase/CONCERNS.md` with the corrected contributor baseline
 - Executed Phase 4 plan 01 to align `README.md`, `docs/go-code-review.md`, and `docs/executive-summary-2026-03.md` to the active `dist/wga`, `internal/*`, and `mailhog` or `MAILPIT_URL` workflow model
+- Executed Phase 4 plan 02 to align `.planning/codebase/*` reference docs and the commented Playwright `webServer` example to the same corrected baseline
 
 ## Next Action
 
-- Execute Phase 4 plan 02 to align internal reference docs and the stale Playwright command comment to the same corrected baseline
+- Plan and execute Phase 5 verification and guardrail work against the corrected contributor, planning, and secondary reference baseline
 - Guard against reintroducing stale path or command terminology in later documentation updates
 
 ---
-*Last updated: 2026-03-17 during Phase 4 plan 01 execution*
+*Last updated: 2026-03-17 after Phase 4 execution*
