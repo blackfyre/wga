@@ -61,7 +61,7 @@ The codebase does not require a rewrite. It requires disciplined hardening in th
 ### Remaining from the full 90-day plan
 
 1. Broader N+1/query optimization sweep.
-2. Dev workflow/documentation alignment (`bun run dev` and local workflow consistency).
+2. Secondary documentation cleanup after the contributor-doc alignment milestone.
 3. Deeper repository extraction for high-churn handlers (especially artworks search).
 4. Expanded package-level unit test coverage beyond current critical-path additions.
 5. Baseline KPIs/SLO instrumentation beyond contributors fallback source metadata.
@@ -79,7 +79,7 @@ The codebase does not require a rewrite. It requires disciplined hardening in th
 ### Key Gaps
 
 1. Query inefficiencies (count via full fetch, known N+1 patterns).
-2. Dev UX drift between docs and scripts (`bun run dev` documented but missing).
+2. Secondary repo-analysis docs needed cleanup after the contributor-doc alignment milestone corrected the active workflow guidance.
 3. Architecture split is still partial; large handlers (notably artworks) remain mixed-responsibility.
 4. Automated test depth remains shallow in many backend domains.
 
