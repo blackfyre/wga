@@ -50,7 +50,7 @@ This roadmap restores trust in repository guidance before further feature work. 
 
 **Requirements:** PLAN-01, PLAN-02
 
-**Plans:** 0/2 plans executed
+**Plans:** 2/2 plans complete
 
 **Success criteria:**
 1. `.planning` context documents describe the current application and maintenance scope accurately.
@@ -96,7 +96,7 @@ This roadmap restores trust in repository guidance before further feature work. 
 |-------|--------|-------|----------|
 | 1 | ✓ | 2/2 | 100% |
 | 2 | ✓ | 2/2 | 100% |
-| 3 | ○ | 0/0 | 0% |
+| 3 | ✓ | 2/2 | 100% |
 | 4 | ○ | 0/0 | 0% |
 | 5 | ○ | 0/0 | 0% |
 

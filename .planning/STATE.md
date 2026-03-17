@@ -36,11 +36,12 @@ See: `.planning/PROJECT.md` (updated 2026-03-16)
 - Executed Phase 1 and produced `01-DRIFT-AUDIT.md`, `01-REMEDIATION-MAP.md`, and `01-VERIFICATION.md`
 - Phase 2 corrected `AGENTS.md`, `README.md`, and `CONTRIBUTING.md`, and recorded that baseline in `02-01-SUMMARY.md` and `02-02-SUMMARY.md`
 - Executed Phase 3 plan 01 to align `.planning/PROJECT.md`, `.planning/REQUIREMENTS.md`, and `.planning/ROADMAP.md` to the explicit source-of-truth model
+- Executed Phase 3 plan 02 to align `.planning/STATE.md` and `.planning/codebase/CONCERNS.md` with the corrected contributor baseline
 
 ## Next Action
 
-- Finish executing Phase 3 plan 02 and verify that internal planning references match the corrected contributor baseline
-- Use the corrected contributor docs as the command and path baseline for later planning and documentation work
+- Run Phase 3 verification or move into Phase 4 using the corrected contributor docs and planning files as the baseline
+- Guard against reintroducing stale path or command terminology in later documentation updates
 
 ---
 *Last updated: 2026-03-17 during Phase 3 execution*

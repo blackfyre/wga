@@ -56,8 +56,8 @@
 | DOCS-01 | Phase 2 | Complete |
 | DOCS-02 | Phase 2 | Complete |
 | DOCS-03 | Phase 2 | Complete |
-| PLAN-01 | Phase 3 | Pending |
-| PLAN-02 | Phase 3 | Pending |
+| PLAN-01 | Phase 3 | Complete |
+| PLAN-02 | Phase 3 | Complete |
 | CLNP-01 | Phase 4 | Pending |
 | CLNP-02 | Phase 4 | Pending |
 | VERI-01 | Phase 5 | Pending |
