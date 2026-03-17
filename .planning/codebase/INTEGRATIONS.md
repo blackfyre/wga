@@ -30,12 +30,12 @@
 ## External HTTP Calls
 
 - `internal/repositories/contributors.go` issues outbound HTTP requests to a configured contributor API endpoint.
-- Playwright postcard tests read `MAILPIT_URL` to inspect delivered email messages from the test environment.
+- Playwright postcard tests read `MAILPIT_URL` to inspect the local mail UI endpoint for delivered email messages.
 - No webhook receivers were identified in the current codebase.
 
 ## Local Service Dependencies
 
-- MailHog is enabled in `devenv.nix` for local email capture.
+- The `mailhog` service is enabled in `devenv.nix` for local email capture, while `MAILPIT_URL` points Playwright at the browser UI used to inspect those captured messages.
 - MinIO is enabled in `devenv.nix` for local object storage emulation.
 - Environment-derived base URL settings use `WGA_PROTOCOL` and `WGA_HOSTNAME`.
 

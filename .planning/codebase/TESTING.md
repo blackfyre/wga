@@ -29,7 +29,7 @@
 - `playwright-tests/artwork-search.spec.ts` covers artwork filtering combinations and reset behavior.
 - `playwright-tests/feedback.spec.ts` covers feedback submission UX.
 - `playwright-tests/guestbook.spec.ts` covers guestbook message flow.
-- `playwright-tests/postcard.spec.ts` covers postcard sending and checks delivered email content through Mailpit/MailHog APIs.
+- `playwright-tests/postcard.spec.ts` covers postcard sending and checks delivered email content through the UI endpoint exposed via `MAILPIT_URL` against the local `mailhog` service.
 
 ## Tooling and Execution
 

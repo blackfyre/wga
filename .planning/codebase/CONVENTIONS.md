@@ -48,6 +48,6 @@
 
 ## Notable Inconsistencies
 
-- Repo instructions mention `handlers/`, `utils/`, and `assets/` at the root, but the current code lives under `internal/...`.
+- Phase 2 corrected the contributor-facing docs to use `cmd/wga`, `internal/*`, `resources/*`, and `playwright-tests/*`; the remaining risk is reintroducing stale path or command terminology in later docs.
 - `package.json` still declares `lint-staged` with `prettier`, while the repo guidance centers on Biome.
 - Some tests are modernized while others remain ad hoc, so testing style is not fully uniform yet.
