@@ -52,6 +52,8 @@ Document any manual QA that matters for reviewers.
 
 Repository docs should follow code and configuration truth. If a command in docs conflicts with `devenv.nix`, `package.json`, or the current code layout, update the docs as part of the same change.
 
+Use the same canonical workflow terms across contributor docs: `devenv shell`, `devenv up`, `app:build`, `app:run`, `code:run`, `go test ./... -cover`, and `bunx playwright test`.
+
 When editing UI-related files, keep these boundaries clear:
 
 - `.templ` source files live in `internal/assets/templ/`
