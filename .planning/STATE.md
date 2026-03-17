@@ -16,7 +16,7 @@ See: `.planning/PROJECT.md` (updated 2026-03-16)
 - Current phase: 9 complete
 - Current phase name: Reconcile Traceability and Re-Audit
 - Current mode: yolo
-- Planning docs committed: no
+- Planning docs committed: yes
 
 ## Context
 
