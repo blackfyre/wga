@@ -5,7 +5,7 @@
 See: `.planning/PROJECT.md` (updated 2026-03-16)
 
 **Core value:** The repository's documentation must describe the code and workflows that actually exist, so maintainers can move quickly without being misled.
-**Current focus:** Phase 5 - Verify and Guard
+**Current focus:** Milestone closeout
 
 ## Status
 
@@ -13,7 +13,7 @@ See: `.planning/PROJECT.md` (updated 2026-03-16)
 - Roadmap created: yes
 - Requirements defined: yes
 - Research completed: yes
-- Current phase: 5
+- Current phase: 5 complete
 - Current phase name: Verify and Guard
 - Current mode: yolo
 - Planning docs committed: no
@@ -40,11 +40,12 @@ See: `.planning/PROJECT.md` (updated 2026-03-16)
 - Executed Phase 4 plan 01 to align `README.md`, `docs/go-code-review.md`, and `docs/executive-summary-2026-03.md` to the active `dist/wga`, `internal/*`, and `mailhog` or `MAILPIT_URL` workflow model
 - Executed Phase 4 plan 02 to align `.planning/codebase/*` reference docs and the commented Playwright `webServer` example to the same corrected baseline
 - Executed Phase 5 plan 01 to create `05-VERIFICATION.md`, verify the corrected command/path baseline against repo truth, and record a successful `go test ./... -cover` result
+- Executed Phase 5 plan 02 to add `docs/documentation-maintenance.md` and wire the anti-drift checklist into contributor and maintainer guidance
 
 ## Next Action
 
-- Execute Phase 5 plan 02 to add the lightweight anti-drift checklist and wire it into contributor and maintainer guidance
+- Complete or archive the documentation-alignment milestone now that all five phases are finished
 - Guard against reintroducing stale path or command terminology in later documentation updates
 
 ---
-*Last updated: 2026-03-17 during Phase 5 plan 01 execution*
+*Last updated: 2026-03-17 after Phase 5 execution*
