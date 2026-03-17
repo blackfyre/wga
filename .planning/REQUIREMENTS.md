@@ -7,8 +7,8 @@
 
 ### Documentation Audit
 
-- [ ] **AUDT-01**: Maintainer can see a concrete inventory of outdated path, command, and workflow references across contributor-facing and planning documentation
-- [ ] **AUDT-02**: Maintainer can trace each documented mismatch back to the current repo file, command, or structure that proves the correction
+- [x] **AUDT-01**: Maintainer can see a concrete inventory of outdated path, command, and workflow references across contributor-facing and planning documentation
+- [x] **AUDT-02**: Maintainer can trace each documented mismatch back to the current repo file, command, or structure that proves the correction
 
 ### Contributor Guidance
 
