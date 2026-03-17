@@ -64,6 +64,8 @@ This roadmap restores trust in repository guidance before further feature work. 
 
 **Requirements:** CLNP-01, CLNP-02
 
+**Plans:** 1/2 plans complete
+
 **Success criteria:**
 1. Misleading active guidance is removed or rewritten rather than preserved as legacy wording.
 2. Small adjacent fixes are applied only where they directly eliminate a recurring mismatch.
@@ -97,7 +99,7 @@ This roadmap restores trust in repository guidance before further feature work. 
 | 1 | ✓ | 2/2 | 100% |
 | 2 | ✓ | 2/2 | 100% |
 | 3 | ✓ | 2/2 | 100% |
-| 4 | ○ | 0/0 | 0% |
+| 4 | ◆ | 1/2 | 50% |
 | 5 | ○ | 0/0 | 0% |
 
 ---

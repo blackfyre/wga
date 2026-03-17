@@ -23,7 +23,7 @@
 
 ### Corrective Cleanup
 
-- [ ] **CLNP-01**: Maintainer can remove or rewrite obsolete guidance rather than keeping misleading historical wording in active docs
+- [x] **CLNP-01**: Maintainer can remove or rewrite obsolete guidance rather than keeping misleading historical wording in active docs
 - [ ] **CLNP-02**: Maintainer can make small adjacent code or naming fixes when they are the cleanest low-risk way to eliminate documentation drift
 
 ### Verification and Guardrails
@@ -58,7 +58,7 @@
 | DOCS-03 | Phase 2 | Complete |
 | PLAN-01 | Phase 3 | Complete |
 | PLAN-02 | Phase 3 | Complete |
-| CLNP-01 | Phase 4 | Pending |
+| CLNP-01 | Phase 4 | Complete |
 | CLNP-02 | Phase 4 | Pending |
 | VERI-01 | Phase 5 | Pending |
 | VERI-02 | Phase 5 | Pending |
@@ -70,4 +70,4 @@
 
 ---
 *Requirements defined: 2026-03-16*
-*Last updated: 2026-03-16 after Phase 1 execution*
+*Last updated: 2026-03-17 after Phase 4 plan 01 execution*
