@@ -78,6 +78,8 @@ This roadmap restores trust in repository guidance before further feature work. 
 
 **Requirements:** VERI-01, VERI-02
 
+**Plans:** 1/2 plans complete
+
 **Success criteria:**
 1. Updated docs are checked against the current repo structure, commands, and configuration files.
 2. Any changed workflows are validated with appropriate spot checks or existing test/build commands where needed.
@@ -100,7 +102,7 @@ This roadmap restores trust in repository guidance before further feature work. 
 | 2 | ✓ | 2/2 | 100% |
 | 3 | ✓ | 2/2 | 100% |
 | 4 | ✓ | 2/2 | 100% |
-| 5 | ○ | 0/0 | 0% |
+| 5 | ◆ | 1/2 | 50% |
 
 ---
 *Roadmap created: 2026-03-16*

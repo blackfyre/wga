@@ -39,11 +39,12 @@ See: `.planning/PROJECT.md` (updated 2026-03-16)
 - Executed Phase 3 plan 02 to align `.planning/STATE.md` and `.planning/codebase/CONCERNS.md` with the corrected contributor baseline
 - Executed Phase 4 plan 01 to align `README.md`, `docs/go-code-review.md`, and `docs/executive-summary-2026-03.md` to the active `dist/wga`, `internal/*`, and `mailhog` or `MAILPIT_URL` workflow model
 - Executed Phase 4 plan 02 to align `.planning/codebase/*` reference docs and the commented Playwright `webServer` example to the same corrected baseline
+- Executed Phase 5 plan 01 to create `05-VERIFICATION.md`, verify the corrected command/path baseline against repo truth, and record a successful `go test ./... -cover` result
 
 ## Next Action
 
-- Plan and execute Phase 5 verification and guardrail work against the corrected contributor, planning, and secondary reference baseline
+- Execute Phase 5 plan 02 to add the lightweight anti-drift checklist and wire it into contributor and maintainer guidance
 - Guard against reintroducing stale path or command terminology in later documentation updates
 
 ---
-*Last updated: 2026-03-17 after Phase 4 execution*
+*Last updated: 2026-03-17 during Phase 5 plan 01 execution*
