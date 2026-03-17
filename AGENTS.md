@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-The Go entrypoint `main.go` wires PocketBase integration and Echo handlers in `handlers/`, with shared helpers in `utils/` and scheduled jobs in `crontab/`. UI templates originate in `assets/templ/` (components, layouts, pages) and render into Go template fragments in `assets/views/`, while generated static assets land in `assets/public/`. Front-end source lives in `resources/js` and `resources/css`, database migrations in `migrations/`, and browser specs in `playwright-tests/`.
+The Go entrypoint is `cmd/wga/main.go`, which wires PocketBase setup plus the packages under `internal/`. Request handlers live in `internal/handlers/`, shared helpers in `internal/utils/`, cron registration in `internal/crontab/`, hooks in `internal/hooks/`, and migrations in `internal/migrations/`. Templ source files are edited in `internal/assets/templ/`, generated Go files live alongside them as `*_templ.go`, rendered view fragments live in `internal/assets/views/`, and built frontend assets land in `internal/assets/public/`. Front-end source lives in `resources/js` and `resources/css`, and browser specs live in `playwright-tests/`.
 
 ## Build, Test, and Development Commands
 
@@ -14,7 +14,8 @@ Use `devenv` as the primary CLI entrypoint for general project tasks. Run `deven
 - `app:tidy` refreshes generated templates and runs `go mod tidy`.
 - `app:build` installs front-end dependencies, builds assets, refreshes generated code, and compiles `dist/wga` from `./cmd/wga`.
 - `app:run` launches the built server from `dist/` in development mode, while `code:run` runs the app directly with `go run ./cmd/wga --dev`.
-- `app:reboot` rebuilds the app, clears local `wga_data`, and restarts the development server.
+- `app:reset` rebuilds the app, clears local `wga_data`, and restarts the development server.
+- `app:reboot` rebuilds the app and restarts the development server without clearing data.
 - `go test ./... -cover` runs unit tests and reports package coverage.
 - `bunx playwright test` executes the end-to-end suite in `playwright-tests/`.
 
@@ -22,7 +23,7 @@ Use raw `go`, `bun`, and `templ` commands for focused work when needed, but pref
 
 ## Coding Style & Naming Conventions
 
-Format Go code with `go fmt ./...` and keep package names lower case, mirroring their folder (for example `handlers/dual`). Follow Biome's defaults (`biome.json`): tab indentation, double quotes, sorted imports, and run `bunx @biomejs/biome format .` before committing front-end changes. Name Templ views with kebab-case filenames that match their route fragment and avoid committing generated build artefacts outside `assets/public/`.
+Format Go code with `go fmt ./...` and keep package names lower case, mirroring their folder (for example `internal/handlers/dual`). Follow Biome's defaults (`biome.json`): tab indentation, double quotes, sorted imports, and run `bunx @biomejs/biome format .` before committing front-end changes. Name Templ views with kebab-case filenames that match their route fragment, edit `.templ` sources in `internal/assets/templ/`, and avoid committing generated build artefacts outside `internal/assets/public/`.
 
 ## Testing Guidelines
 
