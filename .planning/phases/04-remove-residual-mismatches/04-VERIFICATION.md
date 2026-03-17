@@ -17,6 +17,8 @@ This report retroactively verifies the residual-cleanup phase using the mileston
 
 The missing audit proof is now present: the current repo state independently confirms that misleading residual guidance was removed or rewritten across the active docs and internal reference docs, while the only adjacent fix remained the comment-only `./dist/wga serve --dev` correction in `playwright.config.ts`.
 
+The requirement coverage below is intentionally tied back to these verified truths so the milestone audit can trace each Phase 4 claim to current evidence instead of relying on summary frontmatter alone.
+
 ## Observable Truths
 
 | # | Truth | Status | Evidence |
@@ -50,6 +52,7 @@ The missing audit proof is now present: the current repo state independently con
 
 - This verification is retroactive and does not re-run the original Phase 4 editing tasks.
 - The proof is still independent: it confirms that the current cleaned files, Phase 4 plans, and Phase 4 summaries all align to the intended residual-cleanup state.
+- The adjacent fix proof is limited to the commented `webServer` example in `playwright.config.ts`; this report does not claim any runtime Playwright behavior change because none was made.
 
 ## Verification Metadata
 
