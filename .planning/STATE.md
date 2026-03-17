@@ -2,29 +2,29 @@
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-03-16)
+See: `.planning/PROJECT.md` (updated 2026-03-17)
 
 **Core value:** The repository's documentation must describe the code and workflows that actually exist, so maintainers can move quickly without being misled.
-**Current focus:** Milestone closeout
+**Current focus:** Planning next milestone
 
 ## Status
 
 - Project initialized: yes
 - Roadmap created: yes
-- Requirements defined: yes
+- Requirements defined: no
 - Research completed: yes
-- Current phase: 9 complete
-- Current phase name: Reconcile Traceability and Re-Audit
+- Current phase: none active
+- Current phase name: Milestone archived
 - Current mode: yolo
 - Planning docs committed: yes
 
 ## Context
 
-- This is a brownfield maintenance milestone on the existing Web Gallery of Art application.
+- The v1.0 documentation-alignment milestone is complete and archived.
 - The codebase map already exists in `.planning/codebase/`.
-- The current milestone is documentation alignment before more feature work.
+- The current repo baseline includes trustworthy contributor docs, planning docs, verification artifacts, and an anti-drift checklist.
 - Code and working configuration are authoritative over stale docs.
-- Future planning work should use the corrected contributor docs as the command and path baseline.
+- Future planning work should use the corrected contributor docs and `docs/documentation-maintenance.md` as the baseline guardrail.
 - Small adjacent code or naming fixes are allowed when they directly remove documentation drift.
 
 ## Recent Progress
@@ -46,11 +46,12 @@ See: `.planning/PROJECT.md` (updated 2026-03-16)
 - Executed Phase 8 plan 01 to create `.planning/phases/04-remove-residual-mismatches/04-VERIFICATION.md` and independently verify `CLNP-01` and `CLNP-02`
 - Executed Phase 9 plan 01 to reconcile `.planning/REQUIREMENTS.md` so the top-level v1 checklist matches the complete traceability table before the final audit rerun
 - Executed Phase 9 plan 02 to refresh `.planning/v1.0-MILESTONE-AUDIT.md` as a passed, archive-ready report backed by the full Phase 1 through 8 evidence chain
+- Archived the shipped v1.0 milestone into `.planning/milestones/`, updated `.planning/PROJECT.md`, and cleared the active requirements/roadmap surface for the next milestone
 
 ## Next Action
 
-- Run `$gsd-complete-milestone v1.0` to archive the milestone while the refreshed audit and reconciliation artifacts are current
-- Preserve the documentation-maintenance checklist as the baseline guardrail for future milestones
+- Run `$gsd-new-milestone` to define the next milestone's goals, requirements, and roadmap
+- Keep the documentation-maintenance checklist and code/config source-of-truth rule in force for future doc changes
 
 ---
-*Last updated: 2026-03-17 after Phase 9 execution*
+*Last updated: 2026-03-17 after v1.0 milestone completion*
