@@ -7,9 +7,9 @@
 
 ## Documentation Drift
 
-- The repository instructions describe older top-level paths like `handlers/`, `utils/`, `assets/templ/`, and `migrations/`.
-- The actual code lives under `internal/handlers/`, `internal/utils/`, `internal/assets/templ/`, and `internal/migrations/`.
-- That drift can mislead contributors and automation unless docs are refreshed.
+- Phase 2 corrected the contributor-facing docs so they now point at `cmd/wga/main.go`, `internal/*`, and the current development commands.
+- Documentation drift is still a regression risk if future edits stop checking `cmd/wga/main.go`, `internal/*`, `devenv.nix`, `package.json`, and `playwright.config.ts` before changing repo guidance.
+- The maintenance risk is no longer stale contributor docs today; it is reintroducing stale path or command terminology later.
 
 ## Generated and Built Files in Repo
 
@@ -53,7 +53,7 @@
 
 ## Recommended Attention Areas
 
-- Refresh repo docs to match the current directory layout.
+- Guard against reintroducing stale path or command terminology.
 - Expand request/route tests around critical forms and cron side effects.
 - Review dead or oddly named files.
 - Audit platform-specific coupling before any major PocketBase upgrade.
