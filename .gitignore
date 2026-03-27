@@ -41,5 +41,8 @@ devenv.local.nix
 # direnv
 .direnv
 
+# Podman/Docker local overrides
+docker-compose.override.yml
+
 # pre-commit
 .pre-commit-config.yaml

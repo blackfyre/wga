@@ -1,0 +1,40 @@
+# Development services for WGA
+# Replaces devenv.nix services for non-Nix environments
+# Usage: podman-compose up -d (or docker-compose up -d)
+
+services:
+  minio:
+    image: docker.io/minio/minio:latest
+    container_name: wga-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minio_access_key
+      MINIO_ROOT_PASSWORD: minio_secret_key
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+
+  minio-init:
+    image: docker.io/minio/mc:latest
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 2;
+      mc alias set local http://minio:9000 minio_access_key minio_secret_key;
+      mc mb --ignore-existing local/wga;
+      mc anonymous set download local/wga;
+      echo 'MinIO bucket ready';
+      "
+
+  mailpit:
+    image: docker.io/axllent/mailpit:latest
+    container_name: wga-mailpit
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+
+volumes:
+  minio_data:
