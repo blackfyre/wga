@@ -12,3 +12,29 @@ jobs:
         uses: ytanikin/PRConventionalCommits@1.3.0
         with:
           task_types: '["feat","fix","docs","test","ci","refactor","perf","chore","revert", "build"]'
+
+  backend-quality-gates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25.x"
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+      - name: Install frontend dependencies
+        run: bun install
+      - name: Build frontend assets
+        run: bun run build
+      - name: Install templ
+        run: go install github.com/a-h/templ/cmd/templ@latest
+      - name: Generate templates
+        run: templ generate
+      - name: Verify dependencies
+        run: go mod tidy
+      - name: Run go vet
+        run: go vet ./...
+      - name: Run go tests
+        run: go test ./... -cover
