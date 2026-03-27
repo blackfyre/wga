@@ -4,6 +4,7 @@ import "htmx.org";
 import htmx from "htmx.org";
 import warningSign from "../assets/warning-sign.svg";
 import logger from "./logger";
+import { initStatisticsChart } from "./statistics";
 
 logger.setNamespace("WGA");
 logger.setLevel("debug");
@@ -283,6 +284,7 @@ const wgaInternal: wgaInternals = {
 				wgaInternal.func.viewer();
 				wgaInternal.func.cloner();
 				wgaInternal.func.artistSearchModal();
+				initStatisticsChart();
 			});
 
 			document.body.addEventListener("htmx:swapError", (evt) => {
