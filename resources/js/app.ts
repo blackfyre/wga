@@ -53,6 +53,9 @@ type wgaWindow = {
 	music: {
 		openPopUp: () => void;
 	};
+	glossary: {
+		closeAll: () => void;
+	};
 };
 
 type wgaInternals = {
@@ -68,6 +71,7 @@ type wgaInternals = {
 		viewer: () => void;
 		toast: (message: string, type: ToastEvent["detail"]["type"]) => void;
 		artistSearchModal: () => void;
+		glossary: () => void;
 		init: () => void;
 	};
 
@@ -249,6 +253,74 @@ const dualNavAction = (side: string, url: string) => {
 	});
 };
 
+// Glossary popup state — hoisted to avoid event listener leaks
+const glossaryState: { activePopup: HTMLElement | null; activeTerm: HTMLElement | null } = {
+	activePopup: null,
+	activeTerm: null,
+};
+
+const glossaryClosePopup = () => {
+	if (glossaryState.activePopup) {
+		glossaryState.activePopup.remove();
+		glossaryState.activePopup = null;
+	}
+	if (glossaryState.activeTerm) {
+		glossaryState.activeTerm.setAttribute("aria-expanded", "false");
+		glossaryState.activeTerm = null;
+	}
+};
+
+const glossaryShowPopup = (term: HTMLElement) => {
+	glossaryClosePopup();
+
+	const defHtml = term.getAttribute("data-glossary-def") || "";
+	if (!defHtml) return;
+
+	const popup = document.createElement("div");
+	popup.className = "glossary-popup";
+	popup.setAttribute("role", "tooltip");
+	popup.innerHTML = `<button type="button" class="glossary-popup-close" aria-label="Close">&times;</button><div>${defHtml}</div>`;
+
+	popup
+		.querySelector(".glossary-popup-close")
+		?.addEventListener("click", (e) => {
+			e.stopPropagation();
+			glossaryClosePopup();
+		});
+
+	popup.addEventListener("click", (e) => e.stopPropagation());
+
+	document.body.appendChild(popup);
+	glossaryState.activePopup = popup;
+	glossaryState.activeTerm = term;
+	term.setAttribute("aria-expanded", "true");
+
+	// Position relative to term
+	const rect = term.getBoundingClientRect();
+	const scrollY = window.scrollY;
+	const scrollX = window.scrollX;
+
+	popup.style.left = `${rect.left + scrollX}px`;
+	popup.style.top = `${rect.bottom + scrollY + 8}px`;
+
+	// Adjust if popup overflows right edge
+	const popupRect = popup.getBoundingClientRect();
+	if (popupRect.right > window.innerWidth - 16) {
+		popup.style.left = `${window.innerWidth - popupRect.width - 16 + scrollX}px`;
+	}
+
+	// Adjust if popup overflows bottom — show above instead
+	if (popupRect.bottom > window.innerHeight) {
+		popup.style.top = `${rect.top + scrollY - popupRect.height - 8}px`;
+	}
+};
+
+// One-time document-level listeners for glossary dismissal
+document.addEventListener("click", glossaryClosePopup);
+document.addEventListener("keydown", (e) => {
+	if (e.key === "Escape") glossaryClosePopup();
+});
+
 const wgaInternal: wgaInternals = {
 	els: {
 		dialog: null,
@@ -283,6 +355,7 @@ const wgaInternal: wgaInternals = {
 				wgaInternal.func.viewer();
 				wgaInternal.func.cloner();
 				wgaInternal.func.artistSearchModal();
+				wgaInternal.func.glossary();
 			});
 
 			document.body.addEventListener("htmx:swapError", (evt) => {
@@ -530,6 +603,39 @@ const wgaInternal: wgaInternals = {
 				listener();
 			}
 		},
+		glossary() {
+			const terms = document.querySelectorAll(
+				".glossary-term:not([data-glossary-bound])",
+			);
+			if (terms.length === 0) return;
+
+			for (const el of terms) {
+				const term = el as HTMLElement;
+				term.setAttribute("data-glossary-bound", "true");
+				term.setAttribute("role", "button");
+				term.setAttribute("aria-expanded", "false");
+
+				term.addEventListener("click", (e) => {
+					e.preventDefault();
+					e.stopPropagation();
+					if (glossaryState.activeTerm === term) {
+						glossaryClosePopup();
+					} else {
+						glossaryShowPopup(term);
+					}
+				});
+
+				term.addEventListener("keydown", (e) => {
+					if (e.key === "Enter" || e.key === " ") {
+						e.preventDefault();
+						glossaryShowPopup(term);
+					}
+					if (e.key === "Escape") {
+						glossaryClosePopup();
+					}
+				});
+			}
+		},
 		artistSearchModal() {
 			const artistSearchModal = document.getElementById("artist_lookup");
 
@@ -752,6 +858,11 @@ window.wga = {
 			newWin.opener = this;
 			newWin.focus();
 			return;
+		},
+	},
+	glossary: {
+		closeAll() {
+			glossaryClosePopup();
 		},
 	},
 	music: {
