@@ -13,6 +13,7 @@ import (
 	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/errs"
 	"github.com/blackfyre/wga/internal/utils"
+	"github.com/blackfyre/wga/internal/utils/glossary"
 	"github.com/blackfyre/wga/internal/utils/jsonld"
 	"github.com/blackfyre/wga/internal/utils/url"
 	"github.com/pocketbase/pocketbase"
@@ -101,6 +102,15 @@ func RenderArtistContent(app *pocketbase.PocketBase, c *core.RequestEvent, artis
 		content.Works = append(content.Works, img)
 	}
 
+	// Annotate bio with glossary terms (after content is fully built,
+	// so callers can use the raw Bio for meta descriptions first)
+	glossaryEntries, glossaryErr := glossary.GetGlossaryEntries(app)
+	if glossaryErr != nil {
+		app.Logger().Warn("Failed to load glossary entries", "error", glossaryErr)
+	} else {
+		content.Bio = glossary.AnnotateHTML(content.Bio, glossaryEntries)
+	}
+
 	return content, nil
 }
 
@@ -137,7 +147,7 @@ func processArtist(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 	}
 
 	ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", content.Name, content.BioExcerpt))
-	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, content.Bio)
+	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, artist.GetString("bio"))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgUrlKey, fullUrl)
 	if len(content.Works) > 0 {
 		ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgImageKey, utils.AssetUrl(content.Works[0].Image))
