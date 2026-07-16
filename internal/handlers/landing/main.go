@@ -27,7 +27,7 @@ const defaultWelcomeContent = `<p>
 The Web Gallery of Art is a searchable collection of European painting, sculpture, decorative arts, and architecture from the 3rd century to the early 20th century. It began as a Renaissance-focused project and grew into a broader archive built for students, teachers, and curious visitors who want images and context in the same place.
 </p>
 <p>
-This version of the site is organized around a few strong routes. Start with the <a href="/artists">artists</a> index for biographies and related works, move into <a href="/artworks">artwork search</a> when you know what you want to filter, open <a href="/dual-mode" target="_blank">Dual Mode</a> to compare two pages side by side, or use <a href="/inspire">Inspiration</a> when you want the collection to surprise you.
+This version of the site is organized around a few strong routes. Start with the <a href="/artists">artists</a> index for biographies and related works, move into <a href="/artworks">artwork search</a> when you know what you want to filter, or use <a href="/inspire">Inspiration</a> when you want the collection to surprise you.
 </p>
 <p>
 The project remains an independent public resource: open, interconnected, and designed for study as much as enjoyment. If the collection helps you, leave a note in the <a href="/guestbook">guestbook</a> or explore how the site is maintained by its <a href="/contributors">contributors</a>.

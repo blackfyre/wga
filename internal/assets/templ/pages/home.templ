@@ -34,23 +34,21 @@ templ HomePageContent(c HomePage) {
 								Explore artists, artworks, and context without losing the thread.
 							</h1>
 							<p class="max-w-2xl text-base leading-8 text-base-content/75 md:text-lg">
-								Browse the collection, jump between artists and artworks, and use Dual Mode when one page is not enough.
+								Browse the collection, jump between artists and artworks, and follow their connections.
 							</p>
 						</div>
 						<div class="flex flex-wrap gap-3">
 							<a href="/artists" hx-get="/artists" class="btn btn-primary btn-lg">Browse artists</a>
 							<a href="/artworks" hx-get="/artworks" class="btn btn-outline btn-lg">Search artworks</a>
-							<a href="/dual-mode" target="_blank" class="btn btn-ghost btn-lg">Open Dual Mode</a>
 						</div>
 						<div class="flex flex-wrap gap-2 text-sm text-base-content/70">
 							<span class="badge badge-outline badge-lg">Collection research</span>
-							<span class="badge badge-outline badge-lg">Side-by-side comparison</span>
 							<span class="badge badge-outline badge-lg">Open source since 1992</span>
 						</div>
 					</div>
 					<div class="animate__animated animate__fadeInRight home-spotlight rounded-box border border-base-300 bg-base-200/80 p-5 shadow-sm md:p-6">
 						<p class="home-kicker">Start here</p>
-						<h2 class="font-display mb-3 text-2xl text-primary">Three fast entry points</h2>
+						<h2 class="font-display mb-3 text-2xl text-primary">Two fast entry points</h2>
 						<p class="mb-5 text-sm leading-6 text-base-content/70">
 							The collection already has enough depth to overwhelm first-time visitors. Put the strongest routes in front of them.
 						</p>
@@ -68,13 +66,6 @@ templ HomePageContent(c HomePage) {
 									<small>Filter by title, school, form, and type.</small>
 								</span>
 								<span aria-hidden="true">→</span>
-							</a>
-							<a href="/dual-mode" target="_blank" class="home-inline-card">
-								<span>
-									<strong>Dual Mode</strong>
-									<small>Compare two artists or artworks side by side.</small>
-								</span>
-								<span aria-hidden="true">↗</span>
 							</a>
 						</div>
 					</div>

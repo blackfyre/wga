@@ -1,5 +1,5 @@
-import Viewer from "viewerjs";
 import Trix from "trix";
+import Viewer from "viewerjs";
 import "htmx.org";
 import htmx from "htmx.org";
 import warningSign from "../assets/warning-sign.svg";
@@ -40,10 +40,8 @@ type wgaWindow = {
 		close: () => void;
 	};
 	dual: {
-		clearPane: (side: string) => void;
-		copyPane: (source: string, target: string) => void;
 		openLookup: (side: string) => void;
-		reversePanes: () => void;
+		setPaneTarget: (side: string, openInOtherPane: boolean) => void;
 	};
 	window: {
 		historyBack: () => void;
@@ -182,8 +180,16 @@ const normalizeDualPathInput = (value: string): string | null => {
 		normalizedValue.startsWith("http://") ||
 		normalizedValue.startsWith("https://")
 	) {
-		const parsed = new URL(normalizedValue);
-		return `${parsed.pathname}${parsed.search}`;
+		try {
+			const parsed = new URL(normalizedValue);
+			if (parsed.origin !== window.location.origin) {
+				return null;
+			}
+
+			return parsed.pathname;
+		} catch {
+			return null;
+		}
 	}
 
 	if (
@@ -219,33 +225,13 @@ const updateDualMode = (mutateUrl: (url: URL) => void) => {
 const setDualPane = (side: string, value: string) => {
 	updateDualMode((nextUrl) => {
 		nextUrl.searchParams.set(side, value);
-		nextUrl.searchParams.set(`${side}_render_to`, paneToTarget(side));
 	});
 };
 
-const dualNavAction = (side: string, url: string) => {
-	logger.debug("Side", side);
-	logger.debug("URL", url);
-	logger.debug("Base URL", window.location.href.split("?")[0]);
-	// Get the current url base
-	const baseUrl = window.location.href.split("?")[0];
-
-	const newUrl = new URL("/dual-mode", baseUrl);
-
-	// Inherit the search parameters
-	const searchParams = new URLSearchParams(window.location.search);
-	searchParams.forEach((value, key) => {
-		newUrl.searchParams.set(key, value);
-	});
-
-	// Set the search parameters
-	newUrl.searchParams.set(side, url);
-
-	// Create an anchor element
-	htmx.ajax("get", newUrl.href, {
-		target: `#${paneToTarget(side)}`,
-		select: `#${paneToTarget(side)}`,
-		swap: "outerHTML",
+const updatePaneTarget = (side: string, openInOtherPane: boolean) => {
+	updateDualMode((nextUrl) => {
+		const target = openInOtherPane ? paneToTarget(side) : side;
+		nextUrl.searchParams.set(`${side}_render_to`, target);
 	});
 };
 
@@ -698,14 +684,6 @@ window.wga = {
 		},
 	},
 	dual: {
-		clearPane(side: string) {
-			setDualPane(side, "default");
-		},
-		copyPane(source: string, target: string) {
-			const currentUrl = new URL(window.location.href);
-			const sourcePath = currentUrl.searchParams.get(source) || "default";
-			setDualPane(target, sourcePath);
-		},
 		openLookup(side: string) {
 			const modal = document.getElementById(
 				"artist_lookup",
@@ -718,16 +696,8 @@ window.wga = {
 			wgaInternal.func.artistSearchModal();
 			modal.showModal();
 		},
-		reversePanes() {
-			updateDualMode((nextUrl) => {
-				const left = nextUrl.searchParams.get("left") || "default";
-				const right = nextUrl.searchParams.get("right") || "default";
-
-				nextUrl.searchParams.set("left", right);
-				nextUrl.searchParams.set("right", left);
-				nextUrl.searchParams.set("left_render_to", "right");
-				nextUrl.searchParams.set("right_render_to", "left");
-			});
+		setPaneTarget(side: string, openInOtherPane: boolean) {
+			updatePaneTarget(side, openInOtherPane);
 		},
 	},
 	window: {

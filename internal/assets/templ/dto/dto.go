@@ -71,7 +71,9 @@ type ArtistNameListEntry struct {
 }
 
 type DualViewDto struct {
-	Left           string
-	Right          string
-	ArtistNameList []ArtistNameListEntry
+	Left                      string
+	Right                     string
+	LeftLinksOpenInOtherPane  bool
+	RightLinksOpenInOtherPane bool
+	ArtistNameList            []ArtistNameListEntry
 }

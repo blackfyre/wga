@@ -1,74 +1,91 @@
 package dual
 
 import (
-	"cmp"
+	"net/http/httptest"
 	"net/url"
 	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
+	"github.com/pocketbase/pocketbase/core"
 )
 
 func TestFormatArtistNameList(t *testing.T) {
-	// Test case 1: Empty artist name list
-	artistNameList := map[string]string{}
-	expected := []dto.ArtistNameListEntry{}
-	result := formatArtistNameList(artistNameList)
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, but got %v", expected, result)
+	tests := []struct {
+		name  string
+		input map[string]string
+		want  []dto.ArtistNameListEntry
+	}{
+		{
+			name:  "empty list",
+			input: map[string]string{},
+			want:  []dto.ArtistNameListEntry{},
+		},
+		{
+			name: "sorts by label then URL",
+			input: map[string]string{
+				"/artists/two":     "Artist Two",
+				"/artists/one":     "Artist One",
+				"/artists/one-alt": "Artist One",
+			},
+			want: []dto.ArtistNameListEntry{
+				{Url: "/artists/one", Label: "Artist One"},
+				{Url: "/artists/one-alt", Label: "Artist One"},
+				{Url: "/artists/two", Label: "Artist Two"},
+			},
+		},
 	}
 
-	// Test case 2: Single entry in artist name list
-	artistNameList = map[string]string{
-		"/artist/1": "Artist One",
-	}
-	expected = []dto.ArtistNameListEntry{
-		{Url: "/artist/1", Label: "Artist One"},
-	}
-	result = formatArtistNameList(artistNameList)
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, but got %v", expected, result)
-	}
-
-	// Test case 3: Multiple entries in artist name list
-	artistNameList = map[string]string{
-		"/artist/1": "Artist One",
-		"/artist/2": "Artist Two",
-	}
-	expected = []dto.ArtistNameListEntry{
-		{Url: "/artist/1", Label: "Artist One"},
-		{Url: "/artist/2", Label: "Artist Two"},
-	}
-	result = formatArtistNameList(artistNameList)
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, but got %v", expected, result)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got := formatArtistNameList(test.input)
+			if !reflect.DeepEqual(got, test.want) {
+				t.Fatalf("expected %#v, got %#v", test.want, got)
+			}
+		})
 	}
 }
 
 func TestReverseSide(t *testing.T) {
-	// Test case 1: Input is "left"
-	input := "left"
-	expected := "right"
-	result := reverseSide(input)
-	if result != expected {
-		t.Errorf("Expected %v, but got %v", expected, result)
+	tests := []struct {
+		side string
+		want string
+	}{
+		{side: "left", want: "right"},
+		{side: "right", want: "left"},
+		{side: "centre", want: ""},
 	}
 
-	// Test case 2: Input is "right"
-	input = "right"
-	expected = "left"
-	result = reverseSide(input)
-	if result != expected {
-		t.Errorf("Expected %v, but got %v", expected, result)
+	for _, test := range tests {
+		if got := reverseSide(test.side); got != test.want {
+			t.Errorf("reverseSide(%q) = %q, want %q", test.side, got, test.want)
+		}
+	}
+}
+
+func TestResolvePaneTarget(t *testing.T) {
+	tests := []struct {
+		name      string
+		side      string
+		requested string
+		want      string
+	}{
+		{name: "left targets itself", side: "left", requested: "left", want: "left"},
+		{name: "left targets other pane", side: "left", requested: "right", want: "right"},
+		{name: "right targets itself", side: "right", requested: "right", want: "right"},
+		{name: "right targets other pane", side: "right", requested: "left", want: "left"},
+		{name: "empty defaults to other pane", side: "left", requested: "", want: "right"},
+		{name: "whitespace defaults to other pane", side: "right", requested: "  ", want: "left"},
+		{name: "invalid target defaults to other pane", side: "left", requested: "centre", want: "right"},
 	}
 
-	// Test case 3: Input is neither "left" nor "right"
-	input = "center"
-	expected = ""
-	result = reverseSide(input)
-	if result != expected {
-		t.Errorf("Expected %v, but got %v", expected, result)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := resolvePaneTarget(test.side, test.requested); got != test.want {
+				t.Fatalf("resolvePaneTarget(%q, %q) = %q, want %q", test.side, test.requested, got, test.want)
+			}
+		})
 	}
 }
 
@@ -95,7 +112,7 @@ func TestParsePanePath(t *testing.T) {
 			want:  panePathDto{Kind: "artwork", Id: "777", RelPath: "/artists/example-123/artwork-777"},
 		},
 		{
-			name:  "legacy broken artwork path",
+			name:  "legacy artwork path",
 			input: "/artists/example-123/artworks/artwork-777",
 			want:  panePathDto{Kind: "artwork", Id: "777", RelPath: "/artists/example-123/artworks/artwork-777"},
 		},
@@ -105,7 +122,7 @@ func TestParsePanePath(t *testing.T) {
 			want:  panePathDto{Kind: "artwork", Id: "777", RelPath: "/artworks/artwork-777"},
 		},
 		{
-			name:    "invalid path",
+			name:    "unsupported path",
 			input:   "/pages/privacy-policy",
 			wantErr: true,
 		},
@@ -134,211 +151,243 @@ func TestParsePanePath(t *testing.T) {
 }
 
 func TestBuildDualModePushURL(t *testing.T) {
-	left := renderPaneDto{Side: "left", RelPath: "/artists/example-123"}
-	right := renderPaneDto{Side: "right", RelPath: "/artists/example-123/artwork-777"}
-
-	pushURL := buildDualModePushURL(left, right)
-
-	parsed, err := url.Parse(pushURL)
-	if err != nil {
-		t.Fatalf("expected valid push url, got error: %v", err)
+	left := renderPaneDto{
+		Side:     "left",
+		RelPath:  "/artists/example-123",
+		RenderTo: "left",
+	}
+	right := renderPaneDto{
+		Side:     "right",
+		RelPath:  "/artists/example-123/artwork-777",
+		RenderTo: "right",
 	}
 
-	if parsed.Path != "/dual-mode" {
-		t.Fatalf("expected /dual-mode path, got %s", parsed.Path)
-	}
+	parsed := parseDualModeURL(t, buildDualModePushURL(left, right))
+	assertDualModeQuery(t, parsed, map[string]string{
+		"left":            left.RelPath,
+		"right":           right.RelPath,
+		"left_render_to":  "left",
+		"right_render_to": "right",
+	})
+}
 
-	if got := parsed.Query().Get("left"); got != left.RelPath {
-		t.Fatalf("expected left=%s, got %s", left.RelPath, got)
-	}
-
-	if got := parsed.Query().Get("right"); got != right.RelPath {
-		t.Fatalf("expected right=%s, got %s", right.RelPath, got)
-	}
-
-	if got := parsed.Query().Get("left_render_to"); got != right.Side {
-		t.Fatalf("expected left_render_to=%s, got %s", right.Side, got)
-	}
-
-	if got := parsed.Query().Get("right_render_to"); got != left.Side {
-		t.Fatalf("expected right_render_to=%s, got %s", left.Side, got)
-	}
+func TestBuildDualModeURLDefaultsEmptyValues(t *testing.T) {
+	parsed := parseDualModeURL(t, buildDualModeURL("", "", "", "invalid"))
+	assertDualModeQuery(t, parsed, map[string]string{
+		"left":            "default",
+		"right":           "default",
+		"left_render_to":  "right",
+		"right_render_to": "left",
+	})
 }
 
 func TestBuildDualModePaneURL(t *testing.T) {
-	queryValues := map[string][]string{
-		"left":            {"/artists/aagaard-carl-frederik-f2540d7a3fe99f9"},
-		"left_render_to":  {"right"},
-		"right":           {"default"},
-		"right_render_to": {"left"},
+	artistPath := "/artists/aagaard-carl-frederik-f2540d7a3fe99f9"
+	artworkPath := "/artists/aagaard-carl-frederik-f2540d7a3fe99f9/deer-beside-a-lake-a6aab5e26c30056"
+
+	tests := []struct {
+		name        string
+		side        string
+		currentPath string
+		destination string
+		query       map[string][]string
+		want        map[string]string
+	}{
+		{
+			name:        "left source opens in other pane",
+			side:        "left",
+			currentPath: artistPath,
+			destination: artworkPath,
+			query: map[string][]string{
+				"left":            {artistPath},
+				"right":           {"default"},
+				"left_render_to":  {"right"},
+				"right_render_to": {"left"},
+			},
+			want: map[string]string{
+				"left":            artistPath,
+				"right":           artworkPath,
+				"left_render_to":  "right",
+				"right_render_to": "left",
+			},
+		},
+		{
+			name:        "left source opens in same pane",
+			side:        "left",
+			currentPath: artistPath,
+			destination: artworkPath,
+			query: map[string][]string{
+				"left":            {artistPath},
+				"right":           {"default"},
+				"left_render_to":  {"left"},
+				"right_render_to": {"left"},
+			},
+			want: map[string]string{
+				"left":            artworkPath,
+				"right":           "default",
+				"left_render_to":  "left",
+				"right_render_to": "left",
+			},
+		},
+		{
+			name:        "right source opens in other pane",
+			side:        "right",
+			currentPath: artworkPath,
+			destination: artistPath,
+			query: map[string][]string{
+				"left":            {"default"},
+				"right":           {artworkPath},
+				"left_render_to":  {"right"},
+				"right_render_to": {"left"},
+			},
+			want: map[string]string{
+				"left":            artistPath,
+				"right":           artworkPath,
+				"left_render_to":  "right",
+				"right_render_to": "left",
+			},
+		},
+		{
+			name:        "right source opens in same pane",
+			side:        "right",
+			currentPath: artworkPath,
+			destination: artistPath,
+			query: map[string][]string{
+				"left":            {"default"},
+				"right":           {artworkPath},
+				"left_render_to":  {"right"},
+				"right_render_to": {"right"},
+			},
+			want: map[string]string{
+				"left":            "default",
+				"right":           artistPath,
+				"left_render_to":  "right",
+				"right_render_to": "right",
+			},
+		},
+		{
+			name:        "invalid target defaults to other pane",
+			side:        "left",
+			currentPath: artistPath,
+			destination: artworkPath,
+			query: map[string][]string{
+				"left":            {artistPath},
+				"right":           {"default"},
+				"left_render_to":  {"centre"},
+				"right_render_to": {"right"},
+			},
+			want: map[string]string{
+				"left":            artistPath,
+				"right":           artworkPath,
+				"left_render_to":  "right",
+				"right_render_to": "right",
+			},
+		},
 	}
 
-	linkURL := buildDualModePaneURL(
-		"left",
-		"/artists/aagaard-carl-frederik-f2540d7a3fe99f9",
-		"/artists/aagaard-carl-frederik-f2540d7a3fe99f9/deer-beside-a-lake-a6aab5e26c30056",
-		queryValues,
-	)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got := parseDualModeURL(t, buildDualModePaneURL(test.side, test.currentPath, test.destination, test.query))
+			assertDualModeQuery(t, got, test.want)
+		})
+	}
+}
 
-	parsed, err := url.Parse(linkURL)
+func TestResolvePaneRelPath(t *testing.T) {
+	tests := []struct {
+		name      string
+		requested string
+		rendered  string
+		want      string
+	}{
+		{
+			name:      "uses rendered canonical path",
+			requested: "/artists/requested-123",
+			rendered:  "/artists/canonical-123",
+			want:      "/artists/canonical-123",
+		},
+		{
+			name:      "uses request when rendered path is empty",
+			requested: "/artists/requested-123",
+			want:      "/artists/requested-123",
+		},
+		{
+			name:      "rejects nested dual mode URL",
+			requested: "/artists/requested-123",
+			rendered:  "/dual-mode?left=%2Fartists%2Frequested-123",
+			want:      "/artists/requested-123",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := resolvePaneRelPath(test.requested, test.rendered); got != test.want {
+				t.Fatalf("resolvePaneRelPath(%q, %q) = %q, want %q", test.requested, test.rendered, got, test.want)
+			}
+		})
+	}
+}
+
+func TestRenderDefaultPane(t *testing.T) {
+	pane, err := renderDefaultPane("left", "right")
 	if err != nil {
-		t.Fatalf("expected valid pane url, got error: %v", err)
+		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if parsed.Path != "/dual-mode" {
-		t.Fatalf("expected /dual-mode path, got %s", parsed.Path)
+	if pane.Side != "left" || pane.RelPath != "default" || pane.RenderTo != "right" {
+		t.Fatalf("unexpected default pane metadata: %+v", pane)
 	}
 
-	if got := parsed.Query().Get("left"); got != "/artists/aagaard-carl-frederik-f2540d7a3fe99f9" {
-		t.Fatalf("expected left artist path to be preserved, got %s", got)
-	}
-
-	if got := parsed.Query().Get("right"); got != "/artists/aagaard-carl-frederik-f2540d7a3fe99f9/deer-beside-a-lake-a6aab5e26c30056" {
-		t.Fatalf("expected right artwork path, got %s", got)
-	}
-
-	if got := parsed.Query().Get("left_render_to"); got != "right" {
-		t.Fatalf("expected left_render_to=right, got %s", got)
-	}
-
-	if got := parsed.Query().Get("right_render_to"); got != "left" {
-		t.Fatalf("expected right_render_to=left, got %s", got)
-	}
-
-	if got := cmp.Or(queryValues["right"][0], ""); got != "default" {
-		t.Fatalf("expected original query values to remain unchanged, got %s", got)
+	if !strings.Contains(pane.Content, "Choose content for comparison") {
+		t.Fatalf("expected default pane UI, got %q", pane.Content)
 	}
 }
 
-func TestBuildDualModePaneURLFromRightPaneStillTargetsRight(t *testing.T) {
-	queryValues := map[string][]string{
-		"left":            {"default"},
-		"left_render_to":  {"right"},
-		"right":           {"/artists/aachen-hans-von-139ac2dff50d65c"},
-		"right_render_to": {"left"},
-	}
+func TestRenderPaneFallsBackForUnsupportedPath(t *testing.T) {
+	event := &core.RequestEvent{}
+	event.Request = httptest.NewRequest("GET", "/dual-mode?left=/pages/privacy-policy&left_render_to=centre", nil)
 
-	linkURL := buildDualModePaneURL(
-		"right",
-		"/artists/aachen-hans-von-139ac2dff50d65c",
-		"/artists/aachen-hans-von-139ac2dff50d65c/a-couple-in-a-tavern-4035847eedfacc4",
-		queryValues,
-	)
-
-	parsed, err := url.Parse(linkURL)
+	pane, err := renderPane("left", nil, event)
 	if err != nil {
-		t.Fatalf("expected valid pane url, got error: %v", err)
+		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if got := parsed.Query().Get("left"); got != "default" {
-		t.Fatalf("expected left pane to remain unchanged, got %s", got)
+	if pane.RelPath != "default" || pane.RenderTo != "right" {
+		t.Fatalf("unexpected fallback pane metadata: %+v", pane)
 	}
 
-	if got := parsed.Query().Get("right"); got != "/artists/aachen-hans-von-139ac2dff50d65c/a-couple-in-a-tavern-4035847eedfacc4" {
-		t.Fatalf("expected artwork in right pane, got %s", got)
-	}
-
-	if got := parsed.Query().Get("left_render_to"); got != "right" {
-		t.Fatalf("expected left_render_to=right, got %s", got)
-	}
-
-	if got := parsed.Query().Get("right_render_to"); got != "left" {
-		t.Fatalf("expected right_render_to=left, got %s", got)
-	}
-}
-
-func TestBuildDualModeOppositePaneURLFromLeftPaneTargetsRight(t *testing.T) {
-	queryValues := map[string][]string{
-		"left":            {"/artists/aachen-hans-von-139ac2dff50d65c/a-couple-in-a-tavern-4035847eedfacc4"},
-		"left_render_to":  {"right"},
-		"right":           {"default"},
-		"right_render_to": {"left"},
-	}
-
-	linkURL := buildDualModeOppositePaneURL(
-		"left",
-		"/artists/aachen-hans-von-139ac2dff50d65c/a-couple-in-a-tavern-4035847eedfacc4",
-		"/artists/aachen-hans-von-139ac2dff50d65c",
-		queryValues,
-	)
-
-	parsed, err := url.Parse(linkURL)
-	if err != nil {
-		t.Fatalf("expected valid pane url, got error: %v", err)
-	}
-
-	if got := parsed.Query().Get("left"); got != "/artists/aachen-hans-von-139ac2dff50d65c/a-couple-in-a-tavern-4035847eedfacc4" {
-		t.Fatalf("expected left artwork path to be preserved, got %s", got)
-	}
-
-	if got := parsed.Query().Get("right"); got != "/artists/aachen-hans-von-139ac2dff50d65c" {
-		t.Fatalf("expected artist path in right pane, got %s", got)
-	}
-}
-
-func TestBuildDualModeOppositePaneURLFromRightPaneTargetsLeft(t *testing.T) {
-	queryValues := map[string][]string{
-		"left":            {"default"},
-		"left_render_to":  {"right"},
-		"right":           {"/artists/aachen-hans-von-139ac2dff50d65c/a-couple-in-a-tavern-4035847eedfacc4"},
-		"right_render_to": {"left"},
-	}
-
-	linkURL := buildDualModeOppositePaneURL(
-		"right",
-		"/artists/aachen-hans-von-139ac2dff50d65c/a-couple-in-a-tavern-4035847eedfacc4",
-		"/artists/aachen-hans-von-139ac2dff50d65c",
-		queryValues,
-	)
-
-	parsed, err := url.Parse(linkURL)
-	if err != nil {
-		t.Fatalf("expected valid pane url, got error: %v", err)
-	}
-
-	if got := parsed.Query().Get("left"); got != "/artists/aachen-hans-von-139ac2dff50d65c" {
-		t.Fatalf("expected artist path in left pane, got %s", got)
-	}
-
-	if got := parsed.Query().Get("right"); got != "/artists/aachen-hans-von-139ac2dff50d65c/a-couple-in-a-tavern-4035847eedfacc4" {
-		t.Fatalf("expected right artwork path to be preserved, got %s", got)
-	}
-}
-
-func TestResolvePaneRelPathUsesRenderedCanonicalPath(t *testing.T) {
-	got := resolvePaneRelPath("/artists/requested-123", "/artists/canonical-123")
-	if got != "/artists/canonical-123" {
-		t.Fatalf("expected canonical rendered path, got %s", got)
-	}
-}
-
-func TestResolvePaneRelPathRejectsNestedDualModeURL(t *testing.T) {
-	got := resolvePaneRelPath(
-		"/artists/aachen-hans-von-139ac2dff50d65c",
-		"/dual-mode?left=%2Fartists%2Faachen-hans-von-139ac2dff50d65c&right=%2Fartists%2Faachen-hans-von-139ac2dff50d65c%2Fa-couple-in-a-tavern-4035847eedfacc4",
-	)
-	if got != "/artists/aachen-hans-von-139ac2dff50d65c" {
-		t.Fatalf("expected requested pane path when rendered path is nested dual mode, got %s", got)
-	}
-}
-
-func TestDefaultPaneContentLeft(t *testing.T) {
-	content, err := defaultPaneContent("left")
-	if err != nil {
-		t.Fatalf("unexpected error while rendering default left pane content: %v", err)
-	}
-
-	if content == "" {
-		t.Fatalf("expected non-empty default left pane content")
-	}
-
-	if !strings.Contains(content, "Choose content for comparison") {
-		t.Fatalf("expected default left pane UI, got %q", content)
+	if !strings.Contains(pane.Content, "Choose content for comparison") {
+		t.Fatalf("expected default pane UI, got %q", pane.Content)
 	}
 }
 
 func TestDefaultPaneContentUnsupported(t *testing.T) {
-	if _, err := defaultPaneContent("center"); err == nil {
-		t.Fatalf("expected unsupported pane type error")
+	if _, err := defaultPaneContent("centre"); err == nil {
+		t.Fatal("expected unsupported pane type error")
+	}
+}
+
+func parseDualModeURL(t *testing.T, rawURL string) *url.URL {
+	t.Helper()
+
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		t.Fatalf("expected valid URL, got %q: %v", rawURL, err)
+	}
+
+	if parsed.Path != "/dual-mode" {
+		t.Fatalf("expected /dual-mode path, got %q", parsed.Path)
+	}
+
+	return parsed
+}
+
+func assertDualModeQuery(t *testing.T, parsed *url.URL, want map[string]string) {
+	t.Helper()
+
+	for key, wantValue := range want {
+		if got := parsed.Query().Get(key); got != wantValue {
+			t.Errorf("expected %s=%q, got %q", key, wantValue, got)
+		}
 	}
 }

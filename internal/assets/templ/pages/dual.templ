@@ -25,7 +25,7 @@ templ DualPage(c dto.DualViewDto) {
 				<span>Dual Mode is desktop-only. Use a screen width of at least 768px to compare two panes side by side.</span>
 			</div>
 		</div>
-		<main id="dual-area" class="hidden md:grid grid-cols-2 grid-rows-[1fr_100px] gap-0 h-screen">
+		<main id="dual-area" class="hidden md:grid grid-cols-2 grid-rows-[1fr_auto] gap-0 h-screen">
 			<div id="left" class="w-full overflow-y-auto border-r border-base-300 py-10 pl-10 pr-5">
 				@templ.Raw(c.Left)
 			</div>
@@ -51,7 +51,7 @@ templ DualPaneDefault(side string) {
 					<button type="button" class="btn btn-primary btn-sm" onclick="window.wga.dual.openLookup('right')">Browse artists</button>
 				}
 			</div>
-			<p class="mb-4 text-base-content/80">Load an artist page or an artwork page into this pane. The other pane stays active, so you can compare content side by side.</p>
+			<p class="mb-4 text-base-content/80">Load an artist page or an artwork page into this pane. Use the bottom controls to choose whether its links replace this pane or open in the other pane.</p>
 			<div class="grid gap-3 md:grid-cols-2">
 				<div class="rounded-box bg-base-200 p-4">
 					<h3 class="mb-2 font-medium">Supported here</h3>
@@ -62,24 +62,14 @@ templ DualPaneDefault(side string) {
 					</ul>
 				</div>
 				<div class="rounded-box bg-base-200 p-4">
-					<h3 class="mb-2 font-medium">Useful actions</h3>
+					<h3 class="mb-2 font-medium">Start browsing</h3>
 					<ul class="list-inside list-disc space-y-1 text-sm text-base-content/80">
-						<li>Browse artists from the footer lookup</li>
+						<li>Choose an artist from the bottom bar</li>
 						<li>Paste a canonical artist or artwork path</li>
-						<li>Copy or reverse panes from the footer controls</li>
+						<li>Set where links open for each pane</li>
 					</ul>
 				</div>
 			</div>
-			if side == "right" {
-				<div class="mt-6 rounded-box bg-base-200 p-4">
-					<h3 class="mb-2 font-medium">Dual Mode works well for</h3>
-					<ul class="list-inside list-disc space-y-1 text-sm text-base-content/80">
-						<li>Comparing two related artists or artworks</li>
-						<li>Reading an artist biography while keeping an artwork visible</li>
-						<li>Following links in one pane without losing the other pane</li>
-					</ul>
-				</div>
-			}
 		</div>
 	</div>
 }
@@ -89,16 +79,29 @@ templ DualNav(c dto.DualViewDto) {
 		<div class="flex flex-wrap items-center justify-between gap-4">
 			<nav class="flex items-center gap-2" aria-label="Left pane controls">
 				<button type="button" class="btn btn-sm" onclick="window.wga.dual.openLookup('left')">Choose left</button>
-				<button type="button" class="btn btn-ghost btn-sm" onclick="window.wga.dual.clearPane('left')">Clear left</button>
-			</nav>
-			<nav class="flex items-center gap-2" aria-label="Shared pane controls">
-				<button type="button" class="btn btn-outline btn-sm" onclick="window.wga.dual.copyPane('left', 'right')">Copy to right</button>
-				<button type="button" class="btn btn-primary btn-sm" onclick="window.wga.dual.reversePanes()">Reverse</button>
-				<button type="button" class="btn btn-outline btn-sm" onclick="window.wga.dual.copyPane('right', 'left')">Copy to left</button>
+				<label class="label cursor-pointer gap-2">
+					<span class="label-text text-sm">Open left links in the other pane</span>
+					<input
+						id="left-open-in-other-pane"
+						type="checkbox"
+						class="toggle toggle-sm"
+						checked?={ c.LeftLinksOpenInOtherPane }
+						onchange="window.wga.dual.setPaneTarget('left', this.checked)"
+					/>
+				</label>
 			</nav>
 			<nav class="flex items-center gap-2" aria-label="Right pane controls">
 				<button type="button" class="btn btn-sm" onclick="window.wga.dual.openLookup('right')">Choose right</button>
-				<button type="button" class="btn btn-ghost btn-sm" onclick="window.wga.dual.clearPane('right')">Clear right</button>
+				<label class="label cursor-pointer gap-2">
+					<span class="label-text text-sm">Open right links in the other pane</span>
+					<input
+						id="right-open-in-other-pane"
+						type="checkbox"
+						class="toggle toggle-sm"
+						checked?={ c.RightLinksOpenInOtherPane }
+						onchange="window.wga.dual.setPaneTarget('right', this.checked)"
+					/>
+				</label>
 			</nav>
 		</div>
 	</div>
