@@ -103,7 +103,9 @@ func (r *ContributorsRepository) fetchContributorsFromAPI() ([]pages.GithubContr
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("contributors api returned status %d", resp.StatusCode)
@@ -122,7 +124,9 @@ func (r *ContributorsRepository) readStoredContributors() ([]pages.GithubContrib
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() {
+		_ = f.Close()
+	}()
 
 	var contributors []pages.GithubContributor
 	if err := json.NewDecoder(f).Decode(&contributors); err != nil {
@@ -137,7 +141,9 @@ func (r *ContributorsRepository) persistContributors(contributors []pages.Github
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() {
+		_ = f.Close()
+	}()
 
 	if err := json.NewEncoder(f).Encode(contributors); err != nil {
 		return err

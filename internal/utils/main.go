@@ -302,19 +302,25 @@ func IsHtmxRequest(c *core.RequestEvent) bool {
 // NotFoundError is a handler that returns a 404 error page.
 func NotFoundError(c *core.RequestEvent) error {
 	var buf bytes.Buffer
-	error_pages.NotFoundPage().Render(context.Background(), &buf)
+	if err := error_pages.NotFoundPage().Render(context.Background(), &buf); err != nil {
+		return err
+	}
 	return c.HTML(404, buf.String())
 }
 
 func ServerFaultError(c *core.RequestEvent) error {
 	var buf bytes.Buffer
-	error_pages.ServerFaultPage().Render(context.Background(), &buf)
+	if err := error_pages.ServerFaultPage().Render(context.Background(), &buf); err != nil {
+		return err
+	}
 	return c.HTML(500, buf.String())
 }
 
 func BadRequestError(c *core.RequestEvent) error {
 	var buf bytes.Buffer
-	error_pages.BadRequestPage().Render(context.Background(), &buf)
+	if err := error_pages.BadRequestPage().Render(context.Background(), &buf); err != nil {
+		return err
+	}
 	return c.HTML(400, buf.String())
 }
 

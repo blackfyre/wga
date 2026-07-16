@@ -26,8 +26,6 @@ var TwitterDescriptionKey ContextKey = "twitter:description"
 var TwitterImageKey ContextKey = "twitter:image"
 var CanonicalUrlKey ContextKey = "canonical:url"
 
-var ctx context.Context
-
 func AssetUrl(path string) string {
 
 	protocol := os.Getenv("WGA_PROTOCOL")

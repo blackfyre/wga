@@ -73,7 +73,10 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 
 			var buf bytes.Buffer
 
-			pages.StaticPage(content).Render(ctx, &buf)
+			if err := pages.StaticPage(content).Render(ctx, &buf); err != nil {
+				app.Logger().Error("Error rendering static page", "page", slug, "error", err)
+				return c.HTML(500, "Internal server error")
+			}
 
 			return c.HTML(200, buf.String())
 

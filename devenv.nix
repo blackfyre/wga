@@ -93,7 +93,7 @@ in
       description = "Produce the dist binary with fresh assets and dependencies.";
       exec = ''
         mkdir -p dist
-        rm -rf dist/*
+        rm -rf dist/wga
         bun install
         bun run build
         app:tidy

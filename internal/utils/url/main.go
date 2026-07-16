@@ -81,7 +81,7 @@ func GenerateDualModeUrl() url.URL {
 	}
 }
 
-func GetRequiredQueryParam(c echo.Context, param string) (string, error) {
+func GetRequiredQueryParam(c *echo.Context, param string) (string, error) {
 	p := c.QueryParam(param)
 
 	if p == "" {

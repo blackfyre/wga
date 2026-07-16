@@ -222,13 +222,14 @@ func formatArtistNameList(artistNameList map[string]string) []dto.ArtistNameList
 
 // reverseSide returns the opposite side of the given side.
 func reverseSide(side string) string {
-	if side == "left" {
+	switch side {
+	case "left":
 		return "right"
-	} else if side == "right" {
+	case "right":
 		return "left"
+	default:
+		return ""
 	}
-
-	return ""
 }
 
 func renderPane(side string, app *pocketbase.PocketBase, c *core.RequestEvent) (renderPaneDto, error) {

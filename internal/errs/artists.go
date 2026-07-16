@@ -2,5 +2,5 @@ package errs
 
 import "errors"
 
-var ErrArtistNotFound = errors.New("Artist not found")
-var ErrArtworkNotFound = errors.New("Artwork not found")
+var ErrArtistNotFound = errors.New("artist not found")
+var ErrArtworkNotFound = errors.New("artwork not found")

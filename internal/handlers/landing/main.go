@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
@@ -21,6 +22,16 @@ type Content struct {
 }
 
 const landingCacheTTL = 15 * time.Minute
+
+const defaultWelcomeContent = `<p>
+The Web Gallery of Art is a searchable collection of European painting, sculpture, decorative arts, and architecture from the 3rd century to the early 20th century. It began as a Renaissance-focused project and grew into a broader archive built for students, teachers, and curious visitors who want images and context in the same place.
+</p>
+<p>
+This version of the site is organized around a few strong routes. Start with the <a href="/artists">artists</a> index for biographies and related works, move into <a href="/artworks">artwork search</a> when you know what you want to filter, open <a href="/dual-mode" target="_blank">Dual Mode</a> to compare two pages side by side, or use <a href="/inspire">Inspiration</a> when you want the collection to surprise you.
+</p>
+<p>
+The project remains an independent public resource: open, interconnected, and designed for study as much as enjoyment. If the collection helps you, leave a note in the <a href="/guestbook">guestbook</a> or explore how the site is maintained by its <a href="/contributors">contributors</a>.
+</p>`
 
 // getWelcomeContent retrieves the welcome content from the application.
 // It checks if the content is already stored in the application's store.
@@ -44,6 +55,19 @@ func getWelcomeContent(app *pocketbase.PocketBase, repo *repositories.LandingRep
 
 	return content, nil
 
+}
+
+func normalizeWelcomeContent(content string) string {
+	trimmed := strings.TrimSpace(content)
+	if trimmed == "" {
+		return defaultWelcomeContent
+	}
+
+	if strings.Contains(trimmed, "Welcome to the Gallery!") && strings.Contains(trimmed, "/art/index.html") {
+		return defaultWelcomeContent
+	}
+
+	return trimmed
 }
 
 // getArtistCount retrieves the count of artists from the database.
@@ -115,6 +139,8 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 				return utils.ServerFaultError(c)
 			}
 
+			welcomeText = normalizeWelcomeContent(welcomeText)
+
 			artistCount, err := getArtistCount(app, repo)
 
 			if err != nil {
@@ -135,8 +161,8 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 				ArtworkCount: artworkCount,
 			}
 
-			ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, "Welcome to the Gallery")
-			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "Welcome to the Gallery")
+			ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, "Web Gallery of Art | Explore artists and artworks")
+			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "Explore artists, artworks, and side-by-side comparisons in the Web Gallery of Art.")
 
 			//TODO: Fix this
 			// ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgUrlKey, c.Scheme()+"://"+c.Request().Host+c.Request().URL.String())

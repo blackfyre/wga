@@ -71,10 +71,3 @@ func newOccupation(o Occupation) Occupation {
 	o.Type = "Occupation"
 	return o
 }
-
-// newVisualArtwork returns a new VisualArtwork object with the given VisualArtwork object.
-func newVisualArtwork(v VisualArtwork) VisualArtwork {
-	v.Context = "https://schema.org"
-	v.Type = "VisualArtwork"
-	return v
-}
