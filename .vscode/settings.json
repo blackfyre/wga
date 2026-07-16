@@ -13,6 +13,11 @@
   "tailwindCSS.includeLanguages": {
     "templ": "html"
   },
+  "github.copilot.chat.codeGeneration.instructions": [
+    {
+      "file": "./DESIGN_DOCUMENT.md"
+    }
+  ],
   "cSpell.words": [
     "Artform",
     "Autodate",
