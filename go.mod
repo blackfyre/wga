@@ -1,8 +1,6 @@
 module github.com/blackfyre/wga
 
-go 1.25.0
-
-toolchain go1.25.2
+go 1.26.5
 
 require (
 	github.com/a-h/templ v0.3.1020
@@ -21,7 +19,7 @@ require (
 
 require (
 	github.com/a-h/parse v0.0.0-20250122154542-74294addb73e // indirect
-	github.com/andybalholm/brotli v1.1.0 // indirect
+	github.com/andybalholm/brotli v1.1.1 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect

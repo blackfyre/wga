@@ -37,12 +37,10 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: "go.mod"
-      - name: Install a-h/templ
-        run: go install github.com/a-h/templ/cmd/templ@latest
       - name: Install Taskfile CLI
         run: go install github.com/go-task/task/v3/cmd/task@latest
       - name: Compile templates
-        run: templ generate
+        run: go tool templ generate
       - name: Install go modules
         run: go mod tidy
       - name: Run go vet
