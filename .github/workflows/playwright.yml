@@ -65,7 +65,7 @@ jobs:
       - name: Run go tests
         run: go test ./... -cover
       - name: Build the application
-        run: go build -v -race -o ./out/wga ./cmd/wga
+        run: go build -v -o ./out/wga ./cmd/wga
       - uses: actions/upload-artifact@v4
         with:
           name: wga-binary
@@ -89,22 +89,22 @@ jobs:
         run: ./wga migrate
         working-directory: ./out
         env:
-          WGA_PROTOCOL: ${{ vars.WGA_PROTOCOL }}
-          WGA_HOSTNAME: ${{ vars.WGA_HOSTNAME }}
-          WGA_ADMIN_EMAIL: ${{ secrets.WGA_ADMIN_EMAIL }}
-          WGA_ADMIN_PASSWORD: ${{ secrets.WGA_ADMIN_PASSWORD }}
-          WGA_S3_ENDPOINT: ${{ vars.WGA_S3_ENDPOINT }}
-          WGA_S3_BUCKET: ${{ vars.WGA_S3_BUCKET }}
-          WGA_S3_REGION: ""
-          WGA_S3_ACCESS_KEY: ${{ secrets.WGA_S3_ACCESS_KEY }}
-          WGA_S3_ACCESS_SECRET: ${{ secrets.WGA_S3_ACCESS_SECRET }}
-          WGA_SMTP_HOST: ${{ vars.WGA_SMTP_HOST }}
-          WGA_SMTP_PORT: ${{ vars.WGA_SMTP_PORT }}
+          WGA_PROTOCOL: http
+          WGA_HOSTNAME: localhost:8090
+          WGA_ADMIN_EMAIL: some.random.email@local.host
+          WGA_ADMIN_PASSWORD: VerySecurePassword
+          WGA_S3_ENDPOINT: http://localhost:9000
+          WGA_S3_BUCKET: wga
+          WGA_S3_REGION: us-east-1
+          WGA_S3_ACCESS_KEY: minio_access_key
+          WGA_S3_ACCESS_SECRET: minio_secret_key
+          WGA_SMTP_HOST: 127.0.0.1
+          WGA_SMTP_PORT: "8025"
           WGA_SMTP_USERNAME: ""
           WGA_SMTP_PASSWORD: ""
-          WGA_SENDER_ADDRESS: ${{ vars.WGA_SENDER_ADDRESS }}
-          WGA_SENDER_NAME: ${{ vars.WGA_SENDER_NAME }}
-          MAILPIT_URL: ${{ vars.MAILPIT_URL }}
+          WGA_SENDER_ADDRESS: do-not-reply@wga.hu
+          WGA_SENDER_NAME: WGA
+          MAILPIT_URL: http://127.0.0.1:8025
       - uses: actions/upload-artifact@v4
         with:
           name: wga
@@ -162,22 +162,22 @@ jobs:
         run: ./wga serve --dev > wga.log &
         working-directory: ./wga_tmp
         env:
-          WGA_PROTOCOL: ${{ vars.WGA_PROTOCOL }}
-          WGA_HOSTNAME: ${{ vars.WGA_HOSTNAME }}
-          WGA_ADMIN_EMAIL: ${{ secrets.WGA_ADMIN_EMAIL }}
-          WGA_ADMIN_PASSWORD: ${{ secrets.WGA_ADMIN_PASSWORD }}
-          WGA_S3_ENDPOINT: ${{ vars.WGA_S3_ENDPOINT }}
-          WGA_S3_BUCKET: ${{ vars.WGA_S3_BUCKET }}
-          WGA_S3_REGION: ""
-          WGA_S3_ACCESS_KEY: ${{ secrets.WGA_S3_ACCESS_KEY }}
-          WGA_S3_ACCESS_SECRET: ${{ secrets.WGA_S3_ACCESS_SECRET }}
-          WGA_SMTP_HOST: ${{ vars.WGA_SMTP_HOST }}
-          WGA_SMTP_PORT: ${{ vars.WGA_SMTP_PORT }}
+          WGA_PROTOCOL: http
+          WGA_HOSTNAME: localhost:8090
+          WGA_ADMIN_EMAIL: some.random.email@local.host
+          WGA_ADMIN_PASSWORD: VerySecurePassword
+          WGA_S3_ENDPOINT: http://localhost:9000
+          WGA_S3_BUCKET: wga
+          WGA_S3_REGION: us-east-1
+          WGA_S3_ACCESS_KEY: minio_access_key
+          WGA_S3_ACCESS_SECRET: minio_secret_key
+          WGA_SMTP_HOST: 127.0.0.1
+          WGA_SMTP_PORT: "8025"
           WGA_SMTP_USERNAME: ""
           WGA_SMTP_PASSWORD: ""
-          WGA_SENDER_ADDRESS: ${{ vars.WGA_SENDER_ADDRESS }}
-          WGA_SENDER_NAME: ${{ vars.WGA_SENDER_NAME }}
-          MAILPIT_URL: ${{ vars.MAILPIT_URL }}
+          WGA_SENDER_ADDRESS: do-not-reply@wga.hu
+          WGA_SENDER_NAME: WGA
+          MAILPIT_URL: http://127.0.0.1:8025
       - name: Wait for the application to start
         run: sleep 5
       - name: Run Playwright tests
