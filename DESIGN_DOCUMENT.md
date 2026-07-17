@@ -133,7 +133,7 @@ The application is organized into functional packages under `internal/handlers/`
 
 - **Prerequisites:** Mise installs the configured Go, Bun, and Templ versions from `mise.toml`.
 - **Environment Variables:** A `.env` file is required in the process working directory. `mise run app:init-env` creates one in the repository root.
-- **Services:** `mise run dev` starts local MinIO and MailHog alongside the asset and template watchers.
+- **Services:** `mise run dev` starts local MinIO and Mailpit alongside the asset and template watchers.
 - **Running:**
   1.  `mise run app:init-env`
   2.  `mise run dev`

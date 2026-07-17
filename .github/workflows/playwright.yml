@@ -14,6 +14,7 @@ on:
       - "yarn.lock"
       - "go.mod"
       - "go.sum"
+      - "mise.toml"
   pull_request:
     branches: [main]
     paths:
@@ -28,6 +29,7 @@ on:
       - "yarn.lock"
       - "go.mod"
       - "go.sum"
+      - "mise.toml"
 jobs:
   backend-quality-gates:
     runs-on: ubuntu-latest
@@ -132,11 +134,15 @@ jobs:
           name: wga
           path: ./wga_tmp
       - name: Download Mailpit
-        run: wget https://github.com/axllent/mailpit/releases/download/v1.14.4/mailpit-linux-amd64.tar.gz
+        run: wget -q -O mailpit-linux-amd64.tar.gz https://github.com/axllent/mailpit/releases/download/v1.30.4/mailpit-linux-amd64.tar.gz
+      - name: Verify Mailpit archive
+        run: echo "e9c104154c22b83ac4c7d19f9d665a5c933585a3caafcd790805d732fa8d03fb  mailpit-linux-amd64.tar.gz" | sha256sum --check --status
       - name: Extract Mailpit
         run: tar -xvf mailpit-linux-amd64.tar.gz
       - name: Run Mailpit
-        run: ./mailpit -v > mailpit.log &
+        run: ./mailpit --smtp 127.0.0.1:1025 --listen 127.0.0.1:8025 --log-file mailpit.log &
+      - name: Wait for Mailpit
+        run: for i in {1..30}; do curl --fail --silent --show-error http://127.0.0.1:8025/readyz && exit 0; sleep 1; done; exit 1
       - name: Install Bun dependencies
         run: bun install
       - name: Get installed Playwright version
@@ -183,7 +189,7 @@ jobs:
       - name: Run Playwright tests
         run: bunx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
         env:
-          MAILPIT_URL: ${{ vars.MAILPIT_URL }}
+          MAILPIT_URL: http://127.0.0.1:8025
           WGA_PROTOCOL: ${{ vars.WGA_PROTOCOL }}
           WGA_HOSTNAME: ${{ vars.WGA_HOSTNAME }}
       - uses: actions/upload-artifact@v4
