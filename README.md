@@ -14,7 +14,7 @@ This repository contains the code for the Web Gallery of Art project. The projec
 
 The project is built around the following active technologies and workflows:
 
-- [Go](https://go.dev/) 1.24+ with [PocketBase](https://pocketbase.io) for the application server, data layer, hooks, and cron jobs
+- [Go](https://go.dev/) 1.26.5 with [PocketBase](https://pocketbase.io) for the application server, data layer, hooks, and cron jobs
 - [Templ](https://templ.guide/) for server-rendered UI fragments and page composition
 - [Bun](https://bun.sh/) scripts for frontend dependency management and asset builds
 - [PostCSS](https://postcss.org/) plus Tailwind tooling for stylesheet compilation
@@ -25,7 +25,7 @@ The project is built around the following active technologies and workflows:
 
 ### Prerequisites
 
-To run the application you'll have to have a `.env` file next to your executable with the following contents:
+Copy `.env.example` to `.env` in the directory from which you start the application. `mise run app:init-env` creates it in the repository root for `mise run code:run`; copy it to `dist/.env` when using `mise run app:run`.
 
 ```bash
 WGA_ENV=development
@@ -86,22 +86,23 @@ The application will start on port 8090 by default. You can access it by going t
 
 ### Build from source
 
-The canonical build path uses `devenv`:
+The canonical build path uses [Mise](https://mise.jdx.dev/), which installs the pinned tools and defines the project tasks:
 
 ```bash
-devenv shell
-app:build
+mise install
+mise run app:build
 ```
 
 This produces the server binary at `dist/wga`.
 
-If you need the raw commands outside `devenv`, run:
+The equivalent build steps are:
 
 ```bash
 mkdir -p dist
 bun install
 bun run build
 templ generate
+go mod tidy
 go build -o dist/wga ./cmd/wga
 ```
 
@@ -113,14 +114,13 @@ Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) for mo
 
 ### Development quick start
 
-Use `devenv` for the normal development loop:
+Start the local asset watchers and services with Mise:
 
 ```bash
-devenv shell
-devenv up
+mise run dev
 ```
 
-`devenv up` starts the frontend watchers, template watcher, the local `mailhog` service, and MinIO. Playwright reads `MAILPIT_URL` as the browser endpoint for inspecting those captured messages. To run the application server, either build and launch the binary with `app:run` or start it directly with `code:run`.
+`mise run dev` starts the frontend and template watchers, the local MailHog service, and MinIO. Playwright reads `MAILPIT_URL` as the browser endpoint for inspecting captured messages. In another terminal, start the application with `mise run code:run`, or run `mise run app:build` followed by `mise run app:run`.
 
 If you only need asset watchers, use the package scripts directly:
 
@@ -139,23 +139,16 @@ The database is populated on first start, and if you want to have images availab
 
 This will go through the contents of the database and will use placeholder images to "generate" the necessary images to the designated S3 compatible file hosting solution designated in the `.env` file.
 
-## With DevEnv
+## With Mise
 
-Devenv is a Nix based development environment that's more easily accessible than a pure nix based approach.  
-You can check [devenv.sh](https://devenv.sh/getting-started/) for installation and usage details.
+Mise manages the project's development tools and tasks. Install Mise following its [getting-started guide](https://mise.jdx.dev/getting-started.html), then run:
 
-For first-time setup:
+```bash
+mise install
+mise run app:init-env
+```
 
-1. Install Devenv following the [getting started guide](https://devenv.sh/getting-started/)
-2. (optional) copy the `devenv.local.stub.nix` file to `devenv.local.nix`
-3. Run `devenv up` to start the development environment
-
-Checking the [/devenv.nix](devenv.nix) file for more details is also recommended.
-This file contains:
-
-- Development dependencies
-- Environment variables
-- Service configurations
+`mise.toml` defines the pinned tools, local environment defaults, build tasks, watchers, and local MailHog and MinIO services.
 
 ## License
 

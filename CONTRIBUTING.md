@@ -4,18 +4,21 @@ Thanks for contributing to the Web Gallery of Art.
 
 ## Development Setup
 
-Use `devenv` as the primary development entrypoint:
+Use Mise as the primary development entrypoint:
 
 ```bash
-devenv shell
-devenv up
+mise install
+mise run app:init-env
+mise run dev
 ```
 
-Inside the `devenv` shell, the main project scripts are:
+`mise run dev` starts the asset and template watchers, MailHog, and MinIO; run the application separately with `mise run code:run`.
 
-- `app:build` to install frontend dependencies, build assets, regenerate templates, and compile `dist/wga`
-- `app:run` to launch the built server from `dist/`
-- `code:run` to run the application directly with `go run ./cmd/wga --dev`
+The main project tasks are:
+
+- `mise run app:build` to install frontend dependencies, build assets, regenerate templates, and compile `dist/wga`
+- `mise run app:run` to launch the built server from `dist/`
+- `mise run code:run` to run the application directly with `go run ./cmd/wga --dev`
 
 The server entrypoint is `cmd/wga/main.go`. Application code lives under `internal/`, frontend source files live under `resources/`, and browser tests live in `playwright-tests/`.
 
@@ -50,11 +53,11 @@ Document any manual QA that matters for reviewers.
 
 ## Documentation Updates
 
-Repository docs should follow code and configuration truth. If a command in docs conflicts with `devenv.nix`, `package.json`, or the current code layout, update the docs as part of the same change.
+Repository docs should follow code and configuration truth. If a command in docs conflicts with `mise.toml`, `package.json`, or the current code layout, update the docs as part of the same change.
 
 Before editing repo docs, read [docs/documentation-maintenance.md](docs/documentation-maintenance.md). It lists the current source of truth files and the checklist for validating path, command, and environment wording.
 
-Use the same canonical workflow terms across contributor docs: `devenv shell`, `devenv up`, `app:build`, `app:run`, `code:run`, `go test ./... -cover`, and `bunx playwright test`.
+Use the same canonical workflow terms across contributor docs: `mise run dev`, `mise run app:build`, `mise run app:run`, `mise run code:run`, `go test ./... -cover`, and `bunx playwright test`.
 
 If docs conflict with code or config, the source of truth is the executable repo state described in that checklist.
 

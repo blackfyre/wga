@@ -8,7 +8,7 @@ Check these files before editing docs that describe structure, commands, testing
 
 - `cmd/wga/main.go` for the server entrypoint
 - `internal/*` for the current application package layout
-- `devenv.nix` for the canonical local scripts and bundled services
+- `mise.toml` for the pinned tools, canonical local scripts, and bundled services
 - `package.json` for the active frontend build and watch scripts
 - `.env.example` for documented environment variables such as `WGA_RECAPTCHA_SECRET` and `MAILPIT_URL`
 - `playwright.config.ts` for Playwright runtime assumptions such as `baseURL` and the commented built-binary example
@@ -20,7 +20,7 @@ Check these files before editing docs that describe structure, commands, testing
 - Confirm the current path model still starts at `cmd/wga/main.go`, `internal/*`, `resources/*`, and `playwright-tests/*`.
 - Confirm built-binary instructions still use `dist/wga` rather than a root-level binary path.
 - Confirm local mail wording still distinguishes the `mailhog` service from the `MAILPIT_URL` browser endpoint used by Playwright.
-- Confirm the command being documented exists exactly where the docs claim it does, especially `devenv shell`, `devenv up`, `app:build`, `app:run`, `code:run`, `go test ./... -cover`, and `bunx playwright test`.
+- Confirm the command being documented exists exactly where the docs claim it does, especially `mise install`, `mise run dev`, `mise run app:build`, `mise run app:run`, `mise run code:run`, `go test ./... -cover`, and `bunx playwright test`.
 - Confirm environment-variable docs still match `.env.example`, including `WGA_RECAPTCHA_SECRET` and `MAILPIT_URL`.
 - Confirm whether the docs change also requires updating secondary or generated guidance, such as `AGENTS.md`, `README.md`, `CONTRIBUTING.md`, `.planning/codebase/*`, or historical summary docs.
 
