@@ -5,7 +5,7 @@ analytics.txt
 .env
 .env.dev
 .env.uat
-wga
+/wga
 
 # Go build related files
 dist/
@@ -14,24 +14,13 @@ tmp/
 # VSCode can output html from mjml
 */mjml/*.html
 
-# Front-end build files
-resources/sitebuild/out/style.css
-assets/public/css/style.css
-assets/public/js/*.js
-assets/public/js/*.map
-assets/public/js/*.txt
-assets/public/css/*.css
-assets/public/css/*.map
-assets/public/css/*.txt
-assets/public/fa-*
-
 # hosts seed data for the guestbook, can't include because of GDPR
 guestbook.json
 
 # this file is used for cache only
 contributors.json
 
-# Dependecies shouldn't be a part of the source code
+# Dependencies shouldn't be a part of the source code
 node_modules
 meta.json
 
@@ -45,12 +34,5 @@ meta.json
 /blob-report/
 /playwright/.cache/
 
-.direnv# Devenv
-.devenv*
-devenv.local.nix
-
-# direnv
-.direnv
-
-# pre-commit
-.pre-commit-config.yaml
+# Ignore Agentic Harness artefacts
+.opencode

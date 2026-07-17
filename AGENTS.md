@@ -1,140 +1,29 @@
-```markdown
-# AGENTS.md - Guidelines for AI Agents
+# WGA Agent Guide
 
-This document provides guidelines and information for AI agents working with the Web Gallery of Art (WGoA) codebase.
+## Application boundaries
 
-## Project Overview
+- `cmd/wga/main.go` creates the PocketBase app, then registers handlers, hooks, cron jobs, and migrations before `app.Start()`.
+- Route modules are registered from `internal/handlers/main.go`; add a new handler package there rather than looking for a central route table.
+- Add PocketBase migrations as timestamped files in `internal/migrations/` that call `m.Register` from `init()`. The entrypoint blank-imports this package and disables automigration; run the built binary's `migrate` command explicitly when needed.
+- Edit Templ sources in `internal/assets/templ/`, then run `templ generate`. Adjacent `*_templ.go` files are generated and Git-ignored: do not edit or commit them.
+- Edit frontend sources in `resources/js/` and `resources/css/`; `bun run build` writes generated JS/CSS to `internal/assets/public/{js,css}`, which the Go binary embeds. `internal/assets/views/` and `internal/assets/reference/` are also embedded at build time.
+- The active Tailwind 4/daisyUI theme is in `resources/css/style.pcss`; UI work must also follow `.github/instructions/daisyui.instructions.md`.
 
-The Web Gallery of Art is a web application aimed at providing a modern, responsive, and user-friendly experience for browsing a collection of paintings, sculptures, and other art forms. It is a reimplementation of the original WGoA website, built with modern technologies.
+## Environment and development
 
-## Key Technologies
+- Use Go 1.25.2 (`go.mod`/`mise.toml`), Bun, and Templ. `devenv shell` is the documented development environment; `mise` pins the same toolchain and exposes equivalent tasks as `mise run <task>`.
+- Create `.env` from `.env.example` (`mise run app:init-env`). `godotenv.Load()` reads the default `.env` from the process working directory: `code:run` uses the repository root, while `app:run` changes into `dist/`.
+- `wga_data` is likewise relative to the process working directory. `app:run` uses `dist/wga_data`; clear the data directory used by the launcher rather than assuming root `wga_data` is the active one.
+- `devenv up` starts JS/CSS/Templ watchers, MailHog, and MinIO, but not the application server. Start it separately with `code:run`, or use `app:build` followed by `app:run`.
+- `app:build` runs `bun install`, `bun run build`, `templ generate`, `go mod tidy`, then builds `dist/wga`. `seed:images` is registered only when `WGA_ENV=development`.
 
-*   **Backend:**
-    *   **Go:** Version 1.23+ (see `go.mod`)
-    *   **PocketBase:** Used as the primary backend framework, providing database, ORM, authentication, and admin UI.
-*   **Frontend:**
-    *   **Templ:** A Go templating language for generating HTML. Server-side rendering is the primary approach.
-    *   **HTMX:** Used to enhance HTML with AJAX capabilities, allowing for dynamic updates without full page reloads.
-    *   **TailwindCSS:** A utility-first CSS framework for styling.
-    *   **DaisyUI:** A component library for TailwindCSS.
-    *   **Bun:** Used for managing frontend dependencies and running build scripts for CSS and JS.
-*   **Build & Deployment:**
-    *   **Goreleaser:** Used for building and releasing Go applications.
-*   **Testing:**
-    *   **Playwright:** Used for end-to-end testing. Tests are located in the `playwright-tests/` directory.
+## Verification and workflow
 
-## Getting Started & Development Workflow
-
-### Prerequisites
-
-1.  **Go:** Version 1.23 or later.
-2.  **Bun:** Version 1.1 or later.
-3.  **Templ:** `go install github.com/a-h/templ/cmd/templ@latest`
-4.  **Environment Variables:** Create a `.env` file based on `.env.example` and populate it with the necessary credentials and configurations (S3, SMTP, etc.).
-
-### Building the Application
-
-*   **Full Build (Go & Frontend):**
-    *   Run the `build.sh` script: `./build.sh`
-    *   Alternatively, manually:
-        1.  Generate Templ components: `templ generate`
-        2.  Build Go binary: `go build -o wga`
-*   **Frontend Development:**
-    *   Install dependencies: `bun install`
-    *   Run dev server (watches Templ and PostCSS files): `bun run dev`
-    *   Build JS assets: `bun run build:js`
-
-### Running the Application
-
-1.  Ensure you have a configured `.env` file.
-2.  Start the server: `./wga serve`
-3.  The application will be accessible at `http://localhost:8090` by default.
-
-### Database Migrations
-
-*   Migrations are handled by PocketBase.
-*   Migration files are located in the `migrations/` directory.
-*   PocketBase applies pending migrations automatically on startup.
-*   For development, `Automigrate` is set to `false` in `main.go`, meaning collection changes in the Admin UI won't automatically create migration files. You might need to create them manually or adjust this setting if needed.
-
-## Codebase Structure & Conventions
-
-### Go (Backend)
-
-*   **`main.go`:** Entry point of the application. Initializes PocketBase, registers handlers, hooks, and cron jobs.
-*   **`handlers/`:** Contains HTTP request handlers. Handlers typically interact with PocketBase services (DAO for database access, etc.) and use Templ for rendering HTML responses.
-*   **`models/`:** Defines data structures (structs) that map to PocketBase collections. These models often embed `pocketbase/models.BaseModel`.
-*   **`assets/templ/`:** Contains all Templ files.
-    *   **`assets/templ/pages/`:** Templ components for complete pages.
-    *   **`assets/templ/components/`:** Reusable UI components (e.g., navigation, footer).
-    *   **`assets/templ/layouts/`:** Base layouts for pages.
-*   **`utils/`:** Utility functions used across the application.
-*   **PocketBase Integration:**
-    *   Leverage PocketBase's `app.Dao()` for database operations.
-    *   Use PocketBase's event hooks (`app.On...`) for extending core functionalities (see `hooks/` and `main.go`).
-*   **Error Handling:** Standard Go error handling. For HTTP handlers, use `echo` context methods for responses (e.g., `c.JSON()`, `c.String()`, or rendering a Templ error page).
-*   **Logging:** Use `app.Logger()` for logging within the PocketBase context.
-
-### Templ (HTML Templating)
-
-*   Follow the existing structure for organizing components and pages.
-*   Use `templ generate` to compile `.templ` files into Go code. This is usually part of the `build.sh` script or `bun run dev`.
-*   Pass data to templates as typed Go structs for type safety.
-
-### HTMX
-
-*   Attributes like `hx-get`, `hx-post`, `hx-swap`, `hx-target` are used directly in Templ components to define dynamic interactions.
-*   Backend handlers should be designed to return HTML fragments that HTMX can swap into the page.
-
-### CSS (TailwindCSS & DaisyUI)
-
-*   Styles are primarily applied using TailwindCSS utility classes directly in the Templ files.
-*   DaisyUI components are used for common UI elements.
-*   Custom CSS is located in `resources/css/style.pcss` and processed by PostCSS (managed via `bun run dev` or `bun run build:css`).
-
-### JavaScript
-
-*   Minimal custom JavaScript is expected. HTMX handles most dynamic interactions.
-*   JS assets are managed with Bun and built via `bun run build:js`. Entry point is `resources/js/app.ts`.
-
-## Testing
-
-*   **Go Tests:** Standard Go testing practices can be used for testing individual packages and functions.
-*   **Playwright Tests:** End-to-end tests are written using Playwright and TypeScript.
-    *   Test files are in `playwright-tests/`.
-    *   Run tests using `bunx playwright test` (ensure the application is running).
-    *   Update and add new E2E tests for significant UI changes or new features.
-
-## General Guidelines
-
-*   **Commit Messages & Pull Request Titles:**
-    *   Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) for all commit messages and Pull Request titles. Since PRs are squashed, the PR title will become the commit message.
-    *   Examples:
-        *   `feat: add user authentication module`
-        *   `fix: resolve issue with image uploads`
-        *   `docs: update README with setup instructions`
-        *   `style: format code with gofmt`
-        *   `refactor: simplify database query logic`
-        *   `test: add unit tests for payment processing`
-        *   `chore: update build dependencies`
-
-*   **Dependencies:**
-    *   Go dependencies are managed with Go Modules (`go.mod`, `go.sum`). Run `go mod tidy` after adding/removing dependencies.
-    *   Frontend dependencies are managed with Bun (`bun.lockb`, `package.json`).
-*   **Code Style:**
-    *   Follow standard Go formatting (`gofmt` or `goimports`).
-    *   For frontend code, Prettier is configured (see `.prettierrc`).
-*   **API Changes:** If you make changes to API endpoints or data structures that affect the frontend, ensure corresponding frontend code (Templ components, HTMX usage) is updated.
-*   **Database Schema Changes:** When modifying PocketBase collections (tables), ensure migrations are correctly handled.
-*   **Documentation:**
-    *   Update this `AGENTS.MD` if there are significant changes to the development process, architecture, or key technologies.
-    *   Comment Go code where necessary, especially for complex logic.
-
-## Contact / Help
-
-*   If you encounter issues or have questions about the development process, refer to the project's `README.md` and `CONTRIBUTING.md`.
-
----
-
-*This document is intended for AI agents. Please update it as the project evolves.*
-```
+- Backend CI order is `go mod tidy`, `go vet ./...`, then `go test ./... -cover`. For a focused check, use commands such as `go test ./internal/handlers/dual -run '^TestResolvePaneTarget$'`.
+- `mise run check` runs the local Go pre-commit checks (`go vet` and `golangci-lint`), not the test suite. `.pre-commit-config.yaml` is generated; do not edit it.
+- Playwright has no active `webServer` setting. Before `bunx playwright test` (or one spec such as `bunx playwright test playwright-tests/artwork-search.spec.ts`), start the app and set `WGA_PROTOCOL`, `WGA_HOSTNAME`, and a reachable `MAILPIT_URL`; the postcard spec requires the mail UI.
+- The full Go suite includes a mail-send test that skips only when no `sendmail` executable is available.
+- `biome.json` configures JS/TS tabs, double quotes, and import organisation. The Playwright CI workflow also runs Prettier on changed JS and Markdown files.
+- PR titles must use one of the Conventional Commit types enforced by `.github/workflows/pr-validation.yml`: `feat`, `fix`, `docs`, `test`, `ci`, `refactor`, `perf`, `chore`, `revert`, or `build`.
+- Non-`main` deployment runs only when the head commit message contains `deploy-dev`; release tags matching `v*.*.*` invoke GoReleaser.
+- When changing repository documentation, read `docs/documentation-maintenance.md`; it identifies the authoritative config and CI sources, including the MailHog versus `MAILPIT_URL` distinction.

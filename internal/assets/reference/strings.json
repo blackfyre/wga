@@ -1,0 +1,30 @@
+[
+    {
+        "name": "welcome",
+        "content": "<p>\nThe Web Gallery of Art is a searchable collection of European painting, sculpture, decorative arts, and architecture from the 3rd century to the early 20th century. It began as a Renaissance-focused project and grew into a broader archive built for students, teachers, and curious visitors who want images and context in the same place.\n</p>\n<p>\nThis version of the site is organized around a few strong routes. Start with the <a href=\"/artists\">artists</a> index for biographies and related works, move into <a href=\"/artworks\">artwork search</a> when you know what you want to filter, open <a href=\"/dual-mode\" target=\"_blank\">Dual Mode</a> to compare two pages side by side, or use <a href=\"/inspire\">Inspiration</a> when you want the collection to surprise you.\n</p>\n<p>\nThe project remains an independent public resource: open, interconnected, and designed for study as much as enjoyment. If the collection helps you, leave a note in the <a href=\"/guestbook\">guestbook</a> or explore how the site is maintained by its <a href=\"/contributors\">contributors</a>.\n</p>"
+    },
+    {
+        "name": "scripts:header",
+        "content": ""
+    },
+    {
+        "name": "scripts:footer",
+        "content": ""
+    },
+    {
+        "name": "thankYou",
+        "content": "<p>Thank you for visiting the Web Gallery of Art!</p><p>We would like it very much if you <a href='/guestbook/addMessage' hx-get='/guestbook/addMessage' hx-target='#mc-area'>added</a> your entry to our guestbook.</p>"
+    },
+    {
+        "name": "guestbookPlayMusicLink",
+        "content": "<p class='is-vcentered'><a hx-on='click: wga.music.openPopUp()'>Play period music</a> in the background while reading the guestbook!</p>"
+    },
+    {
+        "name": "guestbook",
+        "content": "Guestbook"
+    },
+    {
+        "name": "latestEntries",
+        "content": "See the latest entries"
+    }
+]

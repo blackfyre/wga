@@ -1,0 +1,118 @@
+package pages
+
+import (
+	"github.com/blackfyre/wga/internal/assets/templ/dto"
+	"github.com/blackfyre/wga/internal/assets/templ/layouts"
+)
+
+templ DualPage(c dto.DualViewDto) {
+	@layouts.LayoutBase("", "#dual-area") {
+		<div class="p-4 md:hidden">
+			<div role="alert" class="alert alert-warning">
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					class="h-6 w-6 shrink-0 stroke-current"
+					fill="none"
+					viewBox="0 0 24 24"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+					></path>
+				</svg>
+				<span>Dual Mode is desktop-only. Use a screen width of at least 768px to compare two panes side by side.</span>
+			</div>
+		</div>
+		<main id="dual-area" class="hidden md:grid grid-cols-2 grid-rows-[1fr_auto] gap-0 h-screen">
+			<div id="left" class="w-full overflow-y-auto border-r border-base-300 py-10 pl-10 pr-5">
+				@templ.Raw(c.Left)
+			</div>
+			<div id="right" class="w-full overflow-y-auto py-10 pl-5 pr-10">
+				@templ.Raw(c.Right)
+			</div>
+			@DualNav(c)
+		</main>
+	}
+}
+
+templ DualPaneDefault(side string) {
+	<div class="mx-auto max-w-2xl px-4">
+		<div class="rounded-box border border-base-300 bg-base-100 p-6 shadow-sm">
+			<div class="mb-4 flex items-center justify-between gap-4">
+				<div>
+					<p class="text-sm uppercase tracking-[0.2em] text-base-content/60">{ side } pane</p>
+					<h2 class="text-2xl font-semibold">Choose content for comparison</h2>
+				</div>
+				if side == "left" {
+					<button type="button" class="btn btn-primary btn-sm" onclick="window.wga.dual.openLookup('left')">Browse artists</button>
+				} else {
+					<button type="button" class="btn btn-primary btn-sm" onclick="window.wga.dual.openLookup('right')">Browse artists</button>
+				}
+			</div>
+			<p class="mb-4 text-base-content/80">Load an artist page or an artwork page into this pane. Use the bottom controls to choose whether its links replace this pane or open in the other pane.</p>
+			<div class="grid gap-3 md:grid-cols-2">
+				<div class="rounded-box bg-base-200 p-4">
+					<h3 class="mb-2 font-medium">Supported here</h3>
+					<ul class="list-inside list-disc space-y-1 text-sm text-base-content/80">
+						<li>Artist detail pages</li>
+						<li>Artwork detail pages</li>
+						<li>Artist biography content inside artist pages</li>
+					</ul>
+				</div>
+				<div class="rounded-box bg-base-200 p-4">
+					<h3 class="mb-2 font-medium">Start browsing</h3>
+					<ul class="list-inside list-disc space-y-1 text-sm text-base-content/80">
+						<li>Choose an artist from the bottom bar</li>
+						<li>Paste a canonical artist or artwork path</li>
+						<li>Set where links open for each pane</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
+templ DualNav(c dto.DualViewDto) {
+	<div id="dual-nav" class="col-span-2 row-start-2 border-t border-base-300 bg-base-100/95 px-6 py-4 backdrop-blur">
+		<div class="flex flex-wrap items-center justify-between gap-4">
+			<nav class="flex items-center gap-2" aria-label="Left pane controls">
+				<button type="button" class="btn btn-sm" onclick="window.wga.dual.openLookup('left')">Choose left</button>
+				<label class="label cursor-pointer gap-2">
+					<span class="label-text text-sm">Open left links in the other pane</span>
+					<input
+						id="left-open-in-other-pane"
+						type="checkbox"
+						class="toggle toggle-sm"
+						checked?={ c.LeftLinksOpenInOtherPane }
+						onchange="window.wga.dual.setPaneTarget('left', this.checked)"
+					/>
+				</label>
+			</nav>
+			<nav class="flex items-center gap-2" aria-label="Right pane controls">
+				<button type="button" class="btn btn-sm" onclick="window.wga.dual.openLookup('right')">Choose right</button>
+				<label class="label cursor-pointer gap-2">
+					<span class="label-text text-sm">Open right links in the other pane</span>
+					<input
+						id="right-open-in-other-pane"
+						type="checkbox"
+						class="toggle toggle-sm"
+						checked?={ c.RightLinksOpenInOtherPane }
+						onchange="window.wga.dual.setPaneTarget('right', this.checked)"
+					/>
+				</label>
+			</nav>
+		</div>
+	</div>
+	<dialog id="artist_lookup" class="modal">
+		<div class="modal-box">
+			<h3 class="text-lg font-bold">Load pane</h3>
+			<p class="py-4">Choose an artist or paste a canonical path.</p>
+		</div>
+		<form method="dialog" class="modal-backdrop">
+			<button>close</button>
+		</form>
+	</dialog>
+	@templ.JSONScript("artistList", c.ArtistNameList)
+}

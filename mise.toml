@@ -1,0 +1,136 @@
+[tools]
+bun = "latest"
+go = "1.26.5"
+"go:github.com/a-h/templ/cmd/templ" = "v0.3.1020"
+"go:github.com/air-verse/air" = "latest"
+"http:mc" = { version = "RELEASE.2025-08-13T08-35-41Z", url = "https://dl.min.io/client/mc/release/linux-amd64/archive/mc.{{ version }}", bin = "mc", checksum = "sha256:01f866e9c5f9b87c2b09116fa5d7c06695b106242d829a8bb32990c00312e891" }
+"http:minio" = { version = "RELEASE.2025-09-07T16-13-09Z", url = "https://dl.min.io/server/minio/release/linux-amd64/archive/minio.{{ version }}", bin = "minio", checksum = "sha256:7c5bd8512c6e966455b1d198209358b2d191c77a83ab377c4073281065fb855f" }
+"http:MailHog" = { version = "1.0.1", url = "https://github.com/mailhog/MailHog/releases/download/v{{ version }}/MailHog_linux_amd64", bin = "MailHog" }
+"github:golangci/golangci-lint" = "latest"
+"aqua:superfly/flyctl" = "latest"
+
+# Git is a system prerequisite because Mise has no cross-platform Git backend.
+[env]
+WGA_S3_BUCKET = "wga"
+WGA_S3_REGION = "us-east-1"
+WGA_S3_ACCESS_KEY = "minio_access_key"
+WGA_S3_ACCESS_SECRET = "minio_secret_key"
+WGA_S3_ENDPOINT = "http://localhost:9000"
+WGA_ADMIN_EMAIL = "some.random.email@local.host" # admin email address
+WGA_ADMIN_PASSWORD = "VerySecurePassword" # admin password
+WGA_PROTOCOL = "http" # http or https
+WGA_HOSTNAME = "localhost:8090" # hostname (and port)
+WGA_SMTP_HOST = "127.0.0.1" # smtp server
+WGA_SMTP_PORT = "8025" # smtp port
+WGA_SMTP_USERNAME = "" # smtp username
+WGA_SMTP_PASSWORD = "" # smtp password
+WGA_SENDER_ADDRESS = "do-not-reply@wga.hu" # sender email address
+WGA_SENDER_NAME = "WGA" # sender name
+MAILPIT_URL = "http://127.0.0.1:8025" # mailpit url
+
+[tasks."app:versions"]
+description = "Print versions of the core development tools."
+run = ["bun --version", "git --version", "go version"]
+
+[tasks."app:generate-templates"]
+description = "Generate Go templates from templ sources."
+run = "templ generate"
+
+[tasks."app:tidy-modules"]
+description = "Run go mod tidy to sync module dependencies."
+run = "go mod tidy"
+
+[tasks."app:tidy"]
+description = "Regenerate templates and tidy Go modules."
+run = ["mise run app:generate-templates", "mise run app:tidy-modules"]
+
+[tasks."app:build"]
+description = "Produce the dist binary with fresh assets and dependencies."
+run = [
+  "mkdir -p dist",
+  "rm -rf dist/wga",
+  "bun install",
+  "bun run build",
+  "mise run app:tidy",
+  "go build -v -o dist/wga ./cmd/wga",
+]
+
+[tasks."app:run"]
+description = "Run the built server binary in development mode."
+dir = "dist"
+run = "./wga serve --dev"
+
+[tasks."app:reset"]
+description = "Rebuild, reset local data, and restart the development server."
+run = ["mise run app:build", "rm -rf wga_data", "mise run app:run"]
+
+[tasks."app:reboot"]
+description = "Rebuild and restart the development server."
+run = ["mise run app:build", "mise run app:run"]
+
+[tasks."app:init-env"]
+description = "Bootstrap a local environment file from the example."
+run = "cp .env.example .env"
+
+[tasks."code:run"]
+description = "Run the application in development mode without building."
+run = "go run ./cmd/wga --dev"
+
+# Run this before commits; Mise does not install Git hooks itself.
+[tasks."check:govet"]
+description = "Run go vet."
+run = "go vet ./..."
+
+[tasks."check:golangci-lint"]
+description = "Run golangci-lint."
+run = "golangci-lint run"
+
+[tasks.check]
+description = "Run the checks previously provided by the Git hooks."
+depends = ["check:govet", "check:golangci-lint"]
+
+[tasks."watch:js"]
+description = "Watch and build JavaScript assets."
+run = "bun run build:watch:js"
+
+[tasks."watch:templ"]
+description = "Watch and generate Go templates."
+run = "templ generate --watch"
+
+[tasks."watch:css"]
+description = "Watch and build CSS assets."
+run = "bun run build:watch:css"
+
+[tasks."service:mailhog"]
+description = "Run the local MailHog SMTP server and web UI."
+run = "MailHog -smtp-bind-addr 127.0.0.1:1025 -api-bind-addr 127.0.0.1:8025 -ui-bind-addr 127.0.0.1:8025"
+
+[tasks."service:minio"]
+description = "Run MinIO and initialise the local wga bucket."
+run = '''
+mkdir -p tmp/minio tmp/minio-config
+export MC_CONFIG_DIR="$PWD/tmp/minio-config"
+
+MINIO_ROOT_USER="$WGA_S3_ACCESS_KEY" \
+MINIO_ROOT_PASSWORD="$WGA_S3_ACCESS_SECRET" \
+  minio server --address 127.0.0.1:9000 --console-address 127.0.0.1:9001 tmp/minio &
+minio_pid=$!
+trap 'kill "$minio_pid" 2>/dev/null || true' EXIT INT TERM
+
+until mc alias set local "$WGA_S3_ENDPOINT" "$WGA_S3_ACCESS_KEY" "$WGA_S3_ACCESS_SECRET" >/dev/null 2>&1; do
+  if ! kill -0 "$minio_pid" 2>/dev/null; then
+    wait "$minio_pid"
+    exit $?
+  fi
+  sleep 1
+done
+
+mc mb --ignore-existing "local/$WGA_S3_BUCKET"
+mc anonymous set download "local/$WGA_S3_BUCKET"
+wait "$minio_pid"
+'''
+
+[tasks.dev]
+description = "Start asset watchers, template generation, MailHog, and MinIO."
+alias = "up"
+run = "mise run --jobs 5 watch:js ::: watch:templ ::: watch:css ::: service:mailhog ::: service:minio"
