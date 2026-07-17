@@ -21,12 +21,12 @@ WGA_ADMIN_PASSWORD = "VerySecurePassword" # admin password
 WGA_PROTOCOL = "http" # http or https
 WGA_HOSTNAME = "localhost:8090" # hostname (and port)
 WGA_SMTP_HOST = "127.0.0.1" # smtp server
-WGA_SMTP_PORT = "8025" # smtp port
+WGA_SMTP_PORT = "1025" # MailHog SMTP port
 WGA_SMTP_USERNAME = "" # smtp username
 WGA_SMTP_PASSWORD = "" # smtp password
 WGA_SENDER_ADDRESS = "do-not-reply@wga.hu" # sender email address
 WGA_SENDER_NAME = "WGA" # sender name
-MAILPIT_URL = "http://127.0.0.1:8025" # mailpit url
+MAILPIT_URL = "http://127.0.0.1:8025" # MailHog web UI endpoint
 
 [tasks."app:versions"]
 description = "Print versions of the core development tools."
