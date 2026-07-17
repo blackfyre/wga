@@ -12,8 +12,8 @@ Check these files before editing docs that describe structure, commands, testing
 - `package.json` for the active frontend build and watch scripts
 - `.env.example` for documented environment variables such as `WGA_RECAPTCHA_SECRET` and `MAILPIT_URL`
 - `playwright.config.ts` for Playwright runtime assumptions such as `baseURL` and the commented built-binary example
-- `.github/workflows/pr-validation.yml` for the backend CI quality gates
-- `.github/workflows/playwright.yml` for the CI Playwright flow and the built-artifact execution model
+- `.github/workflows/pr-validation.yml` for PR-title validation
+- `.github/workflows/playwright.yml` for backend CI quality gates, the Playwright flow, and the built-artifact execution model
 
 ## Documentation Change Checklist
 

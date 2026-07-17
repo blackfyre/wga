@@ -5,17 +5,32 @@ on:
     paths:
       - "**/*.go"
       - "**/*.js"
+      - "**/*.ts"
       - "**/*.templ"
+      - "**/*.pcss"
+      - ".github/workflows/playwright.yml"
+      - "package.json"
+      - "bun.lock"
+      - "yarn.lock"
+      - "go.mod"
+      - "go.sum"
   pull_request:
     branches: [main]
     paths:
       - "**/*.go"
       - "**/*.js"
+      - "**/*.ts"
       - "**/*.templ"
+      - "**/*.pcss"
+      - ".github/workflows/playwright.yml"
+      - "package.json"
+      - "bun.lock"
+      - "yarn.lock"
+      - "go.mod"
+      - "go.sum"
 jobs:
-  build:
+  backend-quality-gates:
     runs-on: ubuntu-latest
-    environment: playwright
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -37,8 +52,10 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: "go.mod"
-      - name: Install Taskfile CLI
-        run: go install github.com/go-task/task/v3/cmd/task@latest
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Transpile Frontend
+        run: bun run build
       - name: Compile templates
         run: go tool templ generate
       - name: Install go modules
@@ -47,14 +64,24 @@ jobs:
         run: go vet ./...
       - name: Run go tests
         run: go test ./... -cover
-      - name: Install dependencies
-        run: bun install
-      - name: Transpile Frontend
-        run: bun run build
       - name: Build the application
-        run: go build -v -race -o ./out/wga
-      - run: ls -la
-        working-directory: ./out
+        run: go build -v -race -o ./out/wga ./cmd/wga
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wga-binary
+          path: out/wga
+          retention-days: 1
+
+  build:
+    needs: backend-quality-gates
+    runs-on: ubuntu-latest
+    environment: playwright
+    steps:
+      - name: Fetch the application binary
+        uses: actions/download-artifact@v4
+        with:
+          name: wga-binary
+          path: ./out
       - name: Set executable permissions
         run: chmod +x ./wga
         working-directory: ./out
@@ -179,7 +206,12 @@ jobs:
           retention-days: 1
   merge-reports:
     # Merge reports after playwright-tests, even if some shards have failed
-    if: success() || failure()
+    if: >-
+      ${{
+        always() &&
+        (needs.playwright-tests.result == 'success' ||
+         needs.playwright-tests.result == 'failure')
+      }}
     needs: [playwright-tests]
     environment: playwright
     runs-on: ubuntu-latest
