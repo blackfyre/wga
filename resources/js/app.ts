@@ -51,6 +51,9 @@ type wgaWindow = {
 	music: {
 		openPopUp: () => void;
 	};
+	glossary: {
+		closeAll: () => void;
+	};
 };
 
 type wgaInternals = {
@@ -66,6 +69,7 @@ type wgaInternals = {
 		viewer: () => void;
 		toast: (message: string, type: ToastEvent["detail"]["type"]) => void;
 		artistSearchModal: () => void;
+		glossary: () => void;
 		init: () => void;
 	};
 
@@ -235,6 +239,102 @@ const updatePaneTarget = (side: string, openInOtherPane: boolean) => {
 	});
 };
 
+// Glossary popup state — hoisted to avoid event listener leaks
+const glossaryState: {
+	activePopup: HTMLElement | null;
+	activeTerm: HTMLElement | null;
+} = {
+	activePopup: null,
+	activeTerm: null,
+};
+const glossaryPopupID = "glossary-popup";
+
+const glossaryClosePopup = (restoreFocus = false) => {
+	const activeTerm = glossaryState.activeTerm;
+
+	if (glossaryState.activePopup) {
+		glossaryState.activePopup.remove();
+		glossaryState.activePopup = null;
+	}
+	if (activeTerm) {
+		activeTerm.removeAttribute("aria-controls");
+		activeTerm.setAttribute("aria-expanded", "false");
+		glossaryState.activeTerm = null;
+
+		if (restoreFocus) {
+			activeTerm.focus();
+		}
+	}
+};
+
+const glossaryShowPopup = (term: HTMLElement) => {
+	glossaryClosePopup();
+
+	const defHtml = term.getAttribute("data-glossary-def") || "";
+	if (!defHtml) return;
+
+	const popup = document.createElement("div");
+	popup.id = glossaryPopupID;
+	popup.className = "glossary-popup";
+	popup.setAttribute("role", "dialog");
+	popup.setAttribute(
+		"aria-label",
+		`Definition of ${term.textContent || "glossary term"}`,
+	);
+	popup.tabIndex = -1;
+
+	const closeButton = document.createElement("button");
+	closeButton.type = "button";
+	closeButton.className = "glossary-popup-close";
+	closeButton.setAttribute("aria-label", "Close definition");
+	closeButton.innerHTML = "&times;";
+	closeButton.addEventListener("click", (e) => {
+		e.stopPropagation();
+		glossaryClosePopup(true);
+	});
+
+	const definition = document.createElement("div");
+	definition.id = `${glossaryPopupID}-definition`;
+	definition.innerHTML = defHtml;
+	popup.setAttribute("aria-describedby", definition.id);
+	popup.append(closeButton, definition);
+
+	popup.addEventListener("click", (e) => e.stopPropagation());
+
+	document.body.appendChild(popup);
+	glossaryState.activePopup = popup;
+	glossaryState.activeTerm = term;
+	term.setAttribute("aria-controls", popup.id);
+	term.setAttribute("aria-expanded", "true");
+
+	// Position relative to term
+	const rect = term.getBoundingClientRect();
+	const scrollY = window.scrollY;
+	const scrollX = window.scrollX;
+
+	popup.style.left = `${rect.left + scrollX}px`;
+	popup.style.top = `${rect.bottom + scrollY + 8}px`;
+
+	// Adjust if popup overflows right edge
+	const popupRect = popup.getBoundingClientRect();
+	if (popupRect.right > window.innerWidth - 16) {
+		popup.style.left = `${window.innerWidth - popupRect.width - 16 + scrollX}px`;
+	}
+
+	// Adjust if popup overflows bottom — show above instead
+	if (popupRect.bottom > window.innerHeight) {
+		popup.style.top = `${rect.top + scrollY - popupRect.height - 8}px`;
+	}
+
+	popup.focus();
+};
+
+// One-time document-level listeners for glossary dismissal
+document.addEventListener("click", glossaryClosePopup);
+document.addEventListener("keydown", (e) => {
+	if (e.key === "Escape") glossaryClosePopup(true);
+});
+
 const wgaInternal: wgaInternals = {
 	els: {
 		dialog: null,
@@ -269,7 +369,9 @@ const wgaInternal: wgaInternals = {
 				wgaInternal.func.viewer();
 				wgaInternal.func.cloner();
 				wgaInternal.func.artistSearchModal();
+				wgaInternal.func.glossary();
 			});
+			document.body.addEventListener("htmx:beforeSwap", glossaryClosePopup);
 
 			document.body.addEventListener("htmx:swapError", (evt) => {
 				logger.error("HTMX swap error", evt);
@@ -509,11 +611,47 @@ const wgaInternal: wgaInternals = {
 			logger.debug("Setting up HTMX and elements");
 			wgaInternal.setup.htmx();
 			wgaInternal.setup.elements();
+			wgaInternal.func.glossary();
 
 			// Run all event listeners
 			logger.debug("Running event listeners");
 			for (const listener of wgaInternal.eventListeners) {
 				listener();
+			}
+		},
+		glossary() {
+			const terms = document.querySelectorAll(
+				".glossary-term:not([data-glossary-bound])",
+			);
+			if (terms.length === 0) return;
+
+			for (const el of terms) {
+				const term = el as HTMLElement;
+				term.setAttribute("data-glossary-bound", "true");
+				const togglePopup = () => {
+					if (glossaryState.activeTerm === term) {
+						glossaryClosePopup();
+						return;
+					}
+
+					glossaryShowPopup(term);
+				};
+
+				term.addEventListener("click", (e) => {
+					e.preventDefault();
+					e.stopPropagation();
+					togglePopup();
+				});
+
+				term.addEventListener("keydown", (e) => {
+					if (e.key === "Enter" || e.key === " ") {
+						e.preventDefault();
+						togglePopup();
+					}
+					if (e.key === "Escape") {
+						glossaryClosePopup(true);
+					}
+				});
 			}
 		},
 		artistSearchModal() {
@@ -722,6 +860,11 @@ window.wga = {
 			newWin.opener = this;
 			newWin.focus();
 			return;
+		},
+	},
+	glossary: {
+		closeAll() {
+			glossaryClosePopup();
 		},
 	},
 	music: {

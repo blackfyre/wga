@@ -15,6 +15,7 @@ import (
 	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/errs"
 	"github.com/blackfyre/wga/internal/utils"
+	"github.com/blackfyre/wga/internal/utils/glossary"
 	"github.com/blackfyre/wga/internal/utils/jsonld"
 	"github.com/blackfyre/wga/internal/utils/url"
 	"github.com/pocketbase/pocketbase"
@@ -130,6 +131,14 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 
 	}
 
+	// Annotate comment with glossary terms
+	glossaryEntries, glossaryErr := glossary.GetGlossaryEntries(app)
+	if glossaryErr != nil {
+		app.Logger().Warn("Failed to load glossary entries", "error", glossaryErr)
+	} else {
+		content.Comment = glossary.AnnotateHTML(content.Comment, glossaryEntries)
+	}
+
 	jsonLd := jsonld.ArtworkJsonLd(aw, artist)
 
 	marshalled, err := json.Marshal(jsonLd)
@@ -140,8 +149,8 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 
 	content.Jsonld = fmt.Sprintf(`<script type="application/ld+json">%s</script>`, marshalled)
 
-	ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", content.Title, content.Name))
-	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, content.Comment)
+	ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", content.Title, content.Artist.Name))
+	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, aw.GetString("comment"))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, expectedPageUrl)
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgImageKey, utils.AssetUrl(content.Image.Image))
 
@@ -219,6 +228,14 @@ func RenderArtworkContent(app *pocketbase.PocketBase, c *core.RequestEvent, artw
 			ArtworkId:    artwork.GetString("id"),
 			ArtworkTitle: artwork.GetString("title"),
 		})
+	}
+
+	// Annotate comment with glossary terms
+	glossaryEntries, glossaryErr := glossary.GetGlossaryEntries(app)
+	if glossaryErr != nil {
+		app.Logger().Warn("Failed to load glossary entries", "error", glossaryErr)
+	} else {
+		content.Comment = glossary.AnnotateHTML(content.Comment, glossaryEntries)
 	}
 
 	// Set the URL for the artwork
