@@ -22,6 +22,8 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: "go.mod"
+      - name: Generate templates
+        run: go tool templ generate
       - name: Verify dependencies
         run: go mod tidy
       - name: Run go vet
