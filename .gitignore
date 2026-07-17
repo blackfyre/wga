@@ -5,7 +5,7 @@ analytics.txt
 .env
 .env.dev
 .env.uat
-wga
+/wga
 
 # Go build related files
 dist/
