@@ -1,0 +1,146 @@
+package pages
+
+import (
+	"github.com/blackfyre/wga/internal/assets/templ/layouts"
+	"github.com/blackfyre/wga/internal/assets/templ/utils"
+)
+
+type HomePage struct {
+	Content      string
+	ArtistCount  string
+	ArtworkCount string
+}
+
+templ HomePageWrapped(c HomePage) {
+	@layouts.LayoutMain() {
+		@HomePageContent(c)
+	}
+}
+
+templ HomePageContent(c HomePage) {
+	<head>
+		<title>{ utils.GetTitle(ctx) }</title>
+	</head>
+	<section class="home-page pb-12">
+		<section class="container mx-auto px-4 pb-8 pt-4 md:pb-12 md:pt-8">
+			<div class="home-hero rounded-box border border-base-300 bg-base-100/90 p-6 shadow-xl md:p-10">
+				<div class="home-hero__orb home-hero__orb--one" aria-hidden="true"></div>
+				<div class="home-hero__orb home-hero__orb--two" aria-hidden="true"></div>
+				<div class="grid items-start gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)] lg:gap-12">
+					<div class="animate__animated animate__fadeInLeft space-y-6">
+						<p class="home-kicker">Web Gallery of Art</p>
+						<div class="space-y-4">
+							<h1 class="font-display text-4xl leading-tight text-primary md:text-5xl xl:text-6xl">
+								Explore artists, artworks, and context without losing the thread.
+							</h1>
+							<p class="max-w-2xl text-base leading-8 text-base-content/75 md:text-lg">
+								Browse the collection, jump between artists and artworks, and follow their connections.
+							</p>
+						</div>
+						<div class="flex flex-wrap gap-3">
+							<a href="/artists" hx-get="/artists" class="btn btn-primary btn-lg">Browse artists</a>
+							<a href="/artworks" hx-get="/artworks" class="btn btn-outline btn-lg">Search artworks</a>
+						</div>
+						<div class="flex flex-wrap gap-2 text-sm text-base-content/70">
+							<span class="badge badge-outline badge-lg">Collection research</span>
+							<span class="badge badge-outline badge-lg">Open source since 1992</span>
+						</div>
+					</div>
+					<div class="animate__animated animate__fadeInRight home-spotlight rounded-box border border-base-300 bg-base-200/80 p-5 shadow-sm md:p-6">
+						<p class="home-kicker">Start here</p>
+						<h2 class="font-display mb-3 text-2xl text-primary">Two fast entry points</h2>
+						<p class="mb-5 text-sm leading-6 text-base-content/70">
+							The collection already has enough depth to overwhelm first-time visitors. Put the strongest routes in front of them.
+						</p>
+						<div class="space-y-3">
+							<a href="/artists" hx-get="/artists" class="home-inline-card">
+								<span>
+									<strong>Artists</strong>
+									<small>Start with biographies, schools, and related works.</small>
+								</span>
+								<span aria-hidden="true">→</span>
+							</a>
+							<a href="/artworks" hx-get="/artworks" class="home-inline-card">
+								<span>
+									<strong>Artworks</strong>
+									<small>Filter by title, school, form, and type.</small>
+								</span>
+								<span aria-hidden="true">→</span>
+							</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+		<section class="container mx-auto px-4">
+			<div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+				<a href="/artists" hx-get="/artists" class="home-card home-card--artists animate__animated animate__fadeInUp">
+					<p class="home-card__eyebrow">Browse</p>
+					<h2 class="font-display text-2xl text-primary">Artists</h2>
+					<p class="text-sm leading-6 text-base-content/75">Move through biographies, schools, and linked artworks without digging through the nav.</p>
+				</a>
+				<a href="/artworks" hx-get="/artworks" class="home-card home-card--artworks animate__animated animate__fadeInUp animate__delay-1s">
+					<p class="home-card__eyebrow">Search</p>
+					<h2 class="font-display text-2xl text-primary">Artworks</h2>
+					<p class="text-sm leading-6 text-base-content/75">Use the collection filters when you know what you need or want to discover through attributes.</p>
+				</a>
+				<a href="/inspire" hx-get="/inspire" class="home-card home-card--inspire animate__animated animate__fadeInUp animate__delay-2s">
+					<p class="home-card__eyebrow">Discover</p>
+					<h2 class="font-display text-2xl text-primary">Inspiration</h2>
+					<p class="text-sm leading-6 text-base-content/75">Pull a random slice of the gallery when you do not want to start from a fixed name or period.</p>
+				</a>
+				<a href="/guestbook" hx-get="/guestbook" class="home-card home-card--guestbook animate__animated animate__fadeInUp animate__delay-3s">
+					<p class="home-card__eyebrow">Community</p>
+					<h2 class="font-display text-2xl text-primary">Guestbook</h2>
+					<p class="text-sm leading-6 text-base-content/75">See how people use the project, then leave a note when you have spent time with the collection.</p>
+				</a>
+			</div>
+		</section>
+		<section class="container mx-auto px-4 py-8 md:py-12">
+			<div class="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)]">
+				<div class="rounded-box border border-base-300 bg-base-100 p-6 shadow-sm md:p-8">
+					<div class="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+						<div>
+							<p class="home-kicker">Why this project matters</p>
+							<h2 class="font-display text-3xl text-primary">A research tool first, not just a gallery grid</h2>
+						</div>
+						<p class="max-w-md text-sm leading-6 text-base-content/70">The landing page should explain the collection, then get out of the way. This keeps the editorial welcome copy, but gives it a stronger frame.</p>
+					</div>
+					<div class="home-prose prose max-w-none">
+						@templ.Raw(c.Content)
+					</div>
+				</div>
+				<div class="space-y-4">
+					<div class="stats stats-vertical border border-base-300 bg-base-100 shadow-sm">
+						<div class="stat">
+							<div class="stat-title">Published artists</div>
+							<div class="stat-value text-primary">{ c.ArtistCount }</div>
+							<div class="stat-desc">Browse people, schools, and biographies.</div>
+						</div>
+						<div class="stat">
+							<div class="stat-title">Published artworks</div>
+							<div class="stat-value text-secondary">{ c.ArtworkCount }</div>
+							<div class="stat-desc">Search by title, form, school, and type.</div>
+						</div>
+						<div class="stat">
+							<div class="stat-title">Project history</div>
+							<div class="stat-value text-primary">1992</div>
+							<div class="stat-desc">Long-running reference work, now maintained in the open.</div>
+						</div>
+					</div>
+					<div class="rounded-box border border-base-300 bg-primary p-6 text-primary-content shadow-lg">
+						<p class="home-kicker text-primary-content/80">Keep it alive</p>
+						<h3 class="font-display mb-3 text-2xl">Built with contributors, sustained by the community.</h3>
+						<p class="mb-4 text-sm leading-6 text-primary-content/85">
+							The footer asks for support, but it should be visible sooner. This project has history, and the site should make that feel concrete.
+						</p>
+						<div class="flex flex-wrap gap-3">
+							<a href="/contributors" hx-get="/contributors" class="btn btn-secondary">Meet contributors</a>
+							<a href="https://github.com/blackfyre/wga" target="_blank" class="btn btn-outline border-primary-content/40 text-primary-content hover:bg-primary-content hover:text-primary">View source</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</section>
+}

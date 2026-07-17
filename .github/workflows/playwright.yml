@@ -5,17 +5,32 @@ on:
     paths:
       - "**/*.go"
       - "**/*.js"
+      - "**/*.ts"
       - "**/*.templ"
+      - "**/*.pcss"
+      - ".github/workflows/playwright.yml"
+      - "package.json"
+      - "bun.lock"
+      - "yarn.lock"
+      - "go.mod"
+      - "go.sum"
   pull_request:
     branches: [main]
     paths:
       - "**/*.go"
       - "**/*.js"
+      - "**/*.ts"
       - "**/*.templ"
+      - "**/*.pcss"
+      - ".github/workflows/playwright.yml"
+      - "package.json"
+      - "bun.lock"
+      - "yarn.lock"
+      - "go.mod"
+      - "go.sum"
 jobs:
-  build:
+  backend-quality-gates:
     runs-on: ubuntu-latest
-    environment: playwright
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -37,22 +52,36 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: "go.mod"
-      - name: Install a-h/templ
-        run: go install github.com/a-h/templ/cmd/templ@latest
-      - name: Install Taskfile CLI
-        run: go install github.com/go-task/task/v3/cmd/task@latest
-      - name: Compile templates
-        run: templ generate
-      - name: Install go modules
-        run: go mod tidy
       - name: Install dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
       - name: Transpile Frontend
         run: bun run build
+      - name: Compile templates
+        run: go tool templ generate
+      - name: Install go modules
+        run: go mod tidy
+      - name: Run go vet
+        run: go vet ./...
+      - name: Run go tests
+        run: go test ./... -cover
       - name: Build the application
-        run: go build -v -race -o ./out/wga
-      - run: ls -la
-        working-directory: ./out
+        run: go build -v -o ./out/wga ./cmd/wga
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wga-binary
+          path: out/wga
+          retention-days: 1
+
+  build:
+    needs: backend-quality-gates
+    runs-on: ubuntu-latest
+    environment: playwright
+    steps:
+      - name: Fetch the application binary
+        uses: actions/download-artifact@v4
+        with:
+          name: wga-binary
+          path: ./out
       - name: Set executable permissions
         run: chmod +x ./wga
         working-directory: ./out
@@ -60,22 +89,22 @@ jobs:
         run: ./wga migrate
         working-directory: ./out
         env:
-          WGA_PROTOCOL: ${{ vars.WGA_PROTOCOL }}
-          WGA_HOSTNAME: ${{ vars.WGA_HOSTNAME }}
-          WGA_ADMIN_EMAIL: ${{ secrets.WGA_ADMIN_EMAIL }}
-          WGA_ADMIN_PASSWORD: ${{ secrets.WGA_ADMIN_PASSWORD }}
-          WGA_S3_ENDPOINT: ${{ vars.WGA_S3_ENDPOINT }}
-          WGA_S3_BUCKET: ${{ vars.WGA_S3_BUCKET }}
-          WGA_S3_REGION: ""
-          WGA_S3_ACCESS_KEY: ${{ secrets.WGA_S3_ACCESS_KEY }}
-          WGA_S3_ACCESS_SECRET: ${{ secrets.WGA_S3_ACCESS_SECRET }}
-          WGA_SMTP_HOST: ${{ vars.WGA_SMTP_HOST }}
-          WGA_SMTP_PORT: ${{ vars.WGA_SMTP_PORT }}
+          WGA_PROTOCOL: http
+          WGA_HOSTNAME: localhost:8090
+          WGA_ADMIN_EMAIL: some.random.email@local.host
+          WGA_ADMIN_PASSWORD: VerySecurePassword
+          WGA_S3_ENDPOINT: http://localhost:9000
+          WGA_S3_BUCKET: wga
+          WGA_S3_REGION: us-east-1
+          WGA_S3_ACCESS_KEY: minio_access_key
+          WGA_S3_ACCESS_SECRET: minio_secret_key
+          WGA_SMTP_HOST: 127.0.0.1
+          WGA_SMTP_PORT: "8025"
           WGA_SMTP_USERNAME: ""
           WGA_SMTP_PASSWORD: ""
-          WGA_SENDER_ADDRESS: ${{ vars.WGA_SENDER_ADDRESS }}
-          WGA_SENDER_NAME: ${{ vars.WGA_SENDER_NAME }}
-          MAILPIT_URL: ${{ vars.MAILPIT_URL }}
+          WGA_SENDER_ADDRESS: do-not-reply@wga.hu
+          WGA_SENDER_NAME: WGA
+          MAILPIT_URL: http://127.0.0.1:8025
       - uses: actions/upload-artifact@v4
         with:
           name: wga
@@ -133,22 +162,22 @@ jobs:
         run: ./wga serve --dev > wga.log &
         working-directory: ./wga_tmp
         env:
-          WGA_PROTOCOL: ${{ vars.WGA_PROTOCOL }}
-          WGA_HOSTNAME: ${{ vars.WGA_HOSTNAME }}
-          WGA_ADMIN_EMAIL: ${{ secrets.WGA_ADMIN_EMAIL }}
-          WGA_ADMIN_PASSWORD: ${{ secrets.WGA_ADMIN_PASSWORD }}
-          WGA_S3_ENDPOINT: ${{ vars.WGA_S3_ENDPOINT }}
-          WGA_S3_BUCKET: ${{ vars.WGA_S3_BUCKET }}
-          WGA_S3_REGION: ""
-          WGA_S3_ACCESS_KEY: ${{ secrets.WGA_S3_ACCESS_KEY }}
-          WGA_S3_ACCESS_SECRET: ${{ secrets.WGA_S3_ACCESS_SECRET }}
-          WGA_SMTP_HOST: ${{ vars.WGA_SMTP_HOST }}
-          WGA_SMTP_PORT: ${{ vars.WGA_SMTP_PORT }}
+          WGA_PROTOCOL: http
+          WGA_HOSTNAME: localhost:8090
+          WGA_ADMIN_EMAIL: some.random.email@local.host
+          WGA_ADMIN_PASSWORD: VerySecurePassword
+          WGA_S3_ENDPOINT: http://localhost:9000
+          WGA_S3_BUCKET: wga
+          WGA_S3_REGION: us-east-1
+          WGA_S3_ACCESS_KEY: minio_access_key
+          WGA_S3_ACCESS_SECRET: minio_secret_key
+          WGA_SMTP_HOST: 127.0.0.1
+          WGA_SMTP_PORT: "8025"
           WGA_SMTP_USERNAME: ""
           WGA_SMTP_PASSWORD: ""
-          WGA_SENDER_ADDRESS: ${{ vars.WGA_SENDER_ADDRESS }}
-          WGA_SENDER_NAME: ${{ vars.WGA_SENDER_NAME }}
-          MAILPIT_URL: ${{ vars.MAILPIT_URL }}
+          WGA_SENDER_ADDRESS: do-not-reply@wga.hu
+          WGA_SENDER_NAME: WGA
+          MAILPIT_URL: http://127.0.0.1:8025
       - name: Wait for the application to start
         run: sleep 5
       - name: Run Playwright tests
@@ -177,7 +206,12 @@ jobs:
           retention-days: 1
   merge-reports:
     # Merge reports after playwright-tests, even if some shards have failed
-    if: success() || failure()
+    if: >-
+      ${{
+        always() &&
+        (needs.playwright-tests.result == 'success' ||
+         needs.playwright-tests.result == 'failure')
+      }}
     needs: [playwright-tests]
     environment: playwright
     runs-on: ubuntu-latest

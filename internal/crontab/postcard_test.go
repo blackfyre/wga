@@ -1,0 +1,46 @@
+package crontab
+
+import (
+	"net/mail"
+	"strings"
+	"testing"
+
+	"github.com/pocketbase/pocketbase"
+	"github.com/pocketbase/pocketbase/tools/mailer"
+)
+
+func TestSendMail(t *testing.T) {
+
+	app := pocketbase.NewWithConfig(pocketbase.Config{
+		DefaultDataDir: "./wga_data",
+	})
+
+	mailClient := app.NewMailClient()
+
+	t.Logf("mailClient: %v", mailClient)
+
+	message := &mailer.Message{
+		From: mail.Address{
+			Name:    "sender",
+			Address: "sender@example.com",
+		},
+		To: []mail.Address{
+			{
+				Name:    "recipient",
+				Address: "recipient@example.com",
+			},
+		},
+		Subject: "Test Subject",
+		HTML:    "<html><body>Test Body</body></html>",
+	}
+
+	err := mailClient.Send(message)
+	if err != nil {
+		if strings.Contains(err.Error(), "failed to locate a sendmail executable path") {
+			t.Skip("sendmail is unavailable in this environment")
+		}
+
+		t.Errorf("sendMail returned an error: %v", err)
+	}
+
+}
