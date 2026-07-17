@@ -19,7 +19,7 @@ Check these files before editing docs that describe structure, commands, testing
 
 - Confirm the current path model still starts at `cmd/wga/main.go`, `internal/*`, `resources/*`, and `playwright-tests/*`.
 - Confirm built-binary instructions still use `dist/wga` rather than a root-level binary path.
-- Confirm local mail wording still distinguishes the `mailhog` service from the `MAILPIT_URL` browser endpoint used by Playwright.
+- Confirm local mail wording identifies the `mailpit` service and the `MAILPIT_URL` endpoint used by Playwright's Mailpit API checks.
 - Confirm the command being documented exists exactly where the docs claim it does, especially `mise install`, `mise run dev`, `mise run app:build`, `mise run app:run`, `mise run code:run`, `go test ./... -cover`, and `bunx playwright test`.
 - Confirm environment-variable docs still match `.env.example`, including `WGA_RECAPTCHA_SECRET` and `MAILPIT_URL`.
 - Confirm whether the docs change also requires updating secondary or generated guidance, such as `AGENTS.md`, `README.md`, `CONTRIBUTING.md`, `.planning/codebase/*`, or historical summary docs.
