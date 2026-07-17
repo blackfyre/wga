@@ -72,7 +72,7 @@ MAILPIT_URL=
 | `WGA_SENDER_ADDRESS`   | The sending email address                                                                              |
 | `WGA_SENDER_NAME`      | The name of the email sender                                                                           |
 | `WGA_RECAPTCHA_SECRET` | The reCAPTCHA secret used to verify postcard submissions                                               |
-| `MAILPIT_URL`          | The local mail UI endpoint that Playwright checks during end-to-end tests                              |
+| `MAILPIT_URL`          | The local Mailpit HTTP endpoint that Playwright queries during end-to-end tests                        |
 
 ### Running the application
 
@@ -120,7 +120,7 @@ Start the local asset watchers and services with Mise:
 mise run dev
 ```
 
-`mise run dev` starts the frontend and template watchers, MailHog (SMTP on port 1025 and web UI on port 8025), and MinIO. Playwright reads `MAILPIT_URL` as the browser endpoint for inspecting captured messages. In another terminal, start the application with `mise run code:run`, or run `mise run app:build` followed by `mise run app:run`.
+`mise run dev` starts the frontend and template watchers, Mailpit (SMTP on port 1025 and HTTP API on port 8025), and MinIO. Playwright reads `MAILPIT_URL` to query captured messages. In another terminal, start the application with `mise run code:run`, or run `mise run app:build` followed by `mise run app:run`.
 
 If you only need asset watchers, use the package scripts directly:
 
@@ -148,7 +148,7 @@ mise install
 mise run app:init-env
 ```
 
-`mise.toml` defines the pinned tools, local environment defaults, build tasks, watchers, and local MailHog and MinIO services.
+`mise.toml` defines the pinned tools, local environment defaults, build tasks, watchers, and local Mailpit and MinIO services.
 
 ## License
 

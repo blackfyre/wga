@@ -12,7 +12,7 @@ mise run app:init-env
 mise run dev
 ```
 
-`mise run dev` starts the asset and template watchers, MailHog (SMTP on port 1025 and web UI on port 8025), and MinIO; run the application separately with `mise run code:run`.
+`mise run dev` starts the asset and template watchers, Mailpit (SMTP on port 1025 and HTTP API on port 8025), and MinIO; run the application separately with `mise run code:run`.
 
 The main project tasks are:
 

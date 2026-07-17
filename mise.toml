@@ -5,7 +5,7 @@ go = "1.26.5"
 "go:github.com/air-verse/air" = "latest"
 "http:mc" = { version = "RELEASE.2025-08-13T08-35-41Z", url = "https://dl.min.io/client/mc/release/linux-amd64/archive/mc.{{ version }}", bin = "mc", checksum = "sha256:01f866e9c5f9b87c2b09116fa5d7c06695b106242d829a8bb32990c00312e891" }
 "http:minio" = { version = "RELEASE.2025-09-07T16-13-09Z", url = "https://dl.min.io/server/minio/release/linux-amd64/archive/minio.{{ version }}", bin = "minio", checksum = "sha256:7c5bd8512c6e966455b1d198209358b2d191c77a83ab377c4073281065fb855f" }
-"http:MailHog" = { version = "1.0.1", url = "https://github.com/mailhog/MailHog/releases/download/v{{ version }}/MailHog_linux_amd64", bin = "MailHog" }
+"http:mailpit" = { version = "1.30.4", url = "https://github.com/axllent/mailpit/releases/download/v{{ version }}/mailpit-linux-amd64.tar.gz", bin = "mailpit", checksum = "sha256:e9c104154c22b83ac4c7d19f9d665a5c933585a3caafcd790805d732fa8d03fb" }
 "github:golangci/golangci-lint" = "latest"
 "aqua:superfly/flyctl" = "latest"
 
@@ -21,12 +21,12 @@ WGA_ADMIN_PASSWORD = "VerySecurePassword" # admin password
 WGA_PROTOCOL = "http" # http or https
 WGA_HOSTNAME = "localhost:8090" # hostname (and port)
 WGA_SMTP_HOST = "127.0.0.1" # smtp server
-WGA_SMTP_PORT = "1025" # MailHog SMTP port
+WGA_SMTP_PORT = "1025" # Mailpit SMTP port
 WGA_SMTP_USERNAME = "" # smtp username
 WGA_SMTP_PASSWORD = "" # smtp password
 WGA_SENDER_ADDRESS = "do-not-reply@wga.hu" # sender email address
 WGA_SENDER_NAME = "WGA" # sender name
-MAILPIT_URL = "http://127.0.0.1:8025" # MailHog web UI endpoint
+MAILPIT_URL = "http://127.0.0.1:8025" # Mailpit HTTP endpoint
 
 [tasks."app:versions"]
 description = "Print versions of the core development tools."
@@ -101,9 +101,9 @@ run = "templ generate --watch"
 description = "Watch and build CSS assets."
 run = "bun run build:watch:css"
 
-[tasks."service:mailhog"]
-description = "Run the local MailHog SMTP server and web UI."
-run = "MailHog -smtp-bind-addr 127.0.0.1:1025 -api-bind-addr 127.0.0.1:8025 -ui-bind-addr 127.0.0.1:8025"
+[tasks."service:mailpit"]
+description = "Run the local Mailpit SMTP server and HTTP API."
+run = "mailpit --smtp 127.0.0.1:1025 --listen 127.0.0.1:8025"
 
 [tasks."service:minio"]
 description = "Run MinIO and initialise the local wga bucket."
@@ -131,6 +131,6 @@ wait "$minio_pid"
 '''
 
 [tasks.dev]
-description = "Start asset watchers, template generation, MailHog, and MinIO."
+description = "Start asset watchers, template generation, Mailpit, and MinIO."
 alias = "up"
-run = "mise run --jobs 5 watch:js ::: watch:templ ::: watch:css ::: service:mailhog ::: service:minio"
+run = "mise run --jobs 5 watch:js ::: watch:templ ::: watch:css ::: service:mailpit ::: service:minio"
