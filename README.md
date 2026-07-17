@@ -120,7 +120,7 @@ Start the local asset watchers and services with Mise:
 mise run dev
 ```
 
-`mise run dev` starts the frontend and template watchers, the local MailHog service, and MinIO. Playwright reads `MAILPIT_URL` as the browser endpoint for inspecting captured messages. In another terminal, start the application with `mise run code:run`, or run `mise run app:build` followed by `mise run app:run`.
+`mise run dev` starts the frontend and template watchers, MailHog (SMTP on port 1025 and web UI on port 8025), and MinIO. Playwright reads `MAILPIT_URL` as the browser endpoint for inspecting captured messages. In another terminal, start the application with `mise run code:run`, or run `mise run app:build` followed by `mise run app:run`.
 
 If you only need asset watchers, use the package scripts directly:
 
