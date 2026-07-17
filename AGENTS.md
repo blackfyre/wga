@@ -1,38 +1,29 @@
-# Repository Guidelines
+# WGA Agent Guide
 
-## Project Structure & Module Organization
+## Application boundaries
 
-The Go entrypoint is `cmd/wga/main.go`, which wires PocketBase setup plus the packages under `internal/`. Request handlers live in `internal/handlers/`, shared helpers in `internal/utils/`, cron registration in `internal/crontab/`, hooks in `internal/hooks/`, and migrations in `internal/migrations/`. Templ source files are edited in `internal/assets/templ/`, generated Go files live alongside them as `*_templ.go`, rendered view fragments live in `internal/assets/views/`, and built frontend assets land in `internal/assets/public/`. Front-end source lives in `resources/js` and `resources/css`, and browser specs live in `playwright-tests/`.
+- `cmd/wga/main.go` creates the PocketBase app, then registers handlers, hooks, cron jobs, and migrations before `app.Start()`.
+- Route modules are registered from `internal/handlers/main.go`; add a new handler package there rather than looking for a central route table.
+- Add PocketBase migrations as timestamped files in `internal/migrations/` that call `m.Register` from `init()`. The entrypoint blank-imports this package and disables automigration; run the built binary's `migrate` command explicitly when needed.
+- Edit Templ sources in `internal/assets/templ/`, then run `templ generate`. Adjacent `*_templ.go` files are generated and Git-ignored: do not edit or commit them.
+- Edit frontend sources in `resources/js/` and `resources/css/`; `bun run build` writes generated JS/CSS to `internal/assets/public/{js,css}`, which the Go binary embeds. `internal/assets/views/` and `internal/assets/reference/` are also embedded at build time.
+- The active Tailwind 4/daisyUI theme is in `resources/css/style.pcss`; UI work must also follow `.github/instructions/daisyui.instructions.md`.
 
-## Build, Test, and Development Commands
+## Environment and development
 
-Use `devenv` as the primary CLI entrypoint for general project tasks. Run `devenv shell` to enter the development environment, then invoke the scripts defined in `devenv.nix` directly.
+- Use Go 1.25.2 (`go.mod`/`mise.toml`), Bun, and Templ. `devenv shell` is the documented development environment; `mise` pins the same toolchain and exposes equivalent tasks as `mise run <task>`.
+- Create `.env` from `.env.example` (`mise run app:init-env`). `godotenv.Load()` reads the default `.env` from the process working directory: `code:run` uses the repository root, while `app:run` changes into `dist/`.
+- `wga_data` is likewise relative to the process working directory. `app:run` uses `dist/wga_data`; clear the data directory used by the launcher rather than assuming root `wga_data` is the active one.
+- `devenv up` starts JS/CSS/Templ watchers, MailHog, and MinIO, but not the application server. Start it separately with `code:run`, or use `app:build` followed by `app:run`.
+- `app:build` runs `bun install`, `bun run build`, `templ generate`, `go mod tidy`, then builds `dist/wga`. `seed:images` is registered only when `WGA_ENV=development`.
 
-- `devenv up` starts the local development processes and bundled services such as template watching, asset watchers, MailHog, and MinIO.
-- `app:init-devenv` bootstraps `devenv.local.nix` from the local stub for first-time setup.
-- `app:generate-templates` regenerates Go templates from `.templ` sources.
-- `app:tidy` refreshes generated templates and runs `go mod tidy`.
-- `app:build` installs front-end dependencies, builds assets, refreshes generated code, and compiles `dist/wga` from `./cmd/wga`.
-- `app:run` launches the built server from `dist/` in development mode, while `code:run` runs the app directly with `go run ./cmd/wga --dev`.
-- `app:reset` rebuilds the app, clears local `wga_data`, and restarts the development server.
-- `app:reboot` rebuilds the app and restarts the development server without clearing data.
-- `go test ./... -cover` runs unit tests and reports package coverage.
-- `bunx playwright test` executes the end-to-end suite in `playwright-tests/`.
+## Verification and workflow
 
-Use raw `go`, `bun`, and `templ` commands for focused work when needed, but prefer the repo-defined `devenv` scripts for common workflows so contributors share the same toolchain and sequencing.
-
-## Coding Style & Naming Conventions
-
-Format Go code with `go fmt ./...` and keep package names lower case, mirroring their folder (for example `internal/handlers/dual`). Follow Biome's defaults (`biome.json`): tab indentation, double quotes, sorted imports, and run `bunx @biomejs/biome format .` before committing front-end changes. Name Templ views with kebab-case filenames that match their route fragment, edit `.templ` sources in `internal/assets/templ/`, and avoid committing generated build artefacts outside `internal/assets/public/`.
-
-## Testing Guidelines
-
-Co-locate Go tests with their source using the `_test.go` suffix and table-driven cases for branching logic. Expand Playwright coverage when UI flows change; prefer data-attribute selectors and use `bunx playwright test --headed` for debugging. Document any manual QA in the PR description and keep `go test` coverage from regressing when adding new features.
-
-## Commit & Pull Request Guidelines
-
-Write imperative, 50–72 character commit subjects; conventional prefixes (`fix:`, `feat:`, `chore:`) keep history searchable as seen in recent commits. Clean up WIP commits via rebase before opening a PR. PRs should outline motivation, list major changes, link GitHub issues, and attach screenshots or recordings for UI-impacting work. Note which automated tests ran and call out any follow-up tasks.
-
-## Security & Configuration Tips
-
-Store secrets in a local `.env`; never commit real credentials. Use `devenv up` to provision local services such as MinIO and MailHog, and align hostnames with `WGA_HOSTNAME` defaults. Review `SECURITY.md` before reporting vulnerabilities and coordinate fixes privately when sensitive data is involved.
+- Backend CI order is `go mod tidy`, `go vet ./...`, then `go test ./... -cover`. For a focused check, use commands such as `go test ./internal/handlers/dual -run '^TestResolvePaneTarget$'`.
+- `mise run check` runs the local Go pre-commit checks (`go vet` and `golangci-lint`), not the test suite. `.pre-commit-config.yaml` is generated; do not edit it.
+- Playwright has no active `webServer` setting. Before `bunx playwright test` (or one spec such as `bunx playwright test playwright-tests/artwork-search.spec.ts`), start the app and set `WGA_PROTOCOL`, `WGA_HOSTNAME`, and a reachable `MAILPIT_URL`; the postcard spec requires the mail UI.
+- The full Go suite includes a mail-send test that skips only when no `sendmail` executable is available.
+- `biome.json` configures JS/TS tabs, double quotes, and import organisation. The Playwright CI workflow also runs Prettier on changed JS and Markdown files.
+- PR titles must use one of the Conventional Commit types enforced by `.github/workflows/pr-validation.yml`: `feat`, `fix`, `docs`, `test`, `ci`, `refactor`, `perf`, `chore`, `revert`, or `build`.
+- Non-`main` deployment runs only when the head commit message contains `deploy-dev`; release tags matching `v*.*.*` invoke GoReleaser.
+- When changing repository documentation, read `docs/documentation-maintenance.md`; it identifies the authoritative config and CI sources, including the MailHog versus `MAILPIT_URL` distinction.
