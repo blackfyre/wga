@@ -19,8 +19,8 @@ import (
 const statisticsCacheTTL = 60 * time.Minute
 
 type marshaledStatistics[T any] struct {
-	data T
-	json string
+	Data T
+	JSON string
 }
 
 var statisticsFetchGroup singleflight.Group
@@ -67,7 +67,7 @@ func marshalStats[T any](app *pocketbase.PocketBase, key string, fetch func() (T
 	var zero T
 
 	if cached, ok := utils.GetCachedValue[marshaledStatistics[T]](app, key); ok {
-		return cached.data, cached.json, nil
+		return cached.Data, cached.JSON, nil
 	}
 
 	value, err, _ := statisticsFetchGroup.Do(key, func() (interface{}, error) {
@@ -86,8 +86,8 @@ func marshalStats[T any](app *pocketbase.PocketBase, key string, fetch func() (T
 		}
 
 		cached := marshaledStatistics[T]{
-			data: data,
-			json: string(jsonBytes),
+			Data: data,
+			JSON: string(jsonBytes),
 		}
 		utils.SetCachedValue(app, key, cached, statisticsCacheTTL)
 
@@ -98,7 +98,7 @@ func marshalStats[T any](app *pocketbase.PocketBase, key string, fetch func() (T
 	}
 
 	cached := value.(marshaledStatistics[T])
-	return cached.data, cached.json, nil
+	return cached.Data, cached.JSON, nil
 }
 
 func summarizeArtFormRows(rows []repositories.ArtFormDistribution) []pages.StatisticsArtFormRow {
