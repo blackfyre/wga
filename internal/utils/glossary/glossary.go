@@ -193,7 +193,6 @@ func annotateTextNode(textNode *html.Node, entries []GlossaryEntry, matched map[
 			Data:     "span",
 			Attr: []html.Attribute{
 				{Key: "class", Val: "glossary-term"},
-				{Key: "data-glossary-def", Val: sanitizer.Sanitize(matchEntry.Definition)},
 				{Key: "role", Val: "button"},
 				{Key: "tabindex", Val: "0"},
 				{Key: "aria-expanded", Val: "false"},
@@ -202,6 +201,7 @@ func annotateTextNode(textNode *html.Node, entries []GlossaryEntry, matched map[
 		}
 		span.AppendChild(&html.Node{Type: html.TextNode, Data: text[matchStart:termEnd]})
 		parent.InsertBefore(span, textNode)
+		parent.InsertBefore(glossaryDefinitionTemplate(matchEntry.Definition), textNode)
 
 		matched[strings.ToLower(matchEntry.MatchTerm)] = true
 		cursor = termEnd
@@ -214,6 +214,33 @@ func annotateTextNode(textNode *html.Node, entries []GlossaryEntry, matched map[
 		parent.InsertBefore(&html.Node{Type: html.TextNode, Data: text[cursor:]}, textNode)
 	}
 	parent.RemoveChild(textNode)
+}
+
+func glossaryDefinitionTemplate(definition string) *html.Node {
+	// Keep the sanitized markup in the server-rendered DOM so client code never
+	// needs to parse a definition string.
+	template := &html.Node{
+		Type:     html.ElementNode,
+		DataAtom: atom.Template,
+		Data:     "template",
+		Attr: []html.Attribute{
+			{Key: "class", Val: "glossary-definition"},
+		},
+	}
+
+	definitionNodes, err := html.ParseFragment(
+		strings.NewReader(sanitizer.Sanitize(definition)),
+		&html.Node{Type: html.ElementNode, DataAtom: atom.Div, Data: "div"},
+	)
+	if err != nil {
+		return template
+	}
+
+	for _, definitionNode := range definitionNodes {
+		template.AppendChild(definitionNode)
+	}
+
+	return template
 }
 
 // indexWholeWord finds the first case-insensitive occurrence of term in text

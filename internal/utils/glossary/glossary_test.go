@@ -49,7 +49,7 @@ func TestAnnotateHTML(t *testing.T) {
 		{
 			name:     "plain text with matching term",
 			html:     "<p>The fresco was beautiful.</p>",
-			contains: []string{`<span class="glossary-term"`, `data-glossary-def=`, ">fresco</span>"},
+			contains: []string{`<span class="glossary-term"`, `<template class="glossary-definition">`, ">fresco</span>"},
 		},
 		{
 			name:     "term inside link is not annotated",
@@ -175,6 +175,9 @@ func TestAnnotateHTML_SanitizesDefinitionAndSetsButtonSemantics(t *testing.T) {
 		if strings.Contains(got, unsafe) {
 			t.Errorf("expected definition to exclude %q\ngot: %s", unsafe, got)
 		}
+	}
+	if !strings.Contains(got, `<strong>Safe</strong>`) {
+		t.Errorf("expected sanitized definition markup to be retained\ngot: %s", got)
 	}
 	for _, attribute := range []string{`role="button"`, `aria-expanded="false"`, `aria-haspopup="dialog"`} {
 		if !strings.Contains(got, attribute) {

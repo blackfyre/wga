@@ -271,8 +271,13 @@ const glossaryClosePopup = (restoreFocus = false) => {
 const glossaryShowPopup = (term: HTMLElement) => {
 	glossaryClosePopup();
 
-	const defHtml = term.getAttribute("data-glossary-def") || "";
-	if (!defHtml) return;
+	const definitionTemplate = term.nextElementSibling;
+	if (
+		!(definitionTemplate instanceof HTMLTemplateElement) ||
+		!definitionTemplate.classList.contains("glossary-definition")
+	) {
+		return;
+	}
 
 	const popup = document.createElement("div");
 	popup.id = glossaryPopupID;
@@ -288,7 +293,7 @@ const glossaryShowPopup = (term: HTMLElement) => {
 	closeButton.type = "button";
 	closeButton.className = "glossary-popup-close";
 	closeButton.setAttribute("aria-label", "Close definition");
-	closeButton.innerHTML = "&times;";
+	closeButton.textContent = "×";
 	closeButton.addEventListener("click", (e) => {
 		e.stopPropagation();
 		glossaryClosePopup(true);
@@ -296,7 +301,7 @@ const glossaryShowPopup = (term: HTMLElement) => {
 
 	const definition = document.createElement("div");
 	definition.id = `${glossaryPopupID}-definition`;
-	definition.innerHTML = defHtml;
+	definition.append(definitionTemplate.content.cloneNode(true));
 	popup.setAttribute("aria-describedby", definition.id);
 	popup.append(closeButton, definition);
 
