@@ -164,14 +164,26 @@ func TestAnnotateHTML_PrefersLongestTermAtSamePosition(t *testing.T) {
 	}
 }
 
+func TestAnnotateHTML_PreservesUnicodeCaseInsensitiveMatchOffsets(t *testing.T) {
+	entries := []GlossaryEntry{
+		{MatchTerm: "K", Definition: "Kelvin sign"},
+	}
+
+	got := AnnotateHTML("<p>A K is a unit symbol.</p>", entries)
+
+	if !strings.Contains(got, ">K</span>") {
+		t.Errorf("expected the original Unicode-safe match to be annotated\ngot: %s", got)
+	}
+}
+
 func TestAnnotateHTML_SanitizesDefinitionAndSetsButtonSemantics(t *testing.T) {
 	entries := []GlossaryEntry{
-		{MatchTerm: "fresco", Definition: `<img src=x onerror="alert(1)"><a href="javascript:alert(1)">unsafe</a><strong>Safe</strong>`},
+		{MatchTerm: "fresco", Definition: `<img src="https://tracker.example/pixel" onerror="alert(1)"><p id="glossary-popup-definition"><a href="javascript:alert(1)">unsafe</a><strong>Safe</strong></p>`},
 	}
 
 	got := AnnotateHTML("<p>A fresco.</p>", entries)
 
-	for _, unsafe := range []string{"onerror=", "javascript:"} {
+	for _, unsafe := range []string{"<img", "id=", "onerror=", "javascript:"} {
 		if strings.Contains(got, unsafe) {
 			t.Errorf("expected definition to exclude %q\ngot: %s", unsafe, got)
 		}

@@ -2,7 +2,6 @@ package artists
 
 import (
 	"bytes"
-	"cmp"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -60,6 +59,17 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 
 	if err != nil {
 		app.Logger().Error("Error finding artwork: ", artworkSlug, err)
+		return errs.ErrArtworkNotFound
+	}
+
+	belongsToArtist := false
+	for _, authorID := range aw.GetStringSlice("author") {
+		if authorID == artistId {
+			belongsToArtist = true
+			break
+		}
+	}
+	if !belongsToArtist {
 		return errs.ErrArtworkNotFound
 	}
 
@@ -170,7 +180,11 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 
 func RenderArtworkContent(app *pocketbase.PocketBase, c *core.RequestEvent, artwork *core.Record, hxTarget string, showBreadcrumbs bool) (dto.Artwork, error) {
 
-	artistId := cmp.Or(artwork.GetStringSlice("author")[0], "")
+	authorIDs := artwork.GetStringSlice("author")
+	artistId := ""
+	if len(authorIDs) > 0 {
+		artistId = authorIDs[0]
+	}
 
 	var artworkUrl string
 	var img dto.Image
@@ -202,6 +216,7 @@ func RenderArtworkContent(app *pocketbase.PocketBase, c *core.RequestEvent, artw
 
 		if err != nil {
 			app.Logger().Error(fmt.Sprintf("Error finding artist (%s) related to artwork (%s)", artistId, artwork.Id), "error", err.Error())
+			return dto.Artwork{}, err
 		}
 
 		artworkUrl = url.GenerateFullArtworkUrl(url.ArtworkUrlDTO{

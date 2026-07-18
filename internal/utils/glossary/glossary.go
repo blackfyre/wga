@@ -16,9 +16,16 @@ import (
 	"golang.org/x/net/html/atom"
 )
 
-// sanitizer is a UGC policy that allows safe HTML (links, emphasis, etc.)
-// but strips dangerous elements like scripts and event handlers.
-var sanitizer = bluemonday.UGCPolicy()
+var sanitizer = glossarySanitizer()
+
+func glossarySanitizer() *bluemonday.Policy {
+	policy := bluemonday.NewPolicy()
+	policy.AllowElements("a", "b", "blockquote", "br", "em", "i", "li", "ol", "p", "strong", "sub", "sup", "u", "ul")
+	policy.AllowAttrs("href").OnElements("a")
+	policy.AllowStandardURLs()
+
+	return policy
+}
 
 const (
 	glossaryCacheKey = "glossary:entries"
@@ -151,12 +158,13 @@ func annotateTextNode(textNode *html.Node, entries []GlossaryEntry, matched map[
 		return
 	}
 
-	lower := strings.ToLower(text)
 	parent := textNode.Parent
 	cursor := 0
 
 	for cursor < len(text) {
 		matchStart := -1
+		matchEnd := -1
+		matchLength := 0
 		var matchEntry *GlossaryEntry
 
 		for i := range entries {
@@ -166,14 +174,18 @@ func annotateTextNode(textNode *html.Node, entries []GlossaryEntry, matched map[
 				continue
 			}
 
-			idx := indexWholeWord(lower[cursor:], key)
+			idx, end := indexWholeWordBounds(text[cursor:], entry.MatchTerm)
 			if idx < 0 {
 				continue
 			}
 			idx += cursor
+			end += cursor
+			termLength := utf8.RuneCountInString(entry.MatchTerm)
 
-			if matchStart == -1 || idx < matchStart || (idx == matchStart && len(entry.MatchTerm) > len(matchEntry.MatchTerm)) {
+			if matchStart == -1 || idx < matchStart || (idx == matchStart && termLength > matchLength) {
 				matchStart = idx
+				matchEnd = end
+				matchLength = termLength
 				matchEntry = entry
 			}
 		}
@@ -186,7 +198,7 @@ func annotateTextNode(textNode *html.Node, entries []GlossaryEntry, matched map[
 			parent.InsertBefore(&html.Node{Type: html.TextNode, Data: text[cursor:matchStart]}, textNode)
 		}
 
-		termEnd := matchStart + len(matchEntry.MatchTerm)
+		termEnd := matchEnd
 		span := &html.Node{
 			Type:     html.ElementNode,
 			DataAtom: atom.Span,
@@ -245,38 +257,55 @@ func glossaryDefinitionTemplate(definition string) *html.Node {
 
 // indexWholeWord finds the first case-insensitive occurrence of term in text
 // that is bounded by word boundaries (non-letter/digit characters or string edges).
-// It handles multi-byte UTF-8 characters correctly by decoding runes at boundaries.
-func indexWholeWord(lower, term string) int {
-	termLen := len(term)
-	start := 0
-	for {
-		idx := strings.Index(lower[start:], term)
-		if idx < 0 {
-			return -1
-		}
-		idx += start
+func indexWholeWord(text, term string) int {
+	idx, _ := indexWholeWordBounds(text, term)
+	return idx
+}
 
-		// Check left boundary using rune decoding
-		if idx > 0 {
-			r, _ := utf8.DecodeLastRuneInString(lower[:idx])
-			if r != utf8.RuneError && (unicode.IsLetter(r) || unicode.IsDigit(r)) {
-				start = idx + 1
-				continue
-			}
-		}
-
-		// Check right boundary using rune decoding
-		end := idx + termLen
-		if end < len(lower) {
-			r, _ := utf8.DecodeRuneInString(lower[end:])
-			if r != utf8.RuneError && (unicode.IsLetter(r) || unicode.IsDigit(r)) {
-				start = idx + 1
-				continue
-			}
-		}
-
-		return idx
+// indexWholeWordBounds returns the matching byte range in the original text.
+func indexWholeWordBounds(text, term string) (int, int) {
+	termRunes := utf8.RuneCountInString(term)
+	if termRunes == 0 {
+		return -1, -1
 	}
+
+	for start := 0; start < len(text); {
+		end := start
+		for range termRunes {
+			if end >= len(text) {
+				break
+			}
+			_, size := utf8.DecodeRuneInString(text[end:])
+			end += size
+		}
+
+		if end > start && strings.EqualFold(text[start:end], term) {
+			if start > 0 {
+				r, _ := utf8.DecodeLastRuneInString(text[:start])
+				if r != utf8.RuneError && (unicode.IsLetter(r) || unicode.IsDigit(r)) {
+					_, size := utf8.DecodeRuneInString(text[start:])
+					start += size
+					continue
+				}
+			}
+
+			if end < len(text) {
+				r, _ := utf8.DecodeRuneInString(text[end:])
+				if r != utf8.RuneError && (unicode.IsLetter(r) || unicode.IsDigit(r)) {
+					_, size := utf8.DecodeRuneInString(text[start:])
+					start += size
+					continue
+				}
+			}
+
+			return start, end
+		}
+
+		_, size := utf8.DecodeRuneInString(text[start:])
+		start += size
+	}
+
+	return -1, -1
 }
 
 // hasClass checks if an HTML element node has a specific CSS class.

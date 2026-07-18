@@ -336,7 +336,7 @@ const glossaryShowPopup = (term: HTMLElement) => {
 };
 
 // One-time document-level listeners for glossary dismissal
-document.addEventListener("click", glossaryClosePopup);
+document.addEventListener("click", () => glossaryClosePopup());
 document.addEventListener("keydown", (e) => {
 	if (e.key === "Escape") glossaryClosePopup(true);
 });

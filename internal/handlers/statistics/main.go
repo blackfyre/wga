@@ -2,7 +2,6 @@ package statistics
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -172,7 +171,7 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 				ArtistsPeriodSummary:  summarizeSchoolPeriodRows(artistsByPeriodRows),
 			}
 
-			ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, "Statistics")
+			ctx := tmplUtils.DecorateContext(c.Request.Context(), tmplUtils.TitleKey, "Statistics")
 			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "Statistics about the Web Gallery of Art collection")
 			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, tmplUtils.AssetUrl("/statistics"))
 
