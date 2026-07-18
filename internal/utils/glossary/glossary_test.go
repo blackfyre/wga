@@ -178,7 +178,7 @@ func TestAnnotateHTML_PreservesUnicodeCaseInsensitiveMatchOffsets(t *testing.T) 
 
 func TestAnnotateHTML_SanitizesDefinitionAndSetsButtonSemantics(t *testing.T) {
 	entries := []GlossaryEntry{
-		{MatchTerm: "fresco", Definition: `<img src="https://tracker.example/pixel" onerror="alert(1)"><p id="glossary-popup-definition"><a href="javascript:alert(1)">unsafe</a><strong>Safe</strong></p>`},
+		{MatchTerm: "fresco", Definition: `<img src="https://tracker.example/pixel" onerror="alert(1)"><p id="glossary-popup-definition"><a href="javascript:alert(1)">unsafe</a><a href="https://example.com">safe link</a><strong>Safe</strong></p>`},
 	}
 
 	got := AnnotateHTML("<p>A fresco.</p>", entries)
@@ -190,6 +190,9 @@ func TestAnnotateHTML_SanitizesDefinitionAndSetsButtonSemantics(t *testing.T) {
 	}
 	if !strings.Contains(got, `<strong>Safe</strong>`) {
 		t.Errorf("expected sanitized definition markup to be retained\ngot: %s", got)
+	}
+	if !strings.Contains(got, `href="https://example.com"`) {
+		t.Errorf("expected safe definition links to be retained\ngot: %s", got)
 	}
 	for _, attribute := range []string{`role="button"`, `aria-expanded="false"`, `aria-haspopup="dialog"`} {
 		if !strings.Contains(got, attribute) {
