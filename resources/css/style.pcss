@@ -3,6 +3,8 @@
 @import "animate.css";
 @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Lexend:wght@100..900&family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700;1,900&display=swap");
 @import "../../node_modules/trix/dist/trix.css";
+@source "../../internal/assets/templ";
+@source "../../resources/js";
 @plugin "@tailwindcss/typography";
 @plugin "daisyui";
 
@@ -796,4 +798,29 @@ a[href]:not(:where(
 
 .choices__placeholder {
   @apply opacity-50;
+}
+
+/* Glossary term inline styling */
+.glossary-term {
+  border-bottom: 1px dotted;
+  @apply border-secondary cursor-help;
+
+  &:focus-visible {
+    @apply outline-2 outline-offset-2 outline-secondary;
+  }
+}
+
+/* Glossary popup */
+.glossary-popup {
+  @apply absolute z-50 max-w-sm max-h-60 overflow-y-auto
+    rounded-box border border-base-300 bg-base-100 p-4 shadow-lg
+    text-sm leading-relaxed;
+}
+
+.glossary-popup a {
+  @apply text-primary underline;
+}
+
+.glossary-popup-close {
+  @apply absolute top-1 right-1 btn btn-ghost btn-xs btn-circle;
 }

@@ -1,0 +1,125 @@
+package pages
+
+import (
+	"github.com/blackfyre/wga/internal/assets/templ/layouts"
+	"github.com/blackfyre/wga/internal/assets/templ/utils"
+)
+
+type StatisticsArtFormRow struct {
+	Name  string
+	Count int
+}
+
+type StatisticsSchoolPeriodRow struct {
+	Period string
+	School string
+	Count  int
+}
+
+type StatisticsPageDTO struct {
+	ArtistCount           string
+	ArtworkCount          string
+	ArtFormData           string
+	ArtworksPeriodData    string
+	ArtistsPeriodData     string
+	ArtFormSummary        []StatisticsArtFormRow
+	ArtworksPeriodSummary []StatisticsSchoolPeriodRow
+	ArtistsPeriodSummary  []StatisticsSchoolPeriodRow
+}
+
+templ StatisticsPage(c StatisticsPageDTO) {
+	@layouts.LayoutMain() {
+		@StatisticsBlock(c)
+	}
+}
+
+templ StatisticsBlock(c StatisticsPageDTO) {
+	<head>
+		<title>{ utils.GetTitle(ctx) }</title>
+	</head>
+	<section id="statistics" class="container mx-auto py-6 px-4 md:px-0">
+		<h1 class="text-3xl font-bold mb-6">Statistics</h1>
+		<div class="flex justify-center">
+			<div class="stats shadow my-4">
+				<div class="stat place-items-center">
+					<div class="stat-figure text-secondary">
+						<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+					</div>
+					<div class="stat-title">Artists</div>
+					<div class="stat-value">{ c.ArtistCount }</div>
+				</div>
+				<div class="stat place-items-center">
+					<div class="stat-figure text-secondary">
+						<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+					</div>
+					<div class="stat-title">Artworks</div>
+					<div class="stat-value">{ c.ArtworkCount }</div>
+				</div>
+			</div>
+		</div>
+		<div class="max-w-lg mx-auto my-8">
+			<h2 class="text-xl font-semibold mb-4 text-center">Art Form Distribution</h2>
+			<canvas id="art-form-chart" role="img" aria-label="Art form distribution chart" aria-describedby="art-form-summary"></canvas>
+			@artFormSummary(c.ArtFormSummary)
+		</div>
+		<div class="py-8">
+			<h2 class="text-xl font-semibold mb-4 text-center">Artworks by School &amp; Period</h2>
+			<canvas id="artworks-by-period-chart" role="img" aria-label="Artworks by school and period chart" aria-describedby="artworks-period-summary"></canvas>
+			@schoolPeriodSummary("artworks-period-summary", "Artworks by school and birth period data", c.ArtworksPeriodSummary)
+		</div>
+		<div class="py-8">
+			<h2 class="text-xl font-semibold mb-4 text-center">Artists by School &amp; Period</h2>
+			<canvas id="artists-by-period-chart" role="img" aria-label="Artists by school and period chart" aria-describedby="artists-period-summary"></canvas>
+			@schoolPeriodSummary("artists-period-summary", "Artists by school and birth period data", c.ArtistsPeriodSummary)
+		</div>
+		<div id="art-form-data" hidden data-json={ c.ArtFormData }></div>
+		<div id="artworks-period-data" hidden data-json={ c.ArtworksPeriodData }></div>
+		<div id="artists-period-data" hidden data-json={ c.ArtistsPeriodData }></div>
+	</section>
+}
+
+templ artFormSummary(rows []StatisticsArtFormRow) {
+	<div id="art-form-summary" class="overflow-x-auto">
+		<table class="table table-sm">
+			<caption class="caption-top text-left text-sm font-medium">Art form distribution data</caption>
+			<thead>
+				<tr>
+					<th scope="col">Art form</th>
+					<th scope="col">Artworks</th>
+				</tr>
+			</thead>
+			<tbody>
+				for _, row := range rows {
+					<tr>
+						<th scope="row">{ row.Name }</th>
+						<td>{ row.Count }</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+}
+
+templ schoolPeriodSummary(id string, caption string, rows []StatisticsSchoolPeriodRow) {
+	<div id={ id } class="overflow-x-auto">
+		<table class="table table-sm">
+			<caption class="caption-top text-left text-sm font-medium">{ caption }</caption>
+			<thead>
+				<tr>
+					<th scope="col">Birth period</th>
+					<th scope="col">School</th>
+					<th scope="col">Count</th>
+				</tr>
+			</thead>
+			<tbody>
+				for _, row := range rows {
+					<tr>
+						<th scope="row">{ row.Period }</th>
+						<td>{ row.School }</td>
+						<td>{ row.Count }</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+}

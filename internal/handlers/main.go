@@ -10,6 +10,7 @@ import (
 	"github.com/blackfyre/wga/internal/handlers/inspire"
 	"github.com/blackfyre/wga/internal/handlers/landing"
 	"github.com/blackfyre/wga/internal/handlers/static"
+	"github.com/blackfyre/wga/internal/handlers/statistics"
 
 	"github.com/blackfyre/wga/internal/handlers/postcards"
 	"github.com/microcosm-cc/bluemonday"
@@ -35,5 +36,6 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 	artworks.RegisterArtworksHandlers(app)
 	inspire.RegisterHandlers(app)
 	landing.RegisterHandlers(app)
+	statistics.RegisterHandlers(app)
 	dual.RegisterHandlers(app)
 }
