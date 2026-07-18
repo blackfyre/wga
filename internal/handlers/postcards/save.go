@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/errs"
@@ -77,7 +78,7 @@ func savePostcard(app *pocketbase.PocketBase, c *core.RequestEvent, p *bluemonda
 	record.Set("status", "queued")
 	record.Set("sender_name", postData.SenderName)
 	record.Set("sender_email", postData.SenderEmail)
-	record.Set("recipients", postData.Recipients)
+	record.Set("recipients", strings.Join(postData.Recipients, ","))
 	record.Set("message", p.Sanitize(postData.Message))
 	record.Set("image_id", postData.ImageId)
 	record.Set("notify_sender", postData.NotificationRequired)
