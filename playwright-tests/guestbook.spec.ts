@@ -10,7 +10,10 @@ const entry = {
 
 test("test", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("link", { name: "Guestbook" }).click();
+  await page
+    .getByRole("navigation", { name: "main navigation" })
+    .getByRole("link", { name: "Guestbook", exact: true })
+    .click();
   await page.getByRole("link", { name: "Add Entry" }).click();
   await page.getByPlaceholder("Your name", { exact: true }).fill(entry.name);
   await page.getByPlaceholder("Your name", { exact: true }).press("Tab");

@@ -62,6 +62,14 @@ test("send postcard", async ({ page, request }) => {
 		.fill("playwright.tester@local.host"); // this is the postcard sender's email
 	await page.locator("[name='recipients[]']").fill(recipient); // this is the postcard recipient's email
 	await page.locator("trix-editor").fill("I am testing your site.");
+	// The CI handler skips remote verification but still requires a token.
+	await page.locator("#postcard_create").evaluate((form) => {
+		const token = document.createElement("input");
+		token.name = "g-recaptcha-response";
+		token.type = "hidden";
+		token.value = "playwright-test-token";
+		form.append(token);
+	});
 
 	await page.getByRole("button", { name: "Send postcard" }).click();
 
