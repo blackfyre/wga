@@ -51,7 +51,7 @@ func (r *StatisticsRepository) GetArtworksBySchoolAndPeriod() ([]SchoolPeriodRow
 	rows := []SchoolPeriodRow{}
 	err := r.app.DB().NewQuery(`
 		SELECT
-			((ar.year_of_birth / 50) * 50) AS period_start,
+			(CAST(ar.year_of_birth / 50 AS INTEGER) * 50) AS period_start,
 			CASE WHEN s.name IN ` + top7Schools + `
 			     THEN s.name ELSE 'Other' END AS school_label,
 			COUNT(DISTINCT aw.id) AS count
@@ -76,7 +76,7 @@ func (r *StatisticsRepository) GetArtistsBySchoolAndPeriod() ([]SchoolPeriodRow,
 	rows := []SchoolPeriodRow{}
 	err := r.app.DB().NewQuery(`
 		SELECT
-			((a.year_of_birth / 50) * 50) AS period_start,
+			(CAST(a.year_of_birth / 50 AS INTEGER) * 50) AS period_start,
 			CASE WHEN s.name IN ` + top7Schools + `
 			     THEN s.name ELSE 'Other' END AS school_label,
 			COUNT(DISTINCT a.id) AS count
