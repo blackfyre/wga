@@ -165,7 +165,7 @@ jobs:
         run: chmod +x ./wga
         working-directory: ./wga_tmp
       - name: Run the application
-        run: ./wga serve --dev > wga.log &
+        run: ./wga serve > wga.log &
         working-directory: ./wga_tmp
         env:
           WGA_PROTOCOL: http
