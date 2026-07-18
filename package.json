@@ -51,6 +51,7 @@
   },
   "dependencies": {
     "baseline-browser-mapping": "^2.10.43",
-    "caniuse-lite": "^1.0.30001806"
+    "caniuse-lite": "^1.0.30001806",
+    "chart.js": "^4.5.1"
   }
 }

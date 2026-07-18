@@ -4,6 +4,7 @@ import "htmx.org";
 import htmx from "htmx.org";
 import warningSign from "../assets/warning-sign.svg";
 import logger from "./logger";
+import { initStatisticsChart } from "./statistics";
 
 logger.setNamespace("WGA");
 logger.setLevel("debug");
@@ -335,6 +336,27 @@ document.addEventListener("keydown", (e) => {
 	if (e.key === "Escape") glossaryClosePopup(true);
 });
 
+let statisticsModule: typeof import("./statistics") | null = null;
+
+const maybeInitStatisticsCharts = async () => {
+	if (!document.getElementById("statistics")) {
+		statisticsModule?.destroyStatisticsCharts();
+		return;
+	}
+
+	try {
+		if (statisticsModule) {
+			statisticsModule.initStatisticsChart();
+			return;
+		}
+
+		statisticsModule = await import("./statistics");
+		statisticsModule.initStatisticsChart();
+	} catch (error) {
+		logger.error("Failed to initialise statistics charts", error);
+	}
+};
+
 const wgaInternal: wgaInternals = {
 	els: {
 		dialog: null,
@@ -370,8 +392,12 @@ const wgaInternal: wgaInternals = {
 				wgaInternal.func.cloner();
 				wgaInternal.func.artistSearchModal();
 				wgaInternal.func.glossary();
+				void maybeInitStatisticsCharts();
 			});
-			document.body.addEventListener("htmx:beforeSwap", glossaryClosePopup);
+			document.body.addEventListener("htmx:beforeSwap", () => {
+				glossaryClosePopup();
+				statisticsModule?.destroyStatisticsCharts();
+			});
 
 			document.body.addEventListener("htmx:swapError", (evt) => {
 				logger.error("HTMX swap error", evt);
@@ -612,6 +638,7 @@ const wgaInternal: wgaInternals = {
 			wgaInternal.setup.htmx();
 			wgaInternal.setup.elements();
 			wgaInternal.func.glossary();
+			void maybeInitStatisticsCharts();
 
 			// Run all event listeners
 			logger.debug("Running event listeners");
