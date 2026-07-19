@@ -77,7 +77,11 @@ func renderDualModePage(app *pocketbase.PocketBase, c *core.RequestEvent) error 
 
 	var buff bytes.Buffer
 
-	err = pages.DualPage(contentDto, buildDualPaneLoadForms(leftPane, rightPane)).Render(ctx, &buff)
+	err = pages.DualPage(
+		contentDto,
+		buildDualPaneLoadForms(leftPane, rightPane),
+		buildDualPaneTargetURLs(leftPane, rightPane),
+	).Render(ctx, &buff)
 
 	if err != nil {
 		app.Logger().Error("Error rendering dual mode page", "error", err.Error())
@@ -144,6 +148,15 @@ func buildDualPaneLoadForms(leftPane renderPaneDto, rightPane renderPaneDto) dto
 			LeftRenderTo:  leftPane.RenderTo,
 			RightRenderTo: rightPane.RenderTo,
 		},
+	}
+}
+
+func buildDualPaneTargetURLs(leftPane renderPaneDto, rightPane renderPaneDto) dto.DualPaneTargetUrlsDto {
+	return dto.DualPaneTargetUrlsDto{
+		LeftSamePaneUrl:   buildDualModeURL(leftPane.RelPath, rightPane.RelPath, "left", rightPane.RenderTo),
+		LeftOtherPaneUrl:  buildDualModeURL(leftPane.RelPath, rightPane.RelPath, "right", rightPane.RenderTo),
+		RightSamePaneUrl:  buildDualModeURL(leftPane.RelPath, rightPane.RelPath, leftPane.RenderTo, "right"),
+		RightOtherPaneUrl: buildDualModeURL(leftPane.RelPath, rightPane.RelPath, leftPane.RenderTo, "left"),
 	}
 }
 

@@ -30,6 +30,9 @@ const expectDualModeState = async (
 	);
 };
 
+const paneTargetControls = (page, side: string) =>
+	page.getByRole("navigation", { name: `Open ${side} links in` });
+
 test("loads an artist through the chooser and opens its artwork in the other pane", async ({
 	page,
 }) => {
@@ -42,8 +45,10 @@ test("loads an artist through the chooser and opens its artwork in the other pan
 		"Choose content for comparison",
 	);
 	await expect(
-		page.getByLabel("Open left links in the other pane"),
-	).toBeChecked();
+		paneTargetControls(page, "left").getByRole("link", {
+			name: "Other pane",
+		}),
+	).toHaveAttribute("aria-current", "true");
 
 	await page.getByRole("button", { name: "Choose left" }).click();
 	await page.getByPlaceholder("Filter artists").fill("AACHEN");
@@ -70,13 +75,17 @@ test("loads an artist through the chooser and opens its artwork in the other pan
 test("persists a same-pane target choice", async ({ page }) => {
 	await page.goto(`/dual-mode?left=${aachenPath}&right=default`);
 
-	const targetToggle = page.getByLabel("Open left links in the other pane");
-	await expect(targetToggle).toBeChecked();
-	await targetToggle.uncheck();
+	const leftTargets = paneTargetControls(page, "left");
+	await expect(
+		leftTargets.getByRole("link", { name: "Other pane" }),
+	).toHaveAttribute("aria-current", "true");
+	await leftTargets.getByRole("link", { name: "This pane" }).click();
 
 	await expect(page).toHaveURL(/left_render_to=left/);
 	await page.reload();
-	await expect(targetToggle).not.toBeChecked();
+	await expect(
+		leftTargets.getByRole("link", { name: "This pane" }),
+	).toHaveAttribute("aria-current", "true");
 
 	await page
 		.locator("#left")
@@ -228,6 +237,30 @@ test("loads pane paths through enhanced forms", async ({ page }) => {
 	);
 });
 
+test("updates pane targets through enhanced links", async ({ page }) => {
+	await page.goto(dualModeURL(aachenPath, koedijckPath));
+	const leftTargets = paneTargetControls(page, "left");
+	const targetResponse = page.waitForResponse(
+		(response) =>
+			response.url().includes("/dual-mode") &&
+			response.request().headers()["hx-request"] === "true",
+	);
+	await leftTargets.getByRole("link", { name: "This pane" }).click();
+	await targetResponse;
+	await expectDualModeState(page, aachenPath, koedijckPath, "left", "left");
+	await expect(
+		leftTargets.getByRole("link", { name: "This pane" }),
+	).toHaveAttribute("aria-current", "true");
+
+	await page.goto(dualModeURL(aachenPath, koedijckPath));
+	const rightTargets = paneTargetControls(page, "right");
+	await rightTargets.getByRole("link", { name: "This pane" }).click();
+	await expectDualModeState(page, aachenPath, koedijckPath, "right", "right");
+
+	await rightTargets.getByRole("link", { name: "Other pane" }).click();
+	await expectDualModeState(page, aachenPath, koedijckPath, "right", "left");
+});
+
 test.describe("Dual Mode operations without JavaScript", () => {
 	test.use({ javaScriptEnabled: false });
 
@@ -241,6 +274,27 @@ test.describe("Dual Mode operations without JavaScript", () => {
 		await expectDualModeState(page, koedijckPath, aachenPath);
 		await expect(page.locator("#left h1")).toContainText("KOEDIJCK, Isaack");
 		await expect(page.locator("#right h1")).toContainText("AACHEN, Hans von");
+	});
+
+	test("changes pane targets through standard hrefs", async ({ page }) => {
+		await page.goto(dualModeURL(aachenPath, koedijckPath));
+		await paneTargetControls(page, "left")
+			.getByRole("link", { name: "This pane" })
+			.click();
+		await expectDualModeState(page, aachenPath, koedijckPath, "left", "left");
+
+		await page
+			.locator("#left")
+			.getByRole("link", { name: "Learn More" })
+			.first()
+			.click();
+		await expect(page.locator("#right h1")).toContainText("KOEDIJCK, Isaack");
+
+		await page.goto(dualModeURL(aachenPath, koedijckPath));
+		await paneTargetControls(page, "right")
+			.getByRole("link", { name: "This pane" })
+			.click();
+		await expectDualModeState(page, aachenPath, koedijckPath, "right", "right");
 	});
 
 	test("loads a right pane path through a standard GET form", async ({

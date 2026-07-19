@@ -246,6 +246,65 @@ func TestBuildDualPaneLoadFormsBlankDefaultPath(t *testing.T) {
 	}
 }
 
+func TestBuildDualPaneTargetURLs(t *testing.T) {
+	left := renderPaneDto{RelPath: "/artists/left-123", RenderTo: "right"}
+	right := renderPaneDto{RelPath: "/artworks/right-456", RenderTo: "left"}
+	targets := buildDualPaneTargetURLs(left, right)
+
+	tests := []struct {
+		name string
+		url  string
+		want map[string]string
+	}{
+		{
+			name: "left same pane",
+			url:  targets.LeftSamePaneUrl,
+			want: map[string]string{
+				"left":            left.RelPath,
+				"right":           right.RelPath,
+				"left_render_to":  "left",
+				"right_render_to": "left",
+			},
+		},
+		{
+			name: "left other pane",
+			url:  targets.LeftOtherPaneUrl,
+			want: map[string]string{
+				"left":            left.RelPath,
+				"right":           right.RelPath,
+				"left_render_to":  "right",
+				"right_render_to": "left",
+			},
+		},
+		{
+			name: "right same pane",
+			url:  targets.RightSamePaneUrl,
+			want: map[string]string{
+				"left":            left.RelPath,
+				"right":           right.RelPath,
+				"left_render_to":  "right",
+				"right_render_to": "right",
+			},
+		},
+		{
+			name: "right other pane",
+			url:  targets.RightOtherPaneUrl,
+			want: map[string]string{
+				"left":            left.RelPath,
+				"right":           right.RelPath,
+				"left_render_to":  "right",
+				"right_render_to": "left",
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assertDualModeQuery(t, parseDualModeURL(t, test.url), test.want)
+		})
+	}
+}
+
 func TestBuildDualModePaneURL(t *testing.T) {
 	artistPath := "/artists/aagaard-carl-frederik-f2540d7a3fe99f9"
 	artworkPath := "/artists/aagaard-carl-frederik-f2540d7a3fe99f9/deer-beside-a-lake-a6aab5e26c30056"

@@ -94,3 +94,10 @@ type DualPaneLoadFormsDto struct {
 	Left  DualPaneLoadFormDto
 	Right DualPaneLoadFormDto
 }
+
+type DualPaneTargetUrlsDto struct {
+	LeftSamePaneUrl   string
+	LeftOtherPaneUrl  string
+	RightSamePaneUrl  string
+	RightOtherPaneUrl string
+}
