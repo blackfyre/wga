@@ -20,7 +20,7 @@ This specification defines feature parity as preserving those user outcomes in t
 | Compare artist, artwork, and embedded biography content                                | Complete       | `internal/handlers/dual/main.go` renders artist and artwork blocks                                       |
 | Keep pane state in a reloadable/shareable URL                                          | Complete       | `left`, `right`, and `*_render_to` query parameters                                                      |
 | Choose whether supported artist/artwork links replace a pane or open in the other pane | Complete       | Per-pane labelled toggle and Playwright coverage                                                         |
-| Load content through a chooser                                                         | Partial        | A JavaScript-populated, searchable artist chooser is available; artworks require a pasted canonical path |
+| Load content through a chooser                                                         | Complete       | A bounded server-side lookup searches published artists or artworks; canonical-path forms remain a fallback |
 | Use the legacy A–Z, catalogue-section, Search, and Hints entry points in a pane        | Missing        | `parsePanePath` accepts artist and artwork detail paths only                                             |
 | Create artist lists by school, period, time-line, profession, and sort order           | Missing        | The current artist listing only supports a name query and cannot be loaded into a pane                   |
 | Copy, reverse, and clear panes                                                         | Missing        | The modern control bar has no equivalent actions                                                         |
@@ -72,7 +72,7 @@ The legacy page recommends a 1024 × 768 display. The modern view activates at 7
 
 - [x] Add progressive canonical-path forms for either pane. **Verified by:** Go URL-state coverage and JavaScript-enabled and JavaScript-disabled Playwright journeys.
 - [x] Add progressive link-target controls for either pane. **Verified by:** Go URL-state coverage and JavaScript-enabled and JavaScript-disabled Playwright journeys.
-- [ ] Add searchable artist and artwork selection for either pane. **Done when:** a visitor can select either content type without manually constructing a path.
+- [x] Add searchable artist and artwork selection for either pane. **Verified by:** bounded Go lookup coverage and artist/artwork Playwright chooser journeys.
 - [x] Add copy, reverse, and clear controls. **Verified by:** the operation-link Go and Playwright coverage, including URL state and fallback navigation.
 - [x] Add an explicit Standard view action. **Verified by:** the operation-link Playwright journey.
 - [x] Add focused Go and Playwright coverage for every pane operation and URL-state transition. **Verified by:** success, empty-pane, HTMX, and JavaScript-disabled journeys.

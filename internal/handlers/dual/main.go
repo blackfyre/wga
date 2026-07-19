@@ -6,8 +6,10 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"slices"
+	"fmt"
+	"net/http"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
@@ -15,9 +17,9 @@ import (
 	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/errs"
 	"github.com/blackfyre/wga/internal/handlers/artists"
-	"github.com/blackfyre/wga/internal/handlers/artworks"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/blackfyre/wga/internal/utils/url"
+	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 )
@@ -34,6 +36,12 @@ type panePathDto struct {
 	Id      string
 	RelPath string
 }
+
+const (
+	dualLookupPath              = "/dual-mode/lookup"
+	dualLookupLimit             = 20
+	dualLookupMinimumQueryRunes = 2
+)
 
 // renderDualModePage renders the dual-mode comparison view.
 func renderDualModePage(app *pocketbase.PocketBase, c *core.RequestEvent) error {
@@ -64,15 +72,6 @@ func renderDualModePage(app *pocketbase.PocketBase, c *core.RequestEvent) error 
 	contentDto.ReverseUrl = buildDualModeActionURL(leftPane, rightPane, "reverse")
 	contentDto.ClearLeftUrl = buildDualModeActionURL(leftPane, rightPane, "clear-left")
 	contentDto.ClearRightUrl = buildDualModeActionURL(leftPane, rightPane, "clear-right")
-	contentDto.ArtistNameList = []dto.ArtistNameListEntry{}
-	artistNameList, err := artworks.GetArtistNameList(app)
-
-	if err != nil {
-		app.Logger().Error("Error getting artist name list", "error", err.Error())
-	} else {
-		contentDto.ArtistNameList = formatArtistNameList(artistNameList)
-	}
-
 	c.Response.Header().Set("HX-Push-Url", buildDualModePushURL(leftPane, rightPane))
 
 	var buff bytes.Buffer
@@ -89,6 +88,194 @@ func renderDualModePage(app *pocketbase.PocketBase, c *core.RequestEvent) error 
 	}
 
 	return c.HTML(200, buff.String())
+}
+
+func renderDualLookupResults(app *pocketbase.PocketBase, c *core.RequestEvent) error {
+	queryValues := c.Request.URL.Query()
+	content, err := getDualLookupResults(app, queryValues.Get("kind"), queryValues.Get("q"))
+
+	if err != nil {
+		app.Logger().Error("Error getting dual lookup results", "error", err.Error())
+		return utils.ServerFaultError(c)
+	}
+
+	var buff bytes.Buffer
+
+	if err := pages.DualLookupResultContent(content).Render(context.Background(), &buff); err != nil {
+		app.Logger().Error("Error rendering dual lookup results", "error", err.Error())
+		return utils.ServerFaultError(c)
+	}
+
+	return c.HTML(http.StatusOK, buff.String())
+}
+
+func getDualLookupResults(app core.App, kind string, query string) (dto.DualLookupResultsDto, error) {
+	content := dto.DualLookupResultsDto{
+		Kind:    resolveDualLookupKind(kind),
+		Query:   strings.TrimSpace(query),
+		Results: []dto.DualLookupResultDto{},
+	}
+
+	if content.Query == "" {
+		return content, nil
+	}
+
+	if utf8.RuneCountInString(content.Query) < dualLookupMinimumQueryRunes {
+		content.QueryTooShort = true
+		return content, nil
+	}
+
+	var err error
+
+	switch content.Kind {
+	case "artist":
+		content.Results, err = getArtistLookupResults(app, content.Query)
+	case "artwork":
+		content.Results, err = getArtworkLookupResults(app, content.Query)
+	}
+
+	return content, err
+}
+
+func resolveDualLookupKind(kind string) string {
+	if strings.TrimSpace(kind) == "artwork" {
+		return "artwork"
+	}
+
+	return "artist"
+}
+
+func getArtistLookupResults(app core.App, query string) ([]dto.DualLookupResultDto, error) {
+	records, err := app.FindRecordsByFilter(
+		constants.CollectionArtists,
+		"published = true && name ~ {:query}",
+		"+name,+id",
+		dualLookupLimit,
+		0,
+		dbx.Params{"query": query},
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	results := make([]dto.DualLookupResultDto, 0, len(records))
+
+	for _, record := range records {
+		results = append(results, dto.DualLookupResultDto{
+			Url: url.GenerateArtistUrl(url.ArtistUrlDTO{
+				ArtistId:   record.Id,
+				ArtistName: record.GetString("name"),
+			}),
+			Label: record.GetString("name"),
+		})
+	}
+
+	return results, nil
+}
+
+func getArtworkLookupResults(app core.App, query string) ([]dto.DualLookupResultDto, error) {
+	records, err := app.FindRecordsByFilter(
+		constants.CollectionArtworks,
+		"published = true && author:length > 0 && title ~ {:query}",
+		"+title,+id",
+		dualLookupLimit,
+		0,
+		dbx.Params{"query": query},
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	artistsByID, err := getLookupArtistsByID(app, uniqueLookupArtistIDs(records))
+	if err != nil {
+		return nil, err
+	}
+
+	results := make([]dto.DualLookupResultDto, 0, len(records))
+
+	for _, record := range records {
+		authorIDs := record.GetStringSlice("author")
+		if len(authorIDs) == 0 {
+			continue
+		}
+
+		artist, ok := artistsByID[authorIDs[0]]
+		if !ok {
+			continue
+		}
+
+		results = append(results, dto.DualLookupResultDto{
+			Url: url.GenerateFullArtworkUrl(url.ArtworkUrlDTO{
+				ArtistId:     artist.Id,
+				ArtistName:   artist.GetString("name"),
+				ArtworkId:    record.Id,
+				ArtworkTitle: record.GetString("title"),
+			}),
+			Label:   record.GetString("title"),
+			Context: artist.GetString("name"),
+		})
+	}
+
+	return results, nil
+}
+
+func uniqueLookupArtistIDs(records []*core.Record) []string {
+	seen := map[string]struct{}{}
+	artistIDs := make([]string, 0, len(records))
+
+	for _, record := range records {
+		for _, artistID := range record.GetStringSlice("author") {
+			if artistID == "" {
+				continue
+			}
+
+			if _, exists := seen[artistID]; exists {
+				continue
+			}
+
+			seen[artistID] = struct{}{}
+			artistIDs = append(artistIDs, artistID)
+		}
+	}
+
+	return artistIDs
+}
+
+func getLookupArtistsByID(app core.App, artistIDs []string) (map[string]*core.Record, error) {
+	if len(artistIDs) == 0 {
+		return map[string]*core.Record{}, nil
+	}
+
+	params := dbx.Params{}
+	conditions := make([]string, 0, len(artistIDs))
+
+	for index, artistID := range artistIDs {
+		key := fmt.Sprintf("artist_id_%d", index)
+		conditions = append(conditions, fmt.Sprintf("id = {:%s}", key))
+		params[key] = artistID
+	}
+
+	records, err := app.FindRecordsByFilter(
+		constants.CollectionArtists,
+		strings.Join(conditions, " || "),
+		"+name,+id",
+		len(artistIDs),
+		0,
+		params,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	artistsByID := make(map[string]*core.Record, len(records))
+	for _, record := range records {
+		artistsByID[record.Id] = record
+	}
+
+	return artistsByID, nil
 }
 
 func buildDualModePushURL(leftPane renderPaneDto, rightPane renderPaneDto) string {
@@ -247,30 +434,6 @@ func parsePanePath(raw string) (panePathDto, error) {
 	default:
 		return panePathDto{}, errs.ErrUnknownDualPane
 	}
-}
-
-// formatArtistNameList formats the artist name list.
-// It takes a map of artist names as a parameter.
-// It returns a slice of dto.ArtistNameListEntry.
-func formatArtistNameList(artistNameList map[string]string) []dto.ArtistNameListEntry {
-	artistNameListEntries := make([]dto.ArtistNameListEntry, 0)
-
-	for url, label := range artistNameList {
-		artistNameListEntries = append(artistNameListEntries, dto.ArtistNameListEntry{
-			Url:   url,
-			Label: label,
-		})
-	}
-
-	slices.SortFunc(artistNameListEntries, func(a dto.ArtistNameListEntry, b dto.ArtistNameListEntry) int {
-		if diff := strings.Compare(a.Label, b.Label); diff != 0 {
-			return diff
-		}
-
-		return strings.Compare(a.Url, b.Url)
-	})
-
-	return artistNameListEntries
 }
 
 // reverseSide returns the opposite side of the given side.
@@ -452,6 +615,9 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		se.Router.GET("/dual-mode", func(c *core.RequestEvent) error {
 			return renderDualModePage(app, c)
+		})
+		se.Router.GET(dualLookupPath, func(c *core.RequestEvent) error {
+			return renderDualLookupResults(app, c)
 		})
 		return se.Next()
 	})
