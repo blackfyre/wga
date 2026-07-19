@@ -2,6 +2,7 @@ package artworks
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"fmt"
 	"net/http"
@@ -24,10 +25,11 @@ func searchPage(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	fullUrl := utils.AssetUrl(c.Request.URL.String())
 	pushUrl := utils.GenerateCurrentRelativePageUrl(c)
 	filters := buildFilters(c)
+	dualModeContext := getDualModeSearchContext(c)
 
 	if filters.AnyFilterActive() {
 		// redirect to the search results page
-		return c.Redirect(http.StatusFound, filters.BuildPath("/artworks/results"))
+		return c.Redirect(http.StatusFound, buildArtworkSearchPath("/artworks/results", filters, dualModeContext))
 	}
 
 	content := dto.ArtworkSearchDTO{
@@ -38,7 +40,9 @@ func searchPage(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 			ArtTypeString: filters.ArtTypeString,
 			ArtistString:  filters.ArtistString,
 		},
-		HxTarget: "#artwork-search-results",
+		ClearUrl:        buildArtworkSearchClearPath(dualModeContext),
+		DualModeContext: dualModeContext,
+		HxTarget:        "#artwork-search-results",
 		Results: dto.ArtworkSearchResultDTO{
 			ResultSummary: "Use the filters below, then run a search to browse matching artworks.",
 		},
@@ -91,6 +95,7 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 	//build filters
 	filters := buildFilters(c)
+	dualModeContext := getDualModeSearchContext(c)
 
 	filterString, filterParams := filters.BuildFilter()
 
@@ -126,7 +131,9 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	recordsCount := len(totalRecords)
 
 	content := dto.ArtworkSearchDTO{
-		HxTarget: "#artwork-search-results",
+		HxTarget:        "#artwork-search-results",
+		ClearUrl:        buildArtworkSearchClearPath(dualModeContext),
+		DualModeContext: dualModeContext,
 		Results: dto.ArtworkSearchResultDTO{
 			Artworks: dto.ImageGrid{},
 		},
@@ -137,6 +144,11 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 			ArtTypeString: filters.ArtTypeString,
 			ArtistString:  filters.ArtistString,
 		},
+	}
+
+	if dualModeContext != nil {
+		content.Results.DualModeUrls = map[string]string{}
+		content.Results.DualModeTarget = dualModeContext.Target
 	}
 
 	content.ArtFormOptions, _ = getArtFormOptions(app)
@@ -179,7 +191,7 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 			thumbURL = url.GenerateThumbUrl(constants.CollectionArtworks, v.GetString("id"), imageName, "320x240", "")
 		}
 
-		content.Results.Artworks = append(content.Results.Artworks, dto.Image{
+		artwork := dto.Image{
 			Url: url.GenerateFullArtworkUrl(url.ArtworkUrlDTO{
 				ArtistName:   artist.GetString("name"),
 				ArtistId:     artist.GetString("id"),
@@ -201,11 +213,17 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 				}),
 				Profession: artist.GetString("profession"),
 			},
-		})
+		}
+
+		content.Results.Artworks = append(content.Results.Artworks, artwork)
+
+		if dualModeContext != nil {
+			content.Results.DualModeUrls[artwork.Id] = buildDualModeArtworkURL(artwork.Url, dualModeContext)
+		}
 	}
 
-	pUrl := filters.BuildPath("/artworks")
-	pHtmxUrl := filters.BuildPath("/artworks/results")
+	pUrl := buildArtworkSearchPath("/artworks", filters, dualModeContext)
+	pHtmxUrl := buildArtworkSearchPath("/artworks/results", filters, dualModeContext)
 
 	pagination := utils.NewPagination(recordsCount, limit, page, pUrl, "artwork-search-results", pHtmxUrl)
 
@@ -231,6 +249,79 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	}
 
 	return c.HTML(http.StatusOK, buff.String())
+}
+
+func getDualModeSearchContext(c *core.RequestEvent) *dto.ArtworkSearchDualModeDto {
+	if c == nil || c.Request == nil || c.Request.URL == nil {
+		return nil
+	}
+
+	queryValues := c.Request.URL.Query()
+	target := strings.TrimSpace(queryValues.Get("dual_target"))
+	if target != "left" && target != "right" {
+		return nil
+	}
+
+	return &dto.ArtworkSearchDualModeDto{
+		LeftPath:      cmp.Or(strings.TrimSpace(queryValues.Get("dual_left")), "default"),
+		RightPath:     cmp.Or(strings.TrimSpace(queryValues.Get("dual_right")), "default"),
+		LeftRenderTo:  resolveDualModeSearchRenderTo("left", queryValues.Get("dual_left_render_to")),
+		RightRenderTo: resolveDualModeSearchRenderTo("right", queryValues.Get("dual_right_render_to")),
+		Target:        target,
+	}
+}
+
+func resolveDualModeSearchRenderTo(side string, renderTo string) string {
+	renderTo = strings.TrimSpace(renderTo)
+	if renderTo == "left" || renderTo == "right" {
+		return renderTo
+	}
+
+	if side == "left" {
+		return "right"
+	}
+
+	return "left"
+}
+
+func buildArtworkSearchClearPath(dualModeContext *dto.ArtworkSearchDualModeDto) string {
+	return buildArtworkSearchPath("/artworks", &filters{}, dualModeContext)
+}
+
+func buildArtworkSearchPath(basePath string, filters *filters, dualModeContext *dto.ArtworkSearchDualModeDto) string {
+	if dualModeContext == nil {
+		return filters.BuildPath(basePath)
+	}
+
+	queryValues := filters.queryValues()
+	queryValues.Set("dual_left", dualModeContext.LeftPath)
+	queryValues.Set("dual_right", dualModeContext.RightPath)
+	queryValues.Set("dual_left_render_to", dualModeContext.LeftRenderTo)
+	queryValues.Set("dual_right_render_to", dualModeContext.RightRenderTo)
+	queryValues.Set("dual_target", dualModeContext.Target)
+
+	return basePath + "?" + queryValues.Encode()
+}
+
+func buildDualModeArtworkURL(artworkURL string, dualModeContext *dto.ArtworkSearchDualModeDto) string {
+	dualModeURL := url.GenerateDualModeUrl()
+	queryValues := dualModeURL.Query()
+	leftPath := dualModeContext.LeftPath
+	rightPath := dualModeContext.RightPath
+
+	if dualModeContext.Target == "left" {
+		leftPath = artworkURL
+	} else {
+		rightPath = artworkURL
+	}
+
+	queryValues.Set("left", leftPath)
+	queryValues.Set("right", rightPath)
+	queryValues.Set("left_render_to", dualModeContext.LeftRenderTo)
+	queryValues.Set("right_render_to", dualModeContext.RightRenderTo)
+	dualModeURL.RawQuery = queryValues.Encode()
+
+	return dualModeURL.String()
 }
 
 func buildResultsSummary(recordsCount int, hasActiveFilters bool) string {

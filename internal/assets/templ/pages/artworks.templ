@@ -25,6 +25,13 @@ templ ArtworkSeachFilterBlock(b dto.ArtworkSearchDTO) {
 		method="GET"
 		class="flex flex-col gap-4 rounded-box border border-base-300 bg-base-100 p-4 shadow-sm"
 	>
+		if b.DualModeContext != nil {
+			<input type="hidden" name="dual_left" value={ b.DualModeContext.LeftPath }/>
+			<input type="hidden" name="dual_right" value={ b.DualModeContext.RightPath }/>
+			<input type="hidden" name="dual_left_render_to" value={ b.DualModeContext.LeftRenderTo }/>
+			<input type="hidden" name="dual_right_render_to" value={ b.DualModeContext.RightRenderTo }/>
+			<input type="hidden" name="dual_target" value={ b.DualModeContext.Target }/>
+		}
 		<div class="space-y-1">
 			<h2 class="text-lg font-semibold">Search the collection</h2>
 			<p class="text-sm text-base-content/70">Combine keywords and dropdown filters, then run a search when you are ready.</p>
@@ -98,7 +105,7 @@ templ ArtworkSeachFilterBlock(b dto.ArtworkSearchDTO) {
 		</label>
 		<div class="flex flex-wrap gap-2 pt-2">
 			<button type="submit" class="btn btn-primary">Search</button>
-			<a class="btn btn-ghost" href="/artworks" hx-get="/artworks" hx-target="#mc-area" hx-select="#mc-area" hx-swap="outerHTML">Clear</a>
+			<a class="btn btn-ghost" href={ b.ClearUrl } hx-get={ b.ClearUrl } hx-target="#mc-area" hx-select="#mc-area" hx-swap="outerHTML">Clear</a>
 		</div>
 		<div id="artwork-search-indicator" class="htmx-indicator rounded-box border border-base-300 bg-base-200/70 p-3 text-sm text-base-content/80">
 			Searching the collection...
@@ -140,7 +147,11 @@ templ ArtworkSearchResults(r dto.ArtworkSearchResultDTO) {
 			</div>
 		}
 		if len(r.Artworks) > 0 {
-			@components.ImageGridComponent(r.Artworks, true)
+			if r.DualModeTarget != "" {
+				@ArtworkSearchDualModeResultGrid(r.Artworks, r.DualModeUrls, r.DualModeTarget)
+			} else {
+				@components.ImageGridComponent(r.Artworks, true)
+			}
 		} else if !r.ActiveFiltering {
 			<div role="alert" class="alert alert-info">
 				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 rotate-90 md:rotate-0">
@@ -160,6 +171,23 @@ templ ArtworkSearchResults(r dto.ArtworkSearchResultDTO) {
 			<nav class="pagination box" role="navigation" aria-label="pagination">
 				@templ.Raw(r.Pagination)
 			</nav>
+		}
+	</div>
+}
+
+templ ArtworkSearchDualModeResultGrid(artworks dto.ImageGrid, dualModeUrls map[string]string, target string) {
+	<div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4" data-viewer>
+		for _, artwork := range artworks {
+			<div class="flex flex-col gap-2">
+				@components.ImageCard(artwork, true)
+				if dualModeUrls[artwork.Id] != "" {
+					<a
+						class="btn btn-outline"
+						href={ templ.SafeURL(dualModeUrls[artwork.Id]) }
+						aria-label={ "Open " + artwork.Title + " in " + target + " pane" }
+					>Open in { target } pane</a>
+				}
+			</div>
 		}
 	</div>
 }
