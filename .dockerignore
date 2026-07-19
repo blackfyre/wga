@@ -4,7 +4,7 @@
 **/wga_sitemap
 **/analytics.txt
 **/.env
-**/wga
+/wga
 
 # Go build related files
 **/dist
