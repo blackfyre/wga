@@ -42,7 +42,6 @@ type wgaWindow = {
 	};
 	dual: {
 		openLookup: (side: string) => void;
-		setPaneTarget: (side: string, openInOtherPane: boolean) => void;
 	};
 	window: {
 		historyBack: () => void;
@@ -166,14 +165,6 @@ const deepMerge = (target: object, source: object): object => {
 	return target;
 };
 
-const paneToTarget = (side: string): string => {
-	if (side === "left") {
-		return "right";
-	}
-
-	return "left";
-};
-
 const normalizeDualPathInput = (value: string): string | null => {
 	const normalizedValue = value.trim();
 
@@ -230,13 +221,6 @@ const updateDualMode = (mutateUrl: (url: URL) => void) => {
 const setDualPane = (side: string, value: string) => {
 	updateDualMode((nextUrl) => {
 		nextUrl.searchParams.set(side, value);
-	});
-};
-
-const updatePaneTarget = (side: string, openInOtherPane: boolean) => {
-	updateDualMode((nextUrl) => {
-		const target = openInOtherPane ? paneToTarget(side) : side;
-		nextUrl.searchParams.set(`${side}_render_to`, target);
 	});
 };
 
@@ -865,9 +849,6 @@ window.wga = {
 			modal.setAttribute("data-side", side);
 			wgaInternal.func.artistSearchModal();
 			modal.showModal();
-		},
-		setPaneTarget(side: string, openInOtherPane: boolean) {
-			updatePaneTarget(side, openInOtherPane);
 		},
 	},
 	window: {
