@@ -71,6 +71,7 @@ The legacy page recommends a 1024 × 768 display. The modern view activates at 7
 #### Item: Direct selection and pane operations
 
 - [x] Add progressive canonical-path forms for either pane. **Verified by:** Go URL-state coverage and JavaScript-enabled and JavaScript-disabled Playwright journeys.
+- [x] Add progressive link-target controls for either pane. **Verified by:** Go URL-state coverage and JavaScript-enabled and JavaScript-disabled Playwright journeys.
 - [ ] Add searchable artist and artwork selection for either pane. **Done when:** a visitor can select either content type without manually constructing a path.
 - [x] Add copy, reverse, and clear controls. **Verified by:** the operation-link Go and Playwright coverage, including URL state and fallback navigation.
 - [x] Add an explicit Standard view action. **Verified by:** the operation-link Playwright journey.
