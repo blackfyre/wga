@@ -180,7 +180,7 @@ func newDualLookupTestApp(t *testing.T) *tests.TestApp {
 		&core.RelationField{
 			Name:         "author",
 			CollectionId: artists.Id,
-			MaxSelect:    1,
+			MaxSelect:    2,
 		},
 	)
 	if err := app.Save(artworks); err != nil {
