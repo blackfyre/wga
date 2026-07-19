@@ -5,7 +5,7 @@ import (
 	"github.com/blackfyre/wga/internal/assets/templ/layouts"
 )
 
-templ DualPage(c dto.DualViewDto) {
+templ DualPage(c dto.DualViewDto, forms dto.DualPaneLoadFormsDto) {
 	@layouts.LayoutBase("", "#dual-area") {
 		<div class="p-4 md:hidden">
 			<div role="alert" class="alert alert-warning">
@@ -32,7 +32,7 @@ templ DualPage(c dto.DualViewDto) {
 			<div id="right" class="w-full overflow-y-auto py-10 pl-5 pr-10">
 				@templ.Raw(c.Right)
 			</div>
-			@DualNav(c)
+			@DualNav(c, forms)
 		</main>
 	}
 }
@@ -74,7 +74,7 @@ templ DualPaneDefault(side string) {
 	</div>
 }
 
-templ DualNav(c dto.DualViewDto) {
+templ DualNav(c dto.DualViewDto, forms dto.DualPaneLoadFormsDto) {
 	<div id="dual-nav" class="col-span-2 row-start-2 border-t border-base-300 bg-base-100/95 px-6 py-4 backdrop-blur">
 		<div class="flex flex-wrap items-center justify-between gap-4">
 			<nav class="flex items-center gap-2" aria-label="Left pane controls">
@@ -112,6 +112,10 @@ templ DualNav(c dto.DualViewDto) {
 			<a class="btn btn-sm" href={ c.ClearRightUrl } hx-get={ c.ClearRightUrl } hx-target="#dual-area" hx-select="#dual-area" hx-swap="outerHTML">Clear right</a>
 			<a class="btn btn-sm" href="/">Standard view</a>
 		</nav>
+		<section class="mt-3 grid gap-3 md:grid-cols-2" aria-label="Load pane paths">
+			@DualPanePathForm("left", forms.Left)
+			@DualPanePathForm("right", forms.Right)
+		</section>
 	</div>
 	<dialog id="artist_lookup" class="modal">
 		<div class="modal-box">
@@ -123,4 +127,39 @@ templ DualNav(c dto.DualViewDto) {
 		</form>
 	</dialog>
 	@templ.JSONScript("artistList", c.ArtistNameList)
+}
+
+templ DualPanePathForm(side string, form dto.DualPaneLoadFormDto) {
+	<form
+		action="/dual-mode"
+		aria-label={ "Load " + side + " pane" }
+		class="flex flex-col gap-2 rounded-box border border-base-300 p-3"
+		hx-get="/dual-mode"
+		hx-push-url="true"
+		hx-select="#dual-area"
+		hx-swap="outerHTML"
+		hx-target="#dual-area"
+		method="GET"
+	>
+		<label class="form-control w-full" for={ side + "-pane-path" }>
+			<span class="label-text text-sm">Load { side } pane path</span>
+			<input
+				class="input input-bordered w-full"
+				id={ side + "-pane-path" }
+				name={ side }
+				placeholder="/artists/... or /artworks/..."
+				spellcheck="false"
+				type="text"
+				value={ form.Path }
+			/>
+		</label>
+		if side == "left" {
+			<input type="hidden" name="right" value={ form.OtherPath }/>
+		} else {
+			<input type="hidden" name="left" value={ form.OtherPath }/>
+		}
+		<input type="hidden" name="left_render_to" value={ form.LeftRenderTo }/>
+		<input type="hidden" name="right_render_to" value={ form.RightRenderTo }/>
+		<button type="submit" class="btn btn-sm">Load { side }</button>
+	</form>
 }

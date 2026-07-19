@@ -1,19 +1,32 @@
 import { expect, test } from "@playwright/test";
 
 const aachenPath = "/artists/aachen-hans-von-139ac2dff50d65c";
+const aachenArtworkPath =
+	"/artists/aachen-hans-von-139ac2dff50d65c/a-couple-in-a-tavern-4035847eedfacc4";
 const koedijckPath = "/artists/koedijck-isaack-3ed9e200b9e8252";
 
-const dualModeURL = (left: string, right: string) =>
-	`/dual-mode?left=${encodeURIComponent(left)}&right=${encodeURIComponent(right)}&left_render_to=right&right_render_to=left`;
+const dualModeURL = (
+	left: string,
+	right: string,
+	leftRenderTo = "right",
+	rightRenderTo = "left",
+) =>
+	`/dual-mode?left=${encodeURIComponent(left)}&right=${encodeURIComponent(right)}&left_render_to=${leftRenderTo}&right_render_to=${rightRenderTo}`;
 
-const expectDualModeState = async (page, left: string, right: string) => {
+const expectDualModeState = async (
+	page,
+	left: string,
+	right: string,
+	leftRenderTo = "right",
+	rightRenderTo = "left",
+) => {
 	await expect(page).toHaveURL(
 		(url) =>
 			url.pathname === "/dual-mode" &&
 			url.searchParams.get("left") === left &&
 			url.searchParams.get("right") === right &&
-			url.searchParams.get("left_render_to") === "right" &&
-			url.searchParams.get("right_render_to") === "left",
+			url.searchParams.get("left_render_to") === leftRenderTo &&
+			url.searchParams.get("right_render_to") === rightRenderTo,
 	);
 };
 
@@ -159,6 +172,62 @@ test("updates pane state through enhanced operation links", async ({
 	await expect(page).toHaveURL(/\/$/);
 });
 
+test("loads pane paths through enhanced forms", async ({ page }) => {
+	const leftForm = page.getByRole("form", { name: "Load left pane" });
+	const rightForm = page.getByRole("form", { name: "Load right pane" });
+
+	await page.goto(dualModeURL(aachenPath, koedijckPath));
+	await expect(leftForm.getByLabel("Load left pane path")).toHaveValue(
+		aachenPath,
+	);
+	const leftResponse = page.waitForResponse(
+		(response) =>
+			response.url().includes("/dual-mode") &&
+			response.request().headers()["hx-request"] === "true",
+	);
+	await leftForm.getByLabel("Load left pane path").fill(koedijckPath);
+	await leftForm
+		.getByRole("button", { name: "Load left", exact: true })
+		.click();
+	await leftResponse;
+	await expectDualModeState(page, koedijckPath, koedijckPath);
+	await expect(page.locator("#left h1")).toContainText("KOEDIJCK, Isaack");
+
+	await page.goto(dualModeURL(aachenPath, koedijckPath, "left", "right"));
+	await rightForm.getByLabel("Load right pane path").fill(aachenPath);
+	await rightForm
+		.getByRole("button", { name: "Load right", exact: true })
+		.click();
+	await expectDualModeState(page, aachenPath, aachenPath, "left", "right");
+	await expect(page.locator("#right h1")).toContainText("AACHEN, Hans von");
+
+	await page.goto(dualModeURL(aachenPath, koedijckPath, "left", "right"));
+	await leftForm.getByLabel("Load left pane path").fill(aachenArtworkPath);
+	await leftForm
+		.getByRole("button", { name: "Load left", exact: true })
+		.click();
+	await expectDualModeState(
+		page,
+		aachenArtworkPath,
+		koedijckPath,
+		"left",
+		"right",
+	);
+	await expect(page.locator("#left h1")).toContainText("A Couple in a Tavern");
+
+	await page.goto(dualModeURL(aachenPath, koedijckPath));
+	await leftForm
+		.getByLabel("Load left pane path")
+		.fill("/pages/privacy-policy");
+	await leftForm
+		.getByRole("button", { name: "Load left", exact: true })
+		.click();
+	await expectDualModeState(page, "default", koedijckPath);
+	await expect(page.locator("#left")).toContainText(
+		"Choose content for comparison",
+	);
+});
+
 test.describe("Dual Mode operations without JavaScript", () => {
 	test.use({ javaScriptEnabled: false });
 
@@ -172,5 +241,33 @@ test.describe("Dual Mode operations without JavaScript", () => {
 		await expectDualModeState(page, koedijckPath, aachenPath);
 		await expect(page.locator("#left h1")).toContainText("KOEDIJCK, Isaack");
 		await expect(page.locator("#right h1")).toContainText("AACHEN, Hans von");
+	});
+
+	test("loads a right pane path through a standard GET form", async ({
+		page,
+	}) => {
+		await page.goto(dualModeURL(aachenPath, koedijckPath));
+		const rightForm = page.getByRole("form", { name: "Load right pane" });
+		await rightForm.getByLabel("Load right pane path").fill(aachenPath);
+		await rightForm
+			.getByRole("button", { name: "Load right", exact: true })
+			.click();
+
+		await expectDualModeState(page, aachenPath, aachenPath);
+		await expect(page.locator("#right h1")).toContainText("AACHEN, Hans von");
+	});
+
+	test("loads a left pane path through a standard GET form", async ({
+		page,
+	}) => {
+		await page.goto(dualModeURL(aachenPath, koedijckPath));
+		const leftForm = page.getByRole("form", { name: "Load left pane" });
+		await leftForm.getByLabel("Load left pane path").fill(koedijckPath);
+		await leftForm
+			.getByRole("button", { name: "Load left", exact: true })
+			.click();
+
+		await expectDualModeState(page, koedijckPath, koedijckPath);
+		await expect(page.locator("#left h1")).toContainText("KOEDIJCK, Isaack");
 	});
 });
