@@ -67,6 +67,8 @@ func renderDualModePage(app *pocketbase.PocketBase, c *core.RequestEvent) error 
 	contentDto.Right = rightPane.Content
 	contentDto.LeftLinksOpenInOtherPane = leftPane.RenderTo == reverseSide(leftPane.Side)
 	contentDto.RightLinksOpenInOtherPane = rightPane.RenderTo == reverseSide(rightPane.Side)
+	contentDto.ArtworkSearchLeftUrl = buildDualArtworkSearchURL(leftPane, rightPane, "left")
+	contentDto.ArtworkSearchRightUrl = buildDualArtworkSearchURL(leftPane, rightPane, "right")
 	contentDto.CopyLeftToRightUrl = buildDualModeActionURL(leftPane, rightPane, "copy-left-to-right")
 	contentDto.CopyRightToLeftUrl = buildDualModeActionURL(leftPane, rightPane, "copy-right-to-left")
 	contentDto.ReverseUrl = buildDualModeActionURL(leftPane, rightPane, "reverse")
@@ -319,6 +321,20 @@ func buildDualModeActionURL(leftPane renderPaneDto, rightPane renderPaneDto, act
 	}
 
 	return buildDualModeURL(leftPath, rightPath, leftPane.RenderTo, rightPane.RenderTo)
+}
+
+func buildDualArtworkSearchURL(leftPane renderPaneDto, rightPane renderPaneDto, target string) string {
+	searchURL := url.GenerateDualModeUrl()
+	searchURL.Path = "/artworks"
+	queryValues := searchURL.Query()
+	queryValues.Set("dual_left", leftPane.RelPath)
+	queryValues.Set("dual_right", rightPane.RelPath)
+	queryValues.Set("dual_left_render_to", leftPane.RenderTo)
+	queryValues.Set("dual_right_render_to", rightPane.RenderTo)
+	queryValues.Set("dual_target", target)
+	searchURL.RawQuery = queryValues.Encode()
+
+	return searchURL.String()
 }
 
 func buildDualPaneLoadForms(leftPane renderPaneDto, rightPane renderPaneDto) dto.DualPaneLoadFormsDto {
