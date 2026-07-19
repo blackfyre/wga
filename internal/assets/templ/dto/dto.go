@@ -65,22 +65,29 @@ type ArtworkSearchResultDTO struct {
 	HxTarget        string
 }
 
-type ArtistNameListEntry struct {
-	Url   string `json:"url"`
-	Label string `json:"label"`
-}
-
 type DualViewDto struct {
 	Left                      string
 	Right                     string
 	LeftLinksOpenInOtherPane  bool
 	RightLinksOpenInOtherPane bool
-	ArtistNameList            []ArtistNameListEntry
 	CopyLeftToRightUrl        string
 	CopyRightToLeftUrl        string
 	ReverseUrl                string
 	ClearLeftUrl              string
 	ClearRightUrl             string
+}
+
+type DualLookupResultDto struct {
+	Url     string
+	Label   string
+	Context string
+}
+
+type DualLookupResultsDto struct {
+	Kind          string
+	Query         string
+	QueryTooShort bool
+	Results       []DualLookupResultDto
 }
 
 type DualPaneLoadFormDto struct {
