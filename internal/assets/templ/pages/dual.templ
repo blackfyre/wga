@@ -104,14 +104,14 @@ templ DualNav(c dto.DualViewDto) {
 				</label>
 			</nav>
 		</div>
-		<div class="mt-3 flex flex-wrap items-center gap-2" aria-label="Pane operations">
+		<nav class="mt-3 flex flex-wrap items-center gap-2" aria-label="Pane operations">
 			<a class="btn btn-sm" href={ c.CopyLeftToRightUrl } hx-get={ c.CopyLeftToRightUrl } hx-target="#dual-area" hx-select="#dual-area" hx-swap="outerHTML">Copy left to right</a>
 			<a class="btn btn-sm" href={ c.CopyRightToLeftUrl } hx-get={ c.CopyRightToLeftUrl } hx-target="#dual-area" hx-select="#dual-area" hx-swap="outerHTML">Copy right to left</a>
 			<a class="btn btn-sm" href={ c.ReverseUrl } hx-get={ c.ReverseUrl } hx-target="#dual-area" hx-select="#dual-area" hx-swap="outerHTML">Reverse panes</a>
 			<a class="btn btn-sm" href={ c.ClearLeftUrl } hx-get={ c.ClearLeftUrl } hx-target="#dual-area" hx-select="#dual-area" hx-swap="outerHTML">Clear left</a>
 			<a class="btn btn-sm" href={ c.ClearRightUrl } hx-get={ c.ClearRightUrl } hx-target="#dual-area" hx-select="#dual-area" hx-swap="outerHTML">Clear right</a>
 			<a class="btn btn-sm" href="/">Standard view</a>
-		</div>
+		</nav>
 	</div>
 	<dialog id="artist_lookup" class="modal">
 		<div class="modal-box">
