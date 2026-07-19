@@ -68,7 +68,7 @@ type wgaInternals = {
 		cloner: () => void;
 		viewer: () => void;
 		toast: (message: string, type: ToastEvent["detail"]["type"]) => void;
-		artistSearchModal: () => void;
+		dualLookupModal: () => void;
 		glossary: () => void;
 		init: () => void;
 	};
@@ -346,6 +346,125 @@ const maybeInitStatisticsCharts = async () => {
 	}
 };
 
+const dualLookupFailureContent =
+	'<p class="p-4 text-sm text-base-content/70">Unable to load lookup results.</p>';
+
+const requestDualLookupResults = async (
+	kind: string,
+	query: string,
+	signal: AbortSignal,
+) => {
+	try {
+		const parameters = new URLSearchParams({ kind, q: query });
+		const response = await fetch(`/dual-mode/lookup?${parameters}`, { signal });
+		if (!response.ok) {
+			return null;
+		}
+
+		return response.text();
+	} catch {
+		return null;
+	}
+};
+
+const bindDualLookupSearch = (
+	kindInput: HTMLSelectElement,
+	queryInput: HTMLInputElement,
+	results: HTMLElement,
+) => {
+	let lookupRequest: AbortController | null = null;
+	let lookupTimeout: number | undefined;
+	let lookupVersion = 0;
+
+	const loadResults = async (version: number) => {
+		const request = new AbortController();
+		lookupRequest = request;
+
+		const content = await requestDualLookupResults(
+			kindInput.value,
+			queryInput.value,
+			request.signal,
+		);
+		if (version !== lookupVersion) {
+			return;
+		}
+
+		if (content === null) {
+			results.innerHTML = dualLookupFailureContent;
+			return;
+		}
+
+		results.innerHTML = content;
+	};
+
+	const cancelLookup = () => {
+		lookupVersion += 1;
+		lookupRequest?.abort();
+
+		if (lookupTimeout !== undefined) {
+			window.clearTimeout(lookupTimeout);
+		}
+	};
+
+	const scheduleLookup = () => {
+		cancelLookup();
+		const version = lookupVersion;
+		lookupTimeout = window.setTimeout(() => {
+			void loadResults(version);
+		}, 250);
+	};
+
+	kindInput.addEventListener("change", scheduleLookup);
+	queryInput.addEventListener("input", scheduleLookup);
+	queryInput.addEventListener("search", scheduleLookup);
+
+	return cancelLookup;
+};
+
+const bindDualLookupPathForm = (
+	modal: HTMLDialogElement,
+	pathForm: HTMLFormElement,
+	pathInput: HTMLInputElement,
+	cancelLookup: () => void,
+) => {
+	pathForm.addEventListener("submit", (event) => {
+		event.preventDefault();
+
+		const normalizedPath = normalizeDualPathInput(pathInput.value);
+		if (!normalizedPath) {
+			wgaInternal.func.toast(
+				"Use a canonical /artists/... or /artworks/... path.",
+				"warning",
+			);
+			return;
+		}
+
+		cancelLookup();
+		setDualPane(modal.dataset.side || "left", normalizedPath);
+		modal.close();
+	});
+};
+
+const bindDualLookupResultSelection = (
+	modal: HTMLDialogElement,
+	cancelLookup: () => void,
+) => {
+	modal.addEventListener("click", (event) => {
+		if (!(event.target instanceof Element)) {
+			return;
+		}
+
+		const result = event.target.closest<HTMLElement>("[data-dual-lookup-path]");
+		if (!result?.dataset.dualLookupPath) {
+			return;
+		}
+
+		cancelLookup();
+		setDualPane(modal.dataset.side || "left", result.dataset.dualLookupPath);
+		modal.close();
+	});
+};
+
 const wgaInternal: wgaInternals = {
 	els: {
 		dialog: null,
@@ -379,7 +498,7 @@ const wgaInternal: wgaInternals = {
 			document.body.addEventListener("htmx:load", () => {
 				wgaInternal.func.viewer();
 				wgaInternal.func.cloner();
-				wgaInternal.func.artistSearchModal();
+				wgaInternal.func.dualLookupModal();
 				wgaInternal.func.glossary();
 				void maybeInitStatisticsCharts();
 			});
@@ -670,120 +789,36 @@ const wgaInternal: wgaInternals = {
 				});
 			}
 		},
-		artistSearchModal() {
-			const artistSearchModal = document.getElementById("artist_lookup");
-
-			if (!artistSearchModal) {
+		dualLookupModal() {
+			const modal = document.getElementById(
+				"artist_lookup",
+			) as HTMLDialogElement | null;
+			if (!modal || modal.dataset.lookupBound === "true") {
 				return;
 			}
 
-			//find .modal-box in the modal
-			const modalBox = artistSearchModal.querySelector(".modal-box");
+			const kindInput = document.getElementById(
+				"dual-lookup-kind",
+			) as HTMLSelectElement;
+			const queryInput = document.getElementById(
+				"dual-lookup-query",
+			) as HTMLInputElement;
+			const results = document.getElementById(
+				"dual-lookup-results",
+			) as HTMLElement;
+			const pathForm = document.getElementById(
+				"dual-lookup-path-form",
+			) as HTMLFormElement;
+			const pathInput = document.getElementById(
+				"dual-lookup-path",
+			) as HTMLInputElement;
 
-			if (!modalBox) {
-				logger.error("Modal box not found");
-				return;
-			}
+			const cancelLookup = bindDualLookupSearch(kindInput, queryInput, results);
+			bindDualLookupPathForm(modal, pathForm, pathInput, cancelLookup);
+			bindDualLookupResultSelection(modal, cancelLookup);
+			modal.addEventListener("close", cancelLookup);
 
-			// get the contents of #artistList and parse it as json
-			const artistList = document.getElementById("artistList");
-			if (!artistList) {
-				logger.error("Artist list not found");
-				return;
-			}
-
-			const artists = JSON.parse(artistList.innerHTML);
-
-			const side = artistSearchModal.getAttribute("data-side") || "left";
-
-			const searchInput = document.createElement("input");
-			searchInput.type = "search";
-			searchInput.placeholder = "Filter artists";
-			searchInput.className = "input input-bordered w-full";
-
-			const pathInput = document.createElement("input");
-			pathInput.type = "text";
-			pathInput.placeholder = "/artists/... or /artworks/...";
-			pathInput.className = "input input-bordered w-full";
-
-			const pathButton = document.createElement("button");
-			pathButton.type = "button";
-			pathButton.className = "btn btn-secondary btn-sm";
-			pathButton.textContent = `Load ${side} pane`;
-
-			const resultList = document.createElement("div");
-			resultList.className =
-				"mt-4 max-h-80 overflow-y-auto rounded-box border border-base-300";
-
-			const renderArtistButtons = (filterValue: string) => {
-				resultList.innerHTML = "";
-
-				const filteredArtists = artists.filter(
-					(artist: { label: string; url: string }) =>
-						artist.label.toLowerCase().includes(filterValue.toLowerCase()),
-				);
-
-				if (filteredArtists.length === 0) {
-					const emptyState = document.createElement("p");
-					emptyState.className = "p-4 text-sm text-base-content/70";
-					emptyState.textContent = "No artists match that filter.";
-					resultList.appendChild(emptyState);
-					return;
-				}
-
-				for (const artist of filteredArtists) {
-					const button = document.createElement("button");
-					button.type = "button";
-					button.className =
-						"btn btn-ghost h-auto w-full justify-start rounded-none px-4 py-3 text-left";
-					button.textContent = artist.label;
-					button.addEventListener("click", () => {
-						setDualPane(side, artist.url);
-						(artistSearchModal as HTMLDialogElement).close();
-					});
-					resultList.appendChild(button);
-				}
-			};
-
-			searchInput.addEventListener("input", () => {
-				renderArtistButtons(searchInput.value);
-			});
-
-			pathButton.addEventListener("click", () => {
-				const normalizedPath = normalizeDualPathInput(pathInput.value);
-
-				if (!normalizedPath) {
-					wgaInternal.func.toast(
-						"Use a canonical /artists/... or /artworks/... path.",
-						"warning",
-					);
-					return;
-				}
-
-				setDualPane(side, normalizedPath);
-				(artistSearchModal as HTMLDialogElement).close();
-			});
-
-			// replace the contents of the dialog with the table
-			modalBox.innerHTML = "";
-
-			const modalTitle = document.createElement("h2");
-			modalTitle.className = "mb-2 text-xl font-semibold";
-			modalTitle.textContent = `Load ${side} pane`;
-			const modalText = document.createElement("p");
-			modalText.className = "mb-4 text-sm text-base-content/70";
-			modalText.textContent =
-				"Pick an artist from the list or paste a canonical artist or artwork path.";
-			modalBox.appendChild(modalTitle);
-			modalBox.appendChild(modalText);
-			modalBox.appendChild(searchInput);
-			modalBox.appendChild(document.createElement("div")).className = "h-3";
-			modalBox.appendChild(pathInput);
-			modalBox.appendChild(document.createElement("div")).className = "h-3";
-			modalBox.appendChild(pathButton);
-			modalBox.appendChild(resultList);
-
-			renderArtistButtons("");
+			modal.dataset.lookupBound = "true";
 		},
 	},
 
@@ -847,8 +882,20 @@ window.wga = {
 			}
 
 			modal.setAttribute("data-side", side);
-			wgaInternal.func.artistSearchModal();
+			const title = document.getElementById("dual-lookup-title");
+			const pathSubmit = document.getElementById("dual-lookup-path-submit");
+
+			if (title) {
+				title.textContent = `Load ${side} pane`;
+			}
+
+			if (pathSubmit) {
+				pathSubmit.textContent = `Load ${side} pane`;
+			}
+
+			wgaInternal.func.dualLookupModal();
 			modal.showModal();
+			document.getElementById("dual-lookup-query")?.focus();
 		},
 	},
 	window: {

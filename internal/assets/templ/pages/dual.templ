@@ -46,9 +46,9 @@ templ DualPaneDefault(side string) {
 					<h2 class="text-2xl font-semibold">Choose content for comparison</h2>
 				</div>
 				if side == "left" {
-					<button type="button" class="btn btn-primary btn-sm" onclick="window.wga.dual.openLookup('left')">Browse artists</button>
+					<button type="button" class="btn btn-primary btn-sm" onclick="window.wga.dual.openLookup('left')">Browse collection</button>
 				} else {
-					<button type="button" class="btn btn-primary btn-sm" onclick="window.wga.dual.openLookup('right')">Browse artists</button>
+					<button type="button" class="btn btn-primary btn-sm" onclick="window.wga.dual.openLookup('right')">Browse collection</button>
 				}
 			</div>
 			<p class="mb-4 text-base-content/80">Load an artist page or an artwork page into this pane. Use the bottom controls to choose whether its links replace this pane or open in the other pane.</p>
@@ -64,7 +64,7 @@ templ DualPaneDefault(side string) {
 				<div class="rounded-box bg-base-200 p-4">
 					<h3 class="mb-2 font-medium">Start browsing</h3>
 					<ul class="list-inside list-disc space-y-1 text-sm text-base-content/80">
-						<li>Choose an artist from the bottom bar</li>
+						<li>Choose an artist or artwork from the bottom bar</li>
 						<li>Paste a canonical artist or artwork path</li>
 						<li>Set where links open for each pane</li>
 					</ul>
@@ -99,16 +99,82 @@ templ DualNav(c dto.DualViewDto, forms dto.DualPaneLoadFormsDto, targets dto.Dua
 			@DualPanePathForm("right", forms.Right)
 		</section>
 	</div>
-	<dialog id="artist_lookup" class="modal">
+	<dialog id="artist_lookup" class="modal" aria-labelledby="dual-lookup-title">
 		<div class="modal-box">
-			<h3 class="text-lg font-bold">Load pane</h3>
-			<p class="py-4">Choose an artist or paste a canonical path.</p>
+			<h3 id="dual-lookup-title" class="text-lg font-bold">Load pane</h3>
+			<p class="py-4">Search published artists or artworks, or paste a canonical path.</p>
+			<div id="dual-lookup-form" class="grid gap-3">
+				<label class="form-control w-full" for="dual-lookup-kind">
+					<span class="label-text text-sm">Search for</span>
+					<select
+						class="select select-bordered w-full"
+						id="dual-lookup-kind"
+						name="kind"
+					>
+						<option value="artist">Artists</option>
+						<option value="artwork">Artworks</option>
+					</select>
+				</label>
+				<label class="form-control w-full" for="dual-lookup-query">
+					<span class="label-text text-sm">Search collection</span>
+					<input
+						autocomplete="off"
+						class="input input-bordered w-full"
+						id="dual-lookup-query"
+						name="q"
+						placeholder="Type at least two characters"
+						type="search"
+					/>
+				</label>
+			</div>
+			@DualLookupResults(dto.DualLookupResultsDto{Kind: "artist"})
+			<form id="dual-lookup-path-form" method="dialog" class="mt-4 grid gap-3 border-t border-base-300 pt-4">
+				<label class="form-control w-full" for="dual-lookup-path">
+					<span class="label-text text-sm">Canonical path</span>
+					<input
+						class="input input-bordered w-full"
+						id="dual-lookup-path"
+						placeholder="/artists/... or /artworks/..."
+						type="text"
+					/>
+				</label>
+				<button id="dual-lookup-path-submit" type="submit" class="btn btn-secondary btn-sm">Load pane</button>
+			</form>
 		</div>
 		<form method="dialog" class="modal-backdrop">
 			<button>close</button>
 		</form>
 	</dialog>
-	@templ.JSONScript("artistList", c.ArtistNameList)
+}
+
+templ DualLookupResults(c dto.DualLookupResultsDto) {
+	<div id="dual-lookup-results" class="mt-4 max-h-80 overflow-y-auto rounded-box border border-base-300" aria-live="polite">
+		@DualLookupResultContent(c)
+	</div>
+}
+
+templ DualLookupResultContent(c dto.DualLookupResultsDto) {
+	if c.Query == "" {
+		<p class="p-4 text-sm text-base-content/70">Start typing to search { c.Kind }s.</p>
+	} else if c.QueryTooShort {
+		<p class="p-4 text-sm text-base-content/70">Enter at least two characters to search.</p>
+	} else if len(c.Results) == 0 {
+		<p class="p-4 text-sm text-base-content/70">No { c.Kind }s match “{ c.Query }”.</p>
+	} else {
+		for _, result := range c.Results {
+			<button
+				type="button"
+				class="btn btn-ghost h-auto w-full justify-start rounded-none px-4 py-3 text-left"
+				data-dual-lookup-path={ result.Url }
+				data-dual-lookup-result
+			>
+				<span>{ result.Label }</span>
+				if result.Context != "" {
+					<span class="ml-2 text-sm font-normal text-base-content/70">{ result.Context }</span>
+				}
+			</button>
+		}
+	}
 }
 
 templ DualPaneTargetControls(side string, otherPaneActive bool, samePaneUrl string, otherPaneUrl string) {

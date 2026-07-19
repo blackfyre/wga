@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { type Route, expect, test } from "@playwright/test";
 
 const aachenPath = "/artists/aachen-hans-von-139ac2dff50d65c";
 const aachenArtworkPath =
@@ -49,9 +49,14 @@ test("loads an artist through the chooser and opens its artwork in the other pan
 			name: "Other pane",
 		}),
 	).toHaveAttribute("aria-current", "true");
+	await expect(page.locator("#artistList")).toHaveCount(0);
 
 	await page.getByRole("button", { name: "Choose left" }).click();
-	await page.getByPlaceholder("Filter artists").fill("AACHEN");
+	const lookupResponse = page.waitForResponse((response) =>
+		response.url().includes("/dual-mode/lookup"),
+	);
+	await page.getByLabel("Search collection").fill("AACHEN");
+	await lookupResponse;
 	await page
 		.getByRole("button", { name: "AACHEN, Hans von", exact: true })
 		.click();
@@ -69,6 +74,91 @@ test("loads an artist through the chooser and opens its artwork in the other pan
 	await expect(page.locator("#left h1")).toContainText("AACHEN, Hans von");
 	await expect(page.locator("#right")).not.toContainText(
 		"Choose content for comparison",
+	);
+});
+
+test("loads an artwork through the chooser and preserves Dual Mode state", async ({
+	page,
+}) => {
+	await page.goto(dualModeURL(aachenPath, "default", "left", "right"));
+	await page.getByRole("button", { name: "Choose right" }).click();
+	await page.getByLabel("Search for").selectOption("artwork");
+
+	const lookupResponse = page.waitForResponse((response) =>
+		response.url().includes("/dual-mode/lookup"),
+	);
+	await page.getByLabel("Search collection").fill("A Couple");
+	await lookupResponse;
+
+	const artworkResult = page.getByRole("button", {
+		name: /A Couple in a Tavern/,
+	});
+	await expect(artworkResult).toContainText("AACHEN, Hans von");
+	await artworkResult.click();
+
+	await expectDualModeState(
+		page,
+		aachenPath,
+		aachenArtworkPath,
+		"left",
+		"right",
+	);
+	await expect(page.locator("#right h1")).toContainText("A Couple in a Tavern");
+});
+
+test("shows accessible lookup query states", async ({ page }) => {
+	await page.goto("/dual-mode");
+	await page.getByRole("button", { name: "Choose left" }).click();
+
+	const results = page.locator("#dual-lookup-results");
+	await expect(results).toContainText("Start typing to search artists.");
+
+	const shortQueryResponse = page.waitForResponse((response) =>
+		response.url().includes("/dual-mode/lookup"),
+	);
+	await page.getByLabel("Search collection").fill("a");
+	await shortQueryResponse;
+	await expect(results).toContainText(
+		"Enter at least two characters to search.",
+	);
+
+	const noResultResponse = page.waitForResponse((response) =>
+		response.url().includes("/dual-mode/lookup"),
+	);
+	await page.getByLabel("Search collection").fill("wga-no-match");
+	await noResultResponse;
+	await expect(results).toContainText("No artists match");
+});
+
+test("cancels an active lookup when the chooser closes", async ({ page }) => {
+	let delayedRoute: Route | null = null;
+	await page.route("**/dual-mode/lookup**", (route) => {
+		delayedRoute = route;
+	});
+
+	await page.goto("/dual-mode");
+	await page.getByRole("button", { name: "Choose left" }).click();
+
+	const lookupRequest = page.waitForRequest((request) =>
+		request.url().includes("/dual-mode/lookup"),
+	);
+	await page.getByLabel("Search collection").fill("AACHEN");
+	await lookupRequest;
+	await expect.poll(() => delayedRoute).not.toBeNull();
+	await page.keyboard.press("Escape");
+
+	if (!delayedRoute) {
+		throw new Error("Expected delayed lookup route");
+	}
+
+	await delayedRoute.fulfill({
+		body: "<p>Delayed lookup result</p>",
+		contentType: "text/html",
+	});
+	await page.waitForTimeout(100);
+
+	await expect(page.locator("#dual-lookup-results")).toContainText(
+		"Start typing to search artists.",
 	);
 });
 

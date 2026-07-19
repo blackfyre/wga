@@ -1,6 +1,9 @@
 package dual
 
 import (
+	"bytes"
+	"context"
+	"fmt"
 	"net/http/httptest"
 	"net/url"
 	"reflect"
@@ -8,43 +11,224 @@ import (
 	"testing"
 
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
+	"github.com/blackfyre/wga/internal/assets/templ/pages"
+	"github.com/blackfyre/wga/internal/constants"
 	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/tests"
 )
 
-func TestFormatArtistNameList(t *testing.T) {
+func TestGetDualLookupResultsRequiresTwoRunes(t *testing.T) {
+	content, err := getDualLookupResults(nil, "artwork", " é ")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if content.Kind != "artwork" || content.Query != "é" || !content.QueryTooShort {
+		t.Fatalf("unexpected short lookup result: %#v", content)
+	}
+}
+
+func TestGetArtistLookupResultsIsBounded(t *testing.T) {
+	app := newDualLookupTestApp(t)
+
+	for index := range dualLookupLimit + 1 {
+		saveLookupArtist(t, app, fmt.Sprintf("Artist Lookup %02d", index), true)
+	}
+	saveLookupArtist(t, app, "Artist Lookup hidden", false)
+
+	content, err := getDualLookupResults(app, "artist", "lookup")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(content.Results) != dualLookupLimit {
+		t.Fatalf("expected %d results, got %d", dualLookupLimit, len(content.Results))
+	}
+
+	for index, result := range content.Results {
+		wantLabel := fmt.Sprintf("Artist Lookup %02d", index)
+		if result.Label != wantLabel {
+			t.Fatalf("expected result %d to be %q, got %q", index, wantLabel, result.Label)
+		}
+		if !strings.HasPrefix(result.Url, "/artists/") {
+			t.Fatalf("expected canonical artist URL, got %q", result.Url)
+		}
+	}
+}
+
+func TestGetArtworkLookupResultsIsBounded(t *testing.T) {
+	app := newDualLookupTestApp(t)
+	artist := saveLookupArtist(t, app, "Lookup Artist", true)
+
+	for index := range dualLookupLimit + 1 {
+		saveLookupArtwork(t, app, artist.Id, fmt.Sprintf("Artwork Lookup %02d", index), true)
+	}
+	saveLookupArtwork(t, app, artist.Id, "Artwork Lookup hidden", false)
+
+	content, err := getDualLookupResults(app, "artwork", "lookup")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(content.Results) != dualLookupLimit {
+		t.Fatalf("expected %d results, got %d", dualLookupLimit, len(content.Results))
+	}
+
+	for index, result := range content.Results {
+		wantLabel := fmt.Sprintf("Artwork Lookup %02d", index)
+		if result.Label != wantLabel {
+			t.Fatalf("expected result %d to be %q, got %q", index, wantLabel, result.Label)
+		}
+		if result.Context != "Lookup Artist" {
+			t.Fatalf("expected artist context, got %q", result.Context)
+		}
+		if !strings.HasPrefix(result.Url, "/artists/") {
+			t.Fatalf("expected canonical artwork URL, got %q", result.Url)
+		}
+	}
+}
+
+func TestGetArtworkLookupResultsIncludesAuthorContext(t *testing.T) {
+	app := newDualLookupTestApp(t)
+	firstArtist := saveLookupArtist(t, app, "First Lookup Artist", true)
+	secondArtist := saveLookupArtist(t, app, "Second Lookup Artist", true)
+	saveLookupArtworkWithAuthors(
+		t,
+		app,
+		[]string{firstArtist.Id, secondArtist.Id},
+		"Multiple Lookup Authors",
+		true,
+	)
+
+	content, err := getDualLookupResults(app, "artwork", "multiple")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(content.Results) != 1 {
+		t.Fatalf("expected one result, got %d", len(content.Results))
+	}
+
+	if content.Results[0].Context != "First Lookup Artist" && content.Results[0].Context != "Second Lookup Artist" {
+		t.Fatalf("expected associated author context, got %q", content.Results[0].Context)
+	}
+}
+
+func TestDualLookupResultsRenderAccessibleStates(t *testing.T) {
 	tests := []struct {
-		name  string
-		input map[string]string
-		want  []dto.ArtistNameListEntry
+		name    string
+		content dto.DualLookupResultsDto
+		want    string
 	}{
 		{
-			name:  "empty list",
-			input: map[string]string{},
-			want:  []dto.ArtistNameListEntry{},
+			name:    "empty query",
+			content: dto.DualLookupResultsDto{Kind: "artist"},
+			want:    "Start typing to search artists.",
 		},
 		{
-			name: "sorts by label then URL",
-			input: map[string]string{
-				"/artists/two":     "Artist Two",
-				"/artists/one":     "Artist One",
-				"/artists/one-alt": "Artist One",
+			name: "short query",
+			content: dto.DualLookupResultsDto{
+				Kind:          "artwork",
+				Query:         "a",
+				QueryTooShort: true,
 			},
-			want: []dto.ArtistNameListEntry{
-				{Url: "/artists/one", Label: "Artist One"},
-				{Url: "/artists/one-alt", Label: "Artist One"},
-				{Url: "/artists/two", Label: "Artist Two"},
-			},
+			want: "Enter at least two characters to search.",
+		},
+		{
+			name:    "no results",
+			content: dto.DualLookupResultsDto{Kind: "artist", Query: "Missing"},
+			want:    "No artists match",
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got := formatArtistNameList(test.input)
-			if !reflect.DeepEqual(got, test.want) {
-				t.Fatalf("expected %#v, got %#v", test.want, got)
+			var buff bytes.Buffer
+			if err := pages.DualLookupResults(test.content).Render(context.Background(), &buff); err != nil {
+				t.Fatalf("unexpected render error: %v", err)
+			}
+
+			if !strings.Contains(buff.String(), test.want) {
+				t.Fatalf("expected %q in %q", test.want, buff.String())
 			}
 		})
 	}
+}
+
+func newDualLookupTestApp(t *testing.T) *tests.TestApp {
+	t.Helper()
+
+	app, err := tests.NewTestApp()
+	if err != nil {
+		t.Fatalf("failed to create test app: %v", err)
+	}
+	t.Cleanup(app.Cleanup)
+
+	artists := core.NewBaseCollection(constants.CollectionArtists)
+	artists.Fields.Add(
+		&core.TextField{Name: "name"},
+		&core.BoolField{Name: "published"},
+	)
+	if err := app.Save(artists); err != nil {
+		t.Fatalf("failed to create artists collection: %v", err)
+	}
+
+	artworks := core.NewBaseCollection(constants.CollectionArtworks)
+	artworks.Fields.Add(
+		&core.TextField{Name: "title"},
+		&core.BoolField{Name: "published"},
+		&core.RelationField{
+			Name:         "author",
+			CollectionId: artists.Id,
+			MaxSelect:    2,
+		},
+	)
+	if err := app.Save(artworks); err != nil {
+		t.Fatalf("failed to create artworks collection: %v", err)
+	}
+
+	return app
+}
+
+func saveLookupArtist(t *testing.T, app core.App, name string, published bool) *core.Record {
+	t.Helper()
+
+	collection, err := app.FindCollectionByNameOrId(constants.CollectionArtists)
+	if err != nil {
+		t.Fatalf("failed to find artists collection: %v", err)
+	}
+
+	record := core.NewRecord(collection)
+	record.Set("name", name)
+	record.Set("published", published)
+	if err := app.Save(record); err != nil {
+		t.Fatalf("failed to save artist: %v", err)
+	}
+
+	return record
+}
+
+func saveLookupArtwork(t *testing.T, app core.App, artistID string, title string, published bool) *core.Record {
+	return saveLookupArtworkWithAuthors(t, app, []string{artistID}, title, published)
+}
+
+func saveLookupArtworkWithAuthors(t *testing.T, app core.App, artistIDs []string, title string, published bool) *core.Record {
+	t.Helper()
+
+	collection, err := app.FindCollectionByNameOrId(constants.CollectionArtworks)
+	if err != nil {
+		t.Fatalf("failed to find artworks collection: %v", err)
+	}
+
+	record := core.NewRecord(collection)
+	record.Set("author", artistIDs)
+	record.Set("published", published)
+	record.Set("title", title)
+	if err := app.Save(record); err != nil {
+		t.Fatalf("failed to save artwork: %v", err)
+	}
+
+	return record
 }
 
 func TestReverseSide(t *testing.T) {
