@@ -1,4 +1,4 @@
-ARG GO_VERSION=1.23.3
+ARG GO_VERSION=1.26.5
 FROM oven/bun:alpine AS bun-builder
 
 RUN apk add git
@@ -14,10 +14,9 @@ RUN echo "Building with Go version ${GO_VERSION}"
 WORKDIR /app/src
 COPY --from=bun-builder /app/src /app/src
 RUN go mod download && go mod verify
-RUN go install github.com/a-h/templ/cmd/templ@latest
-RUN templ generate
+RUN go tool templ generate
 RUN go mod tidy
-RUN go build -v -o /tmp/app .
+RUN go build -v -o /tmp/app ./cmd/wga
 
 
 FROM alpine:latest
