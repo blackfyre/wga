@@ -106,6 +106,65 @@ test("loads an artwork through the chooser and preserves Dual Mode state", async
 	await expect(page.locator("#right h1")).toContainText("A Couple in a Tavern");
 });
 
+test("loads an artwork search result into the selected pane", async ({
+	page,
+}) => {
+	await page.goto(dualModeURL(aachenPath, koedijckPath, "left", "right"));
+	await page.getByRole("link", { name: "Search left artworks" }).click();
+
+	await expect(page).toHaveURL(
+		(url) =>
+			url.pathname === "/artworks" &&
+			url.searchParams.get("dual_left") === aachenPath &&
+			url.searchParams.get("dual_right") === koedijckPath &&
+			url.searchParams.get("dual_target") === "left",
+	);
+
+	await page.getByLabel("Title").fill("A Couple in a Tavern");
+	const resultsResponse = page.waitForResponse(
+		(response) =>
+			response.url().includes("/artworks/results") &&
+			response.request().headers()["hx-request"] === "true",
+	);
+	await page.getByRole("button", { name: "Search" }).click();
+	await resultsResponse;
+
+	const clear = page.getByRole("link", { name: "Clear" });
+	await expect(clear).toHaveAttribute("href", /dual_target=left/);
+	const clearResponse = page.waitForResponse(
+		(response) =>
+			response.url().includes("/artworks?") &&
+			response.request().headers()["hx-request"] === "true",
+	);
+	await clear.click();
+	await clearResponse;
+	await expect(page).toHaveURL(
+		(url) =>
+			url.pathname === "/artworks" &&
+			url.searchParams.get("dual_left") === aachenPath &&
+			url.searchParams.get("dual_right") === koedijckPath &&
+			url.searchParams.get("dual_target") === "left",
+	);
+
+	await page.getByLabel("Title").fill("A Couple in a Tavern");
+	await page.getByRole("button", { name: "Search" }).click();
+
+	await page
+		.getByRole("link", {
+			name: "Open A Couple in a Tavern in left pane",
+		})
+		.click();
+
+	await expectDualModeState(
+		page,
+		aachenArtworkPath,
+		koedijckPath,
+		"left",
+		"right",
+	);
+	await expect(page.locator("#left h1")).toContainText("A Couple in a Tavern");
+});
+
 test("shows accessible lookup query states", async ({ page }) => {
 	await page.goto("/dual-mode");
 	await page.getByRole("button", { name: "Choose left" }).click();
@@ -413,5 +472,31 @@ test.describe("Dual Mode operations without JavaScript", () => {
 
 		await expectDualModeState(page, koedijckPath, koedijckPath);
 		await expect(page.locator("#left h1")).toContainText("KOEDIJCK, Isaack");
+	});
+
+	test("loads an artwork search result through standard links", async ({
+		page,
+	}) => {
+		await page.goto(dualModeURL(aachenPath, koedijckPath, "left", "right"));
+		await page.getByRole("link", { name: "Search right artworks" }).click();
+
+		await page.getByLabel("Title").fill("A Couple in a Tavern");
+		await page.getByRole("button", { name: "Search" }).click();
+		await page
+			.getByRole("link", {
+				name: "Open A Couple in a Tavern in right pane",
+			})
+			.click();
+
+		await expectDualModeState(
+			page,
+			aachenPath,
+			aachenArtworkPath,
+			"left",
+			"right",
+		);
+		await expect(page.locator("#right h1")).toContainText(
+			"A Couple in a Tavern",
+		);
 	});
 });

@@ -79,10 +79,12 @@ templ DualNav(c dto.DualViewDto, forms dto.DualPaneLoadFormsDto, targets dto.Dua
 		<div class="flex flex-wrap items-center justify-between gap-4">
 			<div class="flex items-center gap-2">
 				<button type="button" class="btn btn-sm" onclick="window.wga.dual.openLookup('left')">Choose left</button>
+				<a class="btn btn-sm" href={ c.ArtworkSearchLeftUrl }>Search left artworks</a>
 				@DualPaneTargetControls("left", c.LeftLinksOpenInOtherPane, targets.LeftSamePaneUrl, targets.LeftOtherPaneUrl)
 			</div>
 			<div class="flex items-center gap-2">
 				<button type="button" class="btn btn-sm" onclick="window.wga.dual.openLookup('right')">Choose right</button>
+				<a class="btn btn-sm" href={ c.ArtworkSearchRightUrl }>Search right artworks</a>
 				@DualPaneTargetControls("right", c.RightLinksOpenInOtherPane, targets.RightSamePaneUrl, targets.RightOtherPaneUrl)
 			</div>
 		</div>
