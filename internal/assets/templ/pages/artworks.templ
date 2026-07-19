@@ -176,7 +176,7 @@ templ ArtworkSearchResults(r dto.ArtworkSearchResultDTO) {
 }
 
 templ ArtworkSearchDualModeResultGrid(artworks dto.ImageGrid, dualModeUrls map[string]string, target string) {
-	<div class="grid gird-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4" data-viewer>
+	<div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4" data-viewer>
 		for _, artwork := range artworks {
 			<div class="flex flex-col gap-2">
 				@components.ImageCard(artwork, true)
