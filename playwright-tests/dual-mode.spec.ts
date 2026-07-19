@@ -1,6 +1,21 @@
 import { expect, test } from "@playwright/test";
 
 const aachenPath = "/artists/aachen-hans-von-139ac2dff50d65c";
+const koedijckPath = "/artists/koedijck-isaack-3ed9e200b9e8252";
+
+const dualModeURL = (left: string, right: string) =>
+	`/dual-mode?left=${encodeURIComponent(left)}&right=${encodeURIComponent(right)}&left_render_to=right&right_render_to=left`;
+
+const expectDualModeState = async (page, left: string, right: string) => {
+	await expect(page).toHaveURL(
+		(url) =>
+			url.pathname === "/dual-mode" &&
+			url.searchParams.get("left") === left &&
+			url.searchParams.get("right") === right &&
+			url.searchParams.get("left_render_to") === "right" &&
+			url.searchParams.get("right_render_to") === "left",
+	);
+};
 
 test("loads an artist through the chooser and opens its artwork in the other pane", async ({
 	page,
@@ -84,4 +99,78 @@ test("shows the desktop-only message on a small screen", async ({ page }) => {
 		"Dual Mode is desktop-only",
 	);
 	await expect(page.locator("#dual-area")).toBeHidden();
+});
+
+test("updates pane state through enhanced operation links", async ({
+	page,
+}) => {
+	const operations = page.getByRole("navigation", { name: "Pane operations" });
+
+	await page.goto(dualModeURL(aachenPath, koedijckPath));
+	const reverseResponse = page.waitForResponse(
+		(response) =>
+			response.url().includes("/dual-mode") &&
+			response.request().headers()["hx-request"] === "true",
+	);
+	await operations
+		.getByRole("link", { name: "Reverse panes", exact: true })
+		.click();
+	await reverseResponse;
+	await expect(page.locator("#left h1")).toContainText("KOEDIJCK, Isaack");
+	await expect(page.locator("#right h1")).toContainText("AACHEN, Hans von");
+	await expectDualModeState(page, koedijckPath, aachenPath);
+
+	await page.goto(dualModeURL(aachenPath, koedijckPath));
+	await operations
+		.getByRole("link", { name: "Copy left to right", exact: true })
+		.click();
+	await expectDualModeState(page, aachenPath, aachenPath);
+	await expect(page.locator("#right h1")).toContainText("AACHEN, Hans von");
+
+	await page.goto(dualModeURL(aachenPath, koedijckPath));
+	await operations
+		.getByRole("link", { name: "Copy right to left", exact: true })
+		.click();
+	await expectDualModeState(page, koedijckPath, koedijckPath);
+	await expect(page.locator("#left h1")).toContainText("KOEDIJCK, Isaack");
+
+	await page.goto(dualModeURL(aachenPath, koedijckPath));
+	await operations
+		.getByRole("link", { name: "Clear left", exact: true })
+		.click();
+	await expectDualModeState(page, "default", koedijckPath);
+	await expect(page.locator("#left")).toContainText(
+		"Choose content for comparison",
+	);
+
+	await page.goto(dualModeURL(aachenPath, koedijckPath));
+	await operations
+		.getByRole("link", { name: "Clear right", exact: true })
+		.click();
+	await expectDualModeState(page, aachenPath, "default");
+	await expect(page.locator("#right")).toContainText(
+		"Choose content for comparison",
+	);
+
+	await page.goto(dualModeURL(aachenPath, koedijckPath));
+	await operations
+		.getByRole("link", { name: "Standard view", exact: true })
+		.click();
+	await expect(page).toHaveURL(/\/$/);
+});
+
+test.describe("Dual Mode operations without JavaScript", () => {
+	test.use({ javaScriptEnabled: false });
+
+	test("falls back to the reverse-pane href", async ({ page }) => {
+		await page.goto(dualModeURL(aachenPath, koedijckPath));
+		await page
+			.getByRole("navigation", { name: "Pane operations" })
+			.getByRole("link", { name: "Reverse panes", exact: true })
+			.click();
+
+		await expectDualModeState(page, koedijckPath, aachenPath);
+		await expect(page.locator("#left h1")).toContainText("KOEDIJCK, Isaack");
+		await expect(page.locator("#right h1")).toContainText("AACHEN, Hans von");
+	});
 });
