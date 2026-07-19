@@ -159,7 +159,7 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 
 	content.Jsonld = fmt.Sprintf(`<script type="application/ld+json">%s</script>`, marshalled)
 
-	ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", content.Title, content.Artist.Name))
+	ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", content.Title, content.Name))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, aw.GetString("comment"))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, expectedPageUrl)
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgImageKey, utils.AssetUrl(content.Image.Image))

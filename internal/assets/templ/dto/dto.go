@@ -44,6 +44,8 @@ type ArtworkSearchDTO struct {
 	ActiveFilterValues *ArtworkSearchFilterValues
 	ArtistNameList     map[string]string
 	NewFilterValues    string
+	ClearUrl           string
+	DualModeContext    *ArtworkSearchDualModeDto
 	Results            ArtworkSearchResultDTO
 	HxTarget           string
 }
@@ -63,6 +65,16 @@ type ArtworkSearchResultDTO struct {
 	ResultSummary   string
 	Pagination      string
 	HxTarget        string
+	DualModeUrls    map[string]string
+	DualModeTarget  string
+}
+
+type ArtworkSearchDualModeDto struct {
+	LeftPath      string
+	RightPath     string
+	LeftRenderTo  string
+	RightRenderTo string
+	Target        string
 }
 
 type DualViewDto struct {
@@ -70,6 +82,8 @@ type DualViewDto struct {
 	Right                     string
 	LeftLinksOpenInOtherPane  bool
 	RightLinksOpenInOtherPane bool
+	ArtworkSearchLeftUrl      string
+	ArtworkSearchRightUrl     string
 	CopyLeftToRightUrl        string
 	CopyRightToLeftUrl        string
 	ReverseUrl                string

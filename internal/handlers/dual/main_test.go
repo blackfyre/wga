@@ -394,6 +394,28 @@ func TestBuildDualModeActionURL(t *testing.T) {
 	}
 }
 
+func TestBuildDualArtworkSearchURL(t *testing.T) {
+	left := renderPaneDto{RelPath: "/artists/left-123", RenderTo: "right"}
+	right := renderPaneDto{RelPath: "/artworks/right-456", RenderTo: "left"}
+
+	searchURL, err := url.Parse(buildDualArtworkSearchURL(left, right, "left"))
+	if err != nil {
+		t.Fatalf("expected valid search URL: %v", err)
+	}
+
+	if searchURL.Path != "/artworks" {
+		t.Fatalf("expected /artworks path, got %q", searchURL.Path)
+	}
+
+	assertDualModeQuery(t, searchURL, map[string]string{
+		"dual_left":            left.RelPath,
+		"dual_right":           right.RelPath,
+		"dual_left_render_to":  left.RenderTo,
+		"dual_right_render_to": right.RenderTo,
+		"dual_target":          "left",
+	})
+}
+
 func TestBuildDualPaneLoadForms(t *testing.T) {
 	left := renderPaneDto{RelPath: "/artists/left-123", RenderTo: "right"}
 	right := renderPaneDto{RelPath: "/artworks/right-456", RenderTo: "left"}

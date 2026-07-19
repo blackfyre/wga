@@ -12,7 +12,7 @@ This specification defines feature parity as preserving those user outcomes in t
 
 ### Current readiness
 
-**Core comparison is ready; legacy feature parity is incomplete.** The current `/dual-mode` route already renders two independently scrollable panes, supports artist and artwork content, preserves pane state in the URL, and routes supported artist/artwork links to either pane. The remaining gaps are discovery, pane-management controls, legacy catalogue entry points, printing, and the explicit exit/music actions.
+**Core comparison is ready; legacy feature parity is incomplete.** The current `/dual-mode` route already renders two independently scrollable panes, supports artist and artwork content, preserves pane state in the URL, and routes supported artist/artwork links to either pane. The remaining gaps are catalogue discovery, artist-list filtering, printing, and the final accessibility and desktop review.
 
 | Legacy capability                                                                      | Current status | Evidence                                                                                                    |
 | -------------------------------------------------------------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------- |
@@ -21,10 +21,10 @@ This specification defines feature parity as preserving those user outcomes in t
 | Keep pane state in a reloadable/shareable URL                                          | Complete       | `left`, `right`, and `*_render_to` query parameters                                                         |
 | Choose whether supported artist/artwork links replace a pane or open in the other pane | Complete       | Per-pane labelled toggle and Playwright coverage                                                            |
 | Load content through a chooser                                                         | Complete       | A bounded server-side lookup searches published artists or artworks; canonical-path forms remain a fallback |
-| Use the legacy A–Z, catalogue-section, Search, and Hints entry points in a pane        | Missing        | `parsePanePath` accepts artist and artwork detail paths only                                                |
+| Use the legacy A–Z, catalogue-section, Search, and Hints entry points in a pane        | Partial        | Artwork Search returns a selected result to a pane; the other entry points remain unsupported               |
 | Create artist lists by school, period, time-line, profession, and sort order           | Missing        | The current artist listing only supports a name query and cannot be loaded into a pane                      |
-| Copy, reverse, and clear panes                                                         | Missing        | The modern control bar has no equivalent actions                                                            |
-| Explicit standard-view exit and music-selection action                                 | Missing        | No equivalent Dual Mode controls; music handler registration is disabled                                    |
+| Copy, reverse, and clear panes                                                         | Complete       | URL-backed pane operations in `internal/assets/templ/pages/dual.templ` and Playwright coverage              |
+| Explicit standard-view exit and music-selection action                                 | Complete       | Standard view links to `/`; unavailable Music selection is intentionally omitted                            |
 | Print two selected pages together                                                      | Missing        | No Dual Mode print experience or acceptance coverage                                                        |
 
 The legacy page recommends a 1024 × 768 display. The modern view activates at 768 px; it must be visually verified at the legacy reference size before calling the desktop experience complete.
@@ -81,7 +81,7 @@ The legacy page recommends a 1024 × 768 display. The modern view activates at 7
 
 - [ ] Make the modern equivalents of the legacy A–Z, artist-list, period, Decorative Arts, Architecture, Search, and Hints entry points loadable into a selected pane, or document an intentional product exclusion for each unavailable content type. **Done when:** no visible Dual Mode entry point leads to unsupported content.
 - [ ] Audit whether school, period, time-line, profession, and sort data are available in the modern catalogue; implement each supported filter or document its exclusion. **Done when:** every legacy filter has a backed query or an explicit product decision, and supported filter results are shareable and usable from Dual Mode.
-- [ ] Provide a dual-safe search route or per-pane search control. **Done when:** a result can be selected into the intended pane from a keyboard-accessible search flow.
+- [x] Provide a dual-safe artwork search route. **Verified by:** Dual Mode artwork-search journeys preserve both panes and target settings with JavaScript enabled and disabled.
 - [ ] Add integration and browser coverage for discovery paths. **Done when:** one path from each supported catalogue entry point loads content into the selected pane.
 
 ### Phase 3 — Supporting parity outcomes
@@ -97,10 +97,10 @@ The legacy page recommends a 1024 × 768 display. The modern view activates at 7
 
 - [ ] A visitor can independently load and compare two artists, two artworks, or an artist and an artwork.
 - [ ] A visitor can use supported catalogue, Search, and Hints entry points to load content into either pane without pasting a path.
-- [ ] Copy, reverse, and clear operations are available, accessible, and reflected in the URL.
+- [x] Copy, reverse, and clear operations are available, accessible, and reflected in the URL.
 - [ ] Link-target settings, pane state, and operations survive reload and sharing.
 - [ ] Each legacy artist-list filter has a backed, reproducible result or an explicit documented exclusion; supported results can be used from Dual Mode.
-- [ ] The UI includes an explicit standard-view exit and no unavailable music action.
+- [x] The UI includes an explicit standard-view exit and no unavailable music action.
 - [ ] A4-landscape print preview produces two usable panes on one sheet; desktop layout is separately verified at 1024 × 768 or higher.
 - [ ] Desktop, small-screen fallback, keyboard, and screen-reader behaviour have focused automated checks or a documented manual accessibility procedure.
 
