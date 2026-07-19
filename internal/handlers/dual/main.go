@@ -59,6 +59,11 @@ func renderDualModePage(app *pocketbase.PocketBase, c *core.RequestEvent) error 
 	contentDto.Right = rightPane.Content
 	contentDto.LeftLinksOpenInOtherPane = leftPane.RenderTo == reverseSide(leftPane.Side)
 	contentDto.RightLinksOpenInOtherPane = rightPane.RenderTo == reverseSide(rightPane.Side)
+	contentDto.CopyLeftToRightUrl = buildDualModeActionURL(leftPane, rightPane, "copy-left-to-right")
+	contentDto.CopyRightToLeftUrl = buildDualModeActionURL(leftPane, rightPane, "copy-right-to-left")
+	contentDto.ReverseUrl = buildDualModeActionURL(leftPane, rightPane, "reverse")
+	contentDto.ClearLeftUrl = buildDualModeActionURL(leftPane, rightPane, "clear-left")
+	contentDto.ClearRightUrl = buildDualModeActionURL(leftPane, rightPane, "clear-right")
 	contentDto.ArtistNameList = []dto.ArtistNameListEntry{}
 	artistNameList, err := artworks.GetArtistNameList(app)
 
@@ -103,6 +108,26 @@ func buildDualModeURL(leftRelPath string, rightRelPath string, leftRenderTo stri
 	relPath.RawQuery = queryValues.Encode()
 
 	return relPath.String()
+}
+
+func buildDualModeActionURL(leftPane renderPaneDto, rightPane renderPaneDto, action string) string {
+	leftPath := leftPane.RelPath
+	rightPath := rightPane.RelPath
+
+	switch action {
+	case "copy-left-to-right":
+		rightPath = leftPath
+	case "copy-right-to-left":
+		leftPath = rightPath
+	case "reverse":
+		leftPath, rightPath = rightPath, leftPath
+	case "clear-left":
+		leftPath = "default"
+	case "clear-right":
+		rightPath = "default"
+	}
+
+	return buildDualModeURL(leftPath, rightPath, leftPane.RenderTo, rightPane.RenderTo)
 }
 
 func buildDualModePaneURL(side string, currentRelPath string, destinationRelPath string, queryValues map[string][]string) string {

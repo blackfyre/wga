@@ -181,6 +181,35 @@ func TestBuildDualModeURLDefaultsEmptyValues(t *testing.T) {
 	})
 }
 
+func TestBuildDualModeActionURL(t *testing.T) {
+	left := renderPaneDto{RelPath: "/artists/left-123", RenderTo: "right"}
+	right := renderPaneDto{RelPath: "/artworks/right-456", RenderTo: "left"}
+
+	tests := []struct {
+		action    string
+		wantLeft  string
+		wantRight string
+	}{
+		{action: "copy-left-to-right", wantLeft: left.RelPath, wantRight: left.RelPath},
+		{action: "copy-right-to-left", wantLeft: right.RelPath, wantRight: right.RelPath},
+		{action: "reverse", wantLeft: right.RelPath, wantRight: left.RelPath},
+		{action: "clear-left", wantLeft: "default", wantRight: right.RelPath},
+		{action: "clear-right", wantLeft: left.RelPath, wantRight: "default"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.action, func(t *testing.T) {
+			parsed := parseDualModeURL(t, buildDualModeActionURL(left, right, test.action))
+			assertDualModeQuery(t, parsed, map[string]string{
+				"left":            test.wantLeft,
+				"right":           test.wantRight,
+				"left_render_to":  "right",
+				"right_render_to": "left",
+			})
+		})
+	}
+}
+
 func TestBuildDualModePaneURL(t *testing.T) {
 	artistPath := "/artists/aagaard-carl-frederik-f2540d7a3fe99f9"
 	artworkPath := "/artists/aagaard-carl-frederik-f2540d7a3fe99f9/deer-beside-a-lake-a6aab5e26c30056"

@@ -76,4 +76,9 @@ type DualViewDto struct {
 	LeftLinksOpenInOtherPane  bool
 	RightLinksOpenInOtherPane bool
 	ArtistNameList            []ArtistNameListEntry
+	CopyLeftToRightUrl        string
+	CopyRightToLeftUrl        string
+	ReverseUrl                string
+	ClearLeftUrl              string
+	ClearRightUrl             string
 }
