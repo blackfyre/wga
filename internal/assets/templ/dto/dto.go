@@ -82,3 +82,15 @@ type DualViewDto struct {
 	ClearLeftUrl              string
 	ClearRightUrl             string
 }
+
+type DualPaneLoadFormDto struct {
+	Path          string
+	OtherPath     string
+	LeftRenderTo  string
+	RightRenderTo string
+}
+
+type DualPaneLoadFormsDto struct {
+	Left  DualPaneLoadFormDto
+	Right DualPaneLoadFormDto
+}

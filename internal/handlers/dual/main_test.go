@@ -210,6 +210,42 @@ func TestBuildDualModeActionURL(t *testing.T) {
 	}
 }
 
+func TestBuildDualPaneLoadForms(t *testing.T) {
+	left := renderPaneDto{RelPath: "/artists/left-123", RenderTo: "right"}
+	right := renderPaneDto{RelPath: "/artworks/right-456", RenderTo: "left"}
+
+	got := buildDualPaneLoadForms(left, right)
+	want := dto.DualPaneLoadFormsDto{
+		Left: dto.DualPaneLoadFormDto{
+			Path:          left.RelPath,
+			OtherPath:     right.RelPath,
+			LeftRenderTo:  "right",
+			RightRenderTo: "left",
+		},
+		Right: dto.DualPaneLoadFormDto{
+			Path:          right.RelPath,
+			OtherPath:     left.RelPath,
+			LeftRenderTo:  "right",
+			RightRenderTo: "left",
+		},
+	}
+
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("expected %#v, got %#v", want, got)
+	}
+}
+
+func TestBuildDualPaneLoadFormsBlankDefaultPath(t *testing.T) {
+	left := renderPaneDto{RelPath: "default", RenderTo: "right"}
+	right := renderPaneDto{RelPath: "/artworks/right-456", RenderTo: "left"}
+
+	forms := buildDualPaneLoadForms(left, right)
+
+	if forms.Left.Path != "" || forms.Right.OtherPath != "default" {
+		t.Fatalf("expected blank default input and preserved path, got %#v", forms)
+	}
+}
+
 func TestBuildDualModePaneURL(t *testing.T) {
 	artistPath := "/artists/aagaard-carl-frederik-f2540d7a3fe99f9"
 	artworkPath := "/artists/aagaard-carl-frederik-f2540d7a3fe99f9/deer-beside-a-lake-a6aab5e26c30056"

@@ -77,7 +77,7 @@ func renderDualModePage(app *pocketbase.PocketBase, c *core.RequestEvent) error 
 
 	var buff bytes.Buffer
 
-	err = pages.DualPage(contentDto).Render(ctx, &buff)
+	err = pages.DualPage(contentDto, buildDualPaneLoadForms(leftPane, rightPane)).Render(ctx, &buff)
 
 	if err != nil {
 		app.Logger().Error("Error rendering dual mode page", "error", err.Error())
@@ -128,6 +128,31 @@ func buildDualModeActionURL(leftPane renderPaneDto, rightPane renderPaneDto, act
 	}
 
 	return buildDualModeURL(leftPath, rightPath, leftPane.RenderTo, rightPane.RenderTo)
+}
+
+func buildDualPaneLoadForms(leftPane renderPaneDto, rightPane renderPaneDto) dto.DualPaneLoadFormsDto {
+	return dto.DualPaneLoadFormsDto{
+		Left: dto.DualPaneLoadFormDto{
+			Path:          panePathInputValue(leftPane.RelPath),
+			OtherPath:     rightPane.RelPath,
+			LeftRenderTo:  leftPane.RenderTo,
+			RightRenderTo: rightPane.RenderTo,
+		},
+		Right: dto.DualPaneLoadFormDto{
+			Path:          panePathInputValue(rightPane.RelPath),
+			OtherPath:     leftPane.RelPath,
+			LeftRenderTo:  leftPane.RenderTo,
+			RightRenderTo: rightPane.RenderTo,
+		},
+	}
+}
+
+func panePathInputValue(relPath string) string {
+	if relPath == "default" {
+		return ""
+	}
+
+	return relPath
 }
 
 func buildDualModePaneURL(side string, currentRelPath string, destinationRelPath string, queryValues map[string][]string) string {
