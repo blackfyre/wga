@@ -14,7 +14,7 @@ func RegisterPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy, 
 		ag := se.Router.Group("/postcard")
 
 		ag.GET("/send", func(c *core.RequestEvent) error {
-			return sendPostcard(app, c)
+			return sendPostcard(app, c, captcha)
 		}).BindFunc(utils.IsHtmxRequestMiddleware)
 
 		ag.GET("", func(c *core.RequestEvent) error {
