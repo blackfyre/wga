@@ -9,6 +9,9 @@ app = 'wga'
 [build.args]
 GO_VERSION = '1.26.5'
 
+[env]
+WGA_ENV = 'production'
+
 [http_service]
 internal_port = 8090
 force_https = true

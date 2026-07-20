@@ -11,13 +11,14 @@ go = "1.26.5"
 
 # Git is a system prerequisite because Mise has no cross-platform Git backend.
 [env]
+WGA_ENV = "development"
 WGA_S3_BUCKET = "wga"
 WGA_S3_REGION = "us-east-1"
 WGA_S3_ACCESS_KEY = "minio_access_key"
 WGA_S3_ACCESS_SECRET = "minio_secret_key"
 WGA_S3_ENDPOINT = "http://localhost:9000"
-WGA_ADMIN_EMAIL = "some.random.email@local.host" # admin email address
-WGA_ADMIN_PASSWORD = "VerySecurePassword" # admin password
+WGA_ADMIN_EMAIL = "" # optional bootstrap admin email address
+WGA_ADMIN_PASSWORD = "" # optional bootstrap admin password
 WGA_PROTOCOL = "http" # http or https
 WGA_HOSTNAME = "localhost:8090" # hostname (and port)
 WGA_SMTP_HOST = "127.0.0.1" # smtp server
@@ -26,6 +27,7 @@ WGA_SMTP_USERNAME = "" # smtp username
 WGA_SMTP_PASSWORD = "" # smtp password
 WGA_SENDER_ADDRESS = "do-not-reply@wga.hu" # sender email address
 WGA_SENDER_NAME = "WGA" # sender name
+WGA_POSTCARD_FREQUENCY = "*/1 * * * *"
 MAILPIT_URL = "http://127.0.0.1:8025" # Mailpit HTTP endpoint
 
 [tasks."app:versions"]

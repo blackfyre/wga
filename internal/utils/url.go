@@ -1,16 +1,18 @@
 package utils
 
 import (
-	"os"
 	"strings"
+
+	"github.com/blackfyre/wga/internal/config"
+	"github.com/blackfyre/wga/internal/utils/publicurl"
 )
 
+func ConfigurePublicURL(value config.PublicURL) {
+	publicurl.Configure(value)
+}
+
 func AssetUrl(path string) string {
-
-	protocol := os.Getenv("WGA_PROTOCOL")
-	hostname := os.Getenv("WGA_HOSTNAME")
-
-	return protocol + "://" + strings.ReplaceAll(hostname+path, "//", "/")
+	return publicurl.Resolve(path)
 }
 
 // ExtractIdFromString extracts the ID from a string.

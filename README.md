@@ -33,46 +33,52 @@ WGA_ENV=development
 WGA_ADMIN_EMAIL=
 WGA_ADMIN_PASSWORD=
 
-WGA_S3_ENDPOINT=
-WGA_S3_BUCKET=
-WGA_S3_REGION=
-WGA_S3_ACCESS_KEY=
-WGA_S3_ACCESS_SECRET=
+WGA_S3_ENDPOINT=http://localhost:9000
+WGA_S3_BUCKET=wga
+WGA_S3_REGION=us-east-1
+WGA_S3_ACCESS_KEY=minio_access_key
+WGA_S3_ACCESS_SECRET=minio_secret_key
 
 WGA_PROTOCOL=http
 WGA_HOSTNAME=localhost:8090
 
-WGA_SMTP_HOST=
-WGA_SMTP_PORT=
+WGA_SMTP_HOST=127.0.0.1
+WGA_SMTP_PORT=1025
 WGA_SMTP_USERNAME=
 WGA_SMTP_PASSWORD=
-WGA_SENDER_ADDRESS=
-WGA_SENDER_NAME=
+WGA_SENDER_ADDRESS=do-not-reply@wga.hu
+WGA_SENDER_NAME=WGA
+WGA_POSTCARD_FREQUENCY="*/1 * * * *"
 WGA_RECAPTCHA_SECRET=
 
-MAILPIT_URL=
+MAILPIT_URL=http://127.0.0.1:8025
 ```
 
-| Variable               | Description                                                                                            |
-| ---------------------- | ------------------------------------------------------------------------------------------------------ |
-| `WGA_ENV`              | The environment the application is running in, valid values are `development`, `staging`, `production` |
-| `WGA_ADMIN_EMAIL`      | The email address of the admin user                                                                    |
-| `WGA_ADMIN_PASSWORD`   | The password of the admin user                                                                         |
-| `WGA_S3_ENDPOINT`      | The endpoint of the S3 bucket                                                                          |
-| `WGA_S3_BUCKET`        | The name of the S3 bucket                                                                              |
-| `WGA_S3_REGION`        | The region of the S3 bucket                                                                            |
-| `WGA_S3_ACCESS_KEY`    | The access key of the S3 bucket                                                                        |
-| `WGA_S3_ACCESS_SECRET` | The access secret of the S3 bucket                                                                     |
-| `WGA_PROTOCOL`         | The protocol to use for the application, valid values are `http` and `https`                           |
-| `WGA_HOSTNAME`         | The domain pointing to the application                                                                 |
-| `WGA_SMTP_HOST`        | The address of the SMTP host                                                                           |
-| `WGA_SMTP_PORT`        | The SMTP service port on the host address                                                              |
-| `WGA_SMTP_USERNAME`    | The username for the SMTP service                                                                      |
-| `WGA_SMTP_PASSWORD`    | The password for the SMTP service                                                                      |
-| `WGA_SENDER_ADDRESS`   | The sending email address                                                                              |
-| `WGA_SENDER_NAME`      | The name of the email sender                                                                           |
-| `WGA_RECAPTCHA_SECRET` | The reCAPTCHA secret used to verify postcard submissions                                               |
-| `MAILPIT_URL`          | The local Mailpit HTTP endpoint that Playwright queries during end-to-end tests                        |
+| Variable                 | Description                                                                                      |
+| ------------------------ | ------------------------------------------------------------------------------------------------ |
+| `WGA_ENV`                | The environment the application is running in: `development`, `test`, `staging`, or `production` |
+| `WGA_ADMIN_EMAIL`        | Optional email address for the bootstrap administrator                                           |
+| `WGA_ADMIN_PASSWORD`     | Optional unique password for the bootstrap administrator                                         |
+| `WGA_S3_ENDPOINT`        | The absolute S3-compatible object storage service endpoint                                       |
+| `WGA_S3_BUCKET`          | The name of the S3 bucket                                                                        |
+| `WGA_S3_REGION`          | The region of the S3 bucket                                                                      |
+| `WGA_S3_ACCESS_KEY`      | The access-key ID for the S3-compatible object storage service                                   |
+| `WGA_S3_ACCESS_SECRET`   | The access secret for the S3-compatible object storage service                                   |
+| `WGA_PROTOCOL`           | The protocol to use for the application, valid values are `http` and `https`                     |
+| `WGA_HOSTNAME`           | The domain pointing to the application                                                           |
+| `WGA_SMTP_HOST`          | The address of the SMTP host                                                                     |
+| `WGA_SMTP_PORT`          | The SMTP service port on the host address                                                        |
+| `WGA_SMTP_USERNAME`      | The username for the SMTP service                                                                |
+| `WGA_SMTP_PASSWORD`      | The password for the SMTP service                                                                |
+| `WGA_SENDER_ADDRESS`     | The sending email address                                                                        |
+| `WGA_SENDER_NAME`        | The name of the email sender                                                                     |
+| `WGA_POSTCARD_FREQUENCY` | The five-field cron expression for sending queued postcards                                      |
+| `WGA_RECAPTCHA_SECRET`   | The reCAPTCHA secret used to verify postcard submissions; required in staging and production     |
+| `MAILPIT_URL`            | The local Mailpit HTTP endpoint that Playwright queries during end-to-end tests                  |
+
+Local `development` and `test` environments may omit `WGA_RECAPTCHA_SECRET`; staging and production cannot start without it.
+
+The administrator bootstrap is optional. Before the first `migrate`, set both `WGA_ADMIN_EMAIL` and `WGA_ADMIN_PASSWORD` to unique values; leave both empty to skip it.
 
 ### Running the application
 
