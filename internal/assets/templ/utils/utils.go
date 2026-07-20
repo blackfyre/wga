@@ -4,7 +4,7 @@ import (
 	"context"
 	"regexp"
 
-	"github.com/blackfyre/wga/internal/config"
+	"github.com/blackfyre/wga/internal/utils/publicurl"
 )
 
 type ContextKey string
@@ -26,14 +26,8 @@ var TwitterDescriptionKey ContextKey = "twitter:description"
 var TwitterImageKey ContextKey = "twitter:image"
 var CanonicalUrlKey ContextKey = "canonical:url"
 
-var publicURL config.PublicURL
-
-func ConfigurePublicURL(value config.PublicURL) {
-	publicURL = value
-}
-
 func AssetUrl(path string) string {
-	return publicURL.Resolve(path)
+	return publicurl.Resolve(path)
 }
 
 // GetTitle retrieves the title from the context.

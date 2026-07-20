@@ -4,16 +4,15 @@ import (
 	"strings"
 
 	"github.com/blackfyre/wga/internal/config"
+	"github.com/blackfyre/wga/internal/utils/publicurl"
 )
 
-var publicURL config.PublicURL
-
 func ConfigurePublicURL(value config.PublicURL) {
-	publicURL = value
+	publicurl.Configure(value)
 }
 
 func AssetUrl(path string) string {
-	return publicURL.Resolve(path)
+	return publicurl.Resolve(path)
 }
 
 // ExtractIdFromString extracts the ID from a string.

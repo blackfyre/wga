@@ -1,12 +1,14 @@
-package utils
+package utils_test
 
 import (
 	"testing"
 
+	templutils "github.com/blackfyre/wga/internal/assets/templ/utils"
 	"github.com/blackfyre/wga/internal/config"
+	apputils "github.com/blackfyre/wga/internal/utils"
 )
 
-func TestAssetUrlUsesConfiguredPublicURL(t *testing.T) {
+func TestAssetUrlUsesSharedConfiguredPublicURL(t *testing.T) {
 	configuration := config.LoadFrom(func(key string) string {
 		return map[string]string{
 			"WGA_ENV":                "development",
@@ -22,9 +24,30 @@ func TestAssetUrlUsesConfiguredPublicURL(t *testing.T) {
 		t.Fatalf("load server configuration: %v", err)
 	}
 
-	ConfigurePublicURL(server.PublicURL)
+	apputils.ConfigurePublicURL(server.PublicURL)
 
-	if got, want := AssetUrl("/assets/images/logo.png"), "https://gallery.example/assets/images/logo.png"; got != want {
-		t.Fatalf("expected URL %q, got %q", want, got)
+	tests := []struct {
+		name string
+		url  string
+		want string
+	}{
+		{
+			name: "application helper",
+			url:  apputils.AssetUrl("assets/images/logo.png"),
+			want: "https://gallery.example/assets/images/logo.png",
+		},
+		{
+			name: "template helper",
+			url:  templutils.AssetUrl("/postcard?p=abc"),
+			want: "https://gallery.example/postcard?p=abc",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if test.url != test.want {
+				t.Fatalf("expected URL %q, got %q", test.want, test.url)
+			}
+		})
 	}
 }

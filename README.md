@@ -30,8 +30,8 @@ Copy `.env.example` to `.env` in the directory from which you start the applicat
 ```bash
 WGA_ENV=development
 
-WGA_ADMIN_EMAIL=some.random.email@local.host
-WGA_ADMIN_PASSWORD=VerySecurePassword
+WGA_ADMIN_EMAIL=
+WGA_ADMIN_PASSWORD=
 
 WGA_S3_ENDPOINT=http://localhost:9000
 WGA_S3_BUCKET=wga
@@ -57,13 +57,13 @@ MAILPIT_URL=http://127.0.0.1:8025
 | Variable                 | Description                                                                                      |
 | ------------------------ | ------------------------------------------------------------------------------------------------ |
 | `WGA_ENV`                | The environment the application is running in: `development`, `test`, `staging`, or `production` |
-| `WGA_ADMIN_EMAIL`        | The email address of the admin user                                                              |
-| `WGA_ADMIN_PASSWORD`     | The password of the admin user                                                                   |
-| `WGA_S3_ENDPOINT`        | The endpoint of the S3 bucket                                                                    |
+| `WGA_ADMIN_EMAIL`        | Optional email address for the bootstrap administrator                                           |
+| `WGA_ADMIN_PASSWORD`     | Optional unique password for the bootstrap administrator                                         |
+| `WGA_S3_ENDPOINT`        | The absolute S3-compatible object storage service endpoint                                       |
 | `WGA_S3_BUCKET`          | The name of the S3 bucket                                                                        |
 | `WGA_S3_REGION`          | The region of the S3 bucket                                                                      |
-| `WGA_S3_ACCESS_KEY`      | The access key of the S3 bucket                                                                  |
-| `WGA_S3_ACCESS_SECRET`   | The access secret of the S3 bucket                                                               |
+| `WGA_S3_ACCESS_KEY`      | The access-key ID for the S3-compatible object storage service                                   |
+| `WGA_S3_ACCESS_SECRET`   | The access secret for the S3-compatible object storage service                                   |
 | `WGA_PROTOCOL`           | The protocol to use for the application, valid values are `http` and `https`                     |
 | `WGA_HOSTNAME`           | The domain pointing to the application                                                           |
 | `WGA_SMTP_HOST`          | The address of the SMTP host                                                                     |
@@ -77,6 +77,8 @@ MAILPIT_URL=http://127.0.0.1:8025
 | `MAILPIT_URL`            | The local Mailpit HTTP endpoint that Playwright queries during end-to-end tests                  |
 
 Local `development` and `test` environments may omit `WGA_RECAPTCHA_SECRET`; staging and production cannot start without it.
+
+The administrator bootstrap is optional. Before the first `migrate`, set both `WGA_ADMIN_EMAIL` and `WGA_ADMIN_PASSWORD` to unique values; leave both empty to skip it.
 
 ### Running the application
 

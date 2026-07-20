@@ -5,7 +5,6 @@ import (
 	"os"
 	"strings"
 
-	templutils "github.com/blackfyre/wga/internal/assets/templ/utils"
 	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/crontab"
 	"github.com/blackfyre/wga/internal/handlers"
@@ -59,7 +58,6 @@ func main() {
 
 	if capability == commandNeedsServer {
 		utils.ConfigurePublicURL(serverConfig.PublicURL)
-		templutils.ConfigurePublicURL(serverConfig.PublicURL)
 		handlers.RegisterHandlers(app, serverConfig.Captcha)
 		crontab.RegisterCronJobs(app, serverConfig.Postcards, serverConfig.Sitemap())
 	}

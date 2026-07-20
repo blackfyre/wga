@@ -170,13 +170,29 @@ func TestMigrationRequiresMailSettings(t *testing.T) {
 }
 
 func TestAdministratorCredentialsMustBePaired(t *testing.T) {
-	values := validValues()
-	values["WGA_ADMIN_PASSWORD"] = ""
+	t.Run("omitted credentials disable bootstrap", func(t *testing.T) {
+		values := validValues()
+		values["WGA_ADMIN_EMAIL"] = ""
+		values["WGA_ADMIN_PASSWORD"] = ""
 
-	_, err := LoadFrom(lookup(values)).Migrations().Administrator()
-	if err == nil || !strings.Contains(err.Error(), "WGA_ADMIN_EMAIL and WGA_ADMIN_PASSWORD") {
-		t.Fatalf("expected paired administrator credentials error, got %v", err)
-	}
+		administrator, err := LoadFrom(lookup(values)).Migrations().Administrator()
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if administrator.Enabled {
+			t.Fatal("expected omitted credentials to disable administrator bootstrap")
+		}
+	})
+
+	t.Run("partial credentials are rejected", func(t *testing.T) {
+		values := validValues()
+		values["WGA_ADMIN_PASSWORD"] = ""
+
+		_, err := LoadFrom(lookup(values)).Migrations().Administrator()
+		if err == nil || !strings.Contains(err.Error(), "WGA_ADMIN_EMAIL and WGA_ADMIN_PASSWORD") {
+			t.Fatalf("expected paired administrator credentials error, got %v", err)
+		}
+	})
 }
 
 func validValues() map[string]string {

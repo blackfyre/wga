@@ -21,8 +21,6 @@ func TestMigrationsKeepExistingSettings(t *testing.T) {
 			"WGA_SMTP_PORT":        "2525",
 			"WGA_SENDER_NAME":      "WGA Test",
 			"WGA_SENDER_ADDRESS":   "sender@example.com",
-			"WGA_ADMIN_EMAIL":      "admin@example.com",
-			"WGA_ADMIN_PASSWORD":   "password",
 		}[key]
 	})
 	if err := Configure(configuration.Migrations()); err != nil {
@@ -44,6 +42,13 @@ func TestMigrationsKeepExistingSettings(t *testing.T) {
 	}
 	if got, want := freshSettings.SMTP.Port, 2525; got != want {
 		t.Fatalf("expected SMTP port %d, got %d", want, got)
+	}
+	superusers, err := fresh.FindRecordsByFilter(core.CollectionNameSuperusers, "", "", 0, 0)
+	if err != nil {
+		t.Fatalf("find superusers: %v", err)
+	}
+	if len(superusers) != 0 {
+		t.Fatalf("expected no bootstrap administrator, got %d superusers", len(superusers))
 	}
 	if err := fresh.ResetBootstrapState(); err != nil {
 		t.Fatalf("close fresh app: %v", err)
