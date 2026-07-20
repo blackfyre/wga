@@ -2,9 +2,9 @@ package utils
 
 import (
 	"context"
-	"os"
 	"regexp"
-	"strings"
+
+	"github.com/blackfyre/wga/internal/config"
 )
 
 type ContextKey string
@@ -26,17 +26,14 @@ var TwitterDescriptionKey ContextKey = "twitter:description"
 var TwitterImageKey ContextKey = "twitter:image"
 var CanonicalUrlKey ContextKey = "canonical:url"
 
+var publicURL config.PublicURL
+
+func ConfigurePublicURL(value config.PublicURL) {
+	publicURL = value
+}
+
 func AssetUrl(path string) string {
-
-	protocol := os.Getenv("WGA_PROTOCOL")
-	hostname := os.Getenv("WGA_HOSTNAME")
-
-	// if the path beings with a slash, remove it
-	if !strings.HasPrefix(path, "/") {
-		path = "/" + path
-	}
-
-	return protocol + "://" + hostname + path
+	return publicURL.Resolve(path)
 }
 
 // GetTitle retrieves the title from the context.

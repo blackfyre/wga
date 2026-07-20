@@ -91,6 +91,7 @@ jobs:
         run: ./wga migrate
         working-directory: ./out
         env:
+          WGA_ENV: test
           WGA_PROTOCOL: http
           WGA_HOSTNAME: localhost:8090
           WGA_ADMIN_EMAIL: some.random.email@local.host
@@ -168,6 +169,7 @@ jobs:
         run: ./wga serve > wga.log &
         working-directory: ./wga_tmp
         env:
+          WGA_ENV: test
           WGA_PROTOCOL: http
           WGA_HOSTNAME: localhost:8090
           WGA_ADMIN_EMAIL: some.random.email@local.host

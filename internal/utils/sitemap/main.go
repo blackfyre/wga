@@ -3,9 +3,9 @@ package sitemap
 import (
 	"fmt"
 	"log"
-	"os"
 	"time"
 
+	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/utils/url"
 
 	"github.com/pocketbase/pocketbase"
@@ -16,11 +16,11 @@ import (
 // setupSitemapIndex initializes and configures a SitemapIndex object.
 // It sets the SitemapIndex name, hostname, output path, server URI, and compression settings.
 // The SitemapIndex object is then returned.
-func setupSitemapIndex() *smg.SitemapIndex {
-	isDevelopment := os.Getenv("WGA_ENV") == "development"
+func setupSitemapIndex(config config.Sitemap) *smg.SitemapIndex {
+	isDevelopment := config.Environment.IsDevelopment()
 	index := smg.NewSitemapIndex(isDevelopment)
 	index.SetSitemapIndexName("web_gallery_of_art")
-	index.SetHostname(os.Getenv("WGA_PROTOCOL") + "://" + os.Getenv("WGA_HOSTNAME"))
+	index.SetHostname(config.PublicURL.String())
 	index.SetOutputPath("./wga_sitemap")
 	index.SetServerURI("/sitemaps/")
 
@@ -29,9 +29,9 @@ func setupSitemapIndex() *smg.SitemapIndex {
 	return index
 }
 
-func GenerateSiteMap(app *pocketbase.PocketBase) {
+func GenerateSiteMap(app *pocketbase.PocketBase, config config.Sitemap) {
 
-	index := setupSitemapIndex()
+	index := setupSitemapIndex(config)
 
 	generateArtistMap(app, index)
 	generateArtworksMap(app, index)
