@@ -108,17 +108,23 @@ templ PostcardEditor(p PostcardEditorDTO) {
 						name="name"
 						placeholder="Your name here"
 					/>
-					<label aria-hidden="true" class="hpt" for="email"></label>
-					<input
-						aria-hidden="true"
-						class="hpt"
-						autocomplete="off"
-						type="email"
-						id="email"
-						name="email"
-						placeholder="Your e-mail here"
-					/>
-					<div class="flex flex-row justify-end gap-4">
+				<label aria-hidden="true" class="hpt" for="email"></label>
+				<input
+					aria-hidden="true"
+					class="hpt"
+					autocomplete="off"
+					type="email"
+					id="email"
+					name="email"
+					placeholder="Your e-mail here"
+				/>
+				if p.SiteKey != "" {
+					<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+					<div class="g-recaptcha" data-sitekey={ p.SiteKey }></div>
+				} else {
+					<input type="hidden" name="g-recaptcha-response" value="dev"/>
+				}
+				<div class="flex flex-row justify-end gap-4">
 						<button class="btn btn-primary" type="submit">
 							Send postcard
 						</button>
