@@ -49,6 +49,7 @@ WGA_SMTP_PASSWORD=
 WGA_SENDER_ADDRESS=do-not-reply@wga.hu
 WGA_SENDER_NAME=WGA
 WGA_POSTCARD_FREQUENCY="*/1 * * * *"
+WGA_RECAPTCHA_SITE_KEY=
 WGA_RECAPTCHA_SECRET=
 
 MAILPIT_URL=http://127.0.0.1:8025
@@ -73,10 +74,11 @@ MAILPIT_URL=http://127.0.0.1:8025
 | `WGA_SENDER_ADDRESS`     | The sending email address                                                                        |
 | `WGA_SENDER_NAME`        | The name of the email sender                                                                     |
 | `WGA_POSTCARD_FREQUENCY` | The five-field cron expression for sending queued postcards                                      |
+| `WGA_RECAPTCHA_SITE_KEY` | The reCAPTCHA site key rendered in the postcard widget; required in staging and production       |
 | `WGA_RECAPTCHA_SECRET`   | The reCAPTCHA secret used to verify postcard submissions; required in staging and production     |
 | `MAILPIT_URL`            | The local Mailpit HTTP endpoint that Playwright queries during end-to-end tests                  |
 
-Local `development` and `test` environments may omit `WGA_RECAPTCHA_SECRET`; staging and production cannot start without it.
+Local `development` and `test` environments may omit `WGA_RECAPTCHA_SITE_KEY` and `WGA_RECAPTCHA_SECRET`; staging and production cannot start without both.
 
 The administrator bootstrap is optional. Before the first `migrate`, set both `WGA_ADMIN_EMAIL` and `WGA_ADMIN_PASSWORD` to unique values; leave both empty to skip it.
 
