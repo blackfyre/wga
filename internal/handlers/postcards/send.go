@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/blackfyre/wga/internal/assets/templ/components"
+	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/blackfyre/wga/internal/utils/url"
@@ -15,7 +16,7 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
-func sendPostcard(app *pocketbase.PocketBase, c *core.RequestEvent) error {
+func sendPostcard(app *pocketbase.PocketBase, c *core.RequestEvent, captcha config.Captcha) error {
 
 	artworkId := cmp.Or(c.Request.URL.Query().Get("awid"), "")
 
@@ -24,10 +25,10 @@ func sendPostcard(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 		return utils.BadRequestError(c)
 	}
 
-	return renderForm(artworkId, app, c)
+	return renderForm(artworkId, app, c, captcha)
 }
 
-func renderForm(artworkId string, app *pocketbase.PocketBase, c *core.RequestEvent) error {
+func renderForm(artworkId string, app *pocketbase.PocketBase, c *core.RequestEvent, captcha config.Captcha) error {
 	ctx := context.Background()
 
 	r, err := app.FindRecordById(constants.CollectionArtworks, artworkId)
@@ -49,6 +50,7 @@ func renderForm(artworkId string, app *pocketbase.PocketBase, c *core.RequestEve
 	editor.Title = r.GetString("title")
 	editor.Comment = r.GetString("comment")
 	editor.Technique = r.GetString("technique")
+	editor.SiteKey = captcha.SiteKey()
 
 	err = components.PostcardEditor(editor).Render(ctx, &buf)
 

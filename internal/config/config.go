@@ -118,8 +118,9 @@ type Administrator struct {
 }
 
 type Captcha struct {
-	secret Secret
-	verify bool
+	secret  Secret
+	siteKey string
+	verify  bool
 }
 
 func (c Captcha) Verify() bool {
@@ -128,6 +129,10 @@ func (c Captcha) Verify() bool {
 
 func (c Captcha) Secret() string {
 	return c.secret.Value()
+}
+
+func (c Captcha) SiteKey() string {
+	return c.siteKey
 }
 
 type Postcards struct {
@@ -221,7 +226,10 @@ func LoadFrom(lookup Lookup) Config {
 	storage := parseStorage(lookup)
 	administrator := parseAdministrator(lookup)
 	postcards := parsePostcards(lookup, publicURL.value, sender.value)
-	captcha := Captcha{secret: Secret{value: lookup("WGA_RECAPTCHA_SECRET")}}
+	captcha := Captcha{
+		secret:  Secret{value: lookup("WGA_RECAPTCHA_SECRET")},
+		siteKey: lookup("WGA_RECAPTCHA_SITE_KEY"),
+	}
 	captcha.verify = captcha.secret.Value() != ""
 
 	return Config{
@@ -262,8 +270,13 @@ func (c Config) Server() (Server, error) {
 	}
 
 	var captchaErr error
-	if c.environment.err == nil && !c.environment.value.AllowsCaptchaBypass() && !c.captcha.Verify() {
-		captchaErr = required("WGA_RECAPTCHA_SECRET")
+	if c.environment.err == nil && !c.environment.value.AllowsCaptchaBypass() {
+		if !c.captcha.Verify() {
+			captchaErr = errors.Join(captchaErr, required("WGA_RECAPTCHA_SECRET"))
+		}
+		if c.captcha.SiteKey() == "" {
+			captchaErr = errors.Join(captchaErr, required("WGA_RECAPTCHA_SITE_KEY"))
+		}
 	}
 
 	return server, errors.Join(

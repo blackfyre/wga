@@ -10,6 +10,7 @@ func TestServerCaptchaPolicy(t *testing.T) {
 		name        string
 		environment string
 		secret      string
+		siteKey     string
 		wantVerify  bool
 		wantErr     string
 	}{
@@ -27,9 +28,16 @@ func TestServerCaptchaPolicy(t *testing.T) {
 			wantErr:     "WGA_RECAPTCHA_SECRET",
 		},
 		{
+			name:        "staging requires a site key",
+			environment: "staging",
+			secret:      "captcha-secret",
+			wantErr:     "WGA_RECAPTCHA_SITE_KEY",
+		},
+		{
 			name:        "production verifies configured secret",
 			environment: "production",
 			secret:      "captcha-secret",
+			siteKey:     "captcha-site-key",
 			wantVerify:  true,
 		},
 	}
@@ -39,6 +47,7 @@ func TestServerCaptchaPolicy(t *testing.T) {
 			values := validValues()
 			values["WGA_ENV"] = test.environment
 			values["WGA_RECAPTCHA_SECRET"] = test.secret
+			values["WGA_RECAPTCHA_SITE_KEY"] = test.siteKey
 
 			server, err := LoadFrom(lookup(values)).Server()
 			if test.wantErr != "" {
@@ -52,6 +61,9 @@ func TestServerCaptchaPolicy(t *testing.T) {
 			}
 			if server.Captcha.Verify() != test.wantVerify {
 				t.Fatalf("expected captcha verification %t", test.wantVerify)
+			}
+			if got, want := server.Captcha.SiteKey(), test.siteKey; got != want {
+				t.Fatalf("expected site key %q, got %q", want, got)
 			}
 		})
 	}
@@ -210,10 +222,11 @@ func validValues() map[string]string {
 		"WGA_SMTP_USERNAME":      "",
 		"WGA_SMTP_PASSWORD":      "",
 		"WGA_SENDER_NAME":        "WGA",
-		"WGA_SENDER_ADDRESS":     "do-not-reply@wga.hu",
-		"WGA_POSTCARD_FREQUENCY": "*/5 * * * *",
-		"WGA_ADMIN_EMAIL":        "admin@wga.hu",
-		"WGA_ADMIN_PASSWORD":     "admin-password",
+		"WGA_SENDER_ADDRESS":      "do-not-reply@wga.hu",
+		"WGA_POSTCARD_FREQUENCY":  "*/5 * * * *",
+		"WGA_RECAPTCHA_SITE_KEY":  "captcha-site-key",
+		"WGA_ADMIN_EMAIL":         "admin@wga.hu",
+		"WGA_ADMIN_PASSWORD":      "admin-password",
 	}
 }
 

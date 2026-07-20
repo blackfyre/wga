@@ -84,7 +84,7 @@ func savePostcard(app *pocketbase.PocketBase, c *core.RequestEvent, p *bluemonda
 
 	if err := app.Save(record); err != nil {
 
-		return renderForm(postData.ImageId, app, c)
+		return renderForm(postData.ImageId, app, c, captcha)
 	}
 
 	utils.SendToastMessage("Thank you! Your postcard has been queued for sending!", "success", true, c, "")
