@@ -1,41 +1,47 @@
 package migrations
 
 import (
-	"os"
-	"strconv"
+	"fmt"
 
-	"github.com/joho/godotenv"
 	"github.com/pocketbase/pocketbase/core"
 	m "github.com/pocketbase/pocketbase/migrations"
 )
 
 func init() {
 
-	_ = godotenv.Load()
-
 	m.Register(func(app core.App) error {
+		migrations, err := configuredMigrations()
+		if err != nil {
+			return err
+		}
+
+		settingsConfig, err := migrations.InitialSettings()
+		if err != nil {
+			return fmt.Errorf("initial settings migration: %w", err)
+		}
+
 		settings := app.Settings()
 
 		settings.Meta.AppName = "Web Gallery of Art"
 		settings.Logs.MaxDays = 30
 		settings.Meta.SenderName = "Web Gallery of Art"
 		settings.Meta.SenderAddress = "info@wga.hu"
-		settings.Meta.AppURL = os.Getenv("WGA_PROTOCOL") + "://" + os.Getenv("WGA_HOSTNAME")
+		settings.Meta.AppURL = settingsConfig.PublicURL.String()
 		settings.S3.Enabled = true
-		settings.S3.Endpoint = os.Getenv("WGA_S3_ENDPOINT")
-		settings.S3.AccessKey = os.Getenv("WGA_S3_ACCESS_KEY")
-		settings.S3.Bucket = os.Getenv("WGA_S3_BUCKET")
-		settings.S3.Secret = os.Getenv("WGA_S3_ACCESS_SECRET")
-		settings.S3.Region = os.Getenv("WGA_S3_REGION")
+		settings.S3.Endpoint = settingsConfig.Storage.Endpoint.String()
+		settings.S3.AccessKey = settingsConfig.Storage.AccessKey
+		settings.S3.Bucket = settingsConfig.Storage.Bucket
+		settings.S3.Secret = settingsConfig.Storage.AccessSecret.Value()
+		settings.S3.Region = settingsConfig.Storage.Region
 		settings.S3.ForcePathStyle = true
-		settings.Meta.SenderName = os.Getenv("WGA_SENDER_NAME")
-		settings.Meta.SenderAddress = os.Getenv("WGA_SENDER_ADDRESS")
+		settings.Meta.SenderName = settingsConfig.Mail.Sender.Name
+		settings.Meta.SenderAddress = settingsConfig.Mail.Sender.Address.Address
 
 		settings.SMTP.Enabled = true
-		settings.SMTP.Host = os.Getenv("WGA_SMTP_HOST")
-		settings.SMTP.Port, _ = strconv.Atoi(os.Getenv("WGA_SMTP_PORT"))
-		settings.SMTP.Username = os.Getenv("WGA_SMTP_USERNAME")
-		settings.SMTP.Password = os.Getenv("WGA_SMTP_PASSWORD")
+		settings.SMTP.Host = settingsConfig.Mail.SMTP.Host
+		settings.SMTP.Port = settingsConfig.Mail.SMTP.Port
+		settings.SMTP.Username = settingsConfig.Mail.SMTP.Username
+		settings.SMTP.Password = settingsConfig.Mail.SMTP.Password.Value()
 
 		return app.Save(settings)
 	}, nil)

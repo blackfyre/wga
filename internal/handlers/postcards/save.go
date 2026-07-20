@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 
+	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/errs"
 	"github.com/blackfyre/wga/internal/utils"
@@ -16,7 +16,7 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
-func savePostcard(app *pocketbase.PocketBase, c *core.RequestEvent, p *bluemonday.Policy) error {
+func savePostcard(app *pocketbase.PocketBase, c *core.RequestEvent, p *bluemonday.Policy, captcha config.Captcha) error {
 	postData := struct {
 		SenderName           string   `json:"sender_name" form:"sender_name" query:"sender_name" validate:"required"`
 		SenderEmail          string   `json:"sender_email" form:"sender_email" query:"sender_email" validate:"required,email"`
@@ -49,8 +49,8 @@ func savePostcard(app *pocketbase.PocketBase, c *core.RequestEvent, p *bluemonda
 		return utils.BadRequestError(c)
 	}
 
-	if recaptchaSecret := os.Getenv("WGA_RECAPTCHA_SECRET"); recaptchaSecret != "" {
-		verified, err := verifyRecaptchaToken(c.Request.Context(), http.DefaultClient, recaptchaSecret, postData.RecaptchaToken, c.RealIP())
+	if captcha.Verify() {
+		verified, err := verifyRecaptchaToken(c.Request.Context(), http.DefaultClient, captcha.Secret(), postData.RecaptchaToken, c.RealIP())
 		if err != nil {
 			app.Logger().Error("Failed to verify recaptcha token", "error", err.Error())
 			utils.SendToastMessage("Failed to verify captcha", "error", true, c, "")
@@ -63,8 +63,7 @@ func savePostcard(app *pocketbase.PocketBase, c *core.RequestEvent, p *bluemonda
 			return utils.BadRequestError(c)
 		}
 	} else {
-		// Keep local/dev workflows functional when captcha secret isn't configured.
-		app.Logger().Warn("WGA_RECAPTCHA_SECRET is not set; skipping captcha verification")
+		app.Logger().Warn("Captcha verification is disabled for the local or test environment")
 	}
 
 	collection, err := app.FindCollectionByNameOrId(constants.CollectionPostcards)

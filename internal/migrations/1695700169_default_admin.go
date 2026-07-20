@@ -1,7 +1,7 @@
 package migrations
 
 import (
-	"os"
+	"fmt"
 
 	"github.com/pocketbase/pocketbase/core"
 	m "github.com/pocketbase/pocketbase/migrations"
@@ -9,12 +9,18 @@ import (
 
 func init() {
 
-	email := os.Getenv("WGA_ADMIN_EMAIL")
-	password := os.Getenv("WGA_ADMIN_PASSWORD")
-
 	m.Register(func(app core.App) error {
+		migrations, err := configuredMigrations()
+		if err != nil {
+			return err
+		}
 
-		if email != "" && password != "" {
+		administrator, err := migrations.Administrator()
+		if err != nil {
+			return fmt.Errorf("default admin migration: %w", err)
+		}
+
+		if administrator.Enabled {
 
 			superusers, err := app.FindCollectionByNameOrId(core.CollectionNameSuperusers)
 			if err != nil {
@@ -23,10 +29,8 @@ func init() {
 
 			record := core.NewRecord(superusers)
 
-			// note: the values can be eventually loaded via os.Getenv(key)
-			// or from a special local config file
-			record.Set("email", email)
-			record.Set("password", password)
+			record.Set("email", administrator.Email.Address)
+			record.Set("password", administrator.Password.Value())
 
 			return app.Save(record)
 		}
@@ -34,7 +38,20 @@ func init() {
 		return nil
 
 	}, func(app core.App) error {
-		record, _ := app.FindAuthRecordByEmail(core.CollectionNameSuperusers, email)
+		migrations, err := configuredMigrations()
+		if err != nil {
+			return err
+		}
+
+		administrator, err := migrations.Administrator()
+		if err != nil {
+			return fmt.Errorf("default admin migration: %w", err)
+		}
+		if !administrator.Enabled {
+			return nil
+		}
+
+		record, _ := app.FindAuthRecordByEmail(core.CollectionNameSuperusers, administrator.Email.Address)
 		if record == nil {
 			return nil // probably already deleted
 		}

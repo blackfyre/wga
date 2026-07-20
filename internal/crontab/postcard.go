@@ -2,12 +2,11 @@ package crontab
 
 import (
 	"net/mail"
-	"os"
 	"strings"
 	"time"
 
 	"github.com/blackfyre/wga/internal/assets"
-	"github.com/blackfyre/wga/internal/utils"
+	"github.com/blackfyre/wga/internal/config"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/mailer"
@@ -20,13 +19,13 @@ import (
 // The message is then sent using the mailClient.
 // If there is an error sending the postcard, an error message is logged and the function returns.
 // Finally, the postcard record is updated using the updatePostcardRecord function.
-func sendPostcard(r *core.Record, app *pocketbase.PocketBase, mailClient mailer.Mailer) {
+func sendPostcard(r *core.Record, app *pocketbase.PocketBase, mailClient mailer.Mailer, postcards config.Postcards) {
 
 	recipients := convertCommaSeparatedEmailsToMailAddresses(r.GetString("recipients"))
 
 	for _, rec := range recipients {
 
-		message := renderMessage(r, rec, app)
+		message := renderMessage(r, rec, app, postcards)
 
 		err := mailClient.Send(message)
 
@@ -53,12 +52,12 @@ func convertCommaSeparatedEmailsToMailAddresses(emails string) []mail.Address {
 // renderMessage renders the email message for a postcard notification.
 // It takes a pointer to a models.Record, a mail.Address, and a pointer to a pocketbase.PocketBase as input.
 // It returns a pointer to a mailer.Message.
-func renderMessage(r *core.Record, rec mail.Address, app *pocketbase.PocketBase) *mailer.Message {
+func renderMessage(r *core.Record, rec mail.Address, app *pocketbase.PocketBase, postcards config.Postcards) *mailer.Message {
 	html, err := assets.RenderEmail("postcard:notification", map[string]any{
 		"SenderName": r.GetString("sender_name"),
-		"PickUpUrl":  utils.AssetUrl("/postcard?p=" + r.GetString("id")),
+		"PickUpUrl":  postcards.PublicURL.Resolve("/postcard?p=" + r.GetString("id")),
 		"Title":      "",
-		"LogoUrl":    utils.AssetUrl("/assets/images/logo.png"),
+		"LogoUrl":    postcards.PublicURL.Resolve("/assets/images/logo.png"),
 	})
 
 	if err != nil {
@@ -68,8 +67,8 @@ func renderMessage(r *core.Record, rec mail.Address, app *pocketbase.PocketBase)
 
 	message := &mailer.Message{
 		From: mail.Address{
-			Name:    os.Getenv("WGA_SENDER_NAME"),
-			Address: os.Getenv("WGA_SENDER_ADDRESS"),
+			Name:    postcards.Sender.Name,
+			Address: postcards.Sender.Address.Address,
 		},
 		To:      []mail.Address{rec},
 		Subject: "You got a postcard from " + r.GetString("sender_name") + "!",
@@ -96,8 +95,7 @@ func updatePostcardRecord(r *core.Record, app *pocketbase.PocketBase) {
 // sendPostcards sends postcards based on a specified frequency.
 // It retrieves postcard records with a status of 'queued' from the database,
 // sends each postcard using the mail client, and updates the postcard record.
-// The frequency can be customized by setting the environment variable WGA_POSTCARD_FREQUENCY.
-// If the environment variable is not set, the default frequency is "*/1 * * * *".
+// The frequency is provided by the application configuration.
 //
 // Parameters:
 // - app: A pointer to the PocketBase application instance.
@@ -105,20 +103,14 @@ func updatePostcardRecord(r *core.Record, app *pocketbase.PocketBase) {
 //
 // Example usage:
 //
-//	sendPostcards(app, scheduler)
+//	sendPostcards(app, postcards)
 //
 // Note: The sendPostcards function assumes that the necessary dependencies are already imported.
-func sendPostcards(app *pocketbase.PocketBase) {
+func sendPostcards(app *pocketbase.PocketBase, postcards config.Postcards) {
 
 	app.Logger().Info("Starting postcard cron job...")
 
-	var frequency = os.Getenv("WGA_POSTCARD_FREQUENCY")
-
-	if frequency == "" {
-		frequency = "*/1 * * * *"
-	}
-
-	app.Cron().MustAdd("postcards", frequency, func() {
+	app.Cron().MustAdd("postcards", postcards.Expression(), func() {
 		records, err := app.FindRecordsByFilter(
 			"postcards",         // collection
 			"status = 'queued'", // filter
@@ -135,7 +127,7 @@ func sendPostcards(app *pocketbase.PocketBase) {
 		mailClient := app.NewMailClient()
 
 		for _, r := range records {
-			sendPostcard(r, app, mailClient)
+			sendPostcard(r, app, mailClient, postcards)
 			updatePostcardRecord(r, app)
 		}
 	})

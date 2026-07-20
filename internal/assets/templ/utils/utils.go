@@ -2,9 +2,9 @@ package utils
 
 import (
 	"context"
-	"os"
 	"regexp"
-	"strings"
+
+	"github.com/blackfyre/wga/internal/utils/publicurl"
 )
 
 type ContextKey string
@@ -27,16 +27,7 @@ var TwitterImageKey ContextKey = "twitter:image"
 var CanonicalUrlKey ContextKey = "canonical:url"
 
 func AssetUrl(path string) string {
-
-	protocol := os.Getenv("WGA_PROTOCOL")
-	hostname := os.Getenv("WGA_HOSTNAME")
-
-	// if the path beings with a slash, remove it
-	if !strings.HasPrefix(path, "/") {
-		path = "/" + path
-	}
-
-	return protocol + "://" + hostname + path
+	return publicurl.Resolve(path)
 }
 
 // GetTitle retrieves the title from the context.
