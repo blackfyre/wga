@@ -12,7 +12,7 @@ This specification defines feature parity as preserving those user outcomes in t
 
 ### Current readiness
 
-**Core comparison is ready; legacy feature parity is incomplete.** The current `/dual-mode` route already renders two independently scrollable panes, supports artist and artwork content, preserves pane state in the URL, and routes supported artist/artwork links to either pane. The remaining gaps are catalogue discovery, artist-list filtering, printing, and the final accessibility and desktop review.
+**Core comparison is ready; legacy feature parity is incomplete.** The current `/dual-mode` route already renders two independently scrollable panes, supports artist and artwork content, preserves pane state in the URL, and routes supported artist/artwork links to either pane. The remaining gaps are catalogue discovery, artist-list filtering, and the final accessibility review.
 
 | Legacy capability                                                                      | Current status | Evidence                                                                                                    |
 | -------------------------------------------------------------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------- |
@@ -25,9 +25,9 @@ This specification defines feature parity as preserving those user outcomes in t
 | Create artist lists by school, period, time-line, profession, and sort order           | Missing        | The current artist listing only supports a name query and cannot be loaded into a pane                      |
 | Copy, reverse, and clear panes                                                         | Complete       | URL-backed pane operations in `internal/assets/templ/pages/dual.templ` and Playwright coverage              |
 | Explicit standard-view exit and music-selection action                                 | Complete       | Standard view links to `/`; unavailable Music selection is intentionally omitted                            |
-| Print two selected pages together                                                      | Missing        | No Dual Mode print experience or acceptance coverage                                                        |
+| Print two selected pages together                                                      | Out of scope   | Two-pane printing is intentionally excluded                                                                 |
 
-The legacy page recommends a 1024 × 768 display. The modern view activates at 768 px; it must be visually verified at the legacy reference size before calling the desktop experience complete.
+The legacy page recommends a 1024 × 768 display. This historic resolution is not a modern acceptance target; the current view retains its desktop-only breakpoint below 768 px.
 
 ## 2. Target Experience
 
@@ -46,12 +46,11 @@ The legacy page recommends a 1024 × 768 display. The modern view activates at 7
 - Provide **Copy left to right**, **Copy right to left**, **Reverse panes**, **Clear left**, and **Clear right** controls.
 - Provide an explicit, keyboard-accessible Standard view action that returns to `/` and intentionally discards the Dual Mode layout state.
 - Expose per-pane search or a dual-safe route from search results so a result can be loaded directly into the selected pane.
-- Link to Music selection only when the music feature is available; otherwise omit the action rather than presenting a dead control.
+- Keep Music selection outside this feature's scope.
 
-### Printing and accessibility
+### Accessibility
 
-- Provide an A4-landscape print layout that includes both selected panes without global navigation, pane controls, feedback UI, or modal chrome.
-- Work at 1024 × 768 and higher; retain the current clear desktop-only state below the supported breakpoint.
+- Retain the current clear desktop-only state below the supported breakpoint.
 - Use labelled buttons and form controls, visible keyboard focus, logical focus order, and accessible dialog labelling and focus restoration for content selection.
 - Keep the modern implementation frame-free and progressively usable without hover-only controls.
 
@@ -84,14 +83,14 @@ The legacy page recommends a 1024 × 768 display. The modern view activates at 7
 - [x] Provide a dual-safe artwork search route. **Verified by:** Dual Mode artwork-search journeys preserve both panes and target settings with JavaScript enabled and disabled.
 - [ ] Add integration and browser coverage for discovery paths. **Done when:** one path from each supported catalogue entry point loads content into the selected pane.
 
-### Phase 3 — Supporting parity outcomes
+### Phase 3 — Accessibility
 
-#### Item: Print, music, and accessibility
+#### Item: Accessibility
 
-- [ ] Add a two-pane print stylesheet and print action. **Done when:** A4-landscape browser print preview contains both selected panes and excludes application chrome.
-- [ ] Restore or intentionally exclude the Music selection action based on the music feature's delivery status. **Done when:** the Dual Mode UI contains no dead music link.
+- [x] Exclude the A4-landscape print layout. **Decision:** two-pane printing is out of scope.
+- [x] Exclude Music selection and related functions. **Decision:** music is out of scope.
 - [ ] Complete an accessibility pass for the controls and selection dialog. **Done when:** automated checks and keyboard-only manual testing cover focus, labels, dialog focus restoration, and control order.
-- [ ] Perform a manual desktop review at 1024 × 768 and capture the result in the tracking issue. **Done when:** comparison, navigation, controls, and print behaviour remain usable at the legacy reference size.
+- [x] Exclude the 1024 × 768 desktop review. **Decision:** this legacy resolution is no longer a mainstream target.
 
 ## 4. Acceptance Criteria
 
@@ -101,15 +100,16 @@ The legacy page recommends a 1024 × 768 display. The modern view activates at 7
 - [ ] Link-target settings, pane state, and operations survive reload and sharing.
 - [ ] Each legacy artist-list filter has a backed, reproducible result or an explicit documented exclusion; supported results can be used from Dual Mode.
 - [x] The UI includes an explicit standard-view exit and no unavailable music action.
-- [ ] A4-landscape print preview produces two usable panes on one sheet; desktop layout is separately verified at 1024 × 768 or higher.
 - [ ] Desktop, small-screen fallback, keyboard, and screen-reader behaviour have focused automated checks or a documented manual accessibility procedure.
 
 ## 5. Non-Goals
 
 - Reintroducing HTML frames, image-only controls, hover-only interaction, or the legacy layout.
 - Supporting an active two-pane interface below the desktop breakpoint.
+- A4-landscape two-pane printing.
+- Music selection and related music functions.
+- Optimising or manually certifying the view for the legacy 1024 × 768 resolution.
 - Treating every existing or future site route as Dual Mode content without an explicit compatibility decision.
-- Rebuilding the music subsystem solely to display a Dual Mode link.
 
 ## 6. Evidence Sources
 
