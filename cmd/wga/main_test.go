@@ -10,6 +10,10 @@ func TestCommandCapabilityFor(t *testing.T) {
 	}{
 		{name: "default server", want: commandNeedsServer},
 		{name: "server flags", args: []string{"--dev"}, want: commandNeedsServer},
+		{name: "HTTP listener", args: []string{"--http", "0.0.0.0:8090"}, want: commandNeedsServer},
+		{name: "HTTPS listener", args: []string{"--https", "0.0.0.0:8443"}, want: commandNeedsServer},
+		{name: "allowed origins", args: []string{"--origins", "https://gallery.example"}, want: commandNeedsServer},
+		{name: "equals HTTP listener", args: []string{"--http=0.0.0.0:8090"}, want: commandNeedsServer},
 		{name: "serve", args: []string{"serve"}, want: commandNeedsServer},
 		{name: "sitemap", args: []string{"generate-sitemap"}, want: commandNeedsSitemap},
 		{name: "migration", args: []string{"migrate", "up"}, want: commandNeedsNothing},

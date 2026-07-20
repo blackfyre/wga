@@ -120,7 +120,7 @@ func commandCapabilityFor(args []string) commandCapability {
 
 	for index := 0; index < len(args); index++ {
 		arg := args[index]
-		if arg == "--dir" || arg == "--encryptionEnv" || arg == "--queryTimeout" {
+		if arg == "--dir" || arg == "--encryptionEnv" || arg == "--queryTimeout" || arg == "--origins" || arg == "--http" || arg == "--https" {
 			index++
 			continue
 		}
