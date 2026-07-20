@@ -16,10 +16,10 @@ templ ArtworkPage(aw dto.Artwork) {
 templ ArtistListBreadcrumb(aw dto.Artwork) {
 	<li>
 		<div class="flex items-center">
-			<svg class="h-5 w-5 flex-shrink-0 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+			<svg class="h-5 w-5 flex-shrink-0 text-base-content/60" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
 				<path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"></path>
 			</svg>
-			<a href="/artists" hx-get="/artists" hx-target={ aw.HxTarget } class="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700">Artists</a>
+			<a href="/artists" hx-get="/artists" hx-target={ aw.HxTarget } class="ml-4 text-sm font-medium text-base-content/70 hover:text-base-content">Artists</a>
 		</div>
 	</li>
 }
@@ -27,10 +27,10 @@ templ ArtistListBreadcrumb(aw dto.Artwork) {
 templ ArtworksBreadcrumb(aw dto.Artwork) {
 	<li>
 		<div class="flex items-center">
-			<svg class="h-5 w-5 flex-shrink-0 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+			<svg class="h-5 w-5 flex-shrink-0 text-base-content/60" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
 				<path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"></path>
 			</svg>
-			<a href="/artworks" hx-get="/artworks" hx-target={ aw.HxTarget } class="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700">Artworks</a>
+			<a href="/artworks" hx-get="/artworks" hx-target={ aw.HxTarget } class="ml-4 text-sm font-medium text-base-content/70 hover:text-base-content">Artworks</a>
 		</div>
 	</li>
 }
@@ -38,10 +38,10 @@ templ ArtworksBreadcrumb(aw dto.Artwork) {
 templ ArtistBreadcrumbItem(aw dto.Artwork) {
 	<li>
 		<div class="flex items-center">
-			<svg class="h-5 w-5 flex-shrink-0 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+			<svg class="h-5 w-5 flex-shrink-0 text-base-content/60" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
 				<path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"></path>
 			</svg>
-			<a href={ templ.URL(aw.Artist.Url) } hx-get={ aw.Artist.Url } hx-target={ aw.HxTarget } class="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700">{ aw.Artist.Name }</a>
+			<a href={ templ.URL(aw.Artist.Url) } hx-get={ aw.Artist.Url } hx-target={ aw.HxTarget } class="ml-4 text-sm font-medium text-base-content/70 hover:text-base-content">{ aw.Artist.Name }</a>
 		</div>
 	</li>
 }
@@ -57,7 +57,7 @@ templ ArtworkBlock(aw dto.Artwork) {
 					<ol role="list" class="flex items-center space-x-4">
 						<li>
 							<div>
-								<a href="/" hx-get="/" class="text-gray-400 hover:text-gray-500">
+								<a href="/" hx-get="/" class="text-base-content/60 hover:text-base-content/80">
 									<svg class="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
 										<path fill-rule="evenodd" d="M9.293 2.293a1 1 0 011.414 0l7 7A1 1 0 0117 11h-1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-3a1 1 0 00-1-1H9a1 1 0 00-1 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-6H3a1 1 0 01-.707-1.707l7-7z" clip-rule="evenodd"></path>
 									</svg>
@@ -73,10 +73,10 @@ templ ArtworkBlock(aw dto.Artwork) {
 						}
 						<li>
 							<div class="flex items-center">
-								<svg class="h-5 w-5 flex-shrink-0 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+								<svg class="h-5 w-5 flex-shrink-0 text-base-content/60" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
 									<path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"></path>
 								</svg>
-								<a href={ templ.URL(aw.Url) } hx-get={ aw.Url } hx-target={ aw.HxTarget } class="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700" aria-current="page">{ aw.Title }</a>
+								<a href={ templ.URL(aw.Url) } hx-get={ aw.Url } hx-target={ aw.HxTarget } class="ml-4 text-sm font-medium text-base-content/70 hover:text-base-content" aria-current="page">{ aw.Title }</a>
 							</div>
 						</li>
 					</ol>
