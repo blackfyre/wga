@@ -25,6 +25,9 @@ func TestAssetUrlUsesSharedConfiguredPublicURL(t *testing.T) {
 	}
 
 	apputils.ConfigurePublicURL(server.PublicURL)
+	t.Cleanup(func() {
+		apputils.ConfigurePublicURL(config.PublicURL{})
+	})
 
 	tests := []struct {
 		name string
