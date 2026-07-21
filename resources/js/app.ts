@@ -142,6 +142,41 @@ interface ToastEvent extends Event {
 	};
 }
 
+const initThemeToggle = () => {
+	const themeToggle = document.querySelector<HTMLInputElement>(
+		"[data-theme-toggle]",
+	);
+	if (!themeToggle) {
+		return;
+	}
+
+	let savedTheme: string | null = null;
+	try {
+		savedTheme = window.localStorage.getItem("wga-theme");
+	} catch {}
+
+	const savedThemeIsValid =
+		savedTheme === "wga_light" || savedTheme === "wga_dark";
+	themeToggle.checked = savedTheme === "wga_dark";
+	if (!savedThemeIsValid) {
+		themeToggle.checked = window.matchMedia(
+			"(prefers-color-scheme: dark)",
+		).matches;
+	}
+
+	themeToggle.addEventListener("change", () => {
+		let theme = "wga_light";
+		if (themeToggle.checked) {
+			theme = "wga_dark";
+		}
+
+		document.documentElement.dataset.theme = theme;
+		try {
+			window.localStorage.setItem("wga-theme", theme);
+		} catch {}
+	});
+};
+
 const deepMerge = (target: object, source: object): object => {
 	// Iterate over keys in the source object
 	for (const key in source) {
@@ -841,6 +876,7 @@ const wgaInternal: wgaInternals = {
 
 (() => {
 	logger.debug("Initializing WGA");
+	initThemeToggle();
 	wgaInternal.func.init();
 })();
 

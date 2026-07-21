@@ -42,6 +42,14 @@ templ LayoutBase(bodyClasses string, HtmxTargetArea string) {
 			if utils.GetCanonicalUrl(ctx) != "" {
 				<link rel="canonical" href={ utils.GetCanonicalUrl(ctx) }/>
 			}
+			<script>
+				try {
+					const savedTheme = window.localStorage.getItem("wga-theme");
+					if (savedTheme === "wga_light" || savedTheme === "wga_dark") {
+						document.documentElement.dataset.theme = savedTheme;
+					}
+				} catch {}
+			</script>
 			<link rel="stylesheet" href="/assets/css/style.css"/>
 			<link rel="stylesheet" href="/assets/css/vendor/viewer.min.css"/>
 			<link rel="apple-touch-icon" sizes="180x180" href="/assets/images/apple-touch-icon.png"/>

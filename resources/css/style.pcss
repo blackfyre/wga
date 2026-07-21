@@ -43,6 +43,41 @@
   --noise: 0;
 }
 
+@plugin "daisyui/theme" {
+  name: "wga_dark";
+  default: false;
+  prefersdark: true;
+  color-scheme: "dark";
+  --color-base-100: oklch(20% 0.025 250);
+  --color-base-200: oklch(24% 0.025 250);
+  --color-base-300: oklch(29% 0.025 250);
+  --color-base-content: oklch(94% 0.01 250);
+  --color-primary: oklch(78% 0.1 250);
+  --color-primary-content: oklch(20% 0.025 250);
+  --color-secondary: oklch(78% 0.14 350);
+  --color-secondary-content: oklch(21% 0.03 350);
+  --color-accent: oklch(84% 0.14 100);
+  --color-accent-content: oklch(23% 0.04 100);
+  --color-neutral: oklch(30% 0.02 250);
+  --color-neutral-content: oklch(93% 0.01 250);
+  --color-info: oklch(75% 0.09 220);
+  --color-info-content: oklch(20% 0.02 220);
+  --color-success: oklch(76% 0.14 155);
+  --color-success-content: oklch(20% 0.03 155);
+  --color-warning: oklch(82% 0.15 85);
+  --color-warning-content: oklch(24% 0.04 85);
+  --color-error: oklch(74% 0.16 25);
+  --color-error-content: oklch(20% 0.03 25);
+  --radius-selector: 0.25rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.25rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
 
 .btn.is-feedback {
   position: fixed;
@@ -59,35 +94,35 @@
 }
 
 .content {
-  @apply text-lg text-gray-950 leading-normal;
+  @apply text-lg text-base-content leading-normal;
   & > * + *,
   & li + li,
   & li > p + p {
     @apply mt-6;
   }
   & strong {
-    @apply text-black font-bold;
+    @apply text-base-content font-bold;
   }
   & a {
-    @apply text-black font-semibold;
+    @apply text-base-content font-semibold;
   }
   & strong a {
     @apply font-bold;
   }
   & h2 {
-    @apply leading-tight text-xl font-bold text-black mb-2 mt-10;
+    @apply leading-tight text-xl font-bold text-base-content mb-2 mt-10;
   }
   & h3 {
-    @apply leading-tight text-lg font-bold text-black mt-8 -mb-2;
+    @apply leading-tight text-lg font-bold text-base-content mt-8 -mb-2;
   }
   & code {
-    @apply font-mono text-sm inline bg-gray-400 px-1;
+    @apply font-mono text-sm inline bg-base-300 px-1;
   }
   & pre code {
-    @apply block bg-black p-4 rounded;
+    @apply block bg-neutral text-neutral-content p-4 rounded;
   }
   & blockquote {
-    @apply border-l-4 border-gray-300 pl-4 italic;
+    @apply border-l-4 border-base-300 pl-4 italic;
   }
   & ul,
   & ol {
