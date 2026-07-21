@@ -25,8 +25,7 @@ test("persists explicitly selected themes", async ({ page }) => {
 
 	const themeToggle = page.getByRole("checkbox", { name: "Dark mode" });
 	await expect(themeToggle).toBeChecked();
-	await themeToggle.focus();
-	await page.keyboard.press("Space");
+	await themeToggle.press("Space");
 
 	await expect(page.locator("html")).toHaveAttribute("data-theme", "wga_light");
 	await expect(page.locator("html")).toHaveCSS("color-scheme", "light");
@@ -36,8 +35,7 @@ test("persists explicitly selected themes", async ({ page }) => {
 	await expect(themeToggle).not.toBeChecked();
 	await expect(page.locator("html")).toHaveAttribute("data-theme", "wga_light");
 
-	await themeToggle.focus();
-	await page.keyboard.press("Space");
+	await themeToggle.press("Space");
 
 	await expect(page.locator("html")).toHaveAttribute("data-theme", "wga_dark");
 	await expect(page.locator("html")).toHaveCSS("color-scheme", "dark");
