@@ -42,14 +42,28 @@ func TestMigrationsKeepExistingSettings(t *testing.T) {
 	if freshSettings.S3.Enabled {
 		t.Fatal("expected PocketBase default storage configuration")
 	}
-	for _, collectionName := range []string{"strings", "artists", "artworks"} {
+	for _, collectionName := range []string{"strings", "schools", "artists", "art_forms", "art_types", "artworks", "glossary", "static_pages"} {
 		records, err := fresh.FindRecordsByFilter(collectionName, "", "", 0, 0)
 		if err != nil {
 			t.Fatalf("find %s records: %v", collectionName, err)
 		}
-		if len(records) != 0 {
-			t.Fatalf("expected no %s seed records, got %d", collectionName, len(records))
+		if len(records) != 1 {
+			t.Fatalf("expected one %s seed record, got %d", collectionName, len(records))
 		}
+	}
+	welcome, err := fresh.FindFirstRecordByData("strings", "name", "welcome")
+	if err != nil {
+		t.Fatalf("find welcome seed record: %v", err)
+	}
+	if welcome.GetString("content") == "" {
+		t.Fatal("expected welcome seed content")
+	}
+	artwork, err := fresh.FindFirstRecordByData("artworks", "title", "Cobalt Horizon")
+	if err != nil {
+		t.Fatalf("find artwork seed record: %v", err)
+	}
+	if !artwork.GetBool("published") || len(artwork.GetStringSlice("author")) != 1 {
+		t.Fatal("expected a published artwork with one artist relation")
 	}
 	if got, want := freshSettings.SMTP.Port, 2525; got != want {
 		t.Fatalf("expected SMTP port %d, got %d", want, got)
