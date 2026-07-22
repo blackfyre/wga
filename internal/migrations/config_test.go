@@ -58,6 +58,26 @@ func TestMigrationsKeepExistingSettings(t *testing.T) {
 	if welcome.GetString("content") == "" {
 		t.Fatal("expected welcome seed content")
 	}
+	if got, want := welcome.GetString("content"), referenceWelcomeContent; got != want {
+		t.Fatalf("expected reference welcome seed content, got %q", got)
+	}
+	school, err := fresh.FindFirstRecordByData("schools", "slug", referenceSchoolSlug)
+	if err != nil {
+		t.Fatalf("find reference school seed record: %v", err)
+	}
+	if got, want := school.GetString("name"), referenceSchoolName; got != want {
+		t.Fatalf("expected school %q, got %q", want, got)
+	}
+	privacyPage, err := fresh.FindFirstRecordByData("static_pages", "slug", "privacy-policy")
+	if err != nil {
+		t.Fatalf("find privacy page seed record: %v", err)
+	}
+	if got, want := privacyPage.GetString("title"), referencePrivacyPageTitle; got != want {
+		t.Fatalf("expected privacy page title %q, got %q", want, got)
+	}
+	if got, want := privacyPage.GetString("content"), seedPrivacyPageContent; got != want {
+		t.Fatalf("expected seed privacy page content, got %q", got)
+	}
 	artwork, err := fresh.FindFirstRecordByData("artworks", "title", "Cobalt Horizon")
 	if err != nil {
 		t.Fatalf("find artwork seed record: %v", err)
