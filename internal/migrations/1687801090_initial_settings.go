@@ -27,13 +27,15 @@ func init() {
 		settings.Meta.SenderName = "Web Gallery of Art"
 		settings.Meta.SenderAddress = "info@wga.hu"
 		settings.Meta.AppURL = settingsConfig.PublicURL.String()
-		settings.S3.Enabled = true
-		settings.S3.Endpoint = settingsConfig.Storage.Endpoint.String()
-		settings.S3.AccessKey = settingsConfig.Storage.AccessKey
-		settings.S3.Bucket = settingsConfig.Storage.Bucket
-		settings.S3.Secret = settingsConfig.Storage.AccessSecret.Value()
-		settings.S3.Region = settingsConfig.Storage.Region
-		settings.S3.ForcePathStyle = true
+		if settingsConfig.Storage.Enabled {
+			settings.S3.Enabled = true
+			settings.S3.Endpoint = settingsConfig.Storage.Endpoint.String()
+			settings.S3.AccessKey = settingsConfig.Storage.AccessKey
+			settings.S3.Bucket = settingsConfig.Storage.Bucket
+			settings.S3.Secret = settingsConfig.Storage.AccessSecret.Value()
+			settings.S3.Region = settingsConfig.Storage.Region
+			settings.S3.ForcePathStyle = true
+		}
 		settings.Meta.SenderName = settingsConfig.Mail.Sender.Name
 		settings.Meta.SenderAddress = settingsConfig.Mail.Sender.Address.Address
 

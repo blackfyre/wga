@@ -86,6 +86,7 @@ func (u PublicURL) Resolve(path string) string {
 }
 
 type Storage struct {
+	Enabled        bool
 	Endpoint       url.URL
 	Bucket         string
 	Region         string
@@ -179,15 +180,17 @@ type Migrations struct {
 }
 
 func (m Migrations) InitialSettings() (InitialSettings, error) {
+	storage := m.storage.value
+	storage.Enabled = m.storage.err == nil
+
 	settings := InitialSettings{
 		PublicURL: m.publicURL.value,
-		Storage:   m.storage.value,
+		Storage:   storage,
 		Mail:      m.mail.value,
 	}
 
 	return settings, errors.Join(
 		m.publicURL.err,
-		m.storage.err,
 		m.mail.err,
 		requireMigrationMail(settings.Mail),
 	)

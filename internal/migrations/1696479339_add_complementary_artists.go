@@ -5,17 +5,19 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/blackfyre/wga/internal/assets"
 	"github.com/pocketbase/pocketbase/core"
 	m "github.com/pocketbase/pocketbase/migrations"
 )
 
 func init() {
 	m.Register(func(app core.App) error {
-		data, err := assets.InternalFiles.ReadFile("reference/complementary_artists.json")
+		data, available, err := readSeedFile("reference/complementary_artists.json")
 
 		if err != nil {
 			return err
+		}
+		if !available {
+			return nil
 		}
 
 		var c []Artist

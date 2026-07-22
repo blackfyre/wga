@@ -3,7 +3,6 @@ package migrations
 import (
 	"encoding/json"
 
-	"github.com/blackfyre/wga/internal/assets"
 	"github.com/pocketbase/pocketbase/core"
 	m "github.com/pocketbase/pocketbase/migrations"
 )
@@ -53,10 +52,13 @@ func init() {
 			return err
 		}
 
-		data, err := assets.InternalFiles.ReadFile("reference/glossary_stage_1.json")
+		data, available, err := readSeedFile("reference/glossary_stage_1.json")
 
 		if err != nil {
 			return err
+		}
+		if !available {
+			return nil
 		}
 
 		var glossary []Glossary

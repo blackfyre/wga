@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/blackfyre/wga/internal/assets"
 	"github.com/pocketbase/pocketbase/core"
 	m "github.com/pocketbase/pocketbase/migrations"
 )
@@ -52,10 +51,13 @@ func init() {
 			return err
 		}
 
-		data, err := assets.InternalFiles.ReadFile("reference/strings.json")
+		data, available, err := readSeedFile("reference/strings.json")
 
 		if err != nil {
 			return err
+		}
+		if !available {
+			return nil
 		}
 
 		var c []PublicString

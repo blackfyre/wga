@@ -2,25 +2,28 @@ package migrations
 
 import (
 	"testing"
+	"testing/fstest"
 
+	"github.com/blackfyre/wga/internal/assets"
 	"github.com/blackfyre/wga/internal/config"
 	"github.com/pocketbase/pocketbase/core"
 )
 
 func TestMigrationsKeepExistingSettings(t *testing.T) {
+	originalSeedFiles := seedFiles
+	seedFiles = assets.InternalFiles
+	t.Cleanup(func() {
+		seedFiles = originalSeedFiles
+	})
+
 	configuration := config.LoadFrom(func(key string) string {
 		return map[string]string{
-			"WGA_PROTOCOL":         "https",
-			"WGA_HOSTNAME":         "gallery.example",
-			"WGA_S3_ENDPOINT":      "https://storage.example",
-			"WGA_S3_BUCKET":        "wga-test",
-			"WGA_S3_REGION":        "eu-central-1",
-			"WGA_S3_ACCESS_KEY":    "access-key",
-			"WGA_S3_ACCESS_SECRET": "access-secret",
-			"WGA_SMTP_HOST":        "smtp.example",
-			"WGA_SMTP_PORT":        "2525",
-			"WGA_SENDER_NAME":      "WGA Test",
-			"WGA_SENDER_ADDRESS":   "sender@example.com",
+			"WGA_PROTOCOL":       "https",
+			"WGA_HOSTNAME":       "gallery.example",
+			"WGA_SMTP_HOST":      "smtp.example",
+			"WGA_SMTP_PORT":      "2525",
+			"WGA_SENDER_NAME":    "WGA Test",
+			"WGA_SENDER_ADDRESS": "sender@example.com",
 		}[key]
 	})
 	if err := Configure(configuration.Migrations()); err != nil {
@@ -37,8 +40,17 @@ func TestMigrationsKeepExistingSettings(t *testing.T) {
 	if got, want := freshSettings.Meta.AppURL, "https://gallery.example"; got != want {
 		t.Fatalf("expected app URL %q, got %q", want, got)
 	}
-	if got, want := freshSettings.S3.Endpoint, "https://storage.example"; got != want {
-		t.Fatalf("expected storage endpoint %q, got %q", want, got)
+	if freshSettings.S3.Enabled {
+		t.Fatal("expected PocketBase default storage configuration")
+	}
+	for _, collectionName := range []string{"strings", "artists", "artworks"} {
+		records, err := fresh.FindRecordsByFilter(collectionName, "", "", 0, 0)
+		if err != nil {
+			t.Fatalf("find %s records: %v", collectionName, err)
+		}
+		if len(records) == 0 {
+			t.Fatalf("expected %s seed records", collectionName)
+		}
 	}
 	if got, want := freshSettings.SMTP.Port, 2525; got != want {
 		t.Fatalf("expected SMTP port %d, got %d", want, got)
@@ -74,6 +86,33 @@ func TestMigrationsKeepExistingSettings(t *testing.T) {
 	if got, want := existingSettings.SMTP.Port, freshSettings.SMTP.Port; got != want {
 		t.Fatalf("expected existing SMTP port %d, got %d", want, got)
 	}
+
+	t.Run("missing seed files", func(t *testing.T) {
+		seedFiles = fstest.MapFS{}
+		t.Cleanup(func() {
+			seedFiles = assets.InternalFiles
+		})
+
+		app := newMigrationTestApp(t, t.TempDir())
+		defer func() {
+			if err := app.ResetBootstrapState(); err != nil {
+				t.Error(err)
+			}
+		}()
+		if err := app.RunAllMigrations(); err != nil {
+			t.Fatalf("run migrations without seed files: %v", err)
+		}
+
+		for _, collectionName := range []string{"strings", "artists", "artworks"} {
+			records, err := app.FindRecordsByFilter(collectionName, "", "", 0, 0)
+			if err != nil {
+				t.Fatalf("find %s records: %v", collectionName, err)
+			}
+			if len(records) != 0 {
+				t.Fatalf("expected no %s seed records, got %d", collectionName, len(records))
+			}
+		}
+	})
 }
 
 func newMigrationTestApp(t *testing.T, dataDir string) *core.BaseApp {

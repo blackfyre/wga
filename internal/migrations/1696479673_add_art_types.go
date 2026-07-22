@@ -3,7 +3,6 @@ package migrations
 import (
 	"encoding/json"
 
-	"github.com/blackfyre/wga/internal/assets"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/pocketbase/pocketbase/core"
 	m "github.com/pocketbase/pocketbase/migrations"
@@ -52,10 +51,13 @@ func init() {
 			return err
 		}
 
-		data, err := assets.InternalFiles.ReadFile("reference/types.json")
+		data, available, err := readSeedFile("reference/types.json")
 
 		if err != nil {
 			return err
+		}
+		if !available {
+			return nil
 		}
 
 		var c []ArtType

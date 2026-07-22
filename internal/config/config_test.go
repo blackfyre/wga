@@ -90,8 +90,10 @@ func TestConfigurationValidationIsCapabilitySpecific(t *testing.T) {
 
 	if _, err := configuration.Migrations().InitialSettings(); err == nil {
 		t.Fatal("expected invalid migration settings")
-	} else if !strings.Contains(err.Error(), "WGA_SMTP_PORT") || !strings.Contains(err.Error(), "WGA_S3_ENDPOINT") {
+	} else if !strings.Contains(err.Error(), "WGA_SMTP_PORT") {
 		t.Fatalf("expected migration settings errors, got %v", err)
+	} else if strings.Contains(err.Error(), "WGA_S3_ENDPOINT") {
+		t.Fatalf("migration should ignore invalid storage settings: %v", err)
 	}
 }
 
@@ -115,6 +117,9 @@ func TestConfigurationParsesTypedValues(t *testing.T) {
 	}
 	if got, want := settings.Mail.SMTP.Port, 1025; got != want {
 		t.Fatalf("expected SMTP port %d, got %d", want, got)
+	}
+	if !settings.Storage.Enabled {
+		t.Fatal("expected valid storage configuration to be enabled")
 	}
 }
 
@@ -146,20 +151,29 @@ func TestServerRejectsInvalidTypedSettings(t *testing.T) {
 	}
 }
 
-func TestConfigurationErrorsDoNotExposeSecrets(t *testing.T) {
+func TestInvalidStorageConfigurationIsDisabled(t *testing.T) {
 	values := validValues()
 	values["WGA_S3_ENDPOINT"] = "not-a-url"
 	values["WGA_S3_ACCESS_SECRET"] = "private-storage-secret"
 
-	_, err := LoadFrom(lookup(values)).Migrations().InitialSettings()
-	if err == nil {
-		t.Fatal("expected invalid migration configuration")
+	settings, err := LoadFrom(lookup(values)).Migrations().InitialSettings()
+	if err != nil {
+		t.Fatalf("expected invalid storage to be ignored, got %v", err)
 	}
-	if !strings.Contains(err.Error(), "WGA_S3_ENDPOINT") {
-		t.Fatalf("expected setting name in error, got %v", err)
+	if settings.Storage.Enabled {
+		t.Fatal("expected invalid storage configuration to be disabled")
 	}
-	if strings.Contains(err.Error(), "private-storage-secret") {
-		t.Fatalf("error leaked a secret: %v", err)
+
+	values = validValues()
+	for _, key := range []string{"WGA_S3_ENDPOINT", "WGA_S3_BUCKET", "WGA_S3_ACCESS_KEY", "WGA_S3_ACCESS_SECRET"} {
+		values[key] = ""
+	}
+	settings, err = LoadFrom(lookup(values)).Migrations().InitialSettings()
+	if err != nil {
+		t.Fatalf("expected omitted storage to be ignored, got %v", err)
+	}
+	if settings.Storage.Enabled {
+		t.Fatal("expected omitted storage configuration to be disabled")
 	}
 }
 
@@ -222,11 +236,11 @@ func validValues() map[string]string {
 		"WGA_SMTP_USERNAME":      "",
 		"WGA_SMTP_PASSWORD":      "",
 		"WGA_SENDER_NAME":        "WGA",
-		"WGA_SENDER_ADDRESS":      "do-not-reply@wga.hu",
-		"WGA_POSTCARD_FREQUENCY":  "*/5 * * * *",
-		"WGA_RECAPTCHA_SITE_KEY":  "captcha-site-key",
-		"WGA_ADMIN_EMAIL":         "admin@wga.hu",
-		"WGA_ADMIN_PASSWORD":      "admin-password",
+		"WGA_SENDER_ADDRESS":     "do-not-reply@wga.hu",
+		"WGA_POSTCARD_FREQUENCY": "*/5 * * * *",
+		"WGA_RECAPTCHA_SITE_KEY": "captcha-site-key",
+		"WGA_ADMIN_EMAIL":        "admin@wga.hu",
+		"WGA_ADMIN_PASSWORD":     "admin-password",
 	}
 }
 

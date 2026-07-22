@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/blackfyre/wga/internal/assets"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/pocketbase/pocketbase/core"
 	m "github.com/pocketbase/pocketbase/migrations"
@@ -192,10 +191,13 @@ func init() {
 		// create a up query for each Glossary
 		// execute the up query
 
-		zstFile, err := assets.InternalFiles.ReadFile("reference/artists_with_bio_stage_2.json.zst")
+		zstFile, available, err := readSeedFile("reference/artists_with_bio_stage_2.json.zst")
 
 		if err != nil {
 			return err
+		}
+		if !available {
+			return nil
 		}
 
 		var buf bytes.Buffer
