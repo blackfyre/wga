@@ -2,7 +2,6 @@ package migrations
 
 import (
 	"testing"
-	"testing/fstest"
 
 	"github.com/blackfyre/wga/internal/assets"
 	"github.com/blackfyre/wga/internal/config"
@@ -48,8 +47,8 @@ func TestMigrationsKeepExistingSettings(t *testing.T) {
 		if err != nil {
 			t.Fatalf("find %s records: %v", collectionName, err)
 		}
-		if len(records) == 0 {
-			t.Fatalf("expected %s seed records", collectionName)
+		if len(records) != 0 {
+			t.Fatalf("expected no %s seed records, got %d", collectionName, len(records))
 		}
 	}
 	if got, want := freshSettings.SMTP.Port, 2525; got != want {
@@ -87,32 +86,6 @@ func TestMigrationsKeepExistingSettings(t *testing.T) {
 		t.Fatalf("expected existing SMTP port %d, got %d", want, got)
 	}
 
-	t.Run("missing seed files", func(t *testing.T) {
-		seedFiles = fstest.MapFS{}
-		t.Cleanup(func() {
-			seedFiles = assets.InternalFiles
-		})
-
-		app := newMigrationTestApp(t, t.TempDir())
-		defer func() {
-			if err := app.ResetBootstrapState(); err != nil {
-				t.Error(err)
-			}
-		}()
-		if err := app.RunAllMigrations(); err != nil {
-			t.Fatalf("run migrations without seed files: %v", err)
-		}
-
-		for _, collectionName := range []string{"strings", "artists", "artworks"} {
-			records, err := app.FindRecordsByFilter(collectionName, "", "", 0, 0)
-			if err != nil {
-				t.Fatalf("find %s records: %v", collectionName, err)
-			}
-			if len(records) != 0 {
-				t.Fatalf("expected no %s seed records, got %d", collectionName, len(records))
-			}
-		}
-	})
 }
 
 func newMigrationTestApp(t *testing.T, dataDir string) *core.BaseApp {

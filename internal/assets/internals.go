@@ -10,7 +10,7 @@ import (
 	"github.com/pocketbase/pocketbase/apis"
 )
 
-//go:embed "reference/*" "views/*"
+//go:embed "views/*"
 var InternalFiles embed.FS
 
 type Renderable struct {
