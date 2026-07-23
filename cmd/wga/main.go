@@ -105,6 +105,36 @@ func main() {
 		})
 	}
 
+	var replaceMinimalSeed bool
+	seedDataCommand := &cobra.Command{
+		Use:   "seed:data",
+		Short: "Import records from the configured seed SQLite database",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			seedConfig := runtimeConfig.Seed()
+			return seed.SeedDatabase(app, seed.SourceOptions{
+				Environment: seedConfig.Environment,
+				SQLitePath:  seedConfig.SQLitePath,
+				StoragePath: seedConfig.StoragePath,
+				ReplaceMinimal: replaceMinimalSeed,
+			})
+		},
+	}
+	seedDataCommand.Flags().BoolVar(&replaceMinimalSeed, "replace-minimal", false, "replace the known minimal starter dataset")
+	app.RootCmd.AddCommand(seedDataCommand)
+
+	app.RootCmd.AddCommand(&cobra.Command{
+		Use:   "seed:storage",
+		Short: "Upload seed storage assets for imported records",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			seedConfig := runtimeConfig.Seed()
+			return seed.SeedStorage(app, seed.SourceOptions{
+				Environment: seedConfig.Environment,
+				SQLitePath:  seedConfig.SQLitePath,
+				StoragePath: seedConfig.StoragePath,
+			})
+		},
+	})
+
 	if err := app.Start(); err != nil {
 		log.Fatal(err)
 	}
@@ -131,7 +161,7 @@ func commandCapabilityFor(args []string) commandCapability {
 		switch arg {
 		case "generate-sitemap":
 			return commandNeedsSitemap
-		case "migrate", "generate-music-urls", "seed:images", "superuser":
+		case "migrate", "generate-music-urls", "seed:data", "seed:images", "seed:storage", "superuser":
 			return commandNeedsNothing
 		case "serve":
 			return commandNeedsServer

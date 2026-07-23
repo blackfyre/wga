@@ -8,6 +8,7 @@ go = "1.26.5"
 "http:mailpit" = { version = "1.30.4", url = "https://github.com/axllent/mailpit/releases/download/v{{ version }}/mailpit-linux-amd64.tar.gz", bin = "mailpit", checksum = "sha256:e9c104154c22b83ac4c7d19f9d665a5c933585a3caafcd790805d732fa8d03fb" }
 "github:golangci/golangci-lint" = "latest"
 "aqua:superfly/flyctl" = "latest"
+sqlite = "latest"
 
 # Git is a system prerequisite because Mise has no cross-platform Git backend.
 [env]

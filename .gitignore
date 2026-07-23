@@ -36,3 +36,4 @@ meta.json
 
 # Ignore Agentic Harness artefacts
 .opencode
+opencode.jsonc

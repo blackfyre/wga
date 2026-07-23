@@ -179,6 +179,12 @@ type Migrations struct {
 	administrator parsed[Administrator]
 }
 
+type Seed struct {
+	Environment Environment
+	SQLitePath  string
+	StoragePath string
+}
+
 func (m Migrations) InitialSettings() (InitialSettings, error) {
 	storage := m.storage.value
 	storage.Enabled = m.storage.err == nil
@@ -207,6 +213,7 @@ type Config struct {
 	postcards   parsed[Postcards]
 	captcha     Captcha
 	migrations  Migrations
+	seed        Seed
 }
 
 func Load() (Config, error) {
@@ -246,6 +253,11 @@ func LoadFrom(lookup Lookup) Config {
 			storage:       storage,
 			mail:          mailConfig,
 			administrator: administrator,
+		},
+		seed: Seed{
+			Environment: environment.value,
+			SQLitePath:  lookup("WGA_SEED_SQLITE_PATH"),
+			StoragePath: lookup("WGA_SEED_STORAGE_PATH"),
 		},
 	}
 }
@@ -300,6 +312,10 @@ func (c Config) Sitemap() (Sitemap, error) {
 
 func (c Config) Migrations() Migrations {
 	return c.migrations
+}
+
+func (c Config) Seed() Seed {
+	return c.seed
 }
 
 func parseEnvironment(value string) parsed[Environment] {

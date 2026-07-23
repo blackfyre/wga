@@ -19,6 +19,8 @@ func TestCommandCapabilityFor(t *testing.T) {
 		{name: "migration", args: []string{"migrate", "up"}, want: commandNeedsNothing},
 		{name: "migration collections", args: []string{"migrate", "collections"}, want: commandNeedsNothing},
 		{name: "music URLs", args: []string{"generate-music-urls"}, want: commandNeedsNothing},
+		{name: "seed data", args: []string{"seed:data"}, want: commandNeedsNothing},
+		{name: "seed storage", args: []string{"seed:storage"}, want: commandNeedsNothing},
 		{name: "unknown command", args: []string{"not-a-command"}, want: commandNeedsNothing},
 		{name: "server data directory", args: []string{"--dir", "test_data"}, want: commandNeedsServer},
 		{name: "migration data directory", args: []string{"--dir", "test_data", "migrate", "up"}, want: commandNeedsNothing},

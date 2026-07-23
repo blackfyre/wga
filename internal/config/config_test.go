@@ -123,6 +123,23 @@ func TestConfigurationParsesTypedValues(t *testing.T) {
 	}
 }
 
+func TestSeedConfigurationUsesConfiguredPaths(t *testing.T) {
+	values := validValues()
+	values["WGA_SEED_SQLITE_PATH"] = "/data/reference.sqlite"
+	values["WGA_SEED_STORAGE_PATH"] = "/data/storage"
+
+	seed := LoadFrom(lookup(values)).Seed()
+	if got, want := seed.Environment, EnvironmentDevelopment; got != want {
+		t.Fatalf("expected seed environment %q, got %q", want, got)
+	}
+	if got, want := seed.SQLitePath, "/data/reference.sqlite"; got != want {
+		t.Fatalf("expected SQLite path %q, got %q", want, got)
+	}
+	if got, want := seed.StoragePath, "/data/storage"; got != want {
+		t.Fatalf("expected storage path %q, got %q", want, got)
+	}
+}
+
 func TestServerRejectsInvalidTypedSettings(t *testing.T) {
 	tests := []struct {
 		name  string

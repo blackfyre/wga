@@ -22,5 +22,6 @@ RUN go build -v -o /tmp/app ./cmd/wga
 FROM alpine:latest
 
 COPY --from=go-builder /tmp/app /usr/local/bin/
+
 EXPOSE 8090
 CMD ["app", "serve", "--http", "0.0.0.0:8090"]

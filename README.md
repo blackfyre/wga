@@ -33,6 +33,9 @@ WGA_ENV=development
 WGA_ADMIN_EMAIL=
 WGA_ADMIN_PASSWORD=
 
+WGA_SEED_SQLITE_PATH=
+WGA_SEED_STORAGE_PATH=
+
 WGA_S3_ENDPOINT=http://localhost:9000
 WGA_S3_BUCKET=wga
 WGA_S3_REGION=us-east-1
@@ -60,6 +63,8 @@ MAILPIT_URL=http://127.0.0.1:8025
 | `WGA_ENV`                | The environment the application is running in: `development`, `test`, `staging`, or `production` |
 | `WGA_ADMIN_EMAIL`        | Optional email address for the bootstrap administrator                                           |
 | `WGA_ADMIN_PASSWORD`     | Optional unique password for the bootstrap administrator                                         |
+| `WGA_SEED_SQLITE_PATH`   | Optional SQLite seed source; required when running seed commands in production                  |
+| `WGA_SEED_STORAGE_PATH`  | Optional source asset directory; defaults beside the configured SQLite source                    |
 | `WGA_S3_ENDPOINT`        | The absolute S3-compatible object storage service endpoint                                       |
 | `WGA_S3_BUCKET`          | The name of the S3 bucket                                                                        |
 | `WGA_S3_REGION`          | The region of the S3 bucket                                                                      |
@@ -139,13 +144,19 @@ bun run build:watch:js
 
 #### Seeding
 
-The database is populated on first start, and if you want to have images available, make sure that your `WGA_ENV=development` is set and then you can execute:
+Run migrations before importing a seed source. Development and staging commands use the embedded `resources/synthetic` bundle by default. Database records and storage objects use separate commands:
 
 ```bash
-./dist/wga seed:images
+./dist/wga migrate up
+./dist/wga seed:data --replace-minimal
+./dist/wga seed:storage
 ```
 
-This will go through the contents of the database and will use placeholder images to "generate" the necessary images to the designated S3 compatible file hosting solution designated in the `.env` file.
+`seed:data` imports only SQLite records. `seed:storage` separately attaches the supplied artwork and music filenames, then uploads their files to the configured filesystem or S3-compatible storage. PocketBase generates image thumbnails on demand.
+
+These are one-shot initialisers. They accept a fresh data directory, or the known minimal starter dataset when `seed:data` is given `--replace-minimal`; they reject other application data. Changing a seed source after it has been imported does not reconcile or remove existing records; use a fresh data directory for a different source dataset.
+
+Production seed commands require an explicit source path. Set `WGA_SEED_SQLITE_PATH` and, when its storage directory is not adjacent, `WGA_SEED_STORAGE_PATH`; then run the same commands in the intended order. The development-only `seed:images` command remains available for placeholder-image generation.
 
 ## With Mise
 
