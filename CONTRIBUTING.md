@@ -12,7 +12,7 @@ mise run app:init-env
 mise run dev
 ```
 
-`mise run dev` starts the asset and template watchers, Mailpit (SMTP on port 1025 and HTTP API on port 8025), and MinIO; run the application separately with `mise run code:run`.
+`mise run dev` brings up the Podman Compose Mailpit and Garage services, then starts the asset and template watchers. Mailpit exposes SMTP on port 1025 and its HTTP API on port 8025; Garage exposes S3-compatible storage on port 3900. Run the application separately with `mise run code:run`.
 
 The main project tasks are:
 

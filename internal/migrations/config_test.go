@@ -1,12 +1,16 @@
 package migrations
 
 import (
+	"sync"
 	"testing"
 
 	"github.com/blackfyre/wga/internal/assets"
 	"github.com/blackfyre/wga/internal/config"
 	"github.com/pocketbase/pocketbase/core"
 )
+
+var configureMigrationsOnce sync.Once
+var configureMigrationsErr error
 
 func TestMigrationsKeepExistingSettings(t *testing.T) {
 	originalSeedFiles := seedFiles
@@ -15,19 +19,7 @@ func TestMigrationsKeepExistingSettings(t *testing.T) {
 		seedFiles = originalSeedFiles
 	})
 
-	configuration := config.LoadFrom(func(key string) string {
-		return map[string]string{
-			"WGA_PROTOCOL":       "https",
-			"WGA_HOSTNAME":       "gallery.example",
-			"WGA_SMTP_HOST":      "smtp.example",
-			"WGA_SMTP_PORT":      "2525",
-			"WGA_SENDER_NAME":    "WGA Test",
-			"WGA_SENDER_ADDRESS": "sender@example.com",
-		}[key]
-	})
-	if err := Configure(configuration.Migrations()); err != nil {
-		t.Fatalf("configure migrations: %v", err)
-	}
+	configureMigrations(t)
 
 	dataDir := t.TempDir()
 	fresh := newMigrationTestApp(t, dataDir)
@@ -41,49 +33,6 @@ func TestMigrationsKeepExistingSettings(t *testing.T) {
 	}
 	if freshSettings.S3.Enabled {
 		t.Fatal("expected PocketBase default storage configuration")
-	}
-	for _, collectionName := range []string{"strings", "schools", "artists", "art_forms", "art_types", "artworks", "glossary", "static_pages"} {
-		records, err := fresh.FindRecordsByFilter(collectionName, "", "", 0, 0)
-		if err != nil {
-			t.Fatalf("find %s records: %v", collectionName, err)
-		}
-		if len(records) != 1 {
-			t.Fatalf("expected one %s seed record, got %d", collectionName, len(records))
-		}
-	}
-	welcome, err := fresh.FindFirstRecordByData("strings", "name", "welcome")
-	if err != nil {
-		t.Fatalf("find welcome seed record: %v", err)
-	}
-	if welcome.GetString("content") == "" {
-		t.Fatal("expected welcome seed content")
-	}
-	if got, want := welcome.GetString("content"), referenceWelcomeContent; got != want {
-		t.Fatalf("expected reference welcome seed content, got %q", got)
-	}
-	school, err := fresh.FindFirstRecordByData("schools", "slug", referenceSchoolSlug)
-	if err != nil {
-		t.Fatalf("find reference school seed record: %v", err)
-	}
-	if got, want := school.GetString("name"), referenceSchoolName; got != want {
-		t.Fatalf("expected school %q, got %q", want, got)
-	}
-	privacyPage, err := fresh.FindFirstRecordByData("static_pages", "slug", "privacy-policy")
-	if err != nil {
-		t.Fatalf("find privacy page seed record: %v", err)
-	}
-	if got, want := privacyPage.GetString("title"), referencePrivacyPageTitle; got != want {
-		t.Fatalf("expected privacy page title %q, got %q", want, got)
-	}
-	if got, want := privacyPage.GetString("content"), seedPrivacyPageContent; got != want {
-		t.Fatalf("expected seed privacy page content, got %q", got)
-	}
-	artwork, err := fresh.FindFirstRecordByData("artworks", "title", "Cobalt Horizon")
-	if err != nil {
-		t.Fatalf("find artwork seed record: %v", err)
-	}
-	if !artwork.GetBool("published") || len(artwork.GetStringSlice("author")) != 1 {
-		t.Fatal("expected a published artwork with one artist relation")
 	}
 	if got, want := freshSettings.SMTP.Port, 2525; got != want {
 		t.Fatalf("expected SMTP port %d, got %d", want, got)
@@ -120,6 +69,27 @@ func TestMigrationsKeepExistingSettings(t *testing.T) {
 		t.Fatalf("expected existing SMTP port %d, got %d", want, got)
 	}
 
+}
+
+func configureMigrations(t *testing.T) {
+	t.Helper()
+
+	configureMigrationsOnce.Do(func() {
+		configuration := config.LoadFrom(func(key string) string {
+			return map[string]string{
+				"WGA_PROTOCOL":       "https",
+				"WGA_HOSTNAME":       "gallery.example",
+				"WGA_SMTP_HOST":      "smtp.example",
+				"WGA_SMTP_PORT":      "2525",
+				"WGA_SENDER_NAME":    "WGA Test",
+				"WGA_SENDER_ADDRESS": "sender@example.com",
+			}[key]
+		})
+		configureMigrationsErr = Configure(configuration.Migrations())
+	})
+	if configureMigrationsErr != nil {
+		t.Fatalf("configure migrations: %v", configureMigrationsErr)
+	}
 }
 
 func newMigrationTestApp(t *testing.T, dataDir string) *core.BaseApp {

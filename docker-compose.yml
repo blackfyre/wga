@@ -1,0 +1,39 @@
+services:
+  mailpit:
+    image: docker.io/axllent/mailpit
+    ports:
+      - 127.0.0.1:1025:1025
+      - 127.0.0.1:8025:8025
+
+  garage:
+    image: docker.io/dxflrs/garage:v2.3.0
+    command: /garage server --single-node --default-bucket
+    ports:
+      - 127.0.0.1:3900:3900
+      - 127.0.0.1:3901:3901
+      - 127.0.0.1:3902:3902
+      - 127.0.0.1:3903:3903
+    environment:
+      GARAGE_DEFAULT_ACCESS_KEY: ${WGA_S3_ACCESS_KEY:-GKlocaluploads}
+      GARAGE_DEFAULT_SECRET_KEY: ${WGA_S3_ACCESS_SECRET:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+      GARAGE_DEFAULT_BUCKET: ${WGA_S3_BUCKET:-wga-assets}
+    volumes:
+      - ./garage/garage.toml:/etc/garage.toml:ro,Z
+      - garage_meta:/var/lib/garage/meta
+      - garage_data:/var/lib/garage/data
+
+  garage-webui:
+    image: khairul169/garage-webui:latest
+    container_name: garage-webui
+    restart: unless-stopped
+    volumes:
+      - ./garage/garage.toml:/etc/garage.toml:ro,Z
+    ports:
+      - 127.0.0.1:3909:3909
+    environment:
+      API_BASE_URL: "http://garage:3903"
+      S3_ENDPOINT_URL: "http://garage:3900"
+
+volumes:
+  garage_meta:
+  garage_data:

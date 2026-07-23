@@ -3,8 +3,6 @@ bun = "latest"
 go = "1.26.5"
 "go:github.com/a-h/templ/cmd/templ" = "v0.3.1020"
 "go:github.com/air-verse/air" = "latest"
-"http:mc" = { version = "RELEASE.2025-08-13T08-35-41Z", url = "https://dl.min.io/client/mc/release/linux-amd64/archive/mc.{{ version }}", bin = "mc", checksum = "sha256:01f866e9c5f9b87c2b09116fa5d7c06695b106242d829a8bb32990c00312e891" }
-"http:minio" = { version = "RELEASE.2025-09-07T16-13-09Z", url = "https://dl.min.io/server/minio/release/linux-amd64/archive/minio.{{ version }}", bin = "minio", checksum = "sha256:7c5bd8512c6e966455b1d198209358b2d191c77a83ab377c4073281065fb855f" }
 "http:mailpit" = { version = "1.30.4", url = "https://github.com/axllent/mailpit/releases/download/v{{ version }}/mailpit-linux-amd64.tar.gz", bin = "mailpit", checksum = "sha256:e9c104154c22b83ac4c7d19f9d665a5c933585a3caafcd790805d732fa8d03fb" }
 "github:golangci/golangci-lint" = "latest"
 "aqua:superfly/flyctl" = "latest"
@@ -13,11 +11,11 @@ sqlite = "latest"
 # Git is a system prerequisite because Mise has no cross-platform Git backend.
 [env]
 WGA_ENV = "development"
-WGA_S3_BUCKET = "wga"
-WGA_S3_REGION = "us-east-1"
-WGA_S3_ACCESS_KEY = "minio_access_key"
-WGA_S3_ACCESS_SECRET = "minio_secret_key"
-WGA_S3_ENDPOINT = "http://localhost:9000"
+WGA_S3_BUCKET = "wga-assets"
+WGA_S3_REGION = "garage"
+WGA_S3_ACCESS_KEY = "GKlocaluploads"
+WGA_S3_ACCESS_SECRET = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+WGA_S3_ENDPOINT = "http://127.0.0.1:3900"
 WGA_ADMIN_EMAIL = "" # optional bootstrap admin email address
 WGA_ADMIN_PASSWORD = "" # optional bootstrap admin password
 WGA_PROTOCOL = "http" # http or https
@@ -64,8 +62,21 @@ dir = "dist"
 run = "./wga serve --dev"
 
 [tasks."app:reset"]
-description = "Rebuild, reset local data, and restart the development server."
-run = ["mise run app:build", "rm -rf wga_data", "mise run app:run"]
+description = "Rebuild, reset local data, start Garage if needed, and restart the development server."
+run = '''
+mise run app:build || exit $?
+rm -rf dist/wga_data
+
+podman compose up -d garage || exit $?
+for _ in $(seq 1 30); do
+  if curl --fail --silent --show-error http://127.0.0.1:3903/health >/dev/null; then
+    break
+  fi
+  sleep 1
+done
+curl --fail --silent --show-error http://127.0.0.1:3903/health >/dev/null || exit $?
+mise run app:run
+'''
 
 [tasks."app:reboot"]
 description = "Rebuild and restart the development server."
@@ -104,36 +115,11 @@ run = "templ generate --watch"
 description = "Watch and build CSS assets."
 run = "bun run build:watch:css"
 
-[tasks."service:mailpit"]
-description = "Run the local Mailpit SMTP server and HTTP API."
-run = "mailpit --smtp 127.0.0.1:1025 --listen 127.0.0.1:8025"
-
-[tasks."service:minio"]
-description = "Run MinIO and initialise the local wga bucket."
-run = '''
-mkdir -p tmp/minio tmp/minio-config
-export MC_CONFIG_DIR="$PWD/tmp/minio-config"
-
-MINIO_ROOT_USER="$WGA_S3_ACCESS_KEY" \
-MINIO_ROOT_PASSWORD="$WGA_S3_ACCESS_SECRET" \
-  minio server --address 127.0.0.1:9000 --console-address 127.0.0.1:9001 tmp/minio &
-minio_pid=$!
-trap 'kill "$minio_pid" 2>/dev/null || true' EXIT INT TERM
-
-until mc alias set local "$WGA_S3_ENDPOINT" "$WGA_S3_ACCESS_KEY" "$WGA_S3_ACCESS_SECRET" >/dev/null 2>&1; do
-  if ! kill -0 "$minio_pid" 2>/dev/null; then
-    wait "$minio_pid"
-    exit $?
-  fi
-  sleep 1
-done
-
-mc mb --ignore-existing "local/$WGA_S3_BUCKET"
-mc anonymous set download "local/$WGA_S3_BUCKET"
-wait "$minio_pid"
-'''
+[tasks."services:up"]
+description = "Start local Mailpit and Garage services with Podman Compose."
+run = "podman compose up -d"
 
 [tasks.dev]
-description = "Start asset watchers, template generation, Mailpit, and MinIO."
+description = "Start local services, asset watchers, and template generation."
 alias = "up"
-run = "mise run --jobs 5 watch:js ::: watch:templ ::: watch:css ::: service:mailpit ::: service:minio"
+run = "mise run services:up && mise run --jobs 3 watch:js ::: watch:templ ::: watch:css"

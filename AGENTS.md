@@ -4,7 +4,7 @@
 
 - `cmd/wga/main.go` creates the PocketBase app, then registers handlers, hooks, cron jobs, and migrations before `app.Start()`.
 - Route modules are registered from `internal/handlers/main.go`; add a new handler package there rather than looking for a central route table.
-- Add PocketBase migrations as timestamped files in `internal/migrations/` that call `m.Register` from `init()`. The entrypoint blank-imports this package and disables automigration; run the built binary's `migrate` command explicitly when needed.
+- Add PocketBase migrations as timestamped files in `internal/migrations/` that call `m.Register` from `init()`. The entrypoint blank-imports this package and disables migration-file generation; `serve` applies pending migrations before listening, while the built binary's `migrate` command remains available for explicit operations.
 - Edit Templ sources in `internal/assets/templ/`, then run `templ generate`. Adjacent `*_templ.go` files are generated and Git-ignored: do not edit or commit them.
 - Edit frontend sources in `resources/js/` and `resources/css/`; `bun run build` writes generated JS/CSS to `internal/assets/public/{js,css}`, which the Go binary embeds. `internal/assets/views/` and `internal/assets/reference/` are also embedded at build time.
 - The active Tailwind 4/daisyUI theme is in `resources/css/style.pcss`; UI work must also follow `.github/instructions/daisyui.instructions.md`.
@@ -14,8 +14,8 @@
 - Use Go 1.25.2 (`go.mod`/`mise.toml`), Bun, and Templ. `devenv shell` is the documented development environment; `mise` pins the same toolchain and exposes equivalent tasks as `mise run <task>`.
 - Create `.env` from `.env.example` (`mise run app:init-env`). `godotenv.Load()` reads the default `.env` from the process working directory: `code:run` uses the repository root, while `app:run` changes into `dist/`.
 - `wga_data` is likewise relative to the process working directory. `app:run` uses `dist/wga_data`; clear the data directory used by the launcher rather than assuming root `wga_data` is the active one.
-- `devenv up` starts JS/CSS/Templ watchers, Mailpit, and MinIO, but not the application server. Start it separately with `code:run`, or use `app:build` followed by `app:run`.
-- `app:build` runs `bun install`, `bun run build`, `templ generate`, `go mod tidy`, then builds `dist/wga`. `seed:data` and `seed:storage` are registered in every environment; they embed `resources/synthetic` for development and staging defaults, while production requires `WGA_SEED_SQLITE_PATH`. `seed:images` is registered only when `WGA_ENV=development`.
+- `mise run dev` brings up the Podman Compose Mailpit and Garage services, then starts JS/CSS/Templ watchers, but not the application server. Start it separately with `code:run`, or use `app:build` followed by `app:run`.
+- `app:build` runs `bun install`, `bun run build`, `templ generate`, `go mod tidy`, then builds `dist/wga`. The embedded synthetic-data migration initialises a fresh data directory on first server start. `seed:images` is registered only when `WGA_ENV=development`.
 
 ## Verification and workflow
 

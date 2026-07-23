@@ -33,14 +33,11 @@ WGA_ENV=development
 WGA_ADMIN_EMAIL=
 WGA_ADMIN_PASSWORD=
 
-WGA_SEED_SQLITE_PATH=
-WGA_SEED_STORAGE_PATH=
-
-WGA_S3_ENDPOINT=http://localhost:9000
-WGA_S3_BUCKET=wga
-WGA_S3_REGION=us-east-1
-WGA_S3_ACCESS_KEY=minio_access_key
-WGA_S3_ACCESS_SECRET=minio_secret_key
+WGA_S3_ENDPOINT=http://127.0.0.1:3900
+WGA_S3_BUCKET=wga-assets
+WGA_S3_REGION=garage
+WGA_S3_ACCESS_KEY=GKlocaluploads
+WGA_S3_ACCESS_SECRET=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
 
 WGA_PROTOCOL=http
 WGA_HOSTNAME=localhost:8090
@@ -63,8 +60,6 @@ MAILPIT_URL=http://127.0.0.1:8025
 | `WGA_ENV`                | The environment the application is running in: `development`, `test`, `staging`, or `production` |
 | `WGA_ADMIN_EMAIL`        | Optional email address for the bootstrap administrator                                           |
 | `WGA_ADMIN_PASSWORD`     | Optional unique password for the bootstrap administrator                                         |
-| `WGA_SEED_SQLITE_PATH`   | Optional SQLite seed source; required when running seed commands in production                  |
-| `WGA_SEED_STORAGE_PATH`  | Optional source asset directory; defaults beside the configured SQLite source                    |
 | `WGA_S3_ENDPOINT`        | The absolute S3-compatible object storage service endpoint                                       |
 | `WGA_S3_BUCKET`          | The name of the S3 bucket                                                                        |
 | `WGA_S3_REGION`          | The region of the S3 bucket                                                                      |
@@ -85,7 +80,7 @@ MAILPIT_URL=http://127.0.0.1:8025
 
 Local `development` and `test` environments may omit `WGA_RECAPTCHA_SITE_KEY` and `WGA_RECAPTCHA_SECRET`; staging and production cannot start without both.
 
-The administrator bootstrap is optional. Before the first `migrate`, set both `WGA_ADMIN_EMAIL` and `WGA_ADMIN_PASSWORD` to unique values; leave both empty to skip it.
+The administrator bootstrap is optional. Before the first application start, set both `WGA_ADMIN_EMAIL` and `WGA_ADMIN_PASSWORD` to unique values; leave both empty to skip it.
 
 ### Running the application
 
@@ -133,7 +128,7 @@ Start the local asset watchers and services with Mise:
 mise run dev
 ```
 
-`mise run dev` starts the frontend and template watchers, Mailpit (SMTP on port 1025 and HTTP API on port 8025), and MinIO. Playwright reads `MAILPIT_URL` to query captured messages. In another terminal, start the application with `mise run code:run`, or run `mise run app:build` followed by `mise run app:run`.
+`mise run dev` brings up the Podman Compose Mailpit and Garage services, then starts the frontend and template watchers. Mailpit exposes SMTP on port 1025 and its HTTP API on port 8025; Playwright reads `MAILPIT_URL` to query captured messages. Garage exposes S3-compatible storage on port 3900. In another terminal, start the application with `mise run code:run`, or run `mise run app:build` followed by `mise run app:run`. `mise run app:reset` brings up and waits for Garage while rebuilding and replacing `dist/wga_data`.
 
 If you only need asset watchers, use the package scripts directly:
 
@@ -142,21 +137,11 @@ bun run build:watch:css
 bun run build:watch:js
 ```
 
-#### Seeding
+#### Synthetic bootstrap
 
-Run migrations before importing a seed source. Development and staging commands use the embedded `resources/synthetic` bundle by default. Database records and storage objects use separate commands:
+The first application start on a fresh data directory applies the embedded synthetic-data migration. It imports records into the existing collections and attaches the bundled artwork and music files to the configured filesystem or S3-compatible storage.
 
-```bash
-./dist/wga migrate up
-./dist/wga seed:data --replace-minimal
-./dist/wga seed:storage
-```
-
-`seed:data` imports only SQLite records. `seed:storage` separately attaches the supplied artwork and music filenames, then uploads their files to the configured filesystem or S3-compatible storage. PocketBase generates image thumbnails on demand.
-
-These are one-shot initialisers. They accept a fresh data directory, or the known minimal starter dataset when `seed:data` is given `--replace-minimal`; they reject other application data. Changing a seed source after it has been imported does not reconcile or remove existing records; use a fresh data directory for a different source dataset.
-
-Production seed commands require an explicit source path. Set `WGA_SEED_SQLITE_PATH` and, when its storage directory is not adjacent, `WGA_SEED_STORAGE_PATH`; then run the same commands in the intended order. The development-only `seed:images` command remains available for placeholder-image generation.
+The bootstrap migration skips an existing non-system application database rather than merging or replacing it. Changing the embedded source later requires a new migration; it does not rerun on an existing data directory. The development-only `seed:images` command remains available for placeholder-image generation.
 
 ## With Mise
 
@@ -167,7 +152,7 @@ mise install
 mise run app:init-env
 ```
 
-`mise.toml` defines the pinned tools, local environment defaults, build tasks, watchers, and local Mailpit and MinIO services.
+`mise.toml` defines the pinned tools, local environment defaults, build tasks, watchers, and Podman Compose local services.
 
 ## License
 

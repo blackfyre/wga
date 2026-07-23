@@ -123,23 +123,6 @@ func TestConfigurationParsesTypedValues(t *testing.T) {
 	}
 }
 
-func TestSeedConfigurationUsesConfiguredPaths(t *testing.T) {
-	values := validValues()
-	values["WGA_SEED_SQLITE_PATH"] = "/data/reference.sqlite"
-	values["WGA_SEED_STORAGE_PATH"] = "/data/storage"
-
-	seed := LoadFrom(lookup(values)).Seed()
-	if got, want := seed.Environment, EnvironmentDevelopment; got != want {
-		t.Fatalf("expected seed environment %q, got %q", want, got)
-	}
-	if got, want := seed.SQLitePath, "/data/reference.sqlite"; got != want {
-		t.Fatalf("expected SQLite path %q, got %q", want, got)
-	}
-	if got, want := seed.StoragePath, "/data/storage"; got != want {
-		t.Fatalf("expected storage path %q, got %q", want, got)
-	}
-}
-
 func TestServerRejectsInvalidTypedSettings(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -243,10 +226,10 @@ func validValues() map[string]string {
 		"WGA_ENV":                "development",
 		"WGA_PROTOCOL":           "http",
 		"WGA_HOSTNAME":           "localhost:8090",
-		"WGA_S3_ENDPOINT":        "http://localhost:9000",
-		"WGA_S3_BUCKET":          "wga",
-		"WGA_S3_REGION":          "us-east-1",
-		"WGA_S3_ACCESS_KEY":      "access-key",
+		"WGA_S3_ENDPOINT":        "http://127.0.0.1:3900",
+		"WGA_S3_BUCKET":          "wga-assets",
+		"WGA_S3_REGION":          "garage",
+		"WGA_S3_ACCESS_KEY":      "GKlocaluploads",
 		"WGA_S3_ACCESS_SECRET":   "access-secret",
 		"WGA_SMTP_HOST":          "127.0.0.1",
 		"WGA_SMTP_PORT":          "1025",

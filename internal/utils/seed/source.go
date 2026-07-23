@@ -9,21 +9,12 @@ import (
 	"net/url"
 	"os"
 	"path"
-	"path/filepath"
 	"sort"
 	"strings"
 
-	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/resources/synthetic"
 	_ "modernc.org/sqlite"
 )
-
-type SourceOptions struct {
-	Environment config.Environment
-	SQLitePath  string
-	StoragePath string
-	ReplaceMinimal bool
-}
 
 type sourcePaths struct {
 	sqlitePath string
@@ -31,25 +22,28 @@ type sourcePaths struct {
 	cleanup    func() error
 }
 
+type sourceFile struct {
+	name    string
+	content []byte
+}
+
 type sourceData struct {
-	schools            []sourceTaxonomy
-	forms              []sourceTaxonomy
-	types              []sourceTaxonomy
-	professions        []sourceTaxonomy
-	artists            []sourceArtist
-	artistSchools      map[string][]string
-	artistProfessions  map[string][]string
-	biographies        []sourceBiography
-	biographyLinks     []sourceBiographyLink
-	artworks           []sourceArtwork
-	glossaryEntries    []sourceGlossaryEntry
-	guestbookEntries   []sourceGuestbookEntry
-	musicTracks        []sourceMusicTrack
-	sourceAttributions []sourceAttribution
-	strings            []sourceString
-	staticPages        []sourceStaticPage
-	artworkFiles       map[string]string
-	musicFiles         map[string]string
+	schools           []sourceTaxonomy
+	forms             []sourceTaxonomy
+	types             []sourceTaxonomy
+	professions       []sourceTaxonomy
+	artists           []sourceArtist
+	artistSchools     map[string][]string
+	artistProfessions map[string][]string
+	biographies       []sourceBiography
+	artworks          []sourceArtwork
+	glossaryEntries   []sourceGlossaryEntry
+	guestbookEntries  []sourceGuestbookEntry
+	musicTracks       []sourceMusicTrack
+	strings           []sourceString
+	staticPages       []sourceStaticPage
+	artworkFiles      map[string]sourceFile
+	musicFiles        map[string]sourceFile
 }
 
 type sourceTaxonomy struct {
@@ -58,71 +52,36 @@ type sourceTaxonomy struct {
 }
 
 type sourceArtist struct {
-	ID                string
-	SourcePath        string
-	SourceHash        string
-	DebugHash         string
-	SourceDisplayName string
-	DisplayName       string
-	ArtistURL         string
-	BirthYear         int
-	DeathYear         int
-	BirthPlace        string
-	DeathPlace        string
-	ActivityText      string
-	ActivityStartYear int
-	ActivityEndYear   int
-	ArtistIndexPath   string
-	BiographyImagePath string
+	ID          string
+	DisplayName string
+	BirthYear   int
+	DeathYear   int
+	BirthPlace  string
+	DeathPlace  string
 }
 
 type sourceBiography struct {
-	ID               string
-	ArtistID         string
-	RawLifeDetail    string
-	RawBiographyHTML string
-	BiographyHTML    string
-	BiographyText    string
-}
-
-type sourceBiographyLink struct {
-	ID          string
-	BiographyID string
-	LinkType    string
-	TargetPath  string
-	LinkText    string
-	LinkOrder   int
+	ArtistID      string
+	BiographyHTML string
 }
 
 type sourceArtwork struct {
-	ID                       string
-	AuthorID                 string
-	Title                    string
-	DateText                 string
-	DateStart                int
-	DateEnd                  int
-	IsCirca                  bool
-	DateQualifier            string
-	Technique                string
-	TechniqueWithoutDimensions string
-	Dimensions               string
-	Location                 string
-	URL                      string
-	ImagePath                string
-	OutputImagePath          string
-	SchoolID                 string
-	FormID                   string
-	TypeID                   string
-	SourceRow                int
+	ID         string
+	AuthorID   string
+	Title      string
+	DateText   string
+	Technique  string
+	Dimensions string
+	Location   string
+	SchoolID   string
+	FormID     string
+	TypeID     string
 }
 
 type sourceGlossaryEntry struct {
 	ID         string
 	Term       string
 	Definition string
-	Anchor     string
-	SourcePage string
-	SortOrder  int
 }
 
 type sourceGuestbookEntry struct {
@@ -136,28 +95,11 @@ type sourceGuestbookEntry struct {
 }
 
 type sourceMusicTrack struct {
-	ID          string
-	TrackOrder  int
-	Title       string
-	Period      string
-	Composer    string
-	Origin      string
-	PlaybackURL string
-	MediaFormat string
-	PlayerURL   string
-	LocalPath   string
-	Part        int
-	PartCount   int
-}
-
-type sourceAttribution struct {
-	ID               string
-	AttributionOrder int
-	Category         string
-	Subcategory      string
-	Title            string
-	Citation         string
-	SourceURL        string
+	ID        string
+	Title     string
+	Period    string
+	Composer  string
+	LocalPath string
 }
 
 type sourceString struct {
@@ -173,25 +115,13 @@ type sourceStaticPage struct {
 	Content string
 }
 
-func resolveSourcePaths(options SourceOptions) (sourcePaths, error) {
-	if options.SQLitePath == "" {
-		if options.Environment != config.EnvironmentDevelopment && options.Environment != config.EnvironmentStaging {
-			return sourcePaths{}, fmt.Errorf("WGA_SEED_SQLITE_PATH is required in %q", options.Environment)
-		}
-
-		return embeddedSourcePaths(options.StoragePath)
-	}
-
-	return externalSourcePaths(options.SQLitePath, options.StoragePath)
-}
-
-func embeddedSourcePaths(storagePath string) (sourcePaths, error) {
+func embeddedSourcePaths() (sourcePaths, error) {
 	sqlitePath, cleanup, err := materializeEmbeddedSQLite()
 	if err != nil {
 		return sourcePaths{}, err
 	}
 
-	storage, err := embeddedStorageFS(storagePath)
+	storage, err := embeddedStorageFS()
 	if err != nil {
 		_ = cleanup()
 		return sourcePaths{}, err
@@ -203,36 +133,6 @@ func embeddedSourcePaths(storagePath string) (sourcePaths, error) {
 		cleanup:    cleanup,
 	}, nil
 }
-
-func externalSourcePaths(sqlitePath string, storagePath string) (sourcePaths, error) {
-
-	absSQLitePath, err := filepath.Abs(sqlitePath)
-	if err != nil {
-		return sourcePaths{}, fmt.Errorf("resolve seed SQLite path: %w", err)
-	}
-
-	info, err := os.Stat(absSQLitePath)
-	if err != nil {
-		return sourcePaths{}, fmt.Errorf("seed SQLite path: %w", err)
-	}
-	if info.IsDir() {
-		return sourcePaths{}, fmt.Errorf("seed SQLite path %q is a directory", absSQLitePath)
-	}
-
-	if storagePath == "" {
-		storagePath = filepath.Join(filepath.Dir(absSQLitePath), "storage")
-	}
-	absStoragePath, err := filepath.Abs(storagePath)
-	if err != nil {
-		return sourcePaths{}, fmt.Errorf("resolve seed storage path: %w", err)
-	}
-
-	return sourcePaths{
-		sqlitePath: absSQLitePath,
-		storage:    os.DirFS(absStoragePath),
-	}, nil
-}
-
 
 func materializeEmbeddedSQLite() (string, func() error, error) {
 	data, err := synthetic.Files.ReadFile("wga-test.sqlite")
@@ -267,22 +167,13 @@ func materializeEmbeddedSQLite() (string, func() error, error) {
 	return file.Name(), cleanup, nil
 }
 
-func embeddedStorageFS(storagePath string) (iofs.FS, error) {
-	if storagePath == "" {
-		storage, err := iofs.Sub(synthetic.Files, "storage")
-		if err != nil {
-			return nil, fmt.Errorf("open embedded seed storage: %w", err)
-		}
-
-		return storage, nil
-	}
-
-	absStoragePath, err := filepath.Abs(storagePath)
+func embeddedStorageFS() (iofs.FS, error) {
+	storage, err := iofs.Sub(synthetic.Files, "storage")
 	if err != nil {
-		return nil, fmt.Errorf("resolve seed storage path: %w", err)
+		return nil, fmt.Errorf("open embedded seed storage: %w", err)
 	}
 
-	return os.DirFS(absStoragePath), nil
+	return storage, nil
 }
 
 func (paths sourcePaths) Close() error {
@@ -309,8 +200,8 @@ func loadSourceData(paths sourcePaths) (sourceData, error) {
 	data := sourceData{
 		artistSchools:     map[string][]string{},
 		artistProfessions: map[string][]string{},
-		artworkFiles:      map[string]string{},
-		musicFiles:        map[string]string{},
+		artworkFiles:      map[string]sourceFile{},
+		musicFiles:        map[string]sourceFile{},
 	}
 
 	if data.schools, err = loadTaxonomy(db, "schools"); err != nil {
@@ -337,9 +228,6 @@ func loadSourceData(paths sourcePaths) (sourceData, error) {
 	if data.biographies, err = loadBiographies(db); err != nil {
 		return sourceData{}, err
 	}
-	if data.biographyLinks, err = loadBiographyLinks(db); err != nil {
-		return sourceData{}, err
-	}
 	if data.artworks, err = loadArtworks(db); err != nil {
 		return sourceData{}, err
 	}
@@ -352,9 +240,6 @@ func loadSourceData(paths sourcePaths) (sourceData, error) {
 	if data.musicTracks, err = loadMusicTracks(db); err != nil {
 		return sourceData{}, err
 	}
-	if data.sourceAttributions, err = loadSourceAttributions(db); err != nil {
-		return sourceData{}, err
-	}
 	if data.strings, err = loadStrings(db); err != nil {
 		return sourceData{}, err
 	}
@@ -365,6 +250,7 @@ func loadSourceData(paths sourcePaths) (sourceData, error) {
 	if err := validateSourceRelations(data); err != nil {
 		return sourceData{}, err
 	}
+
 	return data, nil
 }
 
@@ -389,11 +275,8 @@ func loadTaxonomy(db *sql.DB, table string) ([]sourceTaxonomy, error) {
 
 func loadArtists(db *sql.DB) ([]sourceArtist, error) {
 	rows, err := db.Query(`
-		SELECT id, source_path, source_hash, debug_hash, source_display_name,
-			display_name, artist_url, COALESCE(birth_year, 0), COALESCE(death_year, 0),
-			COALESCE(birth_place, ''), COALESCE(death_place, ''), COALESCE(activity_text, ''),
-			COALESCE(activity_start_year, 0), COALESCE(activity_end_year, 0),
-			COALESCE(artist_index_path, ''), COALESCE(biography_image_path, '')
+		SELECT id, display_name, COALESCE(birth_year, 0), COALESCE(death_year, 0),
+			COALESCE(birth_place, ''), COALESCE(death_place, '')
 		FROM artists
 		ORDER BY id
 	`)
@@ -407,21 +290,11 @@ func loadArtists(db *sql.DB) ([]sourceArtist, error) {
 		item := sourceArtist{}
 		if err := rows.Scan(
 			&item.ID,
-			&item.SourcePath,
-			&item.SourceHash,
-			&item.DebugHash,
-			&item.SourceDisplayName,
 			&item.DisplayName,
-			&item.ArtistURL,
 			&item.BirthYear,
 			&item.DeathYear,
 			&item.BirthPlace,
 			&item.DeathPlace,
-			&item.ActivityText,
-			&item.ActivityStartYear,
-			&item.ActivityEndYear,
-			&item.ArtistIndexPath,
-			&item.BiographyImagePath,
 		); err != nil {
 			return nil, fmt.Errorf("scan artists: %w", err)
 		}
@@ -453,9 +326,9 @@ func loadArtistRelations(db *sql.DB, table string, relationColumn string) (map[s
 
 func loadBiographies(db *sql.DB) ([]sourceBiography, error) {
 	rows, err := db.Query(`
-		SELECT id, artist_id, raw_life_detail, raw_biography_html, biography_html, biography_text
+		SELECT artist_id, biography_html
 		FROM biographies
-		ORDER BY id
+		ORDER BY artist_id
 	`)
 	if err != nil {
 		return nil, fmt.Errorf("read biographies: %w", err)
@@ -465,31 +338,8 @@ func loadBiographies(db *sql.DB) ([]sourceBiography, error) {
 	items := []sourceBiography{}
 	for rows.Next() {
 		item := sourceBiography{}
-		if err := rows.Scan(&item.ID, &item.ArtistID, &item.RawLifeDetail, &item.RawBiographyHTML, &item.BiographyHTML, &item.BiographyText); err != nil {
+		if err := rows.Scan(&item.ArtistID, &item.BiographyHTML); err != nil {
 			return nil, fmt.Errorf("scan biographies: %w", err)
-		}
-		items = append(items, item)
-	}
-
-	return items, rows.Err()
-}
-
-func loadBiographyLinks(db *sql.DB) ([]sourceBiographyLink, error) {
-	rows, err := db.Query(`
-		SELECT id, biography_id, link_type, target_path, link_text, link_order
-		FROM biography_links
-		ORDER BY id
-	`)
-	if err != nil {
-		return nil, fmt.Errorf("read biography links: %w", err)
-	}
-	defer closeRows(rows)
-
-	items := []sourceBiographyLink{}
-	for rows.Next() {
-		item := sourceBiographyLink{}
-		if err := rows.Scan(&item.ID, &item.BiographyID, &item.LinkType, &item.TargetPath, &item.LinkText, &item.LinkOrder); err != nil {
-			return nil, fmt.Errorf("scan biography links: %w", err)
 		}
 		items = append(items, item)
 	}
@@ -499,11 +349,8 @@ func loadBiographyLinks(db *sql.DB) ([]sourceBiographyLink, error) {
 
 func loadArtworks(db *sql.DB) ([]sourceArtwork, error) {
 	rows, err := db.Query(`
-		SELECT id, author_id, title, date_text, COALESCE(date_start, 0), COALESCE(date_end, 0),
-			is_circa, COALESCE(date_qualifier, ''), technique,
-			COALESCE(technique_without_dimensions, ''), COALESCE(dimensions, ''), location, url,
-			COALESCE(image_path, ''), COALESCE(output_image_path, ''), COALESCE(school_id, ''), form_id,
-			COALESCE(type_id, ''), source_row
+		SELECT id, author_id, title, date_text, technique, COALESCE(dimensions, ''), location,
+			COALESCE(school_id, ''), form_id, COALESCE(type_id, '')
 		FROM artworks
 		ORDER BY id
 	`)
@@ -515,31 +362,20 @@ func loadArtworks(db *sql.DB) ([]sourceArtwork, error) {
 	items := []sourceArtwork{}
 	for rows.Next() {
 		item := sourceArtwork{}
-		var isCirca int
 		if err := rows.Scan(
 			&item.ID,
 			&item.AuthorID,
 			&item.Title,
 			&item.DateText,
-			&item.DateStart,
-			&item.DateEnd,
-			&isCirca,
-			&item.DateQualifier,
 			&item.Technique,
-			&item.TechniqueWithoutDimensions,
 			&item.Dimensions,
 			&item.Location,
-			&item.URL,
-			&item.ImagePath,
-			&item.OutputImagePath,
 			&item.SchoolID,
 			&item.FormID,
 			&item.TypeID,
-			&item.SourceRow,
 		); err != nil {
 			return nil, fmt.Errorf("scan artworks: %w", err)
 		}
-		item.IsCirca = isCirca != 0
 		items = append(items, item)
 	}
 
@@ -548,7 +384,7 @@ func loadArtworks(db *sql.DB) ([]sourceArtwork, error) {
 
 func loadGlossaryEntries(db *sql.DB) ([]sourceGlossaryEntry, error) {
 	rows, err := db.Query(`
-		SELECT id, term, definition, COALESCE(anchor, ''), source_page, sort_order
+		SELECT id, term, definition
 		FROM glossary_entries
 		ORDER BY id
 	`)
@@ -560,7 +396,7 @@ func loadGlossaryEntries(db *sql.DB) ([]sourceGlossaryEntry, error) {
 	items := []sourceGlossaryEntry{}
 	for rows.Next() {
 		item := sourceGlossaryEntry{}
-		if err := rows.Scan(&item.ID, &item.Term, &item.Definition, &item.Anchor, &item.SourcePage, &item.SortOrder); err != nil {
+		if err := rows.Scan(&item.ID, &item.Term, &item.Definition); err != nil {
 			return nil, fmt.Errorf("scan glossary entries: %w", err)
 		}
 		items = append(items, item)
@@ -594,8 +430,7 @@ func loadGuestbookEntries(db *sql.DB) ([]sourceGuestbookEntry, error) {
 
 func loadMusicTracks(db *sql.DB) ([]sourceMusicTrack, error) {
 	rows, err := db.Query(`
-		SELECT id, track_order, title, period, composer, COALESCE(origin, ''), playback_url,
-			media_format, player_url, COALESCE(local_path, ''), part, part_count
+		SELECT id, title, period, composer, COALESCE(local_path, '')
 		FROM music_tracks
 		ORDER BY track_order
 	`)
@@ -607,44 +442,8 @@ func loadMusicTracks(db *sql.DB) ([]sourceMusicTrack, error) {
 	items := []sourceMusicTrack{}
 	for rows.Next() {
 		item := sourceMusicTrack{}
-		if err := rows.Scan(
-			&item.ID,
-			&item.TrackOrder,
-			&item.Title,
-			&item.Period,
-			&item.Composer,
-			&item.Origin,
-			&item.PlaybackURL,
-			&item.MediaFormat,
-			&item.PlayerURL,
-			&item.LocalPath,
-			&item.Part,
-			&item.PartCount,
-		); err != nil {
+		if err := rows.Scan(&item.ID, &item.Title, &item.Period, &item.Composer, &item.LocalPath); err != nil {
 			return nil, fmt.Errorf("scan music tracks: %w", err)
-		}
-		items = append(items, item)
-	}
-
-	return items, rows.Err()
-}
-
-func loadSourceAttributions(db *sql.DB) ([]sourceAttribution, error) {
-	rows, err := db.Query(`
-		SELECT id, attribution_order, category, COALESCE(subcategory, ''), title, citation, source_url
-		FROM source_attributions
-		ORDER BY attribution_order
-	`)
-	if err != nil {
-		return nil, fmt.Errorf("read source attributions: %w", err)
-	}
-	defer closeRows(rows)
-
-	items := []sourceAttribution{}
-	for rows.Next() {
-		item := sourceAttribution{}
-		if err := rows.Scan(&item.ID, &item.AttributionOrder, &item.Category, &item.Subcategory, &item.Title, &item.Citation, &item.SourceURL); err != nil {
-			return nil, fmt.Errorf("scan source attributions: %w", err)
 		}
 		items = append(items, item)
 	}
@@ -696,7 +495,6 @@ func validateSourceRelations(data sourceData) error {
 	formIDs := makeIDSet(data.forms, func(item sourceTaxonomy) string { return item.ID })
 	typeIDs := makeIDSet(data.types, func(item sourceTaxonomy) string { return item.ID })
 	professionIDs := makeIDSet(data.professions, func(item sourceTaxonomy) string { return item.ID })
-	biographyIDs := makeIDSet(data.biographies, func(item sourceBiography) string { return item.ID })
 
 	for artistID, schools := range data.artistSchools {
 		if _, ok := artistIDs[artistID]; !ok {
@@ -722,13 +520,7 @@ func validateSourceRelations(data sourceData) error {
 
 	for _, biography := range data.biographies {
 		if _, ok := artistIDs[biography.ArtistID]; !ok {
-			return fmt.Errorf("biography %q references unknown artist %q", biography.ID, biography.ArtistID)
-		}
-	}
-
-	for _, link := range data.biographyLinks {
-		if _, ok := biographyIDs[link.BiographyID]; !ok {
-			return fmt.Errorf("biography link %q references unknown biography %q", link.ID, link.BiographyID)
+			return fmt.Errorf("biography references unknown artist %q", biography.ArtistID)
 		}
 	}
 
@@ -755,6 +547,7 @@ func makeIDSet[T any](items []T, id func(T) string) map[string]struct{} {
 	for _, item := range items {
 		ids[id(item)] = struct{}{}
 	}
+
 	return ids
 }
 
@@ -764,25 +557,38 @@ func loadSourceFiles(storage iofs.FS, data *sourceData) error {
 		if err != nil {
 			return fmt.Errorf("artwork %q storage: %w", artwork.ID, err)
 		}
-		data.artworkFiles[artwork.ID] = filename
+		content, err := readSourceFile(storage, sourceFilePath("Artworks", artwork.ID, filename))
+		if err != nil {
+			return fmt.Errorf("artwork %q storage: %w", artwork.ID, err)
+		}
+		data.artworkFiles[artwork.ID] = sourceFile{name: filename, content: content}
 	}
 
 	for _, track := range data.musicTracks {
-		relativePath, err := safeRelativePath(track.LocalPath)
+		sourcePath, err := sourceMusicFilePath(track)
 		if err != nil {
 			return fmt.Errorf("music track %q storage path: %w", track.ID, err)
 		}
-		info, err := iofs.Stat(storage, relativePath)
+		content, err := readSourceFile(storage, sourcePath)
 		if err != nil {
-			return fmt.Errorf("music track %q storage file: %w", track.ID, err)
+			return fmt.Errorf("music track %q storage: %w", track.ID, err)
 		}
-		if info.IsDir() {
-			return fmt.Errorf("music track %q storage file %q is a directory", track.ID, relativePath)
-		}
-		data.musicFiles[track.ID] = path.Base(relativePath)
+		data.musicFiles[track.ID] = sourceFile{name: path.Base(sourcePath), content: content}
 	}
 
 	return nil
+}
+
+func readSourceFile(storage iofs.FS, sourcePath string) ([]byte, error) {
+	content, err := iofs.ReadFile(storage, sourcePath)
+	if err != nil {
+		return nil, err
+	}
+	if len(content) == 0 {
+		return nil, errors.New("source file is empty")
+	}
+
+	return content, nil
 }
 
 func singleSourceFile(storage iofs.FS, dir string) (string, error) {
@@ -823,12 +629,7 @@ func sourceFilePath(directory string, recordID string, filename string) string {
 }
 
 func sourceMusicFilePath(track sourceMusicTrack) (string, error) {
-	relativePath, err := safeRelativePath(track.LocalPath)
-	if err != nil {
-		return "", err
-	}
-
-	return relativePath, nil
+	return safeRelativePath(track.LocalPath)
 }
 
 func sortedValues(values []string) []string {
