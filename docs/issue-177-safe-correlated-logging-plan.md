@@ -34,4 +34,4 @@ Issue #177 removes personally identifiable and secret request data from applicat
 ### Review
 
 - [ ] Manually check the changed log field names and contributor error response. Verification: operator-visible output meets the issue acceptance criteria.
-- [ ] Commit and push the approved change. Verification: commit contains only issue #177 files and no credentials or generated artefacts.
+- [✓] Commit and push the approved change. Verification: commit contains only issue #177 files and no credentials or generated artefacts.
