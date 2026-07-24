@@ -67,18 +67,20 @@ templ GuestbookBlock(v GuestbookView) {
 					class="btn btn-primary"
 				>Add Entry</a>
 			</div>
-			<div>
-				<select
-					title="Select a year to filter the guestbook entries"
-					name="year"
-					hx-get="/guestbook"
-					class="select select-bordered w-full "
-				>
-					for _, year := range v.YearOptions {
-						<option value={ year } selected?={ v.SelectedYear == year }>{ year }</option>
-					}
-				</select>
-			</div>
+			if len(v.YearOptions) > 1 {
+				<div>
+					<select
+						title="Select a year to filter the guestbook entries"
+						name="year"
+						hx-get="/guestbook"
+						class="select select-bordered w-full "
+					>
+						for _, year := range v.YearOptions {
+							<option value={ year } selected?={ v.SelectedYear == year }>{ year }</option>
+						}
+					</select>
+				</div>
+			}
 		</div>
 		if len(v.Entries) > 0 {
 			@GuestbookEntries(v.Entries)

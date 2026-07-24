@@ -47,3 +47,43 @@ func TestGuestbookBlockOnlyPromptsToSignForCurrentYear(t *testing.T) {
 		})
 	}
 }
+
+func TestGuestbookBlockOnlyShowsYearSelectorForMultipleYears(t *testing.T) {
+	tests := []struct {
+		name         string
+		yearOptions  []string
+		wantSelector bool
+	}{
+		{
+			name:         "no years",
+			wantSelector: false,
+		},
+		{
+			name:         "one year",
+			yearOptions:  []string{"2020"},
+			wantSelector: false,
+		},
+		{
+			name:         "multiple years",
+			yearOptions:  []string{"2026", "2020"},
+			wantSelector: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var output bytes.Buffer
+			content := GuestbookView{
+				YearOptions: tt.yearOptions,
+			}
+
+			if err := GuestbookBlock(content).Render(context.Background(), &output); err != nil {
+				t.Fatalf("render guestbook block: %v", err)
+			}
+
+			if got := strings.Contains(output.String(), `name="year"`); got != tt.wantSelector {
+				t.Errorf("year selector present = %t, want %t", got, tt.wantSelector)
+			}
+		})
+	}
+}
