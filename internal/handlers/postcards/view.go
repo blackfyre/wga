@@ -16,7 +16,6 @@ import (
 )
 
 func viewPostcard(app core.App, c *core.RequestEvent) error {
-	// postCardId := c.QueryParamDefault("p", "nope")
 	postCardId := cmp.Or(c.Request.URL.Query().Get("p"), "nope")
 	logger := logging.RequestLogger(app, c)
 

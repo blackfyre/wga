@@ -15,23 +15,26 @@ import (
 // sendPostcard sends a postcard to every recipient and reports whether all deliveries succeeded.
 func sendPostcard(r *core.Record, app core.App, mailClient mailer.Mailer, postcards config.Postcards, runID string) bool {
 	recipients := convertCommaSeparatedEmailsToMailAddresses(r.GetString("recipients"))
+	allDelivered := true
 
 	for index, rec := range recipients {
 		message, err := renderMessage(r, rec, postcards)
 		if err != nil {
 			logPostcardDelivery(app, runID, index+1, len(recipients), "render_failed", err)
-			return false
+			allDelivered = false
+			continue
 		}
 
 		if err := mailClient.Send(message); err != nil {
 			logPostcardDelivery(app, runID, index+1, len(recipients), "failed", err)
-			return false
+			allDelivered = false
+			continue
 		}
 
 		logPostcardDelivery(app, runID, index+1, len(recipients), "sent", nil)
 	}
 
-	return true
+	return allDelivered
 }
 
 // convertCommaSeparatedEmailsToMailAddresses converts a comma-separated string of email addresses
@@ -114,11 +117,12 @@ func logPostcardDelivery(app core.App, runID string, recipientIndex int, recipie
 }
 
 func processPostcard(r *core.Record, app core.App, mailClient mailer.Mailer, postcards config.Postcards, runID string) bool {
-	if !sendPostcard(r, app, mailClient, postcards, runID) {
+	allDelivered := sendPostcard(r, app, mailClient, postcards, runID)
+	if !updatePostcardRecord(r, app, runID) {
 		return false
 	}
 
-	return updatePostcardRecord(r, app, runID)
+	return allDelivered
 }
 
 // sendPostcards sends postcards based on a specified frequency.

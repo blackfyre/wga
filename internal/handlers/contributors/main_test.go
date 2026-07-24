@@ -1,17 +1,15 @@
 package contributors
 
 import (
-	"context"
 	"errors"
 	"fmt"
-	"maps"
 	"net/http"
 	"strings"
 	"testing"
 
+	"github.com/blackfyre/wga/internal/testutils"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tests"
-	"github.com/pocketbase/pocketbase/tools/logger"
 )
 
 func TestContributorServerErrorIsClientSafe(t *testing.T) {
@@ -35,7 +33,7 @@ func TestContributorServerErrorIsClientSafe(t *testing.T) {
 				t.Fatalf("create test app: %v", err)
 			}
 			app.Settings().Logs.MaxDays = 1
-			captured = captureContributorLogs(app)
+			captured = testutils.CaptureLogs(app)
 
 			app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 				se.Router.GET("/contributors-error", func(e *core.RequestEvent) error {
@@ -48,65 +46,16 @@ func TestContributorServerErrorIsClientSafe(t *testing.T) {
 			return app
 		},
 		AfterTestFunc: func(t testing.TB, app *tests.TestApp, _ *http.Response) {
-			flushContributorLogs(t, app)
-			entry := contributorLogWithEvent(captured(), "contributors.request.failed")
+			testutils.FlushLogs(t, app)
+			entry := testutils.LogWithEvent(captured(), "contributors.request.failed")
 			if entry == nil {
 				t.Fatal("expected a contributor failure log")
 			}
-			if strings.Contains(fmt.Sprint(contributorLogData(captured())), sensitiveDetail) {
+			if strings.Contains(fmt.Sprint(testutils.LogData(captured())), sensitiveDetail) {
 				t.Fatalf("captured log contains %q", sensitiveDetail)
 			}
 		},
 	}
 
 	scenario.Test(t)
-}
-
-func captureContributorLogs(app *tests.TestApp) func() []*core.Log {
-	var captured []*core.Log
-	app.OnModelCreate(core.LogsTableName).BindFunc(func(e *core.ModelEvent) error {
-		log, ok := e.Model.(*core.Log)
-		if ok {
-			entry := *log
-			entry.Data = maps.Clone(log.Data)
-			captured = append(captured, &entry)
-		}
-
-		return e.Next()
-	})
-
-	return func() []*core.Log {
-		return captured
-	}
-}
-
-func flushContributorLogs(t testing.TB, app *tests.TestApp) {
-	t.Helper()
-
-	handler, ok := app.Logger().Handler().(*logger.BatchHandler)
-	if !ok {
-		t.Fatalf("expected BatchHandler, got %T", app.Logger().Handler())
-	}
-	if err := handler.WriteAll(context.Background()); err != nil {
-		t.Fatalf("write logs: %v", err)
-	}
-}
-
-func contributorLogWithEvent(logs []*core.Log, event string) *core.Log {
-	for _, entry := range logs {
-		if entry.Data["event"] == event {
-			return entry
-		}
-	}
-
-	return nil
-}
-
-func contributorLogData(logs []*core.Log) []any {
-	data := make([]any, len(logs))
-	for index, entry := range logs {
-		data[index] = entry.Data
-	}
-
-	return data
 }

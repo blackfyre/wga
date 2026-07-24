@@ -3,16 +3,15 @@ package logging
 import (
 	"context"
 	"fmt"
-	"maps"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
+	"github.com/blackfyre/wga/internal/testutils"
 	"github.com/google/uuid"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tests"
-	"github.com/pocketbase/pocketbase/tools/logger"
 )
 
 func TestRequestIDMiddlewareCorrelatesRequestLogs(t *testing.T) {
@@ -22,11 +21,12 @@ func TestRequestIDMiddlewareCorrelatesRequestLogs(t *testing.T) {
 		Name:                  "request ID is retained in the route log",
 		Method:                http.MethodGet,
 		URL:                   "/request-id",
+		Headers:               map[string]string{RequestIDHeader: "client-supplied"},
 		ExpectedStatus:        http.StatusNoContent,
 		DisableTestAppCleanup: true,
 		TestAppFactory: func(t testing.TB) *tests.TestApp {
-			app := newTestApp(t)
-			captured = captureLogs(app)
+			app := testutils.NewTestApp(t)
+			captured = testutils.CaptureLogs(app)
 			RegisterRequestIDMiddleware(app)
 			app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 				se.Router.GET("/request-id", func(e *core.RequestEvent) error {
@@ -47,13 +47,16 @@ func TestRequestIDMiddlewareCorrelatesRequestLogs(t *testing.T) {
 		},
 		AfterTestFunc: func(t testing.TB, app *tests.TestApp, response *http.Response) {
 			requestID := response.Header.Get(RequestIDHeader)
+			if requestID == "client-supplied" {
+				t.Fatal("response reused a client-supplied request ID")
+			}
 			if _, err := uuid.Parse(requestID); err != nil {
 				t.Fatalf("response request ID %q is not a UUID: %v", requestID, err)
 			}
 
-			flushLogs(t, app)
+			testutils.FlushLogs(t, app)
 			for _, event := range []string{"test.request.started", "test.request.completed"} {
-				entry := logWithEvent(captured(), event)
+				entry := testutils.LogWithEvent(captured(), event)
 				if entry == nil {
 					t.Fatalf("expected a %q log", event)
 				}
@@ -68,8 +71,8 @@ func TestRequestIDMiddlewareCorrelatesRequestLogs(t *testing.T) {
 }
 
 func TestRedactKeepsSensitiveValuesOutOfCapturedLogs(t *testing.T) {
-	app := newTestApp(t)
-	captured := captureLogs(app)
+	app := testutils.NewTestApp(t)
+	captured := testutils.CaptureLogs(app)
 	request := httptest.NewRequest(http.MethodPost, "/postcard", strings.NewReader("message-body-value"))
 	request.Header.Set("Authorization", "credential-value")
 	sensitiveValues := []string{
@@ -84,8 +87,8 @@ func TestRedactKeepsSensitiveValuesOutOfCapturedLogs(t *testing.T) {
 	}
 	app.Logger().Info("Redaction test", "event", "test.redaction", "request", Redact(request))
 
-	flushLogs(t, app)
-	output := fmt.Sprint(logData(captured()))
+	testutils.FlushLogs(t, app)
+	output := fmt.Sprint(testutils.LogData(captured()))
 	for _, value := range sensitiveValues {
 		if strings.Contains(output, value) {
 			t.Fatalf("captured log contains %q: %s", value, output)
@@ -97,82 +100,20 @@ func TestRedactKeepsSensitiveValuesOutOfCapturedLogs(t *testing.T) {
 }
 
 func TestContextLoggerRetainsRequestID(t *testing.T) {
-	app := newTestApp(t)
-	captured := captureLogs(app)
+	app := testutils.NewTestApp(t)
+	captured := testutils.CaptureLogs(app)
 
 	ContextLogger(app, WithRequestID(context.Background(), "request-123")).Info(
 		"Context correlation test",
 		"event", "test.context",
 	)
 
-	flushLogs(t, app)
-	entry := logWithEvent(captured(), "test.context")
+	testutils.FlushLogs(t, app)
+	entry := testutils.LogWithEvent(captured(), "test.context")
 	if entry == nil {
 		t.Fatal("expected a context correlation log")
 	}
 	if got := entry.Data["request_id"]; got != "request-123" {
 		t.Fatalf("request_id = %v, want %q", got, "request-123")
 	}
-}
-
-func newTestApp(t testing.TB) *tests.TestApp {
-	t.Helper()
-
-	app, err := tests.NewTestApp()
-	if err != nil {
-		t.Fatalf("create test app: %v", err)
-	}
-	t.Cleanup(app.Cleanup)
-	app.Settings().Logs.MaxDays = 1
-
-	return app
-}
-
-func captureLogs(app *tests.TestApp) func() []*core.Log {
-	var captured []*core.Log
-	app.OnModelCreate(core.LogsTableName).BindFunc(func(e *core.ModelEvent) error {
-		log, ok := e.Model.(*core.Log)
-		if ok {
-			entry := *log
-			entry.Data = maps.Clone(log.Data)
-			captured = append(captured, &entry)
-		}
-
-		return e.Next()
-	})
-
-	return func() []*core.Log {
-		return captured
-	}
-}
-
-func flushLogs(t testing.TB, app *tests.TestApp) {
-	t.Helper()
-
-	handler, ok := app.Logger().Handler().(*logger.BatchHandler)
-	if !ok {
-		t.Fatalf("expected BatchHandler, got %T", app.Logger().Handler())
-	}
-	if err := handler.WriteAll(context.Background()); err != nil {
-		t.Fatalf("write logs: %v", err)
-	}
-}
-
-func logWithEvent(logs []*core.Log, event string) *core.Log {
-	for _, entry := range logs {
-		if entry.Data["event"] == event {
-			return entry
-		}
-	}
-
-	return nil
-}
-
-func logData(logs []*core.Log) []any {
-	data := make([]any, len(logs))
-	for index, entry := range logs {
-		data[index] = entry.Data
-	}
-
-	return data
 }

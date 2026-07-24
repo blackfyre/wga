@@ -22,7 +22,7 @@ Issue #177 removes personally identifiable and secret request data from applicat
 
 ### Scheduled delivery
 
-- [✓] Generate one `run_id` per postcard cron callback and include it in delivery, rendering, record-update, and run-result logs. Verification: all captured delivery records for a run share its `run_id`, include only safe execution IDs, attempt, and outcome fields, and failed deliveries remain queued.
+- [✓] Generate one `run_id` per postcard cron callback and include it in delivery, rendering, record-update, and run-result logs. Verification: all captured delivery records for a run share its `run_id`, include only safe execution IDs, attempt, and outcome fields, and every recipient is attempted before terminalising the postcard.
 
 ## Phase 3: Verification and delivery
 

@@ -1,19 +1,17 @@
 package crontab
 
 import (
-	"context"
 	"errors"
 	"fmt"
-	"maps"
 	"net/mail"
+	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/blackfyre/wga/internal/config"
+	"github.com/blackfyre/wga/internal/testutils"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
-	"github.com/pocketbase/pocketbase/tests"
-	"github.com/pocketbase/pocketbase/tools/logger"
 	"github.com/pocketbase/pocketbase/tools/mailer"
 )
 
@@ -52,13 +50,8 @@ func TestSendMail(t *testing.T) {
 }
 
 func TestLogPostcardDeliveryUsesSafeRunFields(t *testing.T) {
-	app, err := tests.NewTestApp()
-	if err != nil {
-		t.Fatalf("create test app: %v", err)
-	}
-	t.Cleanup(app.Cleanup)
-	app.Settings().Logs.MaxDays = 1
-	captured := captureDeliveryLogs(app)
+	app := testutils.NewTestApp(t)
+	captured := testutils.CaptureLogs(app)
 
 	logPostcardDelivery(
 		app,
@@ -77,8 +70,8 @@ func TestLogPostcardDeliveryUsesSafeRunFields(t *testing.T) {
 		errors.New("recipient@example.test token-value message-body-value"),
 	)
 
-	flushDeliveryLogs(t, app)
-	entries := deliveryLogsWithEvent(captured(), "postcard.delivery.attempt")
+	testutils.FlushLogs(t, app)
+	entries := testutils.LogsWithEvent(captured(), "postcard.delivery.attempt")
 	if len(entries) != 2 {
 		t.Fatalf("expected 2 postcard delivery logs, got %d", len(entries))
 	}
@@ -105,7 +98,7 @@ func TestLogPostcardDeliveryUsesSafeRunFields(t *testing.T) {
 		t.Fatalf("outcome = %v, want %q", got, "failed")
 	}
 
-	output := fmt.Sprint(deliveryLogData(captured()))
+	output := fmt.Sprint(testutils.LogData(captured()))
 	for _, sensitive := range []string{"recipient@example.test", "token-value", "message-body-value"} {
 		if strings.Contains(output, sensitive) {
 			t.Fatalf("captured log contains %q: %s", sensitive, output)
@@ -113,12 +106,8 @@ func TestLogPostcardDeliveryUsesSafeRunFields(t *testing.T) {
 	}
 }
 
-func TestProcessPostcardLeavesFailedDeliveryQueued(t *testing.T) {
-	app, err := tests.NewTestApp()
-	if err != nil {
-		t.Fatalf("create test app: %v", err)
-	}
-	t.Cleanup(app.Cleanup)
+func TestProcessPostcardCompletesAfterPartialDeliveryFailure(t *testing.T) {
+	app := testutils.NewTestApp(t)
 	collection := core.NewBaseCollection("postcards")
 	collection.Fields.Add(
 		&core.TextField{Name: "status"},
@@ -131,29 +120,48 @@ func TestProcessPostcardLeavesFailedDeliveryQueued(t *testing.T) {
 
 	record := core.NewRecord(collection)
 	record.Set("status", "queued")
-	record.Set("recipients", "recipient@example.test")
+	record.Set("recipients", "first@example.test,second@example.test,third@example.test")
 	record.Set("sender_name", "sender")
 	if err := app.Save(record); err != nil {
 		t.Fatalf("create postcard: %v", err)
 	}
 
-	if processPostcard(record, app, failingMailer{}, postcardTestConfig(t), "run-123") {
+	mailClient := &scriptedMailer{
+		outcomes: []error{nil, errors.New("mail transport failed"), nil},
+	}
+	if processPostcard(record, app, mailClient, postcardTestConfig(t), "run-123") {
 		t.Fatal("expected postcard delivery to fail")
+	}
+	wantRecipients := []string{"first@example.test", "second@example.test", "third@example.test"}
+	if !reflect.DeepEqual(mailClient.recipients, wantRecipients) {
+		t.Fatalf("attempted recipients = %v, want %v", mailClient.recipients, wantRecipients)
 	}
 
 	stored, err := app.FindRecordById(collection.Id, record.Id)
 	if err != nil {
 		t.Fatalf("reload postcard: %v", err)
 	}
-	if got := stored.GetString("status"); got != "queued" {
-		t.Fatalf("status = %q, want %q", got, "queued")
+	if got := stored.GetString("status"); got != "sent" {
+		t.Fatalf("status = %q, want %q", got, "sent")
+	}
+	queuedRecords, err := app.FindRecordsByFilter(collection.Id, "status = 'queued'", "", 0, 0)
+	if err != nil {
+		t.Fatalf("load queued postcards: %v", err)
+	}
+	if len(queuedRecords) != 0 {
+		t.Fatalf("queued postcards = %d, want 0", len(queuedRecords))
 	}
 }
 
-type failingMailer struct{}
+type scriptedMailer struct {
+	outcomes   []error
+	recipients []string
+}
 
-func (failingMailer) Send(*mailer.Message) error {
-	return errors.New("mail transport failed")
+func (m *scriptedMailer) Send(message *mailer.Message) error {
+	m.recipients = append(m.recipients, message.To[0].Address)
+
+	return m.outcomes[len(m.recipients)-1]
 }
 
 func postcardTestConfig(t *testing.T) config.Postcards {
@@ -175,54 +183,4 @@ func postcardTestConfig(t *testing.T) config.Postcards {
 	}
 
 	return server.Postcards
-}
-
-func captureDeliveryLogs(app *tests.TestApp) func() []*core.Log {
-	var captured []*core.Log
-	app.OnModelCreate(core.LogsTableName).BindFunc(func(e *core.ModelEvent) error {
-		log, ok := e.Model.(*core.Log)
-		if ok {
-			entry := *log
-			entry.Data = maps.Clone(log.Data)
-			captured = append(captured, &entry)
-		}
-
-		return e.Next()
-	})
-
-	return func() []*core.Log {
-		return captured
-	}
-}
-
-func flushDeliveryLogs(t *testing.T, app *tests.TestApp) {
-	t.Helper()
-
-	handler, ok := app.Logger().Handler().(*logger.BatchHandler)
-	if !ok {
-		t.Fatalf("expected BatchHandler, got %T", app.Logger().Handler())
-	}
-	if err := handler.WriteAll(context.Background()); err != nil {
-		t.Fatalf("write logs: %v", err)
-	}
-}
-
-func deliveryLogsWithEvent(logs []*core.Log, event string) []*core.Log {
-	entries := []*core.Log{}
-	for _, entry := range logs {
-		if entry.Data["event"] == event {
-			entries = append(entries, entry)
-		}
-	}
-
-	return entries
-}
-
-func deliveryLogData(logs []*core.Log) []any {
-	data := make([]any, len(logs))
-	for index, entry := range logs {
-		data[index] = entry.Data
-	}
-
-	return data
 }

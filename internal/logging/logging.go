@@ -30,6 +30,7 @@ func RegisterRequestIDMiddleware(app core.App) {
 	})
 }
 
+// AttachRequestID assigns a server-generated identifier without trusting public request headers.
 func AttachRequestID(e *core.RequestEvent) string {
 	requestID := uuid.NewString()
 	SetRequestID(e, requestID)
@@ -77,6 +78,7 @@ func RunLogger(app core.App, runID string) *slog.Logger {
 	return app.Logger().With("run_id", runID)
 }
 
+// Redact intentionally discards all input to prevent sensitive data from reaching logs.
 func Redact(_ any) string {
 	return Redacted
 }

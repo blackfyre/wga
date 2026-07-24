@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -121,4 +122,52 @@ func TestContributorsRepositoryGetContributors(t *testing.T) {
 			t.Fatalf("expected fallback contributor result, got %+v", contributors)
 		}
 	})
+}
+
+func TestFetchContributorsFromAPIHonoursCancellation(t *testing.T) {
+	started := make(chan struct{})
+	cancelled := make(chan struct{})
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		close(started)
+		<-r.Context().Done()
+		close(cancelled)
+	}))
+	defer ts.Close()
+
+	repo := newContributorsRepositoryWithConfig(
+		pocketbase.NewWithConfig(pocketbase.Config{DefaultDataDir: "./wga_data"}),
+		ts.Client(),
+		ts.URL,
+		filepath.Join(t.TempDir(), "contributors.json"),
+		"contributors:test:cancellation",
+		time.Hour,
+	)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	result := make(chan error, 1)
+	go func() {
+		_, err := repo.fetchContributorsFromAPI(ctx)
+		result <- err
+	}()
+
+	select {
+	case <-started:
+	case <-time.After(time.Second):
+		t.Fatal("contributors request did not reach the upstream server")
+	}
+	cancel()
+
+	select {
+	case <-cancelled:
+	case <-time.After(time.Second):
+		t.Fatal("upstream request context was not cancelled")
+	}
+	select {
+	case err := <-result:
+		if !errors.Is(err, context.Canceled) {
+			t.Fatalf("fetch error = %v, want context cancellation", err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("contributors request did not return after cancellation")
+	}
 }
