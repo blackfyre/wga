@@ -17,9 +17,13 @@ const (
 	defaultMaxAttempts         = 5
 )
 
+// ErrNoRecipients indicates that a postcard has no deliverable recipients.
 var ErrNoRecipients = errors.New("postcard requires at least one recipient")
+
+// ErrInvalidAttemptTransition indicates that the requested lifecycle transition is not allowed.
 var ErrInvalidAttemptTransition = errors.New("postcard delivery attempt cannot transition from its current status")
 
+// QueueInput contains the content and recipients required to queue a postcard.
 type QueueInput struct {
 	SenderName    string
 	SenderEmail   string
@@ -30,6 +34,7 @@ type QueueInput struct {
 	CorrelationID string
 }
 
+// Queue persists a postcard with one durable delivery attempt per unique recipient.
 func Queue(app core.App, input QueueInput) (*core.Record, error) {
 	recipients, err := normaliseRecipients(input.Recipients)
 	if err != nil {
@@ -102,6 +107,7 @@ func Queue(app core.App, input QueueInput) (*core.Record, error) {
 	return postcard, nil
 }
 
+// expandLegacyQueuedPostcards moves pre-lifecycle queued postcards into review without sending them.
 func expandLegacyQueuedPostcards(app core.App) error {
 	queued, err := app.FindRecordsByFilter(collectionPostcards, `status = 'queued'`, "", 0, 0)
 	if err != nil {
@@ -123,6 +129,7 @@ func expandLegacyQueuedPostcards(app core.App) error {
 	return nil
 }
 
+// createLegacyReviewAttempts records conservative review attempts for one legacy postcard.
 func createLegacyReviewAttempts(app core.App, postcardID string) error {
 	return app.RunInTransaction(func(txApp core.App) error {
 		postcard, err := txApp.FindRecordById(collectionPostcards, postcardID)
@@ -185,6 +192,7 @@ func createLegacyReviewAttempts(app core.App, postcardID string) error {
 	})
 }
 
+// MarkReceived records the first successful postcard pickup rendering.
 func MarkReceived(app core.App, postcardID string) error {
 	return app.RunInTransaction(func(txApp core.App) error {
 		postcard, err := txApp.FindRecordById(collectionPostcards, postcardID)
@@ -202,6 +210,7 @@ func MarkReceived(app core.App, postcardID string) error {
 	})
 }
 
+// ResolveAttempt applies an operator resolution to a dead-lettered delivery attempt.
 func ResolveAttempt(app core.App, attemptID string, code string, summary string) error {
 	if code != "resolved_manually" && code != "closed_without_replay" && code != "ignored_duplicate" {
 		return errors.New("invalid postcard delivery resolution code")
@@ -242,6 +251,7 @@ func ResolveAttempt(app core.App, attemptID string, code string, summary string)
 	})
 }
 
+// ReplayAttempt creates a linked queued attempt after a dead-lettered attempt is reconciled.
 func ReplayAttempt(app core.App, attemptID string) (*core.Record, error) {
 	var replay *core.Record
 	err := app.RunInTransaction(func(txApp core.App) error {
@@ -286,6 +296,7 @@ func ReplayAttempt(app core.App, attemptID string) (*core.Record, error) {
 	return replay, nil
 }
 
+// normaliseRecipients validates, case-folds, and de-duplicates recipient addresses.
 func normaliseRecipients(recipients []string) ([]string, error) {
 	unique := make(map[string]struct{}, len(recipients))
 	normalised := make([]string, 0, len(recipients))

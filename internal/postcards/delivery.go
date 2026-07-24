@@ -25,6 +25,7 @@ const (
 	deliveryBatchSize = 20
 )
 
+// ClaimedAttempt is an attempt together with the records and lease token required to process it.
 type ClaimedAttempt struct {
 	Attempt  *core.Record
 	Delivery *core.Record
@@ -32,12 +33,14 @@ type ClaimedAttempt struct {
 	Token    string
 }
 
+// deliveryFailure describes a classified mail delivery failure.
 type deliveryFailure struct {
 	class     string
 	retryable bool
 	ambiguous bool
 }
 
+// ProcessDue claims and processes a bounded batch of due postcard delivery attempts.
 func ProcessDue(app core.App, mailClient mailer.Mailer, postcards config.Postcards, runID string) error {
 	if err := expandLegacyQueuedPostcards(app); err != nil {
 		return err
@@ -58,6 +61,7 @@ func ProcessDue(app core.App, mailClient mailer.Mailer, postcards config.Postcar
 	return nil
 }
 
+// claimDue atomically leases the next due delivery attempt.
 func claimDue(app core.App, now types.DateTime) (*ClaimedAttempt, error) {
 	if err := recoverExpiredClaims(app, now); err != nil {
 		return nil, err
@@ -103,6 +107,7 @@ func claimDue(app core.App, now types.DateTime) (*ClaimedAttempt, error) {
 	return &ClaimedAttempt{Attempt: attempt, Delivery: delivery, Postcard: postcard, Token: token}, nil
 }
 
+// recoverExpiredClaims requeues safe expired claims and dead-letters ambiguous ones.
 func recoverExpiredClaims(app core.App, now types.DateTime) error {
 	_, err := app.DB().NewQuery(`
 		UPDATE postcardDeliveryAttempts
@@ -122,6 +127,7 @@ func recoverExpiredClaims(app core.App, now types.DateTime) error {
 	return err
 }
 
+// deliver renders and sends one claimed recipient delivery.
 func deliver(app core.App, mailClient mailer.Mailer, postcards config.Postcards, claim *ClaimedAttempt, runID string) error {
 	message, err := renderMessage(claim.Postcard, claim.Delivery.GetString("recipient"), postcards)
 	if err != nil {
@@ -157,6 +163,7 @@ func deliver(app core.App, mailClient mailer.Mailer, postcards config.Postcards,
 	return err
 }
 
+// logDelivery records a delivery outcome with safe execution identifiers.
 func logDelivery(app core.App, runID string, claim *ClaimedAttempt, outcome string) {
 	logging.RunLogger(app, runID).Info("Postcard delivery attempt completed",
 		"event", "postcard.delivery.attempt",
@@ -168,6 +175,7 @@ func logDelivery(app core.App, runID string, claim *ClaimedAttempt, outcome stri
 	)
 }
 
+// renderMessage produces the notification email for one postcard recipient.
 func renderMessage(postcard *core.Record, recipient string, postcards config.Postcards) (*mailer.Message, error) {
 	html, err := assets.RenderEmail("postcard:notification", map[string]any{
 		"SenderName": postcard.GetString("sender_name"),
@@ -187,6 +195,7 @@ func renderMessage(postcard *core.Record, recipient string, postcards config.Pos
 	}, nil
 }
 
+// startTransport records the SMTP boundary and increments the transport attempt count.
 func startTransport(app core.App, claim *ClaimedAttempt, now types.DateTime) error {
 	result, err := app.DB().NewQuery(`
 		UPDATE postcardDeliveryAttempts
@@ -209,6 +218,7 @@ func startTransport(app core.App, claim *ClaimedAttempt, now types.DateTime) err
 	return nil
 }
 
+// complete records a successful transport and updates the recipient and postcard lifecycles.
 func complete(app core.App, claim *ClaimedAttempt, now types.DateTime) error {
 	return app.RunInTransaction(func(txApp core.App) error {
 		if err := updateOwnedAttempt(txApp, claim, `
@@ -229,6 +239,7 @@ func complete(app core.App, claim *ClaimedAttempt, now types.DateTime) error {
 	})
 }
 
+// retry returns an owned attempt to the queue with bounded exponential backoff.
 func retry(app core.App, claim *ClaimedAttempt, failure deliveryFailure, now types.DateTime) error {
 	delay := deliveryRetryBase * time.Duration(1<<min(claim.Attempt.GetInt("attempt_count")-1, 5))
 	if delay > deliveryRetryMax {
@@ -241,6 +252,7 @@ func retry(app core.App, claim *ClaimedAttempt, failure deliveryFailure, now typ
 	})
 }
 
+// deadLetter records a terminal failed outcome for an owned attempt.
 func deadLetter(app core.App, claim *ClaimedAttempt, failure deliveryFailure, now types.DateTime) error {
 	return updateOwnedAttempt(app, claim, `
 		status = 'dead_lettered', dead_lettered_at = {:now}, claim_token = '', claim_expires_at = '',
@@ -249,6 +261,7 @@ func deadLetter(app core.App, claim *ClaimedAttempt, failure deliveryFailure, no
 	})
 }
 
+// updateOwnedAttempt applies a transition only while the caller retains the lease token.
 func updateOwnedAttempt(app core.App, claim *ClaimedAttempt, changes string, params dbx.Params) error {
 	params["id"] = claim.Attempt.Id
 	params["token"] = claim.Token
@@ -268,6 +281,7 @@ func updateOwnedAttempt(app core.App, claim *ClaimedAttempt, changes string, par
 	return nil
 }
 
+// markPostcardSent finalises a postcard after every recipient delivery has completed.
 func markPostcardSent(app core.App, postcardID string, now types.DateTime) error {
 	var totals struct {
 		Pending int `db:"pending"`
@@ -294,6 +308,7 @@ func markPostcardSent(app core.App, postcardID string, now types.DateTime) error
 	return app.Save(postcard)
 }
 
+// classifyDeliveryError determines whether a mail failure can safely be retried.
 func classifyDeliveryError(err error) deliveryFailure {
 	var dnsError *net.DNSError
 	if errors.As(err, &dnsError) {

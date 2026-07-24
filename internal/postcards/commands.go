@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// RegisterCommands adds postcard delivery inspection and resolution commands.
 func RegisterCommands(app *pocketbase.PocketBase) {
 	var unresolved bool
 	inspect := &cobra.Command{
@@ -75,6 +76,7 @@ func RegisterCommands(app *pocketbase.PocketBase) {
 	app.RootCmd.AddCommand(group)
 }
 
+// firstArg returns the first argument or an empty string when none was supplied.
 func firstArg(args []string) string {
 	if len(args) == 0 {
 		return ""
