@@ -24,7 +24,6 @@ services:
 
   garage-webui:
     image: khairul169/garage-webui:latest
-    container_name: garage-webui
     restart: unless-stopped
     volumes:
       - ./garage/garage.toml:/etc/garage.toml:ro,Z
