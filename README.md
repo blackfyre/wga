@@ -1,6 +1,7 @@
 # Web Gallery of Art
 
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fblackfyre%2Fwga.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fblackfyre%2Fwga?ref=badge_shield)
+![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/blackfyre/wga?utm_source=oss&utm_medium=github&utm_campaign=blackfyre%2Fwga&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)
 
 ## Introduction
 

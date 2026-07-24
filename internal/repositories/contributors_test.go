@@ -1,7 +1,9 @@
 package repositories
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -30,7 +32,7 @@ func TestContributorsRepositoryGetContributors(t *testing.T) {
 			time.Hour,
 		)
 
-		contributors, source, err := repo.GetContributorsWithSource()
+		contributors, source, err := repo.GetContributorsWithSource(context.Background())
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
@@ -64,7 +66,7 @@ func TestContributorsRepositoryGetContributors(t *testing.T) {
 			time.Hour,
 		)
 
-		contributors, source, err := repo.GetContributorsWithSource()
+		contributors, source, err := repo.GetContributorsWithSource(context.Background())
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
@@ -107,7 +109,7 @@ func TestContributorsRepositoryGetContributors(t *testing.T) {
 			time.Hour,
 		)
 
-		contributors, source, err := repo.GetContributorsWithSource()
+		contributors, source, err := repo.GetContributorsWithSource(context.Background())
 		if err != nil {
 			t.Fatalf("expected fallback to succeed, got %v", err)
 		}
@@ -120,4 +122,122 @@ func TestContributorsRepositoryGetContributors(t *testing.T) {
 			t.Fatalf("expected fallback contributor result, got %+v", contributors)
 		}
 	})
+}
+
+func TestFetchContributorsFromAPIHonoursCancellation(t *testing.T) {
+	started := make(chan struct{})
+	cancelled := make(chan struct{})
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		close(started)
+		<-r.Context().Done()
+		close(cancelled)
+	}))
+	defer ts.Close()
+
+	repo := newContributorsRepositoryWithConfig(
+		pocketbase.NewWithConfig(pocketbase.Config{DefaultDataDir: "./wga_data"}),
+		ts.Client(),
+		ts.URL,
+		filepath.Join(t.TempDir(), "contributors.json"),
+		"contributors:test:cancellation",
+		time.Hour,
+	)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	result := make(chan error, 1)
+	go func() {
+		_, err := repo.fetchContributorsFromAPI(ctx)
+		result <- err
+	}()
+
+	select {
+	case <-started:
+	case <-time.After(time.Second):
+		t.Fatal("contributors request did not reach the upstream server")
+	}
+	cancel()
+
+	select {
+	case <-cancelled:
+	case <-time.After(time.Second):
+		t.Fatal("upstream request context was not cancelled")
+	}
+	select {
+	case err := <-result:
+		if !errors.Is(err, context.Canceled) {
+			t.Fatalf("fetch error = %v, want context cancellation", err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("contributors request did not return after cancellation")
+	}
+}
+
+func TestContributorsRepositoryDoesNotCacheFallbackAfterCancellation(t *testing.T) {
+	app := pocketbase.NewWithConfig(pocketbase.Config{DefaultDataDir: "./wga_data"})
+	cacheKey := "contributors:test:cancelled-request"
+	cacheFile := filepath.Join(t.TempDir(), "contributors.json")
+	fallbackContributors := []pages.GithubContributor{{Login: "file-user", Contributions: 5}}
+	file, err := os.Create(cacheFile)
+	if err != nil {
+		t.Fatalf("failed to create fallback file: %v", err)
+	}
+	if err := json.NewEncoder(file).Encode(fallbackContributors); err != nil {
+		_ = file.Close()
+		t.Fatalf("failed to write fallback file: %v", err)
+	}
+	_ = file.Close()
+
+	started := make(chan struct{})
+	cancelled := make(chan struct{})
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		close(started)
+		<-r.Context().Done()
+		close(cancelled)
+	}))
+	defer ts.Close()
+
+	repo := newContributorsRepositoryWithConfig(app, ts.Client(), ts.URL, cacheFile, cacheKey, time.Hour)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	type contributorsResult struct {
+		contributors []pages.GithubContributor
+		source       ContributorsSource
+		err          error
+	}
+	result := make(chan contributorsResult, 1)
+	go func() {
+		contributors, source, err := repo.GetContributorsWithSource(ctx)
+		result <- contributorsResult{contributors: contributors, source: source, err: err}
+	}()
+
+	select {
+	case <-started:
+	case <-time.After(time.Second):
+		t.Fatal("contributors request did not reach the upstream server")
+	}
+	cancel()
+
+	select {
+	case result := <-result:
+		if !errors.Is(result.err, context.Canceled) {
+			t.Fatalf("contributors error = %v, want context cancellation", result.err)
+		}
+		if result.contributors != nil {
+			t.Fatalf("contributors = %+v, want nil", result.contributors)
+		}
+		if result.source != "" {
+			t.Fatalf("source = %q, want empty", result.source)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("contributors request did not return after cancellation")
+	}
+	select {
+	case <-cancelled:
+	case <-time.After(time.Second):
+		t.Fatal("upstream request context was not cancelled")
+	}
+
+	if _, ok := utils.GetCachedValue[[]pages.GithubContributor](app, cacheKey); ok {
+		t.Fatal("cancelled request cached fallback contributors")
+	}
 }

@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -8,6 +9,7 @@ import (
 	"time"
 
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
+	"github.com/blackfyre/wga/internal/logging"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/pocketbase/pocketbase"
 )
@@ -59,16 +61,16 @@ func newContributorsRepositoryWithConfig(app *pocketbase.PocketBase, client *htt
 }
 
 func (r *ContributorsRepository) GetContributors() ([]pages.GithubContributor, error) {
-	contributors, _, err := r.GetContributorsWithSource()
+	contributors, _, err := r.GetContributorsWithSource(context.Background())
 	return contributors, err
 }
 
-func (r *ContributorsRepository) GetContributorsWithSource() ([]pages.GithubContributor, ContributorsSource, error) {
+func (r *ContributorsRepository) GetContributorsWithSource(ctx context.Context) ([]pages.GithubContributor, ContributorsSource, error) {
 	if cached, ok := utils.GetCachedValue[[]pages.GithubContributor](r.app, r.cacheKey); ok {
 		return cached, ContributorsSourceCache, nil
 	}
 
-	contributors, err := r.fetchContributorsFromAPI()
+	contributors, err := r.fetchContributorsFromAPI(ctx)
 	if err == nil {
 		if err := r.persistContributors(contributors); err != nil {
 			return nil, "", err
@@ -77,8 +79,16 @@ func (r *ContributorsRepository) GetContributorsWithSource() ([]pages.GithubCont
 		utils.SetCachedValue(r.app, r.cacheKey, contributors, r.cacheTTL)
 		return contributors, ContributorsSourceAPI, nil
 	}
+	if ctx.Err() != nil {
+		return nil, "", ctx.Err()
+	}
 
-	r.app.Logger().Warn("Contributors API fetch failed; trying local fallback", "error", err)
+	logging.ContextLogger(r.app, ctx).Warn("Contributors API fetch failed; trying local fallback",
+		"event", "contributors.fetch.fallback",
+		"outcome", "fallback",
+		"error_type", logging.ErrorType(err),
+		"error", logging.Redact(err),
+	)
 
 	fallbackContributors, fallbackErr := r.readStoredContributors()
 	if fallbackErr != nil {
@@ -90,8 +100,8 @@ func (r *ContributorsRepository) GetContributorsWithSource() ([]pages.GithubCont
 	return fallbackContributors, ContributorsSourceFileFallback, nil
 }
 
-func (r *ContributorsRepository) fetchContributorsFromAPI() ([]pages.GithubContributor, error) {
-	req, err := http.NewRequest(http.MethodGet, r.apiURL, nil)
+func (r *ContributorsRepository) fetchContributorsFromAPI(ctx context.Context) ([]pages.GithubContributor, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, r.apiURL, nil)
 	if err != nil {
 		return nil, err
 	}

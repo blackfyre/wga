@@ -8,10 +8,22 @@
 - Edit Templ sources in `internal/assets/templ/`, then run `templ generate`. Adjacent `*_templ.go` files are generated and Git-ignored: do not edit or commit them.
 - Edit frontend sources in `resources/js/` and `resources/css/`; `bun run build` writes generated JS/CSS to `internal/assets/public/{js,css}`, which the Go binary embeds. `internal/assets/views/` and `internal/assets/reference/` are also embedded at build time.
 - The active Tailwind 4/daisyUI theme is in `resources/css/style.pcss`; UI work must also follow `.github/instructions/daisyui.instructions.md`.
+- Keep WGA as one deployable application. Extend the owning feature package and use explicit contracts across capability boundaries rather than reaching into another feature's persistence helpers.
+- Treat handlers and hooks as framework adapters: parse input, obtain request context, invoke the owning workflow, and map the result. Keep non-trivial business rules, state changes, and external side-effect ordering outside request handlers.
+- Load deployment settings only through `internal/config`; feature code must not read environment variables or `.env` files directly. Add parsing, validation, and focused tests there for new settings.
+- Use `logging.RequestLogger` for request-scoped work, `logging.RunLogger` for cron or background work, and `logging.Redact` for sensitive values. Request IDs are server-generated and public request headers are not trusted as their source.
+- For new direct third-party integrations, persist work before an external side effect when recovery or retry matters, and define idempotency before retries can repeat it.
+
+## Documentation map
+
+- `docs/development-guide.md` contains durable application design, configuration, external-work, logging, privacy, and delivery guidance.
+- `docs/documentation-maintenance.md` identifies the sources of truth and checks required when repository documentation changes.
+- `docs/features/` contains feature specifications and acceptance criteria.
+- Issue plans, review notes, and historical summaries are task-specific context, not current implementation guidance unless explicitly stated otherwise.
 
 ## Environment and development
 
-- Use Go 1.25.2 (`go.mod`/`mise.toml`), Bun, and Templ. `devenv shell` is the documented development environment; `mise` pins the same toolchain and exposes equivalent tasks as `mise run <task>`.
+- Use Go 1.26.5 (`go.mod`/`mise.toml`), Bun, and Templ. `devenv shell` is the documented development environment; `mise` pins the same toolchain and exposes equivalent tasks as `mise run <task>`.
 - Create `.env` from `.env.example` (`mise run app:init-env`). `godotenv.Load()` reads the default `.env` from the process working directory: `code:run` uses the repository root, while `app:run` changes into `dist/`.
 - `wga_data` is likewise relative to the process working directory. `app:run` uses `dist/wga_data`; clear the data directory used by the launcher rather than assuming root `wga_data` is the active one.
 - `mise run dev` brings up the Podman Compose Mailpit and Garage services, then starts JS/CSS/Templ watchers, but not the application server. Start it separately with `code:run`, or use `app:build` followed by `app:run`.
@@ -26,4 +38,4 @@
 - `biome.json` configures JS/TS tabs, double quotes, and import organisation. The Playwright CI workflow also runs Prettier on changed JS and Markdown files.
 - PR titles must use one of the Conventional Commit types enforced by `.github/workflows/pr-validation.yml`: `feat`, `fix`, `docs`, `test`, `ci`, `refactor`, `perf`, `chore`, `revert`, or `build`.
 - Non-`main` deployment runs only when the head commit message contains `deploy-dev`; release tags matching `v*.*.*` invoke GoReleaser.
-- When changing repository documentation, read `docs/documentation-maintenance.md`; it identifies the authoritative config and CI sources, including the Mailpit service and `MAILPIT_URL` endpoint.
+- When changing repository documentation, read `docs/documentation-maintenance.md` and `docs/development-guide.md`; the maintenance guide identifies the authoritative config and CI sources, including the Mailpit service and `MAILPIT_URL` endpoint.
