@@ -3,12 +3,11 @@ package postcards
 import (
 	"errors"
 	"net/http"
-	"strings"
 
 	"github.com/blackfyre/wga/internal/config"
-	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/errs"
 	"github.com/blackfyre/wga/internal/logging"
+	postcardworkflow "github.com/blackfyre/wga/internal/postcards"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/blackfyre/wga/internal/validation"
 	"github.com/microcosm-cc/bluemonday"
@@ -89,28 +88,15 @@ func savePostcard(app core.App, c *core.RequestEvent, p *bluemonday.Policy, capt
 		)
 	}
 
-	collection, err := app.FindCollectionByNameOrId(constants.CollectionPostcards)
+	_, err := postcardworkflow.Queue(app, postcardworkflow.QueueInput{
+		SenderName:   postData.SenderName,
+		SenderEmail:  postData.SenderEmail,
+		Recipients:   postData.Recipients,
+		Message:      p.Sanitize(postData.Message),
+		ImageID:      postData.ImageId,
+		NotifySender: postData.NotificationRequired,
+	})
 	if err != nil {
-		logger.Error("Postcard collection lookup failed",
-			"event", "postcard.submission.failed",
-			"outcome", "collection_unavailable",
-			"error_type", logging.ErrorType(err),
-			"error", logging.Redact(err),
-		)
-		return utils.NotFoundError(c)
-	}
-
-	record := core.NewRecord(collection)
-
-	record.Set("status", "queued")
-	record.Set("sender_name", postData.SenderName)
-	record.Set("sender_email", postData.SenderEmail)
-	record.Set("recipients", strings.Join(postData.Recipients, ","))
-	record.Set("message", p.Sanitize(postData.Message))
-	record.Set("image_id", postData.ImageId)
-	record.Set("notify_sender", postData.NotificationRequired)
-
-	if err := app.Save(record); err != nil {
 		logger.Error("Postcard submission persistence failed",
 			"event", "postcard.submission.failed",
 			"outcome", "persistence_error",

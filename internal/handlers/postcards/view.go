@@ -10,6 +10,7 @@ import (
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
 	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/logging"
+	postcardworkflow "github.com/blackfyre/wga/internal/postcards"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/blackfyre/wga/internal/utils/url"
 	"github.com/pocketbase/pocketbase/core"
@@ -71,6 +72,15 @@ func viewPostcard(app core.App, c *core.RequestEvent) error {
 		logger.Error("Postcard view rendering failed",
 			"event", "postcard.view.failed",
 			"outcome", "render_error",
+			"error_type", logging.ErrorType(err),
+			"error", logging.Redact(err),
+		)
+		return utils.ServerFaultError(c)
+	}
+	if err := postcardworkflow.MarkReceived(app, r.Id); err != nil {
+		logger.Error("Postcard receipt update failed",
+			"event", "postcard.view.failed",
+			"outcome", "receipt_update_error",
 			"error_type", logging.ErrorType(err),
 			"error", logging.Redact(err),
 		)
