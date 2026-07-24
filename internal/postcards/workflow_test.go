@@ -63,6 +63,9 @@ func TestCompleteMarksParentSentOnlyAfterEveryRecipient(t *testing.T) {
 	if first == nil {
 		t.Fatal("expected first claim")
 	}
+	if err := startTransport(app, first, types.NowDateTime()); err != nil {
+		t.Fatalf("start first transport: %v", err)
+	}
 	if err := complete(app, first, types.NowDateTime()); err != nil {
 		t.Fatalf("complete first attempt: %v", err)
 	}
@@ -80,6 +83,9 @@ func TestCompleteMarksParentSentOnlyAfterEveryRecipient(t *testing.T) {
 	}
 	if second == nil {
 		t.Fatal("expected second claim")
+	}
+	if err := startTransport(app, second, types.NowDateTime()); err != nil {
+		t.Fatalf("start second transport: %v", err)
 	}
 	if err := complete(app, second, types.NowDateTime()); err != nil {
 		t.Fatalf("complete second attempt: %v", err)
@@ -179,6 +185,9 @@ func TestStartTransportRequiresTheClaimToken(t *testing.T) {
 	if got := attempt.GetString("transport_started_at"); got == "" {
 		t.Fatal("expected transport start timestamp")
 	}
+	if got := attempt.GetInt("attempt_count"); got != 1 {
+		t.Fatalf("attempt_count = %d, want 1", got)
+	}
 	claim.Token = "different-token"
 	if err := startTransport(app, claim, types.NowDateTime()); err == nil {
 		t.Fatal("expected a stale claim token to be rejected")
@@ -198,6 +207,9 @@ func TestRetrySchedulesAClaimedAttempt(t *testing.T) {
 	if err != nil {
 		t.Fatalf("claim attempt: %v", err)
 	}
+	if err := startTransport(app, claim, now); err != nil {
+		t.Fatalf("start transport: %v", err)
+	}
 	if err := retry(app, claim, deliveryFailure{class: "dial_failed", retryable: true}, now); err != nil {
 		t.Fatalf("retry attempt: %v", err)
 	}
@@ -210,6 +222,34 @@ func TestRetrySchedulesAClaimedAttempt(t *testing.T) {
 	}
 	if !attempt.GetDateTime("available_at").After(now) {
 		t.Fatalf("retry availability = %s, want after %s", attempt.GetDateTime("available_at"), now)
+	}
+}
+
+func TestExpiredPreTransportClaimDoesNotConsumeAttempt(t *testing.T) {
+	app := testutils.NewTestApp(t)
+	artworkID := installPostcardSchema(t, app)
+	if _, err := Queue(app, QueueInput{
+		SenderName: "sender", SenderEmail: "sender@example.test", Recipients: []string{"recipient@example.test"}, Message: "message", ImageID: artworkID,
+	}); err != nil {
+		t.Fatalf("queue postcard: %v", err)
+	}
+	now := types.NowDateTime()
+	claim, err := claimDue(app, now)
+	if err != nil {
+		t.Fatalf("claim attempt: %v", err)
+	}
+	if err := recoverExpiredClaims(app, now.Add(deliveryLease)); err != nil {
+		t.Fatalf("recover expired claim: %v", err)
+	}
+	attempt, err := app.FindRecordById(collectionDeliveryAttempts, claim.Attempt.Id)
+	if err != nil {
+		t.Fatalf("reload attempt: %v", err)
+	}
+	if got := attempt.GetString("status"); got != "queued" {
+		t.Fatalf("attempt status = %q, want queued", got)
+	}
+	if got := attempt.GetInt("attempt_count"); got != 0 {
+		t.Fatalf("attempt_count = %d, want 0", got)
 	}
 }
 

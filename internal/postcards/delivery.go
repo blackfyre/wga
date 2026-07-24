@@ -71,7 +71,7 @@ func claimDue(app core.App, now types.DateTime) (*ClaimedAttempt, error) {
 	err := app.DB().NewQuery(`
 		UPDATE postcardDeliveryAttempts
 		SET status = 'processing', claim_token = {:token}, claim_expires_at = {:expires},
-			attempt_count = attempt_count + 1, last_attempt_at = {:now}, transport_started_at = ''
+			transport_started_at = ''
 		WHERE id = (
 			SELECT id FROM postcardDeliveryAttempts
 			WHERE status = 'queued' AND available_at <= {:now}
@@ -123,16 +123,15 @@ func recoverExpiredClaims(app core.App, now types.DateTime) error {
 }
 
 func deliver(app core.App, mailClient mailer.Mailer, postcards config.Postcards, claim *ClaimedAttempt, runID string) error {
-	if err := startTransport(app, claim, types.NowDateTime()); err != nil {
-		return err
-	}
-
 	message, err := renderMessage(claim.Postcard, claim.Delivery.GetString("recipient"), postcards)
 	if err != nil {
 		err = deadLetter(app, claim, deliveryFailure{class: "render_failed"}, types.NowDateTime())
 		if err == nil {
 			logDelivery(app, runID, claim, "render_failed")
 		}
+		return err
+	}
+	if err := startTransport(app, claim, types.NowDateTime()); err != nil {
 		return err
 	}
 	if err := mailClient.Send(message); err != nil {
@@ -191,7 +190,8 @@ func renderMessage(postcard *core.Record, recipient string, postcards config.Pos
 func startTransport(app core.App, claim *ClaimedAttempt, now types.DateTime) error {
 	result, err := app.DB().NewQuery(`
 		UPDATE postcardDeliveryAttempts
-		SET transport_started_at = {:now}, claim_expires_at = {:expires}
+		SET transport_started_at = {:now}, claim_expires_at = {:expires},
+			attempt_count = attempt_count + 1, last_attempt_at = {:now}
 		WHERE id = {:id} AND status = 'processing' AND claim_token = {:token}
 	`).Bind(dbx.Params{"id": claim.Attempt.Id, "token": claim.Token, "now": now, "expires": now.Add(deliveryLease)}).Execute()
 	if err != nil {
@@ -204,6 +204,7 @@ func startTransport(app core.App, claim *ClaimedAttempt, now types.DateTime) err
 	if updated != 1 {
 		return errors.New("postcard delivery claim lost")
 	}
+	claim.Attempt.Set("attempt_count", claim.Attempt.GetInt("attempt_count")+1)
 
 	return nil
 }

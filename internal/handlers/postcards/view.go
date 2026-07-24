@@ -84,7 +84,7 @@ func viewPostcard(app core.App, c *core.RequestEvent) error {
 			"error_type", logging.ErrorType(err),
 			"error", logging.Redact(err),
 		)
-		return utils.ServerFaultError(c)
+		// Receipt tracking is best-effort; still serve the rendered page.
 	}
 
 	return c.HTML(http.StatusOK, buf.String())
