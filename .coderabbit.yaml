@@ -1,4 +1,5 @@
 reviews:
   tools:
     golangci-lint:
-      enabled: false
+      enabled: true
+      config_file: ".golangci.yml"
