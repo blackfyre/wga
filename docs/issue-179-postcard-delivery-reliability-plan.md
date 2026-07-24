@@ -40,5 +40,5 @@ Issue #179 replaces the current all-or-nothing postcard cron callback with a dur
 
 - [✓] Add migration, lifecycle, claim, retry, recipient, and route tests. Verification: focused migration and workflow tests cover the durable state changes and no longer encode the previous false-sent behaviour.
 - [✓] Run focused checks, `go vet ./...`, and `go test ./... -cover`. Verification: focused packages, `go vet ./...`, and the full 39-package Go suite pass.
-- [ ] Exercise the postcard journey against Mailpit with Playwright. Verification: the unchanged browser flow sends and renders a postcard using the built application.
-- [ ] Commit, push, and open the requested external review artefact. Verification: delivery contains only Issue #179 changes and uses the requested target and title.
+- [✓] Exercise the postcard journey against Mailpit with Playwright. Verification: `bunx playwright test playwright-tests/postcard.spec.ts` passed against the running application, Mailpit, and Garage services.
+- [✓] Commit, push, and open the requested external review artefact. Verification: the Issue #179 branch is pushed and pull request #186 targets `main`.
