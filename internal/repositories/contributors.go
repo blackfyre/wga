@@ -79,6 +79,9 @@ func (r *ContributorsRepository) GetContributorsWithSource(ctx context.Context) 
 		utils.SetCachedValue(r.app, r.cacheKey, contributors, r.cacheTTL)
 		return contributors, ContributorsSourceAPI, nil
 	}
+	if ctx.Err() != nil {
+		return nil, "", ctx.Err()
+	}
 
 	logging.ContextLogger(r.app, ctx).Warn("Contributors API fetch failed; trying local fallback",
 		"event", "contributors.fetch.fallback",
