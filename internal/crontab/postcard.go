@@ -7,33 +7,31 @@ import (
 
 	"github.com/blackfyre/wga/internal/assets"
 	"github.com/blackfyre/wga/internal/config"
-	"github.com/pocketbase/pocketbase"
+	"github.com/blackfyre/wga/internal/logging"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/mailer"
 )
 
-// sendPostcard sends a postcard to the recipients specified in the given record.
-// It takes a pointer to a models.Record, a pointer to a pocketbase.PocketBase, and a mailer.Mailer as parameters.
-// The recipients are extracted from the "recipients" field of the record and split into a slice of mail.Address.
-// For each recipient, a postcard message is rendered using the renderMessage function.
-// The message is then sent using the mailClient.
-// If there is an error sending the postcard, an error message is logged and the function returns.
-// Finally, the postcard record is updated using the updatePostcardRecord function.
-func sendPostcard(r *core.Record, app *pocketbase.PocketBase, mailClient mailer.Mailer, postcards config.Postcards) {
-
+// sendPostcard sends a postcard to every recipient and reports whether all deliveries succeeded.
+func sendPostcard(r *core.Record, app core.App, mailClient mailer.Mailer, postcards config.Postcards, runID string) bool {
 	recipients := convertCommaSeparatedEmailsToMailAddresses(r.GetString("recipients"))
 
-	for _, rec := range recipients {
-
-		message := renderMessage(r, rec, app, postcards)
-
-		err := mailClient.Send(message)
-
+	for index, rec := range recipients {
+		message, err := renderMessage(r, rec, postcards)
 		if err != nil {
-			app.Logger().Error("Error sending email", "error", err.Error())
-			return
+			logPostcardDelivery(app, runID, index+1, len(recipients), "render_failed", err)
+			return false
 		}
+
+		if err := mailClient.Send(message); err != nil {
+			logPostcardDelivery(app, runID, index+1, len(recipients), "failed", err)
+			return false
+		}
+
+		logPostcardDelivery(app, runID, index+1, len(recipients), "sent", nil)
 	}
+
+	return true
 }
 
 // convertCommaSeparatedEmailsToMailAddresses converts a comma-separated string of email addresses
@@ -50,9 +48,7 @@ func convertCommaSeparatedEmailsToMailAddresses(emails string) []mail.Address {
 }
 
 // renderMessage renders the email message for a postcard notification.
-// It takes a pointer to a models.Record, a mail.Address, and a pointer to a pocketbase.PocketBase as input.
-// It returns a pointer to a mailer.Message.
-func renderMessage(r *core.Record, rec mail.Address, app *pocketbase.PocketBase, postcards config.Postcards) *mailer.Message {
+func renderMessage(r *core.Record, rec mail.Address, postcards config.Postcards) (*mailer.Message, error) {
 	html, err := assets.RenderEmail("postcard:notification", map[string]any{
 		"SenderName": r.GetString("sender_name"),
 		"PickUpUrl":  postcards.PublicURL.Resolve("/postcard?p=" + r.GetString("id")),
@@ -61,8 +57,7 @@ func renderMessage(r *core.Record, rec mail.Address, app *pocketbase.PocketBase,
 	})
 
 	if err != nil {
-		app.Logger().Error("Error rendering postcard email", "error", err.Error())
-		return &mailer.Message{}
+		return nil, err
 	}
 
 	message := &mailer.Message{
@@ -75,21 +70,55 @@ func renderMessage(r *core.Record, rec mail.Address, app *pocketbase.PocketBase,
 		HTML:    html,
 	}
 
-	return message
+	return message, nil
 }
 
-// updatePostcardRecord updates the postcard record with the given status and sent_at timestamp.
-// It takes a pointer to a models.Record object and a pointer to a pocketbase.PocketBase object as parameters.
-// The function sets the "status" field of the record to "sent" and the "sent_at" field to the current Unix timestamp.
-// It then saves the updated record using the SaveRecord method of the pocketbase.PocketBase object.
-// If there is an error during the update, it logs the error using the Logger method of the pocketbase.PocketBase object.
-func updatePostcardRecord(r *core.Record, app *pocketbase.PocketBase) {
+// updatePostcardRecord marks a successfully delivered postcard as sent.
+func updatePostcardRecord(r *core.Record, app core.App, runID string) bool {
 	r.Set("status", "sent")
 	r.Set("sent_at", time.Now().Unix())
 
 	if err := app.Save(r); err != nil {
-		app.Logger().Error("Error updating postcard record", "record_id", r.Get("id"), "error", err.Error())
+		logging.RunLogger(app, runID).Error("Postcard delivery record update failed",
+			"event", "postcard.delivery.record_update",
+			"outcome", "failed",
+			"error_type", logging.ErrorType(err),
+			"error", logging.Redact(err),
+		)
+		return false
 	}
+
+	return true
+}
+
+func logPostcardDelivery(app core.App, runID string, recipientIndex int, recipientCount int, outcome string, err error) {
+	attributes := []any{
+		"event", "postcard.delivery.attempt",
+		"recipient_index", recipientIndex,
+		"recipient_count", recipientCount,
+		"attempt", 1,
+		"outcome", outcome,
+	}
+	logger := logging.RunLogger(app, runID)
+
+	if err == nil {
+		logger.Info("Postcard delivery completed", attributes...)
+		return
+	}
+
+	attributes = append(attributes,
+		"error_type", logging.ErrorType(err),
+		"error", logging.Redact(err),
+	)
+	logger.Error("Postcard delivery failed", attributes...)
+}
+
+func processPostcard(r *core.Record, app core.App, mailClient mailer.Mailer, postcards config.Postcards, runID string) bool {
+	if !sendPostcard(r, app, mailClient, postcards, runID) {
+		return false
+	}
+
+	return updatePostcardRecord(r, app, runID)
 }
 
 // sendPostcards sends postcards based on a specified frequency.
@@ -106,11 +135,17 @@ func updatePostcardRecord(r *core.Record, app *pocketbase.PocketBase) {
 //	sendPostcards(app, postcards)
 //
 // Note: The sendPostcards function assumes that the necessary dependencies are already imported.
-func sendPostcards(app *pocketbase.PocketBase, postcards config.Postcards) {
-
-	app.Logger().Info("Starting postcard cron job...")
+func sendPostcards(app core.App, postcards config.Postcards) {
+	app.Logger().Info("Postcard delivery schedule registered", "event", "postcard.delivery.schedule_registered")
 
 	app.Cron().MustAdd("postcards", postcards.Expression(), func() {
+		runID := logging.NewRunID()
+		logger := logging.RunLogger(app, runID)
+		logger.Info("Postcard delivery run started",
+			"event", "postcard.delivery.run",
+			"outcome", "started",
+		)
+
 		records, err := app.FindRecordsByFilter(
 			"postcards",         // collection
 			"status = 'queued'", // filter
@@ -120,16 +155,50 @@ func sendPostcards(app *pocketbase.PocketBase, postcards config.Postcards) {
 		)
 
 		if err != nil {
-			app.Logger().Error("Error fetching postcards", "error", err.Error())
+			logger.Error("Postcard delivery queue lookup failed",
+				"event", "postcard.delivery.run",
+				"outcome", "queue_lookup_failed",
+				"error_type", logging.ErrorType(err),
+				"error", logging.Redact(err),
+			)
 			return
 		}
 
 		mailClient := app.NewMailClient()
+		deliveredCount := 0
+		failedCount := 0
 
 		for _, r := range records {
-			sendPostcard(r, app, mailClient, postcards)
-			updatePostcardRecord(r, app)
+			if !processPostcard(r, app, mailClient, postcards, runID) {
+				failedCount++
+				continue
+			}
+
+			deliveredCount++
 		}
+
+		if failedCount > 0 {
+			outcome := "partial_failure"
+			if deliveredCount == 0 {
+				outcome = "failed"
+			}
+
+			logger.Warn("Postcard delivery run completed",
+				"event", "postcard.delivery.run",
+				"postcard_count", len(records),
+				"delivered_count", deliveredCount,
+				"failed_count", failedCount,
+				"outcome", outcome,
+			)
+			return
+		}
+
+		logger.Info("Postcard delivery run completed",
+			"event", "postcard.delivery.run",
+			"postcard_count", len(records),
+			"delivered_count", deliveredCount,
+			"outcome", "completed",
+		)
 	})
 
 }

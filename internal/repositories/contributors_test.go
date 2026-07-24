@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -30,7 +31,7 @@ func TestContributorsRepositoryGetContributors(t *testing.T) {
 			time.Hour,
 		)
 
-		contributors, source, err := repo.GetContributorsWithSource()
+		contributors, source, err := repo.GetContributorsWithSource(context.Background())
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
@@ -64,7 +65,7 @@ func TestContributorsRepositoryGetContributors(t *testing.T) {
 			time.Hour,
 		)
 
-		contributors, source, err := repo.GetContributorsWithSource()
+		contributors, source, err := repo.GetContributorsWithSource(context.Background())
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
@@ -107,7 +108,7 @@ func TestContributorsRepositoryGetContributors(t *testing.T) {
 			time.Hour,
 		)
 
-		contributors, source, err := repo.GetContributorsWithSource()
+		contributors, source, err := repo.GetContributorsWithSource(context.Background())
 		if err != nil {
 			t.Fatalf("expected fallback to succeed, got %v", err)
 		}

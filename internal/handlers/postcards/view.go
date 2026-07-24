@@ -4,36 +4,48 @@ import (
 	"bytes"
 	"cmp"
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
 	"github.com/blackfyre/wga/internal/constants"
+	"github.com/blackfyre/wga/internal/logging"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/blackfyre/wga/internal/utils/url"
-	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 )
 
-func viewPostcard(app *pocketbase.PocketBase, c *core.RequestEvent) error {
+func viewPostcard(app core.App, c *core.RequestEvent) error {
 	// postCardId := c.QueryParamDefault("p", "nope")
 	postCardId := cmp.Or(c.Request.URL.Query().Get("p"), "nope")
+	logger := logging.RequestLogger(app, c)
 
 	if postCardId == "nope" {
-		app.Logger().Error(fmt.Sprintf("Invalid postcard id: %s", postCardId))
+		logger.Warn("Postcard view rejected",
+			"event", "postcard.view.rejected",
+			"outcome", "missing_postcard_id",
+		)
 		return utils.NotFoundError(c)
 	}
 
 	r, err := app.FindRecordById(constants.CollectionPostcards, postCardId)
 
 	if err != nil {
-		app.Logger().Error("Failed to find postcard", "id", postCardId, "error", err.Error())
+		logger.Error("Postcard view lookup failed",
+			"event", "postcard.view.failed",
+			"outcome", "postcard_not_found",
+			"error_type", logging.ErrorType(err),
+			"error", logging.Redact(err),
+		)
 		return utils.NotFoundError(c)
 	}
 
 	if errs := app.ExpandRecord(r, []string{"image_id"}, nil); len(errs) > 0 {
-		app.Logger().Error("Failed to expand record", "id", postCardId, "errors", errs)
+		logger.Error("Postcard view expansion failed",
+			"event", "postcard.view.failed",
+			"outcome", "expansion_error",
+			"error", logging.Redact(errs),
+		)
 		return utils.ServerFaultError(c)
 	}
 
@@ -57,7 +69,12 @@ func viewPostcard(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	err = pages.PostcardPage(content).Render(ctx, &buf)
 
 	if err != nil {
-		app.Logger().Error("Error rendering artwork page", "error", err.Error())
+		logger.Error("Postcard view rendering failed",
+			"event", "postcard.view.failed",
+			"outcome", "render_error",
+			"error_type", logging.ErrorType(err),
+			"error", logging.Redact(err),
+		)
 		return utils.ServerFaultError(c)
 	}
 

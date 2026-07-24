@@ -9,6 +9,7 @@ import (
 	"github.com/blackfyre/wga/internal/crontab"
 	"github.com/blackfyre/wga/internal/handlers"
 	"github.com/blackfyre/wga/internal/hooks"
+	"github.com/blackfyre/wga/internal/logging"
 	"github.com/blackfyre/wga/internal/migrations"
 
 	"github.com/blackfyre/wga/internal/utils"
@@ -58,6 +59,7 @@ func main() {
 
 	if capability == commandNeedsServer {
 		utils.ConfigurePublicURL(serverConfig.PublicURL)
+		logging.RegisterRequestIDMiddleware(app)
 		handlers.RegisterHandlers(app, serverConfig.Captcha)
 		crontab.RegisterCronJobs(app, serverConfig.Postcards, serverConfig.Sitemap())
 	}
