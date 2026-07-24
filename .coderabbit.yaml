@@ -1,0 +1,4 @@
+reviews:
+  tools:
+    golangci-lint:
+      enabled: false
