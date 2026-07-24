@@ -70,6 +70,7 @@ func convertRawEntriesToGuestbookEntries(entries []*core.Record) []dto.Guestbook
 			Email:    entry.GetString("email"),
 			Location: entry.GetString("location"),
 			Message:  entry.GetString("message"),
+			Created:  entry.GetDateTime("created").Time().Format("2006-01-02"),
 		})
 	}
 
