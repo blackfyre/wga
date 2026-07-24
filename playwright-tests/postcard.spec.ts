@@ -49,7 +49,9 @@ test("send postcard", async ({ page, request }) => {
 		expect(deleteResponse.ok()).toBeTruthy();
 	}
 
-	await page.goto("/artists/koedijck-isaack-3ed9e200b9e8252");
+	await page.goto(
+		"/artists/synthetic-artist-01-ad32608c6e36b2e/synthetic-artwork-01-01-2225c982be1af02",
+	);
 	await page.getByRole("link", { name: "Send postcard" }).click();
 
 	await expect(page.locator("#d")).toBeVisible();

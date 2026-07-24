@@ -1,11 +1,10 @@
 package hooks
 
 import (
-	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 )
 
-func fileDownloadHook(app *pocketbase.PocketBase) {
+func fileDownloadHook(app core.App) {
 	app.Logger().Debug("Registering file download hook...")
 	app.OnFileDownloadRequest().BindFunc(func(e *core.FileDownloadRequestEvent) error {
 		// e.App

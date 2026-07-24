@@ -10,6 +10,7 @@ import (
 
 type GuestbookView struct {
 	SelectedYear string
+	CurrentYear  string
 	YearOptions  []string
 	Entries      dto.GuestbookEntries
 }
@@ -66,18 +67,20 @@ templ GuestbookBlock(v GuestbookView) {
 					class="btn btn-primary"
 				>Add Entry</a>
 			</div>
-			<div>
-				<select
-					title="Select a year to filter the guestbook entries"
-					name="year"
-					hx-get="/guestbook"
-					class="select select-bordered w-full "
-				>
-					for _, year := range v.YearOptions {
-						<option value={ year } selected?={ v.SelectedYear == year }>{ year }</option>
-					}
-				</select>
-			</div>
+			if len(v.YearOptions) > 1 {
+				<div>
+					<select
+						title="Select a year to filter the guestbook entries"
+						name="year"
+						hx-get="/guestbook"
+						class="select select-bordered w-full "
+					>
+						for _, year := range v.YearOptions {
+							<option value={ year } selected?={ v.SelectedYear == year }>{ year }</option>
+						}
+					</select>
+				</div>
+			}
 		</div>
 		if len(v.Entries) > 0 {
 			@GuestbookEntries(v.Entries)
@@ -85,7 +88,9 @@ templ GuestbookBlock(v GuestbookView) {
 			<div role="alert" class="alert alert-info">
 				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
 				<p>No entries found</p>
-				<p>Be the first to sign the guestbook for { v.SelectedYear }!</p>
+				if v.SelectedYear == v.CurrentYear {
+					<p>Be the first to sign the guestbook for { v.SelectedYear }!</p>
+				}
 			</div>
 		}
 	</section>
