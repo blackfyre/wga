@@ -12,61 +12,61 @@ async function expectArtworkResults(page) {
 test("artwork search", async ({ page }) => {
   await page.goto("/artworks");
   await expect(page.locator("h1")).toHaveText(/Artwork search/);
-  await page.locator("[name='title']").fill("Allegory");
+  await page.locator("[name='title']").fill("Synthetic Artwork 01-01");
   await page.getByRole("button", { name: "Search" }).click();
   await expectArtworkResults(page);
   await expect(page.locator("#search-result-container")).toContainText(
-    /artworks found\./i,
+    "1 artwork found.",
   );
 });
 
 test("artform search", async ({ page }) => {
   await page.goto("/artworks");
-  await page.locator("[name='art_form']").selectOption("painting");
+  await page.locator("[name='art_form']").selectOption("synthetic-test-form");
   await page.getByRole("button", { name: "Search" }).click();
   await expectArtworkResults(page);
 });
 
 test("art type search", async ({ page }) => {
   await page.goto("/artworks");
-  await page.locator("[name='art_type']").selectOption("mythological");
+  await page.locator("[name='art_type']").selectOption("synthetic-test-type");
   await page.getByRole("button", { name: "Search" }).click();
   await expectArtworkResults(page);
 });
 
 test("art school search", async ({ page }) => {
   await page.goto("/artworks");
-  await page.locator("[name='art_school']").selectOption("hungarian");
+  await page.locator("[name='art_school']").selectOption("synthetic-test-school");
   await page.getByRole("button", { name: "Search" }).click();
   await expectArtworkResults(page);
 });
 
 test("art type and school combined search", async ({ page }) => {
   await page.goto("/artworks");
-  await page.locator("[name='art_type']").selectOption("mythological");
-  await page.locator("[name='art_school']").selectOption("hungarian");
+  await page.locator("[name='art_type']").selectOption("synthetic-test-type");
+  await page.locator("[name='art_school']").selectOption("synthetic-test-school");
   await page.getByRole("button", { name: "Search" }).click();
   await expectArtworkResults(page);
 });
 
 test("title search", async ({ page }) => {
   await page.goto("http://localhost:8090/artworks");
-  await page.locator("[name='title']").fill("Allegory");
+  await page.locator("[name='title']").fill("Synthetic Artwork 01-01");
   await page.getByRole("button", { name: "Search" }).click();
   await expectArtworkResults(page);
 });
 
 test("artist name search", async ({ page }) => {
   await page.goto("http://localhost:8090/artworks");
-  await page.locator("[name='artist']").fill("aachen");
+  await page.locator("[name='artist']").fill("Synthetic Artist 01");
   await page.getByRole("button", { name: "Search" }).click();
   await expectArtworkResults(page);
 });
 
 test("clear resets the artwork search form", async ({ page }) => {
   await page.goto("http://localhost:8090/artworks");
-  await page.locator("[name='title']").fill("Allegory");
-  await page.locator("[name='art_school']").selectOption("hungarian");
+  await page.locator("[name='title']").fill("Synthetic Artwork 01-01");
+  await page.locator("[name='art_school']").selectOption("synthetic-test-school");
   await page.getByRole("link", { name: "Clear" }).click();
 
   await expect(page).toHaveURL(/\/artworks$/);

@@ -60,3 +60,62 @@ func TestDeleteCachedValueRemovesValueAndExpiry(t *testing.T) {
 		t.Fatalf("expected cache expiry to be removed")
 	}
 }
+
+func TestGetOrLoadCachedValueCachesLoadedValue(t *testing.T) {
+	app := pocketbase.NewWithConfig(pocketbase.Config{DefaultDataDir: "./wga_data"})
+	key := "cache:test:load"
+
+	value, err := GetOrLoadCachedValue(app, key, time.Hour, func() (string, error) {
+		return "hello", nil
+	})
+	if err != nil {
+		t.Fatalf("load cached value: %v", err)
+	}
+
+	if value != "hello" {
+		t.Fatalf("expected loaded value 'hello', got %q", value)
+	}
+
+	cached, ok := GetCachedValue[string](app, key)
+	if !ok || cached != "hello" {
+		t.Fatalf("expected loaded value to be cached, got %q", cached)
+	}
+}
+
+func TestGetOrLoadCachedValueDoesNotRestoreInvalidatedValue(t *testing.T) {
+	app := pocketbase.NewWithConfig(pocketbase.Config{DefaultDataDir: "./wga_data"})
+	key := "cache:test:invalidation-race"
+	started := make(chan struct{})
+	release := make(chan struct{})
+	type result struct {
+		value string
+		err   error
+	}
+	results := make(chan result, 1)
+
+	go func() {
+		value, err := GetOrLoadCachedValue(app, key, time.Hour, func() (string, error) {
+			close(started)
+			<-release
+			return "stale", nil
+		})
+		results <- result{value: value, err: err}
+	}()
+
+	<-started
+	DeleteCachedValue(app, key)
+	close(release)
+
+	loaded := <-results
+	if loaded.err != nil {
+		t.Fatalf("load cached value: %v", loaded.err)
+	}
+
+	if loaded.value != "stale" {
+		t.Fatalf("expected in-flight result 'stale', got %q", loaded.value)
+	}
+
+	if _, ok := GetCachedValue[string](app, key); ok {
+		t.Fatalf("expected invalidated value to remain absent")
+	}
+}

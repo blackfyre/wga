@@ -35,28 +35,29 @@ type GuestBookMessage struct {
 const guestbookYearsCacheTTL = 10 * time.Minute
 
 func yearOptions(app core.App, currentYear string) ([]string, error) {
-	if cached, ok := utils.GetCachedValue[[]string](app, constants.CacheGuestbookYears); ok {
-		return withCurrentYear(cached, currentYear), nil
-	}
+	years, err := utils.GetOrLoadCachedValue(app, constants.CacheGuestbookYears, guestbookYearsCacheTTL, func() ([]string, error) {
+		entries, err := app.FindRecordsByFilter(constants.CollectionGuestbook, "", "-created", 0, 0)
+		if err != nil {
+			return nil, err
+		}
 
-	entries, err := app.FindRecordsByFilter(constants.CollectionGuestbook, "", "-created", 0, 0)
+		years := []string{}
+		seen := map[string]struct{}{}
+		for _, entry := range entries {
+			year := fmt.Sprintf("%d", entry.GetDateTime("created").Time().Year())
+			if _, ok := seen[year]; ok {
+				continue
+			}
+
+			seen[year] = struct{}{}
+			years = append(years, year)
+		}
+
+		return years, nil
+	})
 	if err != nil {
 		return nil, err
 	}
-
-	years := []string{}
-	seen := map[string]struct{}{}
-	for _, entry := range entries {
-		year := fmt.Sprintf("%d", entry.GetDateTime("created").Time().Year())
-		if _, ok := seen[year]; ok {
-			continue
-		}
-
-		seen[year] = struct{}{}
-		years = append(years, year)
-	}
-
-	utils.SetCachedValue(app, constants.CacheGuestbookYears, years, guestbookYearsCacheTTL)
 
 	return withCurrentYear(years, currentYear), nil
 }
