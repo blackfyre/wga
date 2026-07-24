@@ -135,6 +135,47 @@ func TestMarkReceivedIsIdempotent(t *testing.T) {
 	}
 }
 
+func TestEarlyReceiptTransitionsToReceivedAfterDeliveryCompletes(t *testing.T) {
+	app := testutils.NewTestApp(t)
+	artworkID := installPostcardSchema(t, app)
+	postcard, err := Queue(app, QueueInput{
+		SenderName: "sender", SenderEmail: "sender@example.test", Recipients: []string{"recipient@example.test"}, Message: "message", ImageID: artworkID,
+	})
+	if err != nil {
+		t.Fatalf("queue postcard: %v", err)
+	}
+	if err := MarkReceived(app, postcard.Id); err != nil {
+		t.Fatalf("record early receipt: %v", err)
+	}
+	stored, err := app.FindRecordById(collectionPostcards, postcard.Id)
+	if err != nil {
+		t.Fatalf("reload early receipt: %v", err)
+	}
+	if got := stored.GetString("status"); got != "queued" {
+		t.Fatalf("early receipt status = %q, want queued", got)
+	}
+	if stored.GetString("received_at") == "" {
+		t.Fatal("expected early receipt timestamp")
+	}
+	claim, err := claimDue(app, types.NowDateTime())
+	if err != nil {
+		t.Fatalf("claim attempt: %v", err)
+	}
+	if err := startTransport(app, claim, types.NowDateTime()); err != nil {
+		t.Fatalf("start transport: %v", err)
+	}
+	if err := complete(app, claim, types.NowDateTime()); err != nil {
+		t.Fatalf("complete attempt: %v", err)
+	}
+	stored, err = app.FindRecordById(collectionPostcards, postcard.Id)
+	if err != nil {
+		t.Fatalf("reload completed postcard: %v", err)
+	}
+	if got := stored.GetString("status"); got != "received" {
+		t.Fatalf("completed early receipt status = %q, want received", got)
+	}
+}
+
 func TestDeadLetterLeavesPostcardQueued(t *testing.T) {
 	app := testutils.NewTestApp(t)
 	artworkID := installPostcardSchema(t, app)

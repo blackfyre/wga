@@ -285,8 +285,12 @@ func markPostcardSent(app core.App, postcardID string, now types.DateTime) error
 	if postcard.GetString("status") != "queued" {
 		return nil
 	}
-	postcard.Set("status", "sent")
 	postcard.Set("sent_at", now)
+	if postcard.GetString("received_at") != "" {
+		postcard.Set("status", "received")
+	} else {
+		postcard.Set("status", "sent")
+	}
 	return app.Save(postcard)
 }
 

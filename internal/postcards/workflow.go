@@ -191,11 +191,13 @@ func MarkReceived(app core.App, postcardID string) error {
 		if err != nil {
 			return err
 		}
-		if postcard.GetString("status") != "sent" {
+		if postcard.GetString("received_at") != "" {
 			return nil
 		}
-		postcard.Set("status", "received")
 		postcard.Set("received_at", types.NowDateTime())
+		if postcard.GetString("status") == "sent" {
+			postcard.Set("status", "received")
+		}
 		return txApp.Save(postcard)
 	})
 }
