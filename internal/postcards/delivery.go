@@ -129,7 +129,7 @@ func recoverExpiredClaims(app core.App, now types.DateTime) error {
 
 // deliver renders and sends one claimed recipient delivery.
 func deliver(app core.App, mailClient mailer.Mailer, postcards config.Postcards, claim *ClaimedAttempt, runID string) error {
-	message, err := renderMessage(claim.Postcard, claim.Delivery.GetString("recipient"), postcards)
+	message, err := renderMessage(claim.Postcard, claim.Delivery.GetString("recipient"), claim.Attempt.GetString("message_id"), postcards)
 	if err != nil {
 		err = deadLetter(app, claim, deliveryFailure{class: "render_failed"}, types.NowDateTime())
 		if err == nil {
@@ -176,7 +176,7 @@ func logDelivery(app core.App, runID string, claim *ClaimedAttempt, outcome stri
 }
 
 // renderMessage produces the notification email for one postcard recipient.
-func renderMessage(postcard *core.Record, recipient string, postcards config.Postcards) (*mailer.Message, error) {
+func renderMessage(postcard *core.Record, recipient string, messageID string, postcards config.Postcards) (*mailer.Message, error) {
 	html, err := assets.RenderEmail("postcard:notification", map[string]any{
 		"SenderName": postcard.GetString("sender_name"),
 		"PickUpUrl":  postcards.PublicURL.Resolve("/postcard?p=" + postcard.Id),
@@ -192,6 +192,9 @@ func renderMessage(postcard *core.Record, recipient string, postcards config.Pos
 		To:      []mail.Address{{Address: recipient}},
 		Subject: "You got a postcard from " + postcard.GetString("sender_name") + "!",
 		HTML:    html,
+		Headers: map[string]string{
+			"X-WGA-Delivery-ID": messageID,
+		},
 	}, nil
 }
 

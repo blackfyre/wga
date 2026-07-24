@@ -3,10 +3,14 @@ package postcards
 import (
 	"errors"
 	"net"
+	"net/mail"
+	"strings"
 	"testing"
 
+	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/testutils"
 	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/tools/mailer"
 	"github.com/pocketbase/pocketbase/tools/types"
 )
 
@@ -338,6 +342,34 @@ func TestClassifyDeliveryError(t *testing.T) {
 	}
 }
 
+func TestRenderMessageIncludesDeliveryHeader(t *testing.T) {
+	postcard := core.NewRecord(core.NewBaseCollection("Postcards"))
+	postcard.Set("sender_name", "sender")
+	message, err := renderMessage(postcard, "recipient@example.test", "delivery-123", postcardTestConfig(t))
+	if err != nil {
+		t.Fatalf("render message: %v", err)
+	}
+	if got := message.Headers["X-WGA-Delivery-ID"]; got != "delivery-123" {
+		t.Fatalf("delivery header = %q, want %q", got, "delivery-123")
+	}
+}
+
+func TestSendMail(t *testing.T) {
+	app := testutils.NewTestApp(t)
+	message := &mailer.Message{
+		From:    mail.Address{Name: "sender", Address: "sender@example.com"},
+		To:      []mail.Address{{Name: "recipient", Address: "recipient@example.com"}},
+		Subject: "Test Subject",
+		HTML:    "<html><body>Test Body</body></html>",
+	}
+	if err := app.NewMailClient().Send(message); err != nil {
+		if strings.Contains(err.Error(), "failed to locate a sendmail executable path") {
+			t.Skip("sendmail is unavailable in this environment")
+		}
+		t.Fatalf("send mail: %v", err)
+	}
+}
+
 func TestLogDeliveryUsesOnlySafeExecutionIdentifiers(t *testing.T) {
 	app := testutils.NewTestApp(t)
 	captured := testutils.CaptureLogs(app)
@@ -439,4 +471,23 @@ func installPostcardSchema(t *testing.T, app core.App) string {
 	}
 
 	return artwork.Id
+}
+
+func postcardTestConfig(t *testing.T) config.Postcards {
+	t.Helper()
+	values := map[string]string{
+		"WGA_ENV":            "test",
+		"WGA_PROTOCOL":       "http",
+		"WGA_HOSTNAME":       "example.test",
+		"WGA_SENDER_NAME":    "WGA",
+		"WGA_SENDER_ADDRESS": "sender@example.test",
+	}
+	runtimeConfig := config.LoadFrom(func(key string) string {
+		return values[key]
+	})
+	server, err := runtimeConfig.Server()
+	if err != nil {
+		t.Fatalf("load postcard config: %v", err)
+	}
+	return server.Postcards
 }
