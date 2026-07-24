@@ -11,5 +11,6 @@ const (
 	CollectionStaticPages = "static_pages"
 	CollectionStrings     = "strings"
 	CollectionSchools     = "schools"
-	CollectionGlossary   = "Glossary"
+	CollectionGlossary    = "Glossary"
+	CacheGuestbookYears   = "guestbook:years"
 )

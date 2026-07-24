@@ -1,8 +1,9 @@
 package hooks
 
-import "github.com/pocketbase/pocketbase"
+import "github.com/pocketbase/pocketbase/core"
 
-func RegisterHooks(app *pocketbase.PocketBase) {
+func RegisterHooks(app core.App) {
 	app.Logger().Debug("Registering hooks...")
 	fileDownloadHook(app)
+	guestbookYearsCacheHook(app)
 }

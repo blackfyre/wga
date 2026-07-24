@@ -3,7 +3,7 @@ package utils
 import (
 	"time"
 
-	"github.com/pocketbase/pocketbase"
+	"github.com/pocketbase/pocketbase/core"
 )
 
 const cacheExpirySuffix = ":meta:expires_unix_nano"
@@ -12,7 +12,7 @@ func cacheExpiryKey(key string) string {
 	return key + cacheExpirySuffix
 }
 
-func SetCachedValue(app *pocketbase.PocketBase, key string, value any, ttl time.Duration) {
+func SetCachedValue(app core.App, key string, value any, ttl time.Duration) {
 	app.Store().Set(key, value)
 
 	if ttl <= 0 {
@@ -23,7 +23,7 @@ func SetCachedValue(app *pocketbase.PocketBase, key string, value any, ttl time.
 	app.Store().Set(cacheExpiryKey(key), time.Now().Add(ttl).UnixNano())
 }
 
-func GetCachedValue[T any](app *pocketbase.PocketBase, key string) (T, bool) {
+func GetCachedValue[T any](app core.App, key string) (T, bool) {
 	var zero T
 
 	if !app.Store().Has(key) {
@@ -44,4 +44,9 @@ func GetCachedValue[T any](app *pocketbase.PocketBase, key string) (T, bool) {
 	}
 
 	return typedValue, true
+}
+
+func DeleteCachedValue(app core.App, key string) {
+	app.Store().Remove(key)
+	app.Store().Remove(cacheExpiryKey(key))
 }

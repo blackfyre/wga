@@ -44,3 +44,19 @@ func TestGetCachedValueRespectsExpiry(t *testing.T) {
 		t.Fatalf("expected cached value to be expired")
 	}
 }
+
+func TestDeleteCachedValueRemovesValueAndExpiry(t *testing.T) {
+	app := pocketbase.NewWithConfig(pocketbase.Config{DefaultDataDir: "./wga_data"})
+	key := "cache:test:delete"
+
+	SetCachedValue(app, key, "hello", time.Hour)
+	DeleteCachedValue(app, key)
+
+	if app.Store().Has(key) {
+		t.Fatalf("expected cached value to be removed")
+	}
+
+	if app.Store().Has(cacheExpiryKey(key)) {
+		t.Fatalf("expected cache expiry to be removed")
+	}
+}

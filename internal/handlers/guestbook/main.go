@@ -32,14 +32,33 @@ type GuestBookMessage struct {
 	HoneyPotEmail string `json:"honey_pot_email" form:"email" query:"honey_pot_email"`
 }
 
-func yearOptions() []string {
-	var years []string
+const guestbookYearsCacheTTL = 10 * time.Minute
 
-	for i := time.Now().Year(); i >= 1997; i-- {
-		years = append(years, fmt.Sprintf("%d", i))
+func yearOptions(app core.App) ([]string, error) {
+	if cached, ok := utils.GetCachedValue[[]string](app, constants.CacheGuestbookYears); ok {
+		return cached, nil
 	}
 
-	return years
+	entries, err := app.FindRecordsByFilter(constants.CollectionGuestbook, "", "-created", 0, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	years := []string{}
+	seen := map[string]struct{}{}
+	for _, entry := range entries {
+		year := fmt.Sprintf("%d", entry.GetDateTime("created").Time().Year())
+		if _, ok := seen[year]; ok {
+			continue
+		}
+
+		seen[year] = struct{}{}
+		years = append(years, year)
+	}
+
+	utils.SetCachedValue(app, constants.CacheGuestbookYears, years, guestbookYearsCacheTTL)
+
+	return years, nil
 }
 
 func convertRawEntriesToGuestbookEntries(entries []*core.Record) []dto.GuestbookEntry {
@@ -62,7 +81,13 @@ func EntriesHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	app.Logger().Debug("Guestbook entries request received", "url", c.Request.URL)
 
 	fullUrl := url.GenerateCurrentPageUrl(c)
-	year := cmp.Or(c.Request.URL.Query().Get("year"), fmt.Sprintf("%d", time.Now().Year()))
+	currentYear := fmt.Sprintf("%d", time.Now().Year())
+	year := cmp.Or(c.Request.URL.Query().Get("year"), currentYear)
+	years, err := yearOptions(app)
+	if err != nil {
+		app.Logger().Error("Failed to get guestbook years", "error", err)
+		return utils.ServerFaultError(c)
+	}
 
 	app.Logger().Debug("Guestbook entries request", "year", year, "fullUrl", fullUrl)
 
@@ -78,7 +103,8 @@ func EntriesHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 	content := pages.GuestbookView{
 		SelectedYear: year,
-		YearOptions:  yearOptions(),
+		CurrentYear:  currentYear,
+		YearOptions:  years,
 		Entries:      convertRawEntriesToGuestbookEntries(entries),
 	}
 
