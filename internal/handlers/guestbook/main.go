@@ -34,9 +34,9 @@ type GuestBookMessage struct {
 
 const guestbookYearsCacheTTL = 10 * time.Minute
 
-func yearOptions(app core.App) ([]string, error) {
+func yearOptions(app core.App, currentYear string) ([]string, error) {
 	if cached, ok := utils.GetCachedValue[[]string](app, constants.CacheGuestbookYears); ok {
-		return cached, nil
+		return withCurrentYear(cached, currentYear), nil
 	}
 
 	entries, err := app.FindRecordsByFilter(constants.CollectionGuestbook, "", "-created", 0, 0)
@@ -58,7 +58,17 @@ func yearOptions(app core.App) ([]string, error) {
 
 	utils.SetCachedValue(app, constants.CacheGuestbookYears, years, guestbookYearsCacheTTL)
 
-	return years, nil
+	return withCurrentYear(years, currentYear), nil
+}
+
+func withCurrentYear(years []string, currentYear string) []string {
+	for _, year := range years {
+		if year == currentYear {
+			return years
+		}
+	}
+
+	return append([]string{currentYear}, years...)
 }
 
 func convertRawEntriesToGuestbookEntries(entries []*core.Record) []dto.GuestbookEntry {
@@ -84,7 +94,7 @@ func EntriesHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	fullUrl := url.GenerateCurrentPageUrl(c)
 	currentYear := fmt.Sprintf("%d", time.Now().Year())
 	year := cmp.Or(c.Request.URL.Query().Get("year"), currentYear)
-	years, err := yearOptions(app)
+	years, err := yearOptions(app, currentYear)
 	if err != nil {
 		app.Logger().Error("Failed to get guestbook years", "error", err)
 		return utils.ServerFaultError(c)

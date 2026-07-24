@@ -10,47 +10,47 @@ import (
 	"github.com/pocketbase/pocketbase/tests"
 )
 
-func TestYearOptionsAreDerivedDistinctAndDescending(t *testing.T) {
+func TestYearOptionsIncludeCurrentYearWithDerivedYears(t *testing.T) {
 	app := newGuestbookTestApp(t)
 
 	saveGuestbookEntry(t, app, "2023-01-01 00:00:00.000Z")
 	saveGuestbookEntry(t, app, "2025-01-01 00:00:00.000Z")
 	saveGuestbookEntry(t, app, "2023-06-01 00:00:00.000Z")
 
-	assertYearOptions(t, app, []string{"2025", "2023"})
+	assertYearOptions(t, app, []string{"2026", "2025", "2023"})
 }
 
-func TestYearOptionsAreEmptyWithoutEntries(t *testing.T) {
+func TestYearOptionsIncludeCurrentYearWithoutEntries(t *testing.T) {
 	app := newGuestbookTestApp(t)
 
-	assertYearOptions(t, app, []string{})
+	assertYearOptions(t, app, []string{"2026"})
 }
 
 func TestYearOptionsRefreshAfterRecordChanges(t *testing.T) {
 	app := newGuestbookTestApp(t)
 
 	saveGuestbookEntry(t, app, "2025-01-01 00:00:00.000Z")
-	assertYearOptions(t, app, []string{"2025"})
+	assertYearOptions(t, app, []string{"2026", "2025"})
 
 	entry := saveGuestbookEntry(t, app, "2023-01-01 00:00:00.000Z")
-	assertYearOptions(t, app, []string{"2025", "2023"})
+	assertYearOptions(t, app, []string{"2026", "2025", "2023"})
 
 	entry.Set("created", "2022-01-01 00:00:00.000Z")
 	if err := app.Save(entry); err != nil {
 		t.Fatalf("update guestbook entry: %v", err)
 	}
-	assertYearOptions(t, app, []string{"2025", "2022"})
+	assertYearOptions(t, app, []string{"2026", "2025", "2022"})
 
 	if err := app.Delete(entry); err != nil {
 		t.Fatalf("delete guestbook entry: %v", err)
 	}
-	assertYearOptions(t, app, []string{"2025"})
+	assertYearOptions(t, app, []string{"2026", "2025"})
 }
 
 func newGuestbookTestApp(t *testing.T) *tests.TestApp {
 	t.Helper()
 
-	app, err := tests.NewTestApp()
+	app, err := tests.NewTestApp(t.TempDir())
 	if err != nil {
 		t.Fatalf("create test app: %v", err)
 	}
@@ -89,7 +89,7 @@ func saveGuestbookEntry(t *testing.T, app core.App, created string) *core.Record
 func assertYearOptions(t *testing.T, app core.App, want []string) {
 	t.Helper()
 
-	got, err := yearOptions(app)
+	got, err := yearOptions(app, "2026")
 	if err != nil {
 		t.Fatalf("get year options: %v", err)
 	}
