@@ -30,7 +30,7 @@ func RegisterCommands(app *pocketbase.PocketBase) {
 				return err
 			}
 			for _, record := range records {
-				if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s status=%s attempts=%d outcome=%s\n", record.Id, record.GetString("status"), record.GetInt("attempt_count"), record.GetString("last_error_class")); err != nil {
+				if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s message_id=%s status=%s attempts=%d outcome=%s\n", record.Id, record.GetString("message_id"), record.GetString("status"), record.GetInt("attempt_count"), record.GetString("last_error_class")); err != nil {
 					return err
 				}
 			}
