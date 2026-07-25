@@ -14,6 +14,7 @@ import (
 	"github.com/pocketbase/pocketbase/tools/types"
 )
 
+// TestQueueNormalisesRecipientsAndCreatesAttempts verifies durable recipient work is created once.
 func TestQueueNormalisesRecipientsAndCreatesAttempts(t *testing.T) {
 	app := testutils.NewTestApp(t)
 	artworkID := installPostcardSchema(t, app)
@@ -50,6 +51,7 @@ func TestQueueNormalisesRecipientsAndCreatesAttempts(t *testing.T) {
 	}
 }
 
+// TestCompleteMarksParentSentOnlyAfterEveryRecipient verifies parent completion waits for all recipients.
 func TestCompleteMarksParentSentOnlyAfterEveryRecipient(t *testing.T) {
 	app := testutils.NewTestApp(t)
 	artworkID := installPostcardSchema(t, app)
@@ -103,6 +105,7 @@ func TestCompleteMarksParentSentOnlyAfterEveryRecipient(t *testing.T) {
 	}
 }
 
+// TestMarkReceivedIsIdempotent verifies repeated pickup renders retain the first receipt timestamp.
 func TestMarkReceivedIsIdempotent(t *testing.T) {
 	app := testutils.NewTestApp(t)
 	artworkID := installPostcardSchema(t, app)
@@ -139,6 +142,7 @@ func TestMarkReceivedIsIdempotent(t *testing.T) {
 	}
 }
 
+// TestEarlyReceiptTransitionsToReceivedAfterDeliveryCompletes verifies an early pickup remains recorded.
 func TestEarlyReceiptTransitionsToReceivedAfterDeliveryCompletes(t *testing.T) {
 	app := testutils.NewTestApp(t)
 	artworkID := installPostcardSchema(t, app)
@@ -180,6 +184,7 @@ func TestEarlyReceiptTransitionsToReceivedAfterDeliveryCompletes(t *testing.T) {
 	}
 }
 
+// TestDeadLetterLeavesPostcardQueued verifies a failed attempt cannot mark its parent sent.
 func TestDeadLetterLeavesPostcardQueued(t *testing.T) {
 	app := testutils.NewTestApp(t)
 	artworkID := installPostcardSchema(t, app)
@@ -208,6 +213,7 @@ func TestDeadLetterLeavesPostcardQueued(t *testing.T) {
 	}
 }
 
+// TestClosedDeliveryResolutionCancelsParentPostcard verifies closed work terminally cancels the parent.
 func TestClosedDeliveryResolutionCancelsParentPostcard(t *testing.T) {
 	app := testutils.NewTestApp(t)
 	artworkID := installPostcardSchema(t, app)
@@ -236,6 +242,7 @@ func TestClosedDeliveryResolutionCancelsParentPostcard(t *testing.T) {
 	}
 }
 
+// TestStartTransportRequiresTheClaimToken verifies a stale worker cannot start transport.
 func TestStartTransportRequiresTheClaimToken(t *testing.T) {
 	app := testutils.NewTestApp(t)
 	artworkID := installPostcardSchema(t, app)
@@ -267,6 +274,7 @@ func TestStartTransportRequiresTheClaimToken(t *testing.T) {
 	}
 }
 
+// TestRetrySchedulesAClaimedAttempt verifies retryable failures receive a future availability time.
 func TestRetrySchedulesAClaimedAttempt(t *testing.T) {
 	app := testutils.NewTestApp(t)
 	artworkID := installPostcardSchema(t, app)
@@ -298,6 +306,7 @@ func TestRetrySchedulesAClaimedAttempt(t *testing.T) {
 	}
 }
 
+// TestExpiredPreTransportClaimDoesNotConsumeAttempt verifies safe lease expiry preserves retry budget.
 func TestExpiredPreTransportClaimDoesNotConsumeAttempt(t *testing.T) {
 	app := testutils.NewTestApp(t)
 	artworkID := installPostcardSchema(t, app)
@@ -326,6 +335,7 @@ func TestExpiredPreTransportClaimDoesNotConsumeAttempt(t *testing.T) {
 	}
 }
 
+// TestExpandLegacyQueuedPostcardsMovesAttemptsToReview verifies legacy work is held for review.
 func TestExpandLegacyQueuedPostcardsMovesAttemptsToReview(t *testing.T) {
 	app := testutils.NewTestApp(t)
 	artworkID := installPostcardSchema(t, app)
@@ -361,6 +371,7 @@ func TestExpandLegacyQueuedPostcardsMovesAttemptsToReview(t *testing.T) {
 	}
 }
 
+// TestClassifyDeliveryError verifies only known pre-send failures are retryable.
 func TestClassifyDeliveryError(t *testing.T) {
 	if failure := classifyDeliveryError(&net.DNSError{}); !failure.retryable || failure.class != "dns_failed" {
 		t.Fatalf("dns failure = %#v", failure)
@@ -370,6 +381,7 @@ func TestClassifyDeliveryError(t *testing.T) {
 	}
 }
 
+// TestRenderMessageIncludesDeliveryHeader verifies provider reconciliation can use the durable ID.
 func TestRenderMessageIncludesDeliveryHeader(t *testing.T) {
 	postcard := core.NewRecord(core.NewBaseCollection("Postcards"))
 	postcard.Set("sender_name", "sender")
@@ -382,6 +394,7 @@ func TestRenderMessageIncludesDeliveryHeader(t *testing.T) {
 	}
 }
 
+// TestSendMail exercises PocketBase's configured mail client when sendmail is available.
 func TestSendMail(t *testing.T) {
 	app := testutils.NewTestApp(t)
 	message := &mailer.Message{
@@ -398,6 +411,7 @@ func TestSendMail(t *testing.T) {
 	}
 }
 
+// TestLogDeliveryUsesOnlySafeExecutionIdentifiers verifies delivery logs omit personal data.
 func TestLogDeliveryUsesOnlySafeExecutionIdentifiers(t *testing.T) {
 	app := testutils.NewTestApp(t)
 	captured := testutils.CaptureLogs(app)
@@ -422,6 +436,7 @@ func TestLogDeliveryUsesOnlySafeExecutionIdentifiers(t *testing.T) {
 	}
 }
 
+// installPostcardSchema creates the minimal schema required by postcard workflow tests.
 func installPostcardSchema(t *testing.T, app core.App) string {
 	t.Helper()
 	artworks := core.NewBaseCollection("Artworks")
@@ -501,6 +516,7 @@ func installPostcardSchema(t *testing.T, app core.App) string {
 	return artwork.Id
 }
 
+// postcardTestConfig returns deterministic postcard settings for message rendering tests.
 func postcardTestConfig(t *testing.T) config.Postcards {
 	t.Helper()
 	values := map[string]string{

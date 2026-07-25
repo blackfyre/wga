@@ -7,6 +7,7 @@ import (
 	m "github.com/pocketbase/pocketbase/migrations"
 )
 
+// init registers the cancelled postcard status migration.
 func init() {
 	m.Register(func(app core.App) error {
 		postcards, err := app.FindCollectionByNameOrId("postcards")

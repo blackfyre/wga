@@ -9,6 +9,7 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
+// TestPostcardDeliveryLifecycleMigrationCreatesAdditiveSchema verifies the delivery schema is additive.
 func TestPostcardDeliveryLifecycleMigrationCreatesAdditiveSchema(t *testing.T) {
 	configureMigrations(t)
 	app := newMigrationTestApp(t, t.TempDir())
@@ -53,6 +54,7 @@ func TestPostcardDeliveryLifecycleMigrationCreatesAdditiveSchema(t *testing.T) {
 	}
 }
 
+// TestPostcardDeliveryLifecycleMigrationsRollBackAndReapply verifies rollback restores a reapplicable schema.
 func TestPostcardDeliveryLifecycleMigrationsRollBackAndReapply(t *testing.T) {
 	configureMigrations(t)
 	app := newMigrationTestApp(t, t.TempDir())
@@ -90,6 +92,7 @@ func TestPostcardDeliveryLifecycleMigrationsRollBackAndReapply(t *testing.T) {
 	}
 }
 
+// hasIndex reports whether a collection index definition contains name.
 func hasIndex(indexes []string, name string) bool {
 	for _, index := range indexes {
 		if strings.Contains(index, name) {

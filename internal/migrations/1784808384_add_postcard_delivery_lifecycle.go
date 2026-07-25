@@ -5,6 +5,7 @@ import (
 	m "github.com/pocketbase/pocketbase/migrations"
 )
 
+// init registers the postcard delivery lifecycle schema migration.
 func init() {
 	m.Register(func(app core.App) error {
 		postcards, err := app.FindCollectionByNameOrId("postcards")
