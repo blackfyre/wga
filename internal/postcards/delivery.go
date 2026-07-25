@@ -326,7 +326,7 @@ func finalizePostcard(app core.App, postcardID string, now types.DateTime) error
 func classifyDeliveryError(err error) deliveryFailure {
 	var dnsError *net.DNSError
 	if errors.As(err, &dnsError) {
-		return deliveryFailure{class: "dns_failed", retryable: true}
+		return deliveryFailure{class: "dns_failed", retryable: dnsError.IsTemporary || dnsError.IsTimeout}
 	}
 	var operationError *net.OpError
 	if errors.As(err, &operationError) && operationError.Op == "dial" {

@@ -293,7 +293,7 @@ func ReplayAttempt(app core.App, attemptID string) (*core.Record, error) {
 	return replay, nil
 }
 
-// normaliseRecipients validates, case-folds, and de-duplicates recipient addresses.
+// normaliseRecipients validates, normalises domain case, and de-duplicates recipient addresses.
 func normaliseRecipients(recipients []string) ([]string, error) {
 	unique := make(map[string]struct{}, len(recipients))
 	normalised := make([]string, 0, len(recipients))
@@ -302,7 +302,11 @@ func normaliseRecipients(recipients []string) ([]string, error) {
 		if err != nil || parsed.Address == "" {
 			return nil, errors.New("postcard recipient must be a valid email address")
 		}
-		address := strings.ToLower(parsed.Address)
+		at := strings.LastIndex(parsed.Address, "@")
+		if at <= 0 || at == len(parsed.Address)-1 {
+			return nil, errors.New("postcard recipient must be a valid email address")
+		}
+		address := parsed.Address[:at+1] + strings.ToLower(parsed.Address[at+1:])
 		if _, exists := unique[address]; exists {
 			continue
 		}

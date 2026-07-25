@@ -22,14 +22,14 @@ func TestQueueNormalisesRecipientsAndCreatesAttempts(t *testing.T) {
 	postcard, err := Queue(app, QueueInput{
 		SenderName:  "sender",
 		SenderEmail: "sender@example.test",
-		Recipients:  []string{" First@Example.Test ", "first@example.test", "second@example.test"},
+		Recipients:  []string{" First@Example.Test ", "First@example.test", "first@example.test", "second@example.test"},
 		Message:     "message",
 		ImageID:     artworkID,
 	})
 	if err != nil {
 		t.Fatalf("queue postcard: %v", err)
 	}
-	if got, want := postcard.GetString("recipients"), "first@example.test,second@example.test"; got != want {
+	if got, want := postcard.GetString("recipients"), "First@example.test,first@example.test,second@example.test"; got != want {
 		t.Fatalf("recipients = %q, want %q", got, want)
 	}
 	if postcard.GetString("correlation_id") == "" {
@@ -39,15 +39,15 @@ func TestQueueNormalisesRecipientsAndCreatesAttempts(t *testing.T) {
 	if err != nil {
 		t.Fatalf("find deliveries: %v", err)
 	}
-	if got := len(deliveries); got != 2 {
-		t.Fatalf("deliveries = %d, want 2", got)
+	if got := len(deliveries); got != 3 {
+		t.Fatalf("deliveries = %d, want 3", got)
 	}
 	attempts, err := app.FindRecordsByFilter(collectionDeliveryAttempts, "", "", 0, 0)
 	if err != nil {
 		t.Fatalf("find attempts: %v", err)
 	}
-	if got := len(attempts); got != 2 {
-		t.Fatalf("attempts = %d, want 2", got)
+	if got := len(attempts); got != 3 {
+		t.Fatalf("attempts = %d, want 3", got)
 	}
 }
 
@@ -373,8 +373,11 @@ func TestExpandLegacyQueuedPostcardsMovesAttemptsToReview(t *testing.T) {
 
 // TestClassifyDeliveryError verifies only known pre-send failures are retryable.
 func TestClassifyDeliveryError(t *testing.T) {
-	if failure := classifyDeliveryError(&net.DNSError{}); !failure.retryable || failure.class != "dns_failed" {
+	if failure := classifyDeliveryError(&net.DNSError{IsTemporary: true}); !failure.retryable || failure.class != "dns_failed" {
 		t.Fatalf("dns failure = %#v", failure)
+	}
+	if failure := classifyDeliveryError(&net.DNSError{}); failure.retryable || failure.class != "dns_failed" {
+		t.Fatalf("permanent dns failure = %#v", failure)
 	}
 	if failure := classifyDeliveryError(errors.New("unknown transport failure")); failure.retryable || failure.class != "ambiguous_transport_outcome" {
 		t.Fatalf("unknown failure = %#v", failure)
