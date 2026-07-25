@@ -83,5 +83,19 @@ func init() {
 		}
 
 		return nil
-	}, nil)
+	}, func(app core.App) error {
+		if err := deleteCollection(app, "postcard_delivery_attempts"); err != nil {
+			return err
+		}
+		if err := deleteCollection(app, "postcard_deliveries"); err != nil {
+			return err
+		}
+		postcards, err := app.FindCollectionByNameOrId("postcards")
+		if err != nil {
+			return err
+		}
+		postcards.Fields.RemoveByName("correlation_id")
+		postcards.Fields.RemoveByName("received_at")
+		return app.Save(postcards)
+	})
 }
