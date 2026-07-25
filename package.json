@@ -15,7 +15,7 @@
     "url": "git+https://github.com/blackfyre/wga.git"
   },
   "author": "Miklós Galicz <miklos.galicz@gmail.com>",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/blackfyre/wga/issues"
   },
@@ -41,7 +41,6 @@
     "postcss-cli": "^11.0.1",
     "postcss-import": "^16.1.1",
     "postcss-nesting": "^13.0.2",
-    "tailwind": "^4.0.0",
     "tailwindcss": "^4.2.1",
     "trix": "^2.1.16",
     "viewerjs": "^1.11.7"
