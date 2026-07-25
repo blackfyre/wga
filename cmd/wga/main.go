@@ -11,6 +11,7 @@ import (
 	"github.com/blackfyre/wga/internal/hooks"
 	"github.com/blackfyre/wga/internal/logging"
 	"github.com/blackfyre/wga/internal/migrations"
+	"github.com/blackfyre/wga/internal/postcards"
 
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/blackfyre/wga/internal/utils/seed"
@@ -71,6 +72,7 @@ func main() {
 		// (the `isGoRun` check is to enable it only during development)
 		Automigrate: false,
 	})
+	postcards.RegisterCommands(app)
 
 	app.RootCmd.AddCommand(&cobra.Command{
 		Use:   "generate-sitemap",
@@ -133,7 +135,7 @@ func commandCapabilityFor(args []string) commandCapability {
 		switch arg {
 		case "generate-sitemap":
 			return commandNeedsSitemap
-		case "migrate", "generate-music-urls", "seed:images", "superuser":
+		case "migrate", "generate-music-urls", "seed:images", "superuser", "postcards":
 			return commandNeedsNothing
 		case "serve":
 			return commandNeedsServer
