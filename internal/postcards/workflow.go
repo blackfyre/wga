@@ -244,10 +244,7 @@ func ResolveAttempt(app core.App, attemptID string, code string, summary string)
 		if err := txApp.Save(delivery); err != nil {
 			return err
 		}
-		if code == "closed_without_replay" {
-			return nil
-		}
-		return markPostcardSent(txApp, delivery.GetString("postcard"), now)
+		return finalizePostcard(txApp, delivery.GetString("postcard"), now)
 	})
 }
 

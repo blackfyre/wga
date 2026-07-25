@@ -238,7 +238,7 @@ func complete(app core.App, claim *ClaimedAttempt, now types.DateTime) error {
 		if err := txApp.Save(delivery); err != nil {
 			return err
 		}
-		return markPostcardSent(txApp, claim.Postcard.Id, now)
+		return finalizePostcard(txApp, claim.Postcard.Id, now)
 	})
 }
 
@@ -284,12 +284,19 @@ func updateOwnedAttempt(app core.App, claim *ClaimedAttempt, changes string, par
 	return nil
 }
 
-// markPostcardSent finalises a postcard after every recipient delivery has completed.
-func markPostcardSent(app core.App, postcardID string, now types.DateTime) error {
+// finalizePostcard applies the terminal parent status after every recipient delivery is resolved.
+func finalizePostcard(app core.App, postcardID string, now types.DateTime) error {
 	var totals struct {
-		Pending int `db:"pending"`
+		Pending   int `db:"pending"`
+		Cancelled int `db:"cancelled"`
 	}
-	if err := app.DB().NewQuery(`SELECT COUNT(*) AS pending FROM postcardDeliveries WHERE postcard = {:postcard} AND status != 'sent'`).Bind(dbx.Params{"postcard": postcardID}).One(&totals); err != nil {
+	if err := app.DB().NewQuery(`
+		SELECT
+			SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending,
+			SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled
+		FROM postcardDeliveries
+		WHERE postcard = {:postcard}
+	`).Bind(dbx.Params{"postcard": postcardID}).One(&totals); err != nil {
 		return err
 	}
 	if totals.Pending != 0 {
@@ -301,6 +308,10 @@ func markPostcardSent(app core.App, postcardID string, now types.DateTime) error
 	}
 	if postcard.GetString("status") != "queued" {
 		return nil
+	}
+	if totals.Cancelled != 0 {
+		postcard.Set("status", "cancelled")
+		return app.Save(postcard)
 	}
 	postcard.Set("sent_at", now)
 	if postcard.GetString("received_at") != "" {

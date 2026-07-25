@@ -208,6 +208,34 @@ func TestDeadLetterLeavesPostcardQueued(t *testing.T) {
 	}
 }
 
+func TestClosedDeliveryResolutionCancelsParentPostcard(t *testing.T) {
+	app := testutils.NewTestApp(t)
+	artworkID := installPostcardSchema(t, app)
+	postcard, err := Queue(app, QueueInput{
+		SenderName: "sender", SenderEmail: "sender@example.test", Recipients: []string{"recipient@example.test"}, Message: "message", ImageID: artworkID,
+	})
+	if err != nil {
+		t.Fatalf("queue postcard: %v", err)
+	}
+	claim, err := claimDue(app, types.NowDateTime())
+	if err != nil {
+		t.Fatalf("claim attempt: %v", err)
+	}
+	if err := deadLetter(app, claim, deliveryFailure{class: "smtp_permanent_failure"}, types.NowDateTime()); err != nil {
+		t.Fatalf("dead letter attempt: %v", err)
+	}
+	if err := ResolveAttempt(app, claim.Attempt.Id, "closed_without_replay", "closed by operator"); err != nil {
+		t.Fatalf("close delivery: %v", err)
+	}
+	stored, err := app.FindRecordById(collectionPostcards, postcard.Id)
+	if err != nil {
+		t.Fatalf("reload postcard: %v", err)
+	}
+	if got := stored.GetString("status"); got != "cancelled" {
+		t.Fatalf("status after closed delivery = %q, want cancelled", got)
+	}
+}
+
 func TestStartTransportRequiresTheClaimToken(t *testing.T) {
 	app := testutils.NewTestApp(t)
 	artworkID := installPostcardSchema(t, app)
@@ -417,7 +445,7 @@ func installPostcardSchema(t *testing.T, app core.App) string {
 		&core.EditorField{Name: "message", Required: true},
 		&core.RelationField{Name: "image_id", CollectionId: artworks.Id, Required: true},
 		&core.BoolField{Name: "notify_sender"},
-		&core.SelectField{Name: "status", Values: []string{"queued", "sent", "received"}, MaxSelect: 1, Required: true},
+		&core.SelectField{Name: "status", Values: []string{"queued", "sent", "received", "cancelled"}, MaxSelect: 1, Required: true},
 		&core.DateField{Name: "sent_at"},
 		&core.TextField{Name: "correlation_id"},
 		&core.DateField{Name: "received_at"},
