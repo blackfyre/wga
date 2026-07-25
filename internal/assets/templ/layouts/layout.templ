@@ -51,7 +51,6 @@ templ LayoutBase(bodyClasses string, HtmxTargetArea string) {
 				} catch {}
 			</script>
 			<link rel="stylesheet" href="/assets/css/style.css"/>
-			<link rel="stylesheet" href="/assets/css/vendor/viewer.min.css"/>
 			<link rel="apple-touch-icon" sizes="180x180" href="/assets/images/apple-touch-icon.png"/>
 			<link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32x32.png"/>
 			<link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon-16x16.png"/>
@@ -61,7 +60,6 @@ templ LayoutBase(bodyClasses string, HtmxTargetArea string) {
 			<meta name="msapplication-TileColor" content="#013365"/>
 			<meta name="msapplication-config" content="/assets/browserconfig.xml"/>
 			<meta name="theme-color" content="#013365"/>
-			<link rel="stylesheet" href="/assets/css/vendor/cookieconsent.css"/>
 		</head>
 		<body class={ bodyClasses } hx-indicator=".progress-indicator" hx-target={ getHtmxDefaultArea(HtmxTargetArea) } hx-select={ getHtmxDefaultArea(HtmxTargetArea) } hx-swap="outerHTML">
 			<div class="progress-indicator" style="height: 3px;">
@@ -80,8 +78,6 @@ templ LayoutBase(bodyClasses string, HtmxTargetArea string) {
 			>Feedback</a>
 			<div class="toast" id="toast-container"></div>
 			<script type="module" src="/assets/js/app.js"></script>
-			<script defer src="/assets/js/vendor/cookieconsent.js" crossorigin="anonymous"></script>
-			<script defer src="/assets/js/vendor/cookieconsent-init.js" crossorigin="anonymous"></script>
 		</body>
 	</html>
 }
