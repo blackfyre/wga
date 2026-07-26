@@ -30,4 +30,4 @@ Issue #178 removes GitHub fetching from the contributors request path and moves 
 
 - [✓] Add provider, fallback, stale snapshot, refresh metadata, route, captcha, and persistence-prevention tests. Verification: controlled HTTP servers cover success, rejection, timeout, malformed responses, and provider outages.
 - [✓] Run focused tests, `go vet ./...`, and `go test ./... -cover`. Verification: all selected checks pass.
-- [ ] Commit, push, and open a pull request for issue #178. Verification: the branch is pushed and the pull request targets `main` with a Conventional Commit title.
+- [✓] Commit, push, and open a pull request for issue #178. Verification: the branch is pushed and pull request #192 targets `main` with a Conventional Commit title.
