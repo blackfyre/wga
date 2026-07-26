@@ -300,7 +300,8 @@ func discoverBrowserComponents(metafilePath string) ([]component, error) {
 		if edges[bundled.Parent] == nil {
 			edges[bundled.Parent] = map[string]struct{}{}
 		}
-		if resolved, exists := lock[bundled.Component.Name]; exists && resolved.version == bundled.Component.Version {
+		_, emitted := packageNames[bundled.Component.Name]
+		if resolved, exists := lock[bundled.Component.Name]; emitted && exists && resolved.version == bundled.Component.Version {
 			edges[bundled.Parent][bundled.Component.Name] = struct{}{}
 			continue
 		}
