@@ -7,10 +7,11 @@ report_sizes: true
 before:
   hooks:
     - bun install
-    - go tool templ generate
-    - go mod tidy
     - bun run build:css
     - bun run build:js
+    - go tool templ generate
+    - go run ./cmd/generate-licences --application-version={{ .Version }}
+    - go mod tidy
 
 builds:
   - env:
@@ -22,6 +23,8 @@ builds:
 
 archives:
   - format: tar.gz
+    files:
+      - dist/wga.cdx.json
     name_template: >-
       {{ .ProjectName }}_
       {{- title .Os }}_

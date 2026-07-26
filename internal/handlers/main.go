@@ -10,6 +10,7 @@ import (
 	"github.com/blackfyre/wga/internal/handlers/guestbook"
 	"github.com/blackfyre/wga/internal/handlers/inspire"
 	"github.com/blackfyre/wga/internal/handlers/landing"
+	"github.com/blackfyre/wga/internal/handlers/licences"
 	"github.com/blackfyre/wga/internal/handlers/static"
 	"github.com/blackfyre/wga/internal/handlers/statistics"
 
@@ -37,6 +38,7 @@ func RegisterHandlers(app *pocketbase.PocketBase, captcha config.Captcha) {
 	artworks.RegisterArtworksHandlers(app)
 	inspire.RegisterHandlers(app)
 	landing.RegisterHandlers(app)
+	licences.RegisterHandlers(app)
 	statistics.RegisterHandlers(app)
 	dual.RegisterHandlers(app)
 }

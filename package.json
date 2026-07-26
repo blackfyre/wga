@@ -5,7 +5,7 @@
   "private": "true",
   "scripts": {
     "build": "bun run build:css && bun run build:js",
-    "build:js": "bun build ./resources/js/app.ts --outdir ./internal/assets/public/js --target=browser --minify --sourcemap --splitting",
+    "build:js": "mkdir -p ./dist && bun build ./resources/js/app.ts --outdir ./internal/assets/public/js --target=browser --minify --sourcemap --splitting --metafile=./dist/browser-metafile.json",
     "build:css": "postcss ./resources/css/style.pcss -o ./internal/assets/public/css/style.css",
     "build:watch:css": "bun run build:css --watch",
     "build:watch:js": "bun run build:js --watch"
