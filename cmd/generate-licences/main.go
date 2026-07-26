@@ -3,7 +3,6 @@ package main
 
 import (
 	"bytes"
-	"crypto/sha512"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -364,7 +363,6 @@ func discoverVendoredBrowserPackages(inputs map[string]browserInput, emittedInpu
 			}
 			name := strings.ToLower(string(match[1]))
 			version := string(match[2])
-			integrity := sha512.Sum512(content)
 			components = append(components, vendoredComponent{
 				Parent: parent,
 				Component: component{
@@ -373,7 +371,6 @@ func discoverVendoredBrowserPackages(inputs map[string]browserInput, emittedInpu
 					Version:        version,
 					SourceURL:      "https://www.npmjs.com/package/" + name + "/v/" + version,
 					PURL:           "pkg:npm/" + name + "@" + version,
-					Integrity:      "sha512-" + base64.StdEncoding.EncodeToString(integrity[:]),
 					Targets:        []string{"browser"},
 					SourceEvidence: "https://www.npmjs.com/package/" + name + "/v/" + version,
 				},

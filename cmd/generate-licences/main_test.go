@@ -126,7 +126,7 @@ func TestDiscoverVendoredBrowserPackages(t *testing.T) {
 	if err != nil {
 		t.Fatalf("discover vendored packages: %v", err)
 	}
-	if len(components) != 1 || components[0].Parent != "trix" || components[0].Component.Name != "dompurify" || components[0].Component.Version != "3.2.7" || components[0].Component.Integrity == "" {
+	if len(components) != 1 || components[0].Parent != "trix" || components[0].Component.Name != "dompurify" || components[0].Component.Version != "3.2.7" || components[0].Component.Integrity != "" {
 		t.Fatalf("vendored components = %#v, want DOMPurify 3.2.7", components)
 	}
 }

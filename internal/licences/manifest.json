@@ -919,7 +919,6 @@
       "version": "3.2.7",
       "source_url": "https://www.npmjs.com/package/dompurify/v/3.2.7",
       "purl": "pkg:npm/dompurify@3.2.7",
-      "integrity": "sha512-fjUxILVdZvkB+M74w3ClzJX9fZRXKItmonEoNm001tNJ4qvApunqCv6hg4yV58VqHLhIxtztuivgzhFg6Jf5Ug==",
       "targets": [
         "browser"
       ],

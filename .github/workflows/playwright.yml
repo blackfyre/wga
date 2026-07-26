@@ -66,6 +66,8 @@ jobs:
         run: bun run build
       - name: Compile templates
         run: go tool templ generate
+      - name: Verify committed licence notices
+        run: go test ./cmd/generate-licences -run '^TestCommittedNoticesMatchManifest$'
       - name: Generate licence notices and SBOM
         run: go run ./cmd/generate-licences
       - name: Install go modules
