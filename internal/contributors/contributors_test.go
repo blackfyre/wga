@@ -198,6 +198,42 @@ func TestRefreshRecordsPersistenceFailureAndAllowsRetry(t *testing.T) {
 	}
 }
 
+func TestRefreshRecoversAbandonedExecution(t *testing.T) {
+	app := newContributorTestApp(t)
+	store, err := NewStore(app)
+	if err != nil {
+		t.Fatalf("new store: %v", err)
+	}
+	collection, err := app.FindCollectionByNameOrId(constants.CollectionContributorRefreshExecutions)
+	if err != nil {
+		t.Fatalf("find refresh collection: %v", err)
+	}
+	abandoned := core.NewRecord(collection)
+	abandoned.Set("run_id", "abandoned")
+	abandoned.Set("attempt", 1)
+	abandoned.Set("max_attempts", refreshMaxAttempts)
+	abandoned.Set("status", "processing")
+	abandoned.Set("claim_expires_at", time.Now().Add(-time.Minute))
+	if err := app.Save(abandoned); err != nil {
+		t.Fatalf("save abandoned execution: %v", err)
+	}
+
+	job := newRefreshJob(app, providerFunc(func(context.Context) ([]Contributor, error) {
+		return []Contributor{{Login: "refreshed", Contributions: 1}}, nil
+	}), store, func(context.Context, time.Duration) error { return nil })
+	if err := job.Run(context.Background(), "run-after-abandoned"); err != nil {
+		t.Fatalf("run refresh: %v", err)
+	}
+
+	abandoned, err = app.FindRecordById(constants.CollectionContributorRefreshExecutions, abandoned.Id)
+	if err != nil {
+		t.Fatalf("find abandoned execution: %v", err)
+	}
+	if abandoned.GetString("status") != "failed" || abandoned.GetString("error_class") != "abandoned" {
+		t.Fatalf("abandoned execution = %+v", abandoned)
+	}
+}
+
 func newContributorTestApp(t *testing.T) *tests.TestApp {
 	t.Helper()
 
@@ -223,6 +259,7 @@ func newContributorTestApp(t *testing.T) *tests.TestApp {
 		&core.NumberField{Name: "attempt", Required: true},
 		&core.NumberField{Name: "max_attempts", Required: true},
 		&core.SelectField{Name: "status", Values: []string{"processing", "succeeded", "failed"}, MaxSelect: 1, Required: true},
+		&core.DateField{Name: "claim_expires_at", Required: true},
 		&core.DateField{Name: "completed_at"},
 		&core.NumberField{Name: "snapshot_count"},
 		&core.TextField{Name: "error_class"},

@@ -10,7 +10,10 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
-const refreshMaxAttempts = 3
+const (
+	refreshMaxAttempts   = 3
+	refreshLeaseDuration = time.Minute
+)
 
 var ErrRefreshInProgress = errors.New("contributor refresh already in progress")
 
@@ -68,7 +71,7 @@ func (j *refreshJob) Run(ctx context.Context, runID string) error {
 		execution.Set("error_class", errorClass)
 		execution.Set("error_retryable", retryable)
 		if err := j.app.Save(execution); err != nil {
-			return fmt.Errorf("record contributor refresh failure: %w", err)
+			return fmt.Errorf("record contributor refresh failure: %w", errors.Join(fetchErr, err))
 		}
 
 		if !retryable || attempt == refreshMaxAttempts {
@@ -83,6 +86,11 @@ func (j *refreshJob) Run(ctx context.Context, runID string) error {
 }
 
 func (j *refreshJob) startExecution(runID string, attempt int) (*core.Record, error) {
+	now := time.Now().UTC()
+	if err := j.recoverAbandonedExecutions(now); err != nil {
+		return nil, err
+	}
+
 	active, err := j.app.FindRecordsByFilter(constants.CollectionContributorRefreshExecutions, "status = 'processing'", "", 1, 0)
 	if err != nil {
 		return nil, err
@@ -101,11 +109,35 @@ func (j *refreshJob) startExecution(runID string, attempt int) (*core.Record, er
 	execution.Set("attempt", attempt)
 	execution.Set("max_attempts", refreshMaxAttempts)
 	execution.Set("status", "processing")
+	execution.Set("claim_expires_at", now.Add(refreshLeaseDuration))
 	if err := j.app.Save(execution); err != nil {
 		return nil, err
 	}
 
 	return execution, nil
+}
+
+func (j *refreshJob) recoverAbandonedExecutions(now time.Time) error {
+	executions, err := j.app.FindRecordsByFilter(constants.CollectionContributorRefreshExecutions, "status = 'processing'", "", 0, 0)
+	if err != nil {
+		return err
+	}
+
+	for _, execution := range executions {
+		if !execution.GetDateTime("claim_expires_at").Time().Before(now) {
+			continue
+		}
+
+		execution.Set("status", "failed")
+		execution.Set("completed_at", now)
+		execution.Set("error_class", "abandoned")
+		execution.Set("error_retryable", false)
+		if err := j.app.Save(execution); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func classifyProviderError(err error) (bool, string) {

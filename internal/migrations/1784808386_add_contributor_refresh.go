@@ -32,6 +32,7 @@ func init() {
 			&core.NumberField{Id: "contributor_refresh_attempt", Name: "attempt", Required: true},
 			&core.NumberField{Id: "contributor_refresh_max_attempts", Name: "max_attempts", Required: true},
 			&core.SelectField{Id: "contributor_refresh_status", Name: "status", Values: []string{"processing", "succeeded", "failed"}, MaxSelect: 1, Required: true},
+			&core.DateField{Id: "contributor_refresh_claim_expires_at", Name: "claim_expires_at", Required: true},
 			&core.DateField{Id: "contributor_refresh_completed_at", Name: "completed_at"},
 			&core.NumberField{Id: "contributor_refresh_snapshot_count", Name: "snapshot_count"},
 			&core.TextField{Id: "contributor_refresh_error_class", Name: "error_class"},

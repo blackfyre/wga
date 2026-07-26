@@ -118,7 +118,7 @@ func TestContributorRefreshMigrationCreatesAdditiveSchema(t *testing.T) {
 	if err != nil {
 		t.Fatalf("find contributor refresh executions: %v", err)
 	}
-	for _, field := range []string{"run_id", "attempt", "status", "completed_at", "error_class"} {
+	for _, field := range []string{"run_id", "attempt", "status", "claim_expires_at", "completed_at", "error_class"} {
 		if executions.Fields.GetByName(field) == nil {
 			t.Fatalf("missing execution field %q", field)
 		}
