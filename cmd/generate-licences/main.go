@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -38,6 +39,7 @@ type component struct {
 	Licence        licence  `json:"licence"`
 	SourceEvidence string   `json:"source_evidence"`
 	Direct         bool     `json:"-"`
+	licenceTextURL string
 }
 
 type licence struct {
@@ -331,12 +333,14 @@ func discoverBrowserComponents(metafilePath string) ([]component, error) {
 }
 
 type vendoredBrowserPackage struct {
-	ProductPattern *regexp.Regexp
+	ProductPattern       *regexp.Regexp
+	LicenceSourcePattern *regexp.Regexp
 }
 
 var vendoredBrowserPackages = []vendoredBrowserPackage{
 	{
-		ProductPattern: regexp.MustCompile(`(DOMPurify) ([0-9]+\.[0-9]+\.[0-9]+)`),
+		ProductPattern:       regexp.MustCompile(`(DOMPurify) ([0-9]+\.[0-9]+\.[0-9]+)`),
+		LicenceSourcePattern: regexp.MustCompile(`(?:https://)?github\.com/cure53/DOMPurify/blob/([0-9]+\.[0-9]+\.[0-9]+)/LICENSE`),
 	},
 }
 
@@ -363,6 +367,15 @@ func discoverVendoredBrowserPackages(inputs map[string]browserInput, emittedInpu
 			}
 			name := strings.ToLower(string(match[1]))
 			version := string(match[2])
+			licenceSource := bundled.LicenceSourcePattern.FindSubmatch(content)
+			if len(licenceSource) != 2 || string(licenceSource[1]) != version {
+				continue
+			}
+			evidenceURL := string(licenceSource[0])
+			if !strings.HasPrefix(evidenceURL, "https://") {
+				evidenceURL = "https://" + evidenceURL
+			}
+			licenceTextURL := strings.Replace(evidenceURL, "https://github.com/cure53/DOMPurify/blob/", "https://raw.githubusercontent.com/cure53/DOMPurify/", 1)
 			components = append(components, vendoredComponent{
 				Parent: parent,
 				Component: component{
@@ -372,7 +385,9 @@ func discoverVendoredBrowserPackages(inputs map[string]browserInput, emittedInpu
 					SourceURL:      "https://www.npmjs.com/package/" + name + "/v/" + version,
 					PURL:           "pkg:npm/" + name + "@" + version,
 					Targets:        []string{"browser"},
-					SourceEvidence: "https://www.npmjs.com/package/" + name + "/v/" + version,
+					Dependencies:   []string{},
+					SourceEvidence: evidenceURL,
+					licenceTextURL: licenceTextURL,
 				},
 			})
 		}
@@ -496,6 +511,21 @@ func bootstrapManifest(discovered []component) manifest {
 }
 
 func readLicenceMaterial(component component) (string, error) {
+	if component.licenceTextURL != "" {
+		response, err := http.Get(component.licenceTextURL)
+		if err != nil {
+			return "", fmt.Errorf("fetch licence text for %s: %w", componentKey(component), err)
+		}
+		defer response.Body.Close()
+		if response.StatusCode != http.StatusOK {
+			return "", fmt.Errorf("fetch licence text for %s: %s", componentKey(component), response.Status)
+		}
+		content, err := io.ReadAll(response.Body)
+		if err != nil {
+			return "", fmt.Errorf("read licence text for %s: %w", componentKey(component), err)
+		}
+		return string(content), nil
+	}
 	root := componentRoot(component)
 	for _, name := range []string{"LICENSE", "LICENSE.md", "LICENSE.txt", "LICENCE", "LICENCE.md", "LICENCE.txt", "COPYING"} {
 		path := filepath.Join(root, name)
@@ -557,6 +587,9 @@ func licenceID(text string) string {
 
 func licenceExpression(text string) string {
 	lower := strings.ToLower(text)
+	if strings.Contains(lower, "apache license") && strings.Contains(lower, "mozilla public license") {
+		return "Apache-2.0 OR MPL-2.0"
+	}
 	if strings.Contains(lower, "redistribution and use in source and binary forms") && strings.Contains(lower, "apache license") && strings.Contains(lower, "permission is hereby granted, free of charge") {
 		return "BSD-3-Clause AND Apache-2.0 AND MIT"
 	}

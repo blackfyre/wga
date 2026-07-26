@@ -116,7 +116,8 @@ func TestDiscoverVendoredBrowserPackages(t *testing.T) {
 	if err := os.MkdirAll(strings.TrimSuffix(inputPath, "/trix.esm.min.js"), 0o755); err != nil {
 		t.Fatalf("create vendored fixture directory: %v", err)
 	}
-	if err := os.WriteFile(inputPath, []byte("/*! @license DOMPurify 3.2.7 */"), 0o644); err != nil {
+	fixture := "/*! @license DOMPurify 3.2.7 | https://github.com/cure53/DOMPurify/blob/3.2.7/LICENSE */"
+	if err := os.WriteFile(inputPath, []byte(fixture), 0o644); err != nil {
 		t.Fatalf("write vendored fixture: %v", err)
 	}
 	components, err := discoverVendoredBrowserPackages(
@@ -126,7 +127,7 @@ func TestDiscoverVendoredBrowserPackages(t *testing.T) {
 	if err != nil {
 		t.Fatalf("discover vendored packages: %v", err)
 	}
-	if len(components) != 1 || components[0].Parent != "trix" || components[0].Component.Name != "dompurify" || components[0].Component.Version != "3.2.7" || components[0].Component.Integrity != "" {
+	if len(components) != 1 || components[0].Parent != "trix" || components[0].Component.Name != "dompurify" || components[0].Component.Version != "3.2.7" || components[0].Component.Integrity != "" || components[0].Component.SourceEvidence != "https://github.com/cure53/DOMPurify/blob/3.2.7/LICENSE" {
 		t.Fatalf("vendored components = %#v, want DOMPurify 3.2.7", components)
 	}
 }
