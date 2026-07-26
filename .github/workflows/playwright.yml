@@ -37,6 +37,8 @@ on:
 jobs:
   backend-quality-gates:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -88,6 +90,8 @@ jobs:
   build:
     needs: backend-quality-gates
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     environment: playwright
     steps:
       - name: Fetch the application binary
@@ -122,6 +126,8 @@ jobs:
   playwright-tests:
     needs: build
     timeout-minutes: 5
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:

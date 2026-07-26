@@ -25,5 +25,5 @@ Generate and verify the licence notices and CycloneDX SBOM for dependencies actu
 ### Item: Automated assurance and pull request
 
 - [✓] Add focused generator and route tests. **Verification:** tests cover discovery validation, deterministic output, CycloneDX structure, and the public route.
-- [✓] Run focused and full quality checks. **Verification:** required commands complete successfully.
+- [✓] Run focused and full quality checks. **Verification:** `go mod tidy`, `go vet ./...`, and `go test ./... -cover` complete successfully in that order.
 - [✓] Commit and open a pull request. **Verification:** PR #191 targets `main`, references issue 187, and contains only this work.

@@ -3,6 +3,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/sha512"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -289,7 +290,20 @@ func discoverBrowserComponents(metafilePath string) ([]component, error) {
 		}
 	}
 
-	components := make([]component, 0, len(packageNames)+len(vendoredBrowserPackages))
+	bundledComponents, err := discoverVendoredBrowserPackages(metafile.Inputs, emittedInputs)
+	if err != nil {
+		return nil, err
+	}
+	for _, bundled := range bundledComponents {
+		if _, exists := packageNames[bundled.Component.Name]; exists {
+			continue
+		}
+		if edges[bundled.Parent] == nil {
+			edges[bundled.Parent] = map[string]struct{}{}
+		}
+		edges[bundled.Parent][bundled.Component.Name] = struct{}{}
+	}
+	components := make([]component, 0, len(packageNames)+len(bundledComponents))
 	for name := range packageNames {
 		resolved, ok := lock[name]
 		if !ok {
@@ -308,52 +322,65 @@ func discoverBrowserComponents(metafilePath string) ([]component, error) {
 			Direct:         contains(directPackages, name),
 		})
 	}
-	for _, bundled := range discoverVendoredBrowserPackages(metafile.Inputs, emittedInputs) {
-		if _, exists := packageNames[bundled.Name]; exists {
-			continue
+	for _, bundled := range bundledComponents {
+		if _, exists := packageNames[bundled.Component.Name]; !exists {
+			components = append(components, bundled.Component)
 		}
-		components = append(components, bundled)
 	}
 	sortComponents(components)
 	return components, nil
 }
 
 type vendoredBrowserPackage struct {
-	Parent    string
-	Signature string
-	Component component
+	ProductPattern *regexp.Regexp
 }
 
 var vendoredBrowserPackages = []vendoredBrowserPackage{
 	{
-		Parent:    "trix",
-		Signature: "DOMPurify",
-		Component: component{
-			Ecosystem:      "npm",
-			Name:           "dompurify",
-			Version:        "3.2.7",
-			SourceURL:      "https://www.npmjs.com/package/dompurify/v/3.2.7",
-			PURL:           "pkg:npm/dompurify@3.2.7",
-			Targets:        []string{"browser"},
-			SourceEvidence: "https://www.npmjs.com/package/dompurify/v/3.2.7",
-		},
+		ProductPattern: regexp.MustCompile(`(DOMPurify) ([0-9]+\.[0-9]+\.[0-9]+)`),
 	},
 }
 
-func discoverVendoredBrowserPackages(inputs map[string]browserInput, emittedInputs map[string]struct{}) []component {
-	components := []component{}
+type vendoredComponent struct {
+	Parent    string
+	Component component
+}
+
+func discoverVendoredBrowserPackages(inputs map[string]browserInput, emittedInputs map[string]struct{}) ([]vendoredComponent, error) {
+	components := []vendoredComponent{}
 	for _, bundled := range vendoredBrowserPackages {
 		for inputPath := range inputs {
-			if _, emitted := emittedInputs[inputPath]; !emitted || nodeModuleName(inputPath) != bundled.Parent {
+			parent := nodeModuleName(inputPath)
+			if _, emitted := emittedInputs[inputPath]; !emitted || parent == "" {
 				continue
 			}
 			content, err := os.ReadFile(inputPath)
-			if err == nil && bytes.Contains(content, []byte(bundled.Signature)) {
-				components = append(components, bundled.Component)
+			if err != nil {
+				return nil, fmt.Errorf("read emitted package input %q: %w", inputPath, err)
 			}
+			match := bundled.ProductPattern.FindSubmatch(content)
+			if len(match) != 3 {
+				continue
+			}
+			name := strings.ToLower(string(match[1]))
+			version := string(match[2])
+			integrity := sha512.Sum512(content)
+			components = append(components, vendoredComponent{
+				Parent: parent,
+				Component: component{
+					Ecosystem:      "npm",
+					Name:           name,
+					Version:        version,
+					SourceURL:      "https://www.npmjs.com/package/" + name + "/v/" + version,
+					PURL:           "pkg:npm/" + name + "@" + version,
+					Integrity:      "sha512-" + base64.StdEncoding.EncodeToString(integrity[:]),
+					Targets:        []string{"browser"},
+					SourceEvidence: "https://www.npmjs.com/package/" + name + "/v/" + version,
+				},
+			})
 		}
 	}
-	return components
+	return components, nil
 }
 
 var cssPackagePattern = regexp.MustCompile(`(?:@import\s+(?:url\()?|@plugin\s+)"?([^"'\s;)]+)`)
@@ -570,7 +597,7 @@ func validateManifest(manifest manifest, discovered []component) error {
 		if _, exists := recorded[key]; exists {
 			return fmt.Errorf("manifest repeats %s", key)
 		}
-		if (component.Licence.ID == "" && component.Licence.Expression == "") || component.Licence.ID == "NOASSERTION" || strings.TrimSpace(component.Licence.Text) == "" || strings.TrimSpace(component.Licence.Handling) == "" || component.SourceEvidence == "" {
+		if (component.Licence.ID == "" && component.Licence.Expression == "") || (component.Licence.ID != "" && component.Licence.Expression != "") || component.Licence.ID == "NOASSERTION" || strings.TrimSpace(component.Licence.Text) == "" || strings.TrimSpace(component.Licence.Handling) == "" || component.SourceEvidence == "" {
 			return fmt.Errorf("manifest has incomplete licence material for %s", key)
 		}
 		recorded[key] = component
@@ -653,10 +680,12 @@ type sbomComponent struct {
 }
 
 type sbomLicence struct {
-	Licence struct {
-		ID         string `json:"id,omitempty"`
-		Expression string `json:"expression,omitempty"`
-	} `json:"license"`
+	Licence    *sbomLicenceDetail `json:"license,omitempty"`
+	Expression string             `json:"expression,omitempty"`
+}
+
+type sbomLicenceDetail struct {
+	ID string `json:"id"`
 }
 
 type externalRef struct {
@@ -698,9 +727,10 @@ func newSBOM(applicationVersion string, components []component) sbom {
 		if component.Direct {
 			applicationDependencies = append(applicationDependencies, ref)
 		}
-		licence := sbomLicence{}
-		licence.Licence.ID = component.Licence.ID
-		licence.Licence.Expression = component.Licence.Expression
+		licence := sbomLicence{Expression: component.Licence.Expression}
+		if component.Licence.Expression == "" {
+			licence.Licence = &sbomLicenceDetail{ID: component.Licence.ID}
+		}
 		sbomComponent := sbomComponent{
 			Type:         "library",
 			BomRef:       ref,

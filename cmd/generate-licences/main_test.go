@@ -39,6 +39,27 @@ func TestValidateManifestRejectsStaleComponent(t *testing.T) {
 	}
 }
 
+func TestValidateManifestRejectsLicenceIDAndExpression(t *testing.T) {
+	record := component{
+		Ecosystem: "npm",
+		Name:      "example",
+		Version:   "1.0.0",
+		Targets:   []string{"browser"},
+		Licence: licence{
+			ID:         "MIT",
+			Expression: "MIT OR Apache-2.0",
+			Text:       "Licence text",
+			Handling:   "Include it.",
+		},
+		SourceEvidence: "https://example.test/licence",
+	}
+
+	err := validateManifest(manifest{Version: 1, Components: []component{record}}, []component{record})
+	if err == nil || !strings.Contains(err.Error(), "incomplete") {
+		t.Fatalf("validateManifest() error = %v, want invalid licence error", err)
+	}
+}
+
 func TestDiscoverBrowserComponentsReadsOnlyEmittedPackages(t *testing.T) {
 	workingDirectory, err := os.Getwd()
 	if err != nil {
@@ -95,14 +116,17 @@ func TestDiscoverVendoredBrowserPackages(t *testing.T) {
 	if err := os.MkdirAll(strings.TrimSuffix(inputPath, "/trix.esm.min.js"), 0o755); err != nil {
 		t.Fatalf("create vendored fixture directory: %v", err)
 	}
-	if err := os.WriteFile(inputPath, []byte("DOMPurify"), 0o644); err != nil {
+	if err := os.WriteFile(inputPath, []byte("/*! @license DOMPurify 3.2.7 */"), 0o644); err != nil {
 		t.Fatalf("write vendored fixture: %v", err)
 	}
-	components := discoverVendoredBrowserPackages(
+	components, err := discoverVendoredBrowserPackages(
 		map[string]browserInput{inputPath: {}},
 		map[string]struct{}{inputPath: {}},
 	)
-	if len(components) != 1 || components[0].Name != "dompurify" || components[0].Version != "3.2.7" {
+	if err != nil {
+		t.Fatalf("discover vendored packages: %v", err)
+	}
+	if len(components) != 1 || components[0].Parent != "trix" || components[0].Component.Name != "dompurify" || components[0].Component.Version != "3.2.7" || components[0].Component.Integrity == "" {
 		t.Fatalf("vendored components = %#v, want DOMPurify 3.2.7", components)
 	}
 }
@@ -197,7 +221,10 @@ func TestNewSBOMUsesLicenceExpression(t *testing.T) {
 		Targets:   []string{"binary"},
 		Licence:   licence{Expression: "BSD-3-Clause AND Apache-2.0 AND MIT"},
 	}})
-	if got := document.Components[0].Licences[0].Licence.Expression; got != "BSD-3-Clause AND Apache-2.0 AND MIT" {
+	if got := document.Components[0].Licences[0].Expression; got != "BSD-3-Clause AND Apache-2.0 AND MIT" {
 		t.Fatalf("licence expression = %q", got)
+	}
+	if document.Components[0].Licences[0].Licence != nil {
+		t.Fatal("licence expression must not include a license object")
 	}
 }
