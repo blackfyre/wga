@@ -67,7 +67,7 @@ func TestPostcardDeliveryLifecycleMigrationsRollBackAndReapply(t *testing.T) {
 		t.Fatalf("run migrations: %v", err)
 	}
 	runner := core.NewMigrationsRunner(app, core.AppMigrations)
-	if _, err := runner.Down(2); err != nil {
+	if _, err := runner.Down(3); err != nil {
 		t.Fatalf("roll back postcard delivery migrations: %v", err)
 	}
 	for _, collection := range []string{"postcard_deliveries", "postcard_delivery_attempts"} {
@@ -89,6 +89,55 @@ func TestPostcardDeliveryLifecycleMigrationsRollBackAndReapply(t *testing.T) {
 	}
 	if _, err := app.FindCollectionByNameOrId("postcard_delivery_attempts"); err != nil {
 		t.Fatalf("find attempts collection after reapply: %v", err)
+	}
+}
+
+func TestContributorRefreshMigrationCreatesAdditiveSchema(t *testing.T) {
+	configureMigrations(t)
+	app := newMigrationTestApp(t, t.TempDir())
+	t.Cleanup(func() {
+		if err := app.ResetBootstrapState(); err != nil {
+			t.Error(err)
+		}
+	})
+	if err := app.RunAllMigrations(); err != nil {
+		t.Fatalf("run migrations: %v", err)
+	}
+
+	snapshots, err := app.FindCollectionByNameOrId("contributor_snapshots")
+	if err != nil {
+		t.Fatalf("find contributor snapshots: %v", err)
+	}
+	for _, field := range []string{"key", "payload"} {
+		if snapshots.Fields.GetByName(field) == nil {
+			t.Fatalf("missing snapshot field %q", field)
+		}
+	}
+
+	executions, err := app.FindCollectionByNameOrId("contributor_refresh_executions")
+	if err != nil {
+		t.Fatalf("find contributor refresh executions: %v", err)
+	}
+	for _, field := range []string{"run_id", "attempt", "status", "completed_at", "error_class"} {
+		if executions.Fields.GetByName(field) == nil {
+			t.Fatalf("missing execution field %q", field)
+		}
+	}
+	if !hasIndex(executions.Indexes, "pbx_contributor_refresh_active") {
+		t.Fatal("expected contributor refresh active index")
+	}
+
+	runner := core.NewMigrationsRunner(app, core.AppMigrations)
+	if _, err := runner.Down(1); err != nil {
+		t.Fatalf("roll back contributor migration: %v", err)
+	}
+	for _, collection := range []string{"contributor_snapshots", "contributor_refresh_executions"} {
+		if _, err := app.FindCollectionByNameOrId(collection); !errors.Is(err, sql.ErrNoRows) {
+			t.Fatalf("expected no %s collection after rollback, got %v", collection, err)
+		}
+	}
+	if _, err := runner.Up(); err != nil {
+		t.Fatalf("reapply contributor migration: %v", err)
 	}
 }
 

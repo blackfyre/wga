@@ -2,8 +2,8 @@ package postcards
 
 import (
 	"errors"
-	"net/http"
 
+	"github.com/blackfyre/wga/internal/antiabuse"
 	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/errs"
 	"github.com/blackfyre/wga/internal/logging"
@@ -14,7 +14,7 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
-func savePostcard(app core.App, c *core.RequestEvent, p *bluemonday.Policy, captcha config.Captcha) error {
+func savePostcard(app core.App, c *core.RequestEvent, p *bluemonday.Policy, captcha config.Captcha, verifier antiabuse.Verifier) error {
 	logger := logging.RequestLogger(app, c)
 	postData := struct {
 		SenderName           string   `json:"sender_name" form:"sender_name" query:"sender_name" validate:"required"`
@@ -61,7 +61,7 @@ func savePostcard(app core.App, c *core.RequestEvent, p *bluemonday.Policy, capt
 	}
 
 	if captcha.Verify() {
-		verified, err := verifyRecaptchaToken(c.Request.Context(), http.DefaultClient, captcha.Secret(), postData.RecaptchaToken, c.RealIP())
+		verified, err := verifier.Verify(c.Request.Context(), postData.RecaptchaToken, c.RealIP())
 		if err != nil {
 			logger.Error("Postcard captcha verification failed",
 				"event", "postcard.captcha.failed",

@@ -1,16 +1,24 @@
 package contributors
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 	"testing"
 
+	contributorworkflow "github.com/blackfyre/wga/internal/contributors"
 	"github.com/blackfyre/wga/internal/testutils"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tests"
 )
+
+type readerFunc func(context.Context) (contributorworkflow.Snapshot, error)
+
+func (f readerFunc) Current(ctx context.Context) (contributorworkflow.Snapshot, error) {
+	return f(ctx)
+}
 
 func TestContributorServerErrorIsClientSafe(t *testing.T) {
 	const sensitiveDetail = "upstream credential token=secret-value"
@@ -53,6 +61,36 @@ func TestContributorServerErrorIsClientSafe(t *testing.T) {
 			}
 			if strings.Contains(fmt.Sprint(testutils.LogData(captured())), sensitiveDetail) {
 				t.Fatalf("captured log contains %q", sensitiveDetail)
+			}
+		},
+	}
+
+	scenario.Test(t)
+}
+
+func TestContributorRouteReadsOnlyFromItsReader(t *testing.T) {
+	scenario := tests.ApiScenario{
+		Name:            "contributors route renders stored snapshot",
+		Method:          http.MethodGet,
+		URL:             "/contributors",
+		ExpectedStatus:  http.StatusOK,
+		ExpectedContent: []string{"@stored-contributor"},
+		TestAppFactory: func(t testing.TB) *tests.TestApp {
+			app, err := tests.NewTestApp()
+			if err != nil {
+				t.Fatalf("create test app: %v", err)
+			}
+			RegisterHandlers(app, readerFunc(func(context.Context) (contributorworkflow.Snapshot, error) {
+				return contributorworkflow.Snapshot{
+					Contributors: []contributorworkflow.Contributor{{Login: "stored-contributor", Contributions: 1}},
+					Source:       contributorworkflow.SnapshotSourceCache,
+				}, nil
+			}))
+			return app
+		},
+		AfterTestFunc: func(t testing.TB, _ *tests.TestApp, response *http.Response) {
+			if got := response.Header.Get("X-WGA-Contributors-Source"); got != "cache" {
+				t.Fatalf("source header = %q, want cache", got)
 			}
 		},
 	}

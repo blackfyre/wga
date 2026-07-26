@@ -2,10 +2,14 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"os"
 	"strings"
+	"time"
 
+	"github.com/blackfyre/wga/internal/antiabuse"
 	"github.com/blackfyre/wga/internal/config"
+	"github.com/blackfyre/wga/internal/contributors"
 	"github.com/blackfyre/wga/internal/crontab"
 	"github.com/blackfyre/wga/internal/handlers"
 	"github.com/blackfyre/wga/internal/hooks"
@@ -61,8 +65,14 @@ func main() {
 	if capability == commandNeedsServer {
 		utils.ConfigurePublicURL(serverConfig.PublicURL)
 		logging.RegisterRequestIDMiddleware(app)
-		handlers.RegisterHandlers(app, serverConfig.Captcha)
-		crontab.RegisterCronJobs(app, serverConfig.Postcards, serverConfig.Sitemap())
+		contributorStore, err := contributors.NewStore(app)
+		if err != nil {
+			log.Fatal(err)
+		}
+		contributorProvider := contributors.NewGitHubProvider(&http.Client{Timeout: 10 * time.Second})
+		captchaVerifier := antiabuse.NewRecaptchaVerifier(&http.Client{Timeout: 5 * time.Second}, serverConfig.Captcha.Secret())
+		handlers.RegisterHandlers(app, serverConfig.Captcha, contributorStore, captchaVerifier)
+		crontab.RegisterCronJobs(app, serverConfig.Postcards, serverConfig.Sitemap(), contributors.NewRefreshJob(app, contributorProvider, contributorStore))
 	}
 
 	hooks.RegisterHooks(app)
