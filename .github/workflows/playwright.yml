@@ -8,6 +8,8 @@ on:
       - "**/*.ts"
       - "**/*.templ"
       - "**/*.pcss"
+      - "internal/licences/**"
+      - "internal/assets/views/open-source-licences.html"
       - ".github/workflows/playwright.yml"
       - "package.json"
       - "bun.lock"
@@ -23,6 +25,8 @@ on:
       - "**/*.ts"
       - "**/*.templ"
       - "**/*.pcss"
+      - "internal/licences/**"
+      - "internal/assets/views/open-source-licences.html"
       - ".github/workflows/playwright.yml"
       - "package.json"
       - "bun.lock"
@@ -60,6 +64,8 @@ jobs:
         run: bun run build
       - name: Compile templates
         run: go tool templ generate
+      - name: Generate licence notices and SBOM
+        run: go run ./cmd/generate-licences
       - name: Install go modules
         run: go mod tidy
       - name: Run go vet

@@ -1,0 +1,11 @@
+package pages
+
+import (
+	"github.com/blackfyre/wga/internal/assets/templ/layouts"
+)
+
+templ LicencesPage(content string) {
+	@layouts.LayoutMain() {
+		@templ.Raw(content)
+	}
+}
