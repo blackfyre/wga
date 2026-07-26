@@ -26,4 +26,4 @@ Generate and verify the licence notices and CycloneDX SBOM for dependencies actu
 
 - [✓] Add focused generator and route tests. **Verification:** tests cover discovery validation, deterministic output, CycloneDX structure, and the public route.
 - [✓] Run focused and full quality checks. **Verification:** required commands complete successfully.
-- [ ] Commit and open a pull request. **Verification:** the PR targets `main`, references issue 187, and contains only this work.
+- [✓] Commit and open a pull request. **Verification:** PR #191 targets `main`, references issue 187, and contains only this work.
