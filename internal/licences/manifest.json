@@ -980,7 +980,7 @@
         "browser"
       ],
       "dependencies": [
-        "dompurify"
+        "pkg:npm/dompurify@3.2.7"
       ],
       "licence": {
         "id": "MIT",

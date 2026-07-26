@@ -295,16 +295,19 @@ func discoverBrowserComponents(metafilePath string) ([]component, error) {
 	if err != nil {
 		return nil, err
 	}
+	includedBundledComponents := []vendoredComponent{}
 	for _, bundled := range bundledComponents {
-		if _, exists := packageNames[bundled.Component.Name]; exists {
-			continue
-		}
 		if edges[bundled.Parent] == nil {
 			edges[bundled.Parent] = map[string]struct{}{}
 		}
-		edges[bundled.Parent][bundled.Component.Name] = struct{}{}
+		if resolved, exists := lock[bundled.Component.Name]; exists && resolved.version == bundled.Component.Version {
+			edges[bundled.Parent][bundled.Component.Name] = struct{}{}
+			continue
+		}
+		edges[bundled.Parent][bundled.Component.PURL] = struct{}{}
+		includedBundledComponents = append(includedBundledComponents, bundled)
 	}
-	components := make([]component, 0, len(packageNames)+len(bundledComponents))
+	components := make([]component, 0, len(packageNames)+len(includedBundledComponents))
 	for name := range packageNames {
 		resolved, ok := lock[name]
 		if !ok {
@@ -323,24 +326,20 @@ func discoverBrowserComponents(metafilePath string) ([]component, error) {
 			Direct:         contains(directPackages, name),
 		})
 	}
-	for _, bundled := range bundledComponents {
-		if _, exists := packageNames[bundled.Component.Name]; !exists {
-			components = append(components, bundled.Component)
-		}
+	for _, bundled := range includedBundledComponents {
+		components = append(components, bundled.Component)
 	}
 	sortComponents(components)
 	return components, nil
 }
 
 type vendoredBrowserPackage struct {
-	ProductPattern       *regexp.Regexp
-	LicenceSourcePattern *regexp.Regexp
+	ProductPattern *regexp.Regexp
 }
 
 var vendoredBrowserPackages = []vendoredBrowserPackage{
 	{
-		ProductPattern:       regexp.MustCompile(`(DOMPurify) ([0-9]+\.[0-9]+\.[0-9]+)`),
-		LicenceSourcePattern: regexp.MustCompile(`(?:https://)?github\.com/cure53/DOMPurify/blob/([0-9]+\.[0-9]+\.[0-9]+)/LICENSE`),
+		ProductPattern: regexp.MustCompile(`(DOMPurify) ([0-9]+\.[0-9]+\.[0-9]+)`),
 	},
 }
 
@@ -367,14 +366,11 @@ func discoverVendoredBrowserPackages(inputs map[string]browserInput, emittedInpu
 			}
 			name := strings.ToLower(string(match[1]))
 			version := string(match[2])
-			licenceSource := bundled.LicenceSourcePattern.FindSubmatch(content)
-			if len(licenceSource) != 2 || string(licenceSource[1]) != version {
+			licenceSource := "https://github.com/cure53/DOMPurify/blob/" + version + "/LICENSE"
+			if !bytes.Contains(content, []byte(strings.TrimPrefix(licenceSource, "https://"))) {
 				continue
 			}
-			evidenceURL := string(licenceSource[0])
-			if !strings.HasPrefix(evidenceURL, "https://") {
-				evidenceURL = "https://" + evidenceURL
-			}
+			evidenceURL := licenceSource
 			licenceTextURL := strings.Replace(evidenceURL, "https://github.com/cure53/DOMPurify/blob/", "https://raw.githubusercontent.com/cure53/DOMPurify/", 1)
 			components = append(components, vendoredComponent{
 				Parent: parent,
@@ -622,6 +618,7 @@ func writeManifest(path string, manifest manifest) error {
 
 func validateManifest(manifest manifest, discovered []component) error {
 	recorded := map[string]component{}
+	recordedIdentity := map[string]struct{}{}
 	for _, component := range manifest.Components {
 		key := componentKey(component)
 		if _, exists := recorded[key]; exists {
@@ -631,11 +628,15 @@ func validateManifest(manifest manifest, discovered []component) error {
 			return fmt.Errorf("manifest has incomplete licence material for %s", key)
 		}
 		recorded[key] = component
+		recordedIdentity[componentIdentity(component)] = struct{}{}
 	}
 	for _, component := range discovered {
 		key := componentKey(component)
 		recordedComponent, ok := recorded[key]
 		if !ok {
+			if _, exists := recordedIdentity[componentIdentity(component)]; exists {
+				return fmt.Errorf("manifest record for %s is stale", componentIdentity(component))
+			}
 			return fmt.Errorf("shipped component %s is missing from the manifest", key)
 		}
 		if recordedComponent.Version != component.Version || recordedComponent.SourceURL != component.SourceURL || recordedComponent.PURL != component.PURL || recordedComponent.Integrity != component.Integrity || !slices.Equal(recordedComponent.Targets, component.Targets) || !slices.Equal(recordedComponent.Dependencies, component.Dependencies) {
@@ -778,7 +779,7 @@ func newSBOM(applicationVersion string, components []component) sbom {
 		dependsOn := make([]string, 0, len(component.Dependencies))
 		for _, dependency := range component.Dependencies {
 			for _, candidate := range components {
-				if candidate.Name == dependency && candidate.Ecosystem == component.Ecosystem {
+				if candidate.PURL == dependency || (candidate.Name == dependency && candidate.Ecosystem == component.Ecosystem) {
 					dependsOn = append(dependsOn, bomRef(candidate))
 				}
 			}
@@ -833,6 +834,10 @@ func writeFile(path string, content []byte) error {
 }
 
 func componentKey(component component) string {
+	return component.Ecosystem + ":" + component.Name + "@" + component.Version
+}
+
+func componentIdentity(component component) string {
 	return component.Ecosystem + ":" + component.Name
 }
 

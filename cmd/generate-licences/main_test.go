@@ -229,3 +229,44 @@ func TestNewSBOMUsesLicenceExpression(t *testing.T) {
 		t.Fatal("licence expression must not include a license object")
 	}
 }
+
+func TestNewSBOMLinksVendoredPackageByPURL(t *testing.T) {
+	components := []component{
+		{
+			Ecosystem: "npm",
+			Name:      "dompurify",
+			Version:   "3.2.6",
+			PURL:      "pkg:npm/dompurify@3.2.6",
+			Targets:   []string{"browser"},
+			Licence:   licence{ID: "Apache-2.0"},
+		},
+		{
+			Ecosystem: "npm",
+			Name:      "dompurify",
+			Version:   "3.2.7",
+			PURL:      "pkg:npm/dompurify@3.2.7",
+			Targets:   []string{"browser"},
+			Licence:   licence{ID: "Apache-2.0"},
+		},
+		{
+			Ecosystem:    "npm",
+			Name:         "trix",
+			Version:      "2.1.16",
+			PURL:         "pkg:npm/trix@2.1.16",
+			Targets:      []string{"browser"},
+			Dependencies: []string{"pkg:npm/dompurify@3.2.7"},
+			Licence:      licence{ID: "MIT"},
+		},
+	}
+
+	document := newSBOM("1.0.0", components)
+	for _, dependency := range document.Dependencies {
+		if dependency.Ref == "pkg:npm/trix@2.1.16" {
+			if len(dependency.DependsOn) != 1 || dependency.DependsOn[0] != "pkg:npm/dompurify@3.2.7" {
+				t.Fatalf("Trix dependencies = %v", dependency.DependsOn)
+			}
+			return
+		}
+	}
+	t.Fatal("missing Trix dependency record")
+}
