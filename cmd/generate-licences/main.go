@@ -37,13 +37,22 @@ type component struct {
 	Dependencies   []string `json:"dependencies"`
 	Licence        licence  `json:"licence"`
 	SourceEvidence string   `json:"source_evidence"`
+	Direct         bool     `json:"-"`
 }
 
 type licence struct {
-	ID       string `json:"id"`
-	Text     string `json:"text"`
-	Notice   string `json:"notice"`
-	Handling string `json:"handling"`
+	ID         string `json:"id,omitempty"`
+	Expression string `json:"expression,omitempty"`
+	Text       string `json:"text"`
+	Notice     string `json:"notice"`
+	Handling   string `json:"handling"`
+}
+
+func (licence licence) Label() string {
+	if licence.Expression != "" {
+		return licence.Expression
+	}
+	return licence.ID
 }
 
 type goModule struct {
@@ -117,7 +126,7 @@ func main() {
 	if err := writeNotices(noticesPath, loaded.Components); err != nil {
 		fatal(err)
 	}
-	if err := writeSBOM(sbomPath, applicationVersion, loaded.Components); err != nil {
+	if err := writeSBOM(sbomPath, applicationVersion, mergeDiscovery(loaded.Components, discovered)); err != nil {
 		fatal(err)
 	}
 }
@@ -150,6 +159,7 @@ func discoverGoComponents(packagePath string) ([]component, error) {
 
 	decoder := json.NewDecoder(bytes.NewReader(output))
 	packages := map[string]goPackage{}
+	applicationPackages := map[string]goPackage{}
 	modules := map[string]goModule{}
 	for {
 		var pkg goPackage
@@ -160,7 +170,11 @@ func discoverGoComponents(packagePath string) ([]component, error) {
 		if err != nil {
 			return nil, fmt.Errorf("decode go list output: %w", err)
 		}
-		if pkg.Standard || pkg.Module == nil || pkg.Module.Path == applicationModule {
+		if pkg.Standard || pkg.Module == nil {
+			continue
+		}
+		if pkg.Module.Path == applicationModule {
+			applicationPackages[pkg.ImportPath] = pkg
 			continue
 		}
 		packages[pkg.ImportPath] = pkg
@@ -168,6 +182,7 @@ func discoverGoComponents(packagePath string) ([]component, error) {
 	}
 
 	edges := map[string]map[string]struct{}{}
+	directModules := map[string]struct{}{}
 	for _, pkg := range packages {
 		for _, imported := range pkg.Imports {
 			dependency, ok := packages[imported]
@@ -178,6 +193,13 @@ func discoverGoComponents(packagePath string) ([]component, error) {
 				edges[pkg.Module.Path] = map[string]struct{}{}
 			}
 			edges[pkg.Module.Path][dependency.Module.Path] = struct{}{}
+		}
+	}
+	for _, pkg := range applicationPackages {
+		for _, imported := range pkg.Imports {
+			if dependency, ok := packages[imported]; ok {
+				directModules[dependency.Module.Path] = struct{}{}
+			}
 		}
 	}
 
@@ -193,6 +215,7 @@ func discoverGoComponents(packagePath string) ([]component, error) {
 			Targets:        []string{"binary"},
 			Dependencies:   sortedSet(edges[module.Path]),
 			SourceEvidence: "https://pkg.go.dev/" + module.Path + "@" + module.Version,
+			Direct:         contains(directModules, module.Path),
 		})
 	}
 	sortComponents(components)
@@ -210,8 +233,11 @@ func discoverBrowserComponents(metafilePath string) ([]component, error) {
 	}
 
 	packageNames := map[string]struct{}{}
+	directPackages := map[string]struct{}{}
+	emittedInputs := map[string]struct{}{}
 	for _, output := range metafile.Outputs {
 		for input := range output.Inputs {
+			emittedInputs[input] = struct{}{}
 			if name := nodeModuleName(input); name != "" {
 				packageNames[name] = struct{}{}
 			}
@@ -223,6 +249,7 @@ func discoverBrowserComponents(metafilePath string) ([]component, error) {
 	}
 	for name := range cssPackages {
 		packageNames[name] = struct{}{}
+		directPackages[name] = struct{}{}
 	}
 	lock, err := readBunLock("bun.lock")
 	if err != nil {
@@ -232,6 +259,17 @@ func discoverBrowserComponents(metafilePath string) ([]component, error) {
 	edges := map[string]map[string]struct{}{}
 	for inputPath, input := range metafile.Inputs {
 		from := nodeModuleName(inputPath)
+		if from == "" {
+			for _, imported := range input.Imports {
+				to := nodeModuleName(imported.Path)
+				if to == "" {
+					to = packageNameFromSpecifier(imported.Path)
+				}
+				if _, ok := packageNames[to]; ok {
+					directPackages[to] = struct{}{}
+				}
+			}
+		}
 		if _, ok := packageNames[from]; !ok {
 			continue
 		}
@@ -251,7 +289,7 @@ func discoverBrowserComponents(metafilePath string) ([]component, error) {
 		}
 	}
 
-	components := make([]component, 0, len(packageNames))
+	components := make([]component, 0, len(packageNames)+len(vendoredBrowserPackages))
 	for name := range packageNames {
 		resolved, ok := lock[name]
 		if !ok {
@@ -267,10 +305,55 @@ func discoverBrowserComponents(metafilePath string) ([]component, error) {
 			Targets:        []string{"browser"},
 			Dependencies:   sortedSet(edges[name]),
 			SourceEvidence: "https://www.npmjs.com/package/" + name + "/v/" + resolved.version,
+			Direct:         contains(directPackages, name),
 		})
+	}
+	for _, bundled := range discoverVendoredBrowserPackages(metafile.Inputs, emittedInputs) {
+		if _, exists := packageNames[bundled.Name]; exists {
+			continue
+		}
+		components = append(components, bundled)
 	}
 	sortComponents(components)
 	return components, nil
+}
+
+type vendoredBrowserPackage struct {
+	Parent    string
+	Signature string
+	Component component
+}
+
+var vendoredBrowserPackages = []vendoredBrowserPackage{
+	{
+		Parent:    "trix",
+		Signature: "DOMPurify",
+		Component: component{
+			Ecosystem:      "npm",
+			Name:           "dompurify",
+			Version:        "3.2.7",
+			SourceURL:      "https://www.npmjs.com/package/dompurify/v/3.2.7",
+			PURL:           "pkg:npm/dompurify@3.2.7",
+			Targets:        []string{"browser"},
+			SourceEvidence: "https://www.npmjs.com/package/dompurify/v/3.2.7",
+		},
+	},
+}
+
+func discoverVendoredBrowserPackages(inputs map[string]browserInput, emittedInputs map[string]struct{}) []component {
+	components := []component{}
+	for _, bundled := range vendoredBrowserPackages {
+		for inputPath := range inputs {
+			if _, emitted := emittedInputs[inputPath]; !emitted || nodeModuleName(inputPath) != bundled.Parent {
+				continue
+			}
+			content, err := os.ReadFile(inputPath)
+			if err == nil && bytes.Contains(content, []byte(bundled.Signature)) {
+				components = append(components, bundled.Component)
+			}
+		}
+	}
+	return components
 }
 
 var cssPackagePattern = regexp.MustCompile(`(?:@import\s+(?:url\()?|@plugin\s+)"?([^"'\s;)]+)`)
@@ -362,6 +445,11 @@ func packageNameFromSpecifier(specifier string) string {
 	return strings.Split(specifier, "/")[0]
 }
 
+func contains(values map[string]struct{}, value string) bool {
+	_, ok := values[value]
+	return ok
+}
+
 func bootstrapManifest(discovered []component) manifest {
 	components := make([]component, len(discovered))
 	for index, component := range discovered {
@@ -371,10 +459,11 @@ func bootstrapManifest(discovered []component) manifest {
 		}
 		notice, _ := readNotice(component)
 		component.Licence = licence{
-			ID:       licenceID(licenceText),
-			Text:     licenceText,
-			Notice:   notice,
-			Handling: "Include this licence text and any supplied NOTICE material in distributed notices.",
+			ID:         licenceID(licenceText),
+			Expression: licenceExpression(licenceText),
+			Text:       licenceText,
+			Notice:     notice,
+			Handling:   "Include this licence text and any supplied NOTICE material in distributed notices.",
 		}
 		components[index] = component
 	}
@@ -418,6 +507,9 @@ func componentRoot(component component) string {
 }
 
 func licenceID(text string) string {
+	if licenceExpression(text) != "" {
+		return ""
+	}
 	lower := strings.ToLower(text)
 	switch {
 	case strings.Contains(lower, "apache license") && strings.Contains(lower, "version 2.0"):
@@ -437,6 +529,14 @@ func licenceID(text string) string {
 	default:
 		return "NOASSERTION"
 	}
+}
+
+func licenceExpression(text string) string {
+	lower := strings.ToLower(text)
+	if strings.Contains(lower, "redistribution and use in source and binary forms") && strings.Contains(lower, "apache license") && strings.Contains(lower, "permission is hereby granted, free of charge") {
+		return "BSD-3-Clause AND Apache-2.0 AND MIT"
+	}
+	return ""
 }
 
 func readManifest(path string) (manifest, error) {
@@ -470,7 +570,7 @@ func validateManifest(manifest manifest, discovered []component) error {
 		if _, exists := recorded[key]; exists {
 			return fmt.Errorf("manifest repeats %s", key)
 		}
-		if component.Licence.ID == "" || component.Licence.ID == "NOASSERTION" || strings.TrimSpace(component.Licence.Text) == "" || strings.TrimSpace(component.Licence.Handling) == "" || component.SourceEvidence == "" {
+		if (component.Licence.ID == "" && component.Licence.Expression == "") || component.Licence.ID == "NOASSERTION" || strings.TrimSpace(component.Licence.Text) == "" || strings.TrimSpace(component.Licence.Handling) == "" || component.SourceEvidence == "" {
 			return fmt.Errorf("manifest has incomplete licence material for %s", key)
 		}
 		recorded[key] = component
@@ -491,14 +591,25 @@ func validateManifest(manifest manifest, discovered []component) error {
 	return nil
 }
 
+func mergeDiscovery(components []component, discovered []component) []component {
+	direct := map[string]bool{}
+	for _, component := range discovered {
+		direct[componentKey(component)] = component.Direct
+	}
+	merged := append([]component(nil), components...)
+	for index := range merged {
+		merged[index].Direct = direct[componentKey(merged[index])]
+	}
+	return merged
+}
+
 func writeNotices(path string, components []component) error {
-	const noticesTemplate = `<!-- Code generated by cmd/generate-licences; DO NOT EDIT. -->
-<section class="container mx-auto px-4 py-8">
+	const noticesTemplate = `<section class="container mx-auto px-4 py-8">
   <h1>Open-source licences</h1>
   <p>This application includes the third-party components listed below.</p>
   {{range .}}<article class="my-8" id="{{.Ecosystem}}-{{.Name}}-{{.Version}}">
     <h2>{{.Name}} {{.Version}}</h2>
-    <dl><dt>Licence</dt><dd>{{.Licence.ID}}</dd><dt>Source</dt><dd><a href="{{.SourceURL}}">{{.SourceURL}}</a></dd></dl>
+    <dl><dt>Licence</dt><dd>{{.Licence.Label}}</dd><dt>Source</dt><dd><a href="{{.SourceURL}}">{{.SourceURL}}</a></dd></dl>
     <h3>Licence text</h3><pre class="whitespace-pre-wrap">{{.Licence.Text}}</pre>
     {{if .Licence.Notice}}<h3>NOTICE</h3><pre class="whitespace-pre-wrap">{{.Licence.Notice}}</pre>{{end}}
   </article>{{end}}
@@ -509,6 +620,7 @@ func writeNotices(path string, components []component) error {
 		return err
 	}
 	var output bytes.Buffer
+	output.WriteString("<!-- Code generated by cmd/generate-licences; DO NOT EDIT. -->\n")
 	if err := template.Execute(&output, components); err != nil {
 		return fmt.Errorf("render notices: %w", err)
 	}
@@ -542,7 +654,8 @@ type sbomComponent struct {
 
 type sbomLicence struct {
 	Licence struct {
-		ID string `json:"id"`
+		ID         string `json:"id,omitempty"`
+		Expression string `json:"expression,omitempty"`
 	} `json:"license"`
 }
 
@@ -582,9 +695,12 @@ func newSBOM(applicationVersion string, components []component) sbom {
 	applicationDependencies := make([]string, 0, len(components))
 	for _, component := range components {
 		ref := bomRef(component)
-		applicationDependencies = append(applicationDependencies, ref)
+		if component.Direct {
+			applicationDependencies = append(applicationDependencies, ref)
+		}
 		licence := sbomLicence{}
 		licence.Licence.ID = component.Licence.ID
+		licence.Licence.Expression = component.Licence.Expression
 		sbomComponent := sbomComponent{
 			Type:         "library",
 			BomRef:       ref,

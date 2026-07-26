@@ -79,6 +79,11 @@ jobs:
           name: wga-binary
           path: out/wga
           retention-days: 1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wga-sbom
+          path: dist/wga.cdx.json
+          retention-days: 1
 
   build:
     needs: backend-quality-gates

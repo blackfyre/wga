@@ -47,3 +47,11 @@ When a feature stores personal data, define its purpose and retention outcome. R
 ## Delivery discipline
 
 Use Conventional Commit types for commits and pull-request titles. Keep documentation aligned with the executable configuration and CI workflow; task plans, review notes, and historical summaries are not a substitute for current guidance.
+
+## Licence notices and SBOM
+
+`internal/licences/manifest.json` is the reviewed record of every third-party component shipped by WGA. It contains source evidence, licence text, NOTICE material, integrity data, distribution target, and dependency relationships for the reviewed component version.
+
+`cmd/generate-licences` discovers Go modules with `go list -deps -json ./cmd/wga`, JavaScript packages from `dist/browser-metafile.json`, browser-CSS imports, and declared third-party code bundled inside package artefacts. It validates discovery against the manifest, then writes the embedded notice page at `internal/assets/views/open-source-licences.html` and the release artefact at `dist/wga.cdx.json`.
+
+Run `go run ./cmd/generate-licences` after `bun run build` and `templ generate`. When a dependency changes, run `go run ./cmd/generate-licences --bootstrap`, then review every changed SPDX identifier, full licence text, and required NOTICE or attribution material before committing the manifest and notice page. Do not edit generated HTML or SBOM output directly. `mise run app:build` and GoReleaser run the generator automatically; release archives include `wga.cdx.json` alongside the binary.

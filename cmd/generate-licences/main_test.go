@@ -90,6 +90,23 @@ func TestDiscoverBrowserComponentsReadsOnlyEmittedPackages(t *testing.T) {
 	}
 }
 
+func TestDiscoverVendoredBrowserPackages(t *testing.T) {
+	inputPath := t.TempDir() + "/node_modules/trix/dist/trix.esm.min.js"
+	if err := os.MkdirAll(strings.TrimSuffix(inputPath, "/trix.esm.min.js"), 0o755); err != nil {
+		t.Fatalf("create vendored fixture directory: %v", err)
+	}
+	if err := os.WriteFile(inputPath, []byte("DOMPurify"), 0o644); err != nil {
+		t.Fatalf("write vendored fixture: %v", err)
+	}
+	components := discoverVendoredBrowserPackages(
+		map[string]browserInput{inputPath: {}},
+		map[string]struct{}{inputPath: {}},
+	)
+	if len(components) != 1 || components[0].Name != "dompurify" || components[0].Version != "3.2.7" {
+		t.Fatalf("vendored components = %#v, want DOMPurify 3.2.7", components)
+	}
+}
+
 func TestCommittedNoticesMatchManifest(t *testing.T) {
 	workingDirectory, err := os.Getwd()
 	if err != nil {
@@ -146,6 +163,7 @@ func TestNewSBOMContainsComponentMetadataAndDependencyGraph(t *testing.T) {
 			Targets:      []string{"browser"},
 			Dependencies: []string{"dependency"},
 			Licence:      licence{ID: "Apache-2.0"},
+			Direct:       true,
 		},
 	}
 
@@ -162,7 +180,24 @@ func TestNewSBOMContainsComponentMetadataAndDependencyGraph(t *testing.T) {
 	if got := document.Dependencies[2].DependsOn; len(got) != 1 || got[0] != "pkg:npm/dependency@1.0.0" {
 		t.Fatalf("root dependencies = %v", got)
 	}
+	if got := document.Dependencies[0].DependsOn; len(got) != 1 || got[0] != "pkg:npm/root@1.0.0" {
+		t.Fatalf("application dependencies = %v, want direct root dependency", got)
+	}
 	if got := document.Components[0].Hashes[0].Content; got != "61" {
 		t.Fatalf("decoded hash = %q, want 61", got)
+	}
+}
+
+func TestNewSBOMUsesLicenceExpression(t *testing.T) {
+	document := newSBOM("1.0.0", []component{{
+		Ecosystem: "golang",
+		Name:      "example.test/component",
+		Version:   "1.0.0",
+		PURL:      "pkg:golang/example.test/component@1.0.0",
+		Targets:   []string{"binary"},
+		Licence:   licence{Expression: "BSD-3-Clause AND Apache-2.0 AND MIT"},
+	}})
+	if got := document.Components[0].Licences[0].Licence.Expression; got != "BSD-3-Clause AND Apache-2.0 AND MIT" {
+		t.Fatalf("licence expression = %q", got)
 	}
 }
