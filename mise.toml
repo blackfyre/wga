@@ -50,10 +50,12 @@ description = "Produce the dist binary with fresh assets and dependencies."
 run = [
   "mkdir -p dist",
   "rm -rf dist/wga",
-  "bun install",
-  "bun run build",
-  "mise run app:tidy",
-  "go build -v -o dist/wga ./cmd/wga",
+	"bun install",
+	"bun run build",
+	"mise run app:generate-templates",
+	"go run ./cmd/generate-licences",
+	"mise run app:tidy-modules",
+	"go build -v -o dist/wga ./cmd/wga",
 ]
 
 [tasks."app:run"]

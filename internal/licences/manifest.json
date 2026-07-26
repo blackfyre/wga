@@ -1,0 +1,1032 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "ecosystem": "golang",
+      "name": "github.com/a-h/templ",
+      "version": "v0.3.1020",
+      "source_url": "https://pkg.go.dev/github.com/a-h/templ@v0.3.1020",
+      "purl": "pkg:golang/github.com/a-h/templ@v0.3.1020",
+      "integrity": "h1:ypAT/L5ySWEnZ6Zft/5yfoWXYYkhFNvEFOeeqecg4tw=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [],
+      "licence": {
+        "id": "MIT",
+        "text": "MIT License\n\nCopyright (c) 2021 Adrian Hesketh\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/github.com/a-h/templ@v0.3.1020"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "github.com/asaskevich/govalidator",
+      "version": "v0.0.0-20230301143203-a9d515a09cc2",
+      "source_url": "https://pkg.go.dev/github.com/asaskevich/govalidator@v0.0.0-20230301143203-a9d515a09cc2",
+      "purl": "pkg:golang/github.com/asaskevich/govalidator@v0.0.0-20230301143203-a9d515a09cc2",
+      "integrity": "h1:DklsrG3dyBCFEj5IhUbnKptjxatkF07cF2ak3yi77so=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [],
+      "licence": {
+        "id": "MIT",
+        "text": "The MIT License (MIT)\n\nCopyright (c) 2014-2020 Alex Saskevich\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/github.com/asaskevich/govalidator@v0.0.0-20230301143203-a9d515a09cc2"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "github.com/aymerick/douceur",
+      "version": "v0.2.0",
+      "source_url": "https://pkg.go.dev/github.com/aymerick/douceur@v0.2.0",
+      "purl": "pkg:golang/github.com/aymerick/douceur@v0.2.0",
+      "integrity": "h1:Mv+mAeH1Q+n9Fr+oyamOlAkUNPWPlA8PPGR0QAaYuPk=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [
+        "github.com/gorilla/css"
+      ],
+      "licence": {
+        "id": "MIT",
+        "text": "The MIT License (MIT)\n\nCopyright (c) 2015 Aymerick JEHANNE\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/github.com/aymerick/douceur@v0.2.0"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "github.com/disintegration/imaging",
+      "version": "v1.6.2",
+      "source_url": "https://pkg.go.dev/github.com/disintegration/imaging@v1.6.2",
+      "purl": "pkg:golang/github.com/disintegration/imaging@v1.6.2",
+      "integrity": "h1:w1LecBlG2Lnp8B3jk5zSuNqd7b4DXhcjwek1ei82L+c=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [
+        "golang.org/x/image"
+      ],
+      "licence": {
+        "id": "MIT",
+        "text": "The MIT License (MIT)\n\nCopyright (c) 2012 Grigory Dryapak\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/github.com/disintegration/imaging@v1.6.2"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "github.com/domodwyer/mailyak/v3",
+      "version": "v3.6.2",
+      "source_url": "https://pkg.go.dev/github.com/domodwyer/mailyak/v3@v3.6.2",
+      "purl": "pkg:golang/github.com/domodwyer/mailyak/v3@v3.6.2",
+      "integrity": "h1:x3tGMsyFhTCaxp6ycgR0FE/bu5QiNp+hetUuCOBXMn8=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [],
+      "licence": {
+        "id": "MIT",
+        "text": "The MIT License (MIT)\n\nCopyright (c) 2016 Dom Dwyer\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/github.com/domodwyer/mailyak/v3@v3.6.2"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "github.com/dustin/go-humanize",
+      "version": "v1.0.1",
+      "source_url": "https://pkg.go.dev/github.com/dustin/go-humanize@v1.0.1",
+      "purl": "pkg:golang/github.com/dustin/go-humanize@v1.0.1",
+      "integrity": "h1:GzkhY7T5VNhEkwH0PVJgjz+fX1rhBrR7pRT3mDkpeCY=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [],
+      "licence": {
+        "id": "MIT",
+        "text": "Copyright (c) 2005-2008  Dustin Sallings \u003cdustin@spy.net\u003e\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n\n\u003chttp://www.opensource.org/licenses/mit-license.php\u003e\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/github.com/dustin/go-humanize@v1.0.1"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "github.com/fatih/color",
+      "version": "v1.19.0",
+      "source_url": "https://pkg.go.dev/github.com/fatih/color@v1.19.0",
+      "purl": "pkg:golang/github.com/fatih/color@v1.19.0",
+      "integrity": "h1:Zp3PiM21/9Ld6FzSKyL5c/BULoe/ONr9KlbYVOfG8+w=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [
+        "github.com/mattn/go-colorable",
+        "github.com/mattn/go-isatty"
+      ],
+      "licence": {
+        "id": "MIT",
+        "text": "The MIT License (MIT)\n\nCopyright (c) 2013 Fatih Arslan\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software is furnished to do so,\nsubject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS\nFOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR\nCOPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER\nIN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN\nCONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/github.com/fatih/color@v1.19.0"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "github.com/fsnotify/fsnotify",
+      "version": "v1.10.1",
+      "source_url": "https://pkg.go.dev/github.com/fsnotify/fsnotify@v1.10.1",
+      "purl": "pkg:golang/github.com/fsnotify/fsnotify@v1.10.1",
+      "integrity": "h1:b0/UzAf9yR5rhf3RPm9gf3ehBPpf0oZKIjtpKrx59Ho=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [
+        "golang.org/x/sys"
+      ],
+      "licence": {
+        "id": "BSD-3-Clause",
+        "text": "Copyright © 2012 The Go Authors. All rights reserved.\nCopyright © fsnotify Authors. All rights reserved.\n\nRedistribution and use in source and binary forms, with or without modification,\nare permitted provided that the following conditions are met:\n\n* Redistributions of source code must retain the above copyright notice, this\n  list of conditions and the following disclaimer.\n* Redistributions in binary form must reproduce the above copyright notice, this\n  list of conditions and the following disclaimer in the documentation and/or\n  other materials provided with the distribution.\n* Neither the name of Google Inc. nor the names of its contributors may be used\n  to endorse or promote products derived from this software without specific\n  prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND\nANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED\nWARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\nDISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR\nANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES\n(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;\nLOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON\nANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\nSOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/github.com/fsnotify/fsnotify@v1.10.1"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "github.com/gabriel-vasile/mimetype",
+      "version": "v1.4.13",
+      "source_url": "https://pkg.go.dev/github.com/gabriel-vasile/mimetype@v1.4.13",
+      "purl": "pkg:golang/github.com/gabriel-vasile/mimetype@v1.4.13",
+      "integrity": "h1:46nXokslUBsAJE/wMsp5gtO500a4F3Nkz9Ufpk2AcUM=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [],
+      "licence": {
+        "id": "MIT",
+        "text": "MIT License\n\nCopyright (c) 2018 Gabriel Vasile\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/github.com/gabriel-vasile/mimetype@v1.4.13"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "github.com/ganigeorgiev/fexpr",
+      "version": "v0.5.0",
+      "source_url": "https://pkg.go.dev/github.com/ganigeorgiev/fexpr@v0.5.0",
+      "purl": "pkg:golang/github.com/ganigeorgiev/fexpr@v0.5.0",
+      "integrity": "h1:XA9JxtTE/Xm+g/JFI6RfZEHSiQlk+1glLvRK1Lpv/Tk=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [],
+      "licence": {
+        "id": "BSD-3-Clause",
+        "text": "BSD 3-Clause License\n\nCopyright (c) 2022-present, Gani Georgiev\nAll rights reserved.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are met:\n\n1. Redistributions of source code must retain the above copyright notice, this\n   list of conditions and the following disclaimer.\n\n2. Redistributions in binary form must reproduce the above copyright notice,\n   this list of conditions and the following disclaimer in the documentation\n   and/or other materials provided with the distribution.\n\n3. Neither the name of the copyright holder nor the names of its\n   contributors may be used to endorse or promote products derived from\n   this software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\"\nAND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE\nIMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\nDISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE\nFOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL\nDAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR\nSERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER\nCAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,\nOR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\nOF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/github.com/ganigeorgiev/fexpr@v0.5.0"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "github.com/golang-jwt/jwt/v5",
+      "version": "v5.3.1",
+      "source_url": "https://pkg.go.dev/github.com/golang-jwt/jwt/v5@v5.3.1",
+      "purl": "pkg:golang/github.com/golang-jwt/jwt/v5@v5.3.1",
+      "integrity": "h1:kYf81DTWFe7t+1VvL7eS+jKFVWaUnK9cB1qbwn63YCY=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [],
+      "licence": {
+        "id": "MIT",
+        "text": "Copyright (c) 2012 Dave Grijalva\nCopyright (c) 2021 golang-jwt maintainers\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/github.com/golang-jwt/jwt/v5@v5.3.1"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "github.com/google/uuid",
+      "version": "v1.6.0",
+      "source_url": "https://pkg.go.dev/github.com/google/uuid@v1.6.0",
+      "purl": "pkg:golang/github.com/google/uuid@v1.6.0",
+      "integrity": "h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [],
+      "licence": {
+        "id": "BSD-3-Clause",
+        "text": "Copyright (c) 2009,2014 Google Inc. All rights reserved.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are\nmet:\n\n   * Redistributions of source code must retain the above copyright\nnotice, this list of conditions and the following disclaimer.\n   * Redistributions in binary form must reproduce the above\ncopyright notice, this list of conditions and the following disclaimer\nin the documentation and/or other materials provided with the\ndistribution.\n   * Neither the name of Google Inc. nor the names of its\ncontributors may be used to endorse or promote products derived from\nthis software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\nLIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\nA PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\nOWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\nSPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\nLIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\nDATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\nTHEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\nOF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/github.com/google/uuid@v1.6.0"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "github.com/gorilla/css",
+      "version": "v1.0.1",
+      "source_url": "https://pkg.go.dev/github.com/gorilla/css@v1.0.1",
+      "purl": "pkg:golang/github.com/gorilla/css@v1.0.1",
+      "integrity": "h1:ntNaBIghp6JmvWnxbZKANoLyuXTPZ4cAMlo6RyhlbO8=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [],
+      "licence": {
+        "id": "BSD-3-Clause",
+        "text": "Copyright (c) 2023 The Gorilla Authors. All rights reserved.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are\nmet:\n\n\t * Redistributions of source code must retain the above copyright\nnotice, this list of conditions and the following disclaimer.\n\t * Redistributions in binary form must reproduce the above\ncopyright notice, this list of conditions and the following disclaimer\nin the documentation and/or other materials provided with the\ndistribution.\n\t * Neither the name of Google Inc. nor the names of its\ncontributors may be used to endorse or promote products derived from\nthis software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\nLIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\nA PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\nOWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\nSPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\nLIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\nDATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\nTHEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\nOF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/github.com/gorilla/css@v1.0.1"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "github.com/grokify/html-strip-tags-go",
+      "version": "v0.1.0",
+      "source_url": "https://pkg.go.dev/github.com/grokify/html-strip-tags-go@v0.1.0",
+      "purl": "pkg:golang/github.com/grokify/html-strip-tags-go@v0.1.0",
+      "integrity": "h1:03UrQLjAny8xci+R+qjCce/MYnpNXCtgzltlQbOBae4=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [],
+      "licence": {
+        "id": "BSD-3-Clause",
+        "text": "Copyright (c) 2009 The Go Authors. All rights reserved.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are\nmet:\n\n   * Redistributions of source code must retain the above copyright\nnotice, this list of conditions and the following disclaimer.\n   * Redistributions in binary form must reproduce the above\ncopyright notice, this list of conditions and the following disclaimer\nin the documentation and/or other materials provided with the\ndistribution.\n   * Neither the name of Google Inc. nor the names of its\ncontributors may be used to endorse or promote products derived from\nthis software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\nLIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\nA PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\nOWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\nSPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\nLIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\nDATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\nTHEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\nOF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/github.com/grokify/html-strip-tags-go@v0.1.0"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "github.com/joho/godotenv",
+      "version": "v1.5.1",
+      "source_url": "https://pkg.go.dev/github.com/joho/godotenv@v1.5.1",
+      "purl": "pkg:golang/github.com/joho/godotenv@v1.5.1",
+      "integrity": "h1:7eLL/+HRGLY0ldzfGMeQkb7vMd0as4CfYvUVzLqw0N0=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [],
+      "licence": {
+        "id": "MIT",
+        "text": "Copyright (c) 2013 John Barton\n\nMIT License\n\nPermission is hereby granted, free of charge, to any person obtaining\na copy of this software and associated documentation files (the\n\"Software\"), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\nNONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE\nLIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION\nWITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/github.com/joho/godotenv@v1.5.1"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "github.com/klauspost/compress",
+      "version": "v1.19.0",
+      "source_url": "https://pkg.go.dev/github.com/klauspost/compress@v1.19.0",
+      "purl": "pkg:golang/github.com/klauspost/compress@v1.19.0",
+      "integrity": "h1:sXLILfc9jV2QYWkzFOPWStmcUVH2RHEB1JCdY2oVvCQ=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [],
+      "licence": {
+        "expression": "BSD-3-Clause AND Apache-2.0 AND MIT",
+        "text": "Copyright (c) 2012 The Go Authors. All rights reserved.\nCopyright (c) 2019 Klaus Post. All rights reserved.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are\nmet:\n\n   * Redistributions of source code must retain the above copyright\nnotice, this list of conditions and the following disclaimer.\n   * Redistributions in binary form must reproduce the above\ncopyright notice, this list of conditions and the following disclaimer\nin the documentation and/or other materials provided with the\ndistribution.\n   * Neither the name of Google Inc. nor the names of its\ncontributors may be used to endorse or promote products derived from\nthis software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\nLIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\nA PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\nOWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\nSPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\nLIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\nDATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\nTHEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\nOF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n\n------------------\n\nFiles: gzhttp/*\n\n                                 Apache License\n                           Version 2.0, January 2004\n                        http://www.apache.org/licenses/\n\n   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\n\n   1. Definitions.\n\n      \"License\" shall mean the terms and conditions for use, reproduction,\n      and distribution as defined by Sections 1 through 9 of this document.\n\n      \"Licensor\" shall mean the copyright owner or entity authorized by\n      the copyright owner that is granting the License.\n\n      \"Legal Entity\" shall mean the union of the acting entity and all\n      other entities that control, are controlled by, or are under common\n      control with that entity. For the purposes of this definition,\n      \"control\" means (i) the power, direct or indirect, to cause the\n      direction or management of such entity, whether by contract or\n      otherwise, or (ii) ownership of fifty percent (50%) or more of the\n      outstanding shares, or (iii) beneficial ownership of such entity.\n\n      \"You\" (or \"Your\") shall mean an individual or Legal Entity\n      exercising permissions granted by this License.\n\n      \"Source\" form shall mean the preferred form for making modifications,\n      including but not limited to software source code, documentation\n      source, and configuration files.\n\n      \"Object\" form shall mean any form resulting from mechanical\n      transformation or translation of a Source form, including but\n      not limited to compiled object code, generated documentation,\n      and conversions to other media types.\n\n      \"Work\" shall mean the work of authorship, whether in Source or\n      Object form, made available under the License, as indicated by a\n      copyright notice that is included in or attached to the work\n      (an example is provided in the Appendix below).\n\n      \"Derivative Works\" shall mean any work, whether in Source or Object\n      form, that is based on (or derived from) the Work and for which the\n      editorial revisions, annotations, elaborations, or other modifications\n      represent, as a whole, an original work of authorship. For the purposes\n      of this License, Derivative Works shall not include works that remain\n      separable from, or merely link (or bind by name) to the interfaces of,\n      the Work and Derivative Works thereof.\n\n      \"Contribution\" shall mean any work of authorship, including\n      the original version of the Work and any modifications or additions\n      to that Work or Derivative Works thereof, that is intentionally\n      submitted to Licensor for inclusion in the Work by the copyright owner\n      or by an individual or Legal Entity authorized to submit on behalf of\n      the copyright owner. For the purposes of this definition, \"submitted\"\n      means any form of electronic, verbal, or written communication sent\n      to the Licensor or its representatives, including but not limited to\n      communication on electronic mailing lists, source code control systems,\n      and issue tracking systems that are managed by, or on behalf of, the\n      Licensor for the purpose of discussing and improving the Work, but\n      excluding communication that is conspicuously marked or otherwise\n      designated in writing by the copyright owner as \"Not a Contribution.\"\n\n      \"Contributor\" shall mean Licensor and any individual or Legal Entity\n      on behalf of whom a Contribution has been received by Licensor and\n      subsequently incorporated within the Work.\n\n   2. Grant of Copyright License. Subject to the terms and conditions of\n      this License, each Contributor hereby grants to You a perpetual,\n      worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n      copyright license to reproduce, prepare Derivative Works of,\n      publicly display, publicly perform, sublicense, and distribute the\n      Work and such Derivative Works in Source or Object form.\n\n   3. Grant of Patent License. Subject to the terms and conditions of\n      this License, each Contributor hereby grants to You a perpetual,\n      worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n      (except as stated in this section) patent license to make, have made,\n      use, offer to sell, sell, import, and otherwise transfer the Work,\n      where such license applies only to those patent claims licensable\n      by such Contributor that are necessarily infringed by their\n      Contribution(s) alone or by combination of their Contribution(s)\n      with the Work to which such Contribution(s) was submitted. If You\n      institute patent litigation against any entity (including a\n      cross-claim or counterclaim in a lawsuit) alleging that the Work\n      or a Contribution incorporated within the Work constitutes direct\n      or contributory patent infringement, then any patent licenses\n      granted to You under this License for that Work shall terminate\n      as of the date such litigation is filed.\n\n   4. Redistribution. You may reproduce and distribute copies of the\n      Work or Derivative Works thereof in any medium, with or without\n      modifications, and in Source or Object form, provided that You\n      meet the following conditions:\n\n      (a) You must give any other recipients of the Work or\n          Derivative Works a copy of this License; and\n\n      (b) You must cause any modified files to carry prominent notices\n          stating that You changed the files; and\n\n      (c) You must retain, in the Source form of any Derivative Works\n          that You distribute, all copyright, patent, trademark, and\n          attribution notices from the Source form of the Work,\n          excluding those notices that do not pertain to any part of\n          the Derivative Works; and\n\n      (d) If the Work includes a \"NOTICE\" text file as part of its\n          distribution, then any Derivative Works that You distribute must\n          include a readable copy of the attribution notices contained\n          within such NOTICE file, excluding those notices that do not\n          pertain to any part of the Derivative Works, in at least one\n          of the following places: within a NOTICE text file distributed\n          as part of the Derivative Works; within the Source form or\n          documentation, if provided along with the Derivative Works; or,\n          within a display generated by the Derivative Works, if and\n          wherever such third-party notices normally appear. The contents\n          of the NOTICE file are for informational purposes only and\n          do not modify the License. You may add Your own attribution\n          notices within Derivative Works that You distribute, alongside\n          or as an addendum to the NOTICE text from the Work, provided\n          that such additional attribution notices cannot be construed\n          as modifying the License.\n\n      You may add Your own copyright statement to Your modifications and\n      may provide additional or different license terms and conditions\n      for use, reproduction, or distribution of Your modifications, or\n      for any such Derivative Works as a whole, provided Your use,\n      reproduction, and distribution of the Work otherwise complies with\n      the conditions stated in this License.\n\n   5. Submission of Contributions. Unless You explicitly state otherwise,\n      any Contribution intentionally submitted for inclusion in the Work\n      by You to the Licensor shall be under the terms and conditions of\n      this License, without any additional terms or conditions.\n      Notwithstanding the above, nothing herein shall supersede or modify\n      the terms of any separate license agreement you may have executed\n      with Licensor regarding such Contributions.\n\n   6. Trademarks. This License does not grant permission to use the trade\n      names, trademarks, service marks, or product names of the Licensor,\n      except as required for reasonable and customary use in describing the\n      origin of the Work and reproducing the content of the NOTICE file.\n\n   7. Disclaimer of Warranty. Unless required by applicable law or\n      agreed to in writing, Licensor provides the Work (and each\n      Contributor provides its Contributions) on an \"AS IS\" BASIS,\n      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or\n      implied, including, without limitation, any warranties or conditions\n      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A\n      PARTICULAR PURPOSE. You are solely responsible for determining the\n      appropriateness of using or redistributing the Work and assume any\n      risks associated with Your exercise of permissions under this License.\n\n   8. Limitation of Liability. In no event and under no legal theory,\n      whether in tort (including negligence), contract, or otherwise,\n      unless required by applicable law (such as deliberate and grossly\n      negligent acts) or agreed to in writing, shall any Contributor be\n      liable to You for damages, including any direct, indirect, special,\n      incidental, or consequential damages of any character arising as a\n      result of this License or out of the use or inability to use the\n      Work (including but not limited to damages for loss of goodwill,\n      work stoppage, computer failure or malfunction, or any and all\n      other commercial damages or losses), even if such Contributor\n      has been advised of the possibility of such damages.\n\n   9. Accepting Warranty or Additional Liability. While redistributing\n      the Work or Derivative Works thereof, You may choose to offer,\n      and charge a fee for, acceptance of support, warranty, indemnity,\n      or other liability obligations and/or rights consistent with this\n      License. However, in accepting such obligations, You may act only\n      on Your own behalf and on Your sole responsibility, not on behalf\n      of any other Contributor, and only if You agree to indemnify,\n      defend, and hold each Contributor harmless for any liability\n      incurred by, or claims asserted against, such Contributor by reason\n      of your accepting any such warranty or additional liability.\n\n   END OF TERMS AND CONDITIONS\n\n   APPENDIX: How to apply the Apache License to your work.\n\n      To apply the Apache License to your work, attach the following\n      boilerplate notice, with the fields enclosed by brackets \"[]\"\n      replaced with your own identifying information. (Don't include\n      the brackets!)  The text should be enclosed in the appropriate\n      comment syntax for the file format. We also recommend that a\n      file or class name and description of purpose be included on the\n      same \"printed page\" as the copyright notice for easier\n      identification within third-party archives.\n\n   Copyright 2016-2017 The New York Times Company\n\n   Licensed under the Apache License, Version 2.0 (the \"License\");\n   you may not use this file except in compliance with the License.\n   You may obtain a copy of the License at\n\n       http://www.apache.org/licenses/LICENSE-2.0\n\n   Unless required by applicable law or agreed to in writing, software\n   distributed under the License is distributed on an \"AS IS\" BASIS,\n   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n   See the License for the specific language governing permissions and\n   limitations under the License.\n\n------------------\n\nFiles: s2/cmd/internal/readahead/*\n\nThe MIT License (MIT)\n\nCopyright (c) 2015 Klaus Post\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n\n---------------------\nFiles: snappy/*\nFiles: internal/snapref/*\n\nCopyright (c) 2011 The Snappy-Go Authors. All rights reserved.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are\nmet:\n\n   * Redistributions of source code must retain the above copyright\nnotice, this list of conditions and the following disclaimer.\n   * Redistributions in binary form must reproduce the above\ncopyright notice, this list of conditions and the following disclaimer\nin the documentation and/or other materials provided with the\ndistribution.\n   * Neither the name of Google Inc. nor the names of its\ncontributors may be used to endorse or promote products derived from\nthis software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\nLIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\nA PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\nOWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\nSPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\nLIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\nDATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\nTHEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\nOF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n\n-----------------\n\nFiles: s2/cmd/internal/filepathx/*\n\nCopyright 2016 The filepathx Authors\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/github.com/klauspost/compress@v1.19.0"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "github.com/labstack/echo/v5",
+      "version": "v5.3.0",
+      "source_url": "https://pkg.go.dev/github.com/labstack/echo/v5@v5.3.0",
+      "purl": "pkg:golang/github.com/labstack/echo/v5@v5.3.0",
+      "integrity": "h1:KT74Mprk053PQEHwSZdeCDIz1BigTZOZhavMD0c9Fjs=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [],
+      "licence": {
+        "id": "MIT",
+        "text": "The MIT License (MIT)\n\nCopyright (c) 2022 LabStack\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/github.com/labstack/echo/v5@v5.3.0"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "github.com/mattn/go-colorable",
+      "version": "v0.1.15",
+      "source_url": "https://pkg.go.dev/github.com/mattn/go-colorable@v0.1.15",
+      "purl": "pkg:golang/github.com/mattn/go-colorable@v0.1.15",
+      "integrity": "h1:+u9SLTRGnXv73cEsnsmoZBom+dMU88B2M0aDcWy0/jY=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [
+        "github.com/mattn/go-isatty"
+      ],
+      "licence": {
+        "id": "MIT",
+        "text": "The MIT License (MIT)\n\nCopyright (c) 2016 Yasuhiro Matsumoto\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/github.com/mattn/go-colorable@v0.1.15"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "github.com/mattn/go-isatty",
+      "version": "v0.0.23",
+      "source_url": "https://pkg.go.dev/github.com/mattn/go-isatty@v0.0.23",
+      "purl": "pkg:golang/github.com/mattn/go-isatty@v0.0.23",
+      "integrity": "h1:cYwCQTQf3HB6xUC+BtyCLZNr7IzbOmoZbmssVNzSyiQ=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [
+        "golang.org/x/sys"
+      ],
+      "licence": {
+        "id": "MIT",
+        "text": "Copyright (c) Yasuhiro MATSUMOTO \u003cmattn.jp@gmail.com\u003e\n\nMIT License (Expat)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/github.com/mattn/go-isatty@v0.0.23"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "github.com/microcosm-cc/bluemonday",
+      "version": "v1.0.27",
+      "source_url": "https://pkg.go.dev/github.com/microcosm-cc/bluemonday@v1.0.27",
+      "purl": "pkg:golang/github.com/microcosm-cc/bluemonday@v1.0.27",
+      "integrity": "h1:MpEUotklkwCSLeH+Qdx1VJgNqLlpY2KXwXFM08ygZfk=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [
+        "github.com/aymerick/douceur",
+        "golang.org/x/net"
+      ],
+      "licence": {
+        "id": "BSD-3-Clause",
+        "text": "Copyright (c) 2014, David Kitchen \u003cdavid@buro9.com\u003e\n\nAll rights reserved.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are met:\n\n* Redistributions of source code must retain the above copyright notice, this\n  list of conditions and the following disclaimer.\n\n* Redistributions in binary form must reproduce the above copyright notice,\n  this list of conditions and the following disclaimer in the documentation\n  and/or other materials provided with the distribution.\n\n* Neither the name of the organisation (Microcosm) nor the names of its\n  contributors may be used to endorse or promote products derived from\n  this software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\"\nAND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE\nIMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\nDISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE\nFOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL\nDAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR\nSERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER\nCAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,\nOR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\nOF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/github.com/microcosm-cc/bluemonday@v1.0.27"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "github.com/pocketbase/dbx",
+      "version": "v1.12.0",
+      "source_url": "https://pkg.go.dev/github.com/pocketbase/dbx@v1.12.0",
+      "purl": "pkg:golang/github.com/pocketbase/dbx@v1.12.0",
+      "integrity": "h1:/oLErM+A0b4xI0PWTGPqSDVjzix48PqI/bng2l0PzoA=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [],
+      "licence": {
+        "id": "MIT",
+        "text": "The MIT License (MIT)\nCopyright (c) 2016, Qiang Xue\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software\nand associated documentation files (the \"Software\"), to deal in the Software without restriction,\nincluding without limitation the rights to use, copy, modify, merge, publish, distribute,\nsublicense, and/or sell copies of the Software, and to permit persons to whom the Software\nis furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or\nsubstantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING\nBUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\nNONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,\nDAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/github.com/pocketbase/dbx@v1.12.0"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "github.com/pocketbase/ozzo-validation/v4",
+      "version": "v4.3.0",
+      "source_url": "https://pkg.go.dev/github.com/pocketbase/ozzo-validation/v4@v4.3.0",
+      "purl": "pkg:golang/github.com/pocketbase/ozzo-validation/v4@v4.3.0",
+      "integrity": "h1:uKBDVma7bZqgR2a6AwE+k9hkuDFfiZMpBHQdZ1z3iQs=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [
+        "github.com/asaskevich/govalidator"
+      ],
+      "licence": {
+        "id": "MIT",
+        "text": "The MIT License (MIT)\nCopyright (c) 2016, Qiang Xue\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software\nand associated documentation files (the \"Software\"), to deal in the Software without restriction,\nincluding without limitation the rights to use, copy, modify, merge, publish, distribute,\nsublicense, and/or sell copies of the Software, and to permit persons to whom the Software\nis furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or\nsubstantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING\nBUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\nNONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,\nDAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/github.com/pocketbase/ozzo-validation/v4@v4.3.0"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "github.com/pocketbase/pocketbase",
+      "version": "v0.39.7",
+      "source_url": "https://pkg.go.dev/github.com/pocketbase/pocketbase@v0.39.7",
+      "purl": "pkg:golang/github.com/pocketbase/pocketbase@v0.39.7",
+      "integrity": "h1:XcoKHEcYwJMHtbVeFGcbFXkjfdvW/Khn7eLy/WzKPww=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [
+        "github.com/disintegration/imaging",
+        "github.com/domodwyer/mailyak/v3",
+        "github.com/fatih/color",
+        "github.com/fsnotify/fsnotify",
+        "github.com/gabriel-vasile/mimetype",
+        "github.com/ganigeorgiev/fexpr",
+        "github.com/golang-jwt/jwt/v5",
+        "github.com/pocketbase/dbx",
+        "github.com/pocketbase/ozzo-validation/v4",
+        "github.com/spf13/cast",
+        "github.com/spf13/cobra",
+        "golang.org/x/crypto",
+        "golang.org/x/image",
+        "golang.org/x/net",
+        "golang.org/x/oauth2",
+        "golang.org/x/sync",
+        "modernc.org/sqlite"
+      ],
+      "licence": {
+        "id": "MIT",
+        "text": "The MIT License (MIT)\nCopyright (c) 2022 - present, Gani Georgiev\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software\nand associated documentation files (the \"Software\"), to deal in the Software without restriction,\nincluding without limitation the rights to use, copy, modify, merge, publish, distribute,\nsublicense, and/or sell copies of the Software, and to permit persons to whom the Software\nis furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or\nsubstantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING\nBUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\nNONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,\nDAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/github.com/pocketbase/pocketbase@v0.39.7"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "github.com/remyoudompheng/bigfft",
+      "version": "v0.0.0-20230129092748-24d4a6f8daec",
+      "source_url": "https://pkg.go.dev/github.com/remyoudompheng/bigfft@v0.0.0-20230129092748-24d4a6f8daec",
+      "purl": "pkg:golang/github.com/remyoudompheng/bigfft@v0.0.0-20230129092748-24d4a6f8daec",
+      "integrity": "h1:W09IVJc94icq4NjY3clb7Lk8O1qJ8BdBEF8z0ibU0rE=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [],
+      "licence": {
+        "id": "BSD-3-Clause",
+        "text": "Copyright (c) 2012 The Go Authors. All rights reserved.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are\nmet:\n\n   * Redistributions of source code must retain the above copyright\nnotice, this list of conditions and the following disclaimer.\n   * Redistributions in binary form must reproduce the above\ncopyright notice, this list of conditions and the following disclaimer\nin the documentation and/or other materials provided with the\ndistribution.\n   * Neither the name of Google Inc. nor the names of its\ncontributors may be used to endorse or promote products derived from\nthis software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\nLIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\nA PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\nOWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\nSPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\nLIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\nDATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\nTHEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\nOF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/github.com/remyoudompheng/bigfft@v0.0.0-20230129092748-24d4a6f8daec"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "github.com/robfig/cron/v3",
+      "version": "v3.0.1",
+      "source_url": "https://pkg.go.dev/github.com/robfig/cron/v3@v3.0.1",
+      "purl": "pkg:golang/github.com/robfig/cron/v3@v3.0.1",
+      "integrity": "h1:WdRxkvbJztn8LMz/QEvLN5sBU+xKpSqwwUO1Pjr4qDs=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [],
+      "licence": {
+        "id": "MIT",
+        "text": "Copyright (C) 2012 Rob Figueiredo\nAll Rights Reserved.\n\nMIT LICENSE\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software is furnished to do so,\nsubject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS\nFOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR\nCOPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER\nIN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN\nCONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/github.com/robfig/cron/v3@v3.0.1"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "github.com/sabloger/sitemap-generator",
+      "version": "v1.3.0",
+      "source_url": "https://pkg.go.dev/github.com/sabloger/sitemap-generator@v1.3.0",
+      "purl": "pkg:golang/github.com/sabloger/sitemap-generator@v1.3.0",
+      "integrity": "h1:R8tGnxgxXvZOObL310mgv1ahSiDuaPQmYvlAv6sK4ZM=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [],
+      "licence": {
+        "id": "MIT",
+        "text": "MIT License\n\nCopyright (c) 2022 Saeed Falsafin\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/github.com/sabloger/sitemap-generator@v1.3.0"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "github.com/spf13/cast",
+      "version": "v1.10.0",
+      "source_url": "https://pkg.go.dev/github.com/spf13/cast@v1.10.0",
+      "purl": "pkg:golang/github.com/spf13/cast@v1.10.0",
+      "integrity": "h1:h2x0u2shc1QuLHfxi+cTJvs30+ZAHOGRic8uyGTDWxY=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [],
+      "licence": {
+        "id": "MIT",
+        "text": "The MIT License (MIT)\n\nCopyright (c) 2014 Steve Francia\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/github.com/spf13/cast@v1.10.0"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "github.com/spf13/cobra",
+      "version": "v1.10.2",
+      "source_url": "https://pkg.go.dev/github.com/spf13/cobra@v1.10.2",
+      "purl": "pkg:golang/github.com/spf13/cobra@v1.10.2",
+      "integrity": "h1:DMTTonx5m65Ic0GOoRY2c16WCbHxOOw6xxezuLaBpcU=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [
+        "github.com/spf13/pflag"
+      ],
+      "licence": {
+        "id": "Apache-2.0",
+        "text": "                                Apache License\n                           Version 2.0, January 2004\n                        http://www.apache.org/licenses/\n\n   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\n\n   1. Definitions.\n\n      \"License\" shall mean the terms and conditions for use, reproduction,\n      and distribution as defined by Sections 1 through 9 of this document.\n\n      \"Licensor\" shall mean the copyright owner or entity authorized by\n      the copyright owner that is granting the License.\n\n      \"Legal Entity\" shall mean the union of the acting entity and all\n      other entities that control, are controlled by, or are under common\n      control with that entity. For the purposes of this definition,\n      \"control\" means (i) the power, direct or indirect, to cause the\n      direction or management of such entity, whether by contract or\n      otherwise, or (ii) ownership of fifty percent (50%) or more of the\n      outstanding shares, or (iii) beneficial ownership of such entity.\n\n      \"You\" (or \"Your\") shall mean an individual or Legal Entity\n      exercising permissions granted by this License.\n\n      \"Source\" form shall mean the preferred form for making modifications,\n      including but not limited to software source code, documentation\n      source, and configuration files.\n\n      \"Object\" form shall mean any form resulting from mechanical\n      transformation or translation of a Source form, including but\n      not limited to compiled object code, generated documentation,\n      and conversions to other media types.\n\n      \"Work\" shall mean the work of authorship, whether in Source or\n      Object form, made available under the License, as indicated by a\n      copyright notice that is included in or attached to the work\n      (an example is provided in the Appendix below).\n\n      \"Derivative Works\" shall mean any work, whether in Source or Object\n      form, that is based on (or derived from) the Work and for which the\n      editorial revisions, annotations, elaborations, or other modifications\n      represent, as a whole, an original work of authorship. For the purposes\n      of this License, Derivative Works shall not include works that remain\n      separable from, or merely link (or bind by name) to the interfaces of,\n      the Work and Derivative Works thereof.\n\n      \"Contribution\" shall mean any work of authorship, including\n      the original version of the Work and any modifications or additions\n      to that Work or Derivative Works thereof, that is intentionally\n      submitted to Licensor for inclusion in the Work by the copyright owner\n      or by an individual or Legal Entity authorized to submit on behalf of\n      the copyright owner. For the purposes of this definition, \"submitted\"\n      means any form of electronic, verbal, or written communication sent\n      to the Licensor or its representatives, including but not limited to\n      communication on electronic mailing lists, source code control systems,\n      and issue tracking systems that are managed by, or on behalf of, the\n      Licensor for the purpose of discussing and improving the Work, but\n      excluding communication that is conspicuously marked or otherwise\n      designated in writing by the copyright owner as \"Not a Contribution.\"\n\n      \"Contributor\" shall mean Licensor and any individual or Legal Entity\n      on behalf of whom a Contribution has been received by Licensor and\n      subsequently incorporated within the Work.\n\n   2. Grant of Copyright License. Subject to the terms and conditions of\n      this License, each Contributor hereby grants to You a perpetual,\n      worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n      copyright license to reproduce, prepare Derivative Works of,\n      publicly display, publicly perform, sublicense, and distribute the\n      Work and such Derivative Works in Source or Object form.\n\n   3. Grant of Patent License. Subject to the terms and conditions of\n      this License, each Contributor hereby grants to You a perpetual,\n      worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n      (except as stated in this section) patent license to make, have made,\n      use, offer to sell, sell, import, and otherwise transfer the Work,\n      where such license applies only to those patent claims licensable\n      by such Contributor that are necessarily infringed by their\n      Contribution(s) alone or by combination of their Contribution(s)\n      with the Work to which such Contribution(s) was submitted. If You\n      institute patent litigation against any entity (including a\n      cross-claim or counterclaim in a lawsuit) alleging that the Work\n      or a Contribution incorporated within the Work constitutes direct\n      or contributory patent infringement, then any patent licenses\n      granted to You under this License for that Work shall terminate\n      as of the date such litigation is filed.\n\n   4. Redistribution. You may reproduce and distribute copies of the\n      Work or Derivative Works thereof in any medium, with or without\n      modifications, and in Source or Object form, provided that You\n      meet the following conditions:\n\n      (a) You must give any other recipients of the Work or\n          Derivative Works a copy of this License; and\n\n      (b) You must cause any modified files to carry prominent notices\n          stating that You changed the files; and\n\n      (c) You must retain, in the Source form of any Derivative Works\n          that You distribute, all copyright, patent, trademark, and\n          attribution notices from the Source form of the Work,\n          excluding those notices that do not pertain to any part of\n          the Derivative Works; and\n\n      (d) If the Work includes a \"NOTICE\" text file as part of its\n          distribution, then any Derivative Works that You distribute must\n          include a readable copy of the attribution notices contained\n          within such NOTICE file, excluding those notices that do not\n          pertain to any part of the Derivative Works, in at least one\n          of the following places: within a NOTICE text file distributed\n          as part of the Derivative Works; within the Source form or\n          documentation, if provided along with the Derivative Works; or,\n          within a display generated by the Derivative Works, if and\n          wherever such third-party notices normally appear. The contents\n          of the NOTICE file are for informational purposes only and\n          do not modify the License. You may add Your own attribution\n          notices within Derivative Works that You distribute, alongside\n          or as an addendum to the NOTICE text from the Work, provided\n          that such additional attribution notices cannot be construed\n          as modifying the License.\n\n      You may add Your own copyright statement to Your modifications and\n      may provide additional or different license terms and conditions\n      for use, reproduction, or distribution of Your modifications, or\n      for any such Derivative Works as a whole, provided Your use,\n      reproduction, and distribution of the Work otherwise complies with\n      the conditions stated in this License.\n\n   5. Submission of Contributions. Unless You explicitly state otherwise,\n      any Contribution intentionally submitted for inclusion in the Work\n      by You to the Licensor shall be under the terms and conditions of\n      this License, without any additional terms or conditions.\n      Notwithstanding the above, nothing herein shall supersede or modify\n      the terms of any separate license agreement you may have executed\n      with Licensor regarding such Contributions.\n\n   6. Trademarks. This License does not grant permission to use the trade\n      names, trademarks, service marks, or product names of the Licensor,\n      except as required for reasonable and customary use in describing the\n      origin of the Work and reproducing the content of the NOTICE file.\n\n   7. Disclaimer of Warranty. Unless required by applicable law or\n      agreed to in writing, Licensor provides the Work (and each\n      Contributor provides its Contributions) on an \"AS IS\" BASIS,\n      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or\n      implied, including, without limitation, any warranties or conditions\n      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A\n      PARTICULAR PURPOSE. You are solely responsible for determining the\n      appropriateness of using or redistributing the Work and assume any\n      risks associated with Your exercise of permissions under this License.\n\n   8. Limitation of Liability. In no event and under no legal theory,\n      whether in tort (including negligence), contract, or otherwise,\n      unless required by applicable law (such as deliberate and grossly\n      negligent acts) or agreed to in writing, shall any Contributor be\n      liable to You for damages, including any direct, indirect, special,\n      incidental, or consequential damages of any character arising as a\n      result of this License or out of the use or inability to use the\n      Work (including but not limited to damages for loss of goodwill,\n      work stoppage, computer failure or malfunction, or any and all\n      other commercial damages or losses), even if such Contributor\n      has been advised of the possibility of such damages.\n\n   9. Accepting Warranty or Additional Liability. While redistributing\n      the Work or Derivative Works thereof, You may choose to offer,\n      and charge a fee for, acceptance of support, warranty, indemnity,\n      or other liability obligations and/or rights consistent with this\n      License. However, in accepting such obligations, You may act only\n      on Your own behalf and on Your sole responsibility, not on behalf\n      of any other Contributor, and only if You agree to indemnify,\n      defend, and hold each Contributor harmless for any liability\n      incurred by, or claims asserted against, such Contributor by reason\n      of your accepting any such warranty or additional liability.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/github.com/spf13/cobra@v1.10.2"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "github.com/spf13/pflag",
+      "version": "v1.0.10",
+      "source_url": "https://pkg.go.dev/github.com/spf13/pflag@v1.0.10",
+      "purl": "pkg:golang/github.com/spf13/pflag@v1.0.10",
+      "integrity": "h1:4EBh2KAYBwaONj6b2Ye1GiHfwjqyROoF4RwYO+vPwFk=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [],
+      "licence": {
+        "id": "BSD-3-Clause",
+        "text": "Copyright (c) 2012 Alex Ogier. All rights reserved.\nCopyright (c) 2012 The Go Authors. All rights reserved.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are\nmet:\n\n   * Redistributions of source code must retain the above copyright\nnotice, this list of conditions and the following disclaimer.\n   * Redistributions in binary form must reproduce the above\ncopyright notice, this list of conditions and the following disclaimer\nin the documentation and/or other materials provided with the\ndistribution.\n   * Neither the name of Google Inc. nor the names of its\ncontributors may be used to endorse or promote products derived from\nthis software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\nLIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\nA PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\nOWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\nSPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\nLIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\nDATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\nTHEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\nOF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/github.com/spf13/pflag@v1.0.10"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "golang.org/x/crypto",
+      "version": "v0.54.0",
+      "source_url": "https://pkg.go.dev/golang.org/x/crypto@v0.54.0",
+      "purl": "pkg:golang/golang.org/x/crypto@v0.54.0",
+      "integrity": "h1:YLIA59K4fiNzHzjnZt2tUJQjQtUWfWbeHBqKtk3eScw=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [
+        "golang.org/x/net"
+      ],
+      "licence": {
+        "id": "BSD-3-Clause",
+        "text": "Copyright 2009 The Go Authors.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are\nmet:\n\n   * Redistributions of source code must retain the above copyright\nnotice, this list of conditions and the following disclaimer.\n   * Redistributions in binary form must reproduce the above\ncopyright notice, this list of conditions and the following disclaimer\nin the documentation and/or other materials provided with the\ndistribution.\n   * Neither the name of Google LLC nor the names of its\ncontributors may be used to endorse or promote products derived from\nthis software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\nLIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\nA PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\nOWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\nSPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\nLIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\nDATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\nTHEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\nOF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/golang.org/x/crypto@v0.54.0"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "golang.org/x/image",
+      "version": "v0.44.0",
+      "source_url": "https://pkg.go.dev/golang.org/x/image@v0.44.0",
+      "purl": "pkg:golang/golang.org/x/image@v0.44.0",
+      "integrity": "h1:+tDekMZED9+LrtB3G5xzRggpVh9CARjZqROla3R3R+I=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [],
+      "licence": {
+        "id": "BSD-3-Clause",
+        "text": "Copyright 2009 The Go Authors.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are\nmet:\n\n   * Redistributions of source code must retain the above copyright\nnotice, this list of conditions and the following disclaimer.\n   * Redistributions in binary form must reproduce the above\ncopyright notice, this list of conditions and the following disclaimer\nin the documentation and/or other materials provided with the\ndistribution.\n   * Neither the name of Google LLC nor the names of its\ncontributors may be used to endorse or promote products derived from\nthis software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\nLIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\nA PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\nOWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\nSPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\nLIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\nDATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\nTHEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\nOF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/golang.org/x/image@v0.44.0"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "golang.org/x/net",
+      "version": "v0.57.0",
+      "source_url": "https://pkg.go.dev/golang.org/x/net@v0.57.0",
+      "purl": "pkg:golang/golang.org/x/net@v0.57.0",
+      "integrity": "h1:K5+3DljvIuDG9/Jv9rvyMywYNFCQ9RSUY6OOTTkT+tE=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [
+        "golang.org/x/text"
+      ],
+      "licence": {
+        "id": "BSD-3-Clause",
+        "text": "Copyright 2009 The Go Authors.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are\nmet:\n\n   * Redistributions of source code must retain the above copyright\nnotice, this list of conditions and the following disclaimer.\n   * Redistributions in binary form must reproduce the above\ncopyright notice, this list of conditions and the following disclaimer\nin the documentation and/or other materials provided with the\ndistribution.\n   * Neither the name of Google LLC nor the names of its\ncontributors may be used to endorse or promote products derived from\nthis software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\nLIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\nA PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\nOWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\nSPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\nLIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\nDATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\nTHEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\nOF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/golang.org/x/net@v0.57.0"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "golang.org/x/oauth2",
+      "version": "v0.36.0",
+      "source_url": "https://pkg.go.dev/golang.org/x/oauth2@v0.36.0",
+      "purl": "pkg:golang/golang.org/x/oauth2@v0.36.0",
+      "integrity": "h1:peZ/1z27fi9hUOFCAZaHyrpWG5lwe0RJEEEeH0ThlIs=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [],
+      "licence": {
+        "id": "BSD-3-Clause",
+        "text": "Copyright 2009 The Go Authors.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are\nmet:\n\n   * Redistributions of source code must retain the above copyright\nnotice, this list of conditions and the following disclaimer.\n   * Redistributions in binary form must reproduce the above\ncopyright notice, this list of conditions and the following disclaimer\nin the documentation and/or other materials provided with the\ndistribution.\n   * Neither the name of Google LLC nor the names of its\ncontributors may be used to endorse or promote products derived from\nthis software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\nLIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\nA PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\nOWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\nSPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\nLIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\nDATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\nTHEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\nOF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/golang.org/x/oauth2@v0.36.0"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "golang.org/x/sync",
+      "version": "v0.22.0",
+      "source_url": "https://pkg.go.dev/golang.org/x/sync@v0.22.0",
+      "purl": "pkg:golang/golang.org/x/sync@v0.22.0",
+      "integrity": "h1:SZjpbeLmrCk4xhRSZFNZW5gFUeCeFgjekvI/+gfScek=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [],
+      "licence": {
+        "id": "BSD-3-Clause",
+        "text": "Copyright 2009 The Go Authors.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are\nmet:\n\n   * Redistributions of source code must retain the above copyright\nnotice, this list of conditions and the following disclaimer.\n   * Redistributions in binary form must reproduce the above\ncopyright notice, this list of conditions and the following disclaimer\nin the documentation and/or other materials provided with the\ndistribution.\n   * Neither the name of Google LLC nor the names of its\ncontributors may be used to endorse or promote products derived from\nthis software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\nLIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\nA PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\nOWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\nSPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\nLIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\nDATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\nTHEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\nOF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/golang.org/x/sync@v0.22.0"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "golang.org/x/sys",
+      "version": "v0.47.0",
+      "source_url": "https://pkg.go.dev/golang.org/x/sys@v0.47.0",
+      "purl": "pkg:golang/golang.org/x/sys@v0.47.0",
+      "integrity": "h1:o7XGOvZQCADBQQ4Y7VNq2dRWQR7JmOUW8Kxx4ZsNgWs=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [],
+      "licence": {
+        "id": "BSD-3-Clause",
+        "text": "Copyright 2009 The Go Authors.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are\nmet:\n\n   * Redistributions of source code must retain the above copyright\nnotice, this list of conditions and the following disclaimer.\n   * Redistributions in binary form must reproduce the above\ncopyright notice, this list of conditions and the following disclaimer\nin the documentation and/or other materials provided with the\ndistribution.\n   * Neither the name of Google LLC nor the names of its\ncontributors may be used to endorse or promote products derived from\nthis software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\nLIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\nA PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\nOWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\nSPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\nLIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\nDATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\nTHEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\nOF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/golang.org/x/sys@v0.47.0"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "golang.org/x/text",
+      "version": "v0.40.0",
+      "source_url": "https://pkg.go.dev/golang.org/x/text@v0.40.0",
+      "purl": "pkg:golang/golang.org/x/text@v0.40.0",
+      "integrity": "h1:Ub2Z6/xjgF1WrYQz2nuITOEegKFtiIy+rieRJ5lHZKs=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [],
+      "licence": {
+        "id": "BSD-3-Clause",
+        "text": "Copyright 2009 The Go Authors.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are\nmet:\n\n   * Redistributions of source code must retain the above copyright\nnotice, this list of conditions and the following disclaimer.\n   * Redistributions in binary form must reproduce the above\ncopyright notice, this list of conditions and the following disclaimer\nin the documentation and/or other materials provided with the\ndistribution.\n   * Neither the name of Google LLC nor the names of its\ncontributors may be used to endorse or promote products derived from\nthis software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\nLIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\nA PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\nOWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\nSPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\nLIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\nDATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\nTHEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\nOF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/golang.org/x/text@v0.40.0"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "modernc.org/libc",
+      "version": "v1.74.1",
+      "source_url": "https://pkg.go.dev/modernc.org/libc@v1.74.1",
+      "purl": "pkg:golang/modernc.org/libc@v1.74.1",
+      "integrity": "h1:bdR4VTKFMC4966QSNZ05XLGI/VwzVa2kTUX51Dm0riQ=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [
+        "github.com/dustin/go-humanize",
+        "github.com/google/uuid",
+        "golang.org/x/sys",
+        "modernc.org/mathutil",
+        "modernc.org/memory"
+      ],
+      "licence": {
+        "id": "BSD-3-Clause",
+        "text": "Copyright (c) 2017 The Libc Authors. All rights reserved.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are\nmet:\n\n   * Redistributions of source code must retain the above copyright\nnotice, this list of conditions and the following disclaimer.\n   * Redistributions in binary form must reproduce the above\ncopyright notice, this list of conditions and the following disclaimer\nin the documentation and/or other materials provided with the\ndistribution.\n   * Neither the names of the authors nor the names of the\ncontributors may be used to endorse or promote products derived from\nthis software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\nLIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\nA PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\nOWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\nSPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\nLIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\nDATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\nTHEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\nOF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/modernc.org/libc@v1.74.1"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "modernc.org/mathutil",
+      "version": "v1.7.1",
+      "source_url": "https://pkg.go.dev/modernc.org/mathutil@v1.7.1",
+      "purl": "pkg:golang/modernc.org/mathutil@v1.7.1",
+      "integrity": "h1:GCZVGXdaN8gTqB1Mf/usp1Y/hSqgI2vAGGP4jZMCxOU=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [
+        "github.com/remyoudompheng/bigfft"
+      ],
+      "licence": {
+        "id": "BSD-3-Clause",
+        "text": "Copyright (c) 2014 The mathutil Authors. All rights reserved.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are\nmet:\n\n   * Redistributions of source code must retain the above copyright\nnotice, this list of conditions and the following disclaimer.\n   * Redistributions in binary form must reproduce the above\ncopyright notice, this list of conditions and the following disclaimer\nin the documentation and/or other materials provided with the\ndistribution.\n   * Neither the names of the authors nor the names of the\ncontributors may be used to endorse or promote products derived from\nthis software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\nLIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\nA PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\nOWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\nSPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\nLIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\nDATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\nTHEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\nOF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/modernc.org/mathutil@v1.7.1"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "modernc.org/memory",
+      "version": "v1.11.0",
+      "source_url": "https://pkg.go.dev/modernc.org/memory@v1.11.0",
+      "purl": "pkg:golang/modernc.org/memory@v1.11.0",
+      "integrity": "h1:o4QC8aMQzmcwCK3t3Ux/ZHmwFPzE6hf2Y5LbkRs+hbI=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [
+        "golang.org/x/sys"
+      ],
+      "licence": {
+        "id": "BSD-3-Clause",
+        "text": "Copyright (c) 2017 The Memory Authors. All rights reserved.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are\nmet:\n\n   * Redistributions of source code must retain the above copyright\nnotice, this list of conditions and the following disclaimer.\n   * Redistributions in binary form must reproduce the above\ncopyright notice, this list of conditions and the following disclaimer\nin the documentation and/or other materials provided with the\ndistribution.\n   * Neither the names of the authors nor the names of the\ncontributors may be used to endorse or promote products derived from\nthis software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\nLIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\nA PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\nOWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\nSPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\nLIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\nDATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\nTHEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\nOF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/modernc.org/memory@v1.11.0"
+    },
+    {
+      "ecosystem": "golang",
+      "name": "modernc.org/sqlite",
+      "version": "v1.54.0",
+      "source_url": "https://pkg.go.dev/modernc.org/sqlite@v1.54.0",
+      "purl": "pkg:golang/modernc.org/sqlite@v1.54.0",
+      "integrity": "h1:JCxR4qwkJvOaqAoYcgDoO25Nc+ROg6EJ2LfBVzdrgog=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [
+        "golang.org/x/sys",
+        "modernc.org/libc"
+      ],
+      "licence": {
+        "id": "BSD-3-Clause",
+        "text": "Copyright (c) 2017 The Sqlite Authors. All rights reserved.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are met:\n\n1. Redistributions of source code must retain the above copyright notice, this\nlist of conditions and the following disclaimer.\n\n2. Redistributions in binary form must reproduce the above copyright notice,\nthis list of conditions and the following disclaimer in the documentation\nand/or other materials provided with the distribution.\n\n3. Neither the name of the copyright holder nor the names of its contributors\nmay be used to endorse or promote products derived from this software without\nspecific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND\nANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED\nWARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\nDISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE\nFOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL\nDAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR\nSERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER\nCAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,\nOR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\nOF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/modernc.org/sqlite@v1.54.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@kurkle/color",
+      "version": "0.3.4",
+      "source_url": "https://www.npmjs.com/package/@kurkle/color/v/0.3.4",
+      "purl": "pkg:npm/%40kurkle/color@0.3.4",
+      "integrity": "sha512-M5UknZPHRu3DEDWoipU6sE8PdkZ6Z/S+v4dD+Ke8IaNlpdSQah50lz1KtcFBa2vsdOnwbbnxJwVM4wty6udA5w==",
+      "targets": [
+        "browser"
+      ],
+      "dependencies": [],
+      "licence": {
+        "id": "MIT",
+        "text": "The MIT License (MIT)\n\nCopyright (c) 2018-2024 Jukka Kurkela\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://www.npmjs.com/package/@kurkle/color/v/0.3.4"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@tailwindcss/typography",
+      "version": "0.5.19",
+      "source_url": "https://www.npmjs.com/package/@tailwindcss/typography/v/0.5.19",
+      "purl": "pkg:npm/%40tailwindcss/typography@0.5.19",
+      "integrity": "sha512-w31dd8HOx3k9vPtcQh5QHP9GwKcgbMp87j58qi6xgiBnFFtKEAgCWnDw4qUT8aHwkCp8bKvb/KGKWWHedP0AAg==",
+      "targets": [
+        "browser"
+      ],
+      "dependencies": [],
+      "licence": {
+        "id": "MIT",
+        "text": "MIT License\n\nCopyright (c) Tailwind Labs, Inc.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://www.npmjs.com/package/@tailwindcss/typography/v/0.5.19"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "animate.css",
+      "version": "4.1.1",
+      "source_url": "https://www.npmjs.com/package/animate.css/v/4.1.1",
+      "purl": "pkg:npm/animate.css@4.1.1",
+      "integrity": "sha512-+mRmCTv6SbCmtYJCN4faJMNFVNN5EuCTTprDTAo7YzIGji2KADmakjVA3+8mVDkZ2Bf09vayB35lSQIex2+QaQ==",
+      "targets": [
+        "browser"
+      ],
+      "dependencies": [],
+      "licence": {
+        "id": "MIT",
+        "text": "The MIT License (MIT)\n\nCopyright (c) 2020 Daniel Eden\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://www.npmjs.com/package/animate.css/v/4.1.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "chart.js",
+      "version": "4.5.1",
+      "source_url": "https://www.npmjs.com/package/chart.js/v/4.5.1",
+      "purl": "pkg:npm/chart.js@4.5.1",
+      "integrity": "sha512-GIjfiT9dbmHRiYi6Nl2yFCq7kkwdkp1W/lp2J99rX0yo9tgJGn3lKQATztIjb5tVtevcBtIdICNWqlq5+E8/Pw==",
+      "targets": [
+        "browser"
+      ],
+      "dependencies": [
+        "@kurkle/color"
+      ],
+      "licence": {
+        "id": "MIT",
+        "text": "The MIT License (MIT)\n\nCopyright (c) 2014-2024 Chart.js Contributors\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://www.npmjs.com/package/chart.js/v/4.5.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "daisyui",
+      "version": "5.5.19",
+      "source_url": "https://www.npmjs.com/package/daisyui/v/5.5.19",
+      "purl": "pkg:npm/daisyui@5.5.19",
+      "integrity": "sha512-pbFAkl1VCEh/MPCeclKL61I/MqRIFFhNU7yiXoDDRapXN4/qNCoMxeCCswyxEEhqL5eiTTfwHvucFtOE71C9sA==",
+      "targets": [
+        "browser"
+      ],
+      "dependencies": [],
+      "licence": {
+        "id": "MIT",
+        "text": "MIT License\n\nCopyright (c) 2020 Pouya Saadeghi\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://www.npmjs.com/package/daisyui/v/5.5.19"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "dompurify",
+      "version": "3.2.7",
+      "source_url": "https://www.npmjs.com/package/dompurify/v/3.2.7",
+      "purl": "pkg:npm/dompurify@3.2.7",
+      "targets": [
+        "browser"
+      ],
+      "dependencies": [],
+      "licence": {
+        "expression": "Apache-2.0 OR MPL-2.0",
+        "text": "DOMPurify\nCopyright 2025 Dr.-Ing. Mario Heiderich, Cure53\n\nDOMPurify is free software; you can redistribute it and/or modify it under the\nterms of either:\n\na) the Apache License Version 2.0, or\nb) the Mozilla Public License Version 2.0\n\n-----------------------------------------------------------------------------\n\n                                 Apache License\n                           Version 2.0, January 2004\n                        http://www.apache.org/licenses/\n\n   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\n\n   1. Definitions.\n\n      \"License\" shall mean the terms and conditions for use, reproduction,\n      and distribution as defined by Sections 1 through 9 of this document.\n\n      \"Licensor\" shall mean the copyright owner or entity authorized by\n      the copyright owner that is granting the License.\n\n      \"Legal Entity\" shall mean the union of the acting entity and all\n      other entities that control, are controlled by, or are under common\n      control with that entity. For the purposes of this definition,\n      \"control\" means (i) the power, direct or indirect, to cause the\n      direction or management of such entity, whether by contract or\n      otherwise, or (ii) ownership of fifty percent (50%) or more of the\n      outstanding shares, or (iii) beneficial ownership of such entity.\n\n      \"You\" (or \"Your\") shall mean an individual or Legal Entity\n      exercising permissions granted by this License.\n\n      \"Source\" form shall mean the preferred form for making modifications,\n      including but not limited to software source code, documentation\n      source, and configuration files.\n\n      \"Object\" form shall mean any form resulting from mechanical\n      transformation or translation of a Source form, including but\n      not limited to compiled object code, generated documentation,\n      and conversions to other media types.\n\n      \"Work\" shall mean the work of authorship, whether in Source or\n      Object form, made available under the License, as indicated by a\n      copyright notice that is included in or attached to the work\n      (an example is provided in the Appendix below).\n\n      \"Derivative Works\" shall mean any work, whether in Source or Object\n      form, that is based on (or derived from) the Work and for which the\n      editorial revisions, annotations, elaborations, or other modifications\n      represent, as a whole, an original work of authorship. For the purposes\n      of this License, Derivative Works shall not include works that remain\n      separable from, or merely link (or bind by name) to the interfaces of,\n      the Work and Derivative Works thereof.\n\n      \"Contribution\" shall mean any work of authorship, including\n      the original version of the Work and any modifications or additions\n      to that Work or Derivative Works thereof, that is intentionally\n      submitted to Licensor for inclusion in the Work by the copyright owner\n      or by an individual or Legal Entity authorized to submit on behalf of\n      the copyright owner. For the purposes of this definition, \"submitted\"\n      means any form of electronic, verbal, or written communication sent\n      to the Licensor or its representatives, including but not limited to\n      communication on electronic mailing lists, source code control systems,\n      and issue tracking systems that are managed by, or on behalf of, the\n      Licensor for the purpose of discussing and improving the Work, but\n      excluding communication that is conspicuously marked or otherwise\n      designated in writing by the copyright owner as \"Not a Contribution.\"\n\n      \"Contributor\" shall mean Licensor and any individual or Legal Entity\n      on behalf of whom a Contribution has been received by Licensor and\n      subsequently incorporated within the Work.\n\n   2. Grant of Copyright License. Subject to the terms and conditions of\n      this License, each Contributor hereby grants to You a perpetual,\n      worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n      copyright license to reproduce, prepare Derivative Works of,\n      publicly display, publicly perform, sublicense, and distribute the\n      Work and such Derivative Works in Source or Object form.\n\n   3. Grant of Patent License. Subject to the terms and conditions of\n      this License, each Contributor hereby grants to You a perpetual,\n      worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n      (except as stated in this section) patent license to make, have made,\n      use, offer to sell, sell, import, and otherwise transfer the Work,\n      where such license applies only to those patent claims licensable\n      by such Contributor that are necessarily infringed by their\n      Contribution(s) alone or by combination of their Contribution(s)\n      with the Work to which such Contribution(s) was submitted. If You\n      institute patent litigation against any entity (including a\n      cross-claim or counterclaim in a lawsuit) alleging that the Work\n      or a Contribution incorporated within the Work constitutes direct\n      or contributory patent infringement, then any patent licenses\n      granted to You under this License for that Work shall terminate\n      as of the date such litigation is filed.\n\n   4. Redistribution. You may reproduce and distribute copies of the\n      Work or Derivative Works thereof in any medium, with or without\n      modifications, and in Source or Object form, provided that You\n      meet the following conditions:\n\n      (a) You must give any other recipients of the Work or\n          Derivative Works a copy of this License; and\n\n      (b) You must cause any modified files to carry prominent notices\n          stating that You changed the files; and\n\n      (c) You must retain, in the Source form of any Derivative Works\n          that You distribute, all copyright, patent, trademark, and\n          attribution notices from the Source form of the Work,\n          excluding those notices that do not pertain to any part of\n          the Derivative Works; and\n\n      (d) If the Work includes a \"NOTICE\" text file as part of its\n          distribution, then any Derivative Works that You distribute must\n          include a readable copy of the attribution notices contained\n          within such NOTICE file, excluding those notices that do not\n          pertain to any part of the Derivative Works, in at least one\n          of the following places: within a NOTICE text file distributed\n          as part of the Derivative Works; within the Source form or\n          documentation, if provided along with the Derivative Works; or,\n          within a display generated by the Derivative Works, if and\n          wherever such third-party notices normally appear. The contents\n          of the NOTICE file are for informational purposes only and\n          do not modify the License. You may add Your own attribution\n          notices within Derivative Works that You distribute, alongside\n          or as an addendum to the NOTICE text from the Work, provided\n          that such additional attribution notices cannot be construed\n          as modifying the License.\n\n      You may add Your own copyright statement to Your modifications and\n      may provide additional or different license terms and conditions\n      for use, reproduction, or distribution of Your modifications, or\n      for any such Derivative Works as a whole, provided Your use,\n      reproduction, and distribution of the Work otherwise complies with\n      the conditions stated in this License.\n\n   5. Submission of Contributions. Unless You explicitly state otherwise,\n      any Contribution intentionally submitted for inclusion in the Work\n      by You to the Licensor shall be under the terms and conditions of\n      this License, without any additional terms or conditions.\n      Notwithstanding the above, nothing herein shall supersede or modify\n      the terms of any separate license agreement you may have executed\n      with Licensor regarding such Contributions.\n\n   6. Trademarks. This License does not grant permission to use the trade\n      names, trademarks, service marks, or product names of the Licensor,\n      except as required for reasonable and customary use in describing the\n      origin of the Work and reproducing the content of the NOTICE file.\n\n   7. Disclaimer of Warranty. Unless required by applicable law or\n      agreed to in writing, Licensor provides the Work (and each\n      Contributor provides its Contributions) on an \"AS IS\" BASIS,\n      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or\n      implied, including, without limitation, any warranties or conditions\n      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A\n      PARTICULAR PURPOSE. You are solely responsible for determining the\n      appropriateness of using or redistributing the Work and assume any\n      risks associated with Your exercise of permissions under this License.\n\n   8. Limitation of Liability. In no event and under no legal theory,\n      whether in tort (including negligence), contract, or otherwise,\n      unless required by applicable law (such as deliberate and grossly\n      negligent acts) or agreed to in writing, shall any Contributor be\n      liable to You for damages, including any direct, indirect, special,\n      incidental, or consequential damages of any character arising as a\n      result of this License or out of the use or inability to use the\n      Work (including but not limited to damages for loss of goodwill,\n      work stoppage, computer failure or malfunction, or any and all\n      other commercial damages or losses), even if such Contributor\n      has been advised of the possibility of such damages.\n\n   9. Accepting Warranty or Additional Liability. While redistributing\n      the Work or Derivative Works thereof, You may choose to offer,\n      and charge a fee for, acceptance of support, warranty, indemnity,\n      or other liability obligations and/or rights consistent with this\n      License. However, in accepting such obligations, You may act only\n      on Your own behalf and on Your sole responsibility, not on behalf\n      of any other Contributor, and only if You agree to indemnify,\n      defend, and hold each Contributor harmless for any liability\n      incurred by, or claims asserted against, such Contributor by reason\n      of your accepting any such warranty or additional liability.\n\n   END OF TERMS AND CONDITIONS\n\n   APPENDIX: How to apply the Apache License to your work.\n\n      To apply the Apache License to your work, attach the following\n      boilerplate notice, with the fields enclosed by brackets \"[]\"\n      replaced with your own identifying information. (Don't include\n      the brackets!)  The text should be enclosed in the appropriate\n      comment syntax for the file format. We also recommend that a\n      file or class name and description of purpose be included on the\n      same \"printed page\" as the copyright notice for easier\n      identification within third-party archives.\n\n   Copyright [yyyy] [name of copyright owner]\n\n   Licensed under the Apache License, Version 2.0 (the \"License\");\n   you may not use this file except in compliance with the License.\n   You may obtain a copy of the License at\n\n       http://www.apache.org/licenses/LICENSE-2.0\n\n   Unless required by applicable law or agreed to in writing, software\n   distributed under the License is distributed on an \"AS IS\" BASIS,\n   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n   See the License for the specific language governing permissions and\n   limitations under the License.\n\n-----------------------------------------------------------------------------\nMozilla Public License, version 2.0\n\n1. Definitions\n\n1.1. “Contributor”\n\n     means each individual or legal entity that creates, contributes to the\n     creation of, or owns Covered Software.\n\n1.2. “Contributor Version”\n\n     means the combination of the Contributions of others (if any) used by a\n     Contributor and that particular Contributor’s Contribution.\n\n1.3. “Contribution”\n\n     means Covered Software of a particular Contributor.\n\n1.4. “Covered Software”\n\n     means Source Code Form to which the initial Contributor has attached the\n     notice in Exhibit A, the Executable Form of such Source Code Form, and\n     Modifications of such Source Code Form, in each case including portions\n     thereof.\n\n1.5. “Incompatible With Secondary Licenses”\n     means\n\n     a. that the initial Contributor has attached the notice described in\n        Exhibit B to the Covered Software; or\n\n     b. that the Covered Software was made available under the terms of version\n        1.1 or earlier of the License, but not also under the terms of a\n        Secondary License.\n\n1.6. “Executable Form”\n\n     means any form of the work other than Source Code Form.\n\n1.7. “Larger Work”\n\n     means a work that combines Covered Software with other material, in a separate\n     file or files, that is not Covered Software.\n\n1.8. “License”\n\n     means this document.\n\n1.9. “Licensable”\n\n     means having the right to grant, to the maximum extent possible, whether at the\n     time of the initial grant or subsequently, any and all of the rights conveyed by\n     this License.\n\n1.10. “Modifications”\n\n     means any of the following:\n\n     a. any file in Source Code Form that results from an addition to, deletion\n        from, or modification of the contents of Covered Software; or\n\n     b. any new file in Source Code Form that contains any Covered Software.\n\n1.11. “Patent Claims” of a Contributor\n\n      means any patent claim(s), including without limitation, method, process,\n      and apparatus claims, in any patent Licensable by such Contributor that\n      would be infringed, but for the grant of the License, by the making,\n      using, selling, offering for sale, having made, import, or transfer of\n      either its Contributions or its Contributor Version.\n\n1.12. “Secondary License”\n\n      means either the GNU General Public License, Version 2.0, the GNU Lesser\n      General Public License, Version 2.1, the GNU Affero General Public\n      License, Version 3.0, or any later versions of those licenses.\n\n1.13. “Source Code Form”\n\n      means the form of the work preferred for making modifications.\n\n1.14. “You” (or “Your”)\n\n      means an individual or a legal entity exercising rights under this\n      License. For legal entities, “You” includes any entity that controls, is\n      controlled by, or is under common control with You. For purposes of this\n      definition, “control” means (a) the power, direct or indirect, to cause\n      the direction or management of such entity, whether by contract or\n      otherwise, or (b) ownership of more than fifty percent (50%) of the\n      outstanding shares or beneficial ownership of such entity.\n\n\n2. License Grants and Conditions\n\n2.1. Grants\n\n     Each Contributor hereby grants You a world-wide, royalty-free,\n     non-exclusive license:\n\n     a. under intellectual property rights (other than patent or trademark)\n        Licensable by such Contributor to use, reproduce, make available,\n        modify, display, perform, distribute, and otherwise exploit its\n        Contributions, either on an unmodified basis, with Modifications, or as\n        part of a Larger Work; and\n\n     b. under Patent Claims of such Contributor to make, use, sell, offer for\n        sale, have made, import, and otherwise transfer either its Contributions\n        or its Contributor Version.\n\n2.2. Effective Date\n\n     The licenses granted in Section 2.1 with respect to any Contribution become\n     effective for each Contribution on the date the Contributor first distributes\n     such Contribution.\n\n2.3. Limitations on Grant Scope\n\n     The licenses granted in this Section 2 are the only rights granted under this\n     License. No additional rights or licenses will be implied from the distribution\n     or licensing of Covered Software under this License. Notwithstanding Section\n     2.1(b) above, no patent license is granted by a Contributor:\n\n     a. for any code that a Contributor has removed from Covered Software; or\n\n     b. for infringements caused by: (i) Your and any other third party’s\n        modifications of Covered Software, or (ii) the combination of its\n        Contributions with other software (except as part of its Contributor\n        Version); or\n\n     c. under Patent Claims infringed by Covered Software in the absence of its\n        Contributions.\n\n     This License does not grant any rights in the trademarks, service marks, or\n     logos of any Contributor (except as may be necessary to comply with the\n     notice requirements in Section 3.4).\n\n2.4. Subsequent Licenses\n\n     No Contributor makes additional grants as a result of Your choice to\n     distribute the Covered Software under a subsequent version of this License\n     (see Section 10.2) or under the terms of a Secondary License (if permitted\n     under the terms of Section 3.3).\n\n2.5. Representation\n\n     Each Contributor represents that the Contributor believes its Contributions\n     are its original creation(s) or it has sufficient rights to grant the\n     rights to its Contributions conveyed by this License.\n\n2.6. Fair Use\n\n     This License is not intended to limit any rights You have under applicable\n     copyright doctrines of fair use, fair dealing, or other equivalents.\n\n2.7. Conditions\n\n     Sections 3.1, 3.2, 3.3, and 3.4 are conditions of the licenses granted in\n     Section 2.1.\n\n\n3. Responsibilities\n\n3.1. Distribution of Source Form\n\n     All distribution of Covered Software in Source Code Form, including any\n     Modifications that You create or to which You contribute, must be under the\n     terms of this License. You must inform recipients that the Source Code Form\n     of the Covered Software is governed by the terms of this License, and how\n     they can obtain a copy of this License. You may not attempt to alter or\n     restrict the recipients’ rights in the Source Code Form.\n\n3.2. Distribution of Executable Form\n\n     If You distribute Covered Software in Executable Form then:\n\n     a. such Covered Software must also be made available in Source Code Form,\n        as described in Section 3.1, and You must inform recipients of the\n        Executable Form how they can obtain a copy of such Source Code Form by\n        reasonable means in a timely manner, at a charge no more than the cost\n        of distribution to the recipient; and\n\n     b. You may distribute such Executable Form under the terms of this License,\n        or sublicense it under different terms, provided that the license for\n        the Executable Form does not attempt to limit or alter the recipients’\n        rights in the Source Code Form under this License.\n\n3.3. Distribution of a Larger Work\n\n     You may create and distribute a Larger Work under terms of Your choice,\n     provided that You also comply with the requirements of this License for the\n     Covered Software. If the Larger Work is a combination of Covered Software\n     with a work governed by one or more Secondary Licenses, and the Covered\n     Software is not Incompatible With Secondary Licenses, this License permits\n     You to additionally distribute such Covered Software under the terms of\n     such Secondary License(s), so that the recipient of the Larger Work may, at\n     their option, further distribute the Covered Software under the terms of\n     either this License or such Secondary License(s).\n\n3.4. Notices\n\n     You may not remove or alter the substance of any license notices (including\n     copyright notices, patent notices, disclaimers of warranty, or limitations\n     of liability) contained within the Source Code Form of the Covered\n     Software, except that You may alter any license notices to the extent\n     required to remedy known factual inaccuracies.\n\n3.5. Application of Additional Terms\n\n     You may choose to offer, and to charge a fee for, warranty, support,\n     indemnity or liability obligations to one or more recipients of Covered\n     Software. However, You may do so only on Your own behalf, and not on behalf\n     of any Contributor. You must make it absolutely clear that any such\n     warranty, support, indemnity, or liability obligation is offered by You\n     alone, and You hereby agree to indemnify every Contributor for any\n     liability incurred by such Contributor as a result of warranty, support,\n     indemnity or liability terms You offer. You may include additional\n     disclaimers of warranty and limitations of liability specific to any\n     jurisdiction.\n\n4. Inability to Comply Due to Statute or Regulation\n\n   If it is impossible for You to comply with any of the terms of this License\n   with respect to some or all of the Covered Software due to statute, judicial\n   order, or regulation then You must: (a) comply with the terms of this License\n   to the maximum extent possible; and (b) describe the limitations and the code\n   they affect. Such description must be placed in a text file included with all\n   distributions of the Covered Software under this License. Except to the\n   extent prohibited by statute or regulation, such description must be\n   sufficiently detailed for a recipient of ordinary skill to be able to\n   understand it.\n\n5. Termination\n\n5.1. The rights granted under this License will terminate automatically if You\n     fail to comply with any of its terms. However, if You become compliant,\n     then the rights granted under this License from a particular Contributor\n     are reinstated (a) provisionally, unless and until such Contributor\n     explicitly and finally terminates Your grants, and (b) on an ongoing basis,\n     if such Contributor fails to notify You of the non-compliance by some\n     reasonable means prior to 60 days after You have come back into compliance.\n     Moreover, Your grants from a particular Contributor are reinstated on an\n     ongoing basis if such Contributor notifies You of the non-compliance by\n     some reasonable means, this is the first time You have received notice of\n     non-compliance with this License from such Contributor, and You become\n     compliant prior to 30 days after Your receipt of the notice.\n\n5.2. If You initiate litigation against any entity by asserting a patent\n     infringement claim (excluding declaratory judgment actions, counter-claims,\n     and cross-claims) alleging that a Contributor Version directly or\n     indirectly infringes any patent, then the rights granted to You by any and\n     all Contributors for the Covered Software under Section 2.1 of this License\n     shall terminate.\n\n5.3. In the event of termination under Sections 5.1 or 5.2 above, all end user\n     license agreements (excluding distributors and resellers) which have been\n     validly granted by You or Your distributors under this License prior to\n     termination shall survive termination.\n\n6. Disclaimer of Warranty\n\n   Covered Software is provided under this License on an “as is” basis, without\n   warranty of any kind, either expressed, implied, or statutory, including,\n   without limitation, warranties that the Covered Software is free of defects,\n   merchantable, fit for a particular purpose or non-infringing. The entire\n   risk as to the quality and performance of the Covered Software is with You.\n   Should any Covered Software prove defective in any respect, You (not any\n   Contributor) assume the cost of any necessary servicing, repair, or\n   correction. This disclaimer of warranty constitutes an essential part of this\n   License. No use of  any Covered Software is authorized under this License\n   except under this disclaimer.\n\n7. Limitation of Liability\n\n   Under no circumstances and under no legal theory, whether tort (including\n   negligence), contract, or otherwise, shall any Contributor, or anyone who\n   distributes Covered Software as permitted above, be liable to You for any\n   direct, indirect, special, incidental, or consequential damages of any\n   character including, without limitation, damages for lost profits, loss of\n   goodwill, work stoppage, computer failure or malfunction, or any and all\n   other commercial damages or losses, even if such party shall have been\n   informed of the possibility of such damages. This limitation of liability\n   shall not apply to liability for death or personal injury resulting from such\n   party’s negligence to the extent applicable law prohibits such limitation.\n   Some jurisdictions do not allow the exclusion or limitation of incidental or\n   consequential damages, so this exclusion and limitation may not apply to You.\n\n8. Litigation\n\n   Any litigation relating to this License may be brought only in the courts of\n   a jurisdiction where the defendant maintains its principal place of business\n   and such litigation shall be governed by laws of that jurisdiction, without\n   reference to its conflict-of-law provisions. Nothing in this Section shall\n   prevent a party’s ability to bring cross-claims or counter-claims.\n\n9. Miscellaneous\n\n   This License represents the complete agreement concerning the subject matter\n   hereof. If any provision of this License is held to be unenforceable, such\n   provision shall be reformed only to the extent necessary to make it\n   enforceable. Any law or regulation which provides that the language of a\n   contract shall be construed against the drafter shall not be used to construe\n   this License against a Contributor.\n\n\n10. Versions of the License\n\n10.1. New Versions\n\n      Mozilla Foundation is the license steward. Except as provided in Section\n      10.3, no one other than the license steward has the right to modify or\n      publish new versions of this License. Each version will be given a\n      distinguishing version number.\n\n10.2. Effect of New Versions\n\n      You may distribute the Covered Software under the terms of the version of\n      the License under which You originally received the Covered Software, or\n      under the terms of any subsequent version published by the license\n      steward.\n\n10.3. Modified Versions\n\n      If you create software not governed by this License, and you want to\n      create a new license for such software, you may create and use a modified\n      version of this License if you rename the license and remove any\n      references to the name of the license steward (except to note that such\n      modified license differs from this License).\n\n10.4. Distributing Source Code Form that is Incompatible With Secondary Licenses\n      If You choose to distribute Source Code Form that is Incompatible With\n      Secondary Licenses under the terms of this version of the License, the\n      notice described in Exhibit B of this License must be attached.\n\nExhibit A - Source Code Form License Notice\n\n      This Source Code Form is subject to the\n      terms of the Mozilla Public License, v.\n      2.0. If a copy of the MPL was not\n      distributed with this file, You can\n      obtain one at\n      http://mozilla.org/MPL/2.0/.\n\nIf it is not possible or desirable to put the notice in a particular file, then\nYou may include the notice in a location (such as a LICENSE file in a relevant\ndirectory) where a recipient would be likely to look for such a notice.\n\nYou may add additional accurate notices of copyright ownership.\n\nExhibit B - “Incompatible With Secondary Licenses” Notice\n\n      This Source Code Form is “Incompatible\n      With Secondary Licenses”, as defined by\n      the Mozilla Public License, v. 2.0.\n\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://github.com/cure53/DOMPurify/blob/3.2.7/LICENSE"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "htmx.org",
+      "version": "2.0.4",
+      "source_url": "https://www.npmjs.com/package/htmx.org/v/2.0.4",
+      "purl": "pkg:npm/htmx.org@2.0.4",
+      "integrity": "sha512-HLxMCdfXDOJirs3vBZl/ZLoY+c7PfM4Ahr2Ad4YXh6d22T5ltbTXFFkpx9Tgb2vvmWFMbIc3LqN2ToNkZJvyYQ==",
+      "targets": [
+        "browser"
+      ],
+      "dependencies": [],
+      "licence": {
+        "id": "0BSD",
+        "text": "Zero-Clause BSD\n=============\n\nPermission to use, copy, modify, and/or distribute this software for\nany purpose with or without fee is hereby granted.\n\nTHE SOFTWARE IS PROVIDED “AS IS” AND THE AUTHOR DISCLAIMS ALL\nWARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES\nOF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE\nFOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY\nDAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN\nAN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT\nOF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://www.npmjs.com/package/htmx.org/v/2.0.4"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "tailwindcss",
+      "version": "4.2.1",
+      "source_url": "https://www.npmjs.com/package/tailwindcss/v/4.2.1",
+      "purl": "pkg:npm/tailwindcss@4.2.1",
+      "integrity": "sha512-/tBrSQ36vCleJkAOsy9kbNTgaxvGbyOamC30PRePTQe/o1MFwEKHQk4Cn7BNGaPtjp+PuUrByJehM1hgxfq4sw==",
+      "targets": [
+        "browser"
+      ],
+      "dependencies": [],
+      "licence": {
+        "id": "MIT",
+        "text": "MIT License\n\nCopyright (c) Tailwind Labs, Inc.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://www.npmjs.com/package/tailwindcss/v/4.2.1"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "trix",
+      "version": "2.1.16",
+      "source_url": "https://www.npmjs.com/package/trix/v/2.1.16",
+      "purl": "pkg:npm/trix@2.1.16",
+      "integrity": "sha512-XtZgWI+oBvLzX7CWnkIf+ZWC+chL+YG/TkY43iMTV0Zl+CJjn18B1GJUCEWJ8qgfpcyMBuysnNAfPWiv2sV14A==",
+      "targets": [
+        "browser"
+      ],
+      "dependencies": [
+        "pkg:npm/dompurify@3.2.7"
+      ],
+      "licence": {
+        "id": "MIT",
+        "text": "Copyright (c) 37signals, LLC\n\nPermission is hereby granted, free of charge, to any person obtaining\na copy of this software and associated documentation files (the\n\"Software\"), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\nNONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE\nLIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION\nWITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://www.npmjs.com/package/trix/v/2.1.16"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "vanilla-cookieconsent",
+      "version": "3.1.0",
+      "source_url": "https://www.npmjs.com/package/vanilla-cookieconsent/v/3.1.0",
+      "purl": "pkg:npm/vanilla-cookieconsent@3.1.0",
+      "integrity": "sha512-/McNRtm/3IXzb9dhqMIcbquoU45SzbN2VB+To4jxEPqMmp7uVniP6BhGLjU8MC7ZCDsNQVOp27fhQTM/ruIXAA==",
+      "targets": [
+        "browser"
+      ],
+      "dependencies": [],
+      "licence": {
+        "id": "MIT",
+        "text": "MIT License\n\nCopyright (c) 2020-2025 Orest Bida\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://www.npmjs.com/package/vanilla-cookieconsent/v/3.1.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "viewerjs",
+      "version": "1.11.7",
+      "source_url": "https://www.npmjs.com/package/viewerjs/v/1.11.7",
+      "purl": "pkg:npm/viewerjs@1.11.7",
+      "integrity": "sha512-0JuVqOmL5v1jmEAlG5EBDR3XquxY8DWFQbFMprOXgaBB0F7Q/X9xWdEaQc59D8xzwkdUgXEMSSknTpriq95igg==",
+      "targets": [
+        "browser"
+      ],
+      "dependencies": [],
+      "licence": {
+        "id": "MIT",
+        "text": "The MIT License (MIT)\n\nCopyright 2015-present Chen Fengyuan\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://www.npmjs.com/package/viewerjs/v/1.11.7"
+    }
+  ]
+}

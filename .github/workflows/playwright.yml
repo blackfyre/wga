@@ -8,6 +8,8 @@ on:
       - "**/*.ts"
       - "**/*.templ"
       - "**/*.pcss"
+      - "internal/licences/**"
+      - "internal/assets/views/open-source-licences.html"
       - ".github/workflows/playwright.yml"
       - "package.json"
       - "bun.lock"
@@ -23,6 +25,8 @@ on:
       - "**/*.ts"
       - "**/*.templ"
       - "**/*.pcss"
+      - "internal/licences/**"
+      - "internal/assets/views/open-source-licences.html"
       - ".github/workflows/playwright.yml"
       - "package.json"
       - "bun.lock"
@@ -33,6 +37,8 @@ on:
 jobs:
   backend-quality-gates:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -60,6 +66,10 @@ jobs:
         run: bun run build
       - name: Compile templates
         run: go tool templ generate
+      - name: Verify committed licence notices
+        run: go test ./cmd/generate-licences -run '^TestCommittedNoticesMatchManifest$'
+      - name: Generate licence notices and SBOM
+        run: go run ./cmd/generate-licences
       - name: Install go modules
         run: go mod tidy
       - name: Run go vet
@@ -73,10 +83,17 @@ jobs:
           name: wga-binary
           path: out/wga
           retention-days: 1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wga-sbom
+          path: dist/wga.cdx.json
+          retention-days: 1
 
   build:
     needs: backend-quality-gates
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     environment: playwright
     steps:
       - name: Fetch the application binary
@@ -111,6 +128,8 @@ jobs:
   playwright-tests:
     needs: build
     timeout-minutes: 5
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:

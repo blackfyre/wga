@@ -102,7 +102,7 @@ mise install
 mise run app:build
 ```
 
-This produces the server binary at `dist/wga`.
+This produces the server binary at `dist/wga` and the CycloneDX SBOM at `dist/wga.cdx.json`. See the [development guide](docs/development-guide.md#licence-notices-and-sbom) for dependency-review and regeneration guidance.
 
 The equivalent build steps are:
 
@@ -111,6 +111,7 @@ mkdir -p dist
 bun install
 bun run build
 templ generate
+go run ./cmd/generate-licences
 go mod tidy
 go build -o dist/wga ./cmd/wga
 ```
