@@ -3,6 +3,7 @@ import Viewer from "viewerjs";
 import "htmx.org";
 import htmx from "htmx.org";
 import warningSign from "../assets/warning-sign.svg";
+import { initCookieConsent } from "./cookieconsent";
 import logger from "./logger";
 import { initStatisticsChart } from "./statistics";
 
@@ -876,6 +877,7 @@ const wgaInternal: wgaInternals = {
 
 (() => {
 	logger.debug("Initializing WGA");
+	initCookieConsent();
 	initThemeToggle();
 	wgaInternal.func.init();
 })();
