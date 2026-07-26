@@ -13,7 +13,7 @@ import (
 
 const snapshotKey = "github"
 
-//go:embed contributors.json
+//go:embed fallback.json
 var fallbackContributors []byte
 
 type Store struct {
