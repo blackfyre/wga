@@ -27,9 +27,9 @@ application components.
   succeeds with no new diagnostics.
 - [ ] Manually review the homepage at desktop and mobile widths. Verification:
       the primary search and collection routes are visible and usable.
-- [ ] Commit the implementation and open a pull request for #45. Verification:
-      the pull request describes the homepage, Explore Artworks, and daisyUI
-      removal work, and links to the parent issue.
+- [✓] Commit the implementation and open a pull request for #45. Verification:
+  the pull request describes the homepage, Explore Artworks, and daisyUI
+  removal work, and links to the parent issue.
 
 ## Phase 2: Explore Artworks delivery
 
