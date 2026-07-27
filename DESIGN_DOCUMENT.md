@@ -14,7 +14,6 @@ The project leverages the following core technologies:
 - **Frontend:**
   - **htmx:** A JavaScript library that allows access to modern browser features directly from HTML, enabling dynamic page updates without complex JavaScript.
   - **TailwindCSS:** A utility-first CSS framework for rapidly building custom user interfaces.
-  - **DaisyUI:** A component library for TailwindCSS that provides pre-styled components.
   - **Templ:** A Go library for writing HTML components and pages using Go syntax, which are then compiled into optimized Go code.
   - **TypeScript/JavaScript:** Used for custom client-side enhancements and interactions (`resources/js/app.ts`).
 - **Build & Development Tools:**
@@ -76,8 +75,7 @@ graph LR
   - **JavaScript (`resources/js/app.ts`):** Custom JavaScript (compiled from TypeScript) is used for functionalities that htmx doesn't cover, such as initializing third-party libraries (e.g., image viewers, rich text editors) or complex UI interactions.
 - **Styling:**
   - **TailwindCSS:** Provides utility classes used directly in the `templ` files to style elements.
-  - **DaisyUI:** Offers pre-built components (like buttons, cards, modals) that are styled with TailwindCSS, simplifying development.
-  - Custom CSS is defined in `resources/css/style.pcss` and processed by PostCSS.
+   - WGA-owned CSS primitives for components such as buttons, cards, modals, and forms are defined in `resources/css/style.pcss` and processed by PostCSS.
 
 ### 3.4. Asset Pipeline
 

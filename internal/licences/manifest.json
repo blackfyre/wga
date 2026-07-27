@@ -896,25 +896,6 @@
     },
     {
       "ecosystem": "npm",
-      "name": "daisyui",
-      "version": "5.5.19",
-      "source_url": "https://www.npmjs.com/package/daisyui/v/5.5.19",
-      "purl": "pkg:npm/daisyui@5.5.19",
-      "integrity": "sha512-pbFAkl1VCEh/MPCeclKL61I/MqRIFFhNU7yiXoDDRapXN4/qNCoMxeCCswyxEEhqL5eiTTfwHvucFtOE71C9sA==",
-      "targets": [
-        "browser"
-      ],
-      "dependencies": [],
-      "licence": {
-        "id": "MIT",
-        "text": "MIT License\n\nCopyright (c) 2020 Pouya Saadeghi\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
-        "notice": "",
-        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
-      },
-      "source_evidence": "https://www.npmjs.com/package/daisyui/v/5.5.19"
-    },
-    {
-      "ecosystem": "npm",
       "name": "dompurify",
       "version": "3.2.7",
       "source_url": "https://www.npmjs.com/package/dompurify/v/3.2.7",

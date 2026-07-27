@@ -7,7 +7,7 @@
 - Add PocketBase migrations as timestamped files in `internal/migrations/` that call `m.Register` from `init()`. The entrypoint blank-imports this package and disables migration-file generation; `serve` applies pending migrations before listening, while the built binary's `migrate` command remains available for explicit operations.
 - Edit Templ sources in `internal/assets/templ/`, then run `templ generate`. Adjacent `*_templ.go` files are generated and Git-ignored: do not edit or commit them.
 - Edit frontend sources in `resources/js/` and `resources/css/`; `bun run build` writes generated JS/CSS to `internal/assets/public/{js,css}`, which the Go binary embeds. `internal/assets/views/` and `internal/assets/reference/` are also embedded at build time.
-- The active Tailwind 4/daisyUI theme is in `resources/css/style.pcss`; UI work must also follow `.github/instructions/daisyui.instructions.md`.
+- The active Tailwind 4 theme and WGA-owned UI primitives are in `resources/css/style.pcss`.
 - Keep WGA as one deployable application. Extend the owning feature package and use explicit contracts across capability boundaries rather than reaching into another feature's persistence helpers.
 - Treat handlers and hooks as framework adapters: parse input, obtain request context, invoke the owning workflow, and map the result. Keep non-trivial business rules, state changes, and external side-effect ordering outside request handlers.
 - Load deployment settings only through `internal/config`; feature code must not read environment variables or `.env` files directly. Add parsing, validation, and focused tests there for new settings.
