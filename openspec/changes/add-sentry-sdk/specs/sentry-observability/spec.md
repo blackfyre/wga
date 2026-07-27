@@ -15,6 +15,7 @@ The application SHALL load `WGA_SENTRY_DSN` through `internal/config` as optiona
 - **THEN** the application starts normally and emits one structured log entry that Sentry monitoring is disabled
 
 #### Scenario: DSN is malformed
+
 - **WHEN** `WGA_SENTRY_DSN` is supplied in an invalid format
 - **THEN** server configuration fails with an operator-safe validation error that identifies `WGA_SENTRY_DSN`
 
@@ -52,9 +53,11 @@ The browser bundle SHALL include the official Sentry browser SDK and SHALL initi
 - **THEN** the browser skips Sentry initialisation and the main application bootstrap still completes
 
 ### Requirement: Browser event URL privacy
+
 The browser SDK SHALL remove query strings and fragments from error-event and breadcrumb URLs before sending events to Sentry.
 
 #### Scenario: Page URL contains a sensitive query parameter
+
 - **WHEN** a browser error occurs on a URL containing query parameters or a fragment
 - **THEN** the event sent to Sentry contains the URL path without the query string or fragment
 
