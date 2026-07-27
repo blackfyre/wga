@@ -75,7 +75,7 @@ graph LR
   - **JavaScript (`resources/js/app.ts`):** Custom JavaScript (compiled from TypeScript) is used for functionalities that htmx doesn't cover, such as initializing third-party libraries (e.g., image viewers, rich text editors) or complex UI interactions.
 - **Styling:**
   - **TailwindCSS:** Provides utility classes used directly in the `templ` files to style elements.
-   - WGA-owned CSS primitives for components such as buttons, cards, modals, and forms are defined in `resources/css/style.pcss` and processed by PostCSS.
+  - WGA-owned CSS primitives for components such as buttons, cards, modals, and forms are defined in `resources/css/style.pcss` and processed by PostCSS.
 
 ### 3.4. Asset Pipeline
 
