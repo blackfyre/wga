@@ -11,7 +11,7 @@ const entry = {
 test("test", async ({ page }) => {
   await page.goto("/");
   await page
-    .getByRole("navigation", { name: "main navigation" })
+    .getByRole("navigation", { name: "Main navigation" })
     .getByRole("link", { name: "Guestbook", exact: true })
     .click();
   await page.getByRole("link", { name: "Add Entry" }).click();

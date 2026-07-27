@@ -384,6 +384,205 @@ html[data-theme="wga_dark"] {
   font-family: "Lexend", sans-serif;
 }
 
+.site-header {
+  position: fixed;
+  z-index: 40;
+  top: 0;
+  right: 0;
+  left: 0;
+  border-bottom: 1px solid var(--wga-page-border);
+  background: color-mix(in srgb, var(--wga-page-surface) 94%, transparent);
+  color: var(--wga-page-ink);
+  font-family: "Inter", sans-serif;
+  backdrop-filter: blur(12px);
+}
+
+.site-header__inner {
+  display: grid;
+  min-height: 5rem;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.site-header__identity,
+.site-header__theme {
+  display: flex;
+  align-items: center;
+}
+
+.site-header__identity {
+  gap: 1rem;
+}
+
+.site-header__brand {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  color: var(--wga-primary);
+  text-decoration: none;
+}
+
+.site-header__brand > span {
+  font-family: "Source Serif 4", serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+.site-header__brand small,
+.site-header__theme > span {
+  color: var(--wga-page-muted);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.site-header__links {
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.site-header__links a,
+.site-header__links summary {
+  display: block;
+  padding: 0.5rem 0.75rem;
+  border-radius: 999px;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.site-header__links a:hover,
+.site-header__links summary:hover,
+.site-header__links a:focus-visible,
+.site-header__links summary:focus-visible {
+  background: var(--wga-page-surface-muted);
+}
+
+.site-header__more {
+  position: relative;
+}
+
+.site-header__more summary {
+  list-style: none;
+}
+
+.site-header__more summary::after {
+  margin-left: 0.35rem;
+  content: "⌄";
+}
+
+.site-header__more summary::-webkit-details-marker,
+.site-header__mobile-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.site-header__more details[open] summary::after {
+  content: "⌃";
+}
+
+.site-header__more ul,
+.site-header__mobile-menu ul {
+  margin: 0;
+  list-style: none;
+}
+
+.site-header__more ul {
+  position: absolute;
+  z-index: 1;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  min-width: 11rem;
+  border: 1px solid var(--wga-page-border);
+  background: var(--wga-page-surface);
+  box-shadow: 0 0.75rem 2rem rgb(24 32 39 / 12%);
+  padding: 0.5rem;
+}
+
+.site-header__more ul a {
+  border-radius: 0.2rem;
+}
+
+.site-header__theme {
+  justify-self: end;
+  gap: 0.625rem;
+  cursor: pointer;
+}
+
+.site-header__mobile-menu {
+  position: relative;
+}
+
+.site-header__mobile-menu summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--wga-primary);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  list-style: none;
+  text-transform: uppercase;
+}
+
+.site-header__mobile-menu summary svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.site-header__mobile-menu ul {
+  position: absolute;
+  z-index: 1;
+  top: calc(100% + 1.25rem);
+  left: -1rem;
+  width: min(18rem, calc(100vw - 2rem));
+  border: 1px solid var(--wga-page-border);
+  background: var(--wga-page-surface);
+  box-shadow: 0 0.75rem 2rem rgb(24 32 39 / 12%);
+  padding: 0.5rem;
+}
+
+.site-header__mobile-menu a {
+  display: block;
+  padding: 0.875rem 0.75rem;
+  color: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.site-header__mobile-menu a:hover,
+.site-header__mobile-menu a:focus-visible {
+  background: var(--wga-page-surface-muted);
+}
+
+@media (max-width: 1023px) {
+  .site-header__inner {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 0 1rem;
+  }
+
+  .site-header__brand small {
+    display: none;
+  }
+}
+
+@media (max-width: 479px) {
+  .site-header__theme > span {
+    display: none;
+  }
+}
+
 .homepage {
   --homepage-surface: var(--wga-page-surface);
   --homepage-surface-muted: var(--wga-page-surface-muted);
