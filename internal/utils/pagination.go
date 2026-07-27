@@ -18,6 +18,8 @@ type Pagination struct {
 	baseUrl     string
 	htmxTarget  string
 	htmxBaseUrl string
+	htmxSelect  string
+	htmxSwap    string
 
 	// render parts
 	firstPart  []string
@@ -48,7 +50,14 @@ func NewPagination(totalAmount, perPage, currentPage int, baseUrl string, htmxTa
 		baseUrl:     baseUrl,
 		htmxTarget:  htmxTarget,
 		htmxBaseUrl: htmxUrl,
+		htmxSelect:  "#" + htmxTarget,
+		htmxSwap:    "outerHTML",
 	}
+}
+
+func (p *Pagination) SetHtmxSwap(selectValue string, swap string) {
+	p.htmxSelect = selectValue
+	p.htmxSwap = swap
 }
 
 // TotalPages returns the total number of pages in the pagination.
@@ -201,7 +210,7 @@ func (p *Pagination) GetAvailablePageWrapper(href, page, htmxUrl string) string 
 	str := "<a class='inline-flex items-center border-t-2 border-transparent pr-1 pt-4 text-sm font-medium text-base-content/70 hover:border-secondary hover:text-secondary' aria-label='Goto page " + page + "' hx-get='" + htmxUrl + "' href='" + href
 
 	if p.htmxTarget != "" {
-		str = str + "' hx-target='#" + p.htmxTarget + "' hx-select='#" + p.htmxTarget + "' hx-swap='outerHTML"
+		str = str + "' hx-target='#" + p.htmxTarget + "' hx-select='" + p.htmxSelect + "' hx-swap='" + p.htmxSwap
 	}
 
 	str = str + "'>" + page + "</a>"

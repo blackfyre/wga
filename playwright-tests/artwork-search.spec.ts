@@ -71,22 +71,25 @@ test("art type and school combined search", async ({ page }) => {
 });
 
 test("title search", async ({ page }) => {
-  await page.goto("http://localhost:8090/artworks");
+  await page.goto("/artworks");
   await page.locator("[name='title']").fill("Synthetic Artwork 01-01");
   await page.getByRole("button", { name: "Apply filters" }).click();
   await expectArtworkResults(page);
 });
 
 test("artist name search", async ({ page }) => {
-  await page.goto("http://localhost:8090/artworks");
+  await page.goto("/artworks");
   await page.locator("[name='artist']").fill("Synthetic Artist 01");
   await page.getByRole("button", { name: "Apply filters" }).click();
   await expectArtworkResults(page);
 });
 
 test("clear resets the artwork search form", async ({ page }) => {
-  await page.goto("http://localhost:8090/artworks");
+  await page.goto("/artworks");
   await page.locator("[name='title']").fill("Synthetic Artwork 01-01");
+  await page
+    .locator("[name='art_school']")
+    .selectOption("synthetic-test-school");
   await page.getByRole("link", { name: "Clear all" }).click();
 
   await expect(page).toHaveURL(/\/artworks$/);

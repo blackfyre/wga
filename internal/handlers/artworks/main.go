@@ -226,6 +226,7 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	pHtmxUrl := buildArtworkSearchPath("/artworks/results", filters, dualModeContext)
 
 	pagination := utils.NewPagination(recordsCount, limit, page, pUrl, "artwork-search-results", pHtmxUrl)
+	pagination.SetHtmxSwap("#artwork-search-results > *", "innerHTML")
 
 	content.Results.Pagination = string(pagination.Render())
 

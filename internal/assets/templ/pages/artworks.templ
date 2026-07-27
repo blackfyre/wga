@@ -18,8 +18,8 @@ templ ArtworkSeachFilterBlock(b dto.ArtworkSearchDTO) {
 		hx-get="/artworks/results"
 		hx-disabled-elt="button"
 		hx-target={ b.HxTarget }
-		hx-select={ b.HxTarget }
-		hx-swap="outerHTML"
+		hx-select="#artwork-search-results > *"
+		hx-swap="innerHTML"
 		hx-indicator="#artwork-search-indicator"
 		method="GET"
 		class="explore-filters"
@@ -115,9 +115,9 @@ templ ArtworkSeachFilterBlock(b dto.ArtworkSearchDTO) {
 }
 
 templ ArtworkSearchResults(r dto.ArtworkSearchResultDTO) {
-	<div id="artwork-search-results" class="explore-results">
+	<div id="artwork-search-results" class="explore-results" aria-live="polite">
 		if len(r.ResultSummary) > 0 {
-			<p class="explore-results__summary" aria-live="polite">{ r.ResultSummary }</p>
+			<p class="explore-results__summary">{ r.ResultSummary }</p>
 		}
 		if len(r.Artworks) > 0 {
 			if r.DualModeTarget != "" {
@@ -149,7 +149,10 @@ templ ExploreArtworkGrid(artworks dto.ImageGrid) {
 		for _, artwork := range artworks {
 			<a class="explore-artwork-card" href={ templ.SafeURL(artwork.Url) } hx-get={ artwork.Url }>
 				<figure class="explore-artwork-card__image">
-					<img src={ artwork.Thumb } alt={ artwork.Title + " by " + artwork.Artist.Name } loading="lazy"/>
+					<picture>
+						<source srcset={ artwork.Thumb }/>
+						<img src={ artwork.Image } alt="" loading="lazy"/>
+					</picture>
 				</figure>
 				<div class="explore-artwork-card__copy">
 					<p>{ artwork.Artist.Name }</p>
