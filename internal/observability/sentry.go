@@ -26,6 +26,7 @@ var browserConfiguration BrowserConfiguration
 type Monitor struct {
 	enabled          bool
 	captureException func(error)
+	captureMessage   func(string)
 	recoverPanic     func(any)
 }
 
@@ -58,6 +59,7 @@ func configure(dsn string, environment string, logger *slog.Logger, initialise f
 	return Monitor{
 		enabled:          true,
 		captureException: func(err error) { sentry.CaptureException(err) },
+		captureMessage:   func(message string) { sentry.CaptureMessage(message) },
 		recoverPanic:     func(value any) { sentry.CurrentHub().Recover(value) },
 	}
 }
@@ -87,6 +89,16 @@ func (m Monitor) Flush() {
 	if m.enabled {
 		sentry.Flush(flushTimeout)
 	}
+}
+
+// CaptureMessage sends an intentional test message when monitoring is enabled.
+func (m Monitor) CaptureMessage(message string) bool {
+	if !m.enabled {
+		return false
+	}
+
+	m.captureMessage(message)
+	return true
 }
 
 func (m Monitor) intercept(next func() error, responseStatus func() int) (err error) {

@@ -43,6 +43,17 @@ The serving runtime SHALL initialise the official Sentry Go SDK when a valid DSN
 - **WHEN** Sentry cannot initialise from the configured DSN
 - **THEN** the failure is logged and the application continues without Sentry monitoring
 
+### Requirement: Intentional Sentry verification
+The application SHALL provide a non-production CLI command that sends the message `It works!` to Sentry and flushes before exiting. The command SHALL refuse production execution and SHALL report disabled monitoring instead of claiming delivery.
+
+#### Scenario: Non-production test event
+- **WHEN** an operator runs `sentry-test` with Sentry monitoring configured outside production
+- **THEN** the application sends `It works!` to Sentry and confirms that the test event was sent
+
+#### Scenario: Production test event
+- **WHEN** an operator runs `sentry-test` in production
+- **THEN** the command refuses to send an event
+
 ### Requirement: Browser error monitoring
 
 The browser bundle SHALL include the official Sentry browser SDK and SHALL initialise it as the application starts when the shared layout supplies a non-empty DSN. The browser SDK SHALL use the configured WGA environment and SHALL retain the application's existing browser initialisation behaviour.

@@ -10,6 +10,7 @@
 - [x] 2.1 Create the application-owned observability integration that initialises Sentry with the DSN and WGA environment, logs disabled or failed initialisation, and flushes with a bounded timeout.
 - [x] 2.2 Register the integration from the serving composition root and add PocketBase router adaptation that reports unexpected returned errors and panics while preserving existing request handling and excluding expected client errors.
 - [x] 2.3 Add unit tests for disabled, failed, and enabled server monitoring paths, including preserved error propagation and redacted logging.
+- [x] 2.4 Add a non-production `sentry-test` command that sends and flushes an intentional test message.
 
 ## 3. Browser monitoring
 

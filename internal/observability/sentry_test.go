@@ -155,6 +155,26 @@ func TestMonitorIntercept(t *testing.T) {
 	})
 }
 
+func TestMonitorCaptureMessage(t *testing.T) {
+	message := ""
+	monitor := Monitor{
+		enabled: true,
+		captureMessage: func(value string) {
+			message = value
+		},
+	}
+
+	if !monitor.CaptureMessage("It works!") {
+		t.Fatal("expected enabled monitor to capture test message")
+	}
+	if message != "It works!" {
+		t.Fatalf("expected test message, got %q", message)
+	}
+	if (Monitor{}).CaptureMessage("It works!") {
+		t.Fatal("expected disabled monitor to skip test message")
+	}
+}
+
 func TestMonitorRegisterCapturesServerErrors(t *testing.T) {
 	var captured error
 	scenario := tests.ApiScenario{

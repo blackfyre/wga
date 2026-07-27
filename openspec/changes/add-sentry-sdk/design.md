@@ -69,6 +69,10 @@ This is preferable to failing startup because telemetry is non-essential and the
 3. Promote the DSN to production after event filtering and ownership are confirmed.
 4. To roll back, remove the integration release or unset `WGA_SENTRY_DSN`; no data migration or schema rollback is required.
 
+## Verification Trigger
+
+Use `wga sentry-test` in a non-production environment with `WGA_SENTRY_DSN` configured to send the intentional `It works!` message and flush it before the command exits. The command refuses production execution and reports when monitoring is disabled.
+
 ## Open Questions
 
 None.

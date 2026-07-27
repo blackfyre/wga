@@ -15,6 +15,7 @@ func TestCommandCapabilityFor(t *testing.T) {
 		{name: "allowed origins", args: []string{"--origins", "https://gallery.example"}, want: commandNeedsServer},
 		{name: "equals HTTP listener", args: []string{"--http=0.0.0.0:8090"}, want: commandNeedsServer},
 		{name: "serve", args: []string{"serve"}, want: commandNeedsServer},
+		{name: "Sentry test", args: []string{"sentry-test"}, want: commandNeedsServer},
 		{name: "sitemap", args: []string{"generate-sitemap"}, want: commandNeedsSitemap},
 		{name: "migration", args: []string{"migrate", "up"}, want: commandNeedsNothing},
 		{name: "migration collections", args: []string{"migrate", "collections"}, want: commandNeedsNothing},
