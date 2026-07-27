@@ -7,12 +7,14 @@ The Sentry DSN is public client configuration, but it must remain a runtime depl
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Initialise the current official Sentry Go and browser SDKs from one optional DSN environment setting.
 - Capture unhandled server request failures and browser errors without changing normal response behaviour.
 - Associate events with the configured WGA environment and flush server events during shutdown.
 - Expose only the DSN required by the browser at runtime, and log once when monitoring is disabled.
 
 **Non-Goals:**
+
 - Adding performance tracing, session replay, profiling, user identity, or custom business-event instrumentation.
 - Treating a missing or invalid Sentry configuration as a startup failure.
 - Sending server secrets or request bodies to Sentry.

@@ -12,6 +12,7 @@ The application has no central error-monitoring integration for production failu
 ## Capabilities
 
 ### New Capabilities
+
 - `sentry-observability`: Optional Sentry error monitoring for server and browser runtimes.
 
 ### Modified Capabilities
