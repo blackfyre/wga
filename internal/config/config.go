@@ -143,6 +143,26 @@ type Captcha struct {
 	verify  bool
 }
 
+// Sentry contains the optional Sentry monitoring configuration.
+type Sentry struct {
+	dsn Secret
+}
+
+// DSN returns the configured Sentry DSN.
+func (s Sentry) DSN() string {
+	return s.dsn.Value()
+}
+
+// String returns a redacted representation of the Sentry configuration.
+func (Sentry) String() string {
+	return "[redacted]"
+}
+
+// GoString returns a redacted Go-syntax representation of the Sentry configuration.
+func (Sentry) GoString() string {
+	return "config.Sentry([redacted])"
+}
+
 // Verify reports whether CAPTCHA verification is enabled.
 func (c Captcha) Verify() bool {
 	return c.verify
@@ -183,6 +203,7 @@ type Server struct {
 	PublicURL   PublicURL
 	Postcards   Postcards
 	Captcha     Captcha
+	Sentry      Sentry
 }
 
 // Sitemap returns the sitemap settings derived from the server settings.
@@ -238,6 +259,7 @@ type Config struct {
 	sender      parsed[MailSender]
 	postcards   parsed[Postcards]
 	captcha     Captcha
+	sentry      Sentry
 	migrations  Migrations
 }
 
@@ -275,6 +297,7 @@ func LoadFrom(lookup Lookup) Config {
 		sender:      sender,
 		postcards:   postcards,
 		captcha:     captcha,
+		sentry:      Sentry{dsn: Secret{value: lookup("WGA_SENTRY_DSN")}},
 		migrations: Migrations{
 			publicURL:     publicURL,
 			storage:       storage,
@@ -296,6 +319,7 @@ func (c Config) Server() (Server, error) {
 		PublicURL:   c.publicURL.value,
 		Postcards:   c.postcards.value,
 		Captcha:     c.captcha,
+		Sentry:      c.sentry,
 	}
 
 	senderErr := c.sender.err

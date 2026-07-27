@@ -5,8 +5,10 @@ import htmx from "htmx.org";
 import warningSign from "../assets/warning-sign.svg";
 import { initCookieConsent } from "./cookieconsent";
 import logger from "./logger";
+import { initialiseSentry, loadSentryConfiguration } from "./sentry";
 import { initStatisticsChart } from "./statistics";
 
+initialiseSentry(loadSentryConfiguration(document));
 logger.setNamespace("WGA");
 logger.setLevel("debug");
 

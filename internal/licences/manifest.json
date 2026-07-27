@@ -202,6 +202,28 @@
     },
     {
       "ecosystem": "golang",
+      "name": "github.com/getsentry/sentry-go",
+      "version": "v0.48.0",
+      "source_url": "https://pkg.go.dev/github.com/getsentry/sentry-go@v0.48.0",
+      "purl": "pkg:golang/github.com/getsentry/sentry-go@v0.48.0",
+      "integrity": "h1:FRZNr7Uk1C86ev1bSJmYlUkL9oyivQA6YOcdYfaaMmY=",
+      "targets": [
+        "binary"
+      ],
+      "dependencies": [
+        "golang.org/x/sys",
+        "golang.org/x/text"
+      ],
+      "licence": {
+        "id": "MIT",
+        "text": "MIT License\n\nCopyright (c) 2019 Functional Software, Inc. dba Sentry\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://pkg.go.dev/github.com/getsentry/sentry-go@v0.48.0"
+    },
+    {
+      "ecosystem": "golang",
       "name": "github.com/golang-jwt/jwt/v5",
       "version": "v5.3.1",
       "source_url": "https://pkg.go.dev/github.com/golang-jwt/jwt/v5@v5.3.1",
@@ -834,6 +856,90 @@
         "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
       },
       "source_evidence": "https://www.npmjs.com/package/@kurkle/color/v/0.3.4"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@sentry/browser-utils",
+      "version": "10.68.0",
+      "source_url": "https://www.npmjs.com/package/@sentry/browser-utils/v/10.68.0",
+      "purl": "pkg:npm/%40sentry/browser-utils@10.68.0",
+      "integrity": "sha512-be8VtdjCngKc77cstJeV+gO15iH+blyXpBDk8yOehmtX4BkFO33mfTMNCWVR2LA0oOxjIHWRAhf77fIUEhzxPg==",
+      "targets": [
+        "browser"
+      ],
+      "dependencies": [
+        "@sentry/core"
+      ],
+      "licence": {
+        "id": "MIT",
+        "text": "MIT License\n\nCopyright (c) 2020 Functional Software, Inc. dba Sentry\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies\nof the Software, and to permit persons to whom the Software is furnished to do\nso, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://www.npmjs.com/package/@sentry/browser-utils/v/10.68.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@sentry/browser",
+      "version": "10.68.0",
+      "source_url": "https://www.npmjs.com/package/@sentry/browser/v/10.68.0",
+      "purl": "pkg:npm/%40sentry/browser@10.68.0",
+      "integrity": "sha512-8xVgk7oG2lajXnbXF6a7H1xMZ/U6icqSldHGzQu1+bajfrK8Gan9ULG/Xsj1VM1LlNeK6/7znDJ3u1jgvIwznw==",
+      "targets": [
+        "browser"
+      ],
+      "dependencies": [
+        "@sentry/browser-utils",
+        "@sentry/conventions",
+        "@sentry/core"
+      ],
+      "licence": {
+        "id": "MIT",
+        "text": "MIT License\n\nCopyright (c) 2019 Functional Software, Inc. dba Sentry\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies\nof the Software, and to permit persons to whom the Software is furnished to do\nso, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://www.npmjs.com/package/@sentry/browser/v/10.68.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@sentry/conventions",
+      "version": "0.16.0",
+      "source_url": "https://www.npmjs.com/package/@sentry/conventions/v/0.16.0",
+      "purl": "pkg:npm/%40sentry/conventions@0.16.0",
+      "integrity": "sha512-fO9PLmHdVURcSPUpWCItWAtgKiMwGdJHbovoSEyLplX5sxs2ugvI4CBPTrkkgqhObnZOD0CnWBKDzSVQYBKEyQ==",
+      "targets": [
+        "browser"
+      ],
+      "dependencies": [],
+      "licence": {
+        "id": "MIT",
+        "text": "MIT License\n\nCopyright (c) 2023-2025 Functional Software, Inc. dba Sentry\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies\nof the Software, and to permit persons to whom the Software is furnished to do\nso, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://www.npmjs.com/package/@sentry/conventions/v/0.16.0"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "@sentry/core",
+      "version": "10.68.0",
+      "source_url": "https://www.npmjs.com/package/@sentry/core/v/10.68.0",
+      "purl": "pkg:npm/%40sentry/core@10.68.0",
+      "integrity": "sha512-5Amhx8ltVz7vb1bRGyf3c4J69/iHW8R/H+SJxTRILHlsSOBrnVVc/IQEYDC6PTRdRdZ3x2u7RVjxZi2Mhe525g==",
+      "targets": [
+        "browser"
+      ],
+      "dependencies": [
+        "@sentry/conventions"
+      ],
+      "licence": {
+        "id": "MIT",
+        "text": "MIT License\n\nCopyright (c) 2019 Functional Software, Inc. dba Sentry\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies\nof the Software, and to permit persons to whom the Software is furnished to do\nso, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+        "notice": "",
+        "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
+      },
+      "source_evidence": "https://www.npmjs.com/package/@sentry/core/v/10.68.0"
     },
     {
       "ecosystem": "npm",
