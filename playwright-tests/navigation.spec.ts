@@ -18,3 +18,31 @@ test("mobile header exposes the collection navigation", async ({ page }) => {
     page.locator(".site-header__mobile-menu a", { hasText: "Artworks" }),
   ).toHaveAttribute("href", "/artworks");
 });
+
+test("environment status confirms before opening GitHub", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator(".environment-status")).toHaveAttribute(
+    "href",
+    "https://github.com/blackfyre/wga",
+  );
+
+  let confirmationMessage = "";
+  page.once("dialog", async (dialog) => {
+    confirmationMessage = dialog.message();
+    await dialog.dismiss();
+  });
+  await page.locator(".environment-status").click();
+  await expect(confirmationMessage).toContain("not intended for public use");
+});
+
+test("footer exposes utility navigation", async ({ page }) => {
+  await page.goto("/");
+  const footer = page.getByRole("contentinfo");
+
+  await expect(
+    footer.getByRole("link", { name: "Open-source licences" }),
+  ).toHaveAttribute("href", "/open-source-licences");
+  await expect(
+    footer.getByRole("link", { name: "GitHub" }).last(),
+  ).toHaveAttribute("href", "https://github.com/blackfyre/wga");
+});
