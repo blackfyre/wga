@@ -47,7 +47,7 @@ type wgaWindow = {
 	window: {
 		historyBack: () => void;
 		close: () => void;
-		openPopUp: (w: popUpWindow) => void;
+		openPopUp: (w: popUpWindow) => boolean;
 	};
 	music: {
 		openPopUp: () => void;
@@ -181,7 +181,8 @@ const initThemeToggle = () => {
 const deepMerge = (target: object, source: object): object => {
 	// Iterate over keys in the source object
 	for (const key in source) {
-		if (key === "__proto__" || key === "constructor") continue;
+		if (key === "__proto__" || key === "constructor" || key === "prototype")
+			continue;
 		if (Object.prototype.hasOwnProperty.call(source, key)) {
 			// Check if the current key's value is an object and exists in the target
 			if (typeof source[key] === "object" && source[key] !== null) {
@@ -636,7 +637,7 @@ const wgaInternal: wgaInternals = {
 				);
 
 				if (!target) {
-					return;
+					continue;
 				}
 
 				// Get the target's innerHTML as the template
@@ -835,19 +836,23 @@ const wgaInternal: wgaInternals = {
 
 			const kindInput = document.getElementById(
 				"dual-lookup-kind",
-			) as HTMLSelectElement;
+			) as HTMLSelectElement | null;
 			const queryInput = document.getElementById(
 				"dual-lookup-query",
-			) as HTMLInputElement;
+			) as HTMLInputElement | null;
 			const results = document.getElementById(
 				"dual-lookup-results",
-			) as HTMLElement;
+			) as HTMLElement | null;
 			const pathForm = document.getElementById(
 				"dual-lookup-path-form",
-			) as HTMLFormElement;
+			) as HTMLFormElement | null;
 			const pathInput = document.getElementById(
 				"dual-lookup-path",
-			) as HTMLInputElement;
+			) as HTMLInputElement | null;
+			if (!kindInput || !queryInput || !results || !pathForm || !pathInput) {
+				logger.warn("Dual lookup modal markup is incomplete");
+				return;
+			}
 
 			const cancelLookup = bindDualLookupSearch(kindInput, queryInput, results);
 			bindDualLookupPathForm(modal, pathForm, pathInput, cancelLookup);
@@ -955,9 +960,8 @@ window.wga = {
 				return false;
 			}
 
-			newWin.opener = this;
 			newWin.focus();
-			return;
+			return true;
 		},
 	},
 	glossary: {

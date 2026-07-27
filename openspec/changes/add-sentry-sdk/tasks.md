@@ -3,6 +3,7 @@
 - [x] 1.1 Add `WGA_SENTRY_DSN` as optional, redacted Sentry configuration in `internal/config`, pass it through the server configuration contract, and add focused configuration tests for configured and empty values.
 - [x] 1.2 Document `WGA_SENTRY_DSN` in `.env.example` without making it required for local development.
 - [x] 1.3 Add the latest compatible `github.com/getsentry/sentry-go` and `@sentry/browser` dependencies, updating the Go and Bun lockfiles.
+- [x] 1.4 Reject secret-bearing Sentry DSNs before runtime browser configuration is generated.
 
 ## 2. Server monitoring
 

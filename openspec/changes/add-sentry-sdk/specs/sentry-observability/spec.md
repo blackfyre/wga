@@ -19,6 +19,11 @@ The application SHALL load `WGA_SENTRY_DSN` through `internal/config` as optiona
 - **WHEN** `WGA_SENTRY_DSN` is supplied in an invalid format
 - **THEN** server configuration fails with an operator-safe validation error that identifies `WGA_SENTRY_DSN`
 
+#### Scenario: DSN contains a secret key
+
+- **WHEN** `WGA_SENTRY_DSN` contains a password or secret key
+- **THEN** server configuration rejects the setting before it can be exposed to browser code
+
 ### Requirement: Server error monitoring
 
 The serving runtime SHALL initialise the official Sentry Go SDK when a valid DSN is configured, SHALL label events with the configured WGA environment, and SHALL use bounded flushing during shutdown. It SHALL capture unhandled server failures without changing the response or error-propagation behaviour observed by clients.

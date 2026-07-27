@@ -29,7 +29,7 @@ This keeps framework adaptation and external side-effect ordering out of handler
 
 ### Use a single optional `WGA_SENTRY_DSN` runtime setting
 
-Add the DSN to `internal/config` as optional server configuration, preserving its redacted representation in logs. An omitted DSN disables monitoring, while a supplied malformed DSN is rejected during configuration validation. The same valid DSN is supplied to the Go and browser SDKs because a Sentry DSN is intended to be public for client ingestion. The configured `WGA_ENV` is passed as the Sentry environment.
+Add the DSN to `internal/config` as optional server configuration, preserving its redacted representation in logs. An omitted DSN disables monitoring, while a supplied malformed or secret-bearing DSN is rejected during configuration validation. The same valid public DSN is supplied to the Go and browser SDKs. The configured `WGA_ENV` is passed as the Sentry environment.
 
 The DSN is intentionally not embedded by the Bun build: build-time substitution would require a separate build for each deployment and would not honour the runtime `.env` loaded by the Go process.
 

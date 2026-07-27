@@ -100,7 +100,11 @@ test("scrubs query parameters from Sentry event URLs", () => {
 		request: { url: "https://wga.example/postcard?p=secret#fragment" },
 		breadcrumbs: [
 			{
-				data: { url: "https://wga.example/postcard?p=secret" },
+				data: {
+					url: "https://wga.example/postcard?p=secret",
+					from: "https://wga.example/postcard?p=secret",
+					to: "https://wga.example/artworks?filter=secret",
+				},
 			},
 		],
 	});
@@ -109,6 +113,10 @@ test("scrubs query parameters from Sentry event URLs", () => {
 	expect(event.breadcrumbs?.[0]?.data?.url).toBe(
 		"https://wga.example/postcard",
 	);
+	expect(event.breadcrumbs?.[0]?.data?.from).toBe(
+		"https://wga.example/postcard",
+	);
+	expect(event.breadcrumbs?.[0]?.data?.to).toBe("https://wga.example/artworks");
 });
 
 test("scrubs query parameters from relative breadcrumb URLs", () => {
@@ -121,4 +129,16 @@ test("scrubs query parameters from relative breadcrumb URLs", () => {
 	});
 
 	expect(event.breadcrumbs?.[0]?.data?.url).toBe("/dual-mode/lookup");
+});
+
+test("scrubs query parameters from path-relative breadcrumb URLs", () => {
+	const event = scrubSentryEvent({
+		breadcrumbs: [
+			{
+				data: { url: "lookup?q=secret" },
+			},
+		],
+	});
+
+	expect(event.breadcrumbs?.[0]?.data?.url).toBe("/lookup");
 });

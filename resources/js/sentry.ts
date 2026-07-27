@@ -7,7 +7,8 @@ export type SentryConfiguration = {
 
 const scrubURL = (value: string): string => {
 	try {
-		const isRelative = value.startsWith("/");
+		const isRelative =
+			!value.startsWith("//") && !/^[a-zA-Z][a-zA-Z\d+.-]*:/.test(value);
 		const url = new URL(value, "https://wga.invalid");
 		url.search = "";
 		url.hash = "";
@@ -20,21 +21,27 @@ const scrubURL = (value: string): string => {
 	}
 };
 
+const scrubBreadcrumb = (breadcrumb: Sentry.Breadcrumb): Sentry.Breadcrumb => {
+	if (!breadcrumb.data) {
+		return breadcrumb;
+	}
+
+	const data = { ...breadcrumb.data };
+	for (const key of ["url", "from", "to"]) {
+		if (typeof data[key] === "string") {
+			data[key] = scrubURL(data[key]);
+		}
+	}
+
+	return { ...breadcrumb, data };
+};
+
 export const scrubSentryEvent = (event: Sentry.Event): Sentry.Event => ({
 	...event,
 	request: event.request?.url
 		? { ...event.request, url: scrubURL(event.request.url) }
 		: event.request,
-	breadcrumbs: event.breadcrumbs?.map((breadcrumb) => {
-		if (typeof breadcrumb.data?.url !== "string") {
-			return breadcrumb;
-		}
-
-		return {
-			...breadcrumb,
-			data: { ...breadcrumb.data, url: scrubURL(breadcrumb.data.url) },
-		};
-	}),
+	breadcrumbs: event.breadcrumbs?.map(scrubBreadcrumb),
 });
 
 type MetadataDocument = {

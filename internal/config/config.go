@@ -361,6 +361,13 @@ func parseSentry(value string) parsed[Sentry] {
 		return parsed[Sentry]{value: settings}
 	}
 
+	parsedURL, err := url.Parse(value)
+	if err == nil {
+		if _, hasSecret := parsedURL.User.Password(); hasSecret {
+			return parsed[Sentry]{value: settings, err: fmt.Errorf("WGA_SENTRY_DSN must not contain a secret key")}
+		}
+	}
+
 	if _, err := sentry.NewDsn(value); err != nil {
 		return parsed[Sentry]{value: settings, err: fmt.Errorf("WGA_SENTRY_DSN must be a valid Sentry DSN")}
 	}

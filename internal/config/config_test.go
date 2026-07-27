@@ -15,6 +15,7 @@ func TestServerSentryConfiguration(t *testing.T) {
 		{name: "omitted DSN disables monitoring"},
 		{name: "configured DSN", dsn: "https://public@example.ingest.sentry.io/1"},
 		{name: "malformed DSN", dsn: "not-a-dsn", wantErr: "WGA_SENTRY_DSN"},
+		{name: "DSN with secret key", dsn: "https://public:secret@example.ingest.sentry.io/1", wantErr: "WGA_SENTRY_DSN"},
 	}
 
 	for _, test := range tests {
