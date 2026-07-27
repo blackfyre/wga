@@ -15,6 +15,7 @@
 - [x] 3.1 Make only the public Sentry DSN and WGA environment available to the shared Templ layout at runtime, then run `templ generate`.
 - [x] 3.2 Initialise `@sentry/browser` from the page configuration before the main browser bootstrap, and skip initialisation when the DSN is empty without interrupting the application.
 - [x] 3.3 Add focused browser-facing tests or build assertions covering configured and disabled initialisation paths.
+- [x] 3.4 Initialise Sentry before loading the main browser bundle and strip query strings and fragments from browser event URLs.
 
 ## 4. Verification
 

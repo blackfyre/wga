@@ -1,6 +1,7 @@
 package observability
 
 import (
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -74,7 +75,7 @@ func (m Monitor) Register(app core.App) {
 
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		se.Router.BindFunc(func(e *core.RequestEvent) error {
-			return m.intercept(e.Next)
+			return m.intercept(e.Next, e.Status)
 		})
 
 		return se.Next()
@@ -88,7 +89,7 @@ func (m Monitor) Flush() {
 	}
 }
 
-func (m Monitor) intercept(next func() error) (err error) {
+func (m Monitor) intercept(next func() error, responseStatus func() int) (err error) {
 	if !m.enabled {
 		return next()
 	}
@@ -103,6 +104,8 @@ func (m Monitor) intercept(next func() error) (err error) {
 	err = next()
 	if shouldCapture(err) {
 		m.captureException(err)
+	} else if err == nil && responseStatus() >= 500 {
+		m.captureException(fmt.Errorf("request completed with HTTP status %d", responseStatus()))
 	}
 
 	return err

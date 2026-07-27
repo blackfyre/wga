@@ -16,7 +16,7 @@ The Sentry DSN is public client configuration, but it must remain a runtime depl
 **Non-Goals:**
 
 - Adding performance tracing, session replay, profiling, user identity, or custom business-event instrumentation.
-- Treating a missing or invalid Sentry configuration as a startup failure.
+- Treating a missing Sentry configuration as a startup failure.
 - Sending server secrets or request bodies to Sentry.
 
 ## Decisions
@@ -29,7 +29,7 @@ This keeps framework adaptation and external side-effect ordering out of handler
 
 ### Use a single optional `WGA_SENTRY_DSN` runtime setting
 
-Add the DSN to `internal/config` as optional server configuration, preserving its redacted representation in logs. The same DSN is supplied to the Go and browser SDKs because a Sentry DSN is intended to be public for client ingestion. The configured `WGA_ENV` is passed as the Sentry environment.
+Add the DSN to `internal/config` as optional server configuration, preserving its redacted representation in logs. An omitted DSN disables monitoring, while a supplied malformed DSN is rejected during configuration validation. The same valid DSN is supplied to the Go and browser SDKs because a Sentry DSN is intended to be public for client ingestion. The configured `WGA_ENV` is passed as the Sentry environment.
 
 The DSN is intentionally not embedded by the Bun build: build-time substitution would require a separate build for each deployment and would not honour the runtime `.env` loaded by the Go process.
 
@@ -38,6 +38,8 @@ The DSN is intentionally not embedded by the Bun build: build-time substitution 
 The observability package supplies the public DSN to the common Templ layout at request-render time. The layout emits it in a dedicated metadata/configuration element, and the browser entry point reads that value before initialising `@sentry/browser`.
 
 This makes the configuration available as the application starts in the browser without an extra request or per-page handler changes. A runtime configuration endpoint was rejected because it delays initialisation and adds a public route solely for static process configuration.
+
+The browser entry bundle initialises Sentry before dynamically loading the remainder of the application. Its `beforeSend` hook strips query strings and fragments from event and breadcrumb URLs so bearer-style query parameters are not sent to Sentry.
 
 ### Capture only unexpected server failures and preserve PocketBase semantics
 
@@ -54,6 +56,7 @@ This is preferable to failing startup because telemetry is non-essential and the
 ## Risks / Trade-offs
 
 - [A browser DSN is visible in page source] → A Sentry DSN is public ingestion configuration; expose only the DSN, never credentials or other environment values.
+- [Browser URLs can contain bearer-style query parameters] → Strip query strings and fragments from error-event and breadcrumb URLs before sending them to Sentry.
 - [Automatic browser capture can increase bundle size and event volume] → Use only the browser SDK's default error capture; do not enable tracing, replay, or profiling.
 - [Middleware can alter error handling if it consumes errors] → Capture then return/rethrow the original failure, with focused tests for the existing error response path.
 - [Buffered events can be lost during shutdown] → Flush with a bounded timeout; shutdown must never block indefinitely.

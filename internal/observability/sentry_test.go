@@ -90,7 +90,7 @@ func TestMonitorIntercept(t *testing.T) {
 		}
 		serverError := router.NewInternalServerError("unexpected", nil)
 
-		if got := monitor.intercept(func() error { return serverError }); got != serverError {
+		if got := monitor.intercept(func() error { return serverError }, func() int { return 0 }); got != serverError {
 			t.Fatalf("expected original error, got %v", got)
 		}
 		if captured != serverError {
@@ -107,7 +107,7 @@ func TestMonitorIntercept(t *testing.T) {
 			},
 		}
 
-		if err := monitor.intercept(func() error { return router.NewBadRequestError("invalid", nil) }); err == nil {
+		if err := monitor.intercept(func() error { return router.NewBadRequestError("invalid", nil) }, func() int { return 0 }); err == nil {
 			t.Fatal("expected original client error")
 		}
 		if captured {
@@ -134,7 +134,24 @@ func TestMonitorIntercept(t *testing.T) {
 		}()
 		monitor.intercept(func() error {
 			panic("panic value")
-		})
+		}, func() int { return 0 })
+	})
+
+	t.Run("captures written server responses", func(t *testing.T) {
+		var captured error
+		monitor := Monitor{
+			enabled: true,
+			captureException: func(err error) {
+				captured = err
+			},
+		}
+
+		if err := monitor.intercept(func() error { return nil }, func() int { return http.StatusInternalServerError }); err != nil {
+			t.Fatalf("expected nil error, got %v", err)
+		}
+		if captured == nil {
+			t.Fatal("expected written server response to be captured")
+		}
 	})
 }
 
@@ -146,7 +163,7 @@ func TestMonitorRegisterCapturesServerErrors(t *testing.T) {
 		URL:            "/sentry-server-error",
 		ExpectedStatus: http.StatusInternalServerError,
 		ExpectedContent: []string{
-			"Unexpected.",
+			"unexpected",
 		},
 		TestAppFactory: func(t testing.TB) *tests.TestApp {
 			app, err := tests.NewTestApp()
@@ -162,7 +179,7 @@ func TestMonitorRegisterCapturesServerErrors(t *testing.T) {
 			monitor.Register(app)
 			app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 				se.Router.GET("/sentry-server-error", func(e *core.RequestEvent) error {
-					return e.InternalServerError("unexpected", nil)
+					return e.HTML(http.StatusInternalServerError, "unexpected")
 				})
 
 				return se.Next()

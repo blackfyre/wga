@@ -8,11 +8,13 @@ import (
 
 func TestServerSentryConfiguration(t *testing.T) {
 	tests := []struct {
-		name string
-		dsn  string
+		name    string
+		dsn     string
+		wantErr string
 	}{
 		{name: "omitted DSN disables monitoring"},
 		{name: "configured DSN", dsn: "https://public@example.ingest.sentry.io/1"},
+		{name: "malformed DSN", dsn: "not-a-dsn", wantErr: "WGA_SENTRY_DSN"},
 	}
 
 	for _, test := range tests {
@@ -21,6 +23,12 @@ func TestServerSentryConfiguration(t *testing.T) {
 			values["WGA_SENTRY_DSN"] = test.dsn
 
 			server, err := LoadFrom(lookup(values)).Server()
+			if test.wantErr != "" {
+				if err == nil || !strings.Contains(err.Error(), test.wantErr) {
+					t.Fatalf("expected error containing %q, got %v", test.wantErr, err)
+				}
+				return
+			}
 			if err != nil {
 				t.Fatalf("unexpected server configuration error: %v", err)
 			}

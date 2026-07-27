@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/joho/godotenv"
 	"github.com/robfig/cron/v3"
 )
@@ -259,7 +260,7 @@ type Config struct {
 	sender      parsed[MailSender]
 	postcards   parsed[Postcards]
 	captcha     Captcha
-	sentry      Sentry
+	sentry      parsed[Sentry]
 	migrations  Migrations
 }
 
@@ -285,6 +286,7 @@ func LoadFrom(lookup Lookup) Config {
 	storage := parseStorage(lookup)
 	administrator := parseAdministrator(lookup)
 	postcards := parsePostcards(lookup, publicURL.value, sender.value)
+	sentryConfig := parseSentry(lookup("WGA_SENTRY_DSN"))
 	captcha := Captcha{
 		secret:  Secret{value: lookup("WGA_RECAPTCHA_SECRET")},
 		siteKey: lookup("WGA_RECAPTCHA_SITE_KEY"),
@@ -297,7 +299,7 @@ func LoadFrom(lookup Lookup) Config {
 		sender:      sender,
 		postcards:   postcards,
 		captcha:     captcha,
-		sentry:      Sentry{dsn: Secret{value: lookup("WGA_SENTRY_DSN")}},
+		sentry:      sentryConfig,
 		migrations: Migrations{
 			publicURL:     publicURL,
 			storage:       storage,
@@ -319,7 +321,7 @@ func (c Config) Server() (Server, error) {
 		PublicURL:   c.publicURL.value,
 		Postcards:   c.postcards.value,
 		Captcha:     c.captcha,
-		Sentry:      c.sentry,
+		Sentry:      c.sentry.value,
 	}
 
 	senderErr := c.sender.err
@@ -346,9 +348,24 @@ func (c Config) Server() (Server, error) {
 		c.environment.err,
 		c.publicURL.err,
 		c.postcards.err,
+		c.sentry.err,
 		senderErr,
 		captchaErr,
 	)
+}
+
+// parseSentry validates the optional Sentry DSN.
+func parseSentry(value string) parsed[Sentry] {
+	settings := Sentry{dsn: Secret{value: value}}
+	if value == "" {
+		return parsed[Sentry]{value: settings}
+	}
+
+	if _, err := sentry.NewDsn(value); err != nil {
+		return parsed[Sentry]{value: settings, err: fmt.Errorf("WGA_SENTRY_DSN must be a valid Sentry DSN")}
+	}
+
+	return parsed[Sentry]{value: settings}
 }
 
 // Sitemap returns validated settings required to generate a sitemap.
