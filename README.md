@@ -78,7 +78,7 @@ MAILPIT_URL=http://127.0.0.1:8025
 | `WGA_POSTCARD_FREQUENCY` | The five-field cron expression for sending queued postcards                                      |
 | `WGA_RECAPTCHA_SITE_KEY` | The reCAPTCHA site key rendered in the postcard widget; required in staging and production       |
 | `WGA_RECAPTCHA_SECRET`   | The reCAPTCHA secret used to verify postcard submissions; required in staging and production     |
-| `WGA_SENTRY_DSN`         | Optional public Sentry DSN used for server and browser error monitoring                           |
+| `WGA_SENTRY_DSN`         | Optional public Sentry DSN used for server and browser error monitoring                          |
 | `MAILPIT_URL`            | The local Mailpit HTTP endpoint that Playwright queries during end-to-end tests                  |
 
 Local `development` and `test` environments may omit `WGA_RECAPTCHA_SITE_KEY` and `WGA_RECAPTCHA_SECRET`; staging and production cannot start without both.

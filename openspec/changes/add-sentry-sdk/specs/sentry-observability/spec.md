@@ -86,6 +86,7 @@ The browser SDK SHALL remove query strings and fragments from error-event and br
 - **THEN** the event sent to Sentry contains the URL path without the query string or fragment
 
 #### Scenario: Console breadcrumb contains form data
+
 - **WHEN** a console breadcrumb contains logged form data
 - **THEN** the event sent to Sentry excludes the breadcrumb arguments
 
