@@ -1,3 +1,4 @@
+// Package config loads and validates WGA deployment configuration.
 package config
 
 import (
@@ -13,6 +14,7 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
+// Lookup retrieves a configuration value by name.
 type Lookup func(string) string
 
 type parsed[T any] struct {
@@ -20,24 +22,30 @@ type parsed[T any] struct {
 	err   error
 }
 
+// Secret holds a sensitive configuration value and redacts it when formatted.
 type Secret struct {
 	value string
 }
 
+// Value returns the unredacted secret value.
 func (s Secret) Value() string {
 	return s.value
 }
 
+// String returns a redacted representation of the secret.
 func (Secret) String() string {
 	return "[redacted]"
 }
 
+// GoString returns a redacted Go-syntax representation of the secret.
 func (Secret) GoString() string {
 	return "config.Secret([redacted])"
 }
 
+// Environment identifies the deployment environment.
 type Environment string
 
+// Supported deployment environments.
 const (
 	EnvironmentDevelopment Environment = "development"
 	EnvironmentTest        Environment = "test"
@@ -45,22 +53,27 @@ const (
 	EnvironmentProduction  Environment = "production"
 )
 
+// IsDevelopment reports whether the environment is for local development.
 func (e Environment) IsDevelopment() bool {
 	return e == EnvironmentDevelopment
 }
 
+// AllowsCaptchaBypass reports whether CAPTCHA verification may be disabled.
 func (e Environment) AllowsCaptchaBypass() bool {
 	return e == EnvironmentDevelopment || e == EnvironmentTest
 }
 
+// PublicURL is the canonical external URL for the application.
 type PublicURL struct {
 	url url.URL
 }
 
+// String returns the canonical public URL.
 func (u PublicURL) String() string {
 	return u.url.String()
 }
 
+// Resolve returns path resolved against the public URL.
 func (u PublicURL) Resolve(path string) string {
 	if u.url.Scheme == "" || u.url.Host == "" {
 		return path
@@ -85,6 +98,7 @@ func (u PublicURL) Resolve(path string) string {
 	return u.url.ResolveReference(reference).String()
 }
 
+// Storage defines the optional S3-compatible object storage connection.
 type Storage struct {
 	Enabled        bool
 	Endpoint       url.URL
@@ -95,11 +109,13 @@ type Storage struct {
 	ForcePathStyle bool
 }
 
+// MailSender identifies the sender of application email.
 type MailSender struct {
 	Name    string
 	Address mail.Address
 }
 
+// SMTP defines the SMTP connection used to send application email.
 type SMTP struct {
 	Host     string
 	Port     int
@@ -107,35 +123,42 @@ type SMTP struct {
 	Password Secret
 }
 
+// Mail contains the application email configuration.
 type Mail struct {
 	Sender MailSender
 	SMTP   SMTP
 }
 
+// Administrator defines an optional administrator created during migration.
 type Administrator struct {
 	Email    mail.Address
 	Password Secret
 	Enabled  bool
 }
 
+// Captcha contains the reCAPTCHA settings used by protected routes.
 type Captcha struct {
 	secret  Secret
 	siteKey string
 	verify  bool
 }
 
+// Verify reports whether CAPTCHA verification is enabled.
 func (c Captcha) Verify() bool {
 	return c.verify
 }
 
+// Secret returns the configured reCAPTCHA secret.
 func (c Captcha) Secret() string {
 	return c.secret.Value()
 }
 
+// SiteKey returns the configured reCAPTCHA site key.
 func (c Captcha) SiteKey() string {
 	return c.siteKey
 }
 
+// Postcards contains the postcard delivery schedule and email settings.
 type Postcards struct {
 	expression string
 	schedule   cron.Schedule
@@ -143,15 +166,18 @@ type Postcards struct {
 	PublicURL  PublicURL
 }
 
+// Expression returns the configured postcard delivery schedule.
 func (p Postcards) Expression() string {
 	return p.expression
 }
 
+// Sitemap contains the settings required to generate a sitemap.
 type Sitemap struct {
 	Environment Environment
 	PublicURL   PublicURL
 }
 
+// Server contains the settings required to run the HTTP application.
 type Server struct {
 	Environment Environment
 	PublicURL   PublicURL
@@ -159,6 +185,7 @@ type Server struct {
 	Captcha     Captcha
 }
 
+// Sitemap returns the sitemap settings derived from the server settings.
 func (s Server) Sitemap() Sitemap {
 	return Sitemap{
 		Environment: s.Environment,
@@ -166,12 +193,14 @@ func (s Server) Sitemap() Sitemap {
 	}
 }
 
+// InitialSettings contains configuration applied by the initial migration.
 type InitialSettings struct {
 	PublicURL PublicURL
 	Storage   Storage
 	Mail      Mail
 }
 
+// Migrations provides configuration needed while applying migrations.
 type Migrations struct {
 	publicURL     parsed[PublicURL]
 	storage       parsed[Storage]
@@ -179,6 +208,7 @@ type Migrations struct {
 	administrator parsed[Administrator]
 }
 
+// InitialSettings returns validated settings for the initial migration.
 func (m Migrations) InitialSettings() (InitialSettings, error) {
 	storage := m.storage.value
 	storage.Enabled = m.storage.err == nil
@@ -196,10 +226,12 @@ func (m Migrations) InitialSettings() (InitialSettings, error) {
 	)
 }
 
+// Administrator returns the optional administrator bootstrap configuration.
 func (m Migrations) Administrator() (Administrator, error) {
 	return m.administrator.value, m.administrator.err
 }
 
+// Config holds parsed application configuration for each runtime capability.
 type Config struct {
 	environment parsed[Environment]
 	publicURL   parsed[PublicURL]
@@ -209,6 +241,7 @@ type Config struct {
 	migrations  Migrations
 }
 
+// Load reads .env when present, then loads configuration from the environment.
 func Load() (Config, error) {
 	if err := godotenv.Load(); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return Config{}, errors.New("unable to load .env")
@@ -217,6 +250,7 @@ func Load() (Config, error) {
 	return LoadFrom(os.Getenv), nil
 }
 
+// LoadFrom loads configuration values from lookup without reading the process environment.
 func LoadFrom(lookup Lookup) Config {
 	if lookup == nil {
 		lookup = func(string) string { return "" }
@@ -250,10 +284,12 @@ func LoadFrom(lookup Lookup) Config {
 	}
 }
 
+// Environment returns the configured deployment environment.
 func (c Config) Environment() Environment {
 	return c.environment.value
 }
 
+// Server returns validated settings required to run the HTTP application.
 func (c Config) Server() (Server, error) {
 	server := Server{
 		Environment: c.environment.value,
@@ -291,6 +327,7 @@ func (c Config) Server() (Server, error) {
 	)
 }
 
+// Sitemap returns validated settings required to generate a sitemap.
 func (c Config) Sitemap() (Sitemap, error) {
 	return Sitemap{
 		Environment: c.environment.value,
@@ -298,10 +335,12 @@ func (c Config) Sitemap() (Sitemap, error) {
 	}, errors.Join(c.environment.err, c.publicURL.err)
 }
 
+// Migrations returns the configuration needed while applying migrations.
 func (c Config) Migrations() Migrations {
 	return c.migrations
 }
 
+// parseEnvironment validates a deployment environment value.
 func parseEnvironment(value string) parsed[Environment] {
 	switch Environment(value) {
 	case EnvironmentDevelopment, EnvironmentTest, EnvironmentStaging, EnvironmentProduction:
@@ -311,6 +350,7 @@ func parseEnvironment(value string) parsed[Environment] {
 	}
 }
 
+// parsePublicURL validates the configured public protocol and hostname.
 func parsePublicURL(lookup Lookup) parsed[PublicURL] {
 	protocol := lookup("WGA_PROTOCOL")
 	if protocol == "" {
@@ -333,6 +373,7 @@ func parsePublicURL(lookup Lookup) parsed[PublicURL] {
 	return parsed[PublicURL]{value: PublicURL{url: *parsedURL}}
 }
 
+// parseStorage reads the optional S3-compatible storage settings.
 func parseStorage(lookup Lookup) parsed[Storage] {
 	endpoint, endpointErr := parseAbsoluteURL("WGA_S3_ENDPOINT", lookup("WGA_S3_ENDPOINT"))
 
@@ -356,6 +397,7 @@ func parseStorage(lookup Lookup) parsed[Storage] {
 	}
 }
 
+// parseMail reads SMTP settings and combines them with sender configuration.
 func parseMail(lookup Lookup, sender parsed[MailSender]) parsed[Mail] {
 
 	smtp := SMTP{
@@ -384,6 +426,7 @@ func parseMail(lookup Lookup, sender parsed[MailSender]) parsed[Mail] {
 	}
 }
 
+// parseSender validates the configured email sender.
 func parseSender(lookup Lookup) parsed[MailSender] {
 	sender := MailSender{Name: lookup("WGA_SENDER_NAME")}
 	address := lookup("WGA_SENDER_ADDRESS")
@@ -403,6 +446,7 @@ func parseSender(lookup Lookup) parsed[MailSender] {
 	return parsed[MailSender]{value: sender}
 }
 
+// parseAdministrator validates the optional administrator bootstrap credentials.
 func parseAdministrator(lookup Lookup) parsed[Administrator] {
 	email := lookup("WGA_ADMIN_EMAIL")
 	password := lookup("WGA_ADMIN_PASSWORD")
@@ -427,6 +471,7 @@ func parseAdministrator(lookup Lookup) parsed[Administrator] {
 	}
 }
 
+// parsePostcards validates the postcard delivery schedule and dependencies.
 func parsePostcards(lookup Lookup, publicURL PublicURL, sender MailSender) parsed[Postcards] {
 	expression := lookup("WGA_POSTCARD_FREQUENCY")
 	if expression == "" {
@@ -448,6 +493,7 @@ func parsePostcards(lookup Lookup, publicURL PublicURL, sender MailSender) parse
 	}
 }
 
+// parseAbsoluteURL validates value as an absolute URL for name.
 func parseAbsoluteURL(name string, value string) (url.URL, error) {
 	if value == "" {
 		return url.URL{}, required(name)
@@ -461,10 +507,12 @@ func parseAbsoluteURL(name string, value string) (url.URL, error) {
 	return *parsedURL, nil
 }
 
+// required returns an error indicating that name is not configured.
 func required(name string) error {
 	return fmt.Errorf("%s must be set", name)
 }
 
+// requireValue returns an error when value is empty.
 func requireValue(name string, value string) error {
 	if value == "" {
 		return required(name)
@@ -473,6 +521,7 @@ func requireValue(name string, value string) error {
 	return nil
 }
 
+// requireMigrationMail validates the mail settings required by migrations.
 func requireMigrationMail(mail Mail) error {
 	var errs []error
 	if mail.Sender.Name == "" {

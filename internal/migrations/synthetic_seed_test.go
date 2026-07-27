@@ -24,9 +24,9 @@ func TestSyntheticSeedMigrationImportsExistingSchema(t *testing.T) {
 	}
 
 	assertSyntheticCollectionCounts(t, app, map[string]int{
-		"schools":        1,
-		"art_forms":      1,
-		"art_types":      1,
+		"schools":        26,
+		"art_forms":      14,
+		"art_types":      3,
 		"artists":        10,
 		"artworks":       27,
 		"glossary":       5,

@@ -20,23 +20,24 @@ func init() {
 		collection.Name = "Schools"
 		collection.Id = "schools"
 		collection.System = false
-		collection.MarkAsNew()
+		//collection.MarkAsNew()
 
 		collection.Fields.Add(
 			&core.TextField{
-				Id:          "schools_name",
+				Id:          "school_name",
 				Name:        "name",
 				Required:    true,
 				Presentable: true,
 			},
 			&core.TextField{
-				Id:       "schools_slug",
+				Id:       "school_slug",
 				Name:     "slug",
 				Required: true,
 			},
 			&core.AutodateField{
 				Name:     "created",
 				OnCreate: true,
+				OnUpdate: false,
 			},
 			&core.AutodateField{
 				Name:     "updated",
@@ -44,6 +45,8 @@ func init() {
 				OnUpdate: true,
 			},
 		)
+
+		collection.AddIndex("idx_unique_school", true, "name, slug", "")
 
 		err := app.Save(collection)
 

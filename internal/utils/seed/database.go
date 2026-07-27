@@ -435,7 +435,7 @@ func centuryForPeriod(period string) (string, error) {
 	switch period {
 	case "Baroque":
 		return "18", nil
-	case "Romantic":
+	case "Romantic", "Romanticism":
 		return "19", nil
 	default:
 		return "", fmt.Errorf("unsupported music period %q", period)

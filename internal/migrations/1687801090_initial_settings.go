@@ -27,6 +27,7 @@ func init() {
 		settings.Meta.SenderName = "Web Gallery of Art"
 		settings.Meta.SenderAddress = "info@wga.hu"
 		settings.Meta.AppURL = settingsConfig.PublicURL.String()
+		settings.Meta.AccentColor = "#003366"
 		if settingsConfig.Storage.Enabled {
 			settings.S3.Enabled = true
 			settings.S3.Endpoint = settingsConfig.Storage.Endpoint.String()
