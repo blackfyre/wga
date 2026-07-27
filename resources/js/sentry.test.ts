@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import {
+	captureTestMessage,
 	initialiseSentry,
 	loadSentryConfiguration,
 	scrubSentryEvent,
@@ -50,9 +51,22 @@ test("initialises Sentry only when a DSN is configured", () => {
 		{
 			dsn: "https://public@example.ingest.sentry.io/1",
 			environment: "production",
+			beforeBreadcrumb: expect.any(Function),
 			beforeSend: scrubSentryEvent,
 		},
 	]);
+	const options = calls[0] as {
+		beforeBreadcrumb: (breadcrumb: {
+			category: string;
+			data: Record<string, unknown>;
+		}) => { data?: Record<string, unknown> } | null;
+	};
+	expect(
+		options.beforeBreadcrumb({
+			category: "console",
+			data: { arguments: ["private"] },
+		})?.data?.arguments,
+	).toBeUndefined();
 });
 
 test("does not report successful initialisation when the SDK returns no client", () => {
@@ -141,4 +155,26 @@ test("scrubs query parameters from path-relative breadcrumb URLs", () => {
 	});
 
 	expect(event.breadcrumbs?.[0]?.data?.url).toBe("/lookup");
+});
+
+test("removes console breadcrumb arguments", () => {
+	const event = scrubSentryEvent({
+		breadcrumbs: [
+			{
+				category: "console",
+				data: { arguments: [{ sender: "private", message: "private" }] },
+			},
+		],
+	});
+
+	expect(event.breadcrumbs?.[0]?.data?.arguments).toBeUndefined();
+});
+
+test("captures the intentional test message", () => {
+	let message = "";
+	captureTestMessage((value) => {
+		message = value;
+	});
+
+	expect(message).toBe("It works!");
 });

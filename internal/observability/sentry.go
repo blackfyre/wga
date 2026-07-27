@@ -2,7 +2,9 @@ package observability
 
 import (
 	"fmt"
+	"html"
 	"log/slog"
+	"net/http"
 	"time"
 
 	"github.com/blackfyre/wga/internal/config"
@@ -27,6 +29,7 @@ type Monitor struct {
 	enabled          bool
 	captureException func(error)
 	captureMessage   func(string)
+	flush            func() bool
 	recoverPanic     func(any)
 }
 
@@ -60,6 +63,7 @@ func configure(dsn string, environment string, logger *slog.Logger, initialise f
 		enabled:          true,
 		captureException: func(err error) { sentry.CaptureException(err) },
 		captureMessage:   func(message string) { sentry.CaptureMessage(message) },
+		flush:            func() bool { return sentry.Flush(flushTimeout) },
 		recoverPanic:     func(value any) { sentry.CurrentHub().Recover(value) },
 	}
 }
@@ -84,11 +88,36 @@ func (m Monitor) Register(app core.App) {
 	})
 }
 
-// Flush waits for pending Sentry events before the process exits.
-func (m Monitor) Flush() {
-	if m.enabled {
-		sentry.Flush(flushTimeout)
+// RegisterTestRoute adds a non-production endpoint that sends intentional test events.
+func (m Monitor) RegisterTestRoute(app core.App, environment config.Environment) {
+	if environment == config.EnvironmentProduction {
+		return
 	}
+
+	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
+		se.Router.GET("/sentry-test", func(e *core.RequestEvent) error {
+			if !m.CaptureMessage("It works!") {
+				return e.Error(http.StatusServiceUnavailable, "Sentry monitoring is disabled", nil)
+			}
+
+			if !m.Flush() {
+				return e.Error(http.StatusServiceUnavailable, "Sentry test event did not flush before timeout", nil)
+			}
+
+			return e.HTML(http.StatusOK, sentryTestPage())
+		})
+
+		return se.Next()
+	})
+}
+
+// Flush waits for pending Sentry events before the process exits.
+func (m Monitor) Flush() bool {
+	if !m.enabled || m.flush == nil {
+		return false
+	}
+
+	return m.flush()
 }
 
 // CaptureMessage sends an intentional test message when monitoring is enabled.
@@ -99,6 +128,21 @@ func (m Monitor) CaptureMessage(message string) bool {
 
 	m.captureMessage(message)
 	return true
+}
+
+func sentryTestPage() string {
+	settings := BrowserConfig()
+	return fmt.Sprintf(`<!DOCTYPE html>
+<html>
+<head>
+<meta name="sentry-dsn" content="%s">
+<meta name="sentry-environment" content="%s">
+</head>
+<body>
+<p>Sentry test event queued.</p>
+<script type="module" src="/assets/js/app.js"></script>
+</body>
+</html>`, html.EscapeString(settings.DSN), html.EscapeString(settings.Environment))
 }
 
 func (m Monitor) intercept(next func() error, responseStatus func() int) (err error) {

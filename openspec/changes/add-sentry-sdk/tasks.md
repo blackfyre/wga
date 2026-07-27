@@ -10,7 +10,7 @@
 - [x] 2.1 Create the application-owned observability integration that initialises Sentry with the DSN and WGA environment, logs disabled or failed initialisation, and flushes with a bounded timeout.
 - [x] 2.2 Register the integration from the serving composition root and add PocketBase router adaptation that reports unexpected returned errors and panics while preserving existing request handling and excluding expected client errors.
 - [x] 2.3 Add unit tests for disabled, failed, and enabled server monitoring paths, including preserved error propagation and redacted logging.
-- [x] 2.4 Add a non-production `sentry-test` command that sends and flushes an intentional test message.
+- [x] 2.4 Add a non-production `/sentry-test` route that sends intentional server and browser test messages.
 
 ## 3. Browser monitoring
 
@@ -24,3 +24,5 @@
 - [x] 4.1 Run `go mod tidy`, `go vet ./...`, and focused Go tests for configuration and observability.
 - [x] 4.2 Run `bun run build` and the relevant formatting or browser test checks.
 - [ ] 4.3 Manually verify a deployment with no DSN starts normally and logs that monitoring is disabled, then verify configured server and browser test errors arrive in Sentry with the correct environment.
+  - Verified: a deployment without a DSN starts normally and logs that monitoring is disabled.
+  - Pending: configured server and browser delivery requires non-production Sentry DSN and project access.

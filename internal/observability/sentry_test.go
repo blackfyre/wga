@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/blackfyre/wga/internal/config"
 	"github.com/getsentry/sentry-go"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tests"
@@ -173,6 +174,107 @@ func TestMonitorCaptureMessage(t *testing.T) {
 	if (Monitor{}).CaptureMessage("It works!") {
 		t.Fatal("expected disabled monitor to skip test message")
 	}
+}
+
+func TestMonitorRegisterTestRoute(t *testing.T) {
+	message := ""
+	scenario := tests.ApiScenario{
+		Name:           "non-production test route queues Sentry events",
+		Method:         http.MethodGet,
+		URL:            "/sentry-test",
+		ExpectedStatus: http.StatusOK,
+		ExpectedContent: []string{
+			"Sentry test event queued.",
+			`<script type="module" src="/assets/js/app.js"></script>`,
+		},
+		TestAppFactory: func(t testing.TB) *tests.TestApp {
+			app, err := tests.NewTestApp()
+			if err != nil {
+				t.Fatalf("create test app: %v", err)
+			}
+			monitor := Monitor{
+				enabled: true,
+				captureMessage: func(value string) {
+					message = value
+				},
+				flush: func() bool { return true },
+			}
+			monitor.RegisterTestRoute(app, config.EnvironmentStaging)
+			return app
+		},
+		AfterTestFunc: func(t testing.TB, _ *tests.TestApp, _ *http.Response) {
+			if message != "It works!" {
+				t.Fatalf("expected test message, got %q", message)
+			}
+		},
+	}
+
+	scenario.Test(t)
+}
+
+func TestMonitorRegisterTestRouteWhenFlushTimesOut(t *testing.T) {
+	scenario := tests.ApiScenario{
+		Name:            "non-production test route reports a Sentry flush timeout",
+		Method:          http.MethodGet,
+		URL:             "/sentry-test",
+		ExpectedStatus:  http.StatusServiceUnavailable,
+		ExpectedContent: []string{"Sentry test event did not flush before timeout"},
+		TestAppFactory: func(t testing.TB) *tests.TestApp {
+			app, err := tests.NewTestApp()
+			if err != nil {
+				t.Fatalf("create test app: %v", err)
+			}
+			monitor := Monitor{
+				enabled:        true,
+				captureMessage: func(string) {},
+				flush:          func() bool { return false },
+			}
+			monitor.RegisterTestRoute(app, config.EnvironmentStaging)
+			return app
+		},
+	}
+
+	scenario.Test(t)
+}
+
+func TestMonitorRegisterTestRouteWhenDisabled(t *testing.T) {
+	scenario := tests.ApiScenario{
+		Name:            "non-production test route reports disabled monitoring",
+		Method:          http.MethodGet,
+		URL:             "/sentry-test",
+		ExpectedStatus:  http.StatusServiceUnavailable,
+		ExpectedContent: []string{"Sentry monitoring is disabled"},
+		TestAppFactory: func(t testing.TB) *tests.TestApp {
+			app, err := tests.NewTestApp()
+			if err != nil {
+				t.Fatalf("create test app: %v", err)
+			}
+			Monitor{}.RegisterTestRoute(app, config.EnvironmentStaging)
+			return app
+		},
+	}
+
+	scenario.Test(t)
+}
+
+func TestMonitorRegisterTestRouteInProduction(t *testing.T) {
+	scenario := tests.ApiScenario{
+		Name:            "production does not register the Sentry test route",
+		Method:          http.MethodGet,
+		URL:             "/sentry-test",
+		ExpectedStatus:  http.StatusNotFound,
+		ExpectedContent: []string{"The requested resource wasn't found."},
+		TestAppFactory: func(t testing.TB) *tests.TestApp {
+			app, err := tests.NewTestApp()
+			if err != nil {
+				t.Fatalf("create test app: %v", err)
+			}
+			Monitor{enabled: true}.RegisterTestRoute(app, config.EnvironmentProduction)
+			return app
+		},
+	}
+
+	scenario.Test(t)
 }
 
 func TestMonitorRegisterCapturesServerErrors(t *testing.T) {

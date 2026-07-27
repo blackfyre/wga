@@ -26,7 +26,12 @@ const scrubBreadcrumb = (breadcrumb: Sentry.Breadcrumb): Sentry.Breadcrumb => {
 		return breadcrumb;
 	}
 
-	const data = { ...breadcrumb.data };
+	let data = { ...breadcrumb.data };
+	if (breadcrumb.category === "console") {
+		data = Object.fromEntries(
+			Object.entries(data).filter(([key]) => key !== "arguments"),
+		);
+	}
 	for (const key of ["url", "from", "to"]) {
 		if (typeof data[key] === "string") {
 			data[key] = scrubURL(data[key]);
@@ -75,6 +80,7 @@ export const initialiseSentry = (
 		const client = initialise({
 			dsn: configuration.dsn,
 			environment: configuration.environment,
+			beforeBreadcrumb: scrubBreadcrumb,
 			beforeSend: scrubSentryEvent,
 		});
 		if (!client) {
@@ -86,4 +92,10 @@ export const initialiseSentry = (
 		console.error("Sentry browser initialisation failed", error);
 		return false;
 	}
+};
+
+export const captureTestMessage = (
+	capture: typeof Sentry.captureMessage = Sentry.captureMessage,
+) => {
+	capture("It works!");
 };

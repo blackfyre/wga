@@ -45,17 +45,22 @@ The serving runtime SHALL initialise the official Sentry Go SDK when a valid DSN
 
 ### Requirement: Intentional Sentry verification
 
-The application SHALL provide a non-production CLI command that sends the message `It works!` to Sentry and flushes before exiting. The command SHALL refuse production execution and SHALL report disabled monitoring instead of claiming delivery.
+The application SHALL provide a non-production route that sends the message `It works!` from the server and browser. The server event SHALL be flushed before the route responds. The route SHALL not be registered in production and SHALL report disabled monitoring instead of claiming delivery.
 
-#### Scenario: Non-production test event
+#### Scenario: Non-production test events
 
-- **WHEN** an operator runs `sentry-test` with Sentry monitoring configured outside production
-- **THEN** the application sends `It works!` to Sentry and confirms that the test event was sent
+- **WHEN** an operator visits `/sentry-test` with Sentry monitoring configured outside production
+- **THEN** the application sends `It works!` to Sentry from both the server and browser
 
-#### Scenario: Production test event
+#### Scenario: Production test route
 
-- **WHEN** an operator runs `sentry-test` in production
-- **THEN** the command refuses to send an event
+- **WHEN** an operator requests `/sentry-test` in production
+- **THEN** the application does not register the route
+
+#### Scenario: Disabled non-production monitoring
+
+- **WHEN** an operator requests `/sentry-test` without Sentry monitoring configured
+- **THEN** the application reports that Sentry monitoring is disabled
 
 ### Requirement: Browser error monitoring
 
@@ -71,14 +76,18 @@ The browser bundle SHALL include the official Sentry browser SDK and SHALL initi
 - **WHEN** a full page is rendered with Sentry monitoring disabled
 - **THEN** the browser skips Sentry initialisation and the main application bootstrap still completes
 
-### Requirement: Browser event URL privacy
+### Requirement: Browser event privacy
 
-The browser SDK SHALL remove query strings and fragments from error-event and breadcrumb URLs before sending events to Sentry.
+The browser SDK SHALL remove query strings and fragments from error-event and breadcrumb URLs, and SHALL remove console breadcrumb arguments, before sending events to Sentry.
 
 #### Scenario: Page URL contains a sensitive query parameter
 
 - **WHEN** a browser error occurs on a URL containing query parameters or a fragment
 - **THEN** the event sent to Sentry contains the URL path without the query string or fragment
+
+#### Scenario: Console breadcrumb contains form data
+- **WHEN** a console breadcrumb contains logged form data
+- **THEN** the event sent to Sentry excludes the breadcrumb arguments
 
 ### Requirement: Public configuration boundary
 

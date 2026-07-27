@@ -1,8 +1,6 @@
 package main
 
 import (
-	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -71,6 +69,7 @@ func main() {
 		logging.RegisterRequestIDMiddleware(app)
 		monitor = observability.Configure(serverConfig.Sentry, serverConfig.Environment, app.Logger())
 		monitor.Register(app)
+		monitor.RegisterTestRoute(app, serverConfig.Environment)
 		contributorStore, err := contributors.NewStore(app)
 		if err != nil {
 			log.Fatal(err)
@@ -89,22 +88,6 @@ func main() {
 		Automigrate: false,
 	})
 	postcards.RegisterCommands(app)
-	app.RootCmd.AddCommand(&cobra.Command{
-		Use:   "sentry-test",
-		Short: "Send a Sentry test event in a non-production environment",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if serverConfig.Environment == config.EnvironmentProduction {
-				return errors.New("sentry-test is unavailable in production")
-			}
-			if !monitor.CaptureMessage("It works!") {
-				return errors.New("Sentry monitoring is disabled")
-			}
-
-			monitor.Flush()
-			_, err := fmt.Fprintln(cmd.OutOrStdout(), "Sentry test event sent.")
-			return err
-		},
-	})
 
 	app.RootCmd.AddCommand(&cobra.Command{
 		Use:   "generate-sitemap",
@@ -171,7 +154,7 @@ func commandCapabilityFor(args []string) commandCapability {
 			return commandNeedsSitemap
 		case "migrate", "generate-music-urls", "seed:images", "superuser", "postcards":
 			return commandNeedsNothing
-		case "serve", "sentry-test":
+		case "serve":
 			return commandNeedsServer
 		default:
 			return commandNeedsNothing

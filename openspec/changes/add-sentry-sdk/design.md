@@ -71,7 +71,7 @@ This is preferable to failing startup because telemetry is non-essential and the
 
 ## Verification Trigger
 
-Use `wga sentry-test` in a non-production environment with `WGA_SENTRY_DSN` configured to send the intentional `It works!` message and flush it before the command exits. The command refuses production execution and reports when monitoring is disabled.
+Visit `/sentry-test` in a non-production environment with `WGA_SENTRY_DSN` configured to send the intentional `It works!` message from both the server and browser. The route is not registered in production and reports disabled monitoring instead of claiming delivery.
 
 ## Open Questions
 
