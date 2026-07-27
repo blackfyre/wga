@@ -1,6 +1,7 @@
 package postcards
 
 import (
+	"github.com/blackfyre/wga/internal/antiabuse"
 	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/microcosm-cc/bluemonday"
@@ -8,7 +9,7 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
-func RegisterPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy, captcha config.Captcha) {
+func RegisterPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy, captcha config.Captcha, verifier antiabuse.Verifier) {
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 
 		ag := se.Router.Group("/postcard")
@@ -23,7 +24,7 @@ func RegisterPostcardHandlers(app *pocketbase.PocketBase, p *bluemonday.Policy, 
 		})
 
 		ag.POST("", func(c *core.RequestEvent) error {
-			return savePostcard(app, c, p, captcha)
+			return savePostcard(app, c, p, captcha, verifier)
 		}).BindFunc(utils.IsHtmxRequestMiddleware)
 		return se.Next()
 	})
