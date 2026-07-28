@@ -9,7 +9,7 @@ templ TopNav() {
 						<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M4 6h16M4 12h16M4 18h16"></path></svg>
 						<span>Menu</span>
 					</summary>
-					<ul>
+					<ul onclick="this.closest('details').removeAttribute('open')">
 						<li><a href="/" hx-get="/">Home</a></li>
 						<li><a href="/artists" hx-get="/artists">Artists</a></li>
 						<li><a href="/artworks" hx-get="/artworks">Artworks</a></li>

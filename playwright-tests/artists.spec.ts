@@ -34,3 +34,17 @@ test("filters artists by initial letter", async ({ page }) => {
   await expect(page.getByRole("link", { name: "A", exact: true })).toHaveAttribute("aria-current", "page");
   await expect(page.getByText("No artists match this search.")).toBeVisible();
 });
+
+test("search preserves the selected initial letter", async ({ page }) => {
+  await page.goto("/artists?letter=S");
+
+  await page
+    .getByPlaceholder("Find an artist")
+    .pressSequentially("Synthetic Artist 02", { delay: 100 });
+
+  await expect(page.getByRole("link", { name: "S", exact: true })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  await expect(page.locator("table")).toHaveText(/Synthetic Artist 02/);
+});

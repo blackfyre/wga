@@ -23,6 +23,14 @@ func HighlightArtistName(name string, query string) string {
 	})
 }
 
+func ArtistSearchURL(activeLetter string) string {
+	if activeLetter == "" {
+		return "/artists"
+	}
+
+	return "/artists?letter=" + activeLetter
+}
+
 templ ArtistsPageBlock(c dto.ArtistsView) {
 	<head>
 		<title>{ utils.GetTitle(ctx) }</title>
@@ -40,7 +48,7 @@ templ ArtistsPageBlock(c dto.ArtistsView) {
 					type="search"
 					name="q"
 					placeholder="Find an artist"
-					hx-get="/artists"
+					hx-get={ ArtistSearchURL(c.ActiveLetter) }
 					hx-trigger="keyup changed delay:500ms, search"
 					hx-disabled-elt="this"
 					value={ c.QueryStr }

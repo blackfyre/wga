@@ -17,6 +17,11 @@ test("mobile header exposes the collection navigation", async ({ page }) => {
   await expect(
     page.locator(".site-header__mobile-menu a", { hasText: "Artworks" }),
   ).toHaveAttribute("href", "/artworks");
+  await page.locator(".site-header__mobile-menu a", { hasText: "Artworks" }).click();
+  await expect(page.locator(".site-header__mobile-menu")).not.toHaveAttribute(
+    "open",
+    "",
+  );
 });
 
 test("environment status confirms before opening GitHub", async ({ page }) => {
