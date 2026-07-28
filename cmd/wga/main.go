@@ -15,6 +15,7 @@ import (
 	"github.com/blackfyre/wga/internal/hooks"
 	"github.com/blackfyre/wga/internal/logging"
 	"github.com/blackfyre/wga/internal/migrations"
+	"github.com/blackfyre/wga/internal/observability"
 	"github.com/blackfyre/wga/internal/postcards"
 
 	"github.com/blackfyre/wga/internal/utils"
@@ -57,6 +58,7 @@ func main() {
 	app := pocketbase.NewWithConfig(pocketbase.Config{
 		DefaultDataDir: "./wga_data",
 	})
+	monitor := observability.Monitor{}
 
 	if err := migrations.Configure(runtimeConfig.Migrations()); err != nil {
 		log.Fatal(err)
@@ -65,6 +67,9 @@ func main() {
 	if capability == commandNeedsServer {
 		utils.ConfigurePublicURL(serverConfig.PublicURL)
 		logging.RegisterRequestIDMiddleware(app)
+		monitor = observability.Configure(serverConfig.Sentry, serverConfig.Environment, app.Logger())
+		monitor.Register(app)
+		monitor.RegisterTestRoute(app, serverConfig.Environment)
 		contributorStore, err := contributors.NewStore(app)
 		if err != nil {
 			log.Fatal(err)
@@ -120,8 +125,10 @@ func main() {
 	}
 
 	if err := app.Start(); err != nil {
+		monitor.Flush()
 		log.Fatal(err)
 	}
+	monitor.Flush()
 }
 
 func commandCapabilityFor(args []string) commandCapability {
