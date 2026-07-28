@@ -147,21 +147,23 @@ templ ArtworkSearchResults(r dto.ArtworkSearchResultDTO) {
 templ ExploreArtworkGrid(artworks dto.ImageGrid) {
 	<div class="explore-results__grid" data-viewer>
 		for _, artwork := range artworks {
-			<a class="explore-artwork-card" href={ templ.SafeURL(artwork.Url) } hx-get={ artwork.Url }>
+			<article class="explore-artwork-card">
 				<figure class="explore-artwork-card__image">
 					<picture>
 						<source srcset={ artwork.Thumb }/>
-						<img src={ artwork.Image } alt="" loading="lazy"/>
+						<img src={ artwork.Image } alt="" data-viewer-title={ artwork.Title } loading="lazy"/>
 					</picture>
 				</figure>
-				<div class="explore-artwork-card__copy">
-					<p>{ artwork.Artist.Name }</p>
-					<h2>{ artwork.Title }</h2>
-					if artwork.Technique != "" {
-						<span>{ artwork.Technique }</span>
-					}
-				</div>
-			</a>
+				<a class="explore-artwork-card__link" href={ templ.SafeURL(artwork.Url) } hx-get={ artwork.Url }>
+					<div class="explore-artwork-card__copy">
+						<p>{ artwork.Artist.Name }</p>
+						<h2>{ artwork.Title }</h2>
+						if artwork.Technique != "" {
+							<span>{ artwork.Technique }</span>
+						}
+					</div>
+				</a>
+			</article>
 		}
 	</div>
 }

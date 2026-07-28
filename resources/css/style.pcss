@@ -159,7 +159,9 @@ html[data-theme="wga_dark"] {
   .btn-primary { background: var(--wga-primary); color: var(--wga-primary-content); }
   .btn-primary:hover { background: color-mix(in srgb, var(--wga-primary) 85%, #000); }
   .btn-secondary { background: var(--wga-secondary); color: var(--wga-secondary-content); }
+  .btn-secondary:hover { background: color-mix(in srgb, var(--wga-secondary) 85%, #000); }
   .btn-neutral { background: var(--wga-neutral); color: var(--wga-neutral-content); }
+  .btn-neutral:hover { background: color-mix(in srgb, var(--wga-neutral) 85%, #000); }
   .btn-outline { border-color: currentColor; background: transparent; }
   .btn-ghost { background: transparent; }
   .btn-link { min-height: auto; background: transparent; color: var(--wga-primary); padding: 0; text-decoration: underline; }
@@ -296,12 +298,12 @@ html[data-theme="wga_dark"] {
   .modal-middle { margin: auto; }
   .modal-box { position: relative; z-index: 1; padding: 1.5rem; }
   .modal-backdrop { position: fixed; z-index: 0; inset: 0; margin: 0; padding: 0; }
-  .modal-backdrop button { position: fixed; inset: 0; width: 100%; height: 100%; cursor: default; }
+  .modal-backdrop button { position: fixed; inset: 0; width: 100%; height: 100%; color: transparent; cursor: default; }
 
   .toast { position: fixed; right: 1rem; bottom: 1rem; z-index: 60; display: grid; gap: 0.75rem; max-width: min(24rem, calc(100vw - 2rem)); }
   .footer { display: grid; gap: 1.5rem; }
-  .stats { display: grid; }
-  .stat { padding: 1.25rem; }
+  .stats { display: grid; grid-auto-columns: minmax(0, 1fr); grid-auto-flow: column; }
+  .stat { display: grid; padding: 1.25rem; }
   .stat-title { color: var(--wga-base-content); font-size: 0.875rem; }
   .stat-value { color: var(--wga-primary); font-size: 2rem; font-weight: 700; }
   .stat-desc { color: color-mix(in srgb, var(--wga-base-content) 70%, transparent); font-size: 0.875rem; }
@@ -334,6 +336,8 @@ html[data-theme="wga_dark"] {
   bottom: 12rem;
   min-width: 6rem;
   padding: 0.625rem 1rem;
+  background: var(--wga-neutral);
+  color: var(--wga-neutral-content);
   transform: rotate(-90deg) translate(0, 100%);
   font-family: "Inter", sans-serif;
   font-size: 0.6875rem;
@@ -455,7 +459,6 @@ html[data-theme="wga_dark"] {
 .site-header__brand {
   display: flex;
   align-items: baseline;
-  /*gap: 0.75rem;*/
   color: var(--wga-primary);
   text-decoration: none;
 }
@@ -1171,7 +1174,7 @@ html[data-theme="wga_dark"] {
 
 .explore-filters__actions button:focus-visible,
 .explore-filters__actions a:focus-visible,
-.explore-artwork-card:focus-visible {
+.explore-artwork-card__link:focus-visible {
   outline: 3px solid var(--explore-focus);
   outline-offset: 3px;
 }
@@ -1203,6 +1206,11 @@ html[data-theme="wga_dark"] {
 }
 
 .explore-artwork-card {
+  color: inherit;
+}
+
+.explore-artwork-card__link {
+  display: block;
   color: inherit;
   text-decoration: none;
 }

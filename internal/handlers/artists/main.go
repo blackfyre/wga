@@ -57,26 +57,9 @@ func processArtists(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 		searchExpression = queryParams.Get("q")
 	}
 
-	activeLetter := strings.ToUpper(strings.TrimSpace(queryParams.Get("letter")))
-	if len(activeLetter) != 1 || activeLetter[0] < 'A' || activeLetter[0] > 'Z' {
-		activeLetter = ""
-	}
-
 	offset := (page - 1) * limit
 
-	filter := "published = true"
-
-	filterParams := dbx.Params{
-		"searchExpression": searchExpression,
-	}
-
-	if searchExpression != "" {
-		filter = filter + " && name ~ {:searchExpression}"
-	}
-	if activeLetter != "" {
-		filter = filter + " && name ~ {:activeLetter}"
-		filterParams["activeLetter"] = activeLetter + "%"
-	}
+	filter, filterParams, activeLetter := buildArtistsFilter(searchExpression, queryParams.Get("letter"))
 
 	records, err := app.FindRecordsByFilter(
 		"artists",
@@ -171,6 +154,28 @@ func processArtists(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 	return c.HTML(http.StatusOK, buff.String())
 
+}
+
+func buildArtistsFilter(searchExpression string, rawLetter string) (string, dbx.Params, string) {
+	activeLetter := strings.ToUpper(strings.TrimSpace(rawLetter))
+	if len(activeLetter) != 1 || activeLetter[0] < 'A' || activeLetter[0] > 'Z' {
+		activeLetter = ""
+	}
+
+	filter := "published = true"
+	params := dbx.Params{
+		"searchExpression": searchExpression,
+	}
+
+	if searchExpression != "" {
+		filter = filter + " && name ~ {:searchExpression}"
+	}
+	if activeLetter != "" {
+		filter = filter + " && name ~ {:activeLetter}"
+		params["activeLetter"] = activeLetter + "%"
+	}
+
+	return filter, params, activeLetter
 }
 
 func RegisterHandlers(app *pocketbase.PocketBase) {

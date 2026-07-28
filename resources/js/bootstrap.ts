@@ -683,6 +683,21 @@ const wgaInternal: wgaInternals = {
 				for (const element of elements) {
 					const e = element as HTMLElement;
 					new Viewer(e, {
+						inheritedAttributes: [
+							"crossOrigin",
+							"decoding",
+							"isMap",
+							"loading",
+							"referrerPolicy",
+							"sizes",
+							"srcset",
+							"useMap",
+							"data-viewer-title",
+						],
+						title: [
+							1,
+							(image: HTMLImageElement) => image.dataset.viewerTitle ?? "",
+						],
 						toolbar: {
 							zoomIn: 1,
 							zoomOut: 1,

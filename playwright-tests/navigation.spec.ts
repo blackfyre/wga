@@ -26,13 +26,11 @@ test("environment status confirms before opening GitHub", async ({ page }) => {
     "https://github.com/blackfyre/wga",
   );
 
-  let confirmationMessage = "";
   page.once("dialog", async (dialog) => {
-    confirmationMessage = dialog.message();
+    expect(dialog.message()).toContain("not intended for public use");
     await dialog.dismiss();
   });
   await page.locator(".environment-status").click();
-  await expect(confirmationMessage).toContain("not intended for public use");
 });
 
 test("footer exposes utility navigation", async ({ page }) => {
@@ -43,6 +41,6 @@ test("footer exposes utility navigation", async ({ page }) => {
     footer.getByRole("link", { name: "Open-source licences" }),
   ).toHaveAttribute("href", "/open-source-licences");
   await expect(
-    footer.getByRole("link", { name: "GitHub" }).last(),
+    footer.getByRole("link", { name: "GitHub", exact: true }),
   ).toHaveAttribute("href", "https://github.com/blackfyre/wga");
 });
