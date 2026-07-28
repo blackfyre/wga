@@ -78,12 +78,17 @@ The browser bundle SHALL include the official Sentry browser SDK and SHALL initi
 
 ### Requirement: Browser event privacy
 
-The browser SDK SHALL remove query strings and fragments from error-event and breadcrumb URLs, and SHALL remove console breadcrumb arguments, before sending events to Sentry.
+The browser SDK SHALL remove query strings and fragments from error-event, stack-frame, and breadcrumb URLs, and SHALL remove console breadcrumb arguments, before sending events to Sentry.
 
 #### Scenario: Page URL contains a sensitive query parameter
 
 - **WHEN** a browser error occurs on a URL containing query parameters or a fragment
 - **THEN** the event sent to Sentry contains the URL path without the query string or fragment
+
+#### Scenario: Stack frame contains a sensitive query parameter
+
+- **WHEN** a browser error stack frame contains a URL with query parameters or a fragment
+- **THEN** the stack-frame URL sent to Sentry contains no query string or fragment
 
 #### Scenario: Console breadcrumb contains form data
 

@@ -111,6 +111,20 @@ test("continues when Sentry initialisation throws", () => {
 
 test("scrubs query parameters from Sentry event URLs", () => {
 	const event = scrubSentryEvent({
+		exception: {
+			values: [
+				{
+					stacktrace: {
+						frames: [
+							{
+								filename: "https://wga.example/postcard?p=secret#fragment",
+								abs_path: "https://wga.example/postcard?p=secret#fragment",
+							},
+						],
+					},
+				},
+			],
+		},
 		request: { url: "https://wga.example/postcard?p=secret#fragment" },
 		breadcrumbs: [
 			{
@@ -124,6 +138,12 @@ test("scrubs query parameters from Sentry event URLs", () => {
 	});
 
 	expect(event.request?.url).toBe("https://wga.example/postcard");
+	expect(event.exception?.values?.[0]?.stacktrace?.frames?.[0]?.filename).toBe(
+		"https://wga.example/postcard",
+	);
+	expect(event.exception?.values?.[0]?.stacktrace?.frames?.[0]?.abs_path).toBe(
+		"https://wga.example/postcard",
+	);
 	expect(event.breadcrumbs?.[0]?.data?.url).toBe(
 		"https://wga.example/postcard",
 	);

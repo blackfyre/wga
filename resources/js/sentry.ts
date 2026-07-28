@@ -41,8 +41,43 @@ const scrubBreadcrumb = (breadcrumb: Sentry.Breadcrumb): Sentry.Breadcrumb => {
 	return { ...breadcrumb, data };
 };
 
+const scrubStackFrame = (frame: Sentry.StackFrame): Sentry.StackFrame => {
+	const scrubbed = { ...frame };
+	if (scrubbed.filename) {
+		scrubbed.filename = scrubURL(scrubbed.filename);
+	}
+	if (scrubbed.abs_path) {
+		scrubbed.abs_path = scrubURL(scrubbed.abs_path);
+	}
+
+	return scrubbed;
+};
+
+const scrubException = (exception: Sentry.Exception): Sentry.Exception => {
+	if (!exception.stacktrace?.frames) {
+		return exception;
+	}
+
+	return {
+		...exception,
+		stacktrace: {
+			...exception.stacktrace,
+			frames: exception.stacktrace.frames.map(scrubStackFrame),
+		},
+	};
+};
+
+const scrubEventException = (exception: Sentry.Event["exception"]) => {
+	if (!exception?.values) {
+		return exception;
+	}
+
+	return { ...exception, values: exception.values.map(scrubException) };
+};
+
 export const scrubSentryEvent = (event: Sentry.Event): Sentry.Event => ({
 	...event,
+	exception: scrubEventException(event.exception),
 	request: event.request?.url
 		? { ...event.request, url: scrubURL(event.request.url) }
 		: event.request,
