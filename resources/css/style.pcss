@@ -2082,3 +2082,254 @@ a[href]:not(:where(
     grid-column: span 2;
   }
 }
+
+.artist-biography {
+  width: min(var(--wga-content-width, 1440px), calc(100% - 3rem));
+  margin: 0 auto;
+  padding: 3rem 0 5rem;
+}
+
+.artist-biography__header {
+  padding-bottom: 2.5rem;
+  border-bottom: 1px solid var(--wga-page-border);
+}
+
+.artist-biography__eyebrow {
+  margin: 0 0 0.5rem;
+  color: var(--wga-primary);
+  font-family: "Lexend", sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.artist-biography h1,
+.artist-biography h2,
+.artist-biography h3 {
+  color: var(--wga-primary);
+  font-family: "Source Serif 4", serif;
+}
+
+.artist-biography h1 {
+  margin: 0;
+  font-size: clamp(2.5rem, 5vw, 4.5rem);
+  line-height: 1;
+}
+
+.artist-biography__metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  margin-top: 1.25rem;
+  color: var(--wga-page-muted);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.8rem;
+}
+
+.artist-biography__metadata span:first-child {
+  color: var(--wga-primary);
+  font-family: "Lexend", sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.artist-biography__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(16rem, 0.8fr);
+  gap: 3rem;
+  margin-top: 3rem;
+}
+
+.artist-biography__content > h2,
+.artist-biography__facts > h2,
+.artist-biography__citation > h2,
+.artist-biography__works header {
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--wga-page-border);
+}
+
+.artist-biography__content > h2,
+.artist-biography__facts > h2,
+.artist-biography__citation > h2 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.artist-biography__prose {
+  max-width: 75ch;
+  margin-top: 1.5rem;
+  color: var(--wga-page-ink);
+  font-size: 1rem;
+  line-height: 1.8;
+}
+
+.artist-biography__prose > * + * {
+  margin-top: 1.25rem;
+}
+
+.artist-biography__prose h2,
+.artist-biography__prose h3 {
+  margin: 2.5rem 0 0;
+  font-size: 1.5rem;
+}
+
+.artist-biography__prose a {
+  color: var(--wga-primary);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.artist-biography__facts {
+  align-self: start;
+  position: sticky;
+  top: 6.5rem;
+  border: 1px solid var(--wga-page-border);
+  background: var(--wga-page-surface-muted);
+  padding: 1.5rem;
+}
+
+.artist-biography__facts dl {
+  display: grid;
+  gap: 1.25rem;
+  margin: 1.5rem 0 0;
+}
+
+.artist-biography__facts dt {
+  color: var(--wga-page-muted);
+  font-family: "Lexend", sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.artist-biography__facts dd {
+  margin: 0.35rem 0 0;
+  color: var(--wga-page-ink);
+  line-height: 1.5;
+}
+
+.artist-biography__citation {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--wga-page-border);
+}
+
+.artist-biography__citation > h2 {
+  font-family: "Lexend", sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.artist-biography__citation pre {
+  margin: 1rem 0 0;
+  overflow-x: auto;
+  border: 1px solid var(--wga-page-border);
+  background: var(--wga-page-surface);
+  color: var(--wga-page-muted);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.7rem;
+  line-height: 1.6;
+  padding: 1rem;
+  white-space: pre-wrap;
+}
+
+.artist-biography__works {
+  margin-top: 5rem;
+}
+
+.artist-biography__works header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.artist-biography__works h2 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.artist-biography__works header span,
+.artist-biography__work-grid p {
+  color: var(--wga-page-muted);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.75rem;
+}
+
+.artist-biography__work-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.artist-biography__work-grid a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.artist-biography__work-grid figure {
+  display: grid;
+  aspect-ratio: 4 / 3;
+  place-items: center;
+  margin: 0;
+  border: 1px solid var(--wga-page-border);
+  background: var(--wga-page-surface-muted);
+  overflow: hidden;
+  padding: 0.75rem;
+}
+
+.artist-biography__work-grid img {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: transform 180ms ease;
+}
+
+.artist-biography__work-grid a:hover img {
+  transform: scale(1.02);
+}
+
+.artist-biography__work-grid h3 {
+  margin: 0.75rem 0 0;
+  font-size: 1.15rem;
+  line-height: 1.3;
+}
+
+.artist-biography__work-grid p {
+  margin: 0.3rem 0 0;
+}
+
+@media (max-width: 900px) {
+  .artist-biography__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .artist-biography__facts {
+    position: static;
+  }
+
+  .artist-biography__work-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .artist-biography {
+    width: min(100% - 2rem, var(--wga-content-width, 1440px));
+    padding-top: 2rem;
+  }
+
+  .artist-biography__layout {
+    gap: 2rem;
+  }
+
+  .artist-biography__work-grid {
+    grid-template-columns: 1fr;
+  }
+}

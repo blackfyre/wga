@@ -38,6 +38,7 @@ func RenderArtistContent(app *pocketbase.PocketBase, c *core.RequestEvent, artis
 	schools := utils.RenderSchoolNames(app, artist.GetStringSlice("school"))
 
 	content := dto.Artist{
+		Id:   id,
 		Name: artist.GetString("name"),
 		Bio:  artist.GetString("bio"),
 		BioExcerpt: utils.NormalizedBioExcerpt(utils.BioExcerptDTO{

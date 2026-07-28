@@ -23,6 +23,15 @@ test("check artists page", async ({ page }) => {
 
   // expect to find "Synthetic Artist 02" in the title.
   await expect(page).toHaveTitle(/Synthetic Artist 02/);
+  await expect(
+    page.getByRole("heading", { name: "Biography", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Works in the collection" }),
+  ).toBeVisible();
+  await expect(page.locator(".artist-biography__citation pre")).toContainText(
+    "@misc{wga_artist_",
+  );
 });
 
 test("filters artists by initial letter", async ({ page }) => {
