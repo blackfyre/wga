@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	neturl "net/url"
 	"strconv"
+	"strings"
 
 	"github.com/blackfyre/wga/internal/utils/url"
 
@@ -55,12 +57,25 @@ func processArtists(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 		searchExpression = queryParams.Get("q")
 	}
 
+	activeLetter := strings.ToUpper(strings.TrimSpace(queryParams.Get("letter")))
+	if len(activeLetter) != 1 || activeLetter[0] < 'A' || activeLetter[0] > 'Z' {
+		activeLetter = ""
+	}
+
 	offset := (page - 1) * limit
 
 	filter := "published = true"
 
+	filterParams := dbx.Params{
+		"searchExpression": searchExpression,
+	}
+
 	if searchExpression != "" {
 		filter = filter + " && name ~ {:searchExpression}"
+	}
+	if activeLetter != "" {
+		filter = filter + " && name ~ {:activeLetter}"
+		filterParams["activeLetter"] = activeLetter + "%"
 	}
 
 	records, err := app.FindRecordsByFilter(
@@ -69,9 +84,7 @@ func processArtists(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 		"+name",
 		limit,
 		offset,
-		dbx.Params{
-			"searchExpression": searchExpression,
-		},
+		filterParams,
 	)
 
 	if err != nil {
@@ -85,9 +98,7 @@ func processArtists(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 		"+name",
 		0,
 		0,
-		dbx.Params{
-			"searchExpression": searchExpression,
-		},
+		filterParams,
 	)
 
 	if err != nil {
@@ -98,7 +109,8 @@ func processArtists(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	recordsCount := len(totalRecords)
 
 	content := dto.ArtistsView{
-		Count: strconv.Itoa(recordsCount),
+		Count:        strconv.Itoa(recordsCount),
+		ActiveLetter: activeLetter,
 	}
 
 	if len(searchExpression) > 0 && searchExpressionPresent {
@@ -134,7 +146,12 @@ func processArtists(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 	content.Jsonld = fmt.Sprintf(`<script type="application/ld+json">%s</script>`, marshalledJsonLd)
 
-	pagination := utils.NewPagination(recordsCount, limit, page, "/artists?q="+searchExpression, "", "")
+	paginationQuery := neturl.Values{}
+	paginationQuery.Set("q", searchExpression)
+	if activeLetter != "" {
+		paginationQuery.Set("letter", activeLetter)
+	}
+	pagination := utils.NewPagination(recordsCount, limit, page, "/artists?"+paginationQuery.Encode(), "", "")
 
 	content.Pagination = string(pagination.Render())
 

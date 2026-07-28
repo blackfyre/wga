@@ -1,10 +1,10 @@
 import { test, expect } from "@playwright/test";
 
 test("check artists page", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/artists");
 
-  // Click the get started link.
-  await page.getByRole("link", { name: "Artists", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Artist index" })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Filter artists by first letter" })).toBeVisible();
 
   // expect to find "Synthetic Artist 01" on the page, in a table.
 
@@ -23,4 +23,14 @@ test("check artists page", async ({ page }) => {
 
   // expect to find "Synthetic Artist 02" in the title.
   await expect(page).toHaveTitle(/Synthetic Artist 02/);
+});
+
+test("filters artists by initial letter", async ({ page }) => {
+  await page.goto("/artists");
+
+  await page.getByRole("link", { name: "A", exact: true }).click();
+
+  await expect(page).toHaveURL(/\/artists\?letter=A/);
+  await expect(page.getByRole("link", { name: "A", exact: true })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByText("No artists match this search.")).toBeVisible();
 });

@@ -16,12 +16,13 @@ type Artist struct {
 }
 
 type ArtistsView struct {
-	Count      string
-	Artists    []Artist
-	Pagination string
-	Jsonld     string
-	QueryStr   string
-	HxTarget   string
+	Count        string
+	Artists      []Artist
+	Pagination   string
+	Jsonld       string
+	QueryStr     string
+	ActiveLetter string
+	HxTarget     string
 }
 
 type Artwork struct {

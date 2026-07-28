@@ -27,73 +27,54 @@ templ ArtistsPageBlock(c dto.ArtistsView) {
 	<head>
 		<title>{ utils.GetTitle(ctx) }</title>
 	</head>
-	<section class="container mx-auto">
-		<nav class="flex mb-6" aria-label="Breadcrumb">
-			<ol role="list" class="flex items-center space-x-4">
-				<li>
-					<div>
-						<a href="/" hx-get="/" class="text-base-content/60 hover:text-base-content/80">
-							<svg class="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-								<path fill-rule="evenodd" d="M9.293 2.293a1 1 0 011.414 0l7 7A1 1 0 0117 11h-1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-3a1 1 0 00-1-1H9a1 1 0 00-1 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-6H3a1 1 0 01-.707-1.707l7-7z" clip-rule="evenodd"></path>
-							</svg>
-							<span class="sr-only">Home</span>
-						</a>
-					</div>
-				</li>
-				<li>
-					<div class="flex items-center">
-						<svg class="h-5 w-5 flex-shrink-0 text-base-content/60" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-							<path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"></path>
-						</svg>
-						<a href="/artists" hx-get="/artists" hx-target={ c.HxTarget } class="ml-4 text-sm font-medium text-base-content/70 hover:text-base-content" aria-current="page">Artists</a>
-					</div>
-				</li>
-			</ol>
+	<section class="artist-index">
+		<header class="artist-index__header">
+			<div>
+				<p class="artist-index__eyebrow">Collection directory</p>
+				<h1>Artist index</h1>
+				<p class="artist-index__summary">Browse { c.Count } artists in the Web Gallery of Art collection.</p>
+			</div>
+			<label class="artist-index__search">
+				<span class="sr-only">Search artists</span>
+				<input
+					type="search"
+					name="q"
+					placeholder="Find an artist"
+					hx-get="/artists"
+					hx-trigger="keyup changed delay:500ms, search"
+					hx-disabled-elt="this"
+					value={ c.QueryStr }
+					aria-label="Search artists"
+					hx-target={ c.HxTarget }
+				/>
+			</label>
+		</header>
+		<nav class="artist-index__alphabet" aria-label="Filter artists by first letter">
+			if c.ActiveLetter == "" {
+				<a href="/artists" hx-get="/artists" hx-target={ c.HxTarget } aria-current="page">All</a>
+			} else {
+				<a href="/artists" hx-get="/artists" hx-target={ c.HxTarget }>All</a>
+			}
+			for _, letter := range "ABCDEFGHIJKLMNOPQRSTUVWXYZ" {
+				if c.ActiveLetter == string(letter) {
+					<a href={ templ.SafeURL("/artists?letter=" + string(letter)) } hx-get={ "/artists?letter=" + string(letter) } hx-target={ c.HxTarget } aria-current="page">{ string(letter) }</a>
+				} else {
+					<a href={ templ.SafeURL("/artists?letter=" + string(letter)) } hx-get={ "/artists?letter=" + string(letter) } hx-target={ c.HxTarget }>{ string(letter) }</a>
+				}
+			}
 		</nav>
-		<div class="flex flex-row items-center gap-4">
-			<div>
-				<p><strong>{ c.Count }</strong> artists</p>
-			</div>
-			<div>
-				<label class="input input-bordered flex items-center gap-2 input-sm">
-					<input
-						type="search"
-						class="grow"
-						name="q"
-						placeholder="Find an artist"
-						hx-get="/artists"
-						hx-trigger="keyup changed delay:500ms, search"
-						hx-disabled-elt="this"
-						value={ c.QueryStr }
-						aria-label="Search artists"
-						aria-role="search"
-						hx-target={ c.HxTarget }
-					/>
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 opacity-70"><path fill-rule="evenodd" d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z" clip-rule="evenodd"></path></svg>
-				</label>
-			</div>
-		</div>
 		@ArtistsSearchResults(c)
 	</section>
 }
 
 templ artistsTable(list []dto.Artist, query string) {
-	<div class="overflow-x-auto">
-		<table class="table">
+	<div class="artist-index__table-wrap">
+		<table class="artist-index__table">
 			<thead>
 				<tr>
-					<th>
-						ARTIST
-					</th>
-					<th>
-						BORN-DIED
-					</th>
-					<th>
-						School(s)
-					</th>
-					<th>
-						Profession
-					</th>
+					<th>Artist</th>
+					<th>Life span</th>
+					<th>School</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -101,47 +82,29 @@ templ artistsTable(list []dto.Artist, query string) {
 					<tr>
 						<td>
 							<a href={ templ.SafeURL(a.Url) } hx-get={ a.Url } hx-target={ a.HxTarget }>
-								<b>
-									@templ.Raw(HighlightArtistName(a.Name, query))
-								</b>
+								@templ.Raw(HighlightArtistName(a.Name, query))
 							</a>
 						</td>
 						<td>{ a.BornDied }</td>
 						<td>{ a.Schools }</td>
-						<td>{ a.Profession }</td>
+					</tr>
+				}
+				if len(list) == 0 {
+					<tr>
+						<td colspan="3" class="artist-index__empty">No artists match this search.</td>
 					</tr>
 				}
 			</tbody>
-			<tfoot>
-				<tr>
-					<th>
-						ARTIST
-					</th>
-					<th>
-						BORN-DIED
-					</th>
-					<th>
-						PERIOD
-					</th>
-					<th>
-						SCHOOL
-					</th>
-				</tr>
-			</tfoot>
 		</table>
 	</div>
 }
 
 templ ArtistsSearchResults(c dto.ArtistsView) {
 	<div id="search-results">
-		<div class="table-container">
-			@artistsTable(c.Artists, c.QueryStr)
-		</div>
-		<nav class="pagination" role="navigation" aria-label="pagination">
+		@artistsTable(c.Artists, c.QueryStr)
+		<nav class="artist-index__pagination" role="navigation" aria-label="Artist index pagination">
 			@templ.Raw(c.Pagination)
 		</nav>
-		// {{range .Content}}
 		@templ.Raw(c.Jsonld)
-		// {{end}}
 	</div>
 }

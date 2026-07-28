@@ -1875,3 +1875,202 @@ a[href]:not(:where(
   color: var(--wga-base-content);
   cursor: pointer;
 }
+
+.artist-index {
+  width: min(var(--wga-content-width, 1440px), calc(100% - 3rem));
+  margin: 0 auto;
+  padding: 3rem 0 4rem;
+}
+
+.artist-index__header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--color-base-300);
+}
+
+.artist-index__eyebrow {
+  margin-bottom: 0.5rem;
+  color: var(--color-primary);
+  font-family: "Lexend", sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.artist-index h1 {
+  margin: 0;
+  color: var(--color-primary);
+  font-family: "Merriweather", serif;
+  font-size: clamp(2.25rem, 5vw, 3.75rem);
+  line-height: 1;
+}
+
+.artist-index__summary {
+  max-width: 38rem;
+  margin: 1rem 0 0;
+  color: color-mix(in oklab, var(--color-base-content) 72%, transparent);
+}
+
+.artist-index__search {
+  display: block;
+  width: min(100%, 20rem);
+}
+
+.artist-index__search input {
+  width: 100%;
+  border: 1px solid var(--color-base-300);
+  border-radius: 0;
+  background: var(--color-base-100);
+  padding: 0.75rem 1rem;
+  font: inherit;
+}
+
+.artist-index__search input:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.artist-index__alphabet {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(2.5rem, 1fr));
+  gap: 0.5rem;
+  margin: 1.5rem 0;
+}
+
+.artist-index__alphabet a {
+  display: grid;
+  min-height: 2.5rem;
+  place-items: center;
+  border: 1px solid var(--color-base-300);
+  background: var(--color-base-100);
+  color: var(--color-base-content);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.artist-index__alphabet a:first-child {
+  padding: 0 0.75rem;
+}
+
+.artist-index__alphabet a[aria-current="page"],
+.artist-index__alphabet a:hover,
+.artist-index__alphabet a:focus-visible {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-primary-content);
+  outline: none;
+}
+
+.artist-index__table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--color-base-300);
+}
+
+.artist-index__table {
+  width: 100%;
+  min-width: 38rem;
+  border-collapse: collapse;
+}
+
+.artist-index__table th,
+.artist-index__table td {
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--color-base-300);
+  text-align: left;
+}
+
+.artist-index__table th {
+  background: var(--color-base-200);
+  color: color-mix(in oklab, var(--color-base-content) 72%, transparent);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.artist-index__table th:nth-child(2),
+.artist-index__table td:nth-child(2) {
+  width: 10rem;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.8rem;
+}
+
+.artist-index__table th:last-child,
+.artist-index__table td:last-child {
+  width: 20%;
+  text-align: right;
+}
+
+.artist-index__table tbody tr:hover {
+  background: var(--color-base-200);
+}
+
+.artist-index__table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.artist-index__table a {
+  color: var(--color-primary);
+  font-family: "Merriweather", serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.artist-index__table a:hover,
+.artist-index__table a:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.artist-index__table mark {
+  background: color-mix(in oklab, var(--color-secondary) 35%, transparent);
+  color: inherit;
+}
+
+.artist-index__empty {
+  color: color-mix(in oklab, var(--color-base-content) 72%, transparent);
+  font-style: italic;
+  text-align: center !important;
+}
+
+.artist-index__pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.artist-index__pagination .pagination {
+  justify-content: center;
+}
+
+@media (max-width: 640px) {
+  .artist-index {
+    width: min(100% - 2rem, var(--wga-content-width, 1440px));
+    padding-top: 2rem;
+  }
+
+  .artist-index__header {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .artist-index__search {
+    width: 100%;
+  }
+
+  .artist-index__alphabet {
+    grid-template-columns: repeat(7, 1fr);
+  }
+
+  .artist-index__alphabet a:first-child {
+    grid-column: span 2;
+  }
+}
