@@ -1,9 +1,47 @@
 package config
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 )
+
+func TestServerSentryConfiguration(t *testing.T) {
+	tests := []struct {
+		name    string
+		dsn     string
+		wantErr string
+	}{
+		{name: "omitted DSN disables monitoring"},
+		{name: "configured DSN", dsn: "https://public@example.ingest.sentry.io/1"},
+		{name: "malformed DSN", dsn: "not-a-dsn", wantErr: "WGA_SENTRY_DSN"},
+		{name: "DSN with secret key", dsn: "https://public:secret@example.ingest.sentry.io/1", wantErr: "WGA_SENTRY_DSN"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			values := validValues()
+			values["WGA_SENTRY_DSN"] = test.dsn
+
+			server, err := LoadFrom(lookup(values)).Server()
+			if test.wantErr != "" {
+				if err == nil || !strings.Contains(err.Error(), test.wantErr) {
+					t.Fatalf("expected error containing %q, got %v", test.wantErr, err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected server configuration error: %v", err)
+			}
+			if got := server.Sentry.DSN(); got != test.dsn {
+				t.Fatalf("expected DSN %q, got %q", test.dsn, got)
+			}
+			if got := fmt.Sprint(server.Sentry); got != "[redacted]" {
+				t.Fatalf("expected redacted Sentry configuration, got %q", got)
+			}
+		})
+	}
+}
 
 func TestServerCaptchaPolicy(t *testing.T) {
 	tests := []struct {

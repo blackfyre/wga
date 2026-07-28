@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/blackfyre/wga/internal/assets/templ/components"
 	"github.com/blackfyre/wga/internal/assets/templ/utils"
+	"github.com/blackfyre/wga/internal/observability"
 )
 
 func htmxDefaults() string {
@@ -32,6 +33,8 @@ templ LayoutBase(bodyClasses string, HtmxTargetArea string) {
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
 			<title>{ utils.GetTitle(ctx) } </title>
 			<meta name="description" content={ utils.GetDescription(ctx) }/>
+			<meta name="sentry-dsn" content={ observability.BrowserConfig().DSN }/>
+			<meta name="sentry-environment" content={ observability.BrowserConfig().Environment }/>
 			<meta name="htmx-config" content={ htmxDefaults() }/>
 			for key, content := range utils.GetOpenGraphTags(ctx) {
 				<meta name={ key } content={ content }/>

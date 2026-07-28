@@ -303,6 +303,61 @@
   dependencies:
     playwright "1.58.2"
 
+"@sentry/browser@^10.68.0":
+  version "10.68.0"
+  resolved "https://registry.npmjs.org/@sentry/browser/-/browser-10.68.0.tgz"
+  integrity sha512-8xVgk7oG2lajXnbXF6a7H1xMZ/U6icqSldHGzQu1+bajfrK8Gan9ULG/Xsj1VM1LlNeK6/7znDJ3u1jgvIwznw==
+  dependencies:
+    "@sentry/browser-utils" "10.68.0"
+    "@sentry/conventions" "^0.16.0"
+    "@sentry/core" "10.68.0"
+    "@sentry/feedback" "10.68.0"
+    "@sentry/replay" "10.68.0"
+    "@sentry/replay-canvas" "10.68.0"
+
+"@sentry/browser-utils@10.68.0":
+  version "10.68.0"
+  resolved "https://registry.npmjs.org/@sentry/browser-utils/-/browser-utils-10.68.0.tgz"
+  integrity sha512-be8VtdjCngKc77cstJeV+gO15iH+blyXpBDk8yOehmtX4BkFO33mfTMNCWVR2LA0oOxjIHWRAhf77fIUEhzxPg==
+  dependencies:
+    "@sentry/conventions" "^0.16.0"
+    "@sentry/core" "10.68.0"
+
+"@sentry/conventions@^0.16.0":
+  version "0.16.0"
+  resolved "https://registry.npmjs.org/@sentry/conventions/-/conventions-0.16.0.tgz"
+  integrity sha512-fO9PLmHdVURcSPUpWCItWAtgKiMwGdJHbovoSEyLplX5sxs2ugvI4CBPTrkkgqhObnZOD0CnWBKDzSVQYBKEyQ==
+
+"@sentry/core@10.68.0":
+  version "10.68.0"
+  resolved "https://registry.npmjs.org/@sentry/core/-/core-10.68.0.tgz"
+  integrity sha512-5Amhx8ltVz7vb1bRGyf3c4J69/iHW8R/H+SJxTRILHlsSOBrnVVc/IQEYDC6PTRdRdZ3x2u7RVjxZi2Mhe525g==
+  dependencies:
+    "@sentry/conventions" "^0.16.0"
+
+"@sentry/feedback@10.68.0":
+  version "10.68.0"
+  resolved "https://registry.npmjs.org/@sentry/feedback/-/feedback-10.68.0.tgz"
+  integrity sha512-XbdcXiBnpC3vgw46eHOPeD/ZQ+XzluP75ubdUcaPDW02hCh2nsdXiwjZ2DBImbpvIpTbJgjHf/sIlHWvcZJ2Mg==
+  dependencies:
+    "@sentry/core" "10.68.0"
+
+"@sentry/replay@10.68.0":
+  version "10.68.0"
+  resolved "https://registry.npmjs.org/@sentry/replay/-/replay-10.68.0.tgz"
+  integrity sha512-ZoG2n16vbkx4GWSCnLIqUUN9xlUmccQFbQ2US2rhruQeHTUnHl/ukr8NHOQXZaEbwKyMkX9bEMwfmZHJm+wSTQ==
+  dependencies:
+    "@sentry/browser-utils" "10.68.0"
+    "@sentry/core" "10.68.0"
+
+"@sentry/replay-canvas@10.68.0":
+  version "10.68.0"
+  resolved "https://registry.npmjs.org/@sentry/replay-canvas/-/replay-canvas-10.68.0.tgz"
+  integrity sha512-HusYcr+He+ohnUDHunYrc5St6vdDnBXpUAndnT5ReyUMVSCiWKfY3paXowU/0787HwYfxdcpZgwC5u79+XbEIg==
+  dependencies:
+    "@sentry/core" "10.68.0"
+    "@sentry/replay" "10.68.0"
+
 "@tailwindcss/node@4.2.1":
   version "4.2.1"
   resolved "https://registry.npmjs.org/@tailwindcss/node/-/node-4.2.1.tgz"
