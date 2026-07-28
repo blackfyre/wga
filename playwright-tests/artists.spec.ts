@@ -30,8 +30,14 @@ test("check artists page", async ({ page }) => {
     page.getByRole("heading", { name: "Works in the collection" }),
   ).toBeVisible();
   await expect(page.locator(".artist-biography__citation pre")).toContainText(
-    "@misc{wga_artist_",
+    "@online{wga-artist-",
   );
+  await expect(page.locator(".artist-biography__citation pre")).toContainText(
+    "url = {http",
+  );
+  await expect(
+    page.getByRole("navigation", { name: "Breadcrumb" }),
+  ).toBeVisible();
 
   await page.locator(".artist-biography__work-grid a").first().click();
 
@@ -42,17 +48,26 @@ test("check artists page", async ({ page }) => {
     page.getByRole("heading", { name: "Scholarly commentary" }),
   ).toBeVisible();
   await expect(page.locator(".artwork-detail__citation pre")).toContainText(
-    "@misc{wga_artwork_",
+    "@online{wga-artwork-",
   );
+  await expect(page.locator(".artwork-detail__citation pre")).toContainText(
+    "url = {http",
+  );
+  await expect(
+    page.getByRole("navigation", { name: "Breadcrumb" }),
+  ).toBeVisible();
 });
 
 test("filters artists by initial letter", async ({ page }) => {
   await page.goto("/artists");
 
-  await page.getByRole("link", { name: "A", exact: true }).click();
+  await expect(page.getByText("A", { exact: true })).toHaveAttribute(
+    "aria-disabled",
+    "true",
+  );
+  await page.goto("/artists?letter=A");
 
   await expect(page).toHaveURL(/\/artists\?letter=A/);
-  await expect(page.getByRole("link", { name: "A", exact: true })).toHaveAttribute("aria-current", "page");
   await expect(page.getByText("No artists match this search.")).toBeVisible();
 });
 

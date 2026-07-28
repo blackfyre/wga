@@ -64,7 +64,9 @@ templ ArtistsPageBlock(c dto.ArtistsView) {
 				<a href="/artists" hx-get="/artists" hx-target={ c.HxTarget }>All</a>
 			}
 			for _, letter := range "ABCDEFGHIJKLMNOPQRSTUVWXYZ" {
-				if c.ActiveLetter == string(letter) {
+				if !c.AvailableLetters[string(letter)] {
+					<span aria-disabled="true">{ string(letter) }</span>
+				} else if c.ActiveLetter == string(letter) {
 					<a href={ templ.SafeURL("/artists?letter=" + string(letter)) } hx-get={ "/artists?letter=" + string(letter) } hx-target={ c.HxTarget } aria-current="page">{ string(letter) }</a>
 				} else {
 					<a href={ templ.SafeURL("/artists?letter=" + string(letter)) } hx-get={ "/artists?letter=" + string(letter) } hx-target={ c.HxTarget }>{ string(letter) }</a>

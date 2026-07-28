@@ -108,6 +108,7 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 			ArtworkId:    aw.GetString("id"),
 			ArtworkTitle: aw.GetString("title"),
 		}),
+		CitationUrl:     utils.AssetUrl(expectedPageUrl),
 		Image: img,
 		Artist: dto.Artist{
 			Id:              artist.GetString("id"),
@@ -255,6 +256,7 @@ func RenderArtworkContent(app *pocketbase.PocketBase, c *core.RequestEvent, artw
 
 	// Set the URL for the artwork
 	content.Url = artworkUrl
+	content.CitationUrl = utils.AssetUrl(artworkUrl)
 
 	return content, nil
 }

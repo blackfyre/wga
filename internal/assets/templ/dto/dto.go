@@ -7,6 +7,7 @@ type Artist struct {
 	Schools         string
 	Profession      string
 	Url             string
+	CitationUrl     string
 	BioExcerpt      string
 	Jsonld          string
 	Bio             string
@@ -22,6 +23,7 @@ type ArtistsView struct {
 	Jsonld       string
 	QueryStr     string
 	ActiveLetter string
+	AvailableLetters map[string]bool
 	HxTarget     string
 }
 
@@ -32,6 +34,7 @@ type Artwork struct {
 	Technique       string
 	Jsonld          string
 	Url             string
+	CitationUrl     string
 	HxTarget        string
 	ShowBreadcrumbs bool
 	Image

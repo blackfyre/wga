@@ -2,13 +2,16 @@ package pages
 
 import (
 	"fmt"
+	"time"
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/assets/templ/layouts"
 	"github.com/blackfyre/wga/internal/assets/templ/utils"
 )
 
 func ArtistBibTeX(a dto.Artist) string {
-	return fmt.Sprintf("@misc{wga_artist_%s,\n  author = {Web Gallery of Art},\n  title = {%s Biography},\n  url = {%s}\n}", a.Id, a.Name, a.Url)
+	date := time.Now().UTC().Format(time.DateOnly)
+
+	return fmt.Sprintf("@online{wga-artist-%s,\n  author       = {{Web Gallery of Art}},\n  title        = {%s Biography},\n  organization = {{Web Gallery of Art}},\n  date         = {%s},\n  url          = {%s},\n  urldate      = {%s},\n  langid       = {english}\n}", a.Id, a.Name, date, a.CitationUrl, date)
 }
 
 // ArtistPage is the template for the artist page
@@ -24,6 +27,15 @@ templ ArtistBlock(a dto.Artist) {
 		<title>{ utils.GetTitle(ctx) }</title>
 	</head>
 	<section class="artist-biography">
+		if a.ShowBreadcrumbs {
+			<nav class="detail-breadcrumbs" aria-label="Breadcrumb">
+				<ol>
+					<li><a href="/" hx-get="/">Home</a></li>
+					<li><a href="/artists" hx-get="/artists" hx-target={ a.HxTarget }>Artists</a></li>
+					<li aria-current="page">{ a.Name }</li>
+				</ol>
+			</nav>
+		}
 		<header class="artist-biography__header">
 			<p class="artist-biography__eyebrow">Artist biography</p>
 			<h1>{ a.Name }</h1>

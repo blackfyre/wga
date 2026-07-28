@@ -2,13 +2,16 @@ package pages
 
 import (
 	"fmt"
+	"time"
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/assets/templ/layouts"
 	"github.com/blackfyre/wga/internal/assets/templ/utils"
 )
 
 func ArtworkBibTeX(aw dto.Artwork) string {
-	return fmt.Sprintf("@misc{wga_artwork_%s,\n  author = {%s},\n  title = {%s},\n  howpublished = {Web Gallery of Art},\n  url = {%s}\n}", aw.Id, aw.Artist.Name, aw.Title, aw.Url)
+	date := time.Now().UTC().Format(time.DateOnly)
+
+	return fmt.Sprintf("@online{wga-artwork-%s,\n  author       = {%s},\n  title        = {%s by %s},\n  organization = {{Web Gallery of Art}},\n  date         = {%s},\n  url          = {%s},\n  urldate      = {%s},\n  langid       = {english}\n}", aw.Id, aw.Artist.Name, aw.Title, aw.Artist.Name, date, aw.CitationUrl, date)
 }
 
 templ ArtworkPage(aw dto.Artwork) {
@@ -22,6 +25,16 @@ templ ArtworkBlock(aw dto.Artwork) {
 		<title>{ utils.GetTitle(ctx) }</title>
 	</head>
 	<section class="artwork-detail">
+		if aw.ShowBreadcrumbs {
+			<nav class="detail-breadcrumbs" aria-label="Breadcrumb">
+				<ol>
+					<li><a href="/" hx-get="/">Home</a></li>
+					<li><a href="/artists" hx-get="/artists" hx-target={ aw.HxTarget }>Artists</a></li>
+					<li><a href={ templ.SafeURL(aw.Artist.Url) } hx-get={ aw.Artist.Url } hx-target={ aw.HxTarget }>{ aw.Artist.Name }</a></li>
+					<li aria-current="page">{ aw.Title }</li>
+				</ol>
+			</nav>
+		}
 		<div class="artwork-detail__stage" data-viewer>
 			<figure>
 				<img src={ aw.Image.Image } alt={ aw.Title + " by " + aw.Artist.Name }/>
@@ -30,9 +43,9 @@ templ ArtworkBlock(aw dto.Artwork) {
 		<div class="artwork-detail__layout">
 			<aside class="artwork-detail__sidebar">
 				<section class="artwork-detail__metadata">
-					<h1>Core metadata</h1>
+					<h1>{ aw.Title }</h1>
+					<h2>Core metadata</h2>
 					<dl>
-						<div><dt>Title</dt><dd>{ aw.Title }</dd></div>
 						if aw.Artist.Name != "" {
 							<div><dt>Artist</dt><dd><a href={ templ.SafeURL(aw.Artist.Url) } hx-get={ aw.Artist.Url } hx-target={ aw.HxTarget }>{ aw.Artist.Name }</a></dd></div>
 						}

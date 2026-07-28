@@ -96,6 +96,28 @@ func processArtists(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 		ActiveLetter: activeLetter,
 	}
 
+	availableRecords, err := app.FindRecordsByFilter(
+		"artists",
+		"published = true",
+		"+name",
+		0,
+		0,
+	)
+	if err != nil {
+		app.Logger().Error("Failed to get available artist initials", "error", err.Error())
+		return utils.ServerFaultError(c)
+	}
+
+	content.AvailableLetters = map[string]bool{}
+	for _, record := range availableRecords {
+		name := strings.ToUpper(strings.TrimSpace(record.GetString("name")))
+		if len(name) == 0 || name[0] < 'A' || name[0] > 'Z' {
+			continue
+		}
+
+		content.AvailableLetters[string(name[0])] = true
+	}
+
 	if len(searchExpression) > 0 && searchExpressionPresent {
 		content.QueryStr = searchExpression
 	}

@@ -55,6 +55,7 @@ func RenderArtistContent(app *pocketbase.PocketBase, c *core.RequestEvent, artis
 		Profession:      artist.GetString("profession"),
 		Works:           dto.ImageGrid{},
 		Url:             "/artists/" + expectedSlug,
+		CitationUrl:     tmplUtils.AssetUrl("/artists/" + expectedSlug),
 		HxTarget:        hxTarget,
 		ShowBreadcrumbs: showBreadcrumbs,
 	}

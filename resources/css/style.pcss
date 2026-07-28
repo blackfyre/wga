@@ -2388,22 +2388,35 @@ a[href]:not(:where(
 }
 
 .artwork-detail__metadata h1,
-.artwork-detail__citation h2,
 .artwork-detail__commentary h2 {
   margin: 0;
   color: var(--wga-primary);
   font-family: "Source Serif 4", serif;
 }
 
-.artwork-detail__metadata h1,
+.artwork-detail__metadata h1 {
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  line-height: 1.05;
+}
+
+.artwork-detail__metadata h2,
 .artwork-detail__citation h2 {
   padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--wga-page-border);
+  color: var(--wga-primary);
   font-family: "Lexend", sans-serif;
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+
+.artwork-detail__metadata h2 {
+  margin: 1.5rem 0 0;
+}
+
+.artwork-detail__citation h2 {
+  margin: 0;
 }
 
 .artwork-detail__metadata dl {
@@ -2428,13 +2441,6 @@ a[href]:not(:where(
   color: var(--wga-page-ink);
   font-size: 0.95rem;
   line-height: 1.45;
-}
-
-.artwork-detail__metadata dl > div:first-child dd {
-  color: var(--wga-primary);
-  font-family: "Source Serif 4", serif;
-  font-size: 1.35rem;
-  line-height: 1.1;
 }
 
 .artwork-detail__metadata a {
@@ -2509,6 +2515,37 @@ a[href]:not(:where(
 .artwork-detail__postcard:hover {
   background: transparent;
   color: var(--wga-primary);
+}
+
+.detail-breadcrumbs {
+  margin-bottom: 2rem;
+  color: var(--wga-page-muted);
+  font-family: "Lexend", sans-serif;
+  font-size: 0.75rem;
+}
+
+.detail-breadcrumbs ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.detail-breadcrumbs li + li::before {
+  margin-right: 0.5rem;
+  content: "/";
+}
+
+.detail-breadcrumbs a {
+  color: var(--wga-primary);
+  text-decoration: none;
+}
+
+.artist-index__alphabet [aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.4;
 }
 
 @media (max-width: 767px) {
