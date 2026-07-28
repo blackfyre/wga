@@ -2333,3 +2333,201 @@ a[href]:not(:where(
     grid-template-columns: 1fr;
   }
 }
+
+.artwork-detail {
+  width: min(var(--wga-content-width, 1440px), calc(100% - 3rem));
+  margin: 0 auto;
+  padding: 3rem 0 5rem;
+}
+
+.artwork-detail__stage {
+  display: grid;
+  min-height: min(42rem, 70vh);
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--wga-page-border);
+  background: var(--wga-page-surface-muted);
+  cursor: zoom-in;
+}
+
+.artwork-detail__stage figure {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  place-items: center;
+}
+
+.artwork-detail__stage img {
+  display: block;
+  max-width: 100%;
+  max-height: min(42rem, 70vh);
+  object-fit: contain;
+}
+
+.artwork-detail__layout {
+  display: grid;
+  grid-template-columns: minmax(16rem, 0.75fr) minmax(0, 2fr);
+  gap: 3rem;
+  padding-top: 3rem;
+}
+
+.artwork-detail__sidebar {
+  align-self: start;
+}
+
+.artwork-detail__metadata,
+.artwork-detail__citation {
+  padding: 1.5rem;
+  border: 1px solid var(--wga-page-border);
+  background: var(--wga-page-surface-muted);
+}
+
+.artwork-detail__citation {
+  margin-top: 1.5rem;
+}
+
+.artwork-detail__metadata h1,
+.artwork-detail__citation h2,
+.artwork-detail__commentary h2 {
+  margin: 0;
+  color: var(--wga-primary);
+  font-family: "Source Serif 4", serif;
+}
+
+.artwork-detail__metadata h1,
+.artwork-detail__citation h2 {
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--wga-page-border);
+  font-family: "Lexend", sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.artwork-detail__metadata dl {
+  margin: 1.25rem 0 0;
+}
+
+.artwork-detail__metadata dl > div + div {
+  margin-top: 1rem;
+}
+
+.artwork-detail__metadata dt {
+  color: var(--wga-page-muted);
+  font-family: "Lexend", sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.artwork-detail__metadata dd {
+  margin: 0.3rem 0 0;
+  color: var(--wga-page-ink);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.artwork-detail__metadata dl > div:first-child dd {
+  color: var(--wga-primary);
+  font-family: "Source Serif 4", serif;
+  font-size: 1.35rem;
+  line-height: 1.1;
+}
+
+.artwork-detail__metadata a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--wga-page-border);
+  text-underline-offset: 0.18em;
+}
+
+.artwork-detail__citation pre {
+  margin: 1rem 0 0;
+  padding: 1rem;
+  overflow-x: auto;
+  border: 1px solid var(--wga-page-border);
+  background: var(--wga-page-surface);
+  color: var(--wga-page-muted);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.7rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.artwork-detail__eyebrow {
+  margin: 0 0 0.5rem;
+  color: var(--wga-primary);
+  font-family: "Lexend", sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.artwork-detail__commentary h2 {
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--wga-page-border);
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  line-height: 1.05;
+}
+
+.artwork-detail__prose {
+  max-width: 75ch;
+  margin-top: 1.5rem;
+  color: var(--wga-page-ink);
+  font-size: 1.05rem;
+  line-height: 1.8;
+}
+
+.artwork-detail__prose > * + * {
+  margin-top: 1.25rem;
+}
+
+.artwork-detail__prose a {
+  color: var(--wga-primary);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.artwork-detail__postcard {
+  display: inline-flex;
+  margin-top: 2rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--wga-primary);
+  background: var(--wga-primary);
+  color: var(--wga-page-surface);
+  font-family: "Lexend", sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.artwork-detail__postcard:hover {
+  background: transparent;
+  color: var(--wga-primary);
+}
+
+@media (max-width: 767px) {
+  .artwork-detail {
+    width: min(100% - 2rem, var(--wga-content-width, 1440px));
+    padding-top: 1.5rem;
+  }
+
+  .artwork-detail__stage {
+    min-height: 18rem;
+  }
+
+  .artwork-detail__stage img {
+    max-height: 32rem;
+  }
+
+  .artwork-detail__layout {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding-top: 2rem;
+  }
+}

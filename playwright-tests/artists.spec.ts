@@ -32,6 +32,18 @@ test("check artists page", async ({ page }) => {
   await expect(page.locator(".artist-biography__citation pre")).toContainText(
     "@misc{wga_artist_",
   );
+
+  await page.locator(".artist-biography__work-grid a").first().click();
+
+  await expect(
+    page.getByRole("heading", { name: "Core metadata" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Scholarly commentary" }),
+  ).toBeVisible();
+  await expect(page.locator(".artwork-detail__citation pre")).toContainText(
+    "@misc{wga_artwork_",
+  );
 });
 
 test("filters artists by initial letter", async ({ page }) => {
