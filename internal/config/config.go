@@ -146,12 +146,18 @@ type Captcha struct {
 
 // Sentry contains the optional Sentry monitoring configuration.
 type Sentry struct {
-	dsn Secret
+	dsn        Secret
+	browserDSN Secret
 }
 
-// DSN returns the configured Sentry DSN.
+// DSN returns the configured server Sentry DSN.
 func (s Sentry) DSN() string {
 	return s.dsn.Value()
+}
+
+// BrowserDSN returns the configured browser Sentry DSN.
+func (s Sentry) BrowserDSN() string {
+	return s.browserDSN.Value()
 }
 
 // String returns a redacted representation of the Sentry configuration.
@@ -286,7 +292,10 @@ func LoadFrom(lookup Lookup) Config {
 	storage := parseStorage(lookup)
 	administrator := parseAdministrator(lookup)
 	postcards := parsePostcards(lookup, publicURL.value, sender.value)
-	sentryConfig := parseSentry(lookup("WGA_SENTRY_DSN"))
+	sentryConfig := parseSentry(
+		lookup("WGA_SENTRY_DSN"),
+		lookup("WGA_SENTRY_BROWSER_DSN"),
+	)
 	captcha := Captcha{
 		secret:  Secret{value: lookup("WGA_RECAPTCHA_SECRET")},
 		siteKey: lookup("WGA_RECAPTCHA_SITE_KEY"),
@@ -354,25 +363,39 @@ func (c Config) Server() (Server, error) {
 	)
 }
 
-// parseSentry validates the optional Sentry DSN.
-func parseSentry(value string) parsed[Sentry] {
-	settings := Sentry{dsn: Secret{value: value}}
+// parseSentry validates the optional server and browser Sentry DSNs.
+func parseSentry(dsn string, browserDSN string) parsed[Sentry] {
+	settings := Sentry{
+		dsn:        Secret{value: dsn},
+		browserDSN: Secret{value: browserDSN},
+	}
+
+	return parsed[Sentry]{
+		value: settings,
+		err: errors.Join(
+			validateSentryDSN("WGA_SENTRY_DSN", dsn),
+			validateSentryDSN("WGA_SENTRY_BROWSER_DSN", browserDSN),
+		),
+	}
+}
+
+func validateSentryDSN(name string, value string) error {
 	if value == "" {
-		return parsed[Sentry]{value: settings}
+		return nil
 	}
 
 	parsedURL, err := url.Parse(value)
 	if err == nil {
 		if _, hasSecret := parsedURL.User.Password(); hasSecret {
-			return parsed[Sentry]{value: settings, err: fmt.Errorf("WGA_SENTRY_DSN must not contain a secret key")}
+			return fmt.Errorf("%s must not contain a secret key", name)
 		}
 	}
 
 	if _, err := sentry.NewDsn(value); err != nil {
-		return parsed[Sentry]{value: settings, err: fmt.Errorf("WGA_SENTRY_DSN must be a valid Sentry DSN")}
+		return fmt.Errorf("%s must be a valid Sentry DSN", name)
 	}
 
-	return parsed[Sentry]{value: settings}
+	return nil
 }
 
 // Sitemap returns validated settings required to generate a sitemap.

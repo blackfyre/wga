@@ -16,31 +16,53 @@ import (
 )
 
 func TestConfigure(t *testing.T) {
+	t.Cleanup(func() {
+		browserConfiguration = BrowserConfiguration{}
+	})
+
 	tests := []struct {
 		name       string
-		dsn        string
+		serverDSN  string
+		browserDSN string
 		initialise func(sentry.ClientOptions) error
 		wantEnable bool
 		wantEvent  string
 	}{
 		{
 			name:      "disabled without DSN",
-			wantEvent: "observability.sentry.disabled",
+			wantEvent: "observability.sentry.server_disabled",
 		},
 		{
-			name: "disabled after initialisation failure",
-			dsn:  "https://public@example.ingest.sentry.io/1",
+			name:      "disabled after initialisation failure",
+			serverDSN: "https://public@example.ingest.sentry.io/1",
 			initialise: func(sentry.ClientOptions) error {
 				return errors.New("initialisation failed")
 			},
 			wantEvent: "observability.sentry.initialisation_failed",
 		},
 		{
-			name: "enabled with configured DSN",
-			dsn:  "https://public@example.ingest.sentry.io/1",
+			name:      "enabled with configured DSN",
+			serverDSN: "https://public@example.ingest.sentry.io/1",
 			initialise: func(options sentry.ClientOptions) error {
 				if options.Environment != "production" {
 					t.Fatalf("expected production environment, got %q", options.Environment)
+				}
+				return nil
+			},
+			wantEnable: true,
+		},
+		{
+			name:       "browser configuration is independent from server monitoring",
+			browserDSN: "https://browser@example.ingest.sentry.io/2",
+			wantEvent:  "observability.sentry.server_disabled",
+		},
+		{
+			name:       "server and browser use separate DSNs",
+			serverDSN:  "https://server@example.ingest.sentry.io/1",
+			browserDSN: "https://browser@example.ingest.sentry.io/2",
+			initialise: func(options sentry.ClientOptions) error {
+				if options.Dsn != "https://server@example.ingest.sentry.io/1" {
+					t.Fatalf("expected server DSN, got %q", options.Dsn)
 				}
 				return nil
 			},
@@ -60,21 +82,20 @@ func TestConfigure(t *testing.T) {
 				}
 			}
 
-			monitor := configure(test.dsn, "production", logger, initialise)
+			monitor := configure(test.serverDSN, test.browserDSN, "production", logger, initialise)
 			if monitor.enabled != test.wantEnable {
 				t.Fatalf("expected enabled %t, got %t", test.wantEnable, monitor.enabled)
 			}
-			if BrowserConfig().DSN != test.dsn && test.wantEnable {
-				t.Fatalf("expected browser DSN %q, got %q", test.dsn, BrowserConfig().DSN)
-			}
-			if !test.wantEnable && BrowserConfig().DSN != "" {
-				t.Fatalf("expected empty browser DSN, got %q", BrowserConfig().DSN)
+			if got := BrowserConfig(); got.DSN != test.browserDSN || got.Environment != "production" {
+				t.Fatalf("expected browser configuration %+v, got %+v", BrowserConfiguration{DSN: test.browserDSN, Environment: "production"}, got)
 			}
 			if test.wantEvent != "" && !strings.Contains(logs.String(), test.wantEvent) {
 				t.Fatalf("expected log event %q, got %q", test.wantEvent, logs.String())
 			}
-			if test.dsn != "" && strings.Contains(logs.String(), test.dsn) {
-				t.Fatalf("log must not contain DSN: %q", logs.String())
+			for _, dsn := range []string{test.serverDSN, test.browserDSN} {
+				if dsn != "" && strings.Contains(logs.String(), dsn) {
+					t.Fatalf("log must not contain DSN: %q", logs.String())
+				}
 			}
 		})
 	}
@@ -214,11 +235,15 @@ func TestMonitorRegisterTestRoute(t *testing.T) {
 
 func TestMonitorRegisterTestRouteWhenFlushTimesOut(t *testing.T) {
 	scenario := tests.ApiScenario{
-		Name:            "non-production test route reports a Sentry flush timeout",
-		Method:          http.MethodGet,
-		URL:             "/sentry-test",
-		ExpectedStatus:  http.StatusServiceUnavailable,
-		ExpectedContent: []string{"Sentry test event did not flush before timeout"},
+		Name:           "non-production test route reports a Sentry flush timeout",
+		Method:         http.MethodGet,
+		URL:            "/sentry-test",
+		ExpectedStatus: http.StatusServiceUnavailable,
+		ExpectedContent: []string{
+			"Server Sentry test event did not flush before timeout.",
+			`<meta name="sentry-dsn" content="https://browser@example.ingest.sentry.io/2">`,
+			`<script type="module" src="/assets/js/app.js"></script>`,
+		},
 		TestAppFactory: func(t testing.TB) *tests.TestApp {
 			app, err := tests.NewTestApp()
 			if err != nil {
@@ -229,6 +254,13 @@ func TestMonitorRegisterTestRouteWhenFlushTimesOut(t *testing.T) {
 				captureMessage: func(string) {},
 				flush:          func() bool { return false },
 			}
+			browserConfiguration = BrowserConfiguration{
+				DSN:         "https://browser@example.ingest.sentry.io/2",
+				Environment: "staging",
+			}
+			t.Cleanup(func() {
+				browserConfiguration = BrowserConfiguration{}
+			})
 			monitor.RegisterTestRoute(app, config.EnvironmentStaging)
 			return app
 		},
@@ -249,6 +281,36 @@ func TestMonitorRegisterTestRouteWhenDisabled(t *testing.T) {
 			if err != nil {
 				t.Fatalf("create test app: %v", err)
 			}
+			Monitor{}.RegisterTestRoute(app, config.EnvironmentStaging)
+			return app
+		},
+	}
+
+	scenario.Test(t)
+}
+
+func TestMonitorRegisterTestRouteWhenOnlyBrowserMonitoringIsEnabled(t *testing.T) {
+	scenario := tests.ApiScenario{
+		Name:           "non-production test route loads browser monitoring without server monitoring",
+		Method:         http.MethodGet,
+		URL:            "/sentry-test",
+		ExpectedStatus: http.StatusOK,
+		ExpectedContent: []string{
+			`<meta name="sentry-dsn" content="https://browser@example.ingest.sentry.io/2">`,
+			`<script type="module" src="/assets/js/app.js"></script>`,
+		},
+		TestAppFactory: func(t testing.TB) *tests.TestApp {
+			app, err := tests.NewTestApp()
+			if err != nil {
+				t.Fatalf("create test app: %v", err)
+			}
+			browserConfiguration = BrowserConfiguration{
+				DSN:         "https://browser@example.ingest.sentry.io/2",
+				Environment: "staging",
+			}
+			t.Cleanup(func() {
+				browserConfiguration = BrowserConfiguration{}
+			})
 			Monitor{}.RegisterTestRoute(app, config.EnvironmentStaging)
 			return app
 		},

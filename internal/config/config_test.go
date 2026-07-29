@@ -8,20 +8,25 @@ import (
 
 func TestServerSentryConfiguration(t *testing.T) {
 	tests := []struct {
-		name    string
-		dsn     string
-		wantErr string
+		name       string
+		dsn        string
+		browserDSN string
+		wantErr    string
 	}{
 		{name: "omitted DSN disables monitoring"},
 		{name: "configured DSN", dsn: "https://public@example.ingest.sentry.io/1"},
+		{name: "configured browser DSN", browserDSN: "https://browser@example.ingest.sentry.io/2"},
+		{name: "separate server and browser DSNs", dsn: "https://server@example.ingest.sentry.io/1", browserDSN: "https://browser@example.ingest.sentry.io/2"},
 		{name: "malformed DSN", dsn: "not-a-dsn", wantErr: "WGA_SENTRY_DSN"},
 		{name: "DSN with secret key", dsn: "https://public:secret@example.ingest.sentry.io/1", wantErr: "WGA_SENTRY_DSN"},
+		{name: "browser DSN with secret key", browserDSN: "https://public:secret@example.ingest.sentry.io/1", wantErr: "WGA_SENTRY_BROWSER_DSN"},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			values := validValues()
 			values["WGA_SENTRY_DSN"] = test.dsn
+			values["WGA_SENTRY_BROWSER_DSN"] = test.browserDSN
 
 			server, err := LoadFrom(lookup(values)).Server()
 			if test.wantErr != "" {
@@ -35,6 +40,9 @@ func TestServerSentryConfiguration(t *testing.T) {
 			}
 			if got := server.Sentry.DSN(); got != test.dsn {
 				t.Fatalf("expected DSN %q, got %q", test.dsn, got)
+			}
+			if got := server.Sentry.BrowserDSN(); got != test.browserDSN {
+				t.Fatalf("expected browser DSN %q, got %q", test.browserDSN, got)
 			}
 			if got := fmt.Sprint(server.Sentry); got != "[redacted]" {
 				t.Fatalf("expected redacted Sentry configuration, got %q", got)

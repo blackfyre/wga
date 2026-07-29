@@ -33,22 +33,28 @@ type Monitor struct {
 	recoverPanic     func(any)
 }
 
-// Configure initialises Sentry and stores the public browser configuration.
+// Configure initialises server Sentry and stores the public browser configuration.
 func Configure(settings config.Sentry, environment config.Environment, logger *slog.Logger) Monitor {
-	return configure(settings.DSN(), string(environment), logger, sentry.Init)
+	return configure(
+		settings.DSN(),
+		settings.BrowserDSN(),
+		string(environment),
+		logger,
+		sentry.Init,
+	)
 }
 
-func configure(dsn string, environment string, logger *slog.Logger, initialise func(sentry.ClientOptions) error) Monitor {
-	browserConfiguration = BrowserConfiguration{}
-	if dsn == "" {
-		logger.Warn("Sentry monitoring disabled",
-			"event", "observability.sentry.disabled",
+func configure(serverDSN string, browserDSN string, environment string, logger *slog.Logger, initialise func(sentry.ClientOptions) error) Monitor {
+	browserConfiguration = BrowserConfiguration{DSN: browserDSN, Environment: environment}
+	if serverDSN == "" {
+		logger.Warn("Server Sentry monitoring disabled",
+			"event", "observability.sentry.server_disabled",
 			"environment", environment,
 		)
 		return Monitor{}
 	}
 
-	if err := initialise(sentry.ClientOptions{Dsn: dsn, Environment: environment}); err != nil {
+	if err := initialise(sentry.ClientOptions{Dsn: serverDSN, Environment: environment}); err != nil {
 		logger.Error("Sentry monitoring initialisation failed",
 			"event", "observability.sentry.initialisation_failed",
 			"environment", environment,
@@ -58,7 +64,6 @@ func configure(dsn string, environment string, logger *slog.Logger, initialise f
 		return Monitor{}
 	}
 
-	browserConfiguration = BrowserConfiguration{DSN: dsn, Environment: environment}
 	return Monitor{
 		enabled:          true,
 		captureException: func(err error) { sentry.CaptureException(err) },
@@ -96,15 +101,17 @@ func (m Monitor) RegisterTestRoute(app core.App, environment config.Environment)
 
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		se.Router.GET("/sentry-test", func(e *core.RequestEvent) error {
-			if !m.CaptureMessage("It works!") {
+			serverEnabled := m.CaptureMessage("It works!")
+			browserEnabled := BrowserConfig().DSN != ""
+			if !serverEnabled && !browserEnabled {
 				return e.Error(http.StatusServiceUnavailable, "Sentry monitoring is disabled", nil)
 			}
 
-			if !m.Flush() {
-				return e.Error(http.StatusServiceUnavailable, "Sentry test event did not flush before timeout", nil)
+			if serverEnabled && !m.Flush() {
+				return e.HTML(http.StatusServiceUnavailable, sentryTestPage("Server Sentry test event did not flush before timeout."))
 			}
 
-			return e.HTML(http.StatusOK, sentryTestPage())
+			return e.HTML(http.StatusOK, sentryTestPage("Sentry test event queued."))
 		})
 
 		return se.Next()
@@ -130,7 +137,7 @@ func (m Monitor) CaptureMessage(message string) bool {
 	return true
 }
 
-func sentryTestPage() string {
+func sentryTestPage(message string) string {
 	settings := BrowserConfig()
 	return fmt.Sprintf(`<!DOCTYPE html>
 <html>
@@ -139,10 +146,10 @@ func sentryTestPage() string {
 <meta name="sentry-environment" content="%s">
 </head>
 <body>
-<p>Sentry test event queued.</p>
+<p>%s</p>
 <script type="module" src="/assets/js/app.js"></script>
 </body>
-</html>`, html.EscapeString(settings.DSN), html.EscapeString(settings.Environment))
+</html>`, html.EscapeString(settings.DSN), html.EscapeString(settings.Environment), html.EscapeString(message))
 }
 
 func (m Monitor) intercept(next func() error, responseStatus func() int) (err error) {
