@@ -18,7 +18,8 @@ import (
 func TestConfigure(t *testing.T) {
 	tests := []struct {
 		name       string
-		dsn        string
+		serverDSN  string
+		browserDSN string
 		initialise func(sentry.ClientOptions) error
 		wantEnable bool
 		wantEvent  string
@@ -28,19 +29,36 @@ func TestConfigure(t *testing.T) {
 			wantEvent: "observability.sentry.disabled",
 		},
 		{
-			name: "disabled after initialisation failure",
-			dsn:  "https://public@example.ingest.sentry.io/1",
+			name:      "disabled after initialisation failure",
+			serverDSN: "https://public@example.ingest.sentry.io/1",
 			initialise: func(sentry.ClientOptions) error {
 				return errors.New("initialisation failed")
 			},
 			wantEvent: "observability.sentry.initialisation_failed",
 		},
 		{
-			name: "enabled with configured DSN",
-			dsn:  "https://public@example.ingest.sentry.io/1",
+			name:      "enabled with configured DSN",
+			serverDSN: "https://public@example.ingest.sentry.io/1",
 			initialise: func(options sentry.ClientOptions) error {
 				if options.Environment != "production" {
 					t.Fatalf("expected production environment, got %q", options.Environment)
+				}
+				return nil
+			},
+			wantEnable: true,
+		},
+		{
+			name:       "browser configuration is independent from server monitoring",
+			browserDSN: "https://browser@example.ingest.sentry.io/2",
+			wantEvent:  "observability.sentry.disabled",
+		},
+		{
+			name:       "server and browser use separate DSNs",
+			serverDSN:  "https://server@example.ingest.sentry.io/1",
+			browserDSN: "https://browser@example.ingest.sentry.io/2",
+			initialise: func(options sentry.ClientOptions) error {
+				if options.Dsn != "https://server@example.ingest.sentry.io/1" {
+					t.Fatalf("expected server DSN, got %q", options.Dsn)
 				}
 				return nil
 			},
@@ -60,21 +78,20 @@ func TestConfigure(t *testing.T) {
 				}
 			}
 
-			monitor := configure(test.dsn, "production", logger, initialise)
+			monitor := configure(test.serverDSN, test.browserDSN, "production", logger, initialise)
 			if monitor.enabled != test.wantEnable {
 				t.Fatalf("expected enabled %t, got %t", test.wantEnable, monitor.enabled)
 			}
-			if BrowserConfig().DSN != test.dsn && test.wantEnable {
-				t.Fatalf("expected browser DSN %q, got %q", test.dsn, BrowserConfig().DSN)
-			}
-			if !test.wantEnable && BrowserConfig().DSN != "" {
-				t.Fatalf("expected empty browser DSN, got %q", BrowserConfig().DSN)
+			if got := BrowserConfig(); got.DSN != test.browserDSN || got.Environment != "production" {
+				t.Fatalf("expected browser configuration %+v, got %+v", BrowserConfiguration{DSN: test.browserDSN, Environment: "production"}, got)
 			}
 			if test.wantEvent != "" && !strings.Contains(logs.String(), test.wantEvent) {
 				t.Fatalf("expected log event %q, got %q", test.wantEvent, logs.String())
 			}
-			if test.dsn != "" && strings.Contains(logs.String(), test.dsn) {
-				t.Fatalf("log must not contain DSN: %q", logs.String())
+			for _, dsn := range []string{test.serverDSN, test.browserDSN} {
+				if dsn != "" && strings.Contains(logs.String(), dsn) {
+					t.Fatalf("log must not contain DSN: %q", logs.String())
+				}
 			}
 		})
 	}
