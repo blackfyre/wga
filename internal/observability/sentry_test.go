@@ -16,6 +16,10 @@ import (
 )
 
 func TestConfigure(t *testing.T) {
+	t.Cleanup(func() {
+		browserConfiguration = BrowserConfiguration{}
+	})
+
 	tests := []struct {
 		name       string
 		serverDSN  string
@@ -266,6 +270,36 @@ func TestMonitorRegisterTestRouteWhenDisabled(t *testing.T) {
 			if err != nil {
 				t.Fatalf("create test app: %v", err)
 			}
+			Monitor{}.RegisterTestRoute(app, config.EnvironmentStaging)
+			return app
+		},
+	}
+
+	scenario.Test(t)
+}
+
+func TestMonitorRegisterTestRouteWhenOnlyBrowserMonitoringIsEnabled(t *testing.T) {
+	scenario := tests.ApiScenario{
+		Name:           "non-production test route loads browser monitoring without server monitoring",
+		Method:         http.MethodGet,
+		URL:            "/sentry-test",
+		ExpectedStatus: http.StatusOK,
+		ExpectedContent: []string{
+			`<meta name="sentry-dsn" content="https://browser@example.ingest.sentry.io/2">`,
+			`<script type="module" src="/assets/js/app.js"></script>`,
+		},
+		TestAppFactory: func(t testing.TB) *tests.TestApp {
+			app, err := tests.NewTestApp()
+			if err != nil {
+				t.Fatalf("create test app: %v", err)
+			}
+			browserConfiguration = BrowserConfiguration{
+				DSN:         "https://browser@example.ingest.sentry.io/2",
+				Environment: "staging",
+			}
+			t.Cleanup(func() {
+				browserConfiguration = BrowserConfiguration{}
+			})
 			Monitor{}.RegisterTestRoute(app, config.EnvironmentStaging)
 			return app
 		},

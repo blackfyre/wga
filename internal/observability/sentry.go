@@ -101,11 +101,13 @@ func (m Monitor) RegisterTestRoute(app core.App, environment config.Environment)
 
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		se.Router.GET("/sentry-test", func(e *core.RequestEvent) error {
-			if !m.CaptureMessage("It works!") {
+			serverEnabled := m.CaptureMessage("It works!")
+			browserEnabled := BrowserConfig().DSN != ""
+			if !serverEnabled && !browserEnabled {
 				return e.Error(http.StatusServiceUnavailable, "Sentry monitoring is disabled", nil)
 			}
 
-			if !m.Flush() {
+			if serverEnabled && !m.Flush() {
 				return e.Error(http.StatusServiceUnavailable, "Sentry test event did not flush before timeout", nil)
 			}
 
