@@ -4,7 +4,9 @@ test.describe.configure({ mode: "serial" });
 test.setTimeout(60000);
 
 async function expectArtworkResults(page) {
-  await expect(page.locator("#search-result-container .card").first()).toBeVisible({
+  await expect(
+    page.locator("#search-result-container .card").first(),
+  ).toBeVisible({
     timeout: 30000,
   });
 }
@@ -22,7 +24,7 @@ test("artwork search", async ({ page }) => {
 
 test("artform search", async ({ page }) => {
   await page.goto("/artworks");
-  await page.locator("[name='art_form']").selectOption("synthetic-test-form");
+  await page.locator("[name='art_form']").selectOption("architecture");
   await page.getByRole("button", { name: "Search" }).click();
   await expectArtworkResults(page);
 });
@@ -36,7 +38,7 @@ test("art type search", async ({ page }) => {
 
 test("art school search", async ({ page }) => {
   await page.goto("/artworks");
-  await page.locator("[name='art_school']").selectOption("synthetic-test-school");
+  await page.locator("[name='art_school']").selectOption("bohemian");
   await page.getByRole("button", { name: "Search" }).click();
   await expectArtworkResults(page);
 });
@@ -44,7 +46,7 @@ test("art school search", async ({ page }) => {
 test("art type and school combined search", async ({ page }) => {
   await page.goto("/artworks");
   await page.locator("[name='art_type']").selectOption("synthetic-test-type");
-  await page.locator("[name='art_school']").selectOption("synthetic-test-school");
+  await page.locator("[name='art_school']").selectOption("bohemian");
   await page.getByRole("button", { name: "Search" }).click();
   await expectArtworkResults(page);
 });
@@ -66,7 +68,7 @@ test("artist name search", async ({ page }) => {
 test("clear resets the artwork search form", async ({ page }) => {
   await page.goto("http://localhost:8090/artworks");
   await page.locator("[name='title']").fill("Synthetic Artwork 01-01");
-  await page.locator("[name='art_school']").selectOption("synthetic-test-school");
+  await page.locator("[name='art_school']").selectOption("bohemian");
   await page.getByRole("link", { name: "Clear" }).click();
 
   await expect(page).toHaveURL(/\/artworks$/);
