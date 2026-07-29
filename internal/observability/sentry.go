@@ -33,14 +33,20 @@ type Monitor struct {
 	recoverPanic     func(any)
 }
 
-// Configure initialises Sentry and stores the public browser configuration.
+// Configure initialises server Sentry and stores the public browser configuration.
 func Configure(settings config.Sentry, environment config.Environment, logger *slog.Logger) Monitor {
-	return configure(settings.DSN(), string(environment), logger, sentry.Init)
+	return configure(
+		settings.DSN(),
+		settings.BrowserDSN(),
+		string(environment),
+		logger,
+		sentry.Init,
+	)
 }
 
-func configure(dsn string, environment string, logger *slog.Logger, initialise func(sentry.ClientOptions) error) Monitor {
-	browserConfiguration = BrowserConfiguration{}
-	if dsn == "" {
+func configure(serverDSN string, browserDSN string, environment string, logger *slog.Logger, initialise func(sentry.ClientOptions) error) Monitor {
+	browserConfiguration = BrowserConfiguration{DSN: browserDSN, Environment: environment}
+	if serverDSN == "" {
 		logger.Warn("Sentry monitoring disabled",
 			"event", "observability.sentry.disabled",
 			"environment", environment,
@@ -48,7 +54,7 @@ func configure(dsn string, environment string, logger *slog.Logger, initialise f
 		return Monitor{}
 	}
 
-	if err := initialise(sentry.ClientOptions{Dsn: dsn, Environment: environment}); err != nil {
+	if err := initialise(sentry.ClientOptions{Dsn: serverDSN, Environment: environment}); err != nil {
 		logger.Error("Sentry monitoring initialisation failed",
 			"event", "observability.sentry.initialisation_failed",
 			"environment", environment,
@@ -58,7 +64,6 @@ func configure(dsn string, environment string, logger *slog.Logger, initialise f
 		return Monitor{}
 	}
 
-	browserConfiguration = BrowserConfiguration{DSN: dsn, Environment: environment}
 	return Monitor{
 		enabled:          true,
 		captureException: func(err error) { sentry.CaptureException(err) },
