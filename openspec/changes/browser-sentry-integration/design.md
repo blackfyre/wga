@@ -5,11 +5,13 @@ The existing Sentry integration treats `WGA_SENTRY_DSN` as a shared server and b
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Configure server and browser Sentry SDKs independently.
 - Keep both DSNs optional and preserve the existing disabled behaviour for either runtime.
 - Expose only the browser project's public DSN and deployment environment to page code.
 
 **Non-Goals:**
+
 - Add Sentry tracing, replay, release tracking, or new event types.
 - Change the existing event scrubbing policy or server error-capture behaviour.
 - Commit the supplied DSN to source control.

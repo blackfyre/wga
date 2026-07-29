@@ -12,9 +12,11 @@ The server and browser report to separate Sentry projects, but the current integ
 ## Capabilities
 
 ### New Capabilities
+
 - `separate-sentry-project-configuration`: Independent optional Sentry DSNs for server and browser monitoring.
 
 ### Modified Capabilities
+
 None.
 
 ## Impact
