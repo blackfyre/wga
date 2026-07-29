@@ -47,8 +47,8 @@ func Configure(settings config.Sentry, environment config.Environment, logger *s
 func configure(serverDSN string, browserDSN string, environment string, logger *slog.Logger, initialise func(sentry.ClientOptions) error) Monitor {
 	browserConfiguration = BrowserConfiguration{DSN: browserDSN, Environment: environment}
 	if serverDSN == "" {
-		logger.Warn("Sentry monitoring disabled",
-			"event", "observability.sentry.disabled",
+		logger.Warn("Server Sentry monitoring disabled",
+			"event", "observability.sentry.server_disabled",
 			"environment", environment,
 		)
 		return Monitor{}
@@ -108,10 +108,10 @@ func (m Monitor) RegisterTestRoute(app core.App, environment config.Environment)
 			}
 
 			if serverEnabled && !m.Flush() {
-				return e.Error(http.StatusServiceUnavailable, "Sentry test event did not flush before timeout", nil)
+				return e.HTML(http.StatusServiceUnavailable, sentryTestPage("Server Sentry test event did not flush before timeout."))
 			}
 
-			return e.HTML(http.StatusOK, sentryTestPage())
+			return e.HTML(http.StatusOK, sentryTestPage("Sentry test event queued."))
 		})
 
 		return se.Next()
@@ -137,7 +137,7 @@ func (m Monitor) CaptureMessage(message string) bool {
 	return true
 }
 
-func sentryTestPage() string {
+func sentryTestPage(message string) string {
 	settings := BrowserConfig()
 	return fmt.Sprintf(`<!DOCTYPE html>
 <html>
@@ -146,10 +146,10 @@ func sentryTestPage() string {
 <meta name="sentry-environment" content="%s">
 </head>
 <body>
-<p>Sentry test event queued.</p>
+<p>%s</p>
 <script type="module" src="/assets/js/app.js"></script>
 </body>
-</html>`, html.EscapeString(settings.DSN), html.EscapeString(settings.Environment))
+</html>`, html.EscapeString(settings.DSN), html.EscapeString(settings.Environment), html.EscapeString(message))
 }
 
 func (m Monitor) intercept(next func() error, responseStatus func() int) (err error) {

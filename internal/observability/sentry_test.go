@@ -30,7 +30,7 @@ func TestConfigure(t *testing.T) {
 	}{
 		{
 			name:      "disabled without DSN",
-			wantEvent: "observability.sentry.disabled",
+			wantEvent: "observability.sentry.server_disabled",
 		},
 		{
 			name:      "disabled after initialisation failure",
@@ -54,7 +54,7 @@ func TestConfigure(t *testing.T) {
 		{
 			name:       "browser configuration is independent from server monitoring",
 			browserDSN: "https://browser@example.ingest.sentry.io/2",
-			wantEvent:  "observability.sentry.disabled",
+			wantEvent:  "observability.sentry.server_disabled",
 		},
 		{
 			name:       "server and browser use separate DSNs",
@@ -235,11 +235,15 @@ func TestMonitorRegisterTestRoute(t *testing.T) {
 
 func TestMonitorRegisterTestRouteWhenFlushTimesOut(t *testing.T) {
 	scenario := tests.ApiScenario{
-		Name:            "non-production test route reports a Sentry flush timeout",
-		Method:          http.MethodGet,
-		URL:             "/sentry-test",
-		ExpectedStatus:  http.StatusServiceUnavailable,
-		ExpectedContent: []string{"Sentry test event did not flush before timeout"},
+		Name:           "non-production test route reports a Sentry flush timeout",
+		Method:         http.MethodGet,
+		URL:            "/sentry-test",
+		ExpectedStatus: http.StatusServiceUnavailable,
+		ExpectedContent: []string{
+			"Server Sentry test event did not flush before timeout.",
+			`<meta name="sentry-dsn" content="https://browser@example.ingest.sentry.io/2">`,
+			`<script type="module" src="/assets/js/app.js"></script>`,
+		},
 		TestAppFactory: func(t testing.TB) *tests.TestApp {
 			app, err := tests.NewTestApp()
 			if err != nil {
@@ -250,6 +254,13 @@ func TestMonitorRegisterTestRouteWhenFlushTimesOut(t *testing.T) {
 				captureMessage: func(string) {},
 				flush:          func() bool { return false },
 			}
+			browserConfiguration = BrowserConfiguration{
+				DSN:         "https://browser@example.ingest.sentry.io/2",
+				Environment: "staging",
+			}
+			t.Cleanup(func() {
+				browserConfiguration = BrowserConfiguration{}
+			})
 			monitor.RegisterTestRoute(app, config.EnvironmentStaging)
 			return app
 		},
