@@ -18,6 +18,7 @@ WGA's fresh-database path applies 21 application migrations, including obsolete 
 ## Capabilities
 
 ### New Capabilities
+
 - `database-baseline-bootstrap`: A fresh WGA database receives the complete current PocketBase schema and synthetic reference content from a concise migration baseline.
 
 ### Modified Capabilities
