@@ -31,7 +31,7 @@ func (r *LandingRepository) GetWelcomeContent() (string, error) {
 
 func (r *LandingRepository) CountPublishedArtists() (int, error) {
 	row := countRow{}
-	err := r.app.DB().NewQuery("SELECT COUNT(*) as c FROM artists WHERE published IS true").One(&row)
+	err := r.app.DB().NewQuery("SELECT COUNT(*) as c FROM Artists WHERE published IS true").One(&row)
 	if err != nil {
 		return 0, err
 	}
@@ -41,7 +41,7 @@ func (r *LandingRepository) CountPublishedArtists() (int, error) {
 
 func (r *LandingRepository) CountPublishedArtworks() (int, error) {
 	row := countRow{}
-	err := r.app.DB().NewQuery("SELECT COUNT(*) as c FROM artworks WHERE published IS true").One(&row)
+	err := r.app.DB().NewQuery("SELECT COUNT(*) as c FROM Artworks WHERE published IS true").One(&row)
 	if err != nil {
 		return 0, err
 	}

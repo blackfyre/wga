@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/blackfyre/wga/internal/config"
+	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/utils/url"
 
 	"github.com/pocketbase/pocketbase"
@@ -57,7 +58,7 @@ func setupSitemap(name string, index *smg.SitemapIndex) *smg.Sitemap {
 
 func fetchArtistsForSitemap(app *pocketbase.PocketBase) ([]*core.Record, error) {
 	return app.FindRecordsByFilter(
-		"artists",
+		constants.CollectionArtists,
 		"published = true",
 		"+name",
 		0,
@@ -95,7 +96,7 @@ func generateArtworksMap(app *pocketbase.PocketBase, index *smg.SitemapIndex) {
 	sitemap := setupSitemap("artworks", index)
 
 	records, err := app.FindRecordsByFilter(
-		"artworks",
+		constants.CollectionArtworks,
 		"published = true",
 		"+title",
 		0,
@@ -105,21 +106,21 @@ func generateArtworksMap(app *pocketbase.PocketBase, index *smg.SitemapIndex) {
 	if err != nil {
 		log.Fatal("Unable to Save Sitemap:", err)
 	}
+	authors, err := fetchArtworkAuthors(app, records)
+	if err != nil {
+		app.Logger().Error("Error loading artwork authors for sitemap", "error", err)
+		return
+	}
 
 	for _, m := range records {
-
-		if errs := app.ExpandRecord(m, []string{"author"}, nil); len(errs) > 0 {
-			app.Logger().Error("Error expanding record", "err", errs)
-			// we should log the failed items, still waiting for pb logs
-			continue // we're skipping failed items
+		authorIDs := m.GetStringSlice("author")
+		if len(authorIDs) == 0 {
+			app.Logger().Error("Artwork has no author", "id", m.Id)
+			continue
 		}
-
-		author := m.ExpandedOne("author")
-
-		if author == nil {
-			//every item in the db should have an author
-			// log those items which don't for fixing
-			app.Logger().Error("Error expanding record, no author found", "id", m.Get("id"))
+		author, ok := authors[authorIDs[0]]
+		if !ok {
+			app.Logger().Error("Artwork author is missing", "id", m.Id, "author_id", authorIDs[0])
 			continue
 		}
 
@@ -143,4 +144,32 @@ func generateArtworksMap(app *pocketbase.PocketBase, index *smg.SitemapIndex) {
 			return
 		}
 	}
+}
+
+func fetchArtworkAuthors(app *pocketbase.PocketBase, artworks []*core.Record) (map[string]*core.Record, error) {
+	uniqueIDs := map[string]struct{}{}
+	for _, artwork := range artworks {
+		for _, authorID := range artwork.GetStringSlice("author") {
+			uniqueIDs[authorID] = struct{}{}
+		}
+	}
+
+	ids := make([]string, 0, len(uniqueIDs))
+	for id := range uniqueIDs {
+		ids = append(ids, id)
+	}
+
+	authorsByID := make(map[string]*core.Record, len(ids))
+	for start := 0; start < len(ids); start += 100 {
+		end := min(start+100, len(ids))
+		authors, err := app.FindRecordsByIds(constants.CollectionArtists, ids[start:end])
+		if err != nil {
+			return nil, err
+		}
+		for _, author := range authors {
+			authorsByID[author.Id] = author
+		}
+	}
+
+	return authorsByID, nil
 }

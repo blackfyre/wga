@@ -113,22 +113,12 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 		return utils.ServerFaultError(c)
 	}
 
-	// this could be replaced with a dedicated SQL query, but this is more convinient
-	totalRecords, err := app.FindRecordsByFilter(
-		constants.CollectionArtworks,
-		filterString,
-		"",
-		0,
-		0,
-		filterParams,
-	)
+	recordsCount, err := utils.CountRecordsByFilter(app, constants.CollectionArtworks, filterString, filterParams)
 
 	if err != nil {
 		app.Logger().Error("Failed to count artwork records", "error", err.Error())
 		return utils.ServerFaultError(c)
 	}
-
-	recordsCount := len(totalRecords)
 
 	content := dto.ArtworkSearchDTO{
 		HxTarget:        "#artwork-search-results",
