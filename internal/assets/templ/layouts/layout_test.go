@@ -13,10 +13,12 @@ import (
 
 func TestLayoutBaseSentryConfiguration(t *testing.T) {
 	tests := []struct {
+		serverDSN  string
 		name       string
 		browserDSN string
 	}{
 		{
+			serverDSN:  "https://server@example.ingest.sentry.io/1",
 			name:       "configured browser monitoring",
 			browserDSN: "https://browser@example.ingest.sentry.io/2",
 		},
@@ -27,7 +29,7 @@ func TestLayoutBaseSentryConfiguration(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			configureLayoutSentry(t, test.browserDSN)
+			configureLayoutSentry(t, test.serverDSN, test.browserDSN)
 
 			var output bytes.Buffer
 			if err := LayoutBase("", "").Render(context.Background(), &output); err != nil {
@@ -37,6 +39,9 @@ func TestLayoutBaseSentryConfiguration(t *testing.T) {
 			content := output.String()
 			if !strings.Contains(content, `name="sentry-dsn" content="`+test.browserDSN+`"`) {
 				t.Fatalf("expected browser DSN %q in layout", test.browserDSN)
+			}
+			if test.serverDSN != "" && strings.Contains(content, test.serverDSN) {
+				t.Fatal("server DSN must not be rendered")
 			}
 			if !strings.Contains(content, `name="sentry-environment" content="development"`) {
 				t.Fatal("expected deployment environment in layout")
@@ -48,7 +53,7 @@ func TestLayoutBaseSentryConfiguration(t *testing.T) {
 	}
 }
 
-func configureLayoutSentry(t *testing.T, browserDSN string) {
+func configureLayoutSentry(t *testing.T, serverDSN string, browserDSN string) {
 	t.Helper()
 	values := map[string]string{
 		"WGA_ENV":                "development",
@@ -57,6 +62,7 @@ func configureLayoutSentry(t *testing.T, browserDSN string) {
 		"WGA_SENDER_NAME":        "WGA",
 		"WGA_SENDER_ADDRESS":     "do-not-reply@example.com",
 		"WGA_POSTCARD_FREQUENCY": "*/1 * * * *",
+		"WGA_SENTRY_DSN":         serverDSN,
 		"WGA_SENTRY_BROWSER_DSN": browserDSN,
 	}
 	server, err := config.LoadFrom(func(key string) string {
