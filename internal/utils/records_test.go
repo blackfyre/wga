@@ -18,12 +18,21 @@ func TestCountRecordsByFilter(t *testing.T) {
 		}
 	})
 
+	authors := core.NewBaseCollection("Authors")
+	authors.Id = "authors"
+	authors.MarkAsNew()
+	authors.Fields.Add(&core.TextField{Name: "name", Required: true})
+	if err := app.Save(authors); err != nil {
+		t.Fatalf("save authors collection: %v", err)
+	}
+
 	collection := core.NewBaseCollection("Items")
 	collection.Id = "items"
 	collection.MarkAsNew()
 	collection.Fields.Add(
 		&core.TextField{Name: "title", Required: true},
 		&core.BoolField{Name: "published"},
+		&core.RelationField{Name: "authors", CollectionId: authors.Id, MaxSelect: 10},
 	)
 	if err := app.Save(collection); err != nil {
 		t.Fatalf("save collection: %v", err)
@@ -50,5 +59,32 @@ func TestCountRecordsByFilter(t *testing.T) {
 	}
 	if count != 2 {
 		t.Fatalf("expected 2 published records, got %d", count)
+	}
+
+	for range 2 {
+		author := core.NewRecord(authors)
+		author.Set("name", "Shared")
+		if err := app.Save(author); err != nil {
+			t.Fatalf("save author: %v", err)
+		}
+	}
+	sharedAuthors, err := app.FindRecordsByFilter("authors", `name = 'Shared'`, "", 0, 0)
+	if err != nil {
+		t.Fatalf("find shared authors: %v", err)
+	}
+	collaborative := core.NewRecord(collection)
+	collaborative.Set("title", "Collaborative")
+	collaborative.Set("published", true)
+	collaborative.Set("authors", []string{sharedAuthors[0].Id, sharedAuthors[1].Id})
+	if err := app.Save(collaborative); err != nil {
+		t.Fatalf("save collaborative record: %v", err)
+	}
+
+	count, err = CountRecordsByFilter(app, "items", "authors.name = {:name}", dbx.Params{"name": "Shared"})
+	if err != nil {
+		t.Fatalf("count records by relation: %v", err)
+	}
+	if count != 1 {
+		t.Fatalf("expected 1 collaborative record, got %d", count)
 	}
 }

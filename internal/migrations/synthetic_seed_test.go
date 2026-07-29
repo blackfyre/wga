@@ -83,6 +83,23 @@ func TestSyntheticSeedMigrationImportsBaselineSchema(t *testing.T) {
 	}
 	assertIndex(t, schools, "idx_unique_school")
 
+	for _, item := range []struct {
+		collection string
+		field      string
+	}{
+		{collection: "static_pages", field: "content"},
+		{collection: "feedbacks", field: "message"},
+	} {
+		collection, err := app.FindCollectionByNameOrId(item.collection)
+		if err != nil {
+			t.Fatalf("find %s collection: %v", item.collection, err)
+		}
+		field, ok := collection.Fields.GetByName(item.field).(*core.EditorField)
+		if !ok || !field.ConvertURLs {
+			t.Fatalf("expected %s.%s to convert URLs", item.collection, item.field)
+		}
+	}
+
 	artworks, err := app.FindCollectionByNameOrId("artworks")
 	if err != nil {
 		t.Fatalf("find artworks collection: %v", err)

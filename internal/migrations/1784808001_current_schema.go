@@ -137,7 +137,7 @@ func createCurrentSchema(app core.App) error {
 	if err := saveCurrentCollection(app, currentCollection("Static_pages", "static_pages",
 		textField("title", true, true),
 		textField("slug", false, false),
-		editorField("content", true),
+		convertingEditorField("content", true),
 	)); err != nil {
 		return err
 	}
@@ -145,7 +145,7 @@ func createCurrentSchema(app core.App) error {
 		textField("name", true, true),
 		emailField("email", true),
 		urlField("refer_to", true),
-		editorField("message", true),
+		convertingEditorField("message", true),
 		boolField("handled", false),
 	)); err != nil {
 		return err
@@ -305,6 +305,10 @@ func urlField(name string, required bool) *core.URLField {
 
 func editorField(name string, required bool) *core.EditorField {
 	return &core.EditorField{Name: name, Required: required}
+}
+
+func convertingEditorField(name string, required bool) *core.EditorField {
+	return &core.EditorField{Name: name, Required: required, ConvertURLs: true}
 }
 
 func jsonField(name string, required bool) *core.JSONField {

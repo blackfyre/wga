@@ -13,7 +13,8 @@ func CountRecordsByFilter(app core.App, collectionName string, filter string, pa
 		return 0, err
 	}
 
-	query := app.RecordQuery(collection).Select("COUNT(*)")
+	baseID := app.DB().QuoteSimpleTableName(collection.Name) + "." + app.DB().QuoteSimpleColumnName("id")
+	query := app.RecordQuery(collection).Select("COUNT(DISTINCT " + baseID + ")")
 	resolver := core.NewRecordFieldResolver(app, collection, nil, true)
 	if filter != "" {
 		expression, err := search.FilterData(filter).BuildExpr(resolver, params)
