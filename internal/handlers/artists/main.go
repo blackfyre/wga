@@ -79,23 +79,14 @@ func processArtists(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 		return utils.ServerFaultError(c)
 	}
 
-	totalRecords, err := app.FindRecordsByFilter(
-		"artists",
-		filter,
-		"+name",
-		0,
-		0,
-		dbx.Params{
-			"searchExpression": searchExpression,
-		},
-	)
+	recordsCount, err := utils.CountRecordsByFilter(app, "artists", filter, dbx.Params{
+		"searchExpression": searchExpression,
+	})
 
 	if err != nil {
 		app.Logger().Error("Failed to get total records", "error", err.Error())
 		return utils.ServerFaultError(c)
 	}
-
-	recordsCount := len(totalRecords)
 
 	content := dto.ArtistsView{
 		Count: strconv.Itoa(recordsCount),

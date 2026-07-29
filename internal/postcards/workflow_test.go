@@ -472,7 +472,7 @@ func installPostcardSchema(t *testing.T, app core.App) string {
 		t.Fatalf("create postcards collection: %v", err)
 	}
 
-	deliveries := core.NewBaseCollection("postcardDeliveries")
+	deliveries := core.NewBaseCollection("postcard_deliveries")
 	deliveries.Id = collectionDeliveries
 	deliveries.MarkAsNew()
 	deliveries.Fields.Add(
@@ -486,7 +486,7 @@ func installPostcardSchema(t *testing.T, app core.App) string {
 		t.Fatalf("create deliveries collection: %v", err)
 	}
 
-	attempts := core.NewBaseCollection("postcardDeliveryAttempts")
+	attempts := core.NewBaseCollection("postcard_delivery_attempts")
 	attempts.Id = collectionDeliveryAttempts
 	attempts.MarkAsNew()
 	attempts.Fields.Add(

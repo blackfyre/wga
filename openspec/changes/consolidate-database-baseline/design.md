@@ -1,0 +1,153 @@
+## Context
+
+WGA has two SQLite models with different responsibilities. `resources/synthetic/wga-test.sqlite` is a normalised source fixture with 17 tables and embedded files. PocketBase materialises the target collections, framework metadata, access rules, indexes, migrations, and user state in `wga_data/data.db`.
+
+The current fresh install applies 21 project migrations. Several historical migrations create and optionally seed obsolete source shapes; migration `1784808382` adds synthetic-source schema which `1784808383` immediately removes before importing the current fixture. The project can reset this history before production.
+
+The production catalogue is expected to contain approximately 5,000 artists and 56,000 artworks; the remaining collections remain close to their current sizes. The baseline must therefore optimise artist and artwork browse paths, without speculative indexes on small taxonomies or CMS content.
+
+## Goals / Non-Goals
+
+**Goals:**
+
+- Define a small, complete PocketBase baseline for a fresh WGA database.
+- Keep the synthetic database as the canonical content source and preserve deterministic IDs and relations.
+- Preserve current feature behaviour and all synthetic bootstrap records, relations, and assets.
+- Seed `Art_periods` for the planned search filter.
+- Verify and update every database model call affected by the replacement schema.
+- Describe every source and target table, its fields, types, and purpose.
+
+**Non-Goals:**
+
+- Copy the synthetic SQLite file as PocketBase's `data.db`.
+- Preserve development database migration continuity.
+- Design the art-period search behaviour or infer artwork-to-period membership.
+- Rename application collection IDs.
+
+## Decisions
+
+### 1. Recreate the application migration history as a baseline
+
+Replace the project-owned historical migrations with three ordered migrations: initial settings, current schema, and synthetic bootstrap data. Keep PocketBase's framework migrations under PocketBase control.
+
+This avoids creating obsolete collections and fields during every new installation. Retaining the old files would preserve a history that is no longer an accurate description of the target database.
+
+**Alternative considered:** retain the migration chain and append cleanup migrations. Rejected because it continues to execute redundant schema and data work on every fresh database.
+
+### 2. Keep source and target database models separate
+
+The source database remains embedded and read-only. The bootstrap migration reads it, validates its graph and storage assets, then creates PocketBase records through the framework API. PocketBase owns its `_collections`, `_migrations`, auth, parameters, and other system tables.
+
+**Alternative considered:** distribute a pre-populated PocketBase database. Rejected because it couples application content to PocketBase internals and version migrations, includes mutable runtime state, and bypasses normal configuration and migration setup.
+
+### 3. Retain `Art_periods` in both models
+
+The target schema retains `Art_periods`; the importer must load the fixture's `art_periods` rows, mapping `start_year` and `end_year` to `start` and `end`. This makes the current reference data available before the search filter is built.
+
+The baseline does not add an inferred `Artworks.art_period` relation. The source does not contain that relation, and assigning it from free-form or ranged dates is product logic for the future filter.
+
+### 4. Use collection names to distinguish administrative and tracking data
+
+PocketBase collections that administrators manage through the UI use leading-capital snake case: for example, `Artists`, `Art_forms`, `Music_song`, and `Static_pages`. WGA-owned collections that record delivery or refresh workflow state use lower snake case: `postcard_deliveries`, `postcard_delivery_attempts`, `contributor_snapshots`, and `contributor_refresh_executions`. Their PocketBase IDs are prefixed with `tracking_`, because PocketBase rejects a collection name equal to any collection ID.
+
+`users` remains unchanged. PocketBase-owned underscore-prefixed system collections also remain unchanged. This convention is a presentation and operational-boundary signal; access rules, rather than casing, continue to control access.
+
+### Target PocketBase collections
+
+`id` is PocketBase's required text identifier in every collection. `created` and `updated` are PocketBase autodate fields unless stated otherwise. Relation fields store PocketBase record IDs; file fields store framework-managed asset names.
+
+| Collection | Fields and types | Intention |
+| --- | --- | --- |
+| `Schools` | `id text`, `name text`, `slug text`, `created autodate`, `updated autodate` | Art-school taxonomy used by artists and artworks. |
+| `Art_forms` | `id text`, `name text`, `slug text`, `created autodate`, `updated autodate` | Artwork form taxonomy. |
+| `Art_types` | `id text`, `name text`, `slug text`, `created autodate`, `updated autodate` | Artwork type taxonomy. |
+| `Art_periods` | `id text`, `name text`, `slug text`, `start number`, `end number`, `description text`, `created autodate`, `updated autodate` | Historical period reference data reserved for the future search filter. |
+| `Artists` | `id text`, `name text`, `slug text`, `bio editor`, `year_of_birth number`, `year_of_death number`, `place_of_birth text`, `place_of_death text`, `exact_year_of_birth bool`, `exact_year_of_death bool`, `profession text`, `known_place_of_birth select`, `known_place_of_death select`, `school relation -> Schools`, `published bool`, `also_known_as relation -> Artists`, `created autodate`, `updated autodate` | Published artist profiles and their taxonomy links. Retain unique `slug` and add `(published, name, id)` for browse and sitemap ordering. |
+| `Artworks` | `id text`, `title text`, `author relation -> Artists`, `form relation -> Art_forms`, `type relation -> Art_types`, `technique text`, `school relation -> Schools`, `comment editor`, `published bool`, `image file`, `created autodate`, `updated autodate` | Published artworks and their presentation image. Add `(published, title, id)` for browse and sitemap ordering. |
+| `Glossary` | `id text`, `expression text`, `definition text`, `created autodate`, `updated autodate` | Glossary terms. |
+| `Guestbook` | `id text`, `message text`, `name text`, `email email`, `location text`, `created autodate`, `updated autodate` | Public guestbook entries. |
+| `Music_composer` | `id text`, `name text`, `century select`, `language text`, `created autodate`, `updated autodate` | Composer metadata derived from fixture tracks. |
+| `Music_song` | `id text`, `title text`, `composer relation -> Music_composer`, `source file`, `created autodate`, `updated autodate` | Embedded music files and their composer relation. |
+| `Static_pages` | `id text`, `title text`, `slug text`, `content editor`, `created autodate`, `updated autodate` | CMS-managed static content. |
+| `Strings` | `id text`, `name text`, `content editor`, `created autodate`, `updated autodate` | Named CMS text fragments. |
+| `Feedbacks` | `id text`, `name text`, `email email`, `refer_to url`, `message editor`, `handled bool`, `created autodate`, `updated autodate` | Visitor feedback workflow. |
+| `Postcards` | `id text`, `sender_name text`, `sender_email email`, `recipients text`, `message editor`, `image_id relation -> Artworks`, `notify_sender bool`, `status select`, `sent_at date`, `correlation_id text`, `received_at date`, `created autodate`, `updated autodate` | Postcard request and delivery summary. |
+| `postcard_deliveries` | `id text`, `postcard relation -> Postcards`, `recipient text`, `status select`, `sent_at date`, `cancelled_at date`, `created autodate`, `updated autodate` | One delivery per resolved postcard recipient. |
+| `postcard_delivery_attempts` | `id text`, `delivery relation -> postcard_deliveries`, `sequence number`, `status select`, `correlation_id text`, `message_id text`, `attempt_count number`, `max_attempts number`, `available_at date`, `claim_token text`, `claim_expires_at date`, `transport_started_at date`, `last_attempt_at date`, `processed_at date`, `dead_lettered_at date`, `result_code text`, `last_error_class text`, `last_error_retryable bool`, `last_error_summary text`, `resolution_code select`, `resolution_summary text`, `resolved_at date`, `replay_of relation -> postcard_delivery_attempts`, `created autodate`, `updated autodate` | Durable, retryable postcard transport attempts. Retain expiry, message, sequence, and status indexes; define the due index as `(status, available_at, id)` to match its claim order. |
+| `contributor_snapshots` | `id text`, `key text`, `payload json`, `created autodate`, `updated autodate` | Latest cached contributor response. The unique key index is retained. |
+| `contributor_refresh_executions` | `id text`, `run_id text`, `attempt number`, `max_attempts number`, `status select`, `claim_expires_at date`, `completed_at date`, `snapshot_count number`, `error_class text`, `error_retryable bool`, `created autodate`, `updated autodate` | Contributor refresh lease, outcome, and retry state. Existing active and attempt indexes are retained. |
+| `users` | `id text`, `password password`, `tokenKey text`, `email email`, `emailVisibility bool`, `verified bool`, `name text`, `avatar file`, `created autodate`, `updated autodate` | Application user auth collection. Its self-only list, view, update, and delete rules are retained. |
+
+PocketBase system collections (`_collections`, `_migrations`, `_params`, `_superusers`, `_authOrigins`, `_externalAuths`, `_mfas`, and `_otps`) remain framework-owned and are not recreated by application migrations.
+
+### Source fixture tables
+
+The fixture uses SQLite `TEXT` identifiers, `INTEGER` dates or ordering values, and explicit foreign keys. It remains a source model; no table is copied directly into PocketBase.
+
+| Source table | Fields and types | Intention |
+| --- | --- | --- |
+| `schools` | `id text`, `name text` | School source taxonomy. |
+| `forms` | `id text`, `name text` | Form source taxonomy. |
+| `types` | `id text`, `name text` | Type source taxonomy. |
+| `art_periods` | `id text`, `name text`, `start_year integer`, `end_year integer`, `description text` | Canonical period data for `Art_periods`. |
+| `professions` | `id text`, `name text` | Profession source taxonomy, flattened into `Artists.profession`. |
+| `artists` | `id text`, `source_path text`, `source_hash text`, `debug_hash text`, `source_display_name text`, `display_name text`, `artist_url text`, `birth_year integer`, `death_year integer`, `birth_place text`, `death_place text`, `activity_text text`, `activity_start_year integer`, `activity_end_year integer`, `artist_index_path text`, `biography_image_path text` | Canonical artist identities, display data, and source provenance. |
+| `artist_schools` | `artist_id text -> artists`, `school_id text -> schools` | Artist-to-school mapping. |
+| `artist_professions` | `artist_id text -> artists`, `profession_id text -> professions` | Artist-to-profession mapping. |
+| `biographies` | `id text`, `artist_id text -> artists`, `raw_life_detail text`, `raw_biography_html text`, `biography_html text`, `biography_text text` | Canonical artist biography; HTML imports to `Artists.bio`. |
+| `biography_links` | `id text`, `biography_id text -> biographies`, `link_type text`, `target_path text`, `link_text text`, `link_order integer` | Source biography-link provenance; not represented separately in the target. |
+| `artworks` | `id text`, `author_id text -> artists`, `title text`, `date_text text`, `date_start integer`, `date_end integer`, `is_circa integer`, `date_qualifier text`, `technique text`, `technique_without_dimensions text`, `dimensions text`, `location text`, `url text`, `image_path text`, `output_image_path text`, `school_id text -> schools`, `form_id text -> forms`, `type_id text -> types`, `source_row integer` | Canonical artwork data, source date details, taxonomy links, and asset provenance. |
+| `glossary_entries` | `id text`, `term text`, `definition text`, `anchor text`, `source_page text`, `sort_order integer` | Glossary content and source ordering. |
+| `guestbook_entries` | `id text`, `name text`, `email text`, `location text`, `message text`, `created text`, `updated text` | Bootstrap guestbook records. |
+| `music_tracks` | `id text`, `track_order integer`, `title text`, `period text`, `composer text`, `origin text`, `playback_url text`, `media_format text`, `player_url text`, `local_path text`, `part integer`, `part_count integer`, `art_period_id text -> art_periods` | Canonical music metadata and source-file location. |
+| `static_pages` | `id text`, `title text`, `slug text`, `content text` | Static page source content. |
+| `strings` | `id text`, `name text`, `content text` | Named source text fragments. |
+| `source_attributions` | `id text`, `attribution_order integer`, `category text`, `subcategory text`, `title text`, `citation text`, `source_url text` | Source attribution provenance; not represented separately in the target. |
+
+### 5. Preserve the bootstrap guard and validation
+
+The bootstrap migration continues only for an empty application database. It validates target collection fields, source relations, required fixture files, and file-size limits before saving records. Record and asset writes remain inside PocketBase's migration transaction.
+
+### 6. Audit database model calls before removing legacy schema
+
+Inventory every application call that looks up, queries, saves, or filters a PocketBase collection. Each call must be checked against the baseline collection name, field name, field type, relation target, and index assumptions; update it only where the clean baseline changes that contract.
+
+This makes feature and seed parity an acceptance condition rather than an assumption based solely on migration success.
+
+### 7. Index known high-volume browse paths and remove avoidable full loads
+
+The baseline defines these additional indexes:
+
+- `CREATE INDEX pbx_artist_published_name ON Artists (published, name, id)`
+- `CREATE INDEX pbx_artwork_published_title ON Artworks (published, title, id)`
+- `CREATE INDEX pbx_postcard_attempt_due ON postcard_delivery_attempts (status, available_at, id)`
+
+The artist and artwork indexes match the public browse and sitemap predicates and order. The postcard index removes the observed temporary sort for the `available_at, id` claim order. Text `~` searches and PocketBase JSON relation filters are not assumed to benefit from these B-tree indexes; full-text search and relation-specific indexing remain out of scope until measured.
+
+Artist and artwork pagination must use a count-only query rather than loading every matching record to calculate a total. Sitemap generation must batch author retrieval rather than expanding an author once per artwork. No guestbook, glossary, taxonomy, or static-content index is added because those collections remain small; the guestbook year filter can be redesigned as a date range if its volume changes.
+
+## Risks / Trade-offs
+
+- [Reset invalidates local development databases] → Document deletion and regeneration of `wga_data`; this is acceptable before production.
+- [A future art-period filter needs artwork membership] → Retain and seed the taxonomy now; decide its relation or date-overlap rules in that feature's design.
+- [Fixture schema and target schema can drift] → Keep importer validation and add a fresh-migration test asserting schema, counts, relations, and assets.
+- [A model call references a removed field or collection] → Audit PocketBase lookups and query filters before deleting legacy migrations, then cover affected feature paths with focused tests.
+- [Large catalogue paths scan or materialise excessive records] → Define the browse and claim indexes, use a count-only pagination query, and batch sitemap author retrieval.
+- [Fixture source tables can appear redundant] → Keep provenance-only tables until their source-maintenance value is explicitly rejected; their storage cost is negligible.
+
+## Migration Plan
+
+1. Delete and replace project-owned historical migrations; do not change PocketBase framework migrations.
+2. Implement the three baseline migrations and extend the importer to load art periods.
+3. Apply the administrative and tracking collection naming convention in the baseline schema.
+4. Add the artist, artwork, and postcard-claim indexes to the schema baseline.
+5. Audit and update database model calls against the baseline collection contracts and high-volume query requirements.
+6. Recreate local `wga_data` and apply migrations to a fresh database.
+7. Run focused feature, seed, and migration tests, then the full Go test suite.
+
+Rollback before production is to restore the previous migration files and recreate the local database. A production rollback plan is intentionally out of scope because no production history exists.
+
+## Open Questions
+
+- Which future-search rule will associate an artwork with an art period: an explicit relation maintained by editors, date-range overlap, or another model?
+- Does source provenance require retaining `biography_links` and `source_attributions` in the embedded fixture after the baseline is complete?

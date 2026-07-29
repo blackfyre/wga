@@ -12,8 +12,8 @@ import (
 
 const (
 	collectionPostcards        = "postcards"
-	collectionDeliveries       = "postcard_deliveries"
-	collectionDeliveryAttempts = "postcard_delivery_attempts"
+	collectionDeliveries       = "tracking_postcard_deliveries"
+	collectionDeliveryAttempts = "tracking_postcard_delivery_attempts"
 	defaultMaxAttempts         = 5
 )
 
@@ -262,7 +262,7 @@ func ReplayAttempt(app core.App, attemptID string) (*core.Record, error) {
 		var maxSequence struct {
 			Sequence int `db:"sequence"`
 		}
-		if err := txApp.DB().NewQuery(`SELECT COALESCE(MAX(sequence), 0) AS sequence FROM postcardDeliveryAttempts WHERE delivery = {:delivery}`).Bind(map[string]any{"delivery": attempt.GetString("delivery")}).One(&maxSequence); err != nil {
+		if err := txApp.DB().NewQuery(`SELECT COALESCE(MAX(sequence), 0) AS sequence FROM postcard_delivery_attempts WHERE delivery = {:delivery}`).Bind(map[string]any{"delivery": attempt.GetString("delivery")}).One(&maxSequence); err != nil {
 			return err
 		}
 		now := types.NowDateTime()

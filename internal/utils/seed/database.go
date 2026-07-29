@@ -25,6 +25,7 @@ var syntheticTargetCollections = []targetCollection{
 	{name: "schools", fields: []string{"name", "slug"}},
 	{name: "art_forms", fields: []string{"name", "slug"}},
 	{name: "art_types", fields: []string{"name", "slug"}},
+	{name: "art_periods", fields: []string{"name", "slug", "start", "end", "description"}},
 	{name: constants.CollectionArtists, fields: []string{
 		"name", "slug", "bio", "year_of_birth", "year_of_death", "place_of_birth", "place_of_death",
 		"exact_year_of_birth", "exact_year_of_death", "profession", "known_place_of_birth",
@@ -71,6 +72,9 @@ func ImportEmbedded(app core.App) error {
 		return err
 	}
 	if err := importSyntheticTaxonomy(app, "art_types", data.types, true); err != nil {
+		return err
+	}
+	if err := importSyntheticArtPeriods(app, data.artPeriods); err != nil {
 		return err
 	}
 	if err := importSyntheticArtists(app, data); err != nil {
@@ -173,6 +177,26 @@ func importSyntheticTaxonomy(app core.App, collectionName string, items []source
 
 		if err := app.Save(record); err != nil {
 			return fmt.Errorf("save %s %q: %w", collectionName, item.ID, err)
+		}
+	}
+
+	return nil
+}
+
+func importSyntheticArtPeriods(app core.App, items []sourceArtPeriod) error {
+	for _, item := range items {
+		record, err := newRecord(app, "art_periods", item.ID)
+		if err != nil {
+			return err
+		}
+
+		record.Set("name", item.Name)
+		record.Set("slug", utils.Slugify(item.Name))
+		record.Set("start", item.Start)
+		record.Set("end", item.End)
+		record.Set("description", item.Description)
+		if err := app.Save(record); err != nil {
+			return fmt.Errorf("save art period %q: %w", item.ID, err)
 		}
 	}
 

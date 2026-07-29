@@ -1,12 +1,8 @@
 package migrations
 
 import (
-	"database/sql"
-	"errors"
 	"strings"
 	"testing"
-
-	"github.com/pocketbase/pocketbase/core"
 )
 
 // TestPostcardDeliveryLifecycleMigrationCreatesAdditiveSchema verifies the delivery schema is additive.
@@ -32,7 +28,7 @@ func TestPostcardDeliveryLifecycleMigrationCreatesAdditiveSchema(t *testing.T) {
 		}
 	}
 
-	deliveries, err := app.FindCollectionByNameOrId("postcard_deliveries")
+	deliveries, err := app.FindCollectionByNameOrId("tracking_postcard_deliveries")
 	if err != nil {
 		t.Fatalf("find deliveries collection: %v", err)
 	}
@@ -43,7 +39,7 @@ func TestPostcardDeliveryLifecycleMigrationCreatesAdditiveSchema(t *testing.T) {
 		t.Fatal("expected unique postcard recipient index")
 	}
 
-	attempts, err := app.FindCollectionByNameOrId("postcard_delivery_attempts")
+	attempts, err := app.FindCollectionByNameOrId("tracking_postcard_delivery_attempts")
 	if err != nil {
 		t.Fatalf("find attempts collection: %v", err)
 	}
@@ -51,44 +47,6 @@ func TestPostcardDeliveryLifecycleMigrationCreatesAdditiveSchema(t *testing.T) {
 		if attempts.Fields.GetByName(field) == nil {
 			t.Fatalf("missing attempt field %q", field)
 		}
-	}
-}
-
-// TestPostcardDeliveryLifecycleMigrationsRollBackAndReapply verifies rollback restores a reapplicable schema.
-func TestPostcardDeliveryLifecycleMigrationsRollBackAndReapply(t *testing.T) {
-	configureMigrations(t)
-	app := newMigrationTestApp(t, t.TempDir())
-	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
-			t.Error(err)
-		}
-	})
-	if err := app.RunAllMigrations(); err != nil {
-		t.Fatalf("run migrations: %v", err)
-	}
-	runner := core.NewMigrationsRunner(app, core.AppMigrations)
-	if _, err := runner.Down(3); err != nil {
-		t.Fatalf("roll back postcard delivery migrations: %v", err)
-	}
-	for _, collection := range []string{"postcard_deliveries", "postcard_delivery_attempts"} {
-		if _, err := app.FindCollectionByNameOrId(collection); !errors.Is(err, sql.ErrNoRows) {
-			t.Fatalf("expected no %s collection after rollback, got %v", collection, err)
-		}
-	}
-	postcards, err := app.FindCollectionByNameOrId("postcards")
-	if err != nil {
-		t.Fatalf("find postcards collection after rollback: %v", err)
-	}
-	for _, field := range []string{"correlation_id", "received_at"} {
-		if postcards.Fields.GetByName(field) != nil {
-			t.Fatalf("expected no postcard field %q after rollback", field)
-		}
-	}
-	if _, err := runner.Up(); err != nil {
-		t.Fatalf("reapply postcard delivery migrations: %v", err)
-	}
-	if _, err := app.FindCollectionByNameOrId("postcard_delivery_attempts"); err != nil {
-		t.Fatalf("find attempts collection after reapply: %v", err)
 	}
 }
 
@@ -104,7 +62,7 @@ func TestContributorRefreshMigrationCreatesAdditiveSchema(t *testing.T) {
 		t.Fatalf("run migrations: %v", err)
 	}
 
-	snapshots, err := app.FindCollectionByNameOrId("contributor_snapshots")
+	snapshots, err := app.FindCollectionByNameOrId("tracking_contributor_snapshots")
 	if err != nil {
 		t.Fatalf("find contributor snapshots: %v", err)
 	}
@@ -114,7 +72,7 @@ func TestContributorRefreshMigrationCreatesAdditiveSchema(t *testing.T) {
 		}
 	}
 
-	executions, err := app.FindCollectionByNameOrId("contributor_refresh_executions")
+	executions, err := app.FindCollectionByNameOrId("tracking_contributor_refresh_executions")
 	if err != nil {
 		t.Fatalf("find contributor refresh executions: %v", err)
 	}
@@ -127,18 +85,6 @@ func TestContributorRefreshMigrationCreatesAdditiveSchema(t *testing.T) {
 		t.Fatal("expected contributor refresh active index")
 	}
 
-	runner := core.NewMigrationsRunner(app, core.AppMigrations)
-	if _, err := runner.Down(1); err != nil {
-		t.Fatalf("roll back contributor migration: %v", err)
-	}
-	for _, collection := range []string{"contributor_snapshots", "contributor_refresh_executions"} {
-		if _, err := app.FindCollectionByNameOrId(collection); !errors.Is(err, sql.ErrNoRows) {
-			t.Fatalf("expected no %s collection after rollback, got %v", collection, err)
-		}
-	}
-	if _, err := runner.Up(); err != nil {
-		t.Fatalf("reapply contributor migration: %v", err)
-	}
 }
 
 // hasIndex reports whether a collection index definition contains name.

@@ -31,6 +31,7 @@ type sourceData struct {
 	schools           []sourceTaxonomy
 	forms             []sourceTaxonomy
 	types             []sourceTaxonomy
+	artPeriods        []sourceArtPeriod
 	professions       []sourceTaxonomy
 	artists           []sourceArtist
 	artistSchools     map[string][]string
@@ -49,6 +50,14 @@ type sourceData struct {
 type sourceTaxonomy struct {
 	ID   string
 	Name string
+}
+
+type sourceArtPeriod struct {
+	ID          string
+	Name        string
+	Start       int
+	End         int
+	Description string
 }
 
 type sourceArtist struct {
@@ -95,11 +104,12 @@ type sourceGuestbookEntry struct {
 }
 
 type sourceMusicTrack struct {
-	ID        string
-	Title     string
-	Period    string
-	Composer  string
-	LocalPath string
+	ID          string
+	Title       string
+	Period      string
+	Composer    string
+	LocalPath   string
+	ArtPeriodID string
 }
 
 type sourceString struct {
@@ -213,6 +223,9 @@ func loadSourceData(paths sourcePaths) (sourceData, error) {
 	if data.types, err = loadTaxonomy(db, "types"); err != nil {
 		return sourceData{}, err
 	}
+	if data.artPeriods, err = loadArtPeriods(db); err != nil {
+		return sourceData{}, err
+	}
 	if data.professions, err = loadTaxonomy(db, "professions"); err != nil {
 		return sourceData{}, err
 	}
@@ -266,6 +279,29 @@ func loadTaxonomy(db *sql.DB, table string) ([]sourceTaxonomy, error) {
 		item := sourceTaxonomy{}
 		if err := rows.Scan(&item.ID, &item.Name); err != nil {
 			return nil, fmt.Errorf("scan %s: %w", table, err)
+		}
+		items = append(items, item)
+	}
+
+	return items, rows.Err()
+}
+
+func loadArtPeriods(db *sql.DB) ([]sourceArtPeriod, error) {
+	rows, err := db.Query(`
+		SELECT id, name, start_year, end_year, description
+		FROM art_periods
+		ORDER BY id
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("read art periods: %w", err)
+	}
+	defer closeRows(rows)
+
+	items := []sourceArtPeriod{}
+	for rows.Next() {
+		item := sourceArtPeriod{}
+		if err := rows.Scan(&item.ID, &item.Name, &item.Start, &item.End, &item.Description); err != nil {
+			return nil, fmt.Errorf("scan art periods: %w", err)
 		}
 		items = append(items, item)
 	}
@@ -430,7 +466,7 @@ func loadGuestbookEntries(db *sql.DB) ([]sourceGuestbookEntry, error) {
 
 func loadMusicTracks(db *sql.DB) ([]sourceMusicTrack, error) {
 	rows, err := db.Query(`
-		SELECT id, title, period, composer, COALESCE(local_path, '')
+		SELECT id, title, period, composer, COALESCE(local_path, ''), COALESCE(art_period_id, '')
 		FROM music_tracks
 		ORDER BY track_order
 	`)
@@ -442,7 +478,7 @@ func loadMusicTracks(db *sql.DB) ([]sourceMusicTrack, error) {
 	items := []sourceMusicTrack{}
 	for rows.Next() {
 		item := sourceMusicTrack{}
-		if err := rows.Scan(&item.ID, &item.Title, &item.Period, &item.Composer, &item.LocalPath); err != nil {
+		if err := rows.Scan(&item.ID, &item.Title, &item.Period, &item.Composer, &item.LocalPath, &item.ArtPeriodID); err != nil {
 			return nil, fmt.Errorf("scan music tracks: %w", err)
 		}
 		items = append(items, item)
@@ -494,6 +530,7 @@ func validateSourceRelations(data sourceData) error {
 	schoolIDs := makeIDSet(data.schools, func(item sourceTaxonomy) string { return item.ID })
 	formIDs := makeIDSet(data.forms, func(item sourceTaxonomy) string { return item.ID })
 	typeIDs := makeIDSet(data.types, func(item sourceTaxonomy) string { return item.ID })
+	artPeriodIDs := makeIDSet(data.artPeriods, func(item sourceArtPeriod) string { return item.ID })
 	professionIDs := makeIDSet(data.professions, func(item sourceTaxonomy) string { return item.ID })
 
 	for artistID, schools := range data.artistSchools {
@@ -536,6 +573,15 @@ func validateSourceRelations(data sourceData) error {
 		}
 		if _, ok := typeIDs[artwork.TypeID]; !ok {
 			return fmt.Errorf("artwork %q references unknown type %q", artwork.ID, artwork.TypeID)
+		}
+	}
+
+	for _, track := range data.musicTracks {
+		if track.ArtPeriodID == "" {
+			continue
+		}
+		if _, ok := artPeriodIDs[track.ArtPeriodID]; !ok {
+			return fmt.Errorf("music track %q references unknown art period %q", track.ID, track.ArtPeriodID)
 		}
 	}
 

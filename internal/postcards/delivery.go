@@ -73,11 +73,11 @@ func claimDue(app core.App, now types.DateTime) (*ClaimedAttempt, error) {
 		ID string `db:"id"`
 	}
 	err := app.DB().NewQuery(`
-		UPDATE postcardDeliveryAttempts
+		UPDATE postcard_delivery_attempts
 		SET status = 'processing', claim_token = {:token}, claim_expires_at = {:expires},
 			transport_started_at = ''
 		WHERE id = (
-			SELECT id FROM postcardDeliveryAttempts
+			SELECT id FROM postcard_delivery_attempts
 			WHERE status = 'queued' AND available_at <= {:now}
 			ORDER BY available_at, id LIMIT 1
 		)
@@ -110,7 +110,7 @@ func claimDue(app core.App, now types.DateTime) (*ClaimedAttempt, error) {
 // recoverExpiredClaims requeues safe expired claims and dead-letters ambiguous ones.
 func recoverExpiredClaims(app core.App, now types.DateTime) error {
 	_, err := app.DB().NewQuery(`
-		UPDATE postcardDeliveryAttempts
+		UPDATE postcard_delivery_attempts
 		SET status = 'queued', claim_token = '', claim_expires_at = '', available_at = {:now}
 		WHERE status = 'processing' AND claim_expires_at <= {:now} AND transport_started_at = ''
 	`).Bind(dbx.Params{"now": now}).Execute()
@@ -118,7 +118,7 @@ func recoverExpiredClaims(app core.App, now types.DateTime) error {
 		return err
 	}
 	_, err = app.DB().NewQuery(`
-		UPDATE postcardDeliveryAttempts
+		UPDATE postcard_delivery_attempts
 		SET status = 'dead_lettered', dead_lettered_at = {:now}, claim_token = '', claim_expires_at = '',
 			last_error_class = 'ambiguous_transport_outcome', last_error_retryable = false
 		WHERE status = 'processing' AND claim_expires_at <= {:now} AND transport_started_at != ''
@@ -201,7 +201,7 @@ func renderMessage(postcard *core.Record, recipient string, messageID string, po
 // startTransport records the SMTP boundary and increments the transport attempt count.
 func startTransport(app core.App, claim *ClaimedAttempt, now types.DateTime) error {
 	result, err := app.DB().NewQuery(`
-		UPDATE postcardDeliveryAttempts
+		UPDATE postcard_delivery_attempts
 		SET transport_started_at = {:now}, claim_expires_at = {:expires},
 			attempt_count = attempt_count + 1, last_attempt_at = {:now}
 		WHERE id = {:id} AND status = 'processing' AND claim_token = {:token}
@@ -268,7 +268,7 @@ func deadLetter(app core.App, claim *ClaimedAttempt, failure deliveryFailure, no
 func updateOwnedAttempt(app core.App, claim *ClaimedAttempt, changes string, params dbx.Params) error {
 	params["id"] = claim.Attempt.Id
 	params["token"] = claim.Token
-	result, err := app.DB().NewQuery(`UPDATE postcardDeliveryAttempts SET ` + changes + `
+	result, err := app.DB().NewQuery(`UPDATE postcard_delivery_attempts SET ` + changes + `
 		WHERE id = {:id} AND status = 'processing' AND claim_token = {:token}`).Bind(params).Execute()
 	if err != nil {
 		return err
@@ -294,7 +294,7 @@ func finalizePostcard(app core.App, postcardID string, now types.DateTime) error
 		SELECT
 			SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending,
 			SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled
-		FROM postcardDeliveries
+		FROM postcard_deliveries
 		WHERE postcard = {:postcard}
 	`).Bind(dbx.Params{"postcard": postcardID}).One(&totals); err != nil {
 		return err
