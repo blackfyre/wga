@@ -65,6 +65,18 @@ func TestSyntheticSeedMigrationImportsBaselineSchema(t *testing.T) {
 			t.Fatalf("expected %s collection name %q, got %q", collection.id, collection.name, got)
 		}
 	}
+	users, err := app.FindCollectionByNameOrId("users")
+	if err != nil {
+		t.Fatalf("find users collection: %v", err)
+	}
+	if got, want := users.Id, "_pb_users_auth_"; got != want {
+		t.Fatalf("expected users collection ID %q, got %q", want, got)
+	}
+	for _, rule := range []*string{users.ListRule, users.ViewRule, users.UpdateRule, users.DeleteRule} {
+		if rule == nil || *rule != "id = @request.auth.id" {
+			t.Fatal("expected users self-only access rules")
+		}
+	}
 
 	artists, err := app.FindCollectionByNameOrId("artists")
 	if err != nil {

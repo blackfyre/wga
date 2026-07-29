@@ -72,6 +72,9 @@ func TestCountRecordsByFilter(t *testing.T) {
 	if err != nil {
 		t.Fatalf("find shared authors: %v", err)
 	}
+	if len(sharedAuthors) != 2 {
+		t.Fatalf("expected 2 shared authors, got %d", len(sharedAuthors))
+	}
 	collaborative := core.NewRecord(collection)
 	collaborative.Set("title", "Collaborative")
 	collaborative.Set("published", true)
