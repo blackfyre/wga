@@ -52,11 +52,11 @@ test("send postcard", async ({ page, request }) => {
 	await page.goto(
 		"/artists/synthetic-artist-01-ad32608c6e36b2e/synthetic-artwork-01-01-2225c982be1af02",
 	);
-	await page.getByRole("link", { name: "Send postcard" }).click();
+	await page.getByRole("link", { name: "SEND AS POSTCARD →" }).click();
 
 	await expect(page.locator("#d")).toBeVisible();
 
-	await expect(page.locator("#d")).toHaveText(/Write a postcard/);
+	await expect(page.locator("#d")).toHaveText(/Send a postcard/);
 	const recipients = page.locator("[name='recipients[]']");
 	await expect(recipients).toHaveCount(1);
 	await page.getByRole("button", { name: "ADD RECIPIENT +" }).click();

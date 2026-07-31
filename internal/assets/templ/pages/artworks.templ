@@ -2,10 +2,31 @@ package pages
 
 import (
 	"fmt"
+	"sort"
 	"github.com/blackfyre/wga/internal/assets/templ/components"
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/assets/templ/layouts"
 )
+
+type ArtworkFilterOption struct {
+	Value string
+	Label string
+}
+
+func sortedArtworkFilterOptions(options map[string]string) []ArtworkFilterOption {
+	sorted := make([]ArtworkFilterOption, 0, len(options)-1)
+	for value, label := range options {
+		if value != "" {
+			sorted = append(sorted, ArtworkFilterOption{Value: value, Label: label})
+		}
+	}
+
+	sort.Slice(sorted, func(i, j int) bool {
+		return sorted[i].Label < sorted[j].Label
+	})
+
+	return sorted
+}
 
 // ArtistPage is the template for the artist page
 templ ArtworkSearchPage(s dto.ArtworkSearchDTO) {
@@ -84,14 +105,12 @@ templ ArtworkFilterChips(name string, label string, selected string, options map
 				<input class="sr-only" type="radio" name={ name } value="" checked?={ selected == "" }/>
 				ALL
 			</label>
-			for value, option := range options {
-				if value != "" {
-					<label class="cursor-pointer border border-base-content/25 px-3 py-1.5 font-mono text-[11px] tracking-[1px] text-base-content/70 hover:border-base-content has-checked:border-primary has-checked:bg-primary has-checked:text-primary-content">
-						<input class="sr-only" type="radio" name={ name } value={ value } checked?={ selected == value }/>
-						{ option }
-					</label>
-				}
-			}
+		for _, option := range sortedArtworkFilterOptions(options) {
+			<label class="cursor-pointer border border-base-content/25 px-3 py-1.5 font-mono text-[11px] tracking-[1px] text-base-content/70 hover:border-base-content has-checked:border-primary has-checked:bg-primary has-checked:text-primary-content">
+				<input class="sr-only" type="radio" name={ name } value={ option.Value } checked?={ selected == option.Value }/>
+				{ option.Label }
+			</label>
+		}
 		</div>
 	</fieldset>
 }

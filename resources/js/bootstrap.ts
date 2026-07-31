@@ -71,6 +71,7 @@ type wgaInternals = {
 	eventListeners: (() => void)[];
 	func: {
 		cloner: () => void;
+		copyBibTeX: () => void;
 		viewer: () => void;
 		toast: (message: string, type: ToastEvent["detail"]["type"]) => void;
 		dualLookupModal: () => void;
@@ -745,6 +746,7 @@ const wgaInternal: wgaInternals = {
 				for (const element of elements) {
 					const e = element as HTMLElement;
 					new Viewer(e, {
+						navbar: !e.hasAttribute("data-viewer-no-navbar"),
 						toolbar: {
 							zoomIn: 1,
 							zoomOut: 1,
@@ -846,6 +848,7 @@ const wgaInternal: wgaInternals = {
 			wgaInternal.setup.htmx();
 			wgaInternal.setup.elements();
 			wgaInternal.func.glossary();
+			wgaInternal.func.copyBibTeX();
 			void maybeInitStatisticsCharts();
 
 			// Run all event listeners
@@ -886,6 +889,45 @@ const wgaInternal: wgaInternals = {
 					if (e.key === "Escape") {
 						glossaryClosePopup(true);
 					}
+				});
+			}
+		},
+		copyBibTeX() {
+			const buttons = document.querySelectorAll<HTMLButtonElement>(
+				"[data-copy-bibtex]:not([data-copy-bound])",
+			);
+			for (const button of buttons) {
+				button.dataset.copyBound = "true";
+				button.addEventListener("click", async () => {
+					const target = document.querySelector<HTMLElement>(
+						button.dataset.copyTarget || "",
+					);
+					if (!target) {
+						return;
+					}
+
+					let copied = false;
+					try {
+						await navigator.clipboard.writeText(target.innerText);
+						copied = true;
+					} catch {
+						const field = document.createElement("textarea");
+						field.value = target.innerText;
+						document.body.appendChild(field);
+						field.select();
+						copied = document.execCommand("copy");
+						field.remove();
+					}
+
+					if (!copied) {
+						logger.warn("Unable to copy BibTeX citation");
+						return;
+					}
+
+					button.textContent = "COPIED";
+					setTimeout(() => {
+						button.textContent = "COPY BIBTEX";
+					}, 2000);
 				});
 			}
 		},

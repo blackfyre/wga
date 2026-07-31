@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
@@ -122,6 +124,9 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 		},
 		ShowBreadcrumbs: true,
 	}
+	populateArtworkMetadata(app, aw, &content)
+	content.BibTeX = artworkBibTeX(content, time.Now())
+	content.RelatedWorks = relatedArtworkImages(app, artist, aw.Id, content.HxTarget)
 
 	school := artist.GetStringSlice("school")
 
@@ -208,6 +213,7 @@ func RenderArtworkContent(app *pocketbase.PocketBase, c *core.RequestEvent, artw
 		HxTarget:        hxTarget,
 		ShowBreadcrumbs: showBreadcrumbs,
 	}
+	populateArtworkMetadata(app, artwork, &content)
 
 	if artistId != "" {
 		var artist *core.Record
@@ -257,4 +263,75 @@ func RenderArtworkContent(app *pocketbase.PocketBase, c *core.RequestEvent, artw
 	content.Url = artworkUrl
 
 	return content, nil
+}
+
+func populateArtworkMetadata(app *pocketbase.PocketBase, artwork *core.Record, content *dto.Artwork) {
+	content.Location, content.Dimensions = artworkLocationAndDimensions(artwork.GetString("comment"))
+	if content.Dimensions != "" {
+		content.Technique = strings.TrimSpace(strings.TrimSuffix(content.Technique, ", "+content.Dimensions))
+	}
+
+	if year := artwork.GetInt("year"); year > 0 {
+		content.Year = strconv.Itoa(year)
+	}
+
+	for _, typeID := range artwork.GetStringSlice("type") {
+		artType, err := app.FindRecordById(constants.CollectionArtTypes, typeID)
+		if err == nil {
+			content.ArtType = artType.GetString("name")
+			return
+		}
+	}
+}
+
+func artworkLocationAndDimensions(comment string) (string, string) {
+	parts := strings.Split(tmplUtils.StripHtmlTags(comment), " · ")
+	if len(parts) < 3 {
+		return "", ""
+	}
+
+	return strings.TrimSpace(parts[1]), strings.TrimSpace(parts[2])
+}
+
+func artworkBibTeX(artwork dto.Artwork, accessedAt time.Time) string {
+	accessDate := accessedAt.Format("2006-01-02")
+	slug := utils.Slugify(artwork.Title)
+	return fmt.Sprintf("@online{wga-%s,\n  author       = {Krén, Emil and Marx, Daniel},\n  title        = {%s by %s},\n  organization = {{Web Gallery of Art}},\n  date         = {%s},\n  url          = {%s},\n  urldate      = {%s},\n  langid       = {english}\n}", slug, artwork.Title, artwork.Artist.Name, accessDate, utils.AssetUrl("/artworks/"+slug), accessDate)
+}
+
+func relatedArtworkImages(app *pocketbase.PocketBase, artist *core.Record, currentArtworkID string, hxTarget string) dto.ImageGrid {
+	works, err := utils.FindArtworksByAuthorID(app, artist.Id)
+	if err != nil {
+		app.Logger().Warn("Failed to find related artworks", "artist_id", artist.Id, "error", err)
+		return nil
+	}
+
+	related := dto.ImageGrid{}
+	for _, work := range works {
+		if work.Id == currentArtworkID || len(related) == 4 {
+			continue
+		}
+
+		image := utils.AssetUrl("/assets/images/no-image.png")
+		if imageName := work.GetString("image"); imageName != "" {
+			image = url.GenerateFileUrl(constants.CollectionArtworks, work.Id, imageName, "")
+		}
+
+		related = append(related, dto.Image{
+			Id:        work.Id,
+			Title:     work.GetString("title"),
+			Image:     image,
+			Technique: work.GetString("technique"),
+			Url: url.GenerateFullArtworkUrl(url.ArtworkUrlDTO{
+				ArtistName:   artist.GetString("name"),
+				ArtistId:     artist.Id,
+				ArtworkTitle: work.GetString("title"),
+				ArtworkId:    work.Id,
+			}),
+			Artist:   dto.Artist{Name: artist.GetString("name")},
+			HxTarget: hxTarget,
+		})
+	}
+
+	return related
 }

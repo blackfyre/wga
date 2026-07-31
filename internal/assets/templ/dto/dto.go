@@ -41,6 +41,12 @@ type Artwork struct {
 	Title           string
 	Comment         string
 	Technique       string
+	Year            string
+	Dimensions      string
+	ArtType         string
+	Location        string
+	BibTeX          string
+	RelatedWorks    ImageGrid
 	Jsonld          string
 	Url             string
 	HxTarget        string
