@@ -16,12 +16,24 @@ type Artist struct {
 }
 
 type ArtistsView struct {
-	Count      string
-	Artists    []Artist
-	Pagination string
-	Jsonld     string
-	QueryStr   string
-	HxTarget   string
+	Count              string
+	Artists            []Artist
+	Pagination         string
+	Jsonld             string
+	QueryStr           string
+	HxTarget           string
+	SchoolOptions      []ArtistFilterOption
+	PeriodOptions      []ArtistFilterOption
+	ProfessionOptions  []ArtistFilterOption
+	SelectedSchool     string
+	SelectedPeriod     string
+	SelectedProfession string
+	SelectedLetter     string
+}
+
+type ArtistFilterOption struct {
+	Value string
+	Label string
 }
 
 type Artwork struct {
@@ -51,11 +63,15 @@ type ArtworkSearchDTO struct {
 }
 
 type ArtworkSearchFilterValues struct {
+	Query         string
 	ArtFormString string
 	ArtTypeString string
 	SchoolString  string
 	Title         string
 	ArtistString  string
+	YearFrom      string
+	YearTo        string
+	View          string
 }
 
 type ArtworkSearchResultDTO struct {
@@ -67,6 +83,9 @@ type ArtworkSearchResultDTO struct {
 	HxTarget        string
 	DualModeUrls    map[string]string
 	DualModeTarget  string
+	View            string
+	GridUrl         string
+	ListUrl         string
 }
 
 type ArtworkSearchDualModeDto struct {

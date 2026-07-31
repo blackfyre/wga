@@ -61,7 +61,7 @@ run = [
 [tasks."app:run"]
 description = "Run the built server binary in development mode."
 dir = "dist"
-run = "./wga serve --dev"
+run = "./wga serve --dev --http 0.0.0.0:8090"
 
 [tasks."app:reset"]
 description = "Rebuild, reset local data, start Garage if needed, and restart the development server."

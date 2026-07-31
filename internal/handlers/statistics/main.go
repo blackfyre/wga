@@ -113,14 +113,44 @@ func summarizeArtFormRows(rows []repositories.ArtFormDistribution) []pages.Stati
 	return summary
 }
 
-func summarizeSchoolPeriodRows(rows []repositories.SchoolPeriodRow) []pages.StatisticsSchoolPeriodRow {
-	summary := make([]pages.StatisticsSchoolPeriodRow, len(rows))
-	for i, row := range rows {
-		summary[i] = pages.StatisticsSchoolPeriodRow{
-			Period: fmt.Sprintf("%d–%d", row.PeriodStart, row.PeriodStart+49),
-			School: row.School,
-			Count:  row.Count,
+func summarizeSchoolPeriodRows(rows []repositories.SchoolPeriodRow) []pages.StatisticsSchoolPeriodSummaryRow {
+	byPeriod := map[int]*pages.StatisticsSchoolPeriodSummaryRow{}
+	periods := []int{}
+
+	for _, row := range rows {
+		summary := byPeriod[row.PeriodStart]
+		if summary == nil {
+			summary = &pages.StatisticsSchoolPeriodSummaryRow{
+				Period: fmt.Sprintf("%d–%d", row.PeriodStart, row.PeriodStart+49),
+			}
+			byPeriod[row.PeriodStart] = summary
+			periods = append(periods, row.PeriodStart)
 		}
+
+		summary.Total += row.Count
+		switch row.School {
+		case "Italian":
+			summary.Italian += row.Count
+		case "French":
+			summary.French += row.Count
+		case "Dutch":
+			summary.Dutch += row.Count
+		case "Flemish":
+			summary.Flemish += row.Count
+		case "German":
+			summary.German += row.Count
+		case "English":
+			summary.English += row.Count
+		case "Spanish":
+			summary.Spanish += row.Count
+		default:
+			summary.Other += row.Count
+		}
+	}
+
+	summary := make([]pages.StatisticsSchoolPeriodSummaryRow, 0, len(periods))
+	for _, period := range periods {
+		summary = append(summary, *byPeriod[period])
 	}
 
 	return summary

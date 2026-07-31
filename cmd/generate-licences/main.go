@@ -513,7 +513,9 @@ func readLicenceMaterial(component component) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("fetch licence text for %s: %w", componentKey(component), err)
 		}
-		defer response.Body.Close()
+		defer func() {
+			_ = response.Body.Close()
+		}()
 		if response.StatusCode != http.StatusOK {
 			return "", fmt.Errorf("fetch licence text for %s: %s", componentKey(component), response.Status)
 		}

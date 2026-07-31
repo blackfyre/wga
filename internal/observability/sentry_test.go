@@ -154,7 +154,7 @@ func TestMonitorIntercept(t *testing.T) {
 				t.Fatalf("expected captured panic, got %v", recovered)
 			}
 		}()
-		monitor.intercept(func() error {
+		_ = monitor.intercept(func() error {
 			panic("panic value")
 		}, func() int { return 0 })
 	})

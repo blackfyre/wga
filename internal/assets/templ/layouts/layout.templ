@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/blackfyre/wga/internal/assets/templ/components"
 	"github.com/blackfyre/wga/internal/assets/templ/utils"
+	"github.com/blackfyre/wga/internal/buildinfo"
 	"github.com/blackfyre/wga/internal/observability"
 )
 
@@ -27,7 +28,7 @@ func getHtmxDefaultArea(target string) string {
 
 templ LayoutBase(bodyClasses string, HtmxTargetArea string) {
 	<!DOCTYPE html>
-	<html class="has-navbar-fixed-top" style="height: 100%;">
+	<html>
 		<head>
 			<meta charset="utf-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -65,20 +66,20 @@ templ LayoutBase(bodyClasses string, HtmxTargetArea string) {
 			<meta name="theme-color" content="#013365"/>
 		</head>
 		<body class={ bodyClasses } hx-indicator=".progress-indicator" hx-target={ getHtmxDefaultArea(HtmxTargetArea) } hx-select={ getHtmxDefaultArea(HtmxTargetArea) } hx-swap="outerHTML">
-			<div class="progress-indicator" style="height: 3px;">
-				<div class="indeterminate" style="background-color: #489393;"></div>
+			<div class="progress-indicator h-[3px] bg-primary">
+				<div class="indeterminate"></div>
 			</div>
 			{ children... }
-			<dialog id="d" class="modal modal-bottom sm:modal-middle"></dialog>
+			<dialog id="d" class="modal m-auto border border-base-content p-0 text-base-content backdrop:bg-base-content/30"></dialog>
 			<a
 				href="#"
 				hx-get="/feedback"
 				hx-on:click="wga.dialog.open()"
 				hx-target="#d"
 				hx-select=".modal-box, form[method=dialog].modal-backdrop"
-				class="btn btn-primary is-feedback no-animation"
+				class="fixed right-4 bottom-4 z-50 bg-neutral px-4.5 py-[13px] font-mono text-[11px] tracking-[1.5px] text-neutral-content transition-colors hover:bg-primary md:right-8 md:bottom-8"
 				hx-swap="innerHTML"
-			>Feedback</a>
+			>FEEDBACK</a>
 			<div class="toast" id="toast-container"></div>
 			<script type="module" src="/assets/js/app.js"></script>
 		</body>
@@ -86,36 +87,26 @@ templ LayoutBase(bodyClasses string, HtmxTargetArea string) {
 }
 
 templ LayoutMain() {
-	@LayoutBase("pt-20", "") {
-		@components.TopNav()
+	@LayoutBase("min-h-screen", "") {
 		if utils.GetEnvironment(ctx) != "production" {
-			<section class="container my-6 mx-auto">
-				<div role="alert" class="alert alert-warning">
-					<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-					<span>
-						This is a development version of the site. It is not intended for public use. You can give us a
-						helping
-						hand
-						at <a href="https://github.com/blackfyre/wga">GitHub</a>.
-					</span>
+			<section class="border-b border-base-content/15">
+				<div class="container mx-auto flex items-center gap-3 px-4 py-2 md:px-0">
+					<span class="bg-primary px-2 py-1 font-mono text-[9px] tracking-[1.5px] text-primary-content">BUILD</span>
+					<p class="font-mono text-[10px] tracking-[1px] text-base-content/60">{ utils.GetEnvironment(ctx) } · { buildinfo.Version }</p>
 				</div>
 			</section>
 		}
-		<main id="mc-area" class="">
+		@components.TopNav()
+		<main id="mc-area" class="wga-enter">
 			{ children... }
 		</main>
 		@components.Footer()
-		<div class="jump back-to-top">
-			<span class="icon is-medium">
-				<i class="fas fa-arrow-up fa-2x"></i>
-			</span>
-		</div>
 	}
 }
 
 templ LayoutSlim() {
-	@LayoutBase("pt-20", "") {
-		<main id="mc-area">
+	@LayoutBase("min-h-screen", "") {
+		<main id="mc-area" class="wga-enter">
 			{ children... }
 		</main>
 	}

@@ -10,8 +10,10 @@ import (
 
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
+	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/repositories"
 	"github.com/blackfyre/wga/internal/utils"
+	"github.com/blackfyre/wga/internal/utils/url"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 )
@@ -124,6 +126,47 @@ func getArtworkCount(app *pocketbase.PocketBase, repo *repositories.LandingRepos
 
 }
 
+func getFeaturedArtwork(app *pocketbase.PocketBase) (pages.HomeFeaturedArtwork, error) {
+	records, err := app.FindRecordsByFilter(
+		constants.CollectionArtworks,
+		"published = true",
+		"-created",
+		1,
+		0,
+		nil,
+	)
+	if err != nil || len(records) == 0 {
+		return pages.HomeFeaturedArtwork{}, err
+	}
+
+	artwork := records[0]
+	authorIDs := artwork.GetStringSlice("author")
+	if len(authorIDs) == 0 {
+		return pages.HomeFeaturedArtwork{}, nil
+	}
+
+	artist, err := app.FindRecordById(constants.CollectionArtists, authorIDs[0])
+	if err != nil {
+		return pages.HomeFeaturedArtwork{}, err
+	}
+
+	featured := pages.HomeFeaturedArtwork{
+		Title:  artwork.GetString("title"),
+		Artist: artist.GetString("name"),
+		URL: url.GenerateFullArtworkUrl(url.ArtworkUrlDTO{
+			ArtistId:     artist.Id,
+			ArtistName:   artist.GetString("name"),
+			ArtworkId:    artwork.Id,
+			ArtworkTitle: artwork.GetString("title"),
+		}),
+	}
+	if imageName := artwork.GetString("image"); imageName != "" {
+		featured.Image = url.GenerateFileUrl(constants.CollectionArtworks, artwork.Id, imageName, "")
+	}
+
+	return featured, nil
+}
+
 func RegisterHandlers(app *pocketbase.PocketBase) {
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		// This is safe to be used by multiple goroutines
@@ -155,10 +198,17 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 				return utils.ServerFaultError(c)
 			}
 
+			featuredArtwork, err := getFeaturedArtwork(app)
+			if err != nil {
+				app.Logger().Error("Error getting featured artwork for home page", "error", err)
+				return utils.ServerFaultError(c)
+			}
+
 			content := pages.HomePage{
-				Content:      welcomeText,
-				ArtistCount:  artistCount,
-				ArtworkCount: artworkCount,
+				Content:         welcomeText,
+				ArtistCount:     artistCount,
+				ArtworkCount:    artworkCount,
+				FeaturedArtwork: featuredArtwork,
 			}
 
 			ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, "Web Gallery of Art | Explore artists and artworks")

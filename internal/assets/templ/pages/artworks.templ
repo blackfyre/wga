@@ -1,6 +1,7 @@
 package pages
 
 import (
+	"fmt"
 	"github.com/blackfyre/wga/internal/assets/templ/components"
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/assets/templ/layouts"
@@ -15,6 +16,7 @@ templ ArtworkSearchPage(s dto.ArtworkSearchDTO) {
 
 templ ArtworkSeachFilterBlock(b dto.ArtworkSearchDTO) {
 	<form
+		id="artwork-filters"
 		action="/artworks/results"
 		hx-get="/artworks/results"
 		hx-disabled-elt="button"
@@ -22,8 +24,10 @@ templ ArtworkSeachFilterBlock(b dto.ArtworkSearchDTO) {
 		hx-select={ b.HxTarget }
 		hx-swap="outerHTML"
 		hx-indicator="#artwork-search-indicator"
+		hx-sync="this:replace"
 		method="GET"
-		class="flex flex-col gap-4 rounded-box border border-base-300 bg-base-100 p-4 shadow-sm"
+		hx-trigger="change, input changed delay:300ms from:find input[type=search]"
+		class="w-full"
 	>
 		if b.DualModeContext != nil {
 			<input type="hidden" name="dual_left" value={ b.DualModeContext.LeftPath }/>
@@ -32,85 +36,64 @@ templ ArtworkSeachFilterBlock(b dto.ArtworkSearchDTO) {
 			<input type="hidden" name="dual_right_render_to" value={ b.DualModeContext.RightRenderTo }/>
 			<input type="hidden" name="dual_target" value={ b.DualModeContext.Target }/>
 		}
-		<div class="space-y-1">
-			<h2 class="text-lg font-semibold">Search the collection</h2>
-			<p class="text-sm text-base-content/70">Combine keywords and dropdown filters, then run a search when you are ready.</p>
+		<div class="flex items-baseline justify-between border-b border-base-content pb-3">
+			<p class="font-mono text-[11px] tracking-[1.5px]">FILTERS</p>
+			if b.DualModeContext != nil {
+				<a class="font-mono text-[10px] tracking-[1px] text-primary transition-opacity hover:opacity-60" href={ b.ClearUrl } hx-get={ b.ClearUrl } hx-target="#mc-area" hx-select="#mc-area" hx-swap="outerHTML">RESET</a>
+			} else {
+				<a class="font-mono text-[10px] tracking-[1px] text-primary transition-opacity hover:opacity-60" href={ b.ClearUrl }>RESET</a>
+			}
 		</div>
-		<label class="form-control w-full">
-			Author
+		<label class="block border-b border-base-content/15 py-5">
+			<span class="mb-2.5 block font-mono text-[10px] tracking-[1.5px] text-base-content/60">TITLE OR ARTIST</span>
 			<input
-				class="input input-bordered w-full"
+				class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2 text-sm outline-none focus:ring-0"
 				type="search"
-				list="artist_list"
-				id="artist_name"
-				autocomplete="artist_name"
-				name="artist"
-				value={ b.ActiveFilterValues.ArtistString }
-			/>
-			<datalist id="artist_list">
-				for _, v := range b.ArtistNameList {
-					<option value={ v }></option>
-				}
-			</datalist>
-		</label>
-		<label class="form-control w-full">
-			Title
-			<input
-				class="input input-bordered w-full"
-				type="search"
-				name="title"
-				id="title"
-				autocomplete="title"
-				value={ b.ActiveFilterValues.Title }
+				id="artwork-query"
+				name="q"
+				placeholder="e.g. milkmaid"
+				value={ b.ActiveFilterValues.Query }
 			/>
 		</label>
-		<label class="form-control w-full">
-			School
-			<select name="art_school" id="art_school_select" title="Art school" class="select select-bordered">
-				for k, v := range b.ArtSchoolOptions {
-					<option
-						value={ k }
-						if b.ActiveFilterValues.SchoolString == k {
-							selected
-						}
-					>{ v }</option>
-				}
-			</select>
-		</label>
-		<label class="form-control w-full">
-			Form
-			<select name="art_form" id="art_form_select" title="Art form" class="select select-bordered">
-				for k, v := range b.ArtFormOptions {
-					<option
-						value={ k }
-						if b.ActiveFilterValues.ArtFormString == k {
-							selected
-						}
-					>{ v }</option>
-				}
-			</select>
-		</label>
-		<label class="form-control w-full ">
-			Type
-			<select name="art_type" id="art_type_select" title="Art types" class="select select-bordered">
-				for k, v := range b.ArtTypeOptions {
-					<option
-						value={ k }
-						if b.ActiveFilterValues.ArtTypeString == k {
-							selected
-						}
-					>{ v }</option>
-				}
-			</select>
-		</label>
-		<div class="flex flex-wrap gap-2 pt-2">
-			<button type="submit" class="btn btn-primary">Search</button>
-			<a class="btn btn-ghost" href={ b.ClearUrl } hx-get={ b.ClearUrl } hx-target="#mc-area" hx-select="#mc-area" hx-swap="outerHTML">Clear</a>
-		</div>
+		@ArtworkFilterChips("art_school", "SCHOOL", b.ActiveFilterValues.SchoolString, b.ArtSchoolOptions)
+		@ArtworkFilterChips("art_form", "FORM", b.ActiveFilterValues.ArtFormString, b.ArtFormOptions)
+		@ArtworkFilterChips("art_type", "TYPE", b.ActiveFilterValues.ArtTypeString, b.ArtTypeOptions)
+		<fieldset class="py-5">
+			<div class="mb-4 flex items-baseline justify-between">
+				<legend class="font-mono text-[10px] tracking-[1.5px] text-base-content/60">YEAR RANGE</legend>
+				<output class="font-mono text-xs" for="year_from year_to">{ b.ActiveFilterValues.YearFrom }–{ b.ActiveFilterValues.YearTo }</output>
+			</div>
+			<div class="grid grid-cols-2 gap-3">
+				<input class="w-full accent-primary" type="range" id="year_from" name="year_from" min="1500" max="2020" value={ b.ActiveFilterValues.YearFrom } aria-label="Earliest year"/>
+				<input class="w-full accent-primary" type="range" id="year_to" name="year_to" min="1500" max="2020" value={ b.ActiveFilterValues.YearTo } aria-label="Latest year"/>
+			</div>
+			<div class="mt-2 flex justify-between font-mono text-[10px] text-base-content/50"><span>1500</span><span>2020</span></div>
+		</fieldset>
+		<noscript><button type="submit" class="w-full bg-primary px-4 py-3 font-mono text-[11px] tracking-[1px] text-primary-content">APPLY FILTERS</button></noscript>
 		<div id="artwork-search-indicator" class="htmx-indicator rounded-box border border-base-300 bg-base-200/70 p-3 text-sm text-base-content/80">
 			Searching the collection...
 		</div>
 	</form>
+}
+
+templ ArtworkFilterChips(name string, label string, selected string, options map[string]string) {
+	<fieldset class="border-b border-base-content/15 py-5">
+		<legend class="mb-3 font-mono text-[10px] tracking-[1.5px] text-base-content/60">{ label }</legend>
+		<div class="flex flex-wrap gap-1.5">
+			<label class="cursor-pointer border border-base-content/25 px-3 py-1.5 font-mono text-[11px] tracking-[1px] text-base-content/70 hover:border-base-content has-checked:border-primary has-checked:bg-primary has-checked:text-primary-content">
+				<input class="sr-only" type="radio" name={ name } value="" checked?={ selected == "" }/>
+				ALL
+			</label>
+			for value, option := range options {
+				if value != "" {
+					<label class="cursor-pointer border border-base-content/25 px-3 py-1.5 font-mono text-[11px] tracking-[1px] text-base-content/70 hover:border-base-content has-checked:border-primary has-checked:bg-primary has-checked:text-primary-content">
+						<input class="sr-only" type="radio" name={ name } value={ value } checked?={ selected == value }/>
+						{ option }
+					</label>
+				}
+			}
+		</div>
+	</fieldset>
 }
 
 templ searchIndicator() {
@@ -141,30 +124,42 @@ templ loadIndicator() {
 
 templ ArtworkSearchResults(r dto.ArtworkSearchResultDTO) {
 	<div id="artwork-search-results">
-		if len(r.ResultSummary) > 0 {
-			<div class="mb-4 rounded-box border border-base-300 bg-base-100 px-4 py-3 text-sm text-base-content/80" aria-live="polite">
-				{ r.ResultSummary }
+		<div class="flex flex-wrap items-baseline justify-between gap-3 border-b border-base-content pb-4">
+			<p class="font-mono text-xs text-base-content/60" aria-live="polite">
+				{ fmt.Sprintf("%d WORKS MATCH", r.ResultCount) }
+			</p>
+			<div class="flex items-center gap-2">
+				<a href={ templ.SafeURL(r.GridUrl) } hx-get={ r.GridUrl } hx-target="#artwork-search-results" hx-select="#artwork-search-results" hx-swap="outerHTML" class={ "border px-3.5 py-1.5 font-mono text-[11px] tracking-[1px] transition-colors", templ.KV("border-primary bg-primary text-primary-content", r.View == "grid"), templ.KV("border-base-content/25 text-base-content/70 hover:border-base-content", r.View != "grid") } aria-pressed={ fmt.Sprint(r.View == "grid") }>GRID</a>
+				<a href={ templ.SafeURL(r.ListUrl) } hx-get={ r.ListUrl } hx-target="#artwork-search-results" hx-select="#artwork-search-results" hx-swap="outerHTML" class={ "border px-3.5 py-1.5 font-mono text-[11px] tracking-[1px] transition-colors", templ.KV("border-primary bg-primary text-primary-content", r.View == "list"), templ.KV("border-base-content/25 text-base-content/70 hover:border-base-content", r.View != "list") } aria-pressed={ fmt.Sprint(r.View == "list") }>LIST</a>
 			</div>
-		}
+		</div>
 		if len(r.Artworks) > 0 {
 			if r.DualModeTarget != "" {
 				@ArtworkSearchDualModeResultGrid(r.Artworks, r.DualModeUrls, r.DualModeTarget)
+			} else if r.View == "list" {
+				@ArtworkSearchResultList(r.Artworks)
 			} else {
-				@components.ImageGridComponent(r.Artworks, true)
+				<div class="mt-7 grid grid-cols-2 gap-x-4 gap-y-9 md:grid-cols-3 md:gap-x-7" data-view="grid">
+					for _, artwork := range r.Artworks {
+						<a href={ templ.SafeURL(artwork.Url) } hx-get={ artwork.Url } class="block transition-opacity hover:opacity-70">
+							<figure class="mb-2.5 aspect-[4/5] border border-base-content/15 bg-base-300 p-2.5">
+								<img src={ artwork.Thumb } alt={ artwork.Title } class="h-full w-full object-cover"/>
+							</figure>
+							<p class="text-sm font-semibold leading-tight">{ artwork.Title }</p>
+							<p class="mt-[3px] font-mono text-[11px] leading-relaxed text-base-content/60">{ artwork.Artist.Name }<br/>{ artwork.Technique }</p>
+						</a>
+					}
+				</div>
 			}
 		} else if !r.ActiveFiltering {
-			<div role="alert" class="alert alert-info">
-				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 rotate-90 md:rotate-0">
-					<path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"></path>
-				</svg>
-				<span>Combine filters, then press Search to browse matching artworks in the collection.</span>
+			<div class="border-t border-base-content py-5" role="status">
+				<p class="font-mono text-[11px] tracking-[1px] text-base-content/60">SET FILTERS TO BROWSE THE COLLECTION</p>
+				<p class="mt-2 text-sm leading-relaxed text-base-content/70">Combine title, school, form, type, and period filters, then run a search.</p>
 			</div>
 		} else {
-			<div role="alert" class="alert alert-warning">
-				<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-				<span>
-					No artworks matched the current filters. Try clearing one or two conditions and search again.
-				</span>
+			<div class="border-t border-base-content py-5" role="status">
+				<p class="font-mono text-[11px] tracking-[1px] text-base-content/60">NO MATCHING WORKS</p>
+				<p class="mt-2 text-sm leading-relaxed text-base-content/70">Try clearing one or two filters, or widen the period range.</p>
 			</div>
 		}
 		if len(r.Pagination) > 10 {
@@ -173,6 +168,20 @@ templ ArtworkSearchResults(r dto.ArtworkSearchResultDTO) {
 			</nav>
 		}
 	</div>
+}
+
+templ ArtworkSearchResultList(artworks dto.ImageGrid) {
+	<ul data-view="list">
+		for _, artwork := range artworks {
+			<li>
+				<a href={ templ.SafeURL(artwork.Url) } hx-get={ artwork.Url } class="flex items-center gap-4 border-b border-base-content/15 py-3.5 transition-colors hover:bg-primary/5">
+					<img src={ artwork.Thumb } alt={ artwork.Title } class="h-[54px] w-11 shrink-0 border border-base-content/15 bg-base-300 object-cover"/>
+					<span class="min-w-0 flex-1"><span class="block text-[15px] font-semibold leading-tight">{ artwork.Title }</span><span class="mt-[3px] block font-mono text-[11px] text-base-content/60">{ artwork.Artist.Name }</span></span>
+					<span class="hidden shrink-0 font-mono text-[11px] text-base-content/70 md:block">{ artwork.Technique }</span>
+				</a>
+			</li>
+		}
+	</ul>
 }
 
 templ ArtworkSearchDualModeResultGrid(artworks dto.ImageGrid, dualModeUrls map[string]string, target string) {
@@ -193,10 +202,12 @@ templ ArtworkSearchDualModeResultGrid(artworks dto.ImageGrid, dualModeUrls map[s
 }
 
 templ ArtworkSearchBlock(s dto.ArtworkSearchDTO) {
-	<section class="section px-4">
-		<h1 class="text-2xl font-bold mb-4">Artwork search</h1>
-		<div class="flex flex-col md:flex-row gap-4">
-			<div class="w-full md:w-1/4 lg:w-1/5">
+	<section id="artwork-search" class="container mx-auto px-4 pb-20 pt-10 md:px-0 wga-enter">
+		<p class="mb-3 font-mono text-[11px] tracking-[2px] text-base-content/60">12 — ARTWORK SEARCH</p>
+		<h1 class="mb-3 text-[44px] font-semibold leading-tight tracking-[-0.5px]">Artworks</h1>
+		<p class="mb-11 max-w-[540px] text-base leading-relaxed text-base-content/70">Filter by title, school, form and type — or narrow by period when you are working through a century rather than a name.</p>
+		<div class="flex flex-col items-start gap-10 md:flex-row md:gap-14">
+			<div class="w-full shrink-0 md:w-[250px]">
 				@ArtworkSeachFilterBlock(s)
 			</div>
 			<div class="w-full min-h-48" id="search-result-container">

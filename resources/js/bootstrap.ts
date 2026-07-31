@@ -55,6 +55,10 @@ type wgaWindow = {
 	glossary: {
 		closeAll: () => void;
 	};
+	feedback: {
+		countdown: (field: HTMLTextAreaElement) => void;
+		setPlaceholder: (field: HTMLInputElement) => void;
+	};
 };
 
 type wgaInternals = {
@@ -176,6 +180,64 @@ const initThemeToggle = () => {
 			window.localStorage.setItem("wga-theme", theme);
 		} catch {}
 	});
+};
+
+const syncMobileNavigation = () => {
+	const currentPath = window.location.pathname;
+	for (const link of document.querySelectorAll<HTMLAnchorElement>(
+		"[data-mobile-navigation] a",
+	)) {
+		const active =
+			link.pathname === currentPath ||
+			(link.pathname !== "/" && currentPath.startsWith(`${link.pathname}/`));
+		link.classList.toggle("bg-primary", active);
+		link.classList.toggle("text-primary-content", active);
+		link.classList.toggle("pl-3", active);
+		if (active) {
+			link.setAttribute("aria-current", "page");
+		} else {
+			link.removeAttribute("aria-current");
+		}
+	}
+};
+
+const feedbackCountdown = (field: HTMLTextAreaElement) => {
+	const output = document.getElementById("feedback-chars");
+	if (!output) {
+		return;
+	}
+
+	const max = Number(field.getAttribute("maxlength"));
+	const remaining = Math.max(0, max - field.value.length);
+	output.textContent = String(remaining);
+};
+
+const feedbackSetPlaceholder = (field: HTMLInputElement) => {
+	if (!field.checked) {
+		return;
+	}
+
+	const message = document.getElementById("feedback-message");
+	if (message instanceof HTMLTextAreaElement) {
+		const placeholder = field.getAttribute("data-placeholder");
+		if (placeholder) {
+			message.placeholder = placeholder;
+		}
+	}
+
+	for (const choice of document.querySelectorAll<HTMLInputElement>(
+		"input[name='category']",
+	)) {
+		const label = choice.closest("label");
+		if (!label) {
+			continue;
+		}
+
+		label.classList.toggle("bg-primary", choice.checked);
+		label.classList.toggle("border-primary", choice.checked);
+		label.classList.toggle("text-primary-content", choice.checked);
+		label.classList.toggle("border-base-content/25", !choice.checked);
+	}
 };
 
 const deepMerge = (target: object, source: object): object => {
@@ -661,7 +723,7 @@ const wgaInternal: wgaInternals = {
 						for (const el of removeMe) {
 							const removeMe = () => {
 								// Find the closest .field element
-								const field = el.closest("label.input");
+							const field = el.closest("label");
 
 								// Remove the field
 								field?.remove();
@@ -780,6 +842,7 @@ const wgaInternal: wgaInternals = {
 			logger.debug("WGA Internal Functions Initialized");
 			// Run all internal functions
 			logger.debug("Setting up HTMX and elements");
+			htmx.process(document.body);
 			wgaInternal.setup.htmx();
 			wgaInternal.setup.elements();
 			wgaInternal.func.glossary();
@@ -884,6 +947,8 @@ const wgaInternal: wgaInternals = {
 	logger.debug("Initializing WGA");
 	initCookieConsent();
 	initThemeToggle();
+	syncMobileNavigation();
+	document.addEventListener("htmx:afterSettle", syncMobileNavigation);
 	wgaInternal.func.init();
 })();
 
@@ -967,6 +1032,14 @@ window.wga = {
 	glossary: {
 		closeAll() {
 			glossaryClosePopup();
+		},
+	},
+	feedback: {
+		countdown(field: HTMLTextAreaElement) {
+			feedbackCountdown(field);
+		},
+		setPlaceholder(field: HTMLInputElement) {
+			feedbackSetPlaceholder(field);
 		},
 	},
 	music: {

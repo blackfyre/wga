@@ -5,76 +5,172 @@ test.setTimeout(60000);
 
 async function expectArtworkResults(page) {
   await expect(
-    page.locator("#search-result-container .card").first(),
+    page.locator("#artwork-search-results [data-view='grid']"),
   ).toBeVisible({
     timeout: 30000,
   });
 }
 
+const artworkSearchForm = (page) => page.locator("#artwork-filters");
+
+async function chooseFilter(page, name, value) {
+  const response = page.waitForResponse(
+    (response) =>
+      response.url().includes("/artworks/results") &&
+      new URL(response.url()).searchParams.get(name) === value,
+  );
+  await page
+    .locator(`[name='${name}'][value='${value}']`)
+    .locator("..")
+    .click();
+  await response;
+  await expect(page).toHaveURL((url) => url.searchParams.get(name) === value);
+  await expectArtworkResults(page);
+}
+
+test("active filter chip follows the selected radio", async ({ page }) => {
+  await page.goto("/artworks");
+  const all = page.locator("[name='art_school'][value='']");
+  const school = page.locator("[name='art_school'][value='bohemian']");
+
+  await expect(all).toBeChecked();
+  await school.check({ force: true });
+
+  await expect(school).toBeChecked();
+  await expect(all).not.toBeChecked();
+  await expect(school.locator("..")).toHaveCSS(
+    "background-color",
+    "rgb(0, 51, 102)",
+  );
+});
+
 test("artwork search", async ({ page }) => {
   await page.goto("/artworks");
-  await expect(page.locator("h1")).toHaveText(/Artwork search/);
-  await page.locator("[name='title']").fill("Synthetic Artwork 01-01");
-  await page.getByRole("button", { name: "Search" }).click();
+  await expect(page.locator("h1")).toHaveText("Artworks");
+  await artworkSearchForm(page)
+    .getByRole("searchbox")
+    .fill("Synthetic Artwork 01-01");
   await expectArtworkResults(page);
   await expect(page.locator("#search-result-container")).toContainText(
-    "1 artwork found.",
+    "1 WORKS MATCH",
   );
 });
 
 test("artform search", async ({ page }) => {
   await page.goto("/artworks");
-  await page.locator("[name='art_form']").selectOption("architecture");
-  await page.getByRole("button", { name: "Search" }).click();
-  await expectArtworkResults(page);
+  await chooseFilter(page, "art_form", "architecture");
 });
 
 test("art type search", async ({ page }) => {
   await page.goto("/artworks");
-  await page.locator("[name='art_type']").selectOption("synthetic-test-type");
-  await page.getByRole("button", { name: "Search" }).click();
-  await expectArtworkResults(page);
+  await chooseFilter(page, "art_type", "synthetic-test-type");
 });
 
 test("art school search", async ({ page }) => {
   await page.goto("/artworks");
-  await page.locator("[name='art_school']").selectOption("bohemian");
-  await page.getByRole("button", { name: "Search" }).click();
-  await expectArtworkResults(page);
+  await chooseFilter(page, "art_school", "bohemian");
 });
 
 test("art type and school combined search", async ({ page }) => {
   await page.goto("/artworks");
-  await page.locator("[name='art_type']").selectOption("synthetic-test-type");
-  await page.locator("[name='art_school']").selectOption("bohemian");
-  await page.getByRole("button", { name: "Search" }).click();
-  await expectArtworkResults(page);
-});
-
-test("title search", async ({ page }) => {
-  await page.goto("http://localhost:8090/artworks");
-  await page.locator("[name='title']").fill("Synthetic Artwork 01-01");
-  await page.getByRole("button", { name: "Search" }).click();
-  await expectArtworkResults(page);
+  await chooseFilter(page, "art_type", "synthetic-test-type");
+  await chooseFilter(page, "art_school", "bohemian");
 });
 
 test("artist name search", async ({ page }) => {
-  await page.goto("http://localhost:8090/artworks");
-  await page.locator("[name='artist']").fill("Synthetic Artist 01");
-  await page.getByRole("button", { name: "Search" }).click();
+  await page.goto("/artworks");
+  await artworkSearchForm(page)
+    .getByRole("searchbox")
+    .fill("Synthetic Artist 01");
   await expectArtworkResults(page);
 });
 
-test("clear resets the artwork search form", async ({ page }) => {
-  await page.goto("http://localhost:8090/artworks");
-  await page.locator("[name='title']").fill("Synthetic Artwork 01-01");
-  await page.locator("[name='art_school']").selectOption("bohemian");
-  await page.getByRole("link", { name: "Clear" }).click();
+test("artwork date range search", async ({ page }) => {
+  await page.goto("/artworks");
+  await page.locator("[name='year_from']").fill("1911");
+  await page.locator("[name='year_to']").fill("1911");
+  await expectArtworkResults(page);
+  await expect(page.locator("#search-result-container")).toContainText(
+    "2 WORKS MATCH",
+  );
+});
+
+test("reset clears the artwork search form", async ({ page }) => {
+  await page.goto("/artworks");
+  const form = artworkSearchForm(page);
+  await form.getByRole("searchbox").fill("Synthetic Artwork 01-01");
+  await expectArtworkResults(page);
+  await page.getByRole("link", { name: "RESET" }).click();
 
   await expect(page).toHaveURL(/\/artworks$/);
-  await expect(page.locator("[name='title']").first()).toHaveValue("");
-  await expect(page.locator("[name='art_school']").first()).toHaveValue("");
+  await expect(page.locator("[name='q']")).toHaveValue("");
+  await expect(page.locator("[name='art_school'][value='']")).toBeChecked();
+  await expect(page.locator("[name='year_from']")).toHaveValue("1500");
   await expect(page.locator("#search-result-container")).toContainText(
-    /combine filters, then press search/i,
+    /works match/i,
   );
+});
+
+test("artwork search preserves the date range and list view when paging", async ({
+  page,
+}) => {
+  await page.goto("/artworks");
+  await page.locator("[name='year_from']").fill("1902");
+  await expect(page.getByRole("link", { name: "LIST" })).toHaveAttribute(
+    "href",
+    /year_from=1902/,
+  );
+  const rangeResponse = page.waitForResponse(
+    (response) =>
+      response.url().includes("/artworks/results") &&
+      response.url().includes("year_from=1902") &&
+      response.url().includes("year_to=1911"),
+  );
+  await page.locator("[name='year_to']").fill("1911");
+  await rangeResponse;
+  await page.waitForFunction(() => {
+    const listLink = [
+      ...document.querySelectorAll<HTMLAnchorElement>(
+        "#artwork-search-results a",
+      ),
+    ].find((link) => link.textContent === "LIST");
+    if (!listLink) {
+      return false;
+    }
+
+    const url = new URL(listLink.href);
+    return (
+      url.searchParams.get("year_from") === "1902" &&
+      url.searchParams.get("year_to") === "1911"
+    );
+  });
+  await expect(page.getByRole("link", { name: "LIST" })).toHaveAttribute(
+    "href",
+    /year_from=1902.*year_to=1911/,
+  );
+  await page.getByRole("link", { name: "LIST" }).click();
+
+  await expect(page.locator("[data-view='list']")).toBeVisible();
+  await page.getByRole("link", { name: "Next Page" }).click();
+  await expect(page).toHaveURL(/year_from=1902/);
+  await expect(page).toHaveURL(/year_to=1911/);
+  await expect(page).toHaveURL(/view=list/);
+  await expect(page).toHaveURL(/page=2/);
+  await expect(page.locator("[data-view='list']")).toBeVisible();
+});
+
+test("artwork search form works without JavaScript", async ({ browser }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  const page = await context.newPage();
+
+  await page.goto("/artworks");
+  const form = artworkSearchForm(page);
+  await form.getByRole("searchbox").fill("Synthetic Artwork 01-01");
+  await form.getByRole("button", { name: "APPLY FILTERS" }).click();
+
+  await expect(page).toHaveURL(
+    /\/artworks\/results\?.*q=Synthetic\+Artwork\+01-01/,
+  );
+  await expectArtworkResults(page);
+  await context.close();
 });

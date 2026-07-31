@@ -137,18 +137,6 @@ func EntriesHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	return c.HTML(http.StatusOK, buff.String())
 }
 
-func StoreEntryViewHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error {
-
-	var buff bytes.Buffer
-	err := pages.GuestbookEntryForm().Render(context.Background(), &buff)
-
-	if err != nil {
-		return utils.ServerFaultError(c)
-	}
-
-	return c.HTML(http.StatusOK, buff.String())
-}
-
 func StoreEntryHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 	inputStruct := GuestBookMessage{}
@@ -200,7 +188,7 @@ func StoreEntryHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 		return c.HTML(http.StatusOK, buff.String())
 	}
 
-	utils.SendToastMessage("Message added successfully", "success", true, c, "guestbook-updated")
+	utils.SendToastMessage("Message added successfully", "success", false, c, "guestbook-updated")
 
 	c.Response.Header().Set("HX-Push-Url", "/guestbook")
 
@@ -216,10 +204,6 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 		ag.GET("", func(c *core.RequestEvent) error {
 			return EntriesHandler(app, c)
 		})
-
-		ag.GET("/add", func(c *core.RequestEvent) error {
-			return StoreEntryViewHandler(app, c)
-		}).BindFunc(utils.IsHtmxRequestMiddleware)
 
 		ag.POST("/add", func(c *core.RequestEvent) error {
 			return StoreEntryHandler(app, c)

@@ -9,6 +9,13 @@ type StaticPageDTO struct {
 	Title   string
 	Content string
 	Url     string
+	TOC     []StaticPageTOCItem
+}
+
+type StaticPageTOCItem struct {
+	ID    string
+	Title string
+	Level int
 }
 
 templ StaticPage(sp StaticPageDTO) {
@@ -21,34 +28,34 @@ templ StaticPage(sp StaticPageDTO) {
 }
 
 templ StaticPageBlock(sp StaticPageDTO) {
-	<div class="container mx-auto">
-		<nav class="flex mb-6" aria-label="Breadcrumb">
-			<ol role="list" class="flex items-center space-x-4">
-				<li>
-					<div>
-						<a href="/" hx-get="/" class="text-base-content/60 hover:text-base-content/80">
-							<svg class="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-								<path fill-rule="evenodd" d="M9.293 2.293a1 1 0 011.414 0l7 7A1 1 0 0117 11h-1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-3a1 1 0 00-1-1H9a1 1 0 00-1 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-6H3a1 1 0 01-.707-1.707l7-7z" clip-rule="evenodd"></path>
-							</svg>
-							<span class="sr-only">Home</span>
-						</a>
-					</div>
-				</li>
-				<li>
-					<div class="flex items-center">
-						<svg class="h-5 w-5 flex-shrink-0 text-base-content/60" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-							<path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"></path>
-						</svg>
-						<a href={ templ.URL(sp.Url) } hx-get={ sp.Url } class="ml-4 text-sm font-medium text-base-content/70 hover:text-base-content" aria-current="page">{ sp.Title }</a>
-					</div>
-				</li>
-			</ol>
-		</nav>
-	</div>
-	<article class="container prose">
-		<h1>
-			{ sp.Title }
-		</h1>
-		@templ.Raw(sp.Content)
-	</article>
+	<section class="container mx-auto px-4 pb-20 pt-10 md:px-0">
+		if sp.Title == "About" {
+			<p class="mb-3 font-mono text-[11px] tracking-[2px] text-base-content/60">14 — ABOUT THE COLLECTION</p>
+			<h1 class="mb-3 text-[44px] font-semibold tracking-[-0.5px]">{ sp.Title }</h1>
+			<p class="mb-12 max-w-[560px] text-[17px] leading-relaxed text-base-content/70">What this archive contains, how it is organised, and the terms under which it may be used.</p>
+		} else if sp.Url == "/pages/privacy-policy" {
+			<p class="mb-3 font-mono text-[11px] tracking-[2px] text-base-content/60">06 — GENERAL CONTENT</p>
+			<h1 class="text-[44px] font-semibold tracking-[-0.5px]">{ sp.Title }</h1>
+		} else {
+			<p class="mb-3 font-mono text-[11px] tracking-[2px] text-base-content/60">PUBLIC INFORMATION</p>
+			<h1 class="text-[44px] font-semibold tracking-[-0.5px]">{ sp.Title }</h1>
+		}
+		<div class={ "flex flex-col gap-10 md:flex-row md:gap-16", templ.KV("mt-10", sp.Title != "About") }>
+			if len(sp.TOC) > 0 {
+				<nav class="w-full shrink-0 md:w-52" aria-label="Contents">
+					<p class="mb-3 font-mono text-[10px] tracking-[1.5px] text-base-content/60">CONTENTS</p>
+					<ol class="border-t border-base-content/15">
+						for _, item := range sp.TOC {
+							<li class={ "border-b border-base-content/15", templ.KV("pl-4", item.Level == 3) }>
+								<a class="block py-2.5 font-mono text-xs text-base-content/70 hover:text-primary" href={ templ.URL("#" + item.ID) }>{ item.Title }</a>
+							</li>
+						}
+					</ol>
+				</nav>
+			}
+			<article class="content max-w-[680px] flex-1 leading-[1.7]">
+				@templ.Raw(sp.Content)
+			</article>
+		</div>
+	</section>
 }

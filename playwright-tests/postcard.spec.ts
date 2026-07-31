@@ -57,6 +57,12 @@ test("send postcard", async ({ page, request }) => {
 	await expect(page.locator("#d")).toBeVisible();
 
 	await expect(page.locator("#d")).toHaveText(/Write a postcard/);
+	const recipients = page.locator("[name='recipients[]']");
+	await expect(recipients).toHaveCount(1);
+	await page.getByRole("button", { name: "ADD RECIPIENT +" }).click();
+	await expect(recipients).toHaveCount(2);
+	await page.getByRole("button", { name: "REMOVE" }).last().click();
+	await expect(recipients).toHaveCount(1);
 
 	await page.locator("[name='sender_name']").fill("Playwright Tester");
 	await page

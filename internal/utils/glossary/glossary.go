@@ -18,6 +18,11 @@ import (
 
 var sanitizer = glossarySanitizer()
 
+// SanitizeDefinition returns glossary definition markup safe for server rendering.
+func SanitizeDefinition(definition string) string {
+	return sanitizer.Sanitize(definition)
+}
+
 func glossarySanitizer() *bluemonday.Policy {
 	policy := bluemonday.NewPolicy()
 	policy.AllowElements("a", "b", "blockquote", "br", "em", "i", "li", "ol", "p", "strong", "sub", "sup", "u", "ul")
@@ -72,7 +77,7 @@ func GetGlossaryEntries(app *pocketbase.PocketBase) ([]GlossaryEntry, error) {
 		entries = append(entries, GlossaryEntry{
 			Expression: expr,
 			MatchTerm:  matchTerm,
-			Definition: sanitizer.Sanitize(r.GetString("definition")),
+			Definition: SanitizeDefinition(r.GetString("definition")),
 		})
 	}
 
@@ -241,7 +246,7 @@ func glossaryDefinitionTemplate(definition string) *html.Node {
 	}
 
 	definitionNodes, err := html.ParseFragment(
-		strings.NewReader(sanitizer.Sanitize(definition)),
+		strings.NewReader(SanitizeDefinition(definition)),
 		&html.Node{Type: html.ElementNode, DataAtom: atom.Div, Data: "div"},
 	)
 	if err != nil {

@@ -59,10 +59,17 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 				return utils.NotFoundError(c)
 			}
 
+			contentHTML, toc, err := withTableOfContents(page.GetString("content"))
+			if err != nil {
+				app.Logger().Error("Error generating static page table of contents", "page", slug, "error", err)
+				return utils.ServerFaultError(c)
+			}
+
 			content := pages.StaticPageDTO{
 				Title:   page.GetString("title"),
-				Content: page.GetString("content"),
+				Content: contentHTML,
 				Url:     "/pages/" + page.GetString("slug"),
+				TOC:     toc,
 			}
 
 			ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, page.GetString("title"))

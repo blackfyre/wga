@@ -54,8 +54,11 @@ func TestBuildArtworkSearchPathPreservesDualModeContext(t *testing.T) {
 	}
 
 	searchURL, err := url.Parse(buildArtworkSearchPath("/artworks/results", &filters{
-		Title: "A Couple",
-		Page:  "2",
+		Title:    "A Couple",
+		YearFrom: "1902",
+		YearTo:   "1911",
+		View:     "list",
+		Page:     "2",
 	}, dualModeContext))
 	if err != nil {
 		t.Fatalf("expected valid search URL: %v", err)
@@ -67,6 +70,9 @@ func TestBuildArtworkSearchPathPreservesDualModeContext(t *testing.T) {
 
 	for key, want := range map[string]string{
 		"title":                "A Couple",
+		"year_from":            "1902",
+		"year_to":              "1911",
+		"view":                 "list",
 		"page":                 "2",
 		"dual_left":            dualModeContext.LeftPath,
 		"dual_right":           dualModeContext.RightPath,

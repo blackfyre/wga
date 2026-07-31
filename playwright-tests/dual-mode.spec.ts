@@ -33,6 +33,9 @@ const expectDualModeState = async (
 const paneTargetControls = (page, side: string) =>
 	page.getByRole("navigation", { name: `Open ${side} links in` });
 
+const artworkSearchForm = (page) =>
+	page.locator("form[action='/artworks/results']");
+
 test("loads an artist through the chooser and opens its artwork in the other pane", async ({
 	page,
 }) => {
@@ -66,7 +69,7 @@ test("loads an artist through the chooser and opens its artwork in the other pan
 
 	await page
 		.locator("#left")
-		.getByRole("link", { name: "Learn More" })
+		.getByRole("link", { name: "VIEW WORK →" })
 		.first()
 		.click();
 
@@ -122,16 +125,17 @@ test("loads an artwork search result into the selected pane", async ({
 			url.searchParams.get("dual_target") === "left",
 	);
 
-	await page.getByLabel("Title").fill("Synthetic Artwork 01-01");
 	const resultsResponse = page.waitForResponse(
 		(response) =>
 			response.url().includes("/artworks/results") &&
 			response.request().headers()["hx-request"] === "true",
 	);
-	await page.getByRole("button", { name: "Search" }).click();
+	await artworkSearchForm(page)
+		.getByRole("searchbox", { name: "TITLE OR ARTIST" })
+		.fill("Synthetic Artwork 01-01");
 	await resultsResponse;
 
-	const clear = page.getByRole("link", { name: "Clear" });
+	const clear = page.getByRole("link", { name: "Reset" });
 	await expect(clear).toHaveAttribute("href", /dual_target=left/);
 	const clearResponse = page.waitForResponse(
 		(response) =>
@@ -148,8 +152,15 @@ test("loads an artwork search result into the selected pane", async ({
 			url.searchParams.get("dual_target") === "left",
 	);
 
-	await page.getByLabel("Title").fill("Synthetic Artwork 01-01");
-	await page.getByRole("button", { name: "Search" }).click();
+	const secondResultsResponse = page.waitForResponse(
+		(response) =>
+			response.url().includes("/artworks/results") &&
+			response.request().headers()["hx-request"] === "true",
+	);
+	await artworkSearchForm(page)
+		.getByRole("searchbox", { name: "TITLE OR ARTIST" })
+		.fill("Synthetic Artwork 01-01");
+	await secondResultsResponse;
 
 	await page
 		.getByRole("link", {
@@ -242,7 +253,7 @@ test("persists a same-pane target choice", async ({ page }) => {
 
 	await page
 		.locator("#left")
-		.getByRole("link", { name: "Learn More" })
+		.getByRole("link", { name: "VIEW WORK →" })
 		.first()
 		.click();
 
@@ -266,14 +277,17 @@ test("keeps a valid pane when the other selected record is missing", async ({
 	await expect(page.locator("#right h1")).toContainText("Synthetic Artist 01");
 });
 
-test("shows the desktop-only message on a small screen", async ({ page }) => {
+test("stacks comparison panes on a small screen", async ({ page }) => {
 	await page.setViewportSize({ width: 767, height: 900 });
 	await page.goto("/dual-mode");
 
-	await expect(page.getByRole("alert")).toContainText(
-		"Dual Mode is desktop-only",
+	await expect(page.locator("#dual-area")).toBeVisible();
+	await expect(page.locator("#left")).toContainText(
+		"Choose content for comparison",
 	);
-	await expect(page.locator("#dual-area")).toBeHidden();
+	await expect(page.locator("#right")).toContainText(
+		"Choose content for comparison",
+	);
 });
 
 test("updates pane state through enhanced operation links", async ({
@@ -466,7 +480,7 @@ test.describe("Dual Mode operations without JavaScript", () => {
 
 		await page
 			.locator("#left")
-			.getByRole("link", { name: "Learn More" })
+			.getByRole("link", { name: "VIEW WORK →" })
 			.first()
 			.click();
 		await expect(page.locator("#right h1")).toContainText(
@@ -522,13 +536,17 @@ test.describe("Dual Mode operations without JavaScript", () => {
 		await page.goto(dualModeURL(artistOnePath, artistTwoPath, "left", "right"));
 		await page.getByRole("link", { name: "Search right artworks" }).click();
 
-		await page.getByLabel("Title").fill("Synthetic Artwork 01-01");
-		await page.getByRole("button", { name: "Search" }).click();
+		await artworkSearchForm(page)
+			.getByRole("searchbox", { name: "TITLE OR ARTIST" })
+			.fill("Synthetic Artwork 01-01");
+		await artworkSearchForm(page)
+			.getByRole("button", { name: "APPLY FILTERS", exact: true })
+			.click({ force: true, noWaitAfter: true });
 		await page
 			.getByRole("link", {
 				name: "Open Synthetic Artwork 01-01 in right pane",
 			})
-			.click();
+			.click({ force: true, noWaitAfter: true });
 
 		await expectDualModeState(
 			page,

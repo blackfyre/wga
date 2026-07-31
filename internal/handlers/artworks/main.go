@@ -21,55 +21,7 @@ import (
 )
 
 func searchPage(app *pocketbase.PocketBase, c *core.RequestEvent) error {
-
-	fullUrl := utils.AssetUrl(c.Request.URL.String())
-	pushUrl := utils.GenerateCurrentRelativePageUrl(c)
-	filters := buildFilters(c)
-	dualModeContext := getDualModeSearchContext(c)
-
-	if filters.AnyFilterActive() {
-		// redirect to the search results page
-		return c.Redirect(http.StatusFound, buildArtworkSearchPath("/artworks/results", filters, dualModeContext))
-	}
-
-	content := dto.ArtworkSearchDTO{
-		ActiveFilterValues: &dto.ArtworkSearchFilterValues{
-			Title:         filters.Title,
-			SchoolString:  filters.SchoolString,
-			ArtFormString: filters.ArtFormString,
-			ArtTypeString: filters.ArtTypeString,
-			ArtistString:  filters.ArtistString,
-		},
-		ClearUrl:        buildArtworkSearchClearPath(dualModeContext),
-		DualModeContext: dualModeContext,
-		HxTarget:        "#artwork-search-results",
-		Results: dto.ArtworkSearchResultDTO{
-			ResultSummary: "Use the filters below, then run a search to browse matching artworks.",
-		},
-	}
-
-	content.ArtFormOptions, _ = getArtFormOptions(app)
-	content.ArtTypeOptions, _ = getArtTypesOptions(app)
-	content.ArtSchoolOptions, _ = getArtSchoolOptions(app)
-	content.ArtistNameList, _ = GetArtistNameList(app)
-	content.NewFilterValues = filters.BuildFilterString()
-
-	ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, "Artworks Search")
-	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "On this page you can search for artworks by title, artist, art form, art type and art school!")
-	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgUrlKey, fullUrl)
-
-	c.Response.Header().Set("HX-Push-Url", pushUrl)
-
-	var buff bytes.Buffer
-
-	err := pages.ArtworkSearchPage(content).Render(ctx, &buff)
-
-	if err != nil {
-		app.Logger().Error("Error rendering artwork search page", "error", err.Error())
-		return utils.ServerFaultError(c)
-	}
-
-	return c.HTML(http.StatusOK, buff.String())
+	return search(app, c)
 
 }
 
@@ -85,8 +37,8 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 		err := error(nil)
 		page, err = strconv.Atoi(queryParams.Get("page"))
 
-		if err != nil {
-			app.Logger().Error("Failed to parse page number", "error", err.Error())
+		if err != nil || page < 1 {
+			app.Logger().Error("Invalid page number", "page", queryParams.Get("page"), "error", err)
 			return utils.BadRequestError(c)
 		}
 	}
@@ -126,13 +78,18 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 		DualModeContext: dualModeContext,
 		Results: dto.ArtworkSearchResultDTO{
 			Artworks: dto.ImageGrid{},
+			View:     filters.View,
 		},
 		ActiveFilterValues: &dto.ArtworkSearchFilterValues{
+			Query:         filters.Query,
 			Title:         filters.Title,
 			SchoolString:  filters.SchoolString,
 			ArtFormString: filters.ArtFormString,
 			ArtTypeString: filters.ArtTypeString,
 			ArtistString:  filters.ArtistString,
+			YearFrom:      cmp.Or(filters.YearFrom, "1500"),
+			YearTo:        cmp.Or(filters.YearTo, "2020"),
+			View:          filters.View,
 		},
 	}
 
@@ -149,6 +106,12 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	content.Results.ActiveFiltering = filters.AnyFilterActive()
 	content.Results.ResultCount = recordsCount
 	content.Results.ResultSummary = buildResultsSummary(recordsCount, filters.AnyFilterActive())
+	gridFilters := *filters
+	gridFilters.View = "grid"
+	content.Results.GridUrl = buildArtworkSearchPath("/artworks/results", &gridFilters, dualModeContext)
+	listFilters := *filters
+	listFilters.View = "list"
+	content.Results.ListUrl = buildArtworkSearchPath("/artworks/results", &listFilters, dualModeContext)
 
 	artistsByID, err := getArtistsByIDs(app, records)
 
@@ -223,11 +186,15 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "On this page you can search for artworks by title, artist, art form, art type and art school!")
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgUrlKey, pHtmxUrl)
 
-	c.Response.Header().Set("HX-Push-Url", pHtmxUrl)
+	pushURL := pHtmxUrl
+	if c.Request.URL.Path == "/artworks" {
+		pushURL = pUrl
+	}
+	c.Response.Header().Set("HX-Push-Url", pushURL)
 
 	var buff bytes.Buffer
 
-	if utils.IsHtmxRequest(c) {
+	if utils.IsHtmxRequest(c) && c.Request.URL.Path == "/artworks/results" {
 		err = pages.ArtworkSearchResults(content.Results).Render(ctx, &buff)
 	} else {
 		err = pages.ArtworkSearchPage(content).Render(ctx, &buff)

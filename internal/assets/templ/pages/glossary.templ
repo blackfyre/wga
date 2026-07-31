@@ -1,0 +1,89 @@
+package pages
+
+import (
+	"github.com/blackfyre/wga/internal/assets/templ/layouts"
+	"github.com/blackfyre/wga/internal/assets/templ/utils"
+)
+
+type GlossaryTerm struct {
+	Expression string
+	Definition string
+}
+
+type GlossaryView struct {
+	Query          string
+	SelectedLetter string
+	Letters        []string
+	Terms          []GlossaryTerm
+}
+
+templ GlossaryPage(view GlossaryView) {
+	@layouts.LayoutMain() {
+		@GlossaryBlock(view)
+	}
+}
+
+templ GlossaryBlock(view GlossaryView) {
+	<head>
+		<title>{ utils.GetTitle(ctx) }</title>
+	</head>
+	<section id="glossary" class="container mx-auto px-4 pb-20 pt-10 md:px-0 wga-enter">
+		<p class="mb-3 font-mono text-[11px] tracking-[2px] text-base-content/60">13 — GLOSSARY</p>
+		<h1 class="mb-3 text-[44px] font-semibold leading-tight tracking-[-0.5px]">Glossary</h1>
+		<p class="max-w-[540px] text-base leading-relaxed text-base-content/70">Terms used in the commentaries and catalogue entries.</p>
+
+		<nav class="mt-10 flex flex-wrap gap-[2px] border-b border-base-content/15 pb-5" aria-label="Filter terms by letter">
+			<a
+				href="/glossary"
+				class={ "px-[11px] py-1.5 font-mono text-xs tracking-[1px] transition-colors", templ.KV("bg-neutral text-neutral-content", view.SelectedLetter == ""), templ.KV("text-base-content/70 hover:text-base-content", view.SelectedLetter != "") }
+				aria-current={ glossaryAriaCurrent(view.SelectedLetter == "") }
+			>ALL</a>
+			for _, letter := range view.Letters {
+				<a
+					href={ templ.URL("/glossary?letter=" + letter) }
+					hx-get={ "/glossary?letter=" + letter }
+					hx-target="#glossary"
+					hx-select="#glossary"
+					hx-swap="outerHTML"
+					class={ "px-[11px] py-1.5 font-mono text-xs tracking-[1px] transition-colors", templ.KV("bg-neutral text-neutral-content", view.SelectedLetter == letter), templ.KV("text-base-content/70 hover:text-base-content", view.SelectedLetter != letter) }
+					aria-current={ glossaryAriaCurrent(view.SelectedLetter == letter) }
+				>{ letter }</a>
+			}
+		</nav>
+
+		<form action="/glossary" method="GET" hx-get="/glossary" hx-target="#glossary" hx-select="#glossary" hx-swap="outerHTML" hx-trigger="input delay:300ms" class="flex flex-col justify-between gap-3.5 py-5 pb-8 md:flex-row md:items-baseline md:gap-8">
+			if view.SelectedLetter != "" {
+				<input type="hidden" name="letter" value={ view.SelectedLetter }/>
+			}
+			<label class="w-full md:w-80">
+				<span class="sr-only">Search terms and definitions</span>
+				<input class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2 text-sm outline-none focus:ring-0" type="search" name="q" value={ view.Query } placeholder="Search terms and definitions"/>
+			</label>
+			<p class="font-mono text-xs tracking-[1px] text-base-content/60" aria-live="polite">{ len(view.Terms) } SHOWN</p>
+		</form>
+
+		if len(view.Terms) > 0 {
+			<dl class="grid grid-cols-1 md:grid-cols-2 md:gap-x-14">
+				for _, term := range view.Terms {
+					<div class="border-t border-base-content/15 py-[22px]">
+						<dt class="mb-2 text-xl font-semibold tracking-[-0.2px]">{ term.Expression }</dt>
+						<dd class="text-[15px] leading-relaxed">@templ.Raw(term.Definition)</dd>
+					</div>
+				}
+			</dl>
+		} else {
+			<div class="border-t border-base-content/15 py-12">
+				<p class="mb-2 text-lg font-semibold">No terms match.</p>
+				<a href="/glossary" hx-get="/glossary" hx-target="#glossary" hx-select="#glossary" hx-swap="outerHTML" class="font-mono text-[11px] tracking-[1px] text-primary transition-opacity hover:opacity-60">CLEAR SEARCH →</a>
+			</div>
+		}
+	</section>
+}
+
+func glossaryAriaCurrent(active bool) string {
+	if active {
+		return "page"
+	}
+
+	return "false"
+}

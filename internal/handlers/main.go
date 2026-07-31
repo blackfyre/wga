@@ -9,6 +9,7 @@ import (
 	contributorhandlers "github.com/blackfyre/wga/internal/handlers/contributors"
 	"github.com/blackfyre/wga/internal/handlers/dual"
 	"github.com/blackfyre/wga/internal/handlers/feedback"
+	"github.com/blackfyre/wga/internal/handlers/glossary"
 	"github.com/blackfyre/wga/internal/handlers/guestbook"
 	"github.com/blackfyre/wga/internal/handlers/inspire"
 	"github.com/blackfyre/wga/internal/handlers/landing"
@@ -25,12 +26,13 @@ import (
 // It takes a pointer to a PocketBase instance and initializes the cache.
 // The cache is used to store frequently accessed data for faster access.
 // The cache is automatically cleaned up every 30 minutes.
-func RegisterHandlers(app *pocketbase.PocketBase, captcha config.Captcha, contributorReader contributorworkflow.Reader, captchaVerifier antiabuse.Verifier) {
+func RegisterHandlers(app *pocketbase.PocketBase, environment config.Environment, captcha config.Captcha, contributorReader contributorworkflow.Reader, captchaVerifier antiabuse.Verifier) {
 
 	app.Logger().Debug("Registering route handlers...")
 	p := bluemonday.NewPolicy()
 
-	feedback.RegisterHandlers(app)
+	feedback.RegisterHandlers(app, environment)
+	glossary.RegisterHandlers(app)
 	// registerMusicHandlers(app)
 	guestbook.RegisterHandlers(app)
 	artists.RegisterHandlers(app)

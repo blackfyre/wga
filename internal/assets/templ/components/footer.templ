@@ -1,73 +1,43 @@
 package components
 
 templ Footer() {
-	<footer class="footer sm:footer-horizontal bg-base-200 text-base-content p-10 mt-6">
-		<aside>
-			<a class="navbar-item" id="nav-logo" href="/" hx-get="/">
-				<img
-					src="/assets/images/logo.png"
-					loading="lazy"
-					alt="Web Gallery of Art"
-					title="Go to Home"
-				/>
-			</a>
-			<p>Providing experience since 1992</p>
-		</aside>
-		<div>
-			<p>
-				Please send your comments, sign our guestbook and send a postcard.
-				© Web Gallery of Art, created by Emil Krén and Daniel Marx.
-			</p>
-			<p>
-				v2 was made possible by our <a
-	href="/contributors"
-	hx-get="/contributors"
->contributors</a>!
-			</p>
+	<footer class="mt-16 border-t border-base-content/15 pb-15 pt-10">
+		<div class="container mx-auto grid grid-cols-2 gap-8 px-4 text-sm md:grid-cols-[1.6fr_1fr_1fr_1fr] md:px-0">
+			<div>
+				<p class="mb-3 font-mono text-[11px] tracking-[1.5px]">WEB GALLERY OF ART</p>
+				<p class="max-w-[280px] text-sm leading-relaxed text-base-content/70">A searchable archive of European fine art, decorative art and architecture, 3rd century to the early 20th. Open source, maintained by contributors.</p>
+			</div>
+			<div>
+				<p class="mb-3 font-mono text-[11px] tracking-[1.5px] text-base-content/60">BROWSE</p>
+				<ul class="space-y-1 text-sm leading-[2.1] text-base-content/70">
+					<li><a class="hover:text-primary" href="/artists" hx-get="/artists">Artists</a></li>
+					<li><a class="hover:text-primary" href="/artworks" hx-get="/artworks">Artworks</a></li>
+					<li><a class="hover:text-primary" href="/inspire" hx-get="/inspire">Inspiration</a></li>
+					<li><a class="hover:text-primary" href="/glossary">Glossary</a></li>
+				</ul>
+			</div>
+			<div>
+				<p class="mb-3 font-mono text-[11px] tracking-[1.5px] text-base-content/60">SERVICES</p>
+				<ul class="space-y-1 text-sm leading-[2.1] text-base-content/70">
+					<li>Postcards</li>
+					<li>Period music</li>
+					<li><a class="hover:text-primary" href="/dual-mode" hx-get="/dual-mode">Dual mode</a></li>
+					<li><a class="hover:text-primary" href="/guestbook" hx-get="/guestbook">Guestbook</a></li>
+				</ul>
+			</div>
+			<div>
+				<p class="mb-3 font-mono text-[11px] tracking-[1.5px] text-base-content/60">ABOUT</p>
+				<ul class="space-y-1 text-sm leading-[2.1] text-base-content/70">
+					<li><a class="hover:text-primary" href="/pages/privacy-policy" hx-get="/pages/privacy-policy">Privacy policy</a></li>
+					<li><a class="hover:text-primary" href="/pages/about" hx-get="/pages/about">About the collection</a></li>
+					<li><a class="hover:text-primary" href="/statistics" hx-get="/statistics">Statistics</a></li>
+					<li><a class="hover:text-primary" href="/contributors" hx-get="/contributors">Contributors</a></li>
+					<li><a class="hover:text-primary" href="/open-source-licences" hx-get="/open-source-licences">Open-source licences</a></li>
+					<li><a class="hover:text-primary" data-cc="show-preferencesModal" href="#">Cookie settings</a></li>
+					<li>Contact</li>
+				</ul>
+			</div>
 		</div>
-		<div class="column has-text-center">
-			<p>
-				Donations for maintaining and developing the Gallery are welcome.
-			</p>
-			<ul class="has-text-right">
-				<li><a href="https://ko-fi.com/blackfyre" target="_blank">ko-fi.com/blackfyre</a></li>
-				<li><a href="https://github.com/sponsors/blackfyre" target="_blank">Github sponsorship</a></li>
-			</ul>
-		</div>
-		<div class="column has-text-right">
-			<p>
-				This is an open source project. You can find the source code on <a
-	href="https://github.com/blackfyre/wga"
-	target="_blank"
->Github</a>, and you're welcome to join
-				our <a href="/contributors" hx-get="/contributors">code contributors</a>!
-			</p>
-			<p>
-				<a data-cc="show-preferencesModal" href="#">Manage cookie settings</a>
-			</p>
-			<p>
-				<a href="/open-source-licences" hx-get="/open-source-licences">Open-source licences</a>
-			</p>
-		</div>
-		// <nav>
-		// 	<h6 class="footer-title">Services</h6>
-		// 	<a class="link link-hover">Branding</a>
-		// 	<a class="link link-hover">Design</a>
-		// 	<a class="link link-hover">Marketing</a>
-		// 	<a class="link link-hover">Advertisement</a>
-		// </nav>
-		// <nav>
-		// 	<h6 class="footer-title">Company</h6>
-		// 	<a class="link link-hover">About us</a>
-		// 	<a class="link link-hover">Contact</a>
-		// 	<a class="link link-hover">Jobs</a>
-		// 	<a class="link link-hover">Press kit</a>
-		// </nav>
-		// <nav>
-		// 	<h6 class="footer-title">Legal</h6>
-		// 	<a class="link link-hover">Terms of use</a>
-		// 	<a class="link link-hover">Privacy policy</a>
-		// 	<a class="link link-hover">Cookie policy</a>
-		// </nav>
+		<p class="container mx-auto mt-8 px-4 font-mono text-[10px] tracking-[0.5px] text-base-content/50 md:px-0">© WEB GALLERY OF ART, CREATED BY EMIL KRÉN AND DANIEL MARX</p>
 	</footer>
 }

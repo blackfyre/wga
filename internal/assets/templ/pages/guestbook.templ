@@ -1,9 +1,6 @@
 package pages
 
 import (
-	"crypto/md5"
-	"fmt"
-	"github.com/blackfyre/wga/internal/assets/templ/components"
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/assets/templ/layouts"
 )
@@ -22,154 +19,88 @@ templ GuestbookPage(v GuestbookView) {
 }
 
 templ GuestbookBlock(v GuestbookView) {
-	<section class="container mx-auto">
-		<nav class="flex mb-6" aria-label="Breadcrumb">
-			<ol role="list" class="flex items-center space-x-4">
-				<li>
-					<div>
-						<a href="/" hx-get="/" class="text-base-content/60 hover:text-base-content/80">
-							<svg class="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-								<path fill-rule="evenodd" d="M9.293 2.293a1 1 0 011.414 0l7 7A1 1 0 0117 11h-1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-3a1 1 0 00-1-1H9a1 1 0 00-1 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-6H3a1 1 0 01-.707-1.707l7-7z" clip-rule="evenodd"></path>
-							</svg>
-							<span class="sr-only">Home</span>
-						</a>
-					</div>
-				</li>
-				<li>
-					<div class="flex items-center">
-						<svg class="h-5 w-5 flex-shrink-0 text-base-content/60" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-							<path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"></path>
-						</svg>
-						<a href="/guestbook" hx-get="/guestbook" class="ml-4 text-sm font-medium text-base-content/70 hover:text-base-content">Guestbook</a>
-					</div>
-				</li>
-				<li>
-					<div class="flex items-center">
-						<svg class="h-5 w-5 flex-shrink-0 text-base-content/60" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-							<path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"></path>
-						</svg>
-						<a href={ templ.URL("/guestbook?year=" + v.SelectedYear) } hx-get={ "/guestbook?year=" + v.SelectedYear } class="ml-4 text-sm font-medium text-base-content/70 hover:text-base-content" aria-current="page">{ v.SelectedYear }</a>
-					</div>
-				</li>
-			</ol>
-		</nav>
-		<h1 class="text-xl mb-6">Guestbook</h1>
-		<p class="mb-4">Take a moment to leave your mark in our online gallery's guestbook—your thoughts, reflections, and feedback add depth and richness to our community's experience with art. </p>
-		<div class="flex flex-row justify-between items-center mb-6">
+	<section class="container mx-auto px-4 pb-20 pt-10 md:px-0 wga-enter">
+		<p class="mb-3 font-mono text-[11px] tracking-[2px] text-base-content/60">10 — GUESTBOOK</p>
+		<h1 class="mb-3 text-[44px] font-semibold leading-tight tracking-[-0.5px]">Guestbook</h1>
+		<p class="mb-11 max-w-[540px] text-base leading-relaxed text-base-content/70">Notes from people who have spent time with the collection. Messages are moderated before publication.</p>
+
+		<div class="grid gap-10 md:grid-cols-[340px_1fr] md:gap-14">
+			<aside class="border-t border-base-content/15 pt-5">
+				@GuestbookEntryForm()
+			</aside>
+
 			<div>
-				<a
-					href="#"
-					hx-get="/guestbook/add"
-					hx-on:click="wga.dialog.open()"
-					hx-target="#d"
-					hx-select=".modal-box, form[method=dialog].modal-backdrop"
-					hx-swap="innerHTML"
-					class="btn btn-primary"
-				>Add Entry</a>
-			</div>
-			if len(v.YearOptions) > 1 {
-				<div>
-					<select
-						title="Select a year to filter the guestbook entries"
-						name="year"
-						hx-get="/guestbook"
-						class="select select-bordered w-full "
-					>
-						for _, year := range v.YearOptions {
-							<option value={ year } selected?={ v.SelectedYear == year }>{ year }</option>
-						}
-					</select>
+				if len(v.YearOptions) > 1 {
+					<div class="mb-6">
+						<p class="mb-3 font-mono text-[10px] tracking-[1.5px] text-base-content/60">JUMP TO YEAR</p>
+						<nav class="flex flex-wrap gap-1.5" aria-label="Filter guestbook entries by year">
+							for _, year := range v.YearOptions {
+								<a
+									href={ templ.URL("/guestbook?year=" + year) }
+									hx-get={ "/guestbook?year=" + year }
+									class={ "border px-3 py-1.5 font-mono text-[11px] tracking-[1px] transition-colors", templ.KV("border-primary bg-primary text-primary-content", v.SelectedYear == year), templ.KV("border-base-content/25 text-base-content/70 hover:border-base-content", v.SelectedYear != year) }
+									aria-current={ guestbookAriaCurrent(v.SelectedYear == year) }
+								>{ year }</a>
+							}
+						</nav>
+					</div>
+				}
+				<div class="flex items-baseline justify-between gap-4 border-b border-base-content pb-3 font-mono text-[11px] tracking-[1.5px]">
+					<p>ENTRIES FROM { v.SelectedYear }</p>
+					<p class="text-primary">LATEST FIRST</p>
 				</div>
-			}
-		</div>
-		if len(v.Entries) > 0 {
-			@GuestbookEntries(v.Entries)
-		} else {
-			<div role="alert" class="alert alert-info">
-				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-				<p>No entries found</p>
-				if v.SelectedYear == v.CurrentYear {
-					<p>Be the first to sign the guestbook for { v.SelectedYear }!</p>
+				if len(v.Entries) > 0 {
+					@GuestbookEntries(v.Entries)
+				} else {
+					<div class="py-12">
+						<p class="mb-2 text-lg font-semibold">No entries found.</p>
+						if v.SelectedYear == v.CurrentYear {
+							<p class="text-[15px] leading-relaxed text-base-content/70">Be the first to sign the guestbook for { v.SelectedYear }.</p>
+						}
+					</div>
 				}
 			</div>
-		}
+		</div>
 	</section>
 }
 
 templ GuestbookEntryForm() {
-	@components.DialogBody() {
-		<h1 class="text-2xl mb-4">Leave an entry!</h1>
-		<p>Leave your mark in the guestbook!</p>
-		<p>Be kind and respectful to others.</p>
-		<p>Messages are moderated and will be reviewed before being published.</p>
-		<p class="mb-4">You can post your message anonymously if you prefer.</p>
-		<form
-			hx-post="/guestbook/add"
-			enctype="multipart/form-data"
-			hx-target="#d"
-			hx-disabled-elt="input,button,select"
-		>
-			<div class="flex flex-col gap-6 mb-6">
-				<input
-					type="text"
-					class="input input-bordered w-full "
-					placeholder="Your name"
-					name="sender_name"
-					autocomplete="name"
-					id="sender_name"
-				/>
-				<input
-					type="email"
-					class="input input-bordered w-full "
-					placeholder="Your email"
-					name="sender_email"
-					autocomplete="email"
-					id="sender_email"
-				/>
-				<input
-					type="text"
-					class="input input-bordered w-full "
-					placeholder="Your location"
-					name="location"
-					autocomplete="location"
-				/>
-				<textarea class="textarea textarea-bordered" id="message" name="message" placeholder="Your entry"></textarea>
-			</div>
-			<label aria-hidden="true" class="hpt" for="name"></label>
-			<input
-				aria-hidden="true"
-				class="hpt"
-				autocomplete="off"
-				type="text"
-				id="name"
-				name="name"
-				placeholder="Enter your name"
-			/>
-			<label aria-hidden="true" class="hpt" for="email"></label>
-			<input
-				aria-hidden="true"
-				class="hpt"
-				autocomplete="off"
-				type="email"
-				id="email"
-				name="email"
-				placeholder="Enter your email"
-			/>
-			<div class="flex flex-row justify-end gap-4">
-				<button class="btn btn-primary" type="submit">
-					Leave entry
-				</button>
-				<button type="button" class="btn btn-neutral" hx-on:click="wga.dialog.close();">
-					Cancel
-				</button>
-			</div>
-		</form>
-	}
+	<form id="guestbook-entry-form" hx-post="/guestbook/add" hx-target="#guestbook-entry-form" hx-swap="outerHTML" hx-disabled-elt="input,button,textarea">
+		<p class="mb-5 font-mono text-[11px] tracking-[1.5px] text-base-content/60">LEAVE A NOTE</p>
+		<div class="mb-6 flex flex-col gap-5">
+			<label class="block"><span class="mb-2 block font-mono text-[10px] tracking-[1.5px] text-base-content/60">NAME</span><input type="text" class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2 text-[15px] outline-none focus:ring-0" placeholder="Your name" name="sender_name" autocomplete="name" id="sender_name" required/></label>
+			<label class="block"><span class="mb-2 block font-mono text-[10px] tracking-[1.5px] text-base-content/60">EMAIL</span><input type="email" class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2 text-[15px] outline-none focus:ring-0" placeholder="Your email" name="sender_email" autocomplete="email" id="sender_email" required/></label>
+			<label class="block"><span class="mb-2 block font-mono text-[10px] tracking-[1.5px] text-base-content/60">LOCATION</span><input type="text" class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2 text-[15px] outline-none focus:ring-0" placeholder="Your location" name="location" autocomplete="location" required/></label>
+			<label class="block"><span class="mb-2 block font-mono text-[10px] tracking-[1.5px] text-base-content/60">NOTE</span><textarea class="min-h-28 w-full border border-base-content/30 bg-transparent p-3 text-[15px] leading-relaxed" id="message" name="message" placeholder="What did you come here to find?" required></textarea></label>
+		</div>
+		<label aria-hidden="true" class="hpt" for="name"></label>
+		<input
+			aria-hidden="true"
+			class="hpt"
+			autocomplete="off"
+			type="text"
+			id="name"
+			name="name"
+			placeholder="Enter your name"
+		/>
+		<label aria-hidden="true" class="hpt" for="email"></label>
+		<input
+			aria-hidden="true"
+			class="hpt"
+			autocomplete="off"
+			type="email"
+			id="email"
+			name="email"
+			placeholder="Enter your email"
+		/>
+		<button class="w-full bg-primary px-4 py-3 font-mono text-[11px] tracking-[1.5px] text-primary-content" type="submit">SIGN THE GUESTBOOK →</button>
+		<p class="mt-3 font-mono text-[10px] leading-relaxed text-base-content/50">ENTRIES ARE MODERATED BEFORE PUBLICATION. EMAIL ADDRESSES ARE NOT SHOWN.</p>
+	</form>
 }
 
 templ GuestbookEntries(entries dto.GuestbookEntries) {
 	<div class="flow-root">
-		<div class="divide-y divide-gray-200 gb-entries">
+		<div class="divide-y divide-base-content/15 gb-entries">
 			for _, entry := range entries {
 				@GuestbookEntry(entry)
 			}
@@ -181,47 +112,27 @@ templ GuestbookEntry(entry dto.GuestbookEntry) {
 	if (entry.Message == "") {
 		return
 	}
-	<div class="py-12 gb-entry">
-		<div class="flex items-center">
-			<figure class="h-12 w-12 rounded-full">
-				if entry.Email != "" {
-					<img class="" src={ genGravatarUrl(entry.Email) }/>
+	<div class="gb-entry border-b border-base-content/15 py-[22px]">
+		<div class="mb-2 flex items-baseline justify-between gap-4">
+			<h4 class="text-[15px] font-semibold">
+				if entry.Name != "" {
+					{ entry.Name }
 				} else {
-					<img class="" src="https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y&size=128"/>
+					Anonymous
 				}
-			</figure>
-			<div class="ml-4">
-				<h4 class="text-sm font-bold">
-					if entry.Name != "" {
-						{ entry.Name }
-					} else {
-						Anonymous
-					}
-				</h4>
-				<div class="flex flex-row items-center mt-2">
-					if entry.Location != "" {
-						<div class="badge badge-neutral mr-4">{ entry.Location }</div>
-					}
-					<div class="badge badge-neutral">{ entry.Created }</div>
-				</div>
-			</div>
+			</h4>
+			<p class="text-right font-mono text-[11px] text-base-content/60">{ entry.Location } · { entry.Created }</p>
 		</div>
-		<div class="mt-4 space-y-6 text-base italic">
+		<div class="text-base leading-relaxed text-base-content/80">
 			@templ.Raw(entry.Message)
 		</div>
 	</div>
 }
 
-func genMd5(email string) string {
-	hash := md5.New()
-	hash.Write([]byte(email))
-	return fmt.Sprintf("%x", hash.Sum(nil))
-}
+func guestbookAriaCurrent(active bool) string {
+	if active {
+		return "page"
+	}
 
-func urlEncode(s string) string {
-	return s
-}
-
-func genGravatarUrl(email string) string {
-	return "https://www.gravatar.com/avatar/" + genMd5(email) + "?d=identicon&size=128"
+	return "false"
 }

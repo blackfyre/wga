@@ -1,7 +1,6 @@
 @charset "UTF-8";
 @import "tailwindcss";
 @import "animate.css";
-@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Lexend:wght@100..900&family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700;1,900&display=swap");
 @import "../../node_modules/trix/dist/trix.css";
 @import "../../node_modules/vanilla-cookieconsent/dist/cookieconsent.css";
 @import "../../node_modules/viewerjs/dist/viewer.css";
@@ -10,34 +9,39 @@
 @plugin "@tailwindcss/typography";
 @plugin "daisyui";
 
+@theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+}
+
 @plugin "daisyui/theme" {
   name: "wga_light";
   default: true;
   prefersdark: false;
   color-scheme: "light";
-  --color-base-100: oklch(100% 0 0);
-  --color-base-200: #f0f6ff;
-  --color-base-300: oklch(90% 0 0);
-  --color-base-content: oklch(20% 0 0);
+  --color-base-100: #f4f2ed;
+  --color-base-200: #e9e6df;
+  --color-base-300: #e4e0d7;
+  --color-base-content: #1c1c1a;
   --color-primary: #003366;
-  --color-primary-content: oklch(98% 0.003 247.858);
-  --color-secondary: oklch(64.476% 0.202 359.339);
-  --color-secondary-content: oklch(12.895% 0.04 359.339);
-  --color-accent: oklch(94.228% 0.189 105.306);
-  --color-accent-content: oklch(18.845% 0.037 105.306);
-  --color-neutral: oklch(21.778% 0 0);
-  --color-neutral-content: oklch(84.355% 0 0);
-  --color-info: oklch(68.475% 0.094 217.284);
-  --color-info-content: oklch(13.695% 0.018 217.284);
-  --color-success: oklch(46.949% 0.162 321.406);
-  --color-success-content: oklch(89.389% 0.032 321.406);
-  --color-warning: oklch(71.236% 0.159 52.023);
-  --color-warning-content: oklch(14.247% 0.031 52.023);
-  --color-error: oklch(62.013% 0.208 28.717);
-  --color-error-content: oklch(12.402% 0.041 28.717);
-  --radius-selector: 0.25rem;
-  --radius-field: 0.25rem;
-  --radius-box: 0.25rem;
+  --color-primary-content: #f4f2ed;
+  --color-secondary: #6b6660;
+  --color-secondary-content: #f4f2ed;
+  --color-accent: #1c1c1a;
+  --color-accent-content: #f4f2ed;
+  --color-neutral: #1c1c1a;
+  --color-neutral-content: #f4f2ed;
+  --color-info: #003366;
+  --color-info-content: #f4f2ed;
+  --color-success: #2e5b4a;
+  --color-success-content: #f4f2ed;
+  --color-warning: #8a6d1f;
+  --color-warning-content: #1c1c1a;
+  --color-error: #6b3a2e;
+  --color-error-content: #f4f2ed;
+  --radius-selector: 0;
+  --radius-field: 0;
+  --radius-box: 0;
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
   --border: 1px;
@@ -70,14 +74,70 @@
   --color-warning-content: oklch(24% 0.04 85);
   --color-error: oklch(74% 0.16 25);
   --color-error-content: oklch(20% 0.03 25);
-  --radius-selector: 0.25rem;
-  --radius-field: 0.25rem;
-  --radius-box: 0.25rem;
+  --radius-selector: 0;
+  --radius-field: 0;
+  --radius-box: 0;
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
   --border: 1px;
   --depth: 0;
   --noise: 0;
+}
+
+@layer base {
+  html {
+    background: var(--color-base-100);
+    color: var(--color-base-content);
+    font-family: var(--font-sans);
+  }
+
+  body {
+    min-width: 320px;
+    background: var(--color-base-100);
+  }
+
+  ::selection {
+    background: var(--color-primary);
+    color: var(--color-primary-content);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 3px;
+  }
+}
+
+@layer components {
+  .wga-enter {
+    animation: wga-rise 280ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  }
+
+  .wga-meta {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.15em;
+  }
+}
+
+@keyframes wga-rise {
+  from {
+    transform: translateY(10px);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 
@@ -336,6 +396,57 @@ figure.hidden-caption {
   height: 0;
   width: 0;
   z-index: -1;
+}
+
+#cc-main {
+  --cc-font-family: var(--font-sans);
+  --cc-modal-border-radius: 0;
+  --cc-btn-border-radius: 0;
+  --cc-bg: var(--color-base-100);
+  --cc-primary-color: var(--color-base-content);
+  --cc-secondary-color: color-mix(in srgb, var(--color-base-content) 72%, transparent);
+  --cc-separator-border-color: color-mix(in srgb, var(--color-base-content) 15%, transparent);
+  --cc-btn-primary-bg: var(--color-primary);
+  --cc-btn-primary-color: var(--color-primary-content);
+  --cc-btn-primary-border-color: var(--color-primary);
+  --cc-btn-primary-hover-bg: #00264d;
+  --cc-btn-primary-hover-border-color: #00264d;
+  --cc-btn-secondary-bg: transparent;
+  --cc-btn-secondary-color: var(--color-base-content);
+  --cc-btn-secondary-border-color: color-mix(in srgb, var(--color-base-content) 30%, transparent);
+  --cc-btn-secondary-hover-bg: var(--color-base-200);
+  --cc-btn-secondary-hover-border-color: var(--color-base-content);
+}
+
+#cc-main .cm,
+#cc-main .pm {
+  border: 1px solid var(--color-base-content);
+  box-shadow: none;
+}
+
+#cc-main .cm {
+  max-width: 32.5rem;
+}
+
+#cc-main .cm__title,
+#cc-main .pm__title {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.15em;
+}
+
+#cc-main .cm__desc,
+#cc-main .pm__body {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+#cc-main .cm__btn,
+#cc-main .pm__btn {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
 }
 
 /* fix for cookie consent title hover jumping */
@@ -860,4 +971,44 @@ a[href]:not(:where(
 
 .glossary-popup-close {
   @apply absolute top-1 right-1 btn btn-ghost btn-xs btn-circle;
+}
+
+.container {
+  max-width: 72.5rem;
+  padding-inline: 2.5rem;
+}
+
+.art-form-label::before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 10px;
+  background: #003366;
+}
+
+#art-form-summary tbody tr:nth-child(6n + 2) .art-form-label::before {
+  background: #2a5580;
+}
+
+#art-form-summary tbody tr:nth-child(6n + 3) .art-form-label::before {
+  background: #54789a;
+}
+
+#art-form-summary tbody tr:nth-child(6n + 4) .art-form-label::before {
+  background: #7e9ab5;
+}
+
+#art-form-summary tbody tr:nth-child(6n + 5) .art-form-label::before {
+  background: #a8bccf;
+}
+
+#art-form-summary tbody tr:nth-child(6n) .art-form-label::before {
+  background: #8a857c;
+}
+
+@media (width >= 48rem) {
+  .container {
+    padding-inline: 0;
+  }
 }

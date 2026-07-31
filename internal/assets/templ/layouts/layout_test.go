@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/blackfyre/wga/internal/assets/templ/utils"
+	"github.com/blackfyre/wga/internal/buildinfo"
 	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/observability"
 )
@@ -50,6 +52,36 @@ func TestLayoutBaseSentryConfiguration(t *testing.T) {
 				t.Fatal("expected browser bootstrap script in layout")
 			}
 		})
+	}
+}
+
+func TestLayoutMainShowsNonProductionBuildInfo(t *testing.T) {
+	originalVersion := buildinfo.Version
+	buildinfo.Version = "2.0.0-rc4"
+	t.Cleanup(func() {
+		buildinfo.Version = originalVersion
+	})
+
+	ctx := utils.DecorateContext(context.Background(), utils.EnvironmentKey, "staging")
+	var output bytes.Buffer
+	if err := LayoutMain().Render(ctx, &output); err != nil {
+		t.Fatalf("render main layout: %v", err)
+	}
+
+	if !strings.Contains(output.String(), "BUILD") || !strings.Contains(output.String(), "staging · 2.0.0-rc4") {
+		t.Fatal("expected non-production build information")
+	}
+}
+
+func TestLayoutMainHidesBuildInfoInProduction(t *testing.T) {
+	ctx := utils.DecorateContext(context.Background(), utils.EnvironmentKey, "production")
+	var output bytes.Buffer
+	if err := LayoutMain().Render(ctx, &output); err != nil {
+		t.Fatalf("render main layout: %v", err)
+	}
+
+	if strings.Contains(output.String(), ">BUILD<") {
+		t.Fatal("did not expect production build information")
 	}
 }
 

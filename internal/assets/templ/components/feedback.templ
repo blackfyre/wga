@@ -1,30 +1,52 @@
 package components
 
-templ FeedbackForm() {
+type FeedbackView struct {
+	Context string
+	Build   string
+}
+
+templ FeedbackForm(v FeedbackView) {
 	@DialogBody() {
-		<h1 class="mb-4 text-xl">Are we doing good?</h1>
-		<p class="mb-4">Please, share your observations with us!</p>
+		<div class="flex items-start justify-between gap-6 border-b border-base-content pb-4">
+			<div>
+				<p class="mb-2 font-mono text-[10px] tracking-[1.5px] text-base-content/60">FEEDBACK</p>
+				<h1 class="text-[22px] font-semibold tracking-[-0.2px]">Tell us what is wrong</h1>
+			</div>
+		</div>
 		<form
 			hx-post="/feedback"
 			hx-encoding="multipart/form-data"
 			hx-target="#d"
+			hx-select=".modal-box, form[method=dialog].modal-backdrop"
 			id="feedback_send_form"
-			hx-select="section.container"
 			hx-swap="innerHTML"
+			hx-disabled-elt="input,button,select,textarea"
+			class="pt-5.5"
 		>
-			<div class="flex flex-col">
-				<input class="input input-bordered w-full max-w-xs mb-4" type="text" name="fp_name" id="fp_name" placeholder="Name" required autocomplete="name"/>
-				<input
-					class="input input-bordered w-full max-w-xs mb-4"
-					type="email"
-					name="fp_email"
-					id="fp_email"
-					placeholder="Email"
-					autocomplete="email"
-					required
-				/>
-				<textarea class="textarea textarea-bordered mb-4" id="message" name="message" placeholder="Your message"></textarea>
-			</div>
+			<fieldset class="mb-5.5">
+				<legend class="mb-2.5 font-mono text-[10px] tracking-[1.5px] text-base-content/60">WHAT IS THIS ABOUT?</legend>
+				<div class="flex flex-wrap gap-1.5">
+					<label class="cursor-pointer border border-primary bg-primary px-3.5 py-1.5 font-mono text-[11px] tracking-[1px] text-primary-content transition-colors"><input checked class="sr-only" data-placeholder="Tell us what you noticed." hx-on:change="wga.feedback.setPlaceholder(this)" name="category" type="radio" value="general"/>GENERAL</label>
+					<label class="cursor-pointer border border-base-content/25 px-3.5 py-1.5 font-mono text-[11px] tracking-[1px] text-base-content/70 transition-colors hover:border-base-content"><input class="sr-only" data-placeholder="Describe the correction and, if possible, the source." hx-on:change="wga.feedback.setPlaceholder(this)" name="category" type="radio" value="correction"/>CORRECTION</label>
+					<label class="cursor-pointer border border-base-content/25 px-3.5 py-1.5 font-mono text-[11px] tracking-[1px] text-base-content/70 transition-colors hover:border-base-content"><input class="sr-only" data-placeholder="Tell us what happened and how to reproduce it." hx-on:change="wga.feedback.setPlaceholder(this)" name="category" type="radio" value="technical"/>TECHNICAL</label>
+					<label class="cursor-pointer border border-base-content/25 px-3.5 py-1.5 font-mono text-[11px] tracking-[1px] text-base-content/70 transition-colors hover:border-base-content"><input class="sr-only" data-placeholder="Describe the improvement you would find useful." hx-on:change="wga.feedback.setPlaceholder(this)" name="category" type="radio" value="suggestion"/>SUGGESTION</label>
+				</div>
+			</fieldset>
+			<label class="mb-5.5 block" for="feedback-message">
+				<span class="mb-2 block font-mono text-[10px] tracking-[1.5px] text-base-content/60">YOUR MESSAGE — <output id="feedback-chars">600</output> CHARACTERS LEFT</span>
+				<textarea class="min-h-[120px] w-full border border-base-content/30 bg-transparent p-3 text-[15px] leading-relaxed" id="feedback-message" maxlength="600" name="message" placeholder="e.g. the date given for this work is a decade too early." required hx-on:input="wga.feedback.countdown(this)"></textarea>
+			</label>
+			<label class="mb-5.5 block" for="feedback-email"><span class="mb-2 block font-mono text-[10px] tracking-[1.5px] text-base-content/60">EMAIL — OPTIONAL, ONLY IF YOU WANT A REPLY</span><input class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2 text-[15px] outline-none focus:ring-0" id="feedback-email" name="sender_email" type="email" autocomplete="email" placeholder="you@example.com"/></label>
+			<dl class="mb-5.5 border-t border-base-content/15 pt-3.5">
+				<div class="flex justify-between gap-4 py-[7px]">
+					<dt class="font-mono text-[10px] tracking-[1px] text-base-content/60">SENT WITH THIS REPORT</dt>
+					<dd class="font-mono text-[11px] text-base-content/70">{ v.Context }</dd>
+				</div>
+				<div class="flex justify-between gap-4 py-[7px]">
+					<dt class="font-mono text-[10px] tracking-[1px] text-base-content/60">BUILD</dt>
+					<dd class="font-mono text-[11px] text-base-content/70">{ v.Build }</dd>
+				</div>
+			</dl>
 			<label aria-hidden="true" class="hpt" for="name"></label>
 			<input
 				aria-hidden="true"
@@ -45,14 +67,26 @@ templ FeedbackForm() {
 				name="email"
 				placeholder="Your e-mail here"
 			/>
-			<div class="flex flex-row justify-end gap-4">
-				<button class="btn btn-primary" type="submit">
-					Send feedback
-				</button>
-				<button type="button" class="btn btn-neutral" hx:on:click="wga.dialog.close();">
-					Cancel
-				</button>
+			<div class="mt-6 flex flex-col-reverse gap-2 md:flex-row">
+				<button class="flex-1 bg-primary px-4 py-3 font-mono text-[11px] tracking-[1.5px] text-primary-content" type="submit">SEND REPORT →</button>
+				<button type="button" class="border border-base-content/30 px-4 py-3 font-mono text-[11px] tracking-[1.5px]" hx-on:click="wga.dialog.close();">CANCEL</button>
 			</div>
 		</form>
+	}
+}
+
+templ FeedbackReceived() {
+	@DialogBody() {
+		<div class="flex items-start justify-between gap-6 border-b border-base-content pb-4">
+			<div>
+				<p class="mb-2 font-mono text-[10px] tracking-[1.5px] text-base-content/60">FEEDBACK</p>
+				<h1 class="text-[22px] font-semibold tracking-[-0.2px]">Thank you — report received</h1>
+			</div>
+		</div>
+		<div class="pt-7">
+			<p class="mb-5.5 flex h-11 w-11 items-center justify-center border border-primary font-mono text-lg text-primary">✓</p>
+			<p class="text-base leading-relaxed">Your report has been saved for review. Corrections to collection records are usually applied within a week.</p>
+			<button class="mt-4.5 font-mono text-[11px] tracking-[1px] text-primary transition-opacity hover:opacity-60" type="button" hx-on:click="wga.dialog.close();">CLOSE</button>
+		</div>
 	}
 }
