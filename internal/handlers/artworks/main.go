@@ -87,8 +87,8 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 			ArtFormString: filters.ArtFormString,
 			ArtTypeString: filters.ArtTypeString,
 			ArtistString:  filters.ArtistString,
-			YearFrom:      cmp.Or(filters.YearFrom, "1500"),
-			YearTo:        cmp.Or(filters.YearTo, "2020"),
+			YearFrom:      cmp.Or(filters.YearFrom, "200"),
+			YearTo:        cmp.Or(filters.YearTo, "1900"),
 			View:          filters.View,
 		},
 	}

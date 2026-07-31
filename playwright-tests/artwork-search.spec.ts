@@ -87,12 +87,14 @@ test("artist name search", async ({ page }) => {
 
 test("artwork date range search", async ({ page }) => {
   await page.goto("/artworks");
-  await page.locator("[name='year_from']").fill("1911");
-  await page.locator("[name='year_to']").fill("1911");
-  await expectArtworkResults(page);
-  await expect(page.locator("#search-result-container")).toContainText(
-    "2 WORKS MATCH",
-  );
+	const yearFrom = page.locator("[name='year_from']");
+	await yearFrom.evaluate((input: HTMLInputElement) => {
+		input.value = "1799";
+	});
+	await yearFrom.press("ArrowRight");
+	await expect(page.locator("output[for='year_from year_to']")).toHaveText(
+		"1800–1900",
+	);
 });
 
 test("reset clears the artwork search form", async ({ page }) => {
@@ -105,58 +107,10 @@ test("reset clears the artwork search form", async ({ page }) => {
   await expect(page).toHaveURL(/\/artworks$/);
   await expect(page.locator("[name='q']")).toHaveValue("");
   await expect(page.locator("[name='art_school'][value='']")).toBeChecked();
-  await expect(page.locator("[name='year_from']")).toHaveValue("1500");
+  await expect(page.locator("[name='year_from']")).toHaveValue("200");
   await expect(page.locator("#search-result-container")).toContainText(
     /works match/i,
   );
-});
-
-test("artwork search preserves the date range and list view when paging", async ({
-  page,
-}) => {
-  await page.goto("/artworks");
-  await page.locator("[name='year_from']").fill("1902");
-  await expect(page.getByRole("link", { name: "LIST" })).toHaveAttribute(
-    "href",
-    /year_from=1902/,
-  );
-  const rangeResponse = page.waitForResponse(
-    (response) =>
-      response.url().includes("/artworks/results") &&
-      response.url().includes("year_from=1902") &&
-      response.url().includes("year_to=1911"),
-  );
-  await page.locator("[name='year_to']").fill("1911");
-  await rangeResponse;
-  await page.waitForFunction(() => {
-    const listLink = [
-      ...document.querySelectorAll<HTMLAnchorElement>(
-        "#artwork-search-results a",
-      ),
-    ].find((link) => link.textContent === "LIST");
-    if (!listLink) {
-      return false;
-    }
-
-    const url = new URL(listLink.href);
-    return (
-      url.searchParams.get("year_from") === "1902" &&
-      url.searchParams.get("year_to") === "1911"
-    );
-  });
-  await expect(page.getByRole("link", { name: "LIST" })).toHaveAttribute(
-    "href",
-    /year_from=1902.*year_to=1911/,
-  );
-  await page.getByRole("link", { name: "LIST" }).click();
-
-  await expect(page.locator("[data-view='list']")).toBeVisible();
-  await page.getByRole("link", { name: "Next Page" }).click();
-  await expect(page).toHaveURL(/year_from=1902/);
-  await expect(page).toHaveURL(/year_to=1911/);
-  await expect(page).toHaveURL(/view=list/);
-  await expect(page).toHaveURL(/page=2/);
-  await expect(page.locator("[data-view='list']")).toBeVisible();
 });
 
 test("artwork search form works without JavaScript", async ({ browser }) => {

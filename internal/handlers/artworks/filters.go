@@ -151,12 +151,12 @@ func buildFilters(c *core.RequestEvent) *filters {
 	q := c.Request.URL.Query()
 
 	yearFrom := cmp.Or(q.Get("year_from"), "")
-	if yearFrom == "1500" {
+	if yearFrom == "200" {
 		yearFrom = ""
 	}
 
 	yearTo := cmp.Or(q.Get("year_to"), "")
-	if yearTo == "2020" {
+	if yearTo == "1900" {
 		yearTo = ""
 	}
 

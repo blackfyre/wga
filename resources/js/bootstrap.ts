@@ -71,6 +71,7 @@ type wgaInternals = {
 	eventListeners: (() => void)[];
 	func: {
 		cloner: () => void;
+		artworkYearRange: () => void;
 		copyBibTeX: () => void;
 		viewer: () => void;
 		toast: (message: string, type: ToastEvent["detail"]["type"]) => void;
@@ -849,6 +850,7 @@ const wgaInternal: wgaInternals = {
 			wgaInternal.setup.elements();
 			wgaInternal.func.glossary();
 			wgaInternal.func.copyBibTeX();
+			wgaInternal.func.artworkYearRange();
 			void maybeInitStatisticsCharts();
 
 			// Run all event listeners
@@ -929,6 +931,39 @@ const wgaInternal: wgaInternals = {
 						button.textContent = "COPY BIBTEX";
 					}, 2000);
 				});
+			}
+		},
+		artworkYearRange() {
+			const ranges = document.querySelectorAll<HTMLElement>(
+				"[data-artwork-year-range]:not([data-artwork-year-range-bound])",
+			);
+			for (const range of ranges) {
+				const from = range.querySelector<HTMLInputElement>("#year_from");
+				const to = range.querySelector<HTMLInputElement>("#year_to");
+				const output = range
+					.closest("fieldset")
+					?.querySelector<HTMLOutputElement>("output");
+				if (!from || !to) {
+					continue;
+				}
+
+				const update = () => {
+					const minimum = Number(from.min);
+					const maximum = Number(from.max);
+					const scale = maximum - minimum;
+					const start = ((Number(from.value) - minimum) / scale) * 100;
+					const end = ((Number(to.value) - minimum) / scale) * 100;
+					range.style.setProperty("--range-start", `${start}%`);
+					range.style.setProperty("--range-width", `${end - start}%`);
+					if (output) {
+						output.value = `${from.value}–${to.value}`;
+					}
+				};
+
+				from.addEventListener("input", update);
+				to.addEventListener("input", update);
+				update();
+				range.dataset.artworkYearRangeBound = "true";
 			}
 		},
 		dualLookupModal() {

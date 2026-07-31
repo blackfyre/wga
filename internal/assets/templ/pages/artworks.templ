@@ -47,7 +47,7 @@ templ ArtworkSeachFilterBlock(b dto.ArtworkSearchDTO) {
 		hx-indicator="#artwork-search-indicator"
 		hx-sync="this:replace"
 		method="GET"
-		hx-trigger="change, input changed delay:300ms from:find input[type=search]"
+		hx-trigger="change, input changed delay:300ms from:find input[type=search], input changed delay:300ms from:find input[type=range]"
 		class="w-full"
 	>
 		if b.DualModeContext != nil {
@@ -84,11 +84,13 @@ templ ArtworkSeachFilterBlock(b dto.ArtworkSearchDTO) {
 				<legend class="font-mono text-[10px] tracking-[1.5px] text-base-content/60">YEAR RANGE</legend>
 				<output class="font-mono text-xs" for="year_from year_to">{ b.ActiveFilterValues.YearFrom }–{ b.ActiveFilterValues.YearTo }</output>
 			</div>
-			<div class="grid grid-cols-2 gap-3">
-				<input class="w-full accent-primary" type="range" id="year_from" name="year_from" min="1500" max="2020" value={ b.ActiveFilterValues.YearFrom } aria-label="Earliest year"/>
-				<input class="w-full accent-primary" type="range" id="year_to" name="year_to" min="1500" max="2020" value={ b.ActiveFilterValues.YearTo } aria-label="Latest year"/>
+			<div class="artwork-year-range" data-artwork-year-range>
+				<div class="artwork-year-range-track"></div>
+				<div class="artwork-year-range-fill bg-primary"></div>
+				<input class="artwork-year-range-input" type="range" id="year_from" name="year_from" min="200" max="1900" value={ b.ActiveFilterValues.YearFrom } aria-label="Earliest year"/>
+				<input class="artwork-year-range-input" type="range" id="year_to" name="year_to" min="200" max="1900" value={ b.ActiveFilterValues.YearTo } aria-label="Latest year"/>
 			</div>
-			<div class="mt-2 flex justify-between font-mono text-[10px] text-base-content/50"><span>1500</span><span>2020</span></div>
+			<div class="mt-2 flex justify-between font-mono text-[10px] text-base-content/50"><span>200</span><span>1900</span></div>
 		</fieldset>
 		<noscript><button type="submit" class="w-full bg-primary px-4 py-3 font-mono text-[11px] tracking-[1px] text-primary-content">APPLY FILTERS</button></noscript>
 		<div id="artwork-search-indicator" class="htmx-indicator rounded-box border border-base-300 bg-base-200/70 p-3 text-sm text-base-content/80">
