@@ -8,37 +8,39 @@ The user has decided that reference-defined functionality is binding. Cookie con
 
 ### Implementation baseline
 
-| Public surface | Current owner and rendered contract | Replacement boundary |
-| --- | --- | --- |
-| `/` | landing handler → `HomePageWrapped` | Home composition and shared shell |
-| `/artists`, `/artists/{name}`, `/artists/{name}/{awid}` | artists handler → artist list, artist page, artwork page | Catalogue record/list presentation; retain canonical URLs and glossary annotations |
-| `/artworks`, `/artworks/results` | artworks handler → search page/result block | New search/filter/view contract and result block |
-| `/dual-mode`, dual lookup endpoint | dual handler → pane composition, lookup, artwork block | Visual replacement only; preserve pane URL state and operations |
-| `/postcard`, `/postcard/send` | postcard handler → compose/received dialog flow | Dialog presentation only; preserve queue and delivery workflow |
-| `/inspire`, `/statistics`, `/contributors`, `/open-source-licences` | dedicated handlers → page components | Public visual replacement; statistics IDs/data nodes remain stable |
-| `/guestbook`, `/guestbook/add`, `/feedback`, `/pages/{slug}` | guestbook, feedback, and static handlers → pages/dialogs | Public visual replacement plus new feedback and static-content capabilities |
-| Errors | shared error rendering → error page components | Shared visual replacement |
+| Public surface                                                      | Current owner and rendered contract                      | Replacement boundary                                                               |
+| ------------------------------------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `/`                                                                 | landing handler → `HomePageWrapped`                      | Home composition and shared shell                                                  |
+| `/artists`, `/artists/{name}`, `/artists/{name}/{awid}`             | artists handler → artist list, artist page, artwork page | Catalogue record/list presentation; retain canonical URLs and glossary annotations |
+| `/artworks`, `/artworks/results`                                    | artworks handler → search page/result block              | New search/filter/view contract and result block                                   |
+| `/dual-mode`, dual lookup endpoint                                  | dual handler → pane composition, lookup, artwork block   | Visual replacement only; preserve pane URL state and operations                    |
+| `/postcard`, `/postcard/send`                                       | postcard handler → compose/received dialog flow          | Dialog presentation only; preserve queue and delivery workflow                     |
+| `/inspire`, `/statistics`, `/contributors`, `/open-source-licences` | dedicated handlers → page components                     | Public visual replacement; statistics IDs/data nodes remain stable                 |
+| `/guestbook`, `/guestbook/add`, `/feedback`, `/pages/{slug}`        | guestbook, feedback, and static handlers → pages/dialogs | Public visual replacement plus new feedback and static-content capabilities        |
+| Errors                                                              | shared error rendering → error page components           | Shared visual replacement                                                          |
 
 The browser bundle initialises HTMX/dialog/toast/dual/glossary behaviour in `bootstrap.ts`, statistics in `statistics.ts`, and consent in `cookieconsent.ts`. Public partial updates currently use feature-owned containers such as `#mc-area`, `#artwork-search-results`, `#dual-area`, and `#d`; replacements must update the handler and browser contract together.
 
 ### Visual acceptance matrix
 
-| Viewport | Required review states |
-| --- | --- |
+| Viewport            | Required review states                                                                                                                              |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Desktop, 1440 × 900 | Shared shell, every public route, full navigation, dialogs, artwork grid/list, Dual Mode, statistics, static contents navigation, and cookie notice |
-| Mobile, 390 × 844 | Header/menu, page hierarchy, forms, dialogs, artwork grid/list, Dual Mode stacking, static contents navigation, and cookie notice |
-| Reduced motion | Shared shell, dialogs, feedback acknowledgement, and consent transitions at either viewport |
-| JavaScript disabled | Public navigation, catalogue filter submission, glossary search submission, and static-page links |
+| Mobile, 390 × 844   | Header/menu, page hierarchy, forms, dialogs, artwork grid/list, Dual Mode stacking, static contents navigation, and cookie notice                   |
+| Reduced motion      | Shared shell, dialogs, feedback acknowledgement, and consent transitions at either viewport                                                         |
+| JavaScript disabled | Public navigation, catalogue filter submission, glossary search submission, and static-page links                                                   |
 
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Deliver the reference's Rams-inspired public interface consistently across every public page, responsive breakpoint, dialog, and error page.
 - Add binding public capabilities for glossary browsing/search, redesigned catalogue exploration, and categorised contextual feedback.
 - Keep public URLs, HTMX navigation, no-JavaScript links/forms, existing postcard delivery, and Dual Mode's complete state model operational unless the reference explicitly replaces them.
 - Make visual and behavioural verification explicit through focused Go tests, semantic Playwright tests, and viewport-level review.
 
 **Non-Goals:**
+
 - Copy prototype React/inline-style code, bundle artefacts, placeholder data, or generated Templ files into the application.
 - Replace PocketBase, HTMX, Templ, Chart.js, or Vanilla CookieConsent.
 - Invent glossary metadata or artwork relationships absent from the stored collection.

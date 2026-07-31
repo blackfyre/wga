@@ -17,12 +17,14 @@ The public site currently presents an inconsistent, component-library-led interf
 ## Capabilities
 
 ### New Capabilities
+
 - `public-page-experience`: The coherent public visual system, responsive shell, page composition, dialogs, static content presentation, and accessible interaction treatment for all public routes.
 - `catalogue-exploration`: The redesigned artwork search and comparison experience, including the reference's new search controls while preserving the existing Dual Mode state model.
 - `glossary-browsing`: A public, data-backed glossary with alphabetical browsing and live term/definition search.
 - `public-feedback`: Categorised public feedback reports with contextual metadata and an accessible acknowledgement flow.
 
 ### Modified Capabilities
+
 - None.
 
 ## Impact

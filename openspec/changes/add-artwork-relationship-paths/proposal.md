@@ -15,6 +15,7 @@ The collection needs explicit, curator-managed relationships that support relate
 ## Capabilities
 
 ### New Capabilities
+
 - `artwork-relationship-paths`: Maintains explicit artwork relationships and presents related artworks with their shared connection paths.
 - `location-normalisation`: Classifies raw artwork locations conservatively and maps verified museum variants to canonical museum records.
 

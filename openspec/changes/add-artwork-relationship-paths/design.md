@@ -7,6 +7,7 @@ Curators need an admin-friendly way to maintain a bounded set of meaningful artw
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Represent the agreed relationship paths as explicit PocketBase artwork relations.
 - Make primary authorship distinct from co-authorship.
 - Present public related artworks with the reason for each shared relation.
@@ -14,6 +15,7 @@ Curators need an admin-friendly way to maintain a bounded set of meaningful artw
 - Keep curation workable in the PocketBase dashboard without a custom relationship editor.
 
 **Non-Goals:**
+
 - Build a generic subject-predicate-object graph.
 - Infer museum identities from fuzzy matches without curator confirmation.
 - Treat private collections as a public location or related-artwork path.
