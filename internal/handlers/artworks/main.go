@@ -141,7 +141,7 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 		if imageName := v.GetString("image"); imageName != "" {
 			imageURL = url.GenerateFileUrl(constants.CollectionArtworks, v.GetString("id"), imageName, "")
-			thumbURL = url.GenerateThumbUrl(constants.CollectionArtworks, v.GetString("id"), imageName, "320x240", "")
+			thumbURL = url.GenerateThumbUrl(constants.CollectionArtworks, v.GetString("id"), imageName, "320x400", "")
 		}
 
 		artwork := dto.Image{

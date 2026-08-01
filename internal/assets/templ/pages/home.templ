@@ -61,7 +61,7 @@ templ HomePageContent(c HomePage) {
 									<figcaption class="font-mono text-[9px] tracking-[1px] text-base-content/40">IMAGE — WORK OF THE DAY</figcaption>
 								}
 							</figure>
-							<div class="mt-3"><span class="block text-[15px] font-semibold">{ c.FeaturedArtwork.Title }</span><span class="mt-[3px] block font-mono text-[11px] text-base-content/60">{ c.FeaturedArtwork.Artist }{ homeArtworkYear(c.FeaturedArtwork.Year) } →</span></div>
+							<div class="mt-3"><span class="block text-[15px] font-semibold">{ c.FeaturedArtwork.Title }</span><span class="mt-[3px] block font-mono text-[11px] text-base-content/60">{ c.FeaturedArtwork.Artist }{ homeFeaturedArtworkYear(c.FeaturedArtwork.Year) } →</span></div>
 						</a>
 					</div>
 				}
@@ -71,7 +71,7 @@ templ HomePageContent(c HomePage) {
 			<div><p class="text-[26px] font-semibold tracking-[-0.5px] md:text-[30px]">{ c.ArtworkCount }</p><p class="mt-1.5 font-mono text-[10px] tracking-[1.5px] text-base-content/60">REPRODUCTIONS</p></div>
 			<div><p class="text-[26px] font-semibold tracking-[-0.5px] md:text-[30px]">{ c.ArtistCount }</p><p class="mt-1.5 font-mono text-[10px] tracking-[1.5px] text-base-content/60">ARTISTS</p></div>
 			<div><p class="text-[26px] font-semibold tracking-[-0.5px] md:text-[30px]">{ c.SchoolCount }</p><p class="mt-1.5 font-mono text-[10px] tracking-[1.5px] text-base-content/60">SCHOOLS</p></div>
-			<div><p class="text-[26px] font-semibold tracking-[-0.5px] md:text-[30px]">3RD–19TH</p><p class="mt-1.5 font-mono text-[10px] tracking-[1.5px] text-base-content/60">CENTURY</p></div>
+			<div><p class="text-[26px] font-semibold tracking-[-0.5px] md:text-[30px]">3rd–19th</p><p class="mt-1.5 font-mono text-[10px] tracking-[1.5px] text-base-content/60">CENTURY</p></div>
 		</section>
 		<section class="container mx-auto px-4 pt-12 md:px-0">
 			<div class="flex items-baseline justify-between border-b border-base-content pb-3"><h2 class="font-mono text-[11px] tracking-[1.5px]">RECENT ADDITIONS</h2><a href="/artworks" hx-get="/artworks" class="font-mono text-[11px] tracking-[1px] text-primary">ALL WORKS →</a></div>
@@ -93,7 +93,7 @@ templ HomePageContent(c HomePage) {
 		</section>
 		<section class="container mx-auto grid grid-cols-1 gap-8 px-4 pb-16 pt-16 md:grid-cols-3 md:gap-12 md:px-0">
 			<div class="border-t border-base-content/15 pt-6"><p class="mb-3 font-mono text-[11px] tracking-[1.5px] text-base-content/60">SIDE BY SIDE</p><h3 class="mb-2 text-[22px] font-semibold">Compare two works side by side</h3><p class="mb-3.5 text-[15px] leading-relaxed text-base-content/70">Dual Mode opens two records at once — the same painter across decades, or two treatments of one subject.</p><a href="/dual-mode" hx-get="/dual-mode" class="font-mono text-[11px] tracking-[1px] text-primary transition-opacity hover:opacity-60">OPEN DUAL MODE →</a></div>
-			<div class="border-t border-base-content/15 pt-6"><p class="mb-3 font-mono text-[11px] tracking-[1.5px] text-base-content/60">POSTCARD SERVICE</p><h3 class="mb-2 text-[22px] font-semibold">Send any work as a postcard</h3><p class="mb-3.5 text-[15px] leading-relaxed text-base-content/70">Send a work with a personal note. No account is needed and recipient addresses are not kept after delivery.</p><a href="/postcard" hx-get="/postcard" class="font-mono text-[11px] tracking-[1px] text-primary transition-opacity hover:opacity-60">SEND A POSTCARD →</a></div>
+			<div class="border-t border-base-content/15 pt-6"><p class="mb-3 font-mono text-[11px] tracking-[1.5px] text-base-content/60">POSTCARD SERVICE</p><h3 class="mb-2 text-[22px] font-semibold">Send any work as a postcard</h3><p class="mb-3.5 text-[15px] leading-relaxed text-base-content/70">Free, no account, no address kept after delivery. Period music optional.</p><a href="/postcard" hx-get="/postcard" class="font-mono text-[11px] tracking-[1px] text-primary transition-opacity hover:opacity-60">SEND A POSTCARD →</a></div>
 			<div class="border-t border-base-content/15 pt-6"><p class="mb-3 font-mono text-[11px] tracking-[1.5px] text-base-content/60">COMMUNITY</p><h3 class="mb-2 text-[22px] font-semibold">Help sustain the archive</h3><p class="mb-3.5 text-[15px] leading-relaxed text-base-content/70">Contributions, corrections and comments help keep the collection useful.</p><a href="/contributors" hx-get="/contributors" class="font-mono text-[11px] tracking-[1px] text-primary transition-opacity hover:opacity-60">MEET CONTRIBUTORS →</a></div>
 		</section>
 	</section>
@@ -105,4 +105,12 @@ func homeArtworkYear(year string) string {
 	}
 
 	return " · " + year
+}
+
+func homeFeaturedArtworkYear(year string) string {
+	if year == "" {
+		return ""
+	}
+
+	return ", " + year
 }

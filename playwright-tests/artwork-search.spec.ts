@@ -56,6 +56,15 @@ test("artwork search", async ({ page }) => {
   );
 });
 
+test("search cards request portrait thumbnails", async ({ page }) => {
+  await page.goto("/artworks");
+  await expectArtworkResults(page);
+
+  await expect(
+    page.locator("#artwork-search-results [data-view='grid'] img").first(),
+  ).toHaveAttribute("src", /thumb=320x400/);
+});
+
 test("artform search", async ({ page }) => {
   await page.goto("/artworks");
   await chooseFilter(page, "art_form", "architecture");
