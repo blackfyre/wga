@@ -49,7 +49,7 @@ func RegisterHandlers(app *pocketbase.PocketBase, environment config.Environment
 				}
 
 				c.Response.Header().Set("Cache-Control", "no-store")
-				return c.HTML(http.StatusOK, string(content))
+				return c.Blob(http.StatusOK, "text/html; charset=utf-8", content)
 			})
 		}
 

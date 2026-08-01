@@ -16,6 +16,9 @@ func TestVisualOverhaulReferenceIsEmbedded(t *testing.T) {
 	if len(content) == 0 {
 		t.Fatal("visual overhaul reference is empty")
 	}
+	if string(content[:15]) != "<!DOCTYPE html>" {
+		t.Fatal("visual overhaul reference must remain a standalone HTML document")
+	}
 }
 
 func TestVisualOverhaulRouteExcludesProduction(t *testing.T) {
