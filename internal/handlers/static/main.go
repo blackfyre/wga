@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"context"
 	"io/fs"
+	"net/http"
 	"os"
 
 	"github.com/blackfyre/wga/internal/assets"
 	"github.com/blackfyre/wga/internal/assets/templ/error_pages"
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
+	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/pocketbase/pocketbase"
@@ -27,13 +29,30 @@ func getFilePublicSystem() fs.FS {
 	return fsys
 }
 
+func shouldRegisterVisualOverhaul(environment config.Environment) bool {
+	return environment != config.EnvironmentProduction
+}
+
 // RegisterHandlers registers the static routes for the application.
 // It adds a middleware to serve static assets and a handler to serve static pages.
 // The static pages are retrieved from the database based on the slug parameter in the URL.
 // If the request is an Htmx request, only the content block is rendered, otherwise the entire page is rendered.
 // The function returns an error if there was a problem registering the routes.
-func RegisterHandlers(app *pocketbase.PocketBase) {
+func RegisterHandlers(app *pocketbase.PocketBase, environment config.Environment) {
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
+		if shouldRegisterVisualOverhaul(environment) {
+			se.Router.GET("/tmp/visual-overhaul", func(c *core.RequestEvent) error {
+				content, err := assets.ReferenceFiles.ReadFile("reference/visual-overhaul.html")
+				if err != nil {
+					app.Logger().Error("Failed to read visual overhaul reference", "error", err)
+					return utils.ServerFaultError(c)
+				}
+
+				c.Response.Header().Set("Cache-Control", "no-store")
+				return c.HTML(http.StatusOK, string(content))
+			})
+		}
+
 		// Assets
 		if app.IsDev() {
 			se.Router.GET("/assets/{path...}", apis.Static(os.DirFS("../internal/assets/public"), false))
