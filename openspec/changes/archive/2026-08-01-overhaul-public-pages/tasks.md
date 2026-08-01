@@ -62,6 +62,6 @@
 
 - [x] 9.1 Run `templ generate`, `bun run build`, focused Go tests, and `go test ./... -cover`; fix only failures attributable to this change.
 - [x] 9.2 Run the public Playwright suite with the application, Mailpit, and required environment variables available; update assertions only to reflect approved reference behaviour.
-- [ ] 9.3 Perform desktop and mobile viewport review against `WGA Prototype.dc.html` for every public route and record any intentional deviations caused by retained live behaviour or unavailable data.
+- [x] 9.3 Perform desktop and mobile viewport review against `WGA Prototype.dc.html` for every public route and record any intentional deviations caused by retained live behaviour or unavailable data.
 - [x] 9.4 Run `go vet ./...`, `golangci-lint`, and the complete build path; confirm generated Templ and public assets are not committed.
 - [x] 9.5 Review the final diff for unrelated user changes, migration safety, accessibility regressions, stale prototype copy, and preserved public route contracts.
