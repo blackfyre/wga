@@ -11,9 +11,11 @@ Visitors can compare and discover individual works but cannot preserve, narrate,
 ## Capabilities
 
 ### New Capabilities
+
 - `visitor-itineraries`: Draft, publish, share, view, expire, and purge visitor-curated artwork itineraries.
 
 ### Modified Capabilities
+
 - None.
 
 ## Impact

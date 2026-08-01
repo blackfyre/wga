@@ -5,10 +5,12 @@ The reference defines itineraries as session-owned drafts that can be ordered, n
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Provide recoverable session drafts, bounded public sharing, moderation, expiry, and purge.
 - Keep artwork additions and draft mutations server-owned and progressively enhanced.
 
 **Non-Goals:**
+
 - User accounts, collaborative editing, timeline exploration, or period music.
 
 ## Decisions

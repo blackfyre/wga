@@ -5,10 +5,12 @@ The reference keyboard layer combines discoverable help, section jumps, caret na
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Provide accessible, scoped shortcuts without intercepting form editing.
 - Add a rate-limited, server-rendered record suggestion endpoint for the palette.
 
 **Non-Goals:**
+
 - Replace browser navigation, add client-side routing, or add timeline/itinerary shortcuts.
 
 ## Decisions

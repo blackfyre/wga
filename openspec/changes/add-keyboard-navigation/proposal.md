@@ -11,9 +11,11 @@ The public archive has deep catalogue navigation but no keyboard-first path thro
 ## Capabilities
 
 ### New Capabilities
+
 - `keyboard-navigation`: Accessible keyboard navigation, command-palette lookup, and keyboard help across public pages.
 
 ### Modified Capabilities
+
 - None.
 
 ## Impact
