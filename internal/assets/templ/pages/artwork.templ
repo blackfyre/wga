@@ -7,6 +7,21 @@ import (
 	"github.com/blackfyre/wga/internal/assets/templ/utils"
 )
 
+func artworkMetaEntries(aw dto.Artwork) []components.MetaEntry {
+	entries := []components.MetaEntry{}
+	for _, entry := range []components.MetaEntry{
+		{Label: "MEDIUM", Value: aw.Technique},
+		{Label: "DIMENSIONS", Value: aw.Dimensions},
+		{Label: "TYPE", Value: aw.ArtType},
+		{Label: "LOCATION", Value: aw.Location},
+	} {
+		if entry.Value != "" {
+			entries = append(entries, entry)
+		}
+	}
+	return entries
+}
+
 templ ArtworkPage(aw dto.Artwork) {
 	@layouts.LayoutMain() {
 		@ArtworkBlock(aw)
@@ -49,20 +64,7 @@ templ ArtworkBlock(aw dto.Artwork) {
 						</a>
 					</p>
 				}
-				<div class="mt-7 border-t border-base-content/15">
-					if aw.Technique != "" {
-						<div class="flex justify-between gap-4 border-b border-base-content/15 py-3"><p class="font-mono text-[10px] tracking-[1.2px] text-base-content/60">MEDIUM</p><p class="text-right text-sm">{ aw.Technique }</p></div>
-					}
-					if aw.Dimensions != "" {
-						<div class="flex justify-between gap-4 border-b border-base-content/15 py-3"><p class="font-mono text-[10px] tracking-[1.2px] text-base-content/60">DIMENSIONS</p><p class="text-right text-sm">{ aw.Dimensions }</p></div>
-					}
-					if aw.ArtType != "" {
-						<div class="flex justify-between gap-4 border-b border-base-content/15 py-3"><p class="font-mono text-[10px] tracking-[1.2px] text-base-content/60">TYPE</p><p class="text-right text-sm">{ aw.ArtType }</p></div>
-					}
-					if aw.Location != "" {
-						<div class="flex justify-between gap-4 border-b border-base-content/15 py-3"><p class="font-mono text-[10px] tracking-[1.2px] text-base-content/60">LOCATION</p><p class="text-right text-sm">{ aw.Location }</p></div>
-					}
-				</div>
+				<div class="mt-7">@components.MetaList(artworkMetaEntries(aw))</div>
 				<a href="#" hx-on:click="wga.dialog.open();" hx-get={ `/postcard/send?awid=` + aw.Id } hx-target="#d" hx-swap="innerHTML" hx-select=".modal-box, form[method=dialog].modal-backdrop" class="mt-7 flex w-full justify-center bg-primary px-5 py-3.5 font-mono text-[11px] tracking-[1.5px] text-primary-content hover:opacity-85">SEND AS POSTCARD →</a>
 			</article>
 		</div>
@@ -75,14 +77,8 @@ templ ArtworkBlock(aw dto.Artwork) {
 				@templ.Raw(aw.Comment)
 			</div>
 		</div>
-		if aw.BibTeX != "" {
-			<section class="mt-14 border-t border-base-content/15 pt-5">
-				<div class="flex items-baseline justify-between gap-4">
-					<h2 class="font-mono text-[11px] tracking-[1.5px]">CITE THIS RECORD — BIBTEX</h2>
-					<button type="button" data-copy-bibtex data-copy-target="#artwork-bibtex" class="font-mono text-[11px] tracking-[1px] text-primary hover:opacity-70">COPY BIBTEX</button>
-				</div>
-				<pre id="artwork-bibtex" class="mt-4 overflow-x-auto border border-base-content/15 bg-base-300 p-4 font-mono text-xs leading-relaxed">{ aw.BibTeX }</pre>
-			</section>
+		if aw.CitationKey != "" {
+			@components.CitationBlock(components.Citation{Key: aw.CitationKey, Title: aw.CitationTitle, URL: aw.CitationURL})
 		}
 		if len(aw.RelatedWorks) > 0 {
 			<section class="mt-14 border-t border-base-content/15 pt-5">

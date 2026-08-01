@@ -42,7 +42,7 @@ templ StaticPageBlock(sp StaticPageDTO) {
 		}
 		<div class={ "flex flex-col gap-10 md:flex-row md:gap-16", templ.KV("mt-10", sp.Title != "About") }>
 			if len(sp.TOC) > 0 {
-				<nav class="w-full shrink-0 md:w-52" aria-label="Contents">
+				<nav class="w-full shrink-0 md:sticky md:top-8 md:w-52 md:self-start" aria-label="Contents">
 					<p class="mb-3 font-mono text-[10px] tracking-[1.5px] text-base-content/60">CONTENTS</p>
 					<ol class="border-t border-base-content/15">
 						for _, item := range sp.TOC {

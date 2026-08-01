@@ -1,11 +1,19 @@
 package pages
 
 import (
+	"net/url"
+	"strconv"
+
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/assets/templ/layouts"
 )
 
 type GuestbookView struct {
+	Total        int
+	Query        string
+	Sort         string
+	Shown        int
+	ScopeTotal   int
 	SelectedYear string
 	CurrentYear  string
 	YearOptions  []string
@@ -19,44 +27,53 @@ templ GuestbookPage(v GuestbookView) {
 }
 
 templ GuestbookBlock(v GuestbookView) {
-	<section class="container mx-auto px-4 pb-20 pt-10 md:px-0 wga-enter">
+	<section id="guestbook" class="container mx-auto px-4 pb-20 pt-10 md:px-0 wga-enter">
 		<p class="mb-3 font-mono text-[11px] tracking-[2px] text-base-content/60">10 — GUESTBOOK</p>
 		<h1 class="mb-3 text-[44px] font-semibold leading-tight tracking-[-0.5px]">Guestbook</h1>
-		<p class="mb-11 max-w-[540px] text-base leading-relaxed text-base-content/70">Notes from people who have spent time with the collection. Messages are moderated before publication.</p>
+		<p class="mb-11 max-w-[540px] text-base leading-relaxed text-base-content/70">Notes from people who have spent time with the collection. { strconv.Itoa(v.Total) } entries in the archive.</p>
 
-		<div class="grid gap-10 md:grid-cols-[340px_1fr] md:gap-14">
-			<aside class="border-t border-base-content/15 pt-5">
+		<div class="flex flex-col-reverse gap-10 md:flex-row md:items-start md:gap-14">
+			<aside class="w-full shrink-0 border-t border-base-content/15 pt-5 md:order-2 md:w-[320px]">
 				@GuestbookEntryForm()
 			</aside>
 
-			<div>
-				if len(v.YearOptions) > 1 {
-					<div class="mb-6">
+			<div class="min-w-0 flex-1 md:order-1">
+				<form hx-get="/guestbook" hx-target="#guestbook" hx-select="#guestbook" hx-swap="outerHTML" hx-trigger="change, input changed delay:300ms from:input[type=search]" class="mb-6">
+					<div class="flex items-center gap-3.5 pb-4.5">
+						<label class="min-w-0 flex-1"><span class="sr-only">Search entries</span><input type="search" name="q" value={ v.Query } placeholder="Search entries by name, place or text" class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2 text-sm outline-none focus:ring-0"/></label>
+						<p class="whitespace-nowrap font-mono text-[11px] text-base-content/60" aria-live="polite">{ strconv.Itoa(v.ScopeTotal) } FOUND</p>
+					</div>
+					<input type="hidden" name="year" value={ v.SelectedYear }/>
+					<input type="hidden" name="sort" value={ v.Sort }/>
+					<div>
 						<p class="mb-3 font-mono text-[10px] tracking-[1.5px] text-base-content/60">JUMP TO YEAR</p>
 						<nav class="flex flex-wrap gap-1.5" aria-label="Filter guestbook entries by year">
+							@GuestbookYearLink(v, "all", "ALL")
 							for _, year := range v.YearOptions {
-								<a
-									href={ templ.URL("/guestbook?year=" + year) }
-									hx-get={ "/guestbook?year=" + year }
-									class={ "border px-3 py-1.5 font-mono text-[11px] tracking-[1px] transition-colors", templ.KV("border-primary bg-primary text-primary-content", v.SelectedYear == year), templ.KV("border-base-content/25 text-base-content/70 hover:border-base-content", v.SelectedYear != year) }
-									aria-current={ guestbookAriaCurrent(v.SelectedYear == year) }
-								>{ year }</a>
+								@GuestbookYearLink(v, year, year)
 							}
 						</nav>
 					</div>
-				}
+					<noscript><button type="submit" class="mt-4 bg-primary px-4 py-3 font-mono text-[11px] tracking-[1.5px] text-primary-content">SEARCH</button></noscript>
+				</form>
 				<div class="flex items-baseline justify-between gap-4 border-b border-base-content pb-3 font-mono text-[11px] tracking-[1.5px]">
-					<p>ENTRIES FROM { v.SelectedYear }</p>
-					<p class="text-primary">LATEST FIRST</p>
+					<p>{ guestbookHeading(v.SelectedYear) }</p>
+					<a href={ templ.URL(guestbookURL(v, v.SelectedYear, otherSort(v.Sort), 0)) } hx-get={ guestbookURL(v, v.SelectedYear, otherSort(v.Sort), 0) } hx-target="#guestbook" hx-select="#guestbook" hx-swap="outerHTML" class="text-primary">{ guestbookSortLabel(v.Sort) } ↕</a>
 				</div>
 				if len(v.Entries) > 0 {
 					@GuestbookEntries(v.Entries)
+					<div class="mt-6 flex items-center justify-between gap-4">
+						<p class="font-mono text-[11px] text-base-content/60">SHOWING { strconv.Itoa(v.Shown) } OF { strconv.Itoa(v.ScopeTotal) }</p>
+						if v.Shown < v.ScopeTotal {
+							<a href={ templ.URL(guestbookURL(v, v.SelectedYear, v.Sort, v.Shown + 10)) } hx-get={ guestbookURL(v, v.SelectedYear, v.Sort, v.Shown + 10) } hx-target="#guestbook" hx-select="#guestbook" hx-swap="outerHTML" class="border border-base-content/25 px-3.5 py-2 font-mono text-[11px] tracking-[1px]">LOAD 10 MORE →</a>
+						} else {
+							<p class="font-mono text-[11px] tracking-[1px] text-base-content/40">ALL SHOWN</p>
+						}
+					</div>
 				} else {
 					<div class="py-12">
-						<p class="mb-2 text-lg font-semibold">No entries found.</p>
-						if v.SelectedYear == v.CurrentYear {
-							<p class="text-[15px] leading-relaxed text-base-content/70">Be the first to sign the guestbook for { v.SelectedYear }.</p>
-						}
+						<p class="mb-2 text-lg font-semibold">No entries match.</p>
+						<a href="/guestbook" hx-get="/guestbook" hx-target="#guestbook" hx-select="#guestbook" hx-swap="outerHTML" class="font-mono text-[11px] tracking-[1px] text-primary">CLEAR SEARCH AND YEAR →</a>
 					</div>
 				}
 			</div>
@@ -108,6 +125,18 @@ templ GuestbookEntries(entries dto.GuestbookEntries) {
 	</div>
 }
 
+templ GuestbookYearLink(v GuestbookView, value string, label string) {
+	<a
+		href={ templ.URL(guestbookURL(v, value, v.Sort, 0)) }
+		hx-get={ guestbookURL(v, value, v.Sort, 0) }
+		hx-target="#guestbook"
+		hx-select="#guestbook"
+		hx-swap="outerHTML"
+		class={ "border px-3 py-1.5 font-mono text-[11px] tracking-[1px] transition-colors", templ.KV("border-primary bg-primary text-primary-content", v.SelectedYear == value), templ.KV("border-base-content/25 text-base-content/70 hover:border-base-content", v.SelectedYear != value) }
+		aria-current={ guestbookAriaCurrent(v.SelectedYear == value) }
+	>{ label }</a>
+}
+
 templ GuestbookEntry(entry dto.GuestbookEntry) {
 	if (entry.Message == "") {
 		return
@@ -135,4 +164,44 @@ func guestbookAriaCurrent(active bool) string {
 	}
 
 	return "false"
+}
+
+func guestbookURL(v GuestbookView, year string, sort string, show int) string {
+	values := url.Values{}
+	if v.Query != "" {
+		values.Set("q", v.Query)
+	}
+	values.Set("year", year)
+	if sort == "oldest" {
+		values.Set("sort", sort)
+	}
+	if show > 10 {
+		values.Set("show", strconv.Itoa(show))
+	}
+
+	return "/guestbook?" + values.Encode()
+}
+
+func otherSort(sort string) string {
+	if sort == "newest" {
+		return "oldest"
+	}
+
+	return "newest"
+}
+
+func guestbookSortLabel(sort string) string {
+	if sort == "oldest" {
+		return "OLDEST"
+	}
+
+	return "NEWEST"
+}
+
+func guestbookHeading(year string) string {
+	if year == "all" {
+		return "ALL ENTRIES"
+	}
+
+	return "ENTRIES FROM " + year
 }

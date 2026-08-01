@@ -70,6 +70,19 @@ test("header search submits an artwork title", async ({ page }) => {
   );
 });
 
+test("navigation follows the available reference destinations", async ({ page }) => {
+  await page.goto("/");
+	const navigation = page.locator(
+		"header > nav[aria-label='Primary navigation']",
+	);
+
+  await expect(navigation.getByRole("link", { name: "POSTCARDS" })).toHaveAttribute(
+    "href",
+    "/postcard",
+  );
+  await expect(navigation.locator("a[href='/pages/about']")).toHaveCount(1);
+});
+
 test("mobile navigation opens by keyboard", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
@@ -154,6 +167,10 @@ test("footer follows the public site map", async ({ page }) => {
     "href",
     "/artists",
   );
+	await expect(footer.getByRole("link", { name: "Postcards" })).toHaveAttribute(
+		"href",
+		"/postcard",
+	);
   await expect(page.getByRole("checkbox", { name: "Dark mode" })).toHaveCount(
     0,
   );

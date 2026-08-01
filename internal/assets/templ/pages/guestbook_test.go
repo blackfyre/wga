@@ -47,20 +47,20 @@ func TestGuestbookBlockAlwaysRendersSigningLink(t *testing.T) {
 	}
 }
 
-func TestGuestbookBlockOnlyShowsYearNavigationForMultipleYears(t *testing.T) {
+func TestGuestbookBlockAlwaysShowsYearNavigation(t *testing.T) {
 	tests := []struct {
 		name         string
 		yearOptions  []string
-		wantSelector bool
+			wantSelector bool
 	}{
 		{
 			name:         "no years",
-			wantSelector: false,
+				wantSelector: true,
 		},
 		{
 			name:         "one year",
 			yearOptions:  []string{"2020"},
-			wantSelector: false,
+				wantSelector: true,
 		},
 		{
 			name:         "multiple years",

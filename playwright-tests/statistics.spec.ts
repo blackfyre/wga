@@ -33,10 +33,13 @@ test("art form chart and summary use the reference desktop layout", async ({
   const summary = await page.locator("#art-form-summary").boundingBox();
   expect(summary?.x).toBeCloseTo(436, 0);
   await expect(page.locator(".art-form-label").first()).toBeVisible();
-  await page.waitForFunction(
-    () =>
-      document
-        .getElementById("artworks-by-period-chart")
-        ?.getBoundingClientRect().height === 300,
-  );
+	const periodChart = page.locator("#artworks-by-period-chart");
+	await page.waitForFunction(() => {
+		const box = document
+			.getElementById("artworks-by-period-chart")
+			?.getBoundingClientRect();
+		return box !== undefined && box.width > 0 && box.width / box.height === 2;
+	});
+	const chartBox = await periodChart.boundingBox();
+	expect(chartBox?.width || 0).toBeCloseTo((chartBox?.height || 0) * 2, 0);
 });

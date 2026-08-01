@@ -1,7 +1,7 @@
 package components
 
 templ Footer() {
-	<footer class="mt-16 border-t border-base-content/15 pb-15 pt-10">
+	<footer class="border-t border-base-content/15 pb-15 pt-10">
 		<div class="container mx-auto grid grid-cols-2 gap-8 px-4 text-sm md:grid-cols-[1.6fr_1fr_1fr_1fr] md:px-0">
 			<div>
 				<p class="mb-3 font-mono text-[11px] tracking-[1.5px]">WEB GALLERY OF ART</p>
@@ -19,7 +19,7 @@ templ Footer() {
 			<div>
 				<p class="mb-3 font-mono text-[11px] tracking-[1.5px] text-base-content/60">SERVICES</p>
 				<ul class="space-y-1 text-sm leading-[2.1] text-base-content/70">
-					<li>Postcards</li>
+				<li><a class="hover:text-primary" href="/postcard" hx-get="/postcard">Postcards</a></li>
 					<li>Period music</li>
 					<li><a class="hover:text-primary" href="/dual-mode" hx-get="/dual-mode">Dual mode</a></li>
 					<li><a class="hover:text-primary" href="/guestbook" hx-get="/guestbook">Guestbook</a></li>

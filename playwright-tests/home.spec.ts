@@ -22,3 +22,10 @@ test("home hero uses the reference mobile inset", async ({ page }) => {
     .boundingBox();
   expect(box?.x).toBeCloseTo(40, 0);
 });
+
+test("home lists four recent additions in the reference grid", async ({ page }) => {
+  await page.goto("/");
+
+  await expect(page.getByRole("heading", { name: "RECENT ADDITIONS" })).toBeVisible();
+  await expect(page.locator("#recent-additions > li")).toHaveCount(4);
+});

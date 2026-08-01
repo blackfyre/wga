@@ -69,11 +69,13 @@ templ StatisticsBlock(c StatisticsPageDTO) {
 				<h2 class="text-xl font-semibold">Art form distribution</h2>
 				<p class="font-mono text-[10px] tracking-[1px] text-base-content/60">ARTWORKS BY FORM</p>
 			</div>
-			<div class="mt-8 grid gap-10 md:grid-cols-[240px_1fr] md:items-start md:gap-14">
-				<div class="min-w-0">
-					<canvas id="art-form-chart" class="w-full" role="img" aria-label="Art form distribution chart" aria-describedby="art-form-summary"></canvas>
+			<div class="mt-8 flex flex-col items-start gap-9 md:flex-row md:gap-14">
+				<div class="w-[210px] shrink-0 self-center md:w-[240px] md:self-start">
+					<canvas id="art-form-chart" role="img" aria-label="Art form distribution chart" aria-describedby="art-form-summary"></canvas>
 				</div>
-				@artFormSummary(c.ArtFormSummary)
+				<div class="min-w-0 flex-1">
+					@artFormSummary(c.ArtFormSummary)
+				</div>
 			</div>
 		</section>
 		<section class="mb-[72px]">
@@ -81,9 +83,7 @@ templ StatisticsBlock(c StatisticsPageDTO) {
 				<h2 class="text-xl font-semibold">Artworks by school &amp; period</h2>
 				<p class="font-mono text-[10px] tracking-[1px] text-base-content/60">STACKED BY SCHOOL · BIRTH PERIOD</p>
 			</div>
-			<div class="mt-8 h-[300px]">
-				<canvas id="artworks-by-period-chart" class="h-full w-full" role="img" aria-label="Artworks by school and period chart" aria-describedby="artworks-period-summary"></canvas>
-			</div>
+			<canvas id="artworks-by-period-chart" class="mt-8" role="img" aria-label="Artworks by school and period chart" aria-describedby="artworks-period-summary"></canvas>
 			@schoolPeriodSummary("artworks-period-summary", "Artworks by school and birth period data", c.ArtworksPeriodSummary)
 		</section>
 		<section>
@@ -91,9 +91,7 @@ templ StatisticsBlock(c StatisticsPageDTO) {
 				<h2 class="text-xl font-semibold">Artists by school &amp; period</h2>
 				<p class="font-mono text-[10px] tracking-[1px] text-base-content/60">STACKED BY SCHOOL · BIRTH PERIOD</p>
 			</div>
-			<div class="mt-8 h-[300px]">
-				<canvas id="artists-by-period-chart" class="h-full w-full" role="img" aria-label="Artists by school and period chart" aria-describedby="artists-period-summary"></canvas>
-			</div>
+			<canvas id="artists-by-period-chart" class="mt-8" role="img" aria-label="Artists by school and period chart" aria-describedby="artists-period-summary"></canvas>
 			@schoolPeriodSummary("artists-period-summary", "Artists by school and birth period data", c.ArtistsPeriodSummary)
 		</section>
 		<div id="art-form-data" hidden data-json={ c.ArtFormData }></div>

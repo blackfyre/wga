@@ -4,7 +4,7 @@ The public site currently presents an inconsistent, component-library-led interf
 
 ## What Changes
 
-- Replace the public Templ shell, pages, components, CSS theme, and browser interactions with the supplied visual reference as the visual and interaction contract.
+- Replace the public Templ shell, pages, components, CSS theme, and browser interactions with the supplied visual reference as the visual and interaction contract. Use the updated reusable-component bundle as a pattern reference, adapting or creating local primitives only where they preserve WGA's existing DTO, route, HTMX, and accessibility contracts.
 - Rebuild responsive navigation, home, artist and artwork browsing, artwork records, postcards, inspiration, statistics, static content, guestbook, contributors, feedback, errors, and dialogs in the new visual language.
 - Add the data-backed Glossary route with A–Z filtering and delayed text search over the existing Glossary collection.
 - Seed the reference's missing static-content destinations and render their generated table of contents in the redesigned static-page experience.

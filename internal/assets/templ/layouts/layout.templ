@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"github.com/blackfyre/wga/internal/assets/templ/components"
 	"github.com/blackfyre/wga/internal/assets/templ/utils"
-	"github.com/blackfyre/wga/internal/buildinfo"
 	"github.com/blackfyre/wga/internal/observability"
 )
 
@@ -90,9 +89,9 @@ templ LayoutMain() {
 	@LayoutBase("min-h-screen", "") {
 		if utils.GetEnvironment(ctx) != "production" {
 			<section class="border-b border-base-content/15">
-				<div class="container mx-auto flex items-center gap-3 px-4 py-2 md:px-0">
-					<span class="bg-primary px-2 py-1 font-mono text-[9px] tracking-[1.5px] text-primary-content">BUILD</span>
-					<p class="font-mono text-[10px] tracking-[1px] text-base-content/60">{ utils.GetEnvironment(ctx) } · { buildinfo.Version }</p>
+				<div class="container mx-auto flex items-center gap-3 px-4 py-2.5 md:px-0">
+					<span class="bg-primary px-2 py-1 font-mono text-[9px] tracking-[1.5px] text-primary-content">STAGING</span>
+					<p class="font-mono text-[10px] tracking-[1px] text-base-content/60">DEVELOPMENT BUILD — NOT FOR PUBLIC USE. CONTRIBUTE ON GITHUB.</p>
 				</div>
 			</section>
 		}

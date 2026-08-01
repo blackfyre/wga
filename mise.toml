@@ -125,3 +125,12 @@ run = "podman compose up -d"
 description = "Start local services, asset watchers, and template generation."
 alias = "up"
 run = "mise run services:up && mise run --jobs 3 watch:js ::: watch:templ ::: watch:css"
+
+[tasks."debug:chromium"]
+description = "Start a Chromium browser for debugging"
+run = '''
+chromium-browser \
+  --remote-debugging-port=9222 \
+  --user-data-dir="$HOME/.config/chromium" \
+  http://localhost:8090
+'''

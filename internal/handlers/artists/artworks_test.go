@@ -2,7 +2,6 @@ package artists
 
 import (
 	"testing"
-	"time"
 
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/config"
@@ -26,7 +25,7 @@ func TestArtworkLocationAndDimensionsWithoutCatalogueSummary(t *testing.T) {
 	}
 }
 
-func TestArtworkBibTeX(t *testing.T) {
+func TestPopulateArtworkCitation(t *testing.T) {
 	configuration := config.LoadFrom(func(key string) string {
 		return map[string]string{
 			"WGA_ENV":                "development",
@@ -46,23 +45,21 @@ func TestArtworkBibTeX(t *testing.T) {
 		apputils.ConfigurePublicURL(config.PublicURL{})
 	})
 
-	bibTeX := artworkBibTeX(dto.Artwork{
+	artwork := dto.Artwork{
 		Title: "Girl with a Pearl Earring",
 		Artist: dto.Artist{
 			Name: "Johannes Vermeer",
 		},
-	}, time.Date(2026, time.July, 31, 0, 0, 0, 0, time.UTC))
-	want := `@online{wga-girl-with-a-pearl-earring,
-  author       = {Krén, Emil and Marx, Daniel},
-  title        = {Girl with a Pearl Earring by Johannes Vermeer},
-  organization = {{Web Gallery of Art}},
-  date         = {2026-07-31},
-  url          = {https://gallery.example/artworks/girl-with-a-pearl-earring},
-  urldate      = {2026-07-31},
-  langid       = {english}
-}`
+	}
+	populateArtworkCitation(&artwork)
 
-	if bibTeX != want {
-		t.Errorf("artworkBibTeX() = %q, want %q", bibTeX, want)
+	if artwork.CitationKey != "wga-girl-with-a-pearl-earring" {
+		t.Errorf("CitationKey = %q", artwork.CitationKey)
+	}
+	if artwork.CitationTitle != "Girl with a Pearl Earring by Johannes Vermeer" {
+		t.Errorf("CitationTitle = %q", artwork.CitationTitle)
+	}
+	if artwork.CitationURL != "https://gallery.example/artworks/girl-with-a-pearl-earring" {
+		t.Errorf("CitationURL = %q", artwork.CitationURL)
 	}
 }

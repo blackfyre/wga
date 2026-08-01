@@ -179,7 +179,7 @@ function buildStackedBarChart(
 		data: { labels, datasets },
 		options: {
 			responsive: true,
-			maintainAspectRatio: false,
+			aspectRatio: 2,
 			scales: {
 				x: {
 					stacked: true,

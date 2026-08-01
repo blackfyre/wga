@@ -45,7 +45,9 @@ type Artwork struct {
 	Dimensions      string
 	ArtType         string
 	Location        string
-	BibTeX          string
+	CitationKey     string
+	CitationTitle   string
+	CitationURL     string
 	RelatedWorks    ImageGrid
 	Jsonld          string
 	Url             string

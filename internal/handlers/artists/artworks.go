@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
@@ -125,7 +124,7 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 		ShowBreadcrumbs: true,
 	}
 	populateArtworkMetadata(app, aw, &content)
-	content.BibTeX = artworkBibTeX(content, time.Now())
+	populateArtworkCitation(&content)
 	content.RelatedWorks = relatedArtworkImages(app, artist, aw.Id, content.HxTarget)
 
 	school := artist.GetStringSlice("school")
@@ -293,10 +292,11 @@ func artworkLocationAndDimensions(comment string) (string, string) {
 	return strings.TrimSpace(parts[1]), strings.TrimSpace(parts[2])
 }
 
-func artworkBibTeX(artwork dto.Artwork, accessedAt time.Time) string {
-	accessDate := accessedAt.Format("2006-01-02")
+func populateArtworkCitation(artwork *dto.Artwork) {
 	slug := utils.Slugify(artwork.Title)
-	return fmt.Sprintf("@online{wga-%s,\n  author       = {Krén, Emil and Marx, Daniel},\n  title        = {%s by %s},\n  organization = {{Web Gallery of Art}},\n  date         = {%s},\n  url          = {%s},\n  urldate      = {%s},\n  langid       = {english}\n}", slug, artwork.Title, artwork.Artist.Name, accessDate, utils.AssetUrl("/artworks/"+slug), accessDate)
+	artwork.CitationKey = "wga-" + slug
+	artwork.CitationTitle = fmt.Sprintf("%s by %s", artwork.Title, artwork.Artist.Name)
+	artwork.CitationURL = utils.AssetUrl("/artworks/" + slug)
 }
 
 func relatedArtworkImages(app *pocketbase.PocketBase, artist *core.Record, currentArtworkID string, hxTarget string) dto.ImageGrid {

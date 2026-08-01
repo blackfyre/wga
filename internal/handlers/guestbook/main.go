@@ -2,11 +2,12 @@ package guestbook
 
 import (
 	"bytes"
-	"cmp"
 	"context"
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
@@ -33,6 +34,62 @@ type GuestBookMessage struct {
 }
 
 const guestbookYearsCacheTTL = 10 * time.Minute
+const guestbookPageSize = 10
+
+type filters struct {
+	Query string
+	Year  string
+	Sort  string
+	Show  int
+}
+
+func buildFilters(c *core.RequestEvent, currentYear string) filters {
+	show, err := strconv.Atoi(c.Request.URL.Query().Get("show"))
+	if err != nil || show < guestbookPageSize {
+		show = guestbookPageSize
+	}
+
+	year := c.Request.URL.Query().Get("year")
+	if year == "" {
+		year = currentYear
+	}
+
+	sort := c.Request.URL.Query().Get("sort")
+	if sort != "oldest" {
+		sort = "newest"
+	}
+
+	return filters{
+		Query: strings.TrimSpace(c.Request.URL.Query().Get("q")),
+		Year:  year,
+		Sort:  sort,
+		Show:  show,
+	}
+}
+
+func (f filters) buildFilter() (string, dbx.Params) {
+	parts := []string{}
+	params := dbx.Params{}
+
+	if f.Year != "all" {
+		parts = append(parts, "created ~ {:year}")
+		params["year"] = f.Year
+	}
+	if f.Query != "" {
+		parts = append(parts, "(name ~ {:query} || location ~ {:query} || message ~ {:query})")
+		params["query"] = f.Query
+	}
+
+	return strings.Join(parts, " && "), params
+}
+
+func (f filters) sortExpression() string {
+	if f.Sort == "oldest" {
+		return "+created"
+	}
+
+	return "-created"
+}
 
 func yearOptions(app core.App, currentYear string) ([]string, error) {
 	years, err := utils.GetOrLoadCachedValue(app, constants.CacheGuestbookYears, guestbookYearsCacheTTL, func() ([]string, error) {
@@ -94,19 +151,28 @@ func EntriesHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 	fullUrl := url.GenerateCurrentPageUrl(c)
 	currentYear := fmt.Sprintf("%d", time.Now().Year())
-	year := cmp.Or(c.Request.URL.Query().Get("year"), currentYear)
+	filters := buildFilters(c, currentYear)
 	years, err := yearOptions(app, currentYear)
 	if err != nil {
 		app.Logger().Error("Failed to get guestbook years", "error", err)
 		return utils.ServerFaultError(c)
 	}
 
-	app.Logger().Debug("Guestbook entries request", "year", year, "fullUrl", fullUrl)
+	app.Logger().Debug("Guestbook entries request", "year", filters.Year, "query", filters.Query, "sort", filters.Sort, "show", filters.Show, "fullUrl", fullUrl)
 
-	// entries, err := wgaModels.FindEntriesForYear(app.Dao(), year)
-	entries, err := app.FindRecordsByFilter(constants.CollectionGuestbook, "created ~ {:year}", "-created", 0, 0, dbx.Params{
-		"year": year,
-	})
+	filter, params := filters.buildFilter()
+	scopeTotal, err := utils.CountRecordsByFilter(app, constants.CollectionGuestbook, filter, params)
+	if err != nil {
+		app.Logger().Error("Failed to count guestbook entries", "error", err)
+		return utils.ServerFaultError(c)
+	}
+	total, err := utils.CountRecordsByFilter(app, constants.CollectionGuestbook, "", dbx.Params{})
+	if err != nil {
+		app.Logger().Error("Failed to count all guestbook entries", "error", err)
+		return utils.ServerFaultError(c)
+	}
+
+	entries, err := app.FindRecordsByFilter(constants.CollectionGuestbook, filter, filters.sortExpression(), filters.Show, 0, params)
 
 	if err != nil {
 		app.Logger().Error("Failed to get guestbook entries", "error", err)
@@ -114,7 +180,12 @@ func EntriesHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	}
 
 	content := pages.GuestbookView{
-		SelectedYear: year,
+		Total:        total,
+		Query:        filters.Query,
+		Sort:         filters.Sort,
+		Shown:        len(entries),
+		ScopeTotal:   scopeTotal,
+		SelectedYear: filters.Year,
 		CurrentYear:  currentYear,
 		YearOptions:  years,
 		Entries:      convertRawEntriesToGuestbookEntries(entries),
