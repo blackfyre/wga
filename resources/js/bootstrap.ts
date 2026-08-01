@@ -4,6 +4,7 @@ import "htmx.org";
 import htmx from "htmx.org";
 import warningSign from "../assets/warning-sign.svg";
 import { initCookieConsent } from "./cookieconsent";
+import { initKeyboardNavigation } from "./keyboard";
 import logger from "./logger";
 import { initStatisticsChart } from "./statistics";
 
@@ -1023,6 +1024,7 @@ const wgaInternal: wgaInternals = {
 (() => {
 	logger.debug("Initializing WGA");
 	initCookieConsent();
+	initKeyboardNavigation();
 	initThemeToggle();
 	syncMobileNavigation();
 	document.addEventListener("htmx:afterSettle", syncMobileNavigation);

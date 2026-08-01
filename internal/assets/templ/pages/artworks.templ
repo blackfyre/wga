@@ -71,6 +71,7 @@ templ ArtworkSeachFilterBlock(b dto.ArtworkSearchDTO) {
 				class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2 text-sm outline-none focus:ring-0"
 				type="search"
 				id="artwork-query"
+				data-keyboard-page-search
 				name="q"
 				placeholder="e.g. milkmaid"
 				value={ b.ActiveFilterValues.Query }
@@ -160,9 +161,9 @@ templ ArtworkSearchResults(r dto.ArtworkSearchResultDTO) {
 			} else if r.View == "list" {
 				@ArtworkSearchResultList(r.Artworks)
 			} else {
-				<div class="mt-7 grid grid-cols-2 gap-x-4 gap-y-9 md:grid-cols-3 md:gap-x-7" data-view="grid">
+				<div class="mt-7 grid grid-cols-2 gap-x-4 gap-y-9 md:grid-cols-3 md:gap-x-7" data-keyboard-list data-view="grid">
 					for _, artwork := range r.Artworks {
-						<a href={ templ.SafeURL(artwork.Url) } hx-get={ artwork.Url } class="block transition-opacity hover:opacity-70">
+						<a href={ templ.SafeURL(artwork.Url) } hx-get={ artwork.Url } data-keyboard-item class="block transition-opacity hover:opacity-70">
 							<figure class="mb-2.5 aspect-[4/5] border border-base-content/15 bg-base-300 p-2.5">
 								<img src={ artwork.Thumb } alt={ artwork.Title } class="h-full w-full object-cover"/>
 							</figure>
@@ -192,10 +193,10 @@ templ ArtworkSearchResults(r dto.ArtworkSearchResultDTO) {
 }
 
 templ ArtworkSearchResultList(artworks dto.ImageGrid) {
-	<ul data-view="list">
+	<ul data-keyboard-list data-view="list">
 		for _, artwork := range artworks {
 			<li>
-				<a href={ templ.SafeURL(artwork.Url) } hx-get={ artwork.Url } class="flex items-center gap-4 border-b border-base-content/15 py-3.5 transition-colors hover:bg-primary/5">
+				<a href={ templ.SafeURL(artwork.Url) } hx-get={ artwork.Url } data-keyboard-item class="flex items-center gap-4 border-b border-base-content/15 py-3.5 transition-colors hover:bg-primary/5">
 					<img src={ artwork.Thumb } alt={ artwork.Title } class="h-[54px] w-11 shrink-0 border border-base-content/15 bg-base-300 object-cover"/>
 					<span class="min-w-0 flex-1"><span class="block text-[15px] font-semibold leading-tight">{ artwork.Title }</span><span class="mt-[3px] block font-mono text-[11px] text-base-content/60">{ artwork.Artist.Name }</span></span>
 					<span class="hidden shrink-0 font-mono text-[11px] text-base-content/70 md:block">{ artwork.Technique }</span>

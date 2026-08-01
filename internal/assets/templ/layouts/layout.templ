@@ -70,6 +70,7 @@ templ LayoutBase(bodyClasses string, HtmxTargetArea string) {
 			</div>
 			{ children... }
 			<dialog id="d" class="modal m-auto border border-base-content p-0 text-base-content backdrop:bg-base-content/30"></dialog>
+			@components.KeyboardLayer()
 			<a
 				href="#"
 				hx-get="/feedback"
