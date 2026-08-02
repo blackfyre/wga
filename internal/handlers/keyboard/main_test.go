@@ -33,3 +33,29 @@ func TestRequestLimiterResetsAfterOneMinute(t *testing.T) {
 		t.Fatal("request after rate window reset was rejected")
 	}
 }
+
+func TestRequestLimiterRemovesExpiredClients(t *testing.T) {
+	now := time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC)
+	limiter := newRequestLimiter()
+	limiter.now = func() time.Time { return now }
+	limiter.clients["expired"] = requestWindow{started: now.Add(-time.Minute)}
+
+	if !limiter.allow("current") {
+		t.Fatal("request within limit was rejected")
+	}
+	if _, ok := limiter.clients["expired"]; ok {
+		t.Fatal("expired client was not removed")
+	}
+}
+
+func TestSuggestionLimitForBoundsRequestedCapacity(t *testing.T) {
+	if got := suggestionLimitFor("3"); got != 3 {
+		t.Fatalf("limit = %d, want 3", got)
+	}
+	if got := suggestionLimitFor("0"); got != suggestionLimit {
+		t.Fatalf("zero limit = %d, want %d", got, suggestionLimit)
+	}
+	if got := suggestionLimitFor("99"); got != suggestionLimit {
+		t.Fatalf("capped limit = %d, want %d", got, suggestionLimit)
+	}
+}

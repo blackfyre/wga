@@ -3,6 +3,7 @@ package pages
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"github.com/blackfyre/wga/internal/assets/templ/components"
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/assets/templ/layouts"
@@ -161,9 +162,10 @@ templ ArtworkSearchResults(r dto.ArtworkSearchResultDTO) {
 			} else if r.View == "list" {
 				@ArtworkSearchResultList(r.Artworks)
 			} else {
-				<div class="mt-7 grid grid-cols-2 gap-x-4 gap-y-9 md:grid-cols-3 md:gap-x-7" data-keyboard-list data-view="grid">
-					for _, artwork := range r.Artworks {
-						<a href={ templ.SafeURL(artwork.Url) } hx-get={ artwork.Url } data-keyboard-item class="block transition-opacity hover:opacity-70">
+				<div class="mt-7 grid grid-cols-2 gap-x-4 gap-y-9 md:grid-cols-3 md:gap-x-7" data-kbd-list data-kbd-cols="2" data-kbd-cols-md="3" data-view="grid">
+					for index, artwork := range r.Artworks {
+						<a href={ templ.SafeURL(artwork.Url) } hx-get={ artwork.Url } data-kbd-idx={ strconv.Itoa(index) } data-kbd-href={ artwork.Url } class="block transition-opacity hover:opacity-70">
+							@components.KeyboardCaret()
 							<figure class="mb-2.5 aspect-[4/5] border border-base-content/15 bg-base-300 p-2.5">
 								<img src={ artwork.Thumb } alt={ artwork.Title } class="h-full w-full object-cover"/>
 							</figure>
@@ -193,10 +195,11 @@ templ ArtworkSearchResults(r dto.ArtworkSearchResultDTO) {
 }
 
 templ ArtworkSearchResultList(artworks dto.ImageGrid) {
-	<ul data-keyboard-list data-view="list">
-		for _, artwork := range artworks {
+	<ul data-kbd-list data-kbd-cols="1" data-view="list">
+		for index, artwork := range artworks {
 			<li>
-				<a href={ templ.SafeURL(artwork.Url) } hx-get={ artwork.Url } data-keyboard-item class="flex items-center gap-4 border-b border-base-content/15 py-3.5 transition-colors hover:bg-primary/5">
+				<a href={ templ.SafeURL(artwork.Url) } hx-get={ artwork.Url } data-kbd-idx={ strconv.Itoa(index) } data-kbd-href={ artwork.Url } class="flex items-center gap-4 border-b border-base-content/15 py-3.5 transition-colors hover:bg-primary/5">
+					@components.KeyboardCaret()
 					<img src={ artwork.Thumb } alt={ artwork.Title } class="h-[54px] w-11 shrink-0 border border-base-content/15 bg-base-300 object-cover"/>
 					<span class="min-w-0 flex-1"><span class="block text-[15px] font-semibold leading-tight">{ artwork.Title }</span><span class="mt-[3px] block font-mono text-[11px] text-base-content/60">{ artwork.Artist.Name }</span></span>
 					<span class="hidden shrink-0 font-mono text-[11px] text-base-content/70 md:block">{ artwork.Technique }</span>

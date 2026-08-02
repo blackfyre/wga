@@ -4,6 +4,7 @@ import (
 	"net/url"
 	"strconv"
 
+	"github.com/blackfyre/wga/internal/assets/templ/components"
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/assets/templ/layouts"
 )
@@ -116,10 +117,10 @@ templ GuestbookEntryForm() {
 }
 
 templ GuestbookEntries(entries dto.GuestbookEntries) {
-	<div class="flow-root">
+	<div class="flow-root" data-kbd-list data-kbd-cols="1">
 		<div class="divide-y divide-base-content/15 gb-entries">
-			for _, entry := range entries {
-				@GuestbookEntry(entry)
+			for index, entry := range entries {
+				@GuestbookEntry(entry, index)
 			}
 		</div>
 	</div>
@@ -137,11 +138,12 @@ templ GuestbookYearLink(v GuestbookView, value string, label string) {
 	>{ label }</a>
 }
 
-templ GuestbookEntry(entry dto.GuestbookEntry) {
+templ GuestbookEntry(entry dto.GuestbookEntry, index int) {
 	if (entry.Message == "") {
 		return
 	}
-	<div class="gb-entry border-b border-base-content/15 py-[22px]">
+	<div class="gb-entry border-b border-base-content/15 py-[22px]" data-kbd-idx={ strconv.Itoa(index) }>
+		@components.KeyboardCaret()
 		<div class="mb-2 flex items-baseline justify-between gap-4">
 			<h4 class="text-[15px] font-semibold">
 				if entry.Name != "" {

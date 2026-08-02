@@ -150,37 +150,63 @@ interface ToastEvent extends Event {
 	};
 }
 
-const initThemeToggle = () => {
-	const themeToggle = document.querySelector<HTMLInputElement>(
-		"[data-theme-toggle]",
-	);
-	if (!themeToggle) {
-		return;
-	}
+type ThemeChoice = "light" | "dark";
 
-	let savedTheme: string | null = null;
+const storedTheme = (): ThemeChoice | null => {
 	try {
-		savedTheme = window.localStorage.getItem("wga-theme");
-	} catch {}
+		const theme = window.localStorage.getItem("wga-theme");
+		if (theme === "wga_light") {
+			return "light";
+		}
+		if (theme === "wga_dark") {
+			return "dark";
+		}
+	} catch {
+		return null;
+	}
+	return null;
+};
 
-	const savedThemeIsValid =
-		savedTheme === "wga_light" || savedTheme === "wga_dark";
-	themeToggle.checked = savedTheme === "wga_dark";
-	if (!savedThemeIsValid) {
-		themeToggle.checked = window.matchMedia(
-			"(prefers-color-scheme: dark)",
-		).matches;
+const applyTheme = (choice: ThemeChoice) => {
+	const theme = choice === "dark" ? "wga_dark" : "wga_light";
+	document.documentElement.dataset.theme = theme;
+	for (const toggle of document.querySelectorAll<HTMLElement>(
+		"[data-wga-theme]",
+	)) {
+		const active = toggle.dataset.wgaTheme === choice;
+		toggle.setAttribute("aria-pressed", String(active));
+		toggle.classList.toggle("bg-primary", active);
+		toggle.classList.toggle("text-primary-content", active);
+		toggle.classList.toggle("bg-base-100", !active);
+		toggle.classList.toggle("text-base-content/75", !active);
+	}
+};
+
+const initThemeToggle = () => {
+	const choice = storedTheme();
+	if (choice) {
+		applyTheme(choice);
+	} else {
+		applyTheme(
+			window.matchMedia("(prefers-color-scheme: dark)").matches
+				? "dark"
+				: "light",
+		);
 	}
 
-	themeToggle.addEventListener("change", () => {
-		let theme = "wga_light";
-		if (themeToggle.checked) {
-			theme = "wga_dark";
+	document.addEventListener("click", (event) => {
+		const target = event.target instanceof Element ? event.target : null;
+		const toggle = target?.closest<HTMLElement>("[data-wga-theme]");
+		if (!toggle) {
+			return;
 		}
-
-		document.documentElement.dataset.theme = theme;
+		const choice = toggle.dataset.wgaTheme;
+		if (choice !== "light" && choice !== "dark") {
+			return;
+		}
+		applyTheme(choice);
 		try {
-			window.localStorage.setItem("wga-theme", theme);
+			window.localStorage.setItem("wga-theme", `wga_${choice}`);
 		} catch {}
 	});
 };

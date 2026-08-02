@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -43,6 +44,11 @@ func (l *requestLimiter) allow(client string) bool {
 	defer l.mu.Unlock()
 
 	now := l.now()
+	for name, window := range l.clients {
+		if now.Sub(window.started) >= time.Minute {
+			delete(l.clients, name)
+		}
+	}
 	window := l.clients[client]
 	if now.Sub(window.started) >= time.Minute {
 		window = requestWindow{started: now}
@@ -60,14 +66,26 @@ func validQuery(query string) bool {
 	return utf8.RuneCountInString(strings.TrimSpace(query)) >= minimumQueryRunes
 }
 
-func suggestions(app *pocketbase.PocketBase, query string) ([]components.KeyboardSuggestion, error) {
+func suggestionLimitFor(value string) int {
+	limit, err := strconv.Atoi(value)
+	if err != nil || limit < 1 {
+		return suggestionLimit
+	}
+	if limit > suggestionLimit {
+		return suggestionLimit
+	}
+
+	return limit
+}
+
+func suggestions(app *pocketbase.PocketBase, query string, limit int) ([]components.KeyboardSuggestion, error) {
 	params := dbx.Params{"query": query}
-	artists, err := app.FindRecordsByFilter(constants.CollectionArtists, "published = true && name ~ {:query}", "+name,+id", suggestionLimit/2, 0, params)
+	artists, err := app.FindRecordsByFilter(constants.CollectionArtists, "published = true && name ~ {:query}", "+name,+id", limit, 0, params)
 	if err != nil {
 		return nil, err
 	}
 
-	rows := make([]components.KeyboardSuggestion, 0, suggestionLimit)
+	rows := make([]components.KeyboardSuggestion, 0, limit)
 	for _, artist := range artists {
 		rows = append(rows, components.KeyboardSuggestion{
 			Kind:  "ARTIST",
@@ -76,7 +94,7 @@ func suggestions(app *pocketbase.PocketBase, query string) ([]components.Keyboar
 		})
 	}
 
-	artworks, err := app.FindRecordsByFilter(constants.CollectionArtworks, "published = true && author:length > 0 && title ~ {:query}", "+title,+id", suggestionLimit-len(rows), 0, params)
+	artworks, err := app.FindRecordsByFilter(constants.CollectionArtworks, "published = true && author:length > 0 && title ~ {:query}", "+title,+id", limit-len(rows), 0, params)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +129,7 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 				return c.HTML(http.StatusOK, "")
 			}
 
-			rows, err := suggestions(app, query)
+			rows, err := suggestions(app, query, suggestionLimitFor(c.Request.URL.Query().Get("limit")))
 			if err != nil {
 				app.Logger().Error("Keyboard suggestion lookup failed", "error", err)
 				return c.InternalServerError("Unable to look up suggestions.", nil)

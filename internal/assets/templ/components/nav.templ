@@ -13,19 +13,24 @@ templ TopNav() {
 			<form class="hidden w-[340px] items-end gap-4 md:flex" action="/artworks">
 				<label>
 					<span class="sr-only">Search artwork titles</span>
-					<input class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2 text-sm leading-4 outline-none" name="title" placeholder="Search artist, title, school" type="search"/>
+					<input class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2 text-sm leading-4 outline-none" name="title" placeholder="Search artist, title, school" type="search" data-kbd-search/>
 				</label>
 				<button class="font-mono text-[11px] tracking-[1px] text-primary" type="submit">SEARCH</button>
 				<button type="button" data-keyboard-open class="border border-base-content/25 px-2 py-1 font-mono text-[10px] tracking-[1px] text-base-content/70">⌘K</button>
 				<button type="button" data-keyboard-help class="font-mono text-[10px] tracking-[1px] text-base-content/70" aria-label="Keyboard shortcuts">?</button>
 			</form>
-			<details class="md:hidden">
+			<div class="hidden md:flex">
+				@ThemeToggle()
+			</div>
+			<details class="md:hidden" data-kbd-mobile-navigation>
 				<summary class="flex cursor-pointer list-none flex-col gap-1.5" aria-label="Open navigation">
 					<span class="h-px w-5 bg-base-content" aria-hidden="true"></span>
 					<span class="h-px w-5 bg-base-content" aria-hidden="true"></span>
 					<span class="h-px w-5 bg-base-content" aria-hidden="true"></span>
 				</summary>
 				<nav class="absolute right-4 top-20 z-40 w-64 border border-base-content bg-base-100 p-4" aria-label="Primary navigation" data-mobile-navigation hx-on:click="this.closest('details').removeAttribute('open')">
+					<form action="/artworks" class="mb-4 flex gap-2"><label class="min-w-0 flex-1"><span class="sr-only">Search artwork titles</span><input class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2 text-sm outline-none" name="title" placeholder="Search artist, title, school" type="search"/></label><button class="font-mono text-[10px] tracking-[1px] text-primary" type="submit">SEARCH</button></form>
+					<div class="mb-4 flex">@ThemeToggle()</div>
 					@navLinks("flex flex-col divide-y divide-base-content/15")
 				</nav>
 			</details>
@@ -34,6 +39,13 @@ templ TopNav() {
 			@navLinks("flex flex-wrap gap-x-6 gap-y-3")
 		</nav>
 	</header>
+}
+
+templ ThemeToggle() {
+	<div class="ml-auto flex shrink-0 gap-px bg-base-content/20" role="group" aria-label="Colour scheme" data-wga-theme-toggle>
+		<button type="button" data-wga-theme="light" aria-pressed="false" class="cursor-pointer bg-base-100 px-2 py-[5px] font-mono text-[9px] tracking-[1.5px] text-base-content/75 transition-colors hover:text-base-content">LIGHT</button>
+		<button type="button" data-wga-theme="dark" aria-pressed="false" class="cursor-pointer bg-base-100 px-2 py-[5px] font-mono text-[9px] tracking-[1.5px] text-base-content/75 transition-colors hover:text-base-content">DARK</button>
+	</div>
 }
 
 templ navLinks(classes string) {

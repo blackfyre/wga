@@ -15,9 +15,109 @@
 	height: 20px;
 }
 
-[data-keyboard-current] {
-	outline: 2px solid var(--color-primary);
-	outline-offset: 3px;
+.wga-kbd-bar {
+	position: fixed;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	z-index: 52;
+	display: none;
+	height: 30px;
+	align-items: center;
+	gap: 14px;
+	overflow-x: auto;
+	padding: 0 16px;
+	border-top: 1px solid color-mix(in oklab, var(--color-base-content) 14%, transparent);
+	background: var(--color-base-100);
+	scrollbar-width: none;
+}
+
+.wga-kbd-bar::-webkit-scrollbar {
+	display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+	html[data-kbd-on] .wga-kbd-bar {
+		display: flex;
+	}
+}
+
+.wga-kbd-key {
+	padding: 4px 6px;
+	border: 1px solid color-mix(in oklab, var(--color-base-content) 25%, transparent);
+	font-family: ui-monospace, "SF Mono", Menlo, monospace;
+	font-size: 9.5px;
+	letter-spacing: 1px;
+	line-height: 1;
+	white-space: nowrap;
+}
+
+.wga-kbd-caret {
+	position: absolute;
+	top: 11px;
+	left: -18px;
+	color: var(--color-primary);
+	font-family: ui-monospace, "SF Mono", Menlo, monospace;
+	font-size: 12px;
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.12s ease;
+	user-select: none;
+}
+
+[data-kbd-idx] {
+	position: relative;
+}
+
+[data-kbd-caret] > .wga-kbd-caret {
+	opacity: 1;
+}
+
+[data-kbd-cols]:not([data-kbd-cols="1"]) .wga-kbd-caret {
+	top: -2px;
+	left: -15px;
+}
+
+.wga-kbd-dialog {
+	max-width: none;
+	max-height: none;
+	padding: 0;
+	border: 0;
+	background: transparent;
+}
+
+.wga-kbd-dialog::backdrop {
+	background: color-mix(in oklab, var(--color-base-content) 32%, transparent);
+}
+
+.wga-kbd-palette,
+.wga-kbd-help {
+	border: 1px solid var(--color-base-content);
+	background: var(--color-base-100);
+}
+
+.wga-kbd-palette {
+	width: min(620px, calc(100vw - 32px));
+	margin: 10vh auto auto;
+}
+
+.wga-kbd-help {
+	width: min(760px, calc(100vw - 32px));
+	margin: 8vh auto auto;
+	padding: 28px;
+}
+
+.wga-kbd-row {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	padding: 11px 18px;
+	border-bottom: 1px solid color-mix(in oklab, var(--color-base-content) 10%, transparent);
+}
+
+.wga-kbd-row:hover,
+.wga-kbd-row[data-kbd-pick] {
+	background: color-mix(in oklab, var(--color-primary) 7%, transparent);
 }
 
 .artwork-year-range-track,
@@ -112,26 +212,26 @@
   default: false;
   prefersdark: true;
   color-scheme: "dark";
-  --color-base-100: oklch(20% 0.025 250);
-  --color-base-200: oklch(24% 0.025 250);
-  --color-base-300: oklch(29% 0.025 250);
-  --color-base-content: oklch(94% 0.01 250);
-  --color-primary: oklch(78% 0.1 250);
-  --color-primary-content: oklch(20% 0.025 250);
-  --color-secondary: oklch(78% 0.14 350);
-  --color-secondary-content: oklch(21% 0.03 350);
-  --color-accent: oklch(84% 0.14 100);
-  --color-accent-content: oklch(23% 0.04 100);
-  --color-neutral: oklch(30% 0.02 250);
-  --color-neutral-content: oklch(93% 0.01 250);
-  --color-info: oklch(75% 0.09 220);
-  --color-info-content: oklch(20% 0.02 220);
-  --color-success: oklch(76% 0.14 155);
-  --color-success-content: oklch(20% 0.03 155);
-  --color-warning: oklch(82% 0.15 85);
-  --color-warning-content: oklch(24% 0.04 85);
-  --color-error: oklch(74% 0.16 25);
-  --color-error-content: oklch(20% 0.03 25);
+  --color-base-100: #1a1814;
+  --color-base-200: #211f1a;
+  --color-base-300: #302d26;
+  --color-base-content: #edeae1;
+  --color-primary: #2e5a8c;
+  --color-primary-content: #f1eee6;
+  --color-secondary: #948e82;
+  --color-secondary-content: #17160f;
+  --color-accent: #948e82;
+  --color-accent-content: #17160f;
+  --color-neutral: #33302a;
+  --color-neutral-content: #f1eee6;
+  --color-info: #8fb6de;
+  --color-info-content: #17160f;
+  --color-success: #7fae98;
+  --color-success-content: #17160f;
+  --color-warning: #d8b455;
+  --color-warning-content: #17160f;
+  --color-error: #d08a76;
+  --color-error-content: #17160f;
   --radius-selector: 0;
   --radius-field: 0;
   --radius-box: 0;
@@ -140,6 +240,18 @@
   --border: 1px;
   --depth: 0;
   --noise: 0;
+}
+
+[data-theme="wga_dark"] .text-primary {
+  color: #8fb6de;
+}
+
+[data-theme="wga_dark"] .border-primary {
+  border-color: #8fb6de;
+}
+
+[data-theme="wga_dark"] :focus-visible {
+  outline-color: #8fb6de;
 }
 
 @layer base {
