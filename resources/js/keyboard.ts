@@ -306,6 +306,7 @@ const closeTransientState = () => {
 	closePalette();
 	closeHelp();
 	document.querySelector<HTMLDialogElement>("#d")?.close();
+	document.querySelector<HTMLDialogElement>("#artist_lookup")?.close();
 	mobileNavigation()?.removeAttribute("open");
 	clearCaret();
 };
@@ -417,7 +418,10 @@ export const initKeyboardNavigation = () => {
 			moveCaret(-1);
 			return;
 		}
-		if (event.key === "Enter") {
+		if (
+			event.key === "Enter" &&
+			!(event.target instanceof HTMLElement && event.target.matches("a, button, summary"))
+		) {
 			event.preventDefault();
 			openMarked();
 			return;

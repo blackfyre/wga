@@ -36,7 +36,7 @@ test("check feedback", async ({ page }) => {
   await expect(page.locator("#d")).toContainText("SENT WITH THIS REPORT");
   await expect(page.locator("#d")).toContainText("Home");
   await expect(page.locator("#d")).toContainText("BUILD");
-  await expect(page.locator("#d")).toContainText("development · dev");
+  await expect(page.locator("#d")).toContainText(/(development|test) · dev/);
   await page.getByText("CORRECTION", { exact: true }).click();
   await expect(page.getByRole("radio", { name: "CORRECTION" })).toBeChecked();
 

@@ -220,6 +220,7 @@ test("cancels an active lookup when the chooser closes", async ({ page }) => {
 	await lookupRequest;
 	await expect.poll(() => delayedRoute).not.toBeNull();
 	await page.keyboard.press("Escape");
+	await expect(page.locator("#artist_lookup")).not.toHaveAttribute("open", "");
 
 	if (!delayedRoute) {
 		throw new Error("Expected delayed lookup route");

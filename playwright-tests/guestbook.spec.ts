@@ -12,7 +12,7 @@ test("places the guestbook note rail on the desktop right edge", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/guestbook");
+  await page.goto("/guestbook?year=all");
 
 	const box = await page.locator("aside").boundingBox();
 	expect(box?.width).toBeCloseTo(320, 0);
@@ -35,8 +35,8 @@ test("uses the reference guestbook title scale on mobile", async ({ page }) => {
 test("places guestbook entries before the note form on mobile", async ({
 	page,
 }) => {
-	await page.setViewportSize({ width: 390, height: 844 });
-	await page.goto("/guestbook");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/guestbook?year=all");
 
 	const form = await page.locator("aside").boundingBox();
 	const entries = await page.locator(".gb-entries").boundingBox();
