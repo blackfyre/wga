@@ -43,3 +43,23 @@ test("art form chart and summary use the reference desktop layout", async ({
 	const chartBox = await periodChart.boundingBox();
 	expect(chartBox?.width || 0).toBeCloseTo((chartBox?.height || 0) * 2, 0);
 });
+
+test("school period columns remain readable on mobile", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/statistics");
+
+  const table = page.locator("#artworks-period-summary table");
+  await expect(table).toBeVisible();
+  expect(await table.evaluate((element) => element.scrollWidth)).toBeGreaterThanOrEqual(
+    560,
+  );
+});
+
+test("art form legend fills the mobile content width", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/statistics");
+
+  const summary = await page.locator("#art-form-summary").boundingBox();
+  const section = await page.locator("#statistics > section").first().boundingBox();
+  expect(summary?.width).toBeCloseTo(section?.width || 0, 0);
+});

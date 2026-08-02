@@ -73,7 +73,7 @@ templ StatisticsBlock(c StatisticsPageDTO) {
 				<div class="w-[210px] shrink-0 self-center md:w-[240px] md:self-start">
 					<canvas id="art-form-chart" role="img" aria-label="Art form distribution chart" aria-describedby="art-form-summary"></canvas>
 				</div>
-				<div class="min-w-0 flex-1">
+				<div class="w-full min-w-0 flex-1 md:w-auto">
 					@artFormSummary(c.ArtFormSummary)
 				</div>
 			</div>
@@ -124,7 +124,7 @@ templ artFormSummary(rows []StatisticsArtFormRow) {
 
 templ schoolPeriodSummary(id string, caption string, rows []StatisticsSchoolPeriodSummaryRow) {
 	<div id={ id } class="overflow-x-auto">
-		<table class="min-w-full text-sm">
+		<table class="min-w-[560px] text-sm">
 			<caption class="caption-top pb-3 text-left font-mono text-[10px] tracking-[1px] text-base-content/60">{ caption }</caption>
 			<thead class="border-y border-base-content/15 font-mono text-[10px] tracking-[1px] text-base-content/60">
 				<tr>
