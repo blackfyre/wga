@@ -114,7 +114,7 @@ test("reset clears the artwork search form", async ({ page }) => {
   await page.getByRole("link", { name: "RESET" }).click();
 
   await expect(page).toHaveURL(/\/artworks$/);
-  await expect(page.locator("[name='q']")).toHaveValue("");
+	await expect(form.getByRole("searchbox")).toHaveValue("");
   await expect(page.locator("[name='art_school'][value='']")).toBeChecked();
   await expect(page.locator("[name='year_from']")).toHaveValue("200");
   await expect(page.locator("#search-result-container")).toContainText(
