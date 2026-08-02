@@ -25,7 +25,7 @@ test("palette filters sections and bounds record suggestions", async ({
 	await page.keyboard.press("Control+k");
 
 	const input = page.getByRole("searchbox", {
-		name: "Search sections, artists and artworks",
+		name: "Search sections, artists and works",
 	});
 	await input.fill("artist index");
 	await expect(
@@ -66,10 +66,13 @@ test("search and palette shortcuts respect editing contexts", async ({
 }) => {
 	await page.goto("/");
 	await waitForKeyboard(page);
-	const search = page.locator("[data-kbd-search]");
+	const search = page.locator("[data-kbd-search]").first();
 
+	await search.fill("Vermeer");
+	await page.getByRole("heading", { level: 1 }).click();
 	await page.keyboard.press("/");
 	await expect(search).toBeFocused();
+	await expect(search).toHaveJSProperty("selectionStart", 0);
 	await page.keyboard.press("Escape");
 	await expect(search).not.toBeFocused();
 
@@ -89,6 +92,9 @@ test("mobile search shortcut opens the navigation disclosure", async ({
 		"open",
 		"",
 	);
+	await expect(
+		page.locator("[data-kbd-mobile-navigation] [data-kbd-search]"),
+	).toBeFocused();
 	await page.getByRole("heading", { level: 1 }).click();
 	await expect(
 		page.locator("[data-kbd-mobile-navigation]"),
@@ -99,6 +105,15 @@ test("mobile search shortcut opens the navigation disclosure", async ({
 	await expect(
 		page.locator("[data-kbd-mobile-navigation]"),
 	).not.toHaveAttribute("open");
+});
+
+test("palette selection wraps between its first and last result", async ({ page }) => {
+	await page.goto("/");
+	await waitForKeyboard(page);
+	await page.keyboard.press("Control+k");
+	await page.keyboard.press("ArrowUp");
+	await page.keyboard.press("Enter");
+	await expect(page).toHaveURL(/\/glossary$/);
 });
 
 test("artwork traversal follows grid rows and resets after replacement", async ({

@@ -3,6 +3,7 @@ package keyboard
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -89,7 +90,7 @@ func suggestions(app *pocketbase.PocketBase, query string, limit int) ([]compone
 	for _, artist := range artists {
 		rows = append(rows, components.KeyboardSuggestion{
 			Kind:  "ARTIST",
-			Label: artist.GetString("name"),
+			Label: artistLabel(artist.GetString("name"), artist.GetInt("year_of_birth"), artist.GetInt("year_of_death")),
 			Href:  url.GenerateArtistUrl(url.ArtistUrlDTO{ArtistId: artist.Id, ArtistName: artist.GetString("name")}),
 		})
 	}
@@ -114,6 +115,21 @@ func suggestions(app *pocketbase.PocketBase, query string, limit int) ([]compone
 	}
 
 	return rows, nil
+}
+
+func artistLabel(name string, birthYear int, deathYear int) string {
+	years := []string{}
+	if birthYear > 0 {
+		years = append(years, strconv.Itoa(birthYear))
+	}
+	if deathYear > 0 {
+		years = append(years, strconv.Itoa(deathYear))
+	}
+	if len(years) == 0 {
+		return name
+	}
+
+	return fmt.Sprintf("%s · %s", name, strings.Join(years, "–"))
 }
 
 func RegisterHandlers(app *pocketbase.PocketBase) {

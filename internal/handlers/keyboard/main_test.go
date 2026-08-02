@@ -59,3 +59,9 @@ func TestSuggestionLimitForBoundsRequestedCapacity(t *testing.T) {
 		t.Fatalf("capped limit = %d, want %d", got, suggestionLimit)
 	}
 }
+
+func TestArtistLabelIncludesKnownLifespan(t *testing.T) {
+	if got := artistLabel("Vermeer", 1632, 1675); got != "Vermeer · 1632–1675" {
+		t.Fatalf("artist label = %q", got)
+	}
+}

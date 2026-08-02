@@ -48,9 +48,9 @@ templ KeyboardLayer() {
 		<div class="wga-kbd-palette">
 			<div class="flex items-center gap-3 border-b border-base-content px-5 py-4">
 				<span class="shrink-0 font-mono text-[10px] tracking-[1.5px] text-base-content/60">GO TO</span>
-				<input type="search" data-kbd-query autocomplete="off" placeholder="Section, artist or artwork" aria-label="Search sections, artists and artworks" class="min-w-0 flex-1 border-0 bg-transparent p-0 text-base outline-none"/>
+				<input type="search" data-kbd-query autocomplete="off" placeholder="Section, artist or work" aria-label="Search sections, artists and works" class="min-w-0 flex-1 border-0 bg-transparent p-0 text-base outline-none"/>
 			</div>
-			<div id="kbd-palette-results" class="max-h-[50vh] overflow-y-auto">
+			<div id="kbd-palette-results" class="max-h-[46vh] overflow-y-auto overscroll-contain">
 				for _, screen := range KeyboardScreens {
 					<a href={ templ.URL(screen.Href) } data-kbd-item="section" data-kbd-key={ screen.Key } data-kbd-num={ screen.Num } data-kbd-label={ screen.Label } data-kbd-href={ screen.Href } class="wga-kbd-row">
 						<span class="w-16 shrink-0 font-mono text-[10px] tracking-[1px] text-base-content/60">SECTION</span>
@@ -58,9 +58,9 @@ templ KeyboardLayer() {
 						<span class="wga-kbd-key shrink-0">{ screen.Key }</span>
 					</a>
 				}
-				<div data-keyboard-suggestions data-kbd-suggest="/keyboard/suggestions"></div>
+				<div id="kbd-palette-records" data-kbd-suggest="/keyboard/suggestions"></div>
 			</div>
-			<div class="border-t border-base-content/15 px-5 py-3 font-mono text-[10px] tracking-[1px] text-base-content/60">↑↓ MOVE · ↵ OPEN · ESC CLOSE</div>
+			<div class="border-t border-base-content/15 px-5 py-3 font-mono text-[10px] tracking-[1px] text-base-content/60">↑↓ MOVE · ↵ GO · ESC CLOSE</div>
 		</div>
 	</dialog>
 	<dialog id="keyboard-help" class="wga-kbd-dialog" aria-labelledby="keyboard-help-title">

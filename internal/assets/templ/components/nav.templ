@@ -10,10 +10,10 @@ templ TopNav() {
 					<span class="mt-[3px] block font-mono text-[10px] tracking-[1px] text-base-content/60">EUROPEAN ART, 3RD CENTURY – EARLY 20TH</span>
 				</span>
 			</a>
-			<form class="hidden w-[340px] items-end gap-4 md:flex" action="/artworks">
+			<form class="hidden w-[340px] items-end gap-4 md:flex" action="/search">
 				<label>
-					<span class="sr-only">Search artwork titles</span>
-					<input class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2 text-sm leading-4 outline-none" name="title" placeholder="Search artist, title, school" type="search" data-kbd-search/>
+					<span class="sr-only">Search collection</span>
+					<input class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2 text-sm leading-4 outline-none" name="q" placeholder="Search artist, title, school" type="search" data-kbd-search/>
 				</label>
 				<button class="font-mono text-[11px] tracking-[1px] text-primary" type="submit">SEARCH</button>
 				<button type="button" data-keyboard-open class="border border-base-content/25 px-2 py-1 font-mono text-[10px] tracking-[1px] text-base-content/70">⌘K</button>
@@ -28,8 +28,8 @@ templ TopNav() {
 					<span class="h-px w-5 bg-base-content" aria-hidden="true"></span>
 					<span class="h-px w-5 bg-base-content" aria-hidden="true"></span>
 				</summary>
-				<nav class="absolute right-4 top-20 z-40 w-64 border border-base-content bg-base-100 p-4" aria-label="Primary navigation" data-mobile-navigation hx-on:click="this.closest('details').removeAttribute('open')">
-					<form action="/artworks" class="mb-4 flex gap-2"><label class="min-w-0 flex-1"><span class="sr-only">Search artwork titles</span><input class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2 text-sm outline-none" name="title" placeholder="Search artist, title, school" type="search"/></label><button class="font-mono text-[10px] tracking-[1px] text-primary" type="submit">SEARCH</button></form>
+				<nav class="absolute right-4 top-20 z-40 w-64 border border-base-content bg-base-100 p-4" aria-label="Primary navigation" data-mobile-navigation hx-on:click="if (event.target.closest('a')) this.closest('details').removeAttribute('open')">
+				<form action="/search" class="mb-4 flex gap-2"><label class="min-w-0 flex-1"><span class="sr-only">Search collection</span><input class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2 text-sm outline-none" name="q" placeholder="Search artist, title, school" type="search" data-kbd-search/></label><button class="font-mono text-[10px] tracking-[1px] text-primary" type="submit">SEARCH</button></form>
 					<div class="mb-4 flex">@ThemeToggle()</div>
 					@navLinks("flex flex-col divide-y divide-base-content/15")
 				</nav>

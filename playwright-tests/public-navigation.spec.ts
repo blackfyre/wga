@@ -57,15 +57,15 @@ test("desktop header matches the prototype baseline", async ({ page }) => {
 	expect(Math.abs(bottom - 148)).toBeLessThanOrEqual(1);
 });
 
-test("header search submits an artwork title", async ({ page }) => {
+test("header search submits a global query", async ({ page }) => {
   await page.goto("/");
   await page
-    .getByRole("searchbox", { name: "Search artwork titles" })
+    .getByRole("searchbox", { name: "Search collection" })
     .fill("Synthetic Artwork 01-01");
   await page.getByRole("button", { name: "SEARCH", exact: true }).click();
 
-  await expect(page).toHaveURL(/\/artworks\?title=Synthetic\+Artwork\+01-01/);
-  await expect(page.locator("#search-result-container")).toContainText(
+  await expect(page).toHaveURL(/\/search\?q=Synthetic\+Artwork\+01-01/);
+  await expect(page.locator("#global-search-results")).toContainText(
     "Synthetic Artwork 01-01",
   );
 });
@@ -116,6 +116,17 @@ test("mobile navigation closes after following a link", async ({ page }) => {
   await expect(activeLink).toHaveAttribute("aria-current", "page");
   await expect(activeLink).toHaveCSS("background-color", "rgb(0, 51, 102)");
   await expect(activeLink).toHaveCSS("padding-left", "12px");
+});
+
+test("mobile navigation stays open while using global search", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  const menu = page.locator("header details");
+
+  await page.locator("summary[aria-label='Open navigation']").click();
+  await menu.getByRole("searchbox", { name: "Search collection" }).click();
+
+  await expect(menu).toHaveAttribute("open", "");
 });
 
 test("mobile navigation highlights the current page when opened", async ({

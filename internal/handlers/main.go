@@ -15,6 +15,7 @@ import (
 	"github.com/blackfyre/wga/internal/handlers/keyboard"
 	"github.com/blackfyre/wga/internal/handlers/landing"
 	"github.com/blackfyre/wga/internal/handlers/licences"
+	"github.com/blackfyre/wga/internal/handlers/search"
 	"github.com/blackfyre/wga/internal/handlers/static"
 	"github.com/blackfyre/wga/internal/handlers/statistics"
 
@@ -45,6 +46,7 @@ func RegisterHandlers(app *pocketbase.PocketBase, environment config.Environment
 	inspire.RegisterHandlers(app)
 	landing.RegisterHandlers(app)
 	licences.RegisterHandlers(app)
+	search.RegisterHandlers(app)
 	statistics.RegisterHandlers(app)
 	dual.RegisterHandlers(app)
 }

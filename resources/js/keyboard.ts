@@ -115,8 +115,15 @@ const openMarked = () => {
 		row.dataset.kbdHref ??
 		row.querySelector<HTMLAnchorElement>("a[href]")?.href;
 	if (href) {
-		window.location.assign(href);
+		navigate(href);
 	}
+};
+
+const navigate = (href: string) => {
+	closePalette();
+	closeHelp();
+	markUsed();
+	window.location.assign(href);
 };
 
 const paletteItems = () => {
@@ -135,7 +142,7 @@ const paintPick = () => {
 		pick = 0;
 		return;
 	}
-	pick = Math.max(0, Math.min(items.length - 1, pick));
+	pick = ((pick % items.length) + items.length) % items.length;
 	for (const [index, item] of items.entries()) {
 		item.toggleAttribute("data-kbd-pick", index === pick);
 	}
@@ -185,7 +192,7 @@ const openHelp = () => {
 
 const loadSuggestions = async (query: string, limit: number) => {
 	const target = document.querySelector<HTMLElement>(
-		"[data-keyboard-suggestions]",
+		"#kbd-palette-records",
 	);
 	if (!target || limit < 1) {
 		return;
@@ -196,7 +203,7 @@ const loadSuggestions = async (query: string, limit: number) => {
 	try {
 		const response = await fetch(
 			`${path}?q=${encodeURIComponent(query)}&limit=${limit}`,
-			{ signal: request.signal },
+			{ headers: { "HX-Request": "true" }, signal: request.signal },
 		);
 		if (!response.ok) {
 			return;
@@ -233,7 +240,7 @@ const filterPalette = (query: string) => {
 	}
 
 	const records = document.querySelector<HTMLElement>(
-		"[data-keyboard-suggestions]",
+		"#kbd-palette-records",
 	);
 	if (!records) {
 		paintPick();
@@ -277,7 +284,7 @@ const paletteKey = (event: KeyboardEvent) => {
 			item?.dataset.kbdHref ??
 			item?.querySelector<HTMLAnchorElement>("a")?.href;
 		if (href) {
-			window.location.assign(href);
+			navigate(href);
 		}
 	}
 };
@@ -315,9 +322,12 @@ const focusSearch = () => {
 	const navigation = mobileNavigation();
 	if (navigation?.offsetParent !== null) {
 		navigation.setAttribute("open", "");
-		return;
 	}
-	document.querySelector<HTMLInputElement>("[data-kbd-search]")?.focus();
+	const field = navigation?.open
+		? navigation.querySelector<HTMLInputElement>("[data-kbd-search]")
+		: document.querySelector<HTMLInputElement>("[data-kbd-search]");
+	field?.focus();
+	field?.select();
 };
 
 export const initKeyboardNavigation = () => {
