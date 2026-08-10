@@ -17,14 +17,16 @@ import (
 )
 
 type sourcePaths struct {
-	sqlitePath string
-	storage    iofs.FS
-	cleanup    func() error
+	sqlitePath      string
+	storage         iofs.FS
+	preseededAssets bool
+	cleanup         func() error
 }
 
 type sourceFile struct {
-	name    string
-	content []byte
+	name            string
+	content         []byte
+	preseededAssets bool
 }
 
 type sourceData struct {
@@ -82,6 +84,7 @@ type sourceArtwork struct {
 	Technique  string
 	Dimensions string
 	Location   string
+	ImagePath  string
 	SchoolID   string
 	FormID     string
 	TypeID     string
@@ -123,6 +126,29 @@ type sourceStaticPage struct {
 	Title   string
 	Slug    string
 	Content string
+}
+
+func sourcePathsFor(sqlitePath string) (sourcePaths, error) {
+	if sqlitePath == "" {
+		return embeddedSourcePaths()
+	}
+
+	return externalSourcePaths(sqlitePath)
+}
+
+func externalSourcePaths(sqlitePath string) (sourcePaths, error) {
+	info, err := os.Stat(sqlitePath)
+	if err != nil {
+		return sourcePaths{}, fmt.Errorf("stat seed SQLite database: %w", err)
+	}
+	if !info.Mode().IsRegular() {
+		return sourcePaths{}, fmt.Errorf("seed SQLite database is not a regular file: %s", sqlitePath)
+	}
+
+	return sourcePaths{
+		sqlitePath:      sqlitePath,
+		preseededAssets: true,
+	}, nil
 }
 
 func embeddedSourcePaths() (sourcePaths, error) {
@@ -361,11 +387,25 @@ func loadArtistRelations(db *sql.DB, table string, relationColumn string) (map[s
 }
 
 func loadBiographies(db *sql.DB) ([]sourceBiography, error) {
-	rows, err := db.Query(`
-		SELECT artist_id, biography_html
-		FROM biographies
-		ORDER BY artist_id
-	`)
+	hasLegacyBiographies, err := hasTable(db, "biographies")
+	if err != nil {
+		return nil, err
+	}
+
+	query := `
+		SELECT id, COALESCE(NULLIF(enriched_biography_html, ''), NULLIF(updated_biography_html, ''), raw_biography_html)
+		FROM artists
+		ORDER BY id
+	`
+	if hasLegacyBiographies {
+		query = `
+			SELECT artist_id, biography_html
+			FROM biographies
+			ORDER BY artist_id
+		`
+	}
+
+	rows, err := db.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("read biographies: %w", err)
 	}
@@ -383,10 +423,19 @@ func loadBiographies(db *sql.DB) ([]sourceBiography, error) {
 	return items, rows.Err()
 }
 
+func hasTable(db *sql.DB, name string) (bool, error) {
+	var exists bool
+	if err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?)", name).Scan(&exists); err != nil {
+		return false, fmt.Errorf("check table %q: %w", name, err)
+	}
+
+	return exists, nil
+}
+
 func loadArtworks(db *sql.DB) ([]sourceArtwork, error) {
 	rows, err := db.Query(`
 		SELECT id, author_id, title, date_text, technique, COALESCE(dimensions, ''), location,
-			COALESCE(school_id, ''), form_id, COALESCE(type_id, '')
+			COALESCE(output_image_path, ''), COALESCE(school_id, ''), form_id, COALESCE(type_id, '')
 		FROM artworks
 		ORDER BY id
 	`)
@@ -406,6 +455,7 @@ func loadArtworks(db *sql.DB) ([]sourceArtwork, error) {
 			&item.Technique,
 			&item.Dimensions,
 			&item.Location,
+			&item.ImagePath,
 			&item.SchoolID,
 			&item.FormID,
 			&item.TypeID,
@@ -565,14 +615,18 @@ func validateSourceRelations(data sourceData) error {
 		if _, ok := artistIDs[artwork.AuthorID]; !ok {
 			return fmt.Errorf("artwork %q references unknown artist %q", artwork.ID, artwork.AuthorID)
 		}
-		if _, ok := schoolIDs[artwork.SchoolID]; !ok {
-			return fmt.Errorf("artwork %q references unknown school %q", artwork.ID, artwork.SchoolID)
+		if artwork.SchoolID != "" {
+			if _, ok := schoolIDs[artwork.SchoolID]; !ok {
+				return fmt.Errorf("artwork %q references unknown school %q", artwork.ID, artwork.SchoolID)
+			}
 		}
 		if _, ok := formIDs[artwork.FormID]; !ok {
 			return fmt.Errorf("artwork %q references unknown form %q", artwork.ID, artwork.FormID)
 		}
-		if _, ok := typeIDs[artwork.TypeID]; !ok {
-			return fmt.Errorf("artwork %q references unknown type %q", artwork.ID, artwork.TypeID)
+		if artwork.TypeID != "" {
+			if _, ok := typeIDs[artwork.TypeID]; !ok {
+				return fmt.Errorf("artwork %q references unknown type %q", artwork.ID, artwork.TypeID)
+			}
 		}
 	}
 
@@ -597,7 +651,44 @@ func makeIDSet[T any](items []T, id func(T) string) map[string]struct{} {
 	return ids
 }
 
-func loadSourceFiles(storage iofs.FS, data *sourceData) error {
+func loadSourceFiles(paths sourcePaths, data *sourceData) error {
+	if paths.preseededAssets {
+		return loadPreseededSourceFiles(data)
+	}
+
+	return loadEmbeddedSourceFiles(paths.storage, data)
+}
+
+func loadPreseededSourceFiles(data *sourceData) error {
+	for _, artwork := range data.artworks {
+		file, err := preseededSourceFile(artwork.ImagePath)
+		if err != nil {
+			return fmt.Errorf("artwork %q storage path: %w", artwork.ID, err)
+		}
+		data.artworkFiles[artwork.ID] = file
+	}
+
+	for _, track := range data.musicTracks {
+		file, err := preseededSourceFile(track.LocalPath)
+		if err != nil {
+			return fmt.Errorf("music track %q storage path: %w", track.ID, err)
+		}
+		data.musicFiles[track.ID] = file
+	}
+
+	return nil
+}
+
+func preseededSourceFile(value string) (sourceFile, error) {
+	sourcePath, err := safeRelativePath(value)
+	if err != nil {
+		return sourceFile{}, err
+	}
+
+	return sourceFile{name: path.Base(sourcePath), preseededAssets: true}, nil
+}
+
+func loadEmbeddedSourceFiles(storage iofs.FS, data *sourceData) error {
 	for _, artwork := range data.artworks {
 		filename, err := singleSourceFile(storage, path.Join("Artworks", artwork.ID))
 		if err != nil {

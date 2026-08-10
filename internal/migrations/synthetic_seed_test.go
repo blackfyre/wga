@@ -180,6 +180,22 @@ func TestSyntheticSeedMigrationImportsBaselineSchema(t *testing.T) {
 	if song.GetString("source") == "" {
 		t.Fatal("expected music source")
 	}
+	music, err := app.FindCollectionByNameOrId("music_song")
+	if err != nil {
+		t.Fatalf("find music collection: %v", err)
+	}
+	source, ok := music.Fields.GetByName("source").(*core.FileField)
+	if !ok || source.MaxSize != 64*1024*1024 {
+		t.Fatal("expected 64 MiB music source file limit")
+	}
+	glossary, err := app.FindCollectionByNameOrId("glossary")
+	if err != nil {
+		t.Fatalf("find glossary collection: %v", err)
+	}
+	definition, ok := glossary.Fields.GetByName("definition").(*core.TextField)
+	if !ok || definition.Max != 10000 {
+		t.Fatal("expected 10,000-character glossary definition limit")
+	}
 }
 
 func TestSyntheticSeedMigrationSkipsPopulatedTarget(t *testing.T) {

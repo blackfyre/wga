@@ -23,5 +23,10 @@ func seedCurrentSyntheticData(app core.App) error {
 		return err
 	}
 
-	return seed.ImportEmbedded(app)
+	configuration, err := configuredMigrations()
+	if err != nil {
+		return err
+	}
+
+	return seed.Import(app, configuration.SeedSQLitePath())
 }

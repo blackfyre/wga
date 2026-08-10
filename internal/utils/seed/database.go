@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"html"
+	"strconv"
 	"strings"
 
 	"github.com/blackfyre/wga/internal/constants"
@@ -42,8 +43,8 @@ var syntheticTargetCollections = []targetCollection{
 	{name: constants.CollectionStaticPages, fields: []string{"title", "slug", "content"}},
 }
 
-func ImportEmbedded(app core.App) error {
-	paths, err := embeddedSourcePaths()
+func Import(app core.App, sqlitePath string) error {
+	paths, err := sourcePathsFor(sqlitePath)
 	if err != nil {
 		return err
 	}
@@ -55,7 +56,7 @@ func ImportEmbedded(app core.App) error {
 	if err != nil {
 		return err
 	}
-	if err := loadSourceFiles(paths.storage, &data); err != nil {
+	if err := loadSourceFiles(paths, &data); err != nil {
 		return err
 	}
 	if err := validateTargetCollections(app, data); err != nil {
@@ -86,7 +87,7 @@ func ImportEmbedded(app core.App) error {
 	if err := importSyntheticGlossary(app, data.glossaryEntries); err != nil {
 		return err
 	}
-	if err := importSyntheticGuestbook(app, data.guestbookEntries); err != nil {
+	if err := importSyntheticGuestbook(app, data.guestbookEntries, paths.preseededAssets); err != nil {
 		return err
 	}
 	if err := importSyntheticMusic(app, data); err != nil {
@@ -132,6 +133,9 @@ func validateFileFieldSizes(collection *core.Collection, fieldName string, files
 		maxSize = 5 * 1024 * 1024
 	}
 	for id, file := range files {
+		if file.preseededAssets {
+			continue
+		}
 		if int64(len(file.content)) > maxSize {
 			return fmt.Errorf("source file %q for %s/%s is %d bytes, exceeding the %d-byte field limit", id, collection.Id, fieldName, len(file.content), maxSize)
 		}
@@ -213,6 +217,7 @@ func importSyntheticArtists(app core.App, data sourceData) error {
 	for _, biography := range data.biographies {
 		biographies[biography.ArtistID] = biography
 	}
+	usedSlugs := map[string]struct{}{}
 
 	for _, item := range data.artists {
 		record, err := newRecord(app, constants.CollectionArtists, item.ID)
@@ -221,7 +226,7 @@ func importSyntheticArtists(app core.App, data sourceData) error {
 		}
 
 		record.Set("name", item.DisplayName)
-		record.Set("slug", utils.Slugify(item.DisplayName))
+		record.Set("slug", uniqueArtistSlug(usedSlugs, item.DisplayName, item.ID))
 		record.Set("bio", biographies[item.ID].BiographyHTML)
 		record.Set("year_of_birth", item.BirthYear)
 		record.Set("year_of_death", item.DeathYear)
@@ -243,17 +248,22 @@ func importSyntheticArtists(app core.App, data sourceData) error {
 	return nil
 }
 
+func uniqueArtistSlug(used map[string]struct{}, name string, id string) string {
+	slug := utils.Slugify(name)
+	if _, exists := used[slug]; exists {
+		slug += "-" + id
+	}
+	used[slug] = struct{}{}
+
+	return slug
+}
+
 func importSyntheticArtworks(app core.App, data sourceData) error {
 	for _, item := range data.artworks {
 		file, ok := data.artworkFiles[item.ID]
 		if !ok {
 			return fmt.Errorf("artwork %q has no source file", item.ID)
 		}
-		image, err := filesystem.NewFileFromBytes(file.content, file.name)
-		if err != nil {
-			return fmt.Errorf("create artwork %q image: %w", item.ID, err)
-		}
-
 		record, err := newRecord(app, constants.CollectionArtworks, item.ID)
 		if err != nil {
 			return err
@@ -262,14 +272,26 @@ func importSyntheticArtworks(app core.App, data sourceData) error {
 		record.Set("title", item.Title)
 		record.Set("author", []string{item.AuthorID})
 		record.Set("form", []string{item.FormID})
-		record.Set("type", []string{item.TypeID})
-		record.Set("school", []string{item.SchoolID})
+		if item.TypeID != "" {
+			record.Set("type", []string{item.TypeID})
+		}
+		if item.SchoolID != "" {
+			record.Set("school", []string{item.SchoolID})
+		}
 		record.Set("technique", item.Technique)
 		record.Set("comment", artworkComment(item))
 		record.Set("published", true)
-		record.Set("image", image)
+		if file.preseededAssets {
+			record.Set("image", file.name)
+		} else {
+			image, err := filesystem.NewFileFromBytes(file.content, file.name)
+			if err != nil {
+				return fmt.Errorf("create artwork %q image: %w", item.ID, err)
+			}
+			record.Set("image", image)
+		}
 
-		if err := app.Save(record); err != nil {
+		if err := saveSeedRecord(app, record, file.preseededAssets); err != nil {
 			return fmt.Errorf("save artwork %q: %w", item.ID, err)
 		}
 	}
@@ -295,7 +317,7 @@ func importSyntheticGlossary(app core.App, items []sourceGlossaryEntry) error {
 	return nil
 }
 
-func importSyntheticGuestbook(app core.App, items []sourceGuestbookEntry) error {
+func importSyntheticGuestbook(app core.App, items []sourceGuestbookEntry, preseededAssets bool) error {
 	for _, item := range items {
 		record, err := newRecord(app, constants.CollectionGuestbook, item.ID)
 		if err != nil {
@@ -306,7 +328,7 @@ func importSyntheticGuestbook(app core.App, items []sourceGuestbookEntry) error 
 		record.Set("email", item.Email)
 		record.Set("location", item.Location)
 		record.Set("message", item.Message)
-		if err := app.Save(record); err != nil {
+		if err := saveSeedRecord(app, record, preseededAssets); err != nil {
 			return fmt.Errorf("save guestbook entry %q: %w", item.ID, err)
 		}
 		if _, err := app.DB().Update(constants.CollectionGuestbook, dbx.Params{
@@ -350,20 +372,23 @@ func importSyntheticMusic(app core.App, data sourceData) error {
 		if !ok {
 			return fmt.Errorf("music track %q has no source file", track.ID)
 		}
-		source, err := filesystem.NewFileFromBytes(file.content, file.name)
-		if err != nil {
-			return fmt.Errorf("create music track %q source: %w", track.ID, err)
-		}
-
 		record, err := newRecord(app, "music_song", track.ID)
 		if err != nil {
 			return err
 		}
 		record.Set("title", track.Title)
 		record.Set("composer", []string{composerIDs[track.Composer]})
-		record.Set("source", source)
+		if file.preseededAssets {
+			record.Set("source", file.name)
+		} else {
+			source, err := filesystem.NewFileFromBytes(file.content, file.name)
+			if err != nil {
+				return fmt.Errorf("create music track %q source: %w", track.ID, err)
+			}
+			record.Set("source", source)
+		}
 
-		if err := app.Save(record); err != nil {
+		if err := saveSeedRecord(app, record, file.preseededAssets); err != nil {
 			return fmt.Errorf("save music track %q: %w", track.ID, err)
 		}
 	}
@@ -420,6 +445,14 @@ func newRecord(app core.App, collectionName string, id string) (*core.Record, er
 	return record, nil
 }
 
+func saveSeedRecord(app core.App, record *core.Record, preseededAssets bool) error {
+	if preseededAssets {
+		return app.SaveNoValidate(record)
+	}
+
+	return app.Save(record)
+}
+
 func knownPlace(value string) string {
 	if value == "" {
 		return "n/a"
@@ -456,6 +489,17 @@ func syntheticID(value string) string {
 }
 
 func centuryForPeriod(period string) (string, error) {
+	parts := strings.Fields(period)
+	if len(parts) == 2 && parts[1] == "century" {
+		ordinal := parts[0]
+		if len(ordinal) > 2 {
+			century, err := strconv.Atoi(ordinal[:len(ordinal)-2])
+			if err == nil && century > 0 {
+				return strconv.Itoa(century), nil
+			}
+		}
+	}
+
 	switch period {
 	case "Baroque":
 		return "18", nil
