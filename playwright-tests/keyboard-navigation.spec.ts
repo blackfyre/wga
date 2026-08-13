@@ -17,6 +17,29 @@ test("opens keyboard help and command palette", async ({ page }) => {
 	await expect(page.getByRole("dialog", { name: "Go to" })).toBeVisible();
 });
 
+test("centres keyboard dialogs on desktop", async ({ page }) => {
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await page.goto("/");
+	await waitForKeyboard(page);
+
+	for (const { open, panel } of [
+		{
+			open: () => page.getByRole("button", { name: "Keyboard shortcuts" }).click(),
+			panel: ".wga-kbd-help",
+		},
+		{
+			open: () => page.keyboard.press("Control+k"),
+			panel: ".wga-kbd-palette",
+		},
+	]) {
+		await open();
+		const box = await page.locator(panel).boundingBox();
+		expect(Math.abs((box?.x || 0) + (box?.width || 0) / 2 - 720)).toBeLessThanOrEqual(1);
+		expect(Math.abs((box?.y || 0) + (box?.height || 0) / 2 - 450)).toBeLessThanOrEqual(1);
+		await page.keyboard.press("Escape");
+	}
+});
+
 test("palette filters sections and bounds record suggestions", async ({
 	page,
 }) => {

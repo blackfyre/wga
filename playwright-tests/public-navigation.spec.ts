@@ -57,6 +57,25 @@ test("desktop header matches the prototype baseline", async ({ page }) => {
 	expect(Math.abs(bottom - 148)).toBeLessThanOrEqual(1);
 });
 
+test("desktop header controls share the search baseline", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+
+  const desktopControls = page.locator("header > div > div.hidden");
+  const controls = [
+    desktopControls.locator("form button[type='submit']"),
+    desktopControls.locator("[data-keyboard-open]"),
+    desktopControls.locator("[data-keyboard-help]"),
+    desktopControls.locator("[data-wga-theme-toggle]"),
+  ];
+  const bottoms = await Promise.all(
+    controls.map((control) =>
+      control.evaluate((element) => element.getBoundingClientRect().bottom),
+    ),
+  );
+  expect(Math.max(...bottoms) - Math.min(...bottoms)).toBeLessThanOrEqual(1);
+});
+
 test("header search submits a global query", async ({ page }) => {
   await page.goto("/");
   await page

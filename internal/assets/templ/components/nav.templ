@@ -10,17 +10,19 @@ templ TopNav() {
 					<span class="mt-[3px] block font-mono text-[10px] tracking-[1px] text-base-content/60">EUROPEAN ART, 3RD CENTURY – EARLY 20TH</span>
 				</span>
 			</a>
-			<form class="hidden w-[340px] items-end gap-4 md:flex" action="/search">
-				<label>
-					<span class="sr-only">Search collection</span>
-					<input class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2 text-sm leading-4 outline-none" name="q" placeholder="Search artist, title, school" type="search" data-kbd-search/>
-				</label>
-				<button class="font-mono text-[11px] tracking-[1px] text-primary" type="submit">SEARCH</button>
-				<button type="button" data-keyboard-open class="border border-base-content/25 px-2 py-1 font-mono text-[10px] tracking-[1px] text-base-content/70">⌘K</button>
-				<button type="button" data-keyboard-help class="font-mono text-[10px] tracking-[1px] text-base-content/70" aria-label="Keyboard shortcuts">?</button>
-			</form>
-			<div class="hidden md:flex">
+			<div class="hidden items-end gap-6 md:flex">
+				<form class="flex w-[340px] items-end gap-4" action="/search">
+					<label>
+						<span class="sr-only">Search collection</span>
+						<input class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2 text-sm leading-4 outline-none" name="q" placeholder="Search artist, title, school" type="search" data-kbd-search/>
+					</label>
+					<button class="font-mono text-[11px] tracking-[1px] text-primary" type="submit">SEARCH</button>
+					<button type="button" data-keyboard-open class="border border-base-content/25 px-2 py-1 font-mono text-[10px] tracking-[1px] text-base-content/70">⌘K</button>
+					<button type="button" data-keyboard-help class="font-mono text-[10px] tracking-[1px] text-base-content/70" aria-label="Keyboard shortcuts">?</button>
+				</form>
+				<div>
 				@ThemeToggle()
+				</div>
 			</div>
 			<details class="md:hidden" data-kbd-mobile-navigation>
 				<summary class="flex cursor-pointer list-none flex-col gap-1.5" aria-label="Open navigation">
