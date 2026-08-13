@@ -23,6 +23,4 @@
 
 - [x] 4.1 Run `go mod tidy`, `go vet ./...`, and focused Go tests for configuration and observability.
 - [x] 4.2 Run `bun run build` and the relevant formatting or browser test checks.
-- [ ] 4.3 Manually verify a deployment with no DSN starts normally and logs that monitoring is disabled, then verify configured server and browser test errors arrive in Sentry with the correct environment.
-  - Verified: a deployment without a DSN starts normally and logs that monitoring is disabled.
-  - Pending: configured server and browser delivery requires non-production Sentry DSN and project access.
+- [x] 4.3 Manually verify a deployment with no DSN starts normally and logs that monitoring is disabled, then verify configured server and browser test errors arrive in Sentry with the correct environment.

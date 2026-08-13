@@ -12,128 +12,54 @@ type PostcardEditorDTO struct {
 
 templ PostcardEditor(p PostcardEditorDTO) {
 	@DialogBody() {
-		<h1 class="text-2xl mb-6">Write a postcard</h1>
-		<div class="flex flex-col md:flex-row gap-6">
-			<div class="w-full md:w-1/2">
-				<figure><img src={ p.Image } alt={ p.Title + " by " + p.AuthorName }/></figure>
-				<h2 class="card-title">{ p.Title }</h2>
-				<p class="subtitle">{ p.AuthorName }</p>
-				<div class="line-clamp-3">
-					@templ.Raw(p.Comment)
+		<div class="border-b border-base-content pb-4 pr-8">
+			<p class="font-mono text-[11px] tracking-[2px] text-base-content/60">04 — POSTCARD SERVICE</p>
+			<h1 class="mt-2 text-[30px] font-semibold tracking-[-0.5px]">Send a postcard</h1>
+			<p class="mt-3 max-w-[520px] text-sm leading-relaxed text-base-content/70">Free service. The recipient receives a link to the artwork with your message; no account is needed and no address is stored after delivery.</p>
+		</div>
+		<div class="grid gap-7 pt-6 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+			<aside>
+				<figure class="border border-base-content/15 bg-base-300 p-2"><img src={ p.Image } alt={ p.Title + " by " + p.AuthorName } class="aspect-[4/3] w-full object-cover"/></figure>
+				<h2 class="mt-3 text-lg font-semibold">{ p.Title }</h2>
+				if p.AuthorName != "" {
+					<p class="mt-1 font-mono text-[10px] tracking-[1px] text-primary">{ p.AuthorName }</p>
+				}
+				if p.Technique != "" {
+					<p class="mt-1 font-mono text-[10px] tracking-[1px] text-base-content/60">{ p.Technique }</p>
+				}
+				<div class="content mt-4 text-sm leading-relaxed">@templ.Raw(p.Comment)</div>
+			</aside>
+			<form hx-post="/postcard" enctype="multipart/form-data" hx-target="#d" id="postcard_create" hx-disabled-elt="input,button,select" class="space-y-5">
+				<input type="hidden" name="image_id" value={ p.ImageId }/>
+				<div class="grid gap-4 sm:grid-cols-2">
+					<label class="block font-mono text-[10px] tracking-[1px]">NAME<input class="mt-2 w-full border border-base-content/30 bg-transparent px-3 py-2.5 font-sans text-sm tracking-normal" type="text" name="sender_name" id="sender_name" placeholder="My name" required autocomplete="name"/></label>
+					<label class="block font-mono text-[10px] tracking-[1px]">EMAIL<input class="mt-2 w-full border border-base-content/30 bg-transparent px-3 py-2.5 font-sans text-sm tracking-normal" type="email" name="sender_email" id="sender_email" placeholder="My email address" autocomplete="email" required/></label>
 				</div>
-			</div>
-			<div class="grow">
-				<form
-					hx-post="/postcard"
-					enctype="multipart/form-data"
-					hx-target="#d"
-					id="postcard_create"
-					hx-disabled-elt="input,button,select"
-				>
-					<input type="hidden" name="image_id" value={ p.ImageId }/>
-					<div class="flex flex-col gap-4">
-						<label class="input input-bordered flex items-center gap-2">
-							Name
-							<input
-								class="grow"
-								type="text"
-								name="sender_name"
-								id="sender_name"
-								placeholder="My name"
-								required
-								autocomplete="name"
-							/>
-						</label>
-						<label class="input input-bordered flex items-center gap-2">
-							Email
-							<input
-								class="grow"
-								type="email"
-								name="sender_email"
-								id="sender_email"
-								placeholder="My email address"
-								autocomplete="email"
-								required
-							/>
-						</label>
+				<div>
+					<p class="font-mono text-[10px] tracking-[1px]">RECIPIENTS</p>
+					<div id="recipients-array" class="mt-2 space-y-2">
+						<label class="flex items-center gap-2 border border-base-content/30 px-3 py-1.5"><span class="sr-only">Recipient email</span><input type="text" class="min-w-0 grow bg-transparent py-1 text-sm outline-none" name="recipients[]" placeholder="friend@provider.tld" autocomplete="email" required/><button type="button" class="shrink-0 font-mono text-xs text-base-content/60 hover:text-base-content" title="Remove recipient" data-cloner-remove-me>REMOVE</button></label>
 					</div>
-					<div class="field">
-						<label class="label">Recipients</label>
-					</div>
-					<div id="recipients-array" class="flex flex-col gap-4">
-						<label class="input input-bordered flex items-center gap-2 pr-0">
-							Email
-							<input
-								type="text"
-								class="grow"
-								name="recipients[]"
-								placeholder="friend@provider.tld"
-								autocomplete="email"
-								required
-							/>
-							<button
-								type="button"
-								class="btn btn-primary"
-								title="Remove recipient"
-								data-cloner-remove-me
-							>-</button>
-						</label>
-					</div>
-					<div class="field">
-						<button type="button" class="btn btn-link" data-cloner-target="#recipients-array">
-							Add
-							recipient
-						</button>
-					</div>
-					<div class="field">
-						<label class="label">Message</label>
-						<div class="control">
-							<trix-editor input="message"></trix-editor>
-							<input type="hidden" id="message" name="message"/>
-						</div>
-					</div>
-					<div class="form-control">
-						<label class="label cursor-pointer">
-							<span class="label-text">Notify me the first time the postcard is viewed</span>
-							<input type="checkbox" name="notify_sender" value="true" checked="checked" class="toggle"/>
-						</label>
-					</div>
-					<label aria-hidden="true" class="hpt" for="name"></label>
-					<input
-						aria-hidden="true"
-						class="hpt"
-						autocomplete="off"
-						type="text"
-						id="name"
-						name="name"
-						placeholder="Your name here"
-					/>
+					<button type="button" class="mt-3 font-mono text-[10px] tracking-[1px] text-primary hover:opacity-60" data-cloner-target="#recipients-array">ADD RECIPIENT +</button>
+				</div>
+				<div>
+					<label for="message" class="font-mono text-[10px] tracking-[1px]">MESSAGE</label>
+					<div class="mt-2 border border-base-content/30 bg-base-100"><trix-editor input="message"></trix-editor></div>
+					<input type="hidden" id="message" name="message"/>
+				</div>
+				<label class="flex items-start gap-3 text-sm leading-relaxed"><input type="checkbox" name="notify_sender" value="true" checked="checked" class="mt-1"/><span>Notify me the first time the postcard is viewed</span></label>
+				<label aria-hidden="true" class="hpt" for="name"></label>
+				<input aria-hidden="true" class="hpt" autocomplete="off" type="text" id="name" name="name" placeholder="Your name here"/>
 				<label aria-hidden="true" class="hpt" for="email"></label>
-				<input
-					aria-hidden="true"
-					class="hpt"
-					autocomplete="off"
-					type="email"
-					id="email"
-					name="email"
-					placeholder="Your e-mail here"
-				/>
+				<input aria-hidden="true" class="hpt" autocomplete="off" type="email" id="email" name="email" placeholder="Your e-mail here"/>
 				if p.SiteKey != "" {
 					<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 					<div class="g-recaptcha" data-sitekey={ p.SiteKey }></div>
 				} else {
 					<input type="hidden" name="g-recaptcha-response" value="dev"/>
 				}
-				<div class="flex flex-row justify-end gap-4">
-						<button class="btn btn-primary" type="submit">
-							Send postcard
-						</button>
-						<button type="button" class="btn btn-neutral" hx-on:click="wga.dialog.close();">
-							Cancel
-						</button>
-					</div>
-				</form>
-			</div>
+				<div class="flex flex-wrap justify-end gap-3 border-t border-base-content/15 pt-5"><button class="bg-primary px-4 py-3 font-mono text-[10px] tracking-[1px] text-primary-content" type="submit">Send postcard</button><button type="button" class="border border-base-content/30 px-4 py-3 font-mono text-[10px] tracking-[1px]" hx-on:click="wga.dialog.close();">Cancel</button></div>
+			</form>
 		</div>
 	}
 }

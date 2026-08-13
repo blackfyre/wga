@@ -22,33 +22,29 @@ Chart.register(
 	Legend,
 );
 
-// Art pigment-inspired palette for the donut chart
 const donutPalette = [
-	"#c0392b", // Vermilion
-	"#2980b9", // Ultramarine
-	"#27ae60", // Viridian
-	"#f39c12", // Yellow Ochre
-	"#8e44ad", // Tyrian Purple
-	"#16a085", // Malachite
-	"#d35400", // Burnt Sienna
-	"#2c3e50", // Ivory Black
-	"#7f8c8d", // Payne's Grey
-	"#bdc3c7", // Titanium White
-	"#e74c3c", // Cadmium Red
-	"#3498db", // Cerulean
+	"#003366",
+	"#2a5580",
+	"#54789a",
+	"#7e9ab5",
+	"#a8bccf",
+	"#8a857c",
 ];
 
-// Fixed colors per school so they're consistent across both bar charts
 const schoolColors: Record<string, string> = {
-	Italian: "#c0392b",
-	French: "#2980b9",
-	Dutch: "#f39c12",
-	Flemish: "#8e44ad",
-	German: "#27ae60",
-	English: "#16a085",
-	Spanish: "#d35400",
-	Other: "#7f8c8d",
+	Italian: "#003366",
+	French: "#1c4d80",
+	Dutch: "#356a99",
+	Flemish: "#5786af",
+	German: "#7ba1c4",
+	English: "#9fbbd6",
+	Spanish: "#c0d2e4",
+	Other: "#8a857c",
 };
+
+const chartText = "#1c1c1a";
+const chartMutedText = "#6b6660";
+const chartRule = "rgba(28, 28, 26, 0.15)";
 
 // Preferred display order — Other always last
 const schoolOrder = [
@@ -125,7 +121,9 @@ function initDonutChart(): void {
 		options: {
 			responsive: true,
 			plugins: {
-				legend: { position: "bottom" },
+				legend: {
+					display: false,
+				},
 				tooltip: {
 					callbacks: {
 						label: (ctx) => {
@@ -181,18 +179,36 @@ function buildStackedBarChart(
 		data: { labels, datasets },
 		options: {
 			responsive: true,
+			aspectRatio: 2,
 			scales: {
 				x: {
 					stacked: true,
-					ticks: { maxRotation: 45, minRotation: 45 },
+					border: { color: chartRule },
+					grid: { display: false },
+					ticks: {
+						color: chartMutedText,
+						font: { family: "ui-monospace, SF Mono, Menlo, monospace", size: 10 },
+						maxRotation: 45,
+						minRotation: 45,
+					},
 				},
 				y: {
 					stacked: true,
-					title: { display: true, text: totalLabel },
+					border: { color: chartRule },
+					grid: { color: chartRule },
+					ticks: { color: chartMutedText },
+					title: { color: chartText, display: true, text: totalLabel },
 				},
 			},
 			plugins: {
-				legend: { position: "bottom" },
+				legend: {
+					position: "bottom",
+					labels: {
+						boxWidth: 10,
+						color: chartMutedText,
+						font: { family: "ui-monospace, SF Mono, Menlo, monospace", size: 11 },
+					},
+				},
 				tooltip: {
 					callbacks: {
 						footer: (items) => {

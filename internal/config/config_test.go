@@ -169,6 +169,15 @@ func TestConfigurationParsesTypedValues(t *testing.T) {
 	}
 }
 
+func TestMigrationSeedSQLitePath(t *testing.T) {
+	values := validValues()
+	values["WGA_SEED_SQLITE_PATH"] = "/prod-data/wga-src.sqlite"
+
+	if got, want := LoadFrom(lookup(values)).Migrations().SeedSQLitePath(), "/prod-data/wga-src.sqlite"; got != want {
+		t.Fatalf("seed SQLite path = %q, want %q", got, want)
+	}
+}
+
 func TestServerRejectsInvalidTypedSettings(t *testing.T) {
 	tests := []struct {
 		name  string

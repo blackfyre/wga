@@ -76,7 +76,7 @@ func main() {
 		}
 		contributorProvider := contributors.NewGitHubProvider(&http.Client{Timeout: 10 * time.Second})
 		captchaVerifier := antiabuse.NewRecaptchaVerifier(&http.Client{Timeout: 5 * time.Second}, serverConfig.Captcha.Secret())
-		handlers.RegisterHandlers(app, serverConfig.Captcha, contributorStore, captchaVerifier)
+		handlers.RegisterHandlers(app, serverConfig.Environment, serverConfig.Captcha, contributorStore, captchaVerifier)
 		crontab.RegisterCronJobs(app, serverConfig.Postcards, serverConfig.Sitemap(), contributors.NewRefreshJob(app, contributorProvider, contributorStore))
 	}
 

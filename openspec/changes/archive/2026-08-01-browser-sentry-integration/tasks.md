@@ -11,4 +11,4 @@
 ## 3. Verification
 
 - [x] 3.1 Run `templ generate`, focused Go configuration and observability tests, `go vet ./...`, and `bun run build`.
-- [ ] 3.2 In non-production deployment configuration, set the server and supplied browser DSNs, visit `/sentry-test`, and verify each event reaches its respective Sentry project with the correct environment.
+- [x] 3.2 In non-production deployment configuration, set the server and supplied browser DSNs, visit `/sentry-test`, and verify each event reaches its respective Sentry project with the correct environment.

@@ -7,6 +7,7 @@ go = "1.26.5"
 "github:golangci/golangci-lint" = "latest"
 "aqua:superfly/flyctl" = "latest"
 sqlite = "latest"
+railway = "latest"
 
 # Git is a system prerequisite because Mise has no cross-platform Git backend.
 [env]
@@ -61,7 +62,7 @@ run = [
 [tasks."app:run"]
 description = "Run the built server binary in development mode."
 dir = "dist"
-run = "./wga serve --dev"
+run = "./wga serve --dev --http 0.0.0.0:8090"
 
 [tasks."app:reset"]
 description = "Rebuild, reset local data, start Garage if needed, and restart the development server."
@@ -125,3 +126,12 @@ run = "podman compose up -d"
 description = "Start local services, asset watchers, and template generation."
 alias = "up"
 run = "mise run services:up && mise run --jobs 3 watch:js ::: watch:templ ::: watch:css"
+
+[tasks."debug:chromium"]
+description = "Start a Chromium browser for debugging"
+run = '''
+chromium-browser \
+  --remote-debugging-port=9222 \
+  --user-data-dir="$HOME/.config/chromium" \
+  http://localhost:8090
+'''

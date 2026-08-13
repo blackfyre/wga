@@ -8,43 +8,8 @@ for (const colorScheme of ["light", "dark"] as const) {
 		await page.goto("/");
 
 		await expect(page.locator("html")).toHaveCSS("color-scheme", colorScheme);
-
-		const themeToggle = page.getByRole("checkbox", { name: "Dark mode" });
-		if (colorScheme === "dark") {
-			await expect(themeToggle).toBeChecked();
-			return;
-		}
-
-		await expect(themeToggle).not.toBeChecked();
 	});
 }
-
-test("persists explicitly selected themes", async ({ page }) => {
-	await page.emulateMedia({ colorScheme: "dark" });
-	await page.goto("/");
-
-	const themeToggle = page.getByRole("checkbox", { name: "Dark mode" });
-	await expect(themeToggle).toBeChecked();
-	await themeToggle.press("Space");
-
-	await expect(page.locator("html")).toHaveAttribute("data-theme", "wga_light");
-	await expect(page.locator("html")).toHaveCSS("color-scheme", "light");
-
-	await page.reload();
-
-	await expect(themeToggle).not.toBeChecked();
-	await expect(page.locator("html")).toHaveAttribute("data-theme", "wga_light");
-
-	await themeToggle.press("Space");
-
-	await expect(page.locator("html")).toHaveAttribute("data-theme", "wga_dark");
-	await expect(page.locator("html")).toHaveCSS("color-scheme", "dark");
-
-	await page.reload();
-
-	await expect(themeToggle).toBeChecked();
-	await expect(page.locator("html")).toHaveAttribute("data-theme", "wga_dark");
-});
 
 test.describe("without JavaScript", () => {
 	test.use({ javaScriptEnabled: false });
@@ -55,4 +20,22 @@ test.describe("without JavaScript", () => {
 
 		await expect(page.locator("html")).toHaveCSS("color-scheme", "dark");
 	});
+});
+
+test("switches and remembers the selected colour scheme", async ({ page }) => {
+	await page.goto("/");
+
+	await page.getByRole("button", { name: "DARK" }).first().click();
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "wga_dark");
+	await expect(
+		page.getByRole("button", { name: "DARK" }).first(),
+	).toHaveAttribute("aria-pressed", "true");
+	await expect(page.getByRole("button", { name: "DARK" }).first()).toHaveClass(
+		/bg-primary/,
+	);
+
+	await page.reload();
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "wga_dark");
+	await page.getByRole("button", { name: "LIGHT" }).first().click();
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "wga_light");
 });

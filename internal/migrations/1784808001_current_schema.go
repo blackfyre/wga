@@ -109,7 +109,7 @@ func createCurrentSchema(app core.App) error {
 	}
 	if err := saveCurrentCollection(app, currentCollection("Glossary", "glossary",
 		textField("expression", true, true),
-		textField("definition", true, false),
+		textFieldWithMax("definition", true, false, 10000),
 	)); err != nil {
 		return err
 	}
@@ -124,7 +124,7 @@ func createCurrentSchema(app core.App) error {
 	if err := saveCurrentCollection(app, currentCollection("Music_song", "music_song",
 		textField("title", true, true),
 		relationField("composer", "music_composer", 1, 20, false, false),
-		fileField("source", []string{"audio/mpeg", "audio/mp3"}, 15*1024*1024, nil, true),
+		fileField("source", []string{"audio/mpeg", "audio/mp3"}, 64*1024*1024, nil, true),
 	)); err != nil {
 		return err
 	}
@@ -281,6 +281,10 @@ func saveCurrentCollection(app core.App, collection *core.Collection) error {
 
 func textField(name string, required bool, presentable bool) *core.TextField {
 	return &core.TextField{Name: name, Required: required, Presentable: presentable}
+}
+
+func textFieldWithMax(name string, required bool, presentable bool, max int) *core.TextField {
+	return &core.TextField{Name: name, Required: required, Presentable: presentable, Max: max}
 }
 
 func numberField(name string, required bool) *core.NumberField {

@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/blackfyre/wga/internal/repositories"
 	"github.com/pocketbase/pocketbase"
 )
 
@@ -54,5 +55,24 @@ func TestMarshalStatsCoalescesConcurrentFetches(t *testing.T) {
 
 	if got := fetches.Load(); got != 1 {
 		t.Errorf("expected one aggregate fetch, got %d", got)
+	}
+}
+
+func TestSummarizeSchoolPeriodRowsBuildsPeriodMatrix(t *testing.T) {
+	rows := summarizeSchoolPeriodRows([]repositories.SchoolPeriodRow{
+		{PeriodStart: 1500, School: "Italian", Count: 3},
+		{PeriodStart: 1500, School: "French", Count: 2},
+		{PeriodStart: 1500, School: "Other", Count: 1},
+		{PeriodStart: 1550, School: "Dutch", Count: 4},
+	})
+
+	if len(rows) != 2 {
+		t.Fatalf("period rows = %d, want 2", len(rows))
+	}
+	if rows[0].Period != "1500–1549" || rows[0].Italian != 3 || rows[0].French != 2 || rows[0].Other != 1 || rows[0].Total != 6 {
+		t.Errorf("first period = %#v", rows[0])
+	}
+	if rows[1].Period != "1550–1599" || rows[1].Dutch != 4 || rows[1].Total != 4 {
+		t.Errorf("second period = %#v", rows[1])
 	}
 }

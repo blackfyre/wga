@@ -4,6 +4,7 @@ import "htmx.org";
 import htmx from "htmx.org";
 import warningSign from "../assets/warning-sign.svg";
 import { initCookieConsent } from "./cookieconsent";
+import { initKeyboardNavigation } from "./keyboard";
 import logger from "./logger";
 import { initStatisticsChart } from "./statistics";
 
@@ -55,6 +56,10 @@ type wgaWindow = {
 	glossary: {
 		closeAll: () => void;
 	};
+	feedback: {
+		countdown: (field: HTMLTextAreaElement) => void;
+		setPlaceholder: (field: HTMLInputElement) => void;
+	};
 };
 
 type wgaInternals = {
@@ -67,6 +72,8 @@ type wgaInternals = {
 	eventListeners: (() => void)[];
 	func: {
 		cloner: () => void;
+		artworkYearRange: () => void;
+		copyBibTeX: () => void;
 		viewer: () => void;
 		toast: (message: string, type: ToastEvent["detail"]["type"]) => void;
 		dualLookupModal: () => void;
@@ -143,39 +150,123 @@ interface ToastEvent extends Event {
 	};
 }
 
+type ThemeChoice = "light" | "dark";
+
+const storedTheme = (): ThemeChoice | null => {
+	try {
+		const theme = window.localStorage.getItem("wga-theme");
+		if (theme === "wga_light") {
+			return "light";
+		}
+		if (theme === "wga_dark") {
+			return "dark";
+		}
+	} catch {
+		return null;
+	}
+	return null;
+};
+
+const applyTheme = (choice: ThemeChoice) => {
+	const theme = choice === "dark" ? "wga_dark" : "wga_light";
+	document.documentElement.dataset.theme = theme;
+	for (const toggle of document.querySelectorAll<HTMLElement>(
+		"[data-wga-theme]",
+	)) {
+		const active = toggle.dataset.wgaTheme === choice;
+		toggle.setAttribute("aria-pressed", String(active));
+		toggle.classList.toggle("bg-primary", active);
+		toggle.classList.toggle("text-primary-content", active);
+		toggle.classList.toggle("bg-base-100", !active);
+		toggle.classList.toggle("text-base-content/75", !active);
+	}
+};
+
 const initThemeToggle = () => {
-	const themeToggle = document.querySelector<HTMLInputElement>(
-		"[data-theme-toggle]",
-	);
-	if (!themeToggle) {
+	const choice = storedTheme();
+	if (choice) {
+		applyTheme(choice);
+	} else {
+		applyTheme(
+			window.matchMedia("(prefers-color-scheme: dark)").matches
+				? "dark"
+				: "light",
+		);
+	}
+
+	document.addEventListener("click", (event) => {
+		const target = event.target instanceof Element ? event.target : null;
+		const toggle = target?.closest<HTMLElement>("[data-wga-theme]");
+		if (!toggle) {
+			return;
+		}
+		const choice = toggle.dataset.wgaTheme;
+		if (choice !== "light" && choice !== "dark") {
+			return;
+		}
+		applyTheme(choice);
+		try {
+			window.localStorage.setItem("wga-theme", `wga_${choice}`);
+		} catch {}
+	});
+};
+
+const syncMobileNavigation = () => {
+	const currentPath = window.location.pathname;
+	for (const link of document.querySelectorAll<HTMLAnchorElement>(
+		"[data-mobile-navigation] a",
+	)) {
+		const active =
+			link.pathname === currentPath ||
+			(link.pathname !== "/" && currentPath.startsWith(`${link.pathname}/`));
+		link.classList.toggle("bg-primary", active);
+		link.classList.toggle("text-primary-content", active);
+		link.classList.toggle("pl-3", active);
+		if (active) {
+			link.setAttribute("aria-current", "page");
+		} else {
+			link.removeAttribute("aria-current");
+		}
+	}
+};
+
+const feedbackCountdown = (field: HTMLTextAreaElement) => {
+	const output = document.getElementById("feedback-chars");
+	if (!output) {
 		return;
 	}
 
-	let savedTheme: string | null = null;
-	try {
-		savedTheme = window.localStorage.getItem("wga-theme");
-	} catch {}
+	const max = Number(field.getAttribute("maxlength"));
+	const remaining = Math.max(0, max - field.value.length);
+	output.textContent = String(remaining);
+};
 
-	const savedThemeIsValid =
-		savedTheme === "wga_light" || savedTheme === "wga_dark";
-	themeToggle.checked = savedTheme === "wga_dark";
-	if (!savedThemeIsValid) {
-		themeToggle.checked = window.matchMedia(
-			"(prefers-color-scheme: dark)",
-		).matches;
+const feedbackSetPlaceholder = (field: HTMLInputElement) => {
+	if (!field.checked) {
+		return;
 	}
 
-	themeToggle.addEventListener("change", () => {
-		let theme = "wga_light";
-		if (themeToggle.checked) {
-			theme = "wga_dark";
+	const message = document.getElementById("feedback-message");
+	if (message instanceof HTMLTextAreaElement) {
+		const placeholder = field.getAttribute("data-placeholder");
+		if (placeholder) {
+			message.placeholder = placeholder;
+		}
+	}
+
+	for (const choice of document.querySelectorAll<HTMLInputElement>(
+		"input[name='category']",
+	)) {
+		const label = choice.closest("label");
+		if (!label) {
+			continue;
 		}
 
-		document.documentElement.dataset.theme = theme;
-		try {
-			window.localStorage.setItem("wga-theme", theme);
-		} catch {}
-	});
+		label.classList.toggle("bg-primary", choice.checked);
+		label.classList.toggle("border-primary", choice.checked);
+		label.classList.toggle("text-primary-content", choice.checked);
+		label.classList.toggle("border-base-content/25", !choice.checked);
+	}
 };
 
 const deepMerge = (target: object, source: object): object => {
@@ -661,7 +752,7 @@ const wgaInternal: wgaInternals = {
 						for (const el of removeMe) {
 							const removeMe = () => {
 								// Find the closest .field element
-								const field = el.closest("label.input");
+							const field = el.closest("label");
 
 								// Remove the field
 								field?.remove();
@@ -683,6 +774,7 @@ const wgaInternal: wgaInternals = {
 				for (const element of elements) {
 					const e = element as HTMLElement;
 					new Viewer(e, {
+						navbar: !e.hasAttribute("data-viewer-no-navbar"),
 						toolbar: {
 							zoomIn: 1,
 							zoomOut: 1,
@@ -780,9 +872,12 @@ const wgaInternal: wgaInternals = {
 			logger.debug("WGA Internal Functions Initialized");
 			// Run all internal functions
 			logger.debug("Setting up HTMX and elements");
+			htmx.process(document.body);
 			wgaInternal.setup.htmx();
 			wgaInternal.setup.elements();
 			wgaInternal.func.glossary();
+			wgaInternal.func.copyBibTeX();
+			wgaInternal.func.artworkYearRange();
 			void maybeInitStatisticsCharts();
 
 			// Run all event listeners
@@ -824,6 +919,78 @@ const wgaInternal: wgaInternals = {
 						glossaryClosePopup(true);
 					}
 				});
+			}
+		},
+		copyBibTeX() {
+			const buttons = document.querySelectorAll<HTMLButtonElement>(
+				"[data-copy-bibtex]:not([data-copy-bound])",
+			);
+			for (const button of buttons) {
+				button.dataset.copyBound = "true";
+				button.addEventListener("click", async () => {
+					const target = document.querySelector<HTMLElement>(
+						button.dataset.copyTarget || "",
+					);
+					if (!target) {
+						return;
+					}
+
+					let copied = false;
+					try {
+						await navigator.clipboard.writeText(target.innerText);
+						copied = true;
+					} catch {
+						const field = document.createElement("textarea");
+						field.value = target.innerText;
+						document.body.appendChild(field);
+						field.select();
+						copied = document.execCommand("copy");
+						field.remove();
+					}
+
+					if (!copied) {
+						logger.warn("Unable to copy BibTeX citation");
+						return;
+					}
+
+					button.textContent = "COPIED";
+					setTimeout(() => {
+						button.textContent = "COPY BIBTEX";
+					}, 2000);
+				});
+			}
+		},
+		artworkYearRange() {
+			const ranges = document.querySelectorAll<HTMLElement>(
+				"[data-artwork-year-range]:not([data-artwork-year-range-bound])",
+			);
+			for (const range of ranges) {
+				const from = range.querySelector<HTMLInputElement>("#year_from");
+				const to = range.querySelector<HTMLInputElement>("#year_to");
+				const output = range
+					.closest("fieldset")
+					?.querySelector<HTMLOutputElement>("output");
+				if (!from || !to) {
+					continue;
+				}
+
+				const update = () => {
+					const minimum = Number(from.min);
+					const maximum = Number(from.max);
+					const scale = maximum - minimum;
+					const start = ((Number(from.value) - minimum) / scale) * 100;
+					const end = ((Number(to.value) - minimum) / scale) * 100;
+					range.style.setProperty("--range-start", `${start}%`);
+					range.style.setProperty("--range-width", `${end - start}%`);
+					if (output) {
+						output.value = `${from.value}–${to.value}`;
+					}
+				};
+
+				from.addEventListener("input", update);
+				to.addEventListener("input", update);
+				update();
+				range.dataset.artworkYearRangeBound = "true";
 			}
 		},
 		dualLookupModal() {
@@ -883,7 +1050,10 @@ const wgaInternal: wgaInternals = {
 (() => {
 	logger.debug("Initializing WGA");
 	initCookieConsent();
+	initKeyboardNavigation();
 	initThemeToggle();
+	syncMobileNavigation();
+	document.addEventListener("htmx:afterSettle", syncMobileNavigation);
 	wgaInternal.func.init();
 })();
 
@@ -967,6 +1137,14 @@ window.wga = {
 	glossary: {
 		closeAll() {
 			glossaryClosePopup();
+		},
+	},
+	feedback: {
+		countdown(field: HTMLTextAreaElement) {
+			feedbackCountdown(field);
+		},
+		setPlaceholder(field: HTMLInputElement) {
+			feedbackSetPlaceholder(field);
 		},
 	},
 	music: {

@@ -1,0 +1,93 @@
+package pages
+
+import (
+	"net/url"
+	"strconv"
+
+	"github.com/blackfyre/wga/internal/assets/templ/layouts"
+)
+
+type SearchArtist struct {
+	Name   string
+	Dates  string
+	School string
+	Href   string
+}
+
+type SearchWork struct {
+	Title  string
+	Artist string
+	Href   string
+}
+
+type SearchView struct {
+	Term        string
+	ArtistTotal int
+	WorkTotal   int
+	Artists     []SearchArtist
+	Works       []SearchWork
+}
+
+templ SearchPage(v SearchView) {
+	@layouts.LayoutMain() {
+		<section id="search" class="container mx-auto px-4 pb-20 pt-10 md:px-0 wga-enter">
+			<p class="mb-3 font-mono text-[11px] tracking-[2px] text-base-content/60">08 — SEARCH RESULTS</p>
+			<h1 class="mb-3 text-[28px] font-semibold leading-tight tracking-[-0.5px] md:text-[40px]">Results for { searchLabel(v.Term) }</h1>
+			<form action="/search" hx-get="/search/results" hx-target="#global-search-results" hx-swap="outerHTML" hx-trigger="input changed delay:300ms from:input[type=search]" class="mb-8 max-w-xl">
+				<label><span class="sr-only">Search collection</span><input class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2 text-base outline-none" name="q" value={ v.Term } type="search" placeholder="Search artist, title, school"/></label>
+				<noscript><button type="submit" class="mt-4 bg-primary px-4 py-3 font-mono text-[11px] tracking-[1.5px] text-primary-content">SEARCH</button></noscript>
+			</form>
+			@SearchResults(v)
+		</section>
+	}
+}
+
+templ SearchResults(v SearchView) {
+	<div id="global-search-results" aria-live="polite">
+		<p class="mb-11 font-mono text-xs text-base-content/60">{ strconv.Itoa(v.ArtistTotal) } ARTISTS · { strconv.Itoa(v.WorkTotal) } WORKS · SEARCHED NAME, TITLE, SCHOOL</p>
+		<div class="flex flex-col items-start gap-10 md:flex-row md:gap-14">
+			<div class="min-w-0 flex-1">
+				<h2 class="border-b border-base-content pb-2.5 font-mono text-[11px] tracking-[1.5px]">ARTISTS</h2>
+				if len(v.Artists) == 0 {
+					<p class="py-6 text-[15px] leading-relaxed text-base-content/70">No artist matches that.</p>
+				} else {
+					<ul>
+						for _, artist := range v.Artists {
+							<li><a href={ templ.URL(artist.Href) } hx-get={ artist.Href } class="flex items-baseline justify-between gap-4 border-b border-base-content/15 py-3.5 transition-colors hover:bg-primary/5"><span class="text-[15px] font-semibold">{ artist.Name }</span><span class="text-right font-mono text-[11px] text-base-content/60">{ artist.Dates }<br/>{ artist.School }</span></a></li>
+						}
+					</ul>
+					<a href={ templ.URL(searchIndexPath("/artists", v.Term)) } hx-get={ searchIndexPath("/artists", v.Term) } class="mt-4 inline-block font-mono text-[11px] tracking-[1px] text-primary">ALL MATCHING ARTISTS →</a>
+				}
+			</div>
+			<div class="min-w-0 flex-1">
+				<h2 class="border-b border-base-content pb-2.5 font-mono text-[11px] tracking-[1.5px]">WORKS</h2>
+				if len(v.Works) == 0 {
+					<p class="py-6 text-[15px] leading-relaxed text-base-content/70">No work matches that.</p>
+				} else {
+					<ul>
+						for _, work := range v.Works {
+							<li><a href={ templ.URL(work.Href) } hx-get={ work.Href } class="flex items-baseline justify-between gap-4 border-b border-base-content/15 py-3.5 transition-colors hover:bg-primary/5"><span class="text-[15px] font-semibold">{ work.Title }</span><span class="text-right font-mono text-[11px] text-base-content/60">{ work.Artist }</span></a></li>
+						}
+					</ul>
+					<a href={ templ.URL(searchIndexPath("/artworks", v.Term)) } hx-get={ searchIndexPath("/artworks", v.Term) } class="mt-4 inline-block font-mono text-[11px] tracking-[1px] text-primary">ALL MATCHING WORKS →</a>
+				}
+			</div>
+		</div>
+	</div>
+}
+
+func searchLabel(term string) string {
+	if term == "" {
+		return "ALL RECORDS"
+	}
+
+	return "\"" + term + "\""
+}
+
+func searchIndexPath(path string, term string) string {
+	if term == "" {
+		return path
+	}
+
+	return path + "?q=" + url.QueryEscape(term)
+}

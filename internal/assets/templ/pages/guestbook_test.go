@@ -7,24 +7,24 @@ import (
 	"testing"
 )
 
-func TestGuestbookBlockOnlyPromptsToSignForCurrentYear(t *testing.T) {
+func TestGuestbookBlockAlwaysRendersSigningLink(t *testing.T) {
 	tests := []struct {
 		name         string
 		selectedYear string
 		currentYear  string
-		wantPrompt   bool
+		wantSignLink bool
 	}{
 		{
 			name:         "current year",
 			selectedYear: "2026",
 			currentYear:  "2026",
-			wantPrompt:   true,
+			wantSignLink: true,
 		},
 		{
 			name:         "past year",
 			selectedYear: "2025",
 			currentYear:  "2026",
-			wantPrompt:   false,
+			wantSignLink: true,
 		},
 	}
 
@@ -40,28 +40,27 @@ func TestGuestbookBlockOnlyPromptsToSignForCurrentYear(t *testing.T) {
 				t.Fatalf("render guestbook block: %v", err)
 			}
 
-			prompt := "Be the first to sign the guestbook for " + tt.selectedYear + "!"
-			if got := strings.Contains(output.String(), prompt); got != tt.wantPrompt {
-				t.Errorf("sign prompt present = %t, want %t", got, tt.wantPrompt)
+			if got := strings.Contains(output.String(), "SIGN THE GUESTBOOK →"); got != tt.wantSignLink {
+				t.Errorf("sign link present = %t, want %t", got, tt.wantSignLink)
 			}
 		})
 	}
 }
 
-func TestGuestbookBlockOnlyShowsYearSelectorForMultipleYears(t *testing.T) {
+func TestGuestbookBlockAlwaysShowsYearNavigation(t *testing.T) {
 	tests := []struct {
 		name         string
 		yearOptions  []string
-		wantSelector bool
+			wantSelector bool
 	}{
 		{
 			name:         "no years",
-			wantSelector: false,
+				wantSelector: true,
 		},
 		{
 			name:         "one year",
 			yearOptions:  []string{"2020"},
-			wantSelector: false,
+				wantSelector: true,
 		},
 		{
 			name:         "multiple years",
@@ -81,8 +80,8 @@ func TestGuestbookBlockOnlyShowsYearSelectorForMultipleYears(t *testing.T) {
 				t.Fatalf("render guestbook block: %v", err)
 			}
 
-			if got := strings.Contains(output.String(), `name="year"`); got != tt.wantSelector {
-				t.Errorf("year selector present = %t, want %t", got, tt.wantSelector)
+			if got := strings.Contains(output.String(), `aria-label="Filter guestbook entries by year"`); got != tt.wantSelector {
+				t.Errorf("year navigation present = %t, want %t", got, tt.wantSelector)
 			}
 		})
 	}

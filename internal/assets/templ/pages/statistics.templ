@@ -16,6 +16,19 @@ type StatisticsSchoolPeriodRow struct {
 	Count  int
 }
 
+type StatisticsSchoolPeriodSummaryRow struct {
+	Period   string
+	Italian  int
+	French   int
+	Dutch    int
+	Flemish  int
+	German   int
+	English  int
+	Spanish  int
+	Other    int
+	Total    int
+}
+
 type StatisticsPageDTO struct {
 	ArtistCount           string
 	ArtworkCount          string
@@ -23,8 +36,8 @@ type StatisticsPageDTO struct {
 	ArtworksPeriodData    string
 	ArtistsPeriodData     string
 	ArtFormSummary        []StatisticsArtFormRow
-	ArtworksPeriodSummary []StatisticsSchoolPeriodRow
-	ArtistsPeriodSummary  []StatisticsSchoolPeriodRow
+	ArtworksPeriodSummary []StatisticsSchoolPeriodSummaryRow
+	ArtistsPeriodSummary  []StatisticsSchoolPeriodSummaryRow
 }
 
 templ StatisticsPage(c StatisticsPageDTO) {
@@ -37,41 +50,50 @@ templ StatisticsBlock(c StatisticsPageDTO) {
 	<head>
 		<title>{ utils.GetTitle(ctx) }</title>
 	</head>
-	<section id="statistics" class="container mx-auto py-6 px-4 md:px-0">
-		<h1 class="text-3xl font-bold mb-6">Statistics</h1>
-		<div class="flex justify-center">
-			<div class="stats shadow my-4">
-				<div class="stat place-items-center">
-					<div class="stat-figure text-secondary">
-						<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-					</div>
-					<div class="stat-title">Artists</div>
-					<div class="stat-value">{ c.ArtistCount }</div>
-				</div>
-				<div class="stat place-items-center">
-					<div class="stat-figure text-secondary">
-						<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
-					</div>
-					<div class="stat-title">Artworks</div>
-					<div class="stat-value">{ c.ArtworkCount }</div>
-				</div>
+	<section id="statistics" class="container mx-auto px-4 pb-20 pt-12 md:px-0">
+		<p class="mb-3 font-mono text-[11px] tracking-[2px] text-base-content/60">15 — STATISTICS</p>
+		<h1 class="mb-3 text-[44px] font-semibold leading-[1.1] tracking-[-0.5px]">Statistics</h1>
+		<p class="mb-11 max-w-[560px] leading-relaxed text-base-content/70">Published records only, grouped into fifty-year birth periods. Every chart is followed by the same figures as a table.</p>
+		<div class="mb-14 flex gap-8 border-y border-base-content/15 py-[26px] md:gap-16">
+			<div>
+				<p class="mb-2 font-mono text-[10px] tracking-[1.5px] text-base-content/60">ARTISTS</p>
+				<p class="text-[30px] font-semibold leading-[1.1] tracking-[-0.8px] md:text-[38px]">{ c.ArtistCount }</p>
+			</div>
+			<div>
+				<p class="mb-2 font-mono text-[10px] tracking-[1.5px] text-base-content/60">ARTWORKS</p>
+				<p class="text-[30px] font-semibold leading-[1.1] tracking-[-0.8px] md:text-[38px]">{ c.ArtworkCount }</p>
 			</div>
 		</div>
-		<div class="max-w-lg mx-auto my-8">
-			<h2 class="text-xl font-semibold mb-4 text-center">Art Form Distribution</h2>
-			<canvas id="art-form-chart" role="img" aria-label="Art form distribution chart" aria-describedby="art-form-summary"></canvas>
-			@artFormSummary(c.ArtFormSummary)
-		</div>
-		<div class="py-8">
-			<h2 class="text-xl font-semibold mb-4 text-center">Artworks by School &amp; Period</h2>
-			<canvas id="artworks-by-period-chart" role="img" aria-label="Artworks by school and period chart" aria-describedby="artworks-period-summary"></canvas>
+		<section class="mb-[72px]">
+			<div class="flex flex-wrap items-baseline justify-between gap-4 border-b border-base-content pb-3">
+				<h2 class="text-xl font-semibold">Art form distribution</h2>
+				<p class="font-mono text-[10px] tracking-[1px] text-base-content/60">ARTWORKS BY FORM</p>
+			</div>
+			<div class="mt-8 flex flex-col items-start gap-9 md:flex-row md:gap-14">
+				<div class="w-[210px] shrink-0 self-center md:w-[240px] md:self-start">
+					<canvas id="art-form-chart" role="img" aria-label="Art form distribution chart" aria-describedby="art-form-summary"></canvas>
+				</div>
+				<div class="w-full min-w-0 flex-1 md:w-auto">
+					@artFormSummary(c.ArtFormSummary)
+				</div>
+			</div>
+		</section>
+		<section class="mb-[72px]">
+			<div class="flex flex-wrap items-baseline justify-between gap-4 border-b border-base-content pb-3">
+				<h2 class="text-xl font-semibold">Artworks by school &amp; period</h2>
+				<p class="font-mono text-[10px] tracking-[1px] text-base-content/60">STACKED BY SCHOOL · BIRTH PERIOD</p>
+			</div>
+			<canvas id="artworks-by-period-chart" class="mt-8" role="img" aria-label="Artworks by school and period chart" aria-describedby="artworks-period-summary"></canvas>
 			@schoolPeriodSummary("artworks-period-summary", "Artworks by school and birth period data", c.ArtworksPeriodSummary)
-		</div>
-		<div class="py-8">
-			<h2 class="text-xl font-semibold mb-4 text-center">Artists by School &amp; Period</h2>
-			<canvas id="artists-by-period-chart" role="img" aria-label="Artists by school and period chart" aria-describedby="artists-period-summary"></canvas>
+		</section>
+		<section>
+			<div class="flex flex-wrap items-baseline justify-between gap-4 border-b border-base-content pb-3">
+				<h2 class="text-xl font-semibold">Artists by school &amp; period</h2>
+				<p class="font-mono text-[10px] tracking-[1px] text-base-content/60">STACKED BY SCHOOL · BIRTH PERIOD</p>
+			</div>
+			<canvas id="artists-by-period-chart" class="mt-8" role="img" aria-label="Artists by school and period chart" aria-describedby="artists-period-summary"></canvas>
 			@schoolPeriodSummary("artists-period-summary", "Artists by school and birth period data", c.ArtistsPeriodSummary)
-		</div>
+		</section>
 		<div id="art-form-data" hidden data-json={ c.ArtFormData }></div>
 		<div id="artworks-period-data" hidden data-json={ c.ArtworksPeriodData }></div>
 		<div id="artists-period-data" hidden data-json={ c.ArtistsPeriodData }></div>
@@ -80,19 +102,19 @@ templ StatisticsBlock(c StatisticsPageDTO) {
 
 templ artFormSummary(rows []StatisticsArtFormRow) {
 	<div id="art-form-summary" class="overflow-x-auto">
-		<table class="table table-sm">
-			<caption class="caption-top text-left text-sm font-medium">Art form distribution data</caption>
-			<thead>
+		<table class="w-full text-sm">
+			<caption class="sr-only">Art form distribution data</caption>
+			<thead class="border-y border-base-content/15 font-mono text-[10px] tracking-[1px] text-base-content/60">
 				<tr>
-					<th scope="col">Art form</th>
-					<th scope="col">Artworks</th>
+					<th scope="col" class="py-3 text-left font-normal">ART FORM</th>
+					<th scope="col" class="py-3 text-right font-normal">ARTWORKS</th>
 				</tr>
 			</thead>
 			<tbody>
 				for _, row := range rows {
-					<tr>
-						<th scope="row">{ row.Name }</th>
-						<td>{ row.Count }</td>
+					<tr class="border-b border-base-content/15">
+						<th scope="row" class="art-form-label py-3 text-left font-normal">{ row.Name }</th>
+						<td class="py-3 text-right font-mono text-[11px]">{ row.Count }</td>
 					</tr>
 				}
 			</tbody>
@@ -100,23 +122,37 @@ templ artFormSummary(rows []StatisticsArtFormRow) {
 	</div>
 }
 
-templ schoolPeriodSummary(id string, caption string, rows []StatisticsSchoolPeriodRow) {
+templ schoolPeriodSummary(id string, caption string, rows []StatisticsSchoolPeriodSummaryRow) {
 	<div id={ id } class="overflow-x-auto">
-		<table class="table table-sm">
-			<caption class="caption-top text-left text-sm font-medium">{ caption }</caption>
-			<thead>
+		<table class="min-w-[560px] text-sm">
+			<caption class="caption-top pb-3 text-left font-mono text-[10px] tracking-[1px] text-base-content/60">{ caption }</caption>
+			<thead class="border-y border-base-content/15 font-mono text-[10px] tracking-[1px] text-base-content/60">
 				<tr>
-					<th scope="col">Birth period</th>
-					<th scope="col">School</th>
-					<th scope="col">Count</th>
+					<th scope="col" class="py-3 text-left font-normal">BIRTH PERIOD</th>
+					<th scope="col" class="py-3 text-right font-normal">IT</th>
+					<th scope="col" class="py-3 text-right font-normal">FR</th>
+					<th scope="col" class="py-3 text-right font-normal">NL</th>
+					<th scope="col" class="py-3 text-right font-normal">FL</th>
+					<th scope="col" class="py-3 text-right font-normal">DE</th>
+					<th scope="col" class="py-3 text-right font-normal">EN</th>
+					<th scope="col" class="py-3 text-right font-normal">ES</th>
+					<th scope="col" class="py-3 text-right font-normal">OTH</th>
+					<th scope="col" class="py-3 text-right font-normal">TOTAL</th>
 				</tr>
 			</thead>
 			<tbody>
 				for _, row := range rows {
-					<tr>
-						<th scope="row">{ row.Period }</th>
-						<td>{ row.School }</td>
-						<td>{ row.Count }</td>
+					<tr class="border-b border-base-content/15">
+						<th scope="row" class="py-3 text-left font-mono text-[11px] font-normal">{ row.Period }</th>
+						<td class="py-3 text-right font-mono text-[11px]">{ row.Italian }</td>
+						<td class="py-3 text-right font-mono text-[11px]">{ row.French }</td>
+						<td class="py-3 text-right font-mono text-[11px]">{ row.Dutch }</td>
+						<td class="py-3 text-right font-mono text-[11px]">{ row.Flemish }</td>
+						<td class="py-3 text-right font-mono text-[11px]">{ row.German }</td>
+						<td class="py-3 text-right font-mono text-[11px]">{ row.English }</td>
+						<td class="py-3 text-right font-mono text-[11px]">{ row.Spanish }</td>
+						<td class="py-3 text-right font-mono text-[11px]">{ row.Other }</td>
+						<td class="py-3 text-right font-mono text-[11px]">{ row.Total }</td>
 					</tr>
 				}
 			</tbody>

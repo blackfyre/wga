@@ -1,10 +1,13 @@
 package pages
 
 import (
+	"regexp"
+	"strconv"
+
+	"github.com/blackfyre/wga/internal/assets/templ/components"
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/assets/templ/layouts"
 	"github.com/blackfyre/wga/internal/assets/templ/utils"
-	"regexp"
 )
 
 templ ArtistsPageFull(c dto.ArtistsView) {
@@ -27,121 +30,77 @@ templ ArtistsPageBlock(c dto.ArtistsView) {
 	<head>
 		<title>{ utils.GetTitle(ctx) }</title>
 	</head>
-	<section class="container mx-auto">
-		<nav class="flex mb-6" aria-label="Breadcrumb">
-			<ol role="list" class="flex items-center space-x-4">
-				<li>
-					<div>
-						<a href="/" hx-get="/" class="text-base-content/60 hover:text-base-content/80">
-							<svg class="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-								<path fill-rule="evenodd" d="M9.293 2.293a1 1 0 011.414 0l7 7A1 1 0 0117 11h-1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-3a1 1 0 00-1-1H9a1 1 0 00-1 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-6H3a1 1 0 01-.707-1.707l7-7z" clip-rule="evenodd"></path>
-							</svg>
-							<span class="sr-only">Home</span>
-						</a>
-					</div>
-				</li>
-				<li>
-					<div class="flex items-center">
-						<svg class="h-5 w-5 flex-shrink-0 text-base-content/60" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-							<path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"></path>
-						</svg>
-						<a href="/artists" hx-get="/artists" hx-target={ c.HxTarget } class="ml-4 text-sm font-medium text-base-content/70 hover:text-base-content" aria-current="page">Artists</a>
-					</div>
-				</li>
-			</ol>
-		</nav>
-		<div class="flex flex-row items-center gap-4">
-			<div>
-				<p><strong>{ c.Count }</strong> artists</p>
+	<section class="container mx-auto px-4 pb-20 pt-10 md:px-0">
+		<p class="mb-3 font-mono text-[11px] tracking-[2px] text-base-content/60">01 — ARTIST INDEX</p>
+		<h1 class="mb-3 text-[44px] font-semibold leading-[1.1] tracking-[-0.5px]">Artists</h1>
+		<p class="max-w-[540px] leading-relaxed text-base-content/70">Painters, sculptors and architects in the collection. Browse alphabetically, or filter by school and period.</p>
+		<form action="/artists" method="GET" class="py-5">
+			<div class="flex flex-wrap gap-1 border-b border-base-content/15 pb-5" aria-label="Filter artists by letter">
+				<button type="submit" name="letter" value="" class="px-2 py-1 font-mono text-[11px] tracking-[1px]">ALL</button>
+				for _, letter := range []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"} {
+					<button type="submit" name="letter" value={ letter } class={ "px-2 py-1 font-mono text-[11px] tracking-[1px]", templ.KV("bg-neutral text-neutral-content", c.SelectedLetter == letter) } aria-current={ glossaryAriaCurrent(c.SelectedLetter == letter) }>{ letter }</button>
+				}
 			</div>
-			<div>
-				<label class="input input-bordered flex items-center gap-2 input-sm">
-					<input
-						type="search"
-						class="grow"
-						name="q"
-						placeholder="Find an artist"
-						hx-get="/artists"
-						hx-trigger="keyup changed delay:500ms, search"
-						hx-disabled-elt="this"
-						value={ c.QueryStr }
-						aria-label="Search artists"
-						aria-role="search"
-						hx-target={ c.HxTarget }
-					/>
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 opacity-70"><path fill-rule="evenodd" d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z" clip-rule="evenodd"></path></svg>
+			<div class="grid gap-4 py-5 md:grid-cols-4">
+				<label><span class="font-mono text-[10px] tracking-[1px] text-base-content/60">SEARCH</span><input type="search" class="mt-2 w-full border-0 border-b border-base-content bg-transparent px-0 py-2 text-sm outline-none" name="q" value={ c.QueryStr } placeholder="Find an artist"/></label>
+				<label>
+					<span class="font-mono text-[10px] tracking-[1px] text-base-content/60">SCHOOL</span>
+					<select class="mt-2 w-full border-0 border-b border-base-content bg-transparent py-2 text-sm" name="school">
+						<option value="">All schools</option>
+						for _, option := range c.SchoolOptions {
+							<option value={ option.Value } selected?={ c.SelectedSchool == option.Value }>{ option.Label }</option>
+						}
+					</select>
+				</label>
+				<label>
+					<span class="font-mono text-[10px] tracking-[1px] text-base-content/60">PERIOD</span>
+					<select class="mt-2 w-full border-0 border-b border-base-content bg-transparent py-2 text-sm" name="period">
+						<option value="">All periods</option>
+						for _, option := range c.PeriodOptions {
+							<option value={ option.Value } selected?={ c.SelectedPeriod == option.Value }>{ option.Label }</option>
+						}
+					</select>
+				</label>
+				<label>
+					<span class="font-mono text-[10px] tracking-[1px] text-base-content/60">PROFESSION</span>
+					<select class="mt-2 w-full border-0 border-b border-base-content bg-transparent py-2 text-sm" name="profession">
+						<option value="">All professions</option>
+						for _, option := range c.ProfessionOptions {
+							<option value={ option.Value } selected?={ c.SelectedProfession == option.Value }>{ option.Label }</option>
+						}
+					</select>
 				</label>
 			</div>
-		</div>
+			<button type="submit" class="bg-primary px-4 py-2 font-mono text-[11px] tracking-[1px] text-primary-content">FILTER ARTISTS</button>
+		</form>
 		@ArtistsSearchResults(c)
 	</section>
 }
 
 templ artistsTable(list []dto.Artist, query string) {
-	<div class="overflow-x-auto">
-		<table class="table">
-			<thead>
-				<tr>
-					<th>
-						ARTIST
-					</th>
-					<th>
-						BORN-DIED
-					</th>
-					<th>
-						School(s)
-					</th>
-					<th>
-						Profession
-					</th>
-				</tr>
-			</thead>
-			<tbody>
-				for _, a := range list {
-					<tr>
-						<td>
-							<a href={ templ.SafeURL(a.Url) } hx-get={ a.Url } hx-target={ a.HxTarget }>
-								<b>
-									@templ.Raw(HighlightArtistName(a.Name, query))
-								</b>
-							</a>
-						</td>
-						<td>{ a.BornDied }</td>
-						<td>{ a.Schools }</td>
-						<td>{ a.Profession }</td>
-					</tr>
-				}
-			</tbody>
-			<tfoot>
-				<tr>
-					<th>
-						ARTIST
-					</th>
-					<th>
-						BORN-DIED
-					</th>
-					<th>
-						PERIOD
-					</th>
-					<th>
-						SCHOOL
-					</th>
-				</tr>
-			</tfoot>
-		</table>
+	<div class="grid grid-cols-2 gap-x-4 gap-y-9 md:grid-cols-4 md:gap-x-7" data-kbd-list data-kbd-cols="2" data-kbd-cols-md="4">
+		for index, a := range list {
+			<a href={ templ.SafeURL(a.Url) } hx-get={ a.Url } hx-target={ a.HxTarget } data-kbd-idx={ strconv.Itoa(index) } data-kbd-href={ a.Url } class="block transition-opacity hover:opacity-70">
+				@components.KeyboardCaret()
+				<figure class="flex aspect-square items-end border border-base-content/15 bg-base-300 p-3">
+					<figcaption class="font-mono text-[9px] tracking-[1px] text-base-content/40">PORTRAIT — { a.Name }</figcaption>
+				</figure>
+				<p class="mt-3 text-[17px] font-semibold leading-tight">@templ.Raw(HighlightArtistName(a.Name, query))</p>
+				<p class="mt-[3px] font-mono text-[11px] leading-relaxed text-base-content/60">{ a.BornDied }<br/>{ a.Schools }</p>
+			</a>
+		}
 	</div>
 }
 
 templ ArtistsSearchResults(c dto.ArtistsView) {
 	<div id="search-results">
+		<p class="py-4 font-mono text-xs text-base-content/60">{ c.Count } ARTISTS</p>
 		<div class="table-container">
 			@artistsTable(c.Artists, c.QueryStr)
 		</div>
-		<nav class="pagination" role="navigation" aria-label="pagination">
+		<nav class="pagination mt-7 font-mono text-[11px] tracking-[1px]" role="navigation" aria-label="pagination">
 			@templ.Raw(c.Pagination)
 		</nav>
-		// {{range .Content}}
 		@templ.Raw(c.Jsonld)
-		// {{end}}
 	</div>
 }

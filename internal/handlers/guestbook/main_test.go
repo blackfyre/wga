@@ -1,6 +1,7 @@
 package guestbook
 
 import (
+	"net/http/httptest"
 	"reflect"
 	"testing"
 
@@ -8,7 +9,39 @@ import (
 	"github.com/blackfyre/wga/internal/hooks"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tests"
+	"github.com/pocketbase/pocketbase/tools/router"
 )
+
+func TestBuildFilters(t *testing.T) {
+	request := httptest.NewRequest("GET", "/guestbook?q=%20%20Jane%20%20&year=all&sort=oldest&show=20", nil)
+	got := buildFilters(&core.RequestEvent{Event: router.Event{Request: request}}, "2026")
+	want := filters{Query: "Jane", Year: "all", Sort: "oldest", Show: 20}
+
+	if got != want {
+		t.Errorf("filters = %#v", got)
+	}
+
+	filter, params := got.buildFilter()
+	if filter != "(name ~ {:query} || location ~ {:query} || message ~ {:query})" {
+		t.Errorf("filter = %q", filter)
+	}
+	if params["query"] != "Jane" {
+		t.Errorf("query = %q", params["query"])
+	}
+}
+
+func TestBuildFiltersDefaults(t *testing.T) {
+	request := httptest.NewRequest("GET", "/guestbook?sort=invalid&show=2", nil)
+	got := buildFilters(&core.RequestEvent{Event: router.Event{Request: request}}, "2026")
+	want := filters{Year: "2026", Sort: "newest", Show: guestbookPageSize}
+
+	if got != want {
+		t.Errorf("filters = %#v", got)
+	}
+	if got.sortExpression() != "-created" {
+		t.Errorf("sort expression = %q", got.sortExpression())
+	}
+}
 
 func TestYearOptionsIncludeCurrentYearWithDerivedYears(t *testing.T) {
 	app := newGuestbookTestApp(t)

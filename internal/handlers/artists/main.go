@@ -6,7 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	neturl "net/url"
+	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/blackfyre/wga/internal/utils/url"
 
@@ -30,8 +33,6 @@ func processArtists(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 	limit := 30
 	page := 1
-	searchExpression := ""
-	searchExpressionPresent := false
 	currentUrl := c.Request.URL.String()
 	c.Response.Header().Set("HX-Push-Url", currentUrl)
 
@@ -47,21 +48,15 @@ func processArtists(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 		}
 	}
 
-	if queryParams.Has("q") {
-		searchExpressionPresent = true
-	}
-
-	if queryParams.Get("q") != "" {
-		searchExpression = queryParams.Get("q")
+	filters, err := buildArtistFilters(app, queryParams)
+	if err != nil {
+		app.Logger().Error("Build artist filters", "error", err)
+		return utils.ServerFaultError(c)
 	}
 
 	offset := (page - 1) * limit
 
-	filter := "published = true"
-
-	if searchExpression != "" {
-		filter = filter + " && name ~ {:searchExpression}"
-	}
+	filter, params := filters.buildFilter()
 
 	records, err := app.FindRecordsByFilter(
 		"artists",
@@ -69,9 +64,7 @@ func processArtists(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 		"+name",
 		limit,
 		offset,
-		dbx.Params{
-			"searchExpression": searchExpression,
-		},
+		params,
 	)
 
 	if err != nil {
@@ -79,9 +72,7 @@ func processArtists(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 		return utils.ServerFaultError(c)
 	}
 
-	recordsCount, err := utils.CountRecordsByFilter(app, "artists", filter, dbx.Params{
-		"searchExpression": searchExpression,
-	})
+	recordsCount, err := utils.CountRecordsByFilter(app, "artists", filter, params)
 
 	if err != nil {
 		app.Logger().Error("Failed to get total records", "error", err.Error())
@@ -89,11 +80,16 @@ func processArtists(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	}
 
 	content := dto.ArtistsView{
-		Count: strconv.Itoa(recordsCount),
+		Count:              strconv.Itoa(recordsCount),
+		QueryStr:           filters.Query,
+		SelectedLetter:     filters.Letter,
+		SelectedSchool:     filters.School,
+		SelectedPeriod:     filters.Period,
+		SelectedProfession: filters.Profession,
 	}
-
-	if len(searchExpression) > 0 && searchExpressionPresent {
-		content.QueryStr = searchExpression
+	if err := populateArtistFilterOptions(app, &content); err != nil {
+		app.Logger().Error("Load artist filter options", "error", err)
+		return utils.ServerFaultError(c)
 	}
 
 	var jsonLdCollector []jsonld.Person
@@ -125,7 +121,7 @@ func processArtists(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 	content.Jsonld = fmt.Sprintf(`<script type="application/ld+json">%s</script>`, marshalledJsonLd)
 
-	pagination := utils.NewPagination(recordsCount, limit, page, "/artists?q="+searchExpression, "", "")
+	pagination := utils.NewPagination(recordsCount, limit, page, filters.path(), "", "")
 
 	content.Pagination = string(pagination.Render())
 
@@ -145,6 +141,127 @@ func processArtists(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 	return c.HTML(http.StatusOK, buff.String())
 
+}
+
+type artistFilters struct {
+	Query      string
+	Letter     string
+	School     string
+	Period     string
+	Profession string
+	PeriodFrom int
+	PeriodTo   int
+}
+
+func buildArtistFilters(app *pocketbase.PocketBase, values neturl.Values) (artistFilters, error) {
+	filters := artistFilters{
+		Query:      strings.TrimSpace(values.Get("q")),
+		School:     strings.TrimSpace(values.Get("school")),
+		Period:     strings.TrimSpace(values.Get("period")),
+		Profession: strings.TrimSpace(values.Get("profession")),
+	}
+	letter := strings.ToUpper(strings.TrimSpace(values.Get("letter")))
+	if len(letter) == 1 && letter[0] >= 'A' && letter[0] <= 'Z' {
+		filters.Letter = letter
+	}
+	if filters.Period == "" {
+		return filters, nil
+	}
+
+	period, err := app.FindRecordById("art_periods", filters.Period)
+	if err != nil {
+		filters.Period = ""
+		return filters, nil
+	}
+	filters.PeriodFrom = period.GetInt("start")
+	filters.PeriodTo = period.GetInt("end")
+	return filters, nil
+}
+
+func (f artistFilters) buildFilter() (string, dbx.Params) {
+	conditions := []string{"published = true"}
+	params := dbx.Params{}
+	if f.Query != "" {
+		conditions = append(conditions, "(name ~ {:query} || profession ~ {:query} || school.name ~ {:query})")
+		params["query"] = f.Query
+	}
+	if f.Letter != "" {
+		conditions = append(conditions, "name ~ {:letter}")
+		params["letter"] = f.Letter + "%"
+	}
+	if f.School != "" {
+		conditions = append(conditions, "school.slug = {:school}")
+		params["school"] = f.School
+	}
+	if f.Profession != "" {
+		conditions = append(conditions, "profession ~ {:profession}")
+		params["profession"] = f.Profession
+	}
+	if f.PeriodFrom > 0 {
+		conditions = append(conditions, "year_of_birth >= {:period_from}")
+		params["period_from"] = f.PeriodFrom
+	}
+	if f.PeriodTo > 0 {
+		conditions = append(conditions, "year_of_birth <= {:period_to}")
+		params["period_to"] = f.PeriodTo
+	}
+	return strings.Join(conditions, " && "), params
+}
+
+func (f artistFilters) path() string {
+	values := neturl.Values{}
+	if f.Query != "" {
+		values.Set("q", f.Query)
+	}
+	if f.Letter != "" {
+		values.Set("letter", f.Letter)
+	}
+	if f.School != "" {
+		values.Set("school", f.School)
+	}
+	if f.Period != "" {
+		values.Set("period", f.Period)
+	}
+	if f.Profession != "" {
+		values.Set("profession", f.Profession)
+	}
+	if len(values) == 0 {
+		return "/artists"
+	}
+	return "/artists?" + values.Encode()
+}
+
+func populateArtistFilterOptions(app *pocketbase.PocketBase, view *dto.ArtistsView) error {
+	schools, err := app.FindRecordsByFilter("schools", "", "+name", 0, 0)
+	if err != nil {
+		return err
+	}
+	for _, school := range schools {
+		view.SchoolOptions = append(view.SchoolOptions, dto.ArtistFilterOption{Value: school.GetString("slug"), Label: school.GetString("name")})
+	}
+	periods, err := app.FindRecordsByFilter("art_periods", "", "+start,+name", 0, 0)
+	if err != nil {
+		return err
+	}
+	for _, period := range periods {
+		view.PeriodOptions = append(view.PeriodOptions, dto.ArtistFilterOption{Value: period.Id, Label: period.GetString("name")})
+	}
+	artists, err := app.FindRecordsByFilter("artists", "published = true", "+profession", 0, 0)
+	if err != nil {
+		return err
+	}
+	professions := map[string]struct{}{}
+	for _, artist := range artists {
+		profession := strings.TrimSpace(artist.GetString("profession"))
+		if profession != "" {
+			professions[profession] = struct{}{}
+		}
+	}
+	for profession := range professions {
+		view.ProfessionOptions = append(view.ProfessionOptions, dto.ArtistFilterOption{Value: profession, Label: profession})
+	}
+	sort.Slice(view.ProfessionOptions, func(i, j int) bool { return view.ProfessionOptions[i].Label < view.ProfessionOptions[j].Label })
+	return nil
 }
 
 func RegisterHandlers(app *pocketbase.PocketBase) {

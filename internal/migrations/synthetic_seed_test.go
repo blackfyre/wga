@@ -35,7 +35,7 @@ func TestSyntheticSeedMigrationImportsBaselineSchema(t *testing.T) {
 		"music_composer": 2,
 		"music_song":     3,
 		"strings":        7,
-		"static_pages":   1,
+		"static_pages":   2,
 	})
 
 	for _, collectionName := range []string{"professions", "biographies", "biography_links", "source_attributions"} {
@@ -121,6 +121,9 @@ func TestSyntheticSeedMigrationImportsBaselineSchema(t *testing.T) {
 			t.Fatalf("expected no %s artwork field", fieldName)
 		}
 	}
+	if artworks.Fields.GetByName("year") == nil {
+		t.Fatal("expected artwork year field")
+	}
 	assertIndex(t, artworks, "pbx_artwork_published_title")
 
 	attempts, err := app.FindCollectionByNameOrId("tracking_postcard_delivery_attempts")
@@ -158,6 +161,17 @@ func TestSyntheticSeedMigrationImportsBaselineSchema(t *testing.T) {
 	if artwork.GetString("image") == "" {
 		t.Fatal("expected artwork image")
 	}
+	if got, want := artwork.GetInt("year"), 1911; got != want {
+		t.Fatalf("expected artwork year %d, got %d", want, got)
+	}
+
+	about, err := app.FindFirstRecordByData("static_pages", "slug", "about")
+	if err != nil {
+		t.Fatalf("find seeded about page: %v", err)
+	}
+	if about.GetString("title") != "About" {
+		t.Fatalf("seeded about title = %q, want About", about.GetString("title"))
+	}
 
 	song, err := app.FindRecordById("music_song", "72d6bb922f76aea")
 	if err != nil {
@@ -165,6 +179,22 @@ func TestSyntheticSeedMigrationImportsBaselineSchema(t *testing.T) {
 	}
 	if song.GetString("source") == "" {
 		t.Fatal("expected music source")
+	}
+	music, err := app.FindCollectionByNameOrId("music_song")
+	if err != nil {
+		t.Fatalf("find music collection: %v", err)
+	}
+	source, ok := music.Fields.GetByName("source").(*core.FileField)
+	if !ok || source.MaxSize != 64*1024*1024 {
+		t.Fatal("expected 64 MiB music source file limit")
+	}
+	glossary, err := app.FindCollectionByNameOrId("glossary")
+	if err != nil {
+		t.Fatalf("find glossary collection: %v", err)
+	}
+	definition, ok := glossary.Fields.GetByName("definition").(*core.TextField)
+	if !ok || definition.Max != 10000 {
+		t.Fatal("expected 10,000-character glossary definition limit")
 	}
 }
 

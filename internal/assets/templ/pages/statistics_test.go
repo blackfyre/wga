@@ -17,11 +17,11 @@ func TestStatisticsBlockRendersAccessibleSummaries(t *testing.T) {
 		ArtFormSummary: []StatisticsArtFormRow{
 			{Name: "Painting", Count: 2},
 		},
-		ArtworksPeriodSummary: []StatisticsSchoolPeriodRow{
-			{Period: "1500–1549", School: "Italian", Count: 2},
+		ArtworksPeriodSummary: []StatisticsSchoolPeriodSummaryRow{
+			{Period: "1500–1549", Italian: 2, Total: 2},
 		},
-		ArtistsPeriodSummary: []StatisticsSchoolPeriodRow{
-			{Period: "1500–1549", School: "Italian", Count: 1},
+		ArtistsPeriodSummary: []StatisticsSchoolPeriodSummaryRow{
+			{Period: "1500–1549", Italian: 1, Total: 1},
 		},
 	}
 
@@ -40,7 +40,8 @@ func TestStatisticsBlockRendersAccessibleSummaries(t *testing.T) {
 		`id="artists-period-summary"`,
 		"Painting",
 		"1500–1549",
-		"Italian",
+		"IT",
+		"TOTAL",
 	} {
 		if !strings.Contains(rendered, expected) {
 			t.Errorf("expected rendered statistics to contain %q\ngot: %s", expected, rendered)

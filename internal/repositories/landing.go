@@ -1,12 +1,6 @@
 package repositories
 
-import (
-	"fmt"
-
-	"github.com/blackfyre/wga/internal/constants"
-	"github.com/pocketbase/pocketbase"
-	"github.com/pocketbase/pocketbase/core"
-)
+import "github.com/pocketbase/pocketbase"
 
 type LandingRepository struct {
 	app *pocketbase.PocketBase
@@ -18,15 +12,6 @@ type countRow struct {
 
 func NewLandingRepository(app *pocketbase.PocketBase) *LandingRepository {
 	return &LandingRepository{app: app}
-}
-
-func (r *LandingRepository) GetWelcomeContent() (string, error) {
-	record, err := r.app.FindFirstRecordByData(constants.CollectionStrings, "name", "welcome")
-	if err != nil {
-		return "", err
-	}
-
-	return getRecordStringField(record, "content")
 }
 
 func (r *LandingRepository) CountPublishedArtists() (int, error) {
@@ -49,11 +34,12 @@ func (r *LandingRepository) CountPublishedArtworks() (int, error) {
 	return row.Count, nil
 }
 
-func getRecordStringField(record *core.Record, field string) (string, error) {
-	value, ok := record.Get(field).(string)
-	if !ok {
-		return "", fmt.Errorf("%s is not a string", field)
+func (r *LandingRepository) CountSchools() (int, error) {
+	row := countRow{}
+	err := r.app.DB().NewQuery("SELECT COUNT(*) as c FROM Schools").One(&row)
+	if err != nil {
+		return 0, err
 	}
 
-	return value, nil
+	return row.Count, nil
 }

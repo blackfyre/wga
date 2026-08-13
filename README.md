@@ -63,6 +63,7 @@ MAILPIT_URL=http://127.0.0.1:8025
 | `WGA_ENV`                | The environment the application is running in: `development`, `test`, `staging`, or `production` |
 | `WGA_ADMIN_EMAIL`        | Optional email address for the bootstrap administrator                                           |
 | `WGA_ADMIN_PASSWORD`     | Optional unique password for the bootstrap administrator                                         |
+| `WGA_SEED_SQLITE_PATH`   | Optional source SQLite path for a fresh bootstrap; referenced assets must already be in S3       |
 | `WGA_S3_ENDPOINT`        | The absolute S3-compatible object storage service endpoint                                       |
 | `WGA_S3_BUCKET`          | The name of the S3 bucket                                                                        |
 | `WGA_S3_REGION`          | The region of the S3 bucket                                                                      |
@@ -145,7 +146,7 @@ bun run build:watch:js
 
 #### Synthetic bootstrap
 
-The first application start on a fresh data directory applies the embedded synthetic-data migration. It imports records into the existing collections and attaches the bundled artwork and music files to the configured filesystem or S3-compatible storage.
+The first application start on a fresh data directory imports records into the existing collections and attaches artwork and music files to the configured filesystem or S3-compatible storage. Set `WGA_SEED_SQLITE_PATH` to use the authoritative source SQLite database; its referenced assets must already be uploaded to the configured S3-compatible storage. Otherwise the embedded synthetic fixture is used.
 
 The bootstrap migration skips an existing non-system application database rather than merging or replacing it. Changing the embedded source later requires a new migration; it does not rerun on an existing data directory. The development-only `seed:images` command remains available for placeholder-image generation.
 

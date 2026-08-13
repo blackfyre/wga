@@ -4,9 +4,14 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
+	"net/url"
+	"unicode/utf8"
 
 	"github.com/blackfyre/wga/internal/assets/templ/components"
+	"github.com/blackfyre/wga/internal/buildinfo"
+	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/errs"
 	"github.com/blackfyre/wga/internal/utils"
@@ -15,10 +20,13 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
+const feedbackMessageLimit = 600
+
 type feedbackForm struct {
-	Email         string `json:"email" form:"fp_email" query:"email"`
+	Category      string `json:"category" form:"category" query:"category"`
+	Email         string `json:"email" form:"sender_email" query:"email"`
 	Message       string `json:"message" form:"message" query:"message"`
-	Name          string `json:"name" form:"fp_name" query:"name"`
+	Name          string `json:"name" form:"sender_name" query:"name"`
 	HoneyPotName  string `json:"honey_pot_name" form:"name" query:"honey_pot_name"`
 	HoneyPotEmail string `json:"honey_pot_email" form:"email" query:"honey_pot_email"`
 	ReferTo       string `json:"refer_to"`
@@ -36,8 +44,18 @@ func validateFeedbackForm(form feedbackForm) error {
 	if err := validation.ValidateMessage(form.Message); err != nil {
 		return err
 	}
+	if utf8.RuneCountInString(form.Message) > feedbackMessageLimit {
+		return fmt.Errorf("feedback must be %d characters or fewer", feedbackMessageLimit)
+	}
+	if !validFeedbackCategory(form.Category) {
+		return errors.New("select a feedback category")
+	}
 
 	return nil
+}
+
+func validFeedbackCategory(category string) bool {
+	return category == "general" || category == "correction" || category == "technical" || category == "suggestion"
 }
 
 // presentFeedbackForm is a function that presents a feedback form to the user.
@@ -45,11 +63,11 @@ func validateFeedbackForm(form feedbackForm) error {
 // It renders the feedback form using the components.FeedbackForm() function.
 // If there is an error during rendering, it logs the error and returns a server fault error.
 // Otherwise, it returns nil.
-func presentFeedbackForm(c *core.RequestEvent, app *pocketbase.PocketBase) error {
+func presentFeedbackForm(c *core.RequestEvent, app *pocketbase.PocketBase, environment config.Environment) error {
 
 	var buff bytes.Buffer
 
-	err := components.FeedbackForm().Render(context.Background(), &buff)
+	err := components.FeedbackForm(feedbackFormView(c.Request.Header.Get("Referer"), environment)).Render(context.Background(), &buff)
 
 	if err != nil {
 		app.Logger().Error("Failed to render the feedback form", "error", err.Error())
@@ -67,7 +85,7 @@ func presentFeedbackForm(c *core.RequestEvent, app *pocketbase.PocketBase) error
 // If there is an error while saving the feedback, the feedback form is rendered again and a server fault error is returned.
 // If the feedback is successfully saved, a success toast message is sent to the user.
 // The function returns nil if there are no errors.
-func processFeedbackForm(c *core.RequestEvent, app *pocketbase.PocketBase) error {
+func processFeedbackForm(c *core.RequestEvent, app *pocketbase.PocketBase, environment config.Environment) error {
 	postData := feedbackForm{
 		ReferTo: c.Request.Header.Get("Referer"),
 	}
@@ -95,7 +113,7 @@ func processFeedbackForm(c *core.RequestEvent, app *pocketbase.PocketBase) error
 
 		var buff bytes.Buffer
 
-		err := components.FeedbackForm().Render(context.Background(), &buff)
+		err := components.FeedbackForm(feedbackFormView(postData.ReferTo, environment)).Render(context.Background(), &buff)
 
 		if err != nil {
 			app.Logger().Error("Failed to render the feedback form after form submission error", "error", err.Error())
@@ -107,9 +125,12 @@ func processFeedbackForm(c *core.RequestEvent, app *pocketbase.PocketBase) error
 		return c.HTML(http.StatusOK, buff.String())
 	}
 
-	utils.SendToastMessage("Thank you! Your feedback is valuable to us!", "success", true, c, "")
+	var buff bytes.Buffer
+	if err := components.FeedbackReceived().Render(context.Background(), &buff); err != nil {
+		return utils.ServerFaultError(c)
+	}
 
-	return nil
+	return c.HTML(http.StatusOK, buff.String())
 }
 
 // saveFeedback saves the feedback provided by the user.
@@ -142,6 +163,7 @@ func saveFeedback(app *pocketbase.PocketBase, c *core.RequestEvent, postData fee
 	r.Set("name", postData.Name)
 	r.Set("message", postData.Message)
 	r.Set("refer_to", postData.ReferTo)
+	r.Set("category", postData.Category)
 
 	err = app.Save(r)
 	if err != nil {
@@ -157,16 +179,32 @@ func saveFeedback(app *pocketbase.PocketBase, c *core.RequestEvent, postData fee
 // The handlers use the given echo.Context and PocketBase app to handle the requests.
 // The handlers also utilize the IsHtmxRequestMiddleware from the utils package.
 // This function should be called before serving the application.
-func RegisterHandlers(app *pocketbase.PocketBase) {
+func RegisterHandlers(app *pocketbase.PocketBase, environment config.Environment) {
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		se.Router.GET("/feedback", func(c *core.RequestEvent) error {
-			return presentFeedbackForm(c, app)
+			return presentFeedbackForm(c, app, environment)
 		}).BindFunc(utils.IsHtmxRequestMiddleware)
 
 		se.Router.POST("/feedback", func(c *core.RequestEvent) error {
-			return processFeedbackForm(c, app)
+			return processFeedbackForm(c, app, environment)
 		}).BindFunc(utils.IsHtmxRequestMiddleware)
 
 		return se.Next()
 	})
+}
+
+func feedbackFormView(referer string, environment config.Environment) components.FeedbackView {
+	return components.FeedbackView{
+		Context: feedbackContext(referer),
+		Build:   string(environment) + " · " + buildinfo.Version,
+	}
+}
+
+func feedbackContext(referer string) string {
+	parsed, err := url.Parse(referer)
+	if err != nil || parsed.Path != "/" {
+		return "Current page"
+	}
+
+	return "Home"
 }

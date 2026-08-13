@@ -1,9 +1,6 @@
 package pages
 
-import (
-	"github.com/blackfyre/wga/internal/assets/templ/components"
-	"github.com/blackfyre/wga/internal/assets/templ/layouts"
-)
+import "github.com/blackfyre/wga/internal/assets/templ/layouts"
 
 type PostcardView struct {
 	Message    string
@@ -21,32 +18,24 @@ templ PostcardPage(p PostcardView) {
 	}
 }
 
-templ PostcardBlock(p PostcardView) {
-	<section class="section">
-		<div class="container mx-auto">
-			<div class="columns">
-				<div class="column is-half">
-					<div class="card">
-						<div class="card-image">
-							@components.ImageBig(p.Image, p.Title, p.Author)
-						</div>
-						<div class="card-content">
-							<div>
-								<h3 class="title is-size-3">{ p.Title }</h3>
-								<p class="subtitle">{ p.Technique }</p>
-								<div class="line-clamp-3 content">
-									@templ.Raw(p.Comment)
-								</div>
-							</div>
-						</div>
+	templ PostcardBlock(p PostcardView) {
+		<section class="container mx-auto px-4 pb-20 pt-10 md:px-0">
+			<p class="mb-3 font-mono text-[11px] tracking-[2px] text-base-content/60">05 — POSTCARD RECEIVED</p>
+			<h1 class="mb-10 text-[44px] font-semibold leading-tight tracking-[-0.5px] md:text-[48px]">You have received a postcard</h1>
+			<article class="max-w-[700px] border border-base-content/15 bg-base-100">
+				<div class="aspect-video border-b border-base-content/15 bg-base-300"><img src={ p.Image } alt={ p.Title + " by " + p.Author } class="h-full w-full object-cover"/></div>
+				<div class="grid gap-8 p-6 md:grid-cols-[minmax(0,1fr)_220px]">
+					<div>
+						<p class="mb-3 font-mono text-[10px] tracking-[1px] text-base-content/60">FROM { p.SenderName }</p>
+						<div class="content text-[17px] leading-relaxed">@templ.Raw(p.Message)</div>
+					</div>
+					<div class="border-t border-base-content/15 pt-6 md:border-t-0 md:border-l md:pl-6 md:pt-0">
+						<h2 class="text-[15px] font-semibold leading-tight">{ p.Title }</h2>
+						<p class="mt-1 font-mono text-[11px] leading-relaxed text-base-content/60">{ p.Author }<br/>{ p.Technique }</p>
+						<div class="content mt-4 text-sm leading-relaxed">@templ.Raw(p.Comment)</div>
 					</div>
 				</div>
-				<div class="column">
-					<div class="box content">
-						@templ.Raw(p.Message)
-					</div>
-				</div>
-			</div>
-		</div>
-	</section>
+			</article>
+			<a href="/artists" hx-get="/artists" class="mt-7 inline-block font-mono text-[11px] tracking-[1px] text-primary hover:opacity-70">BROWSE THE ARCHIVE →</a>
+		</section>
 }

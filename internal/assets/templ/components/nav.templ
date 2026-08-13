@@ -1,87 +1,65 @@
 package components
 
 templ TopNav() {
-	<div class="navbar bg-base-100 shadow-sm fixed top-0 z-40" role="navigation" aria-label="main navigation">
-		<div class="navbar-start">
-			<div class="dropdown">
-				<div tabindex="0" role="button" class="btn btn-ghost lg:hidden">
-					<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16"></path></svg>
+	<header class="border-b border-base-content/15">
+		<div class="container mx-auto flex items-center justify-between gap-6 px-4 py-5 md:px-0 md:pb-[18px] md:pt-[22px]">
+			<a class="flex items-center gap-3.5" href="/" hx-get="/">
+				<span class="flex h-[34px] w-[34px] items-center justify-center border-[1.5px] border-base-content font-mono text-[11px] font-bold tracking-[0.5px]">WGA</span>
+				<span>
+					<span class="block font-mono text-[11px] tracking-[2.5px]">WEB GALLERY OF ART</span>
+					<span class="mt-[3px] block font-mono text-[10px] tracking-[1px] text-base-content/60">EUROPEAN ART, 3RD CENTURY – EARLY 20TH</span>
+				</span>
+			</a>
+			<div class="hidden items-end gap-6 md:flex">
+				<form class="flex w-[340px] items-end gap-4" action="/search">
+					<label>
+						<span class="sr-only">Search collection</span>
+						<input class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2 text-sm leading-4 outline-none" name="q" placeholder="Search artist, title, school" type="search" data-kbd-search/>
+					</label>
+					<button class="font-mono text-[11px] tracking-[1px] text-primary" type="submit">SEARCH</button>
+					<button type="button" data-keyboard-open class="border border-base-content/25 px-2 py-1 font-mono text-[10px] tracking-[1px] text-base-content/70">⌘K</button>
+					<button type="button" data-keyboard-help class="font-mono text-[10px] tracking-[1px] text-base-content/70" aria-label="Keyboard shortcuts">?</button>
+				</form>
+				<div>
+				@ThemeToggle()
 				</div>
-				<ul
-					tabindex="0"
-					class="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow"
-				>
-					<li><a href="/" hx-get="/">Home</a></li>
-					<li><a href="/artists" hx-get="/artists">Artists</a></li>
-					<li><a href="/artworks" hx-get="/artworks">Artworks</a></li>
-					<li><a href="/dual-mode" target="_blank">Dual Mode</a></li>
-					<li><a href="/guestbook" hx-get="/guestbook" hx-trigger="guestbook-updated from:body">Guestbook</a></li>
-					<li>
-						<a>More</a>
-						<ul class="p-2">
-							<li>
-								<a
-									href="/inspire"
-									hx-get="/inspire"
-								>Inspiration</a>
-							</li>
-							<li>
-								<a
-									href="/statistics"
-									hx-get="/statistics"
-								>Statistics</a>
-							</li>
-							<li>
-								<a
-									href="/pages/privacy-policy"
-									hx-get="/pages/privacy-policy"
-								>Privacy Policy</a>
-							</li>
-						</ul>
-					</li>
-				</ul>
 			</div>
-			<a class="btn btn-ghost text-xl" href="/" hx-get="/">WGoA</a>
+			<details class="md:hidden" data-kbd-mobile-navigation>
+				<summary class="flex cursor-pointer list-none flex-col gap-1.5" aria-label="Open navigation">
+					<span class="h-px w-5 bg-base-content" aria-hidden="true"></span>
+					<span class="h-px w-5 bg-base-content" aria-hidden="true"></span>
+					<span class="h-px w-5 bg-base-content" aria-hidden="true"></span>
+				</summary>
+				<nav class="absolute right-4 top-20 z-40 w-64 border border-base-content bg-base-100 p-4" aria-label="Primary navigation" data-mobile-navigation hx-on:click="if (event.target.closest('a')) this.closest('details').removeAttribute('open')">
+				<form action="/search" class="mb-4 flex gap-2"><label class="min-w-0 flex-1"><span class="sr-only">Search collection</span><input class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2 text-sm outline-none" name="q" placeholder="Search artist, title, school" type="search" data-kbd-search/></label><button class="font-mono text-[10px] tracking-[1px] text-primary" type="submit">SEARCH</button></form>
+					<div class="mb-4 flex">@ThemeToggle()</div>
+					@navLinks("flex flex-col divide-y divide-base-content/15")
+				</nav>
+			</details>
 		</div>
-		<div class="navbar-center hidden lg:flex">
-			<ul class="menu menu-horizontal px-1">
-				<li><a href="/" hx-get="/">Home</a></li>
-				<li><a href="/artists" hx-get="/artists">Artists</a></li>
-				<li><a href="/artworks" hx-get="/artworks">Artworks</a></li>
-				<li><a href="/dual-mode" target="_blank">Dual Mode</a></li>
-				<li><a href="/guestbook" hx-get="/guestbook" hx-trigger="guestbook-updated from:body">Guestbook</a></li>
-				<li>
-					<details>
-						<summary>More</summary>
-						<ul class="p-2">
-							<li>
-								<a
-									href="/inspire"
-									hx-get="/inspire"
-								>Inspiration</a>
-							</li>
-							<li>
-								<a
-									href="/statistics"
-									hx-get="/statistics"
-								>Statistics</a>
-							</li>
-							<li>
-								<a
-									href="/pages/privacy-policy"
-									hx-get="/pages/privacy-policy"
-								>Privacy Policy</a>
-							</li>
-						</ul>
-					</details>
-				</li>
-			</ul>
-		</div>
-		<div class="navbar-end">
-			<label class="flex cursor-pointer items-center gap-2 pr-3">
-				<span class="text-sm">Dark mode</span>
-				<input type="checkbox" class="toggle toggle-sm" aria-label="Dark mode" data-theme-toggle/>
-			</label>
-		</div>
+		<nav class="container mx-auto hidden gap-6 px-4 pt-3 md:flex md:px-0 md:pt-0 [&_a]:py-0 [&_a]:pb-3" aria-label="Primary navigation">
+			@navLinks("flex flex-wrap gap-x-6 gap-y-3")
+		</nav>
+	</header>
+}
+
+templ ThemeToggle() {
+	<div class="ml-auto flex shrink-0 gap-px bg-base-content/20" role="group" aria-label="Colour scheme" data-wga-theme-toggle>
+		<button type="button" data-wga-theme="light" aria-pressed="false" class="cursor-pointer bg-base-100 px-2 py-[5px] font-mono text-[9px] tracking-[1.5px] text-base-content/75 transition-colors hover:text-base-content">LIGHT</button>
+		<button type="button" data-wga-theme="dark" aria-pressed="false" class="cursor-pointer bg-base-100 px-2 py-[5px] font-mono text-[9px] tracking-[1.5px] text-base-content/75 transition-colors hover:text-base-content">DARK</button>
 	</div>
+}
+
+templ navLinks(classes string) {
+	<ul class={ classes }>
+		<li><a class="block border-b-2 border-transparent py-1 font-mono text-xs tracking-[1.5px] hover:border-primary" href="/artists" hx-get="/artists">ARTISTS</a></li>
+		<li><a class="block border-b-2 border-transparent py-1 font-mono text-xs tracking-[1.5px] hover:border-primary" href="/artworks" hx-get="/artworks">ARTWORKS</a></li>
+		<li><a class="block border-b-2 border-transparent py-1 font-mono text-xs tracking-[1.5px] hover:border-primary" href="/dual-mode" hx-get="/dual-mode">DUAL MODE</a></li>
+		<li><a class="block border-b-2 border-transparent py-1 font-mono text-xs tracking-[1.5px] hover:border-primary" href="/inspire" hx-get="/inspire">INSPIRATION</a></li>
+		<li><a class="block border-b-2 border-transparent py-1 font-mono text-xs tracking-[1.5px] hover:border-primary" href="/statistics" hx-get="/statistics">STATISTICS</a></li>
+		<li><a class="block border-b-2 border-transparent py-1 font-mono text-xs tracking-[1.5px] hover:border-primary" href="/glossary">GLOSSARY</a></li>
+		<li><a class="block border-b-2 border-transparent py-1 font-mono text-xs tracking-[1.5px] hover:border-primary" href="/guestbook" hx-get="/guestbook" hx-trigger="guestbook-updated from:body">GUESTBOOK</a></li>
+		<li><a class="block border-b-2 border-transparent py-1 font-mono text-xs tracking-[1.5px] hover:border-primary" href="/postcard" hx-get="/postcard">POSTCARDS</a></li>
+		<li><a class="block border-b-2 border-transparent py-1 font-mono text-xs tracking-[1.5px] hover:border-primary" href="/pages/about" hx-get="/pages/about">ABOUT</a></li>
+	</ul>
 }

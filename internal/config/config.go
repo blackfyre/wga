@@ -230,10 +230,11 @@ type InitialSettings struct {
 
 // Migrations provides configuration needed while applying migrations.
 type Migrations struct {
-	publicURL     parsed[PublicURL]
-	storage       parsed[Storage]
-	mail          parsed[Mail]
-	administrator parsed[Administrator]
+	publicURL      parsed[PublicURL]
+	storage        parsed[Storage]
+	mail           parsed[Mail]
+	administrator  parsed[Administrator]
+	seedSQLitePath string
 }
 
 // InitialSettings returns validated settings for the initial migration.
@@ -257,6 +258,11 @@ func (m Migrations) InitialSettings() (InitialSettings, error) {
 // Administrator returns the optional administrator bootstrap configuration.
 func (m Migrations) Administrator() (Administrator, error) {
 	return m.administrator.value, m.administrator.err
+}
+
+// SeedSQLitePath returns the optional authoritative source database for a fresh bootstrap.
+func (m Migrations) SeedSQLitePath() string {
+	return m.seedSQLitePath
 }
 
 // Config holds parsed application configuration for each runtime capability.
@@ -310,10 +316,11 @@ func LoadFrom(lookup Lookup) Config {
 		captcha:     captcha,
 		sentry:      sentryConfig,
 		migrations: Migrations{
-			publicURL:     publicURL,
-			storage:       storage,
-			mail:          mailConfig,
-			administrator: administrator,
+			publicURL:      publicURL,
+			storage:        storage,
+			mail:           mailConfig,
+			administrator:  administrator,
+			seedSQLitePath: lookup("WGA_SEED_SQLITE_PATH"),
 		},
 	}
 }

@@ -1,0 +1,51 @@
+import { expect, test } from "@playwright/test";
+
+test("home hero uses the reference desktop geometry", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+
+  const hero = page.locator(".home-page > section").first();
+  await expect(hero).toHaveCSS("max-width", "1160px");
+
+  const featured = hero.locator("figure");
+  const box = await featured.boundingBox();
+  expect(box?.width).toBeCloseTo(300, 0);
+  expect(box?.height).toBeCloseTo(342, 0);
+});
+
+test("home hero uses the reference mobile inset", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+
+  const box = await page
+    .getByRole("heading", { name: /Explore artists/ })
+    .boundingBox();
+  expect(box?.x).toBeCloseTo(40, 0);
+});
+
+test("home lists four recent additions in the reference grid", async ({ page }) => {
+  await page.goto("/");
+
+  await expect(page.getByRole("heading", { name: "RECENT ADDITIONS" })).toBeVisible();
+  await expect(page.locator("#recent-additions > li")).toHaveCount(4);
+});
+
+test("home uses the reference period and postcard copy", async ({ page }) => {
+  await page.goto("/");
+
+  await expect(page.getByText("3rd–19th", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText(
+      "Free, no account, no address kept after delivery. Period music optional.",
+    ),
+  ).toBeVisible();
+});
+
+test("home uses Noto Sans for body copy", async ({ page }) => {
+  await page.goto("/");
+
+  await expect(page.locator("body")).toHaveCSS(
+    "font-family",
+    '"Noto Sans", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif',
+  );
+});

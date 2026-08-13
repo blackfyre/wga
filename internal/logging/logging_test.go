@@ -59,6 +59,7 @@ func TestRequestIDMiddlewareCorrelatesRequestLogs(t *testing.T) {
 				entry := testutils.LogWithEvent(captured(), event)
 				if entry == nil {
 					t.Fatalf("expected a %q log", event)
+					continue
 				}
 				if got := entry.Data["request_id"]; got != requestID {
 					t.Fatalf("%s request_id = %v, want %q", event, got, requestID)

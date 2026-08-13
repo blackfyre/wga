@@ -2,6 +2,19 @@ import * as CookieConsent from "vanilla-cookieconsent";
 
 export const initCookieConsent = () => {
 	CookieConsent.run({
+		guiOptions: {
+			consentModal: {
+				layout: "box inline",
+				position: "bottom left",
+				equalWeightButtons: false,
+				flipButtons: false,
+			},
+			preferencesModal: {
+				layout: "box",
+				equalWeightButtons: false,
+				flipButtons: false,
+			},
+		},
 		categories: {
 			necessary: {
 				enabled: true,
@@ -13,16 +26,16 @@ export const initCookieConsent = () => {
 			translations: {
 				en: {
 					consentModal: {
-						title: "We use cookies",
+						title: "COOKIES",
 						description:
-							'We use essential cookies to make this site work. Read our <a href="/pages/privacy-policy">privacy policy</a>.',
-						acceptNecessaryBtn: "Accept essential cookies",
-						showPreferencesBtn: "Cookie preferences",
+							'Essential cookies keep this site working. Analytics cookies are not in use. Read our <a href="/pages/privacy-policy">privacy policy</a>.',
+						acceptNecessaryBtn: "ACCEPT ESSENTIAL COOKIES",
+						showPreferencesBtn: "COOKIE PREFERENCES",
 					},
 					preferencesModal: {
-						title: "Cookie preferences",
-						acceptNecessaryBtn: "Accept essential cookies",
-						savePreferencesBtn: "Save preferences",
+						title: "COOKIE PREFERENCES",
+						acceptNecessaryBtn: "ACCEPT ESSENTIAL COOKIES",
+						savePreferencesBtn: "SAVE PREFERENCES",
 						closeIconLabel: "Close cookie preferences",
 						sections: [
 							{
