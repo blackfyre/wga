@@ -38,6 +38,62 @@ func TestLoadBiographiesUsesArtistFieldsWhenLegacyTableIsAbsent(t *testing.T) {
 	}
 }
 
+func TestLoadArtistsPortraitPath(t *testing.T) {
+	tests := []struct {
+		name      string
+		hasColumn bool
+		portrait  string
+		want      string
+		wantErr   bool
+	}{
+		{name: "without portrait column"},
+		{name: "with portrait path", hasColumn: true, portrait: "artists/artist/portrait.jpg", want: "portrait.jpg"},
+		{name: "with unsafe portrait path", hasColumn: true, portrait: "../portrait.jpg", wantErr: true},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			db, err := sql.Open("sqlite", ":memory:")
+			if err != nil {
+				t.Fatalf("open database: %v", err)
+			}
+			defer closeDatabase(db)
+
+			schema := `CREATE TABLE artists (id TEXT PRIMARY KEY, display_name TEXT, birth_year INTEGER, death_year INTEGER, birth_place TEXT, death_place TEXT`
+			if test.hasColumn {
+				schema += `, biography_image_output_path TEXT`
+			}
+			schema += `)`
+			if _, err := db.Exec(schema); err != nil {
+				t.Fatalf("create artists: %v", err)
+			}
+
+			if test.hasColumn {
+				_, err = db.Exec(`INSERT INTO artists VALUES ('artist', 'Artist', NULL, NULL, NULL, NULL, ?)`, test.portrait)
+			} else {
+				_, err = db.Exec(`INSERT INTO artists VALUES ('artist', 'Artist', NULL, NULL, NULL, NULL)`)
+			}
+			if err != nil {
+				t.Fatalf("insert artist: %v", err)
+			}
+
+			artists, err := loadArtists(db)
+			if test.wantErr {
+				if err == nil {
+					t.Fatal("expected portrait path error")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("load artists: %v", err)
+			}
+			if got := artists[0].Portrait; got != test.want {
+				t.Fatalf("portrait = %q, want %q", got, test.want)
+			}
+		})
+	}
+}
+
 func TestExternalSourcePaths(t *testing.T) {
 	root := t.TempDir()
 	sqlitePath := filepath.Join(root, "wga-src.sqlite")

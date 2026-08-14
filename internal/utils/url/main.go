@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase/core"
@@ -63,6 +64,15 @@ func GenerateArtistUrlFromRecord(r *core.Record) string {
 		ArtistName: r.GetString("name"),
 		ArtistId:   r.GetString("id"),
 	})
+}
+
+func GenerateArtistPortraitURL(r *core.Record) string {
+	portrait := r.GetString("portrait")
+	if portrait == "" {
+		return ""
+	}
+
+	return GenerateFileUrl(constants.CollectionArtists, r.Id, portrait, "")
 }
 
 type ArtistUrlDTO struct {

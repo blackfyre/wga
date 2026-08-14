@@ -70,6 +70,13 @@ func createCurrentSchema(app core.App) error {
 		selectField("known_place_of_birth", []string{"yes", "no", "n/a"}, true),
 		selectField("known_place_of_death", []string{"yes", "no", "n/a"}, true),
 		relationField("school", "schools", 1, 10, false, false),
+		&core.FileField{
+			Name:      "portrait",
+			MaxSelect: 1,
+			MimeTypes: []string{"image/jpeg", "image/png"},
+			MaxSize:   5 * 1024 * 1024,
+			Thumbs:    []string{"320x320"},
+		},
 		boolField("published", true),
 	)); err != nil {
 		return err

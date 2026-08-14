@@ -52,6 +52,7 @@ func RenderArtistContent(app *pocketbase.PocketBase, c *core.RequestEvent, artis
 		}),
 		Schools:         schools,
 		Profession:      artist.GetString("profession"),
+		Portrait:        url.GenerateArtistPortraitURL(artist),
 		Works:           dto.ImageGrid{},
 		Url:             "/artists/" + expectedSlug,
 		HxTarget:        hxTarget,
@@ -149,8 +150,8 @@ func processArtist(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 	ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", content.Name, content.BioExcerpt))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, artist.GetString("bio"))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgUrlKey, fullUrl)
-	if len(content.Works) > 0 {
-		ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgImageKey, utils.AssetUrl(content.Works[0].Image))
+	if image := artistOpenGraphImage(content); image != "" {
+		ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgImageKey, image)
 	}
 
 	c.Response.Header().Set("HX-Push-Url", fullUrl)
@@ -166,4 +167,15 @@ func processArtist(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 	}
 
 	return c.HTML(http.StatusOK, buff.String())
+}
+
+func artistOpenGraphImage(content dto.Artist) string {
+	if content.Portrait != "" {
+		return utils.AssetUrl(content.Portrait)
+	}
+	if len(content.Works) > 0 {
+		return utils.AssetUrl(content.Works[0].Image)
+	}
+
+	return ""
 }

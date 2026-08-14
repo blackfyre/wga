@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/blackfyre/wga/internal/utils"
+	"github.com/blackfyre/wga/internal/utils/url"
 	"github.com/pocketbase/pocketbase/core"
 )
 
@@ -11,7 +12,7 @@ import (
 // It takes an instance of wgaModels.Artist and an echo.Context as input.
 // It returns a Person struct representing the artist in JSON-LD format.
 func ArtistJsonLd(r *core.Record) Person {
-	return newPerson(Person{
+	person := Person{
 		Name:      r.GetString("name"),
 		Url:       utils.AssetUrl("/artists/" + r.GetString("slug") + "-" + r.GetString("id")),
 		BirthDate: fmt.Sprint(r.GetString("year_of_birth")),
@@ -26,7 +27,12 @@ func ArtistJsonLd(r *core.Record) Person {
 			Name: r.GetString("profession"),
 		}),
 		Description: utils.StrippedHTML(r.GetString("bio")),
-	})
+	}
+	if portraitURL := url.GenerateArtistPortraitURL(r); portraitURL != "" {
+		person.Image = utils.AssetUrl(portraitURL)
+	}
+
+	return newPerson(person)
 }
 
 // generateVisualArtworkJsonLdContent generates a map containing JSON-LD content for a visual artwork record.

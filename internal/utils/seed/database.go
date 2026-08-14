@@ -30,7 +30,7 @@ var syntheticTargetCollections = []targetCollection{
 	{name: constants.CollectionArtists, fields: []string{
 		"name", "slug", "bio", "year_of_birth", "year_of_death", "place_of_birth", "place_of_death",
 		"exact_year_of_birth", "exact_year_of_death", "profession", "known_place_of_birth",
-		"known_place_of_death", "school", "published",
+		"known_place_of_death", "school", "portrait", "published",
 	}},
 	{name: constants.CollectionArtworks, fields: []string{
 		"title", "author", "form", "type", "technique", "school", "comment", "published", "image",
@@ -78,7 +78,7 @@ func Import(app core.App, sqlitePath string) error {
 	if err := importSyntheticArtPeriods(app, data.artPeriods); err != nil {
 		return err
 	}
-	if err := importSyntheticArtists(app, data); err != nil {
+	if err := importSyntheticArtists(app, data, paths.preseededAssets); err != nil {
 		return err
 	}
 	if err := importSyntheticArtworks(app, data); err != nil {
@@ -207,7 +207,7 @@ func importSyntheticArtPeriods(app core.App, items []sourceArtPeriod) error {
 	return nil
 }
 
-func importSyntheticArtists(app core.App, data sourceData) error {
+func importSyntheticArtists(app core.App, data sourceData, preseededAssets bool) error {
 	professionNames := make(map[string]string, len(data.professions))
 	for _, profession := range data.professions {
 		professionNames[profession.ID] = profession.Name
@@ -238,9 +238,12 @@ func importSyntheticArtists(app core.App, data sourceData) error {
 		record.Set("known_place_of_death", knownPlace(item.DeathPlace))
 		record.Set("school", data.artistSchools[item.ID])
 		record.Set("profession", joinedProfessionNames(data.artistProfessions[item.ID], professionNames))
+		if item.Portrait != "" {
+			record.Set("portrait", item.Portrait)
+		}
 		record.Set("published", true)
 
-		if err := app.Save(record); err != nil {
+		if err := saveSeedRecord(app, record, preseededAssets && item.Portrait != ""); err != nil {
 			return fmt.Errorf("save artist %q: %w", item.ID, err)
 		}
 	}

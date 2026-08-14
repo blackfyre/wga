@@ -69,6 +69,7 @@ type sourceArtist struct {
 	DeathYear   int
 	BirthPlace  string
 	DeathPlace  string
+	Portrait    string
 }
 
 type sourceBiography struct {
@@ -336,9 +337,18 @@ func loadArtPeriods(db *sql.DB) ([]sourceArtPeriod, error) {
 }
 
 func loadArtists(db *sql.DB) ([]sourceArtist, error) {
+	portraitPathColumn := "''"
+	hasPortraitPath, err := hasArtistPortraitPath(db)
+	if err != nil {
+		return nil, err
+	}
+	if hasPortraitPath {
+		portraitPathColumn = "COALESCE(biography_image_output_path, '')"
+	}
+
 	rows, err := db.Query(`
 		SELECT id, display_name, COALESCE(birth_year, 0), COALESCE(death_year, 0),
-			COALESCE(birth_place, ''), COALESCE(death_place, '')
+			COALESCE(birth_place, ''), COALESCE(death_place, ''), ` + portraitPathColumn + `
 		FROM artists
 		ORDER BY id
 	`)
@@ -350,6 +360,7 @@ func loadArtists(db *sql.DB) ([]sourceArtist, error) {
 	items := []sourceArtist{}
 	for rows.Next() {
 		item := sourceArtist{}
+		var portraitPath string
 		if err := rows.Scan(
 			&item.ID,
 			&item.DisplayName,
@@ -357,13 +368,41 @@ func loadArtists(db *sql.DB) ([]sourceArtist, error) {
 			&item.DeathYear,
 			&item.BirthPlace,
 			&item.DeathPlace,
+			&portraitPath,
 		); err != nil {
 			return nil, fmt.Errorf("scan artists: %w", err)
+		}
+		if portraitPath != "" {
+			file, err := preseededSourceFile(portraitPath)
+			if err != nil {
+				return nil, fmt.Errorf("artist %q portrait path: %w", item.ID, err)
+			}
+			item.Portrait = file.name
 		}
 		items = append(items, item)
 	}
 
 	return items, rows.Err()
+}
+
+func hasArtistPortraitPath(db *sql.DB) (bool, error) {
+	rows, err := db.Query(`SELECT name FROM pragma_table_info('artists')`)
+	if err != nil {
+		return false, fmt.Errorf("inspect artists schema: %w", err)
+	}
+	defer closeRows(rows)
+
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return false, fmt.Errorf("scan artists schema: %w", err)
+		}
+		if name == "biography_image_output_path" {
+			return true, nil
+		}
+	}
+
+	return false, rows.Err()
 }
 
 func loadArtistRelations(db *sql.DB, table string, relationColumn string) (map[string][]string, error) {

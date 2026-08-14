@@ -10,6 +10,7 @@ type Artist struct {
 	BioExcerpt      string
 	Jsonld          string
 	Bio             string
+	Portrait        string
 	Works           ImageGrid
 	HxTarget        string
 	ShowBreadcrumbs bool

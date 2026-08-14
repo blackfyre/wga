@@ -88,6 +88,13 @@ func TestSyntheticSeedMigrationImportsBaselineSchema(t *testing.T) {
 		}
 	}
 	assertIndex(t, artists, "pbx_artist_published_name")
+	portrait, ok := artists.Fields.GetByName("portrait").(*core.FileField)
+	if !ok {
+		t.Fatal("expected artist portrait file field")
+	}
+	if portrait.MaxSelect != 1 || portrait.MaxSize != 5*1024*1024 || len(portrait.Thumbs) != 1 || portrait.Thumbs[0] != "320x320" {
+		t.Fatal("expected single-file artist portrait with a 320x320 thumbnail")
+	}
 
 	schools, err := app.FindCollectionByNameOrId("schools")
 	if err != nil {

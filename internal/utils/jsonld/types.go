@@ -11,6 +11,7 @@ type Person struct {
 	PlaceOfBirth  Place      `json:"birthPlace,omitempty"`
 	PlaceOfDeath  Place      `json:"deathPlace,omitempty"`
 	Description   string     `json:"description,omitempty"`
+	Image         string     `json:"image,omitempty"`
 	HasOccupation Occupation `json:"hasOccupation,omitempty"`
 }
 
