@@ -106,6 +106,7 @@ func processArtists(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 			Profession: m.GetString("profession"),
 			BornDied:   utils.NormalizedBirthDeathActivity(m),
 			Schools:    schools,
+			Portrait:   url.GenerateArtistPortraitThumbnailURL(m, url.ThumbnailPortraitCard),
 		})
 
 		jsonLdCollector = append(jsonLdCollector, jsonld.ArtistJsonLd(m))

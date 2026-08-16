@@ -91,11 +91,13 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 	img.Comment = aw.GetString("comment")
 	img.Technique = aw.GetString("technique")
 	if aw.GetString("image") != "" {
-		img.Image = url.GenerateFileUrl(constants.CollectionArtworks, aw.GetString("id"), aw.GetString("image"), "")
-		img.Thumb = url.GenerateThumbUrl(constants.CollectionArtworks, aw.GetString("id"), aw.GetString("image"), "320x240", "")
+		img.Image = url.GenerateThumbUrl(constants.CollectionArtworks, aw.GetString("id"), aw.GetString("image"), url.ThumbnailArtworkPlate, "")
+		img.Zoom = url.GenerateThumbUrl(constants.CollectionArtworks, aw.GetString("id"), aw.GetString("image"), url.ThumbnailArtworkZoom, "")
+		img.Thumb = img.Image
 	} else {
 		img.Image = utils.AssetUrl("/assets/images/no-image.png")
 		img.Thumb = utils.AssetUrl("/assets/images/no-image.png")
+		img.Zoom = img.Image
 	}
 
 	content := dto.Artwork{
@@ -198,9 +200,11 @@ func RenderArtworkContent(app *pocketbase.PocketBase, c *core.RequestEvent, artw
 	img.Comment = artwork.GetString("comment")
 	img.Technique = artwork.GetString("technique")
 	if artwork.GetString("image") != "" {
-		img.Image = url.GenerateFileUrl("artworks", artwork.GetString("id"), artwork.GetString("image"), "")
+		img.Image = url.GenerateThumbUrl(constants.CollectionArtworks, artwork.GetString("id"), artwork.GetString("image"), url.ThumbnailArtworkPlate, "")
+		img.Zoom = url.GenerateThumbUrl(constants.CollectionArtworks, artwork.GetString("id"), artwork.GetString("image"), url.ThumbnailArtworkZoom, "")
 	} else {
 		img.Image = utils.AssetUrl("/assets/images/no-image.png")
+		img.Zoom = img.Image
 	}
 
 	content := dto.Artwork{
@@ -314,7 +318,7 @@ func relatedArtworkImages(app *pocketbase.PocketBase, artist *core.Record, curre
 
 		image := utils.AssetUrl("/assets/images/no-image.png")
 		if imageName := work.GetString("image"); imageName != "" {
-			image = url.GenerateFileUrl(constants.CollectionArtworks, work.Id, imageName, "")
+			image = url.GenerateThumbUrl(constants.CollectionArtworks, work.Id, imageName, url.ThumbnailArtworkCardSmall, "")
 		}
 
 		related = append(related, dto.Image{

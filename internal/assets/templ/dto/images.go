@@ -3,6 +3,7 @@ package dto
 type Image struct {
 	Thumb     string
 	Image     string
+	Zoom      string
 	Title     string
 	Technique string
 	Comment   string

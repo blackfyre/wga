@@ -3,6 +3,7 @@ package migrations
 import (
 	"database/sql"
 	"errors"
+	"slices"
 	"strings"
 	"testing"
 
@@ -92,8 +93,8 @@ func TestSyntheticSeedMigrationImportsBaselineSchema(t *testing.T) {
 	if !ok {
 		t.Fatal("expected artist portrait file field")
 	}
-	if portrait.MaxSelect != 1 || portrait.MaxSize != 5*1024*1024 || len(portrait.Thumbs) != 1 || portrait.Thumbs[0] != "320x320" {
-		t.Fatal("expected single-file artist portrait with a 320x320 thumbnail")
+	if portrait.MaxSelect != 1 || portrait.MaxSize != 5*1024*1024 || !slices.Equal(portrait.Thumbs, []string{"500x0", "600x0"}) {
+		t.Fatal("expected single-file artist portrait with visual thumbnail variants")
 	}
 
 	schools, err := app.FindCollectionByNameOrId("schools")
@@ -130,6 +131,13 @@ func TestSyntheticSeedMigrationImportsBaselineSchema(t *testing.T) {
 	}
 	if artworks.Fields.GetByName("year") == nil {
 		t.Fatal("expected artwork year field")
+	}
+	image, ok := artworks.Fields.GetByName("image").(*core.FileField)
+	if !ok {
+		t.Fatal("expected artwork image file field")
+	}
+	if !slices.Equal(image.Thumbs, []string{"120x0", "200x0", "400x0", "500x0", "600x0", "700x0", "800x0", "900x0", "1000x0", "1100x0", "1400x0", "1600x0", "2000x0"}) {
+		t.Fatal("expected artwork image field with visual thumbnail variants")
 	}
 	assertIndex(t, artworks, "pbx_artwork_published_title")
 

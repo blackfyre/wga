@@ -82,8 +82,12 @@ templ artistsTable(list []dto.Artist, query string) {
 		for index, a := range list {
 			<a href={ templ.SafeURL(a.Url) } hx-get={ a.Url } hx-target={ a.HxTarget } data-kbd-idx={ strconv.Itoa(index) } data-kbd-href={ a.Url } class="block transition-opacity hover:opacity-70">
 				@components.KeyboardCaret()
-				<figure class="flex aspect-square items-end border border-base-content/15 bg-base-300 p-3">
-					<figcaption class="font-mono text-[9px] tracking-[1px] text-base-content/40">PORTRAIT — { a.Name }</figcaption>
+				<figure class="flex aspect-square items-end overflow-hidden border border-base-content/15 bg-base-300 p-3">
+					if a.Portrait != "" {
+						<img src={ a.Portrait } alt={ a.Name } loading="lazy" class="h-full w-full object-cover"/>
+					} else {
+						<figcaption class="font-mono text-[9px] tracking-[1px] text-base-content/40">PORTRAIT — { a.Name }</figcaption>
+					}
 				</figure>
 				<p class="mt-3 text-[17px] font-semibold leading-tight">@templ.Raw(HighlightArtistName(a.Name, query))</p>
 				<p class="mt-[3px] font-mono text-[11px] leading-relaxed text-base-content/60">{ a.BornDied }<br/>{ a.Schools }</p>

@@ -774,6 +774,7 @@ const wgaInternal: wgaInternals = {
 				for (const element of elements) {
 					const e = element as HTMLElement;
 					new Viewer(e, {
+						url: "data-zoom-url",
 						navbar: !e.hasAttribute("data-viewer-no-navbar"),
 						toolbar: {
 							zoomIn: 1,

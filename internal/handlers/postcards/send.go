@@ -52,7 +52,7 @@ func renderForm(artworkId string, app core.App, c *core.RequestEvent, captcha co
 	if r.GetString("image") == "" {
 		editor.Image = utils.AssetUrl("/assets/images/no-image.png")
 	} else {
-		editor.Image = url.GenerateFileUrl(constants.CollectionArtworks, artworkId, r.GetString("image"), "")
+		editor.Image = url.GenerateThumbUrl(constants.CollectionArtworks, artworkId, r.GetString("image"), url.ThumbnailArtworkPostcard, "")
 	}
 	editor.Title = r.GetString("title")
 	editor.Comment = r.GetString("comment")

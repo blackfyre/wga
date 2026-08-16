@@ -6,8 +6,28 @@ import (
 	"testing"
 
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
+	urlutils "github.com/blackfyre/wga/internal/utils/url"
 	"github.com/pocketbase/pocketbase/core"
 )
+
+func TestArtworkSearchThumbnail(t *testing.T) {
+	for _, test := range []struct {
+		name     string
+		view     string
+		dualMode bool
+		want     string
+	}{
+		{name: "grid", view: "grid", want: urlutils.ThumbnailArtworkCard},
+		{name: "list", view: "list", want: urlutils.ThumbnailArtworkRow},
+		{name: "dual mode list", view: "list", dualMode: true, want: urlutils.ThumbnailArtworkCard},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			if got := artworkSearchThumbnail(test.view, test.dualMode); got != test.want {
+				t.Fatalf("artworkSearchThumbnail() = %q, want %q", got, test.want)
+			}
+		})
+	}
+}
 
 func TestGetDualModeSearchContext(t *testing.T) {
 	event := &core.RequestEvent{}

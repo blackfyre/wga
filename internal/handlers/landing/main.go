@@ -125,7 +125,7 @@ func getFeaturedArtwork(app *pocketbase.PocketBase) (pages.HomeFeaturedArtwork, 
 		}),
 	}
 	if imageName := artwork.GetString("image"); imageName != "" {
-		featured.Image = url.GenerateFileUrl(constants.CollectionArtworks, artwork.Id, imageName, "")
+		featured.Image = url.GenerateThumbUrl(constants.CollectionArtworks, artwork.Id, imageName, url.ThumbnailArtworkFeature, "")
 	}
 
 	return featured, nil
@@ -161,7 +161,7 @@ func getRecentArtworks(app *pocketbase.PocketBase) ([]pages.HomeRecentArtwork, e
 			}),
 		}
 		if imageName := artwork.GetString("image"); imageName != "" {
-			work.Image = url.GenerateThumbUrl(constants.CollectionArtworks, artwork.Id, imageName, "640x480", "")
+			work.Image = url.GenerateThumbUrl(constants.CollectionArtworks, artwork.Id, imageName, url.ThumbnailArtworkCard, "")
 		}
 
 		works = append(works, work)

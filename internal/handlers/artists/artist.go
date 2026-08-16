@@ -52,7 +52,7 @@ func RenderArtistContent(app *pocketbase.PocketBase, c *core.RequestEvent, artis
 		}),
 		Schools:         schools,
 		Profession:      artist.GetString("profession"),
-		Portrait:        url.GenerateArtistPortraitURL(artist),
+		Portrait:        url.GenerateArtistPortraitThumbnailURL(artist, url.ThumbnailPortraitRecord),
 		Works:           dto.ImageGrid{},
 		Url:             "/artists/" + expectedSlug,
 		HxTarget:        hxTarget,
@@ -89,8 +89,8 @@ func RenderArtistContent(app *pocketbase.PocketBase, c *core.RequestEvent, artis
 		img.Technique = w.GetString("technique")
 
 		if w.GetString("image") != "" {
-			img.Image = url.GenerateFileUrl(constants.CollectionArtworks, w.GetString("id"), w.GetString("image"), "")
-			img.Thumb = url.GenerateThumbUrl(constants.CollectionArtworks, w.GetString("id"), w.GetString("image"), "320x240", "")
+			img.Image = url.GenerateThumbUrl(constants.CollectionArtworks, w.GetString("id"), w.GetString("image"), url.ThumbnailArtworkCard, "")
+			img.Thumb = img.Image
 		} else {
 			img.Image = utils.AssetUrl("/assets/images/no-image.png")
 			img.Thumb = utils.AssetUrl("/assets/images/no-image.png")

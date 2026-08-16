@@ -51,10 +51,15 @@ func viewPostcard(app core.App, c *core.RequestEvent) error {
 
 	aw := r.ExpandedOne("image_id")
 
+	image := utils.AssetUrl("/assets/images/no-image.png")
+	if imageName := aw.GetString("image"); imageName != "" {
+		image = url.GenerateThumbUrl(constants.CollectionArtworks, aw.GetString("id"), imageName, url.ThumbnailArtworkPostcard, "")
+	}
+
 	content := pages.PostcardView{
 		SenderName: r.GetString("sender_name"),
 		Message:    r.GetString("message"),
-		Image:      url.GenerateFileUrl(constants.CollectionArtworks, aw.GetString("id"), aw.GetString("image"), ""),
+		Image:      image,
 		Title:      aw.GetString("title"),
 		Comment:    aw.GetString("comment"),
 		Technique:  aw.GetString("technique"),

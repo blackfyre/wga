@@ -46,3 +46,15 @@ func TestArtistBlockRendersPortraitFallback(t *testing.T) {
 		t.Error("expected no portrait image")
 	}
 }
+
+func TestArtistsTableRendersPortraitThumbnail(t *testing.T) {
+	var output bytes.Buffer
+	artist := dto.Artist{Name: "Portrait Artist", Portrait: "/api/files/artists/artist/portrait.jpg?thumb=500x0"}
+	if err := artistsTable([]dto.Artist{artist}, "").Render(context.Background(), &output); err != nil {
+		t.Fatalf("render artists table: %v", err)
+	}
+
+	if !strings.Contains(output.String(), `src="/api/files/artists/artist/portrait.jpg?thumb=500x0"`) {
+		t.Fatal("expected portrait thumbnail")
+	}
+}

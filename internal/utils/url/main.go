@@ -11,6 +11,19 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
+const (
+	ThumbnailArtworkTray      = "120x0"
+	ThumbnailArtworkRow       = "200x0"
+	ThumbnailArtworkCardSmall = "400x0"
+	ThumbnailArtworkCard      = "500x0"
+	ThumbnailArtworkPostcard  = "700x0"
+	ThumbnailArtworkFeature   = "900x0"
+	ThumbnailArtworkPlate     = "1400x0"
+	ThumbnailArtworkZoom      = "2000x0"
+	ThumbnailPortraitCard     = "500x0"
+	ThumbnailPortraitRecord   = "600x0"
+)
+
 func GenerateFileUrl(collection string, collectionId string, fileName string, token string) string {
 
 	url := fmt.Sprintf(
@@ -73,6 +86,15 @@ func GenerateArtistPortraitURL(r *core.Record) string {
 	}
 
 	return GenerateFileUrl(constants.CollectionArtists, r.Id, portrait, "")
+}
+
+func GenerateArtistPortraitThumbnailURL(r *core.Record, thumbSize string) string {
+	portrait := r.GetString("portrait")
+	if portrait == "" {
+		return ""
+	}
+
+	return GenerateThumbUrl(constants.CollectionArtists, r.Id, portrait, thumbSize, "")
 }
 
 type ArtistUrlDTO struct {

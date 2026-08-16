@@ -140,8 +140,8 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 		thumbURL := imageURL
 
 		if imageName := v.GetString("image"); imageName != "" {
-			imageURL = url.GenerateFileUrl(constants.CollectionArtworks, v.GetString("id"), imageName, "")
-			thumbURL = url.GenerateThumbUrl(constants.CollectionArtworks, v.GetString("id"), imageName, "320x400", "")
+			imageURL = url.GenerateThumbUrl(constants.CollectionArtworks, v.GetString("id"), imageName, artworkSearchThumbnail(filters.View, dualModeContext != nil), "")
+			thumbURL = imageURL
 		}
 
 		artwork := dto.Image{
@@ -206,6 +206,14 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	}
 
 	return c.HTML(http.StatusOK, buff.String())
+}
+
+func artworkSearchThumbnail(view string, dualMode bool) string {
+	if view == "list" && !dualMode {
+		return url.ThumbnailArtworkRow
+	}
+
+	return url.ThumbnailArtworkCard
 }
 
 func getDualModeSearchContext(c *core.RequestEvent) *dto.ArtworkSearchDualModeDto {

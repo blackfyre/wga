@@ -61,8 +61,8 @@ func inspirationHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error 
 		imageName := artPiece.GetString("image")
 
 		if imageName != "" {
-			imageUrl = url.GenerateFileUrl(constants.CollectionArtworks, artworkId, imageName, "")
-			thumbUrl = url.GenerateThumbUrl(constants.CollectionArtworks, artworkId, imageName, "320x240", "")
+			imageUrl = url.GenerateThumbUrl(constants.CollectionArtworks, artworkId, imageName, url.ThumbnailArtworkCard, "")
+			thumbUrl = imageUrl
 		}
 
 		content = append(content, dto.Image{

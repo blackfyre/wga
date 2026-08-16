@@ -75,7 +75,7 @@ func createCurrentSchema(app core.App) error {
 			MaxSelect: 1,
 			MimeTypes: []string{"image/jpeg", "image/png"},
 			MaxSize:   5 * 1024 * 1024,
-			Thumbs:    []string{"320x320"},
+			Thumbs:    []string{"500x0", "600x0"},
 		},
 		boolField("published", true),
 	)); err != nil {
@@ -102,7 +102,7 @@ func createCurrentSchema(app core.App) error {
 		relationField("school", "schools", 1, 10, false, false),
 		editorField("comment", false),
 		boolField("published", false),
-		fileField("image", []string{"image/jpeg", "image/png"}, 5*1024*1024, []string{"100x100", "320x240"}, false),
+		fileField("image", []string{"image/jpeg", "image/png"}, 5*1024*1024, []string{"120x0", "200x0", "400x0", "500x0", "600x0", "700x0", "800x0", "900x0", "1000x0", "1100x0", "1400x0", "1600x0", "2000x0"}, false),
 	)); err != nil {
 		return err
 	}
