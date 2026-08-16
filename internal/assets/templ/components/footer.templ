@@ -38,6 +38,12 @@ templ Footer() {
 				</ul>
 			</div>
 		</div>
-		<p class="container mx-auto mt-8 px-4 font-mono text-[10px] tracking-[0.5px] text-base-content/50 md:px-0">© WEB GALLERY OF ART, CREATED BY EMIL KRÉN AND DANIEL MARX</p>
+		<div class="container mx-auto mt-8 flex items-center justify-between gap-4 px-4 md:px-0">
+			<p class="font-mono text-[10px] tracking-[0.5px] text-base-content/50">© WEB GALLERY OF ART, CREATED BY EMIL KRÉN AND DANIEL MARX</p>
+			<div data-wga-bionic-control class="hidden shrink-0 items-center gap-2">
+				<span class="font-mono text-[10px] tracking-[1px] text-base-content/60">READING</span>
+				<button type="button" role="switch" aria-label="Bionic reading" aria-checked="false" data-wga-bionic-toggle class="border border-base-content/20 bg-base-100 px-2 py-1 font-mono text-[10px] tracking-[1px] text-base-content/75 transition-colors hover:text-base-content">BIONIC</button>
+			</div>
+		</div>
 	</footer>
 }

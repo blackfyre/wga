@@ -3,6 +3,7 @@ import Viewer from "viewerjs";
 import "htmx.org";
 import htmx from "htmx.org";
 import warningSign from "../assets/warning-sign.svg";
+import { initBionicReading } from "./bionic";
 import { initCookieConsent } from "./cookieconsent";
 import { initKeyboardNavigation } from "./keyboard";
 import logger from "./logger";
@@ -1053,6 +1054,7 @@ const wgaInternal: wgaInternals = {
 	initCookieConsent();
 	initKeyboardNavigation();
 	initThemeToggle();
+	initBionicReading();
 	syncMobileNavigation();
 	document.addEventListener("htmx:afterSettle", syncMobileNavigation);
 	wgaInternal.func.init();
