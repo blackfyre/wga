@@ -41,7 +41,7 @@ func SendToastMessage(message string, t string, closeDialog bool, c *core.Reques
 
 func IsHtmxRequestMiddleware(e *core.RequestEvent) error {
 	if e.Request.Header.Get("HX-Request") != "true" {
-		return ServerFaultError(e)
+		return BadRequestError(e)
 	}
 
 	return e.Next()
