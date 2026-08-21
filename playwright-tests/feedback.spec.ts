@@ -1,54 +1,44 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
-test("places feedback at the mobile bottom edge", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/");
+const feedbackURL =
+	"https://github.com/blackfyre/wga/issues?q=sort%3Aupdated-desc+is%3Aissue+state%3Aopen+";
 
-  const feedback = page.locator("a[hx-get='/feedback']");
-  const bottom = await feedback.evaluate(
-    (element) => window.innerHeight - element.getBoundingClientRect().bottom,
-  );
-  expect(bottom).toBeCloseTo(16, 0);
-  await expect(feedback).toHaveCSS("padding-left", "18px");
-  await expect(feedback).toHaveCSS("padding-top", "13px");
+test("renders feedback as a styled ordinary external link", async ({
+	page,
+}) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.goto("/");
+
+	const feedback = page.locator("a.wga-feedback-anchor");
+	await expect(feedback).toHaveAttribute("href", feedbackURL);
+	await expect(feedback).not.toHaveAttribute("hx-get");
+	await expect(feedback).not.toHaveAttribute("hx-on:click");
+	await expect(feedback).not.toHaveAttribute("hx-target");
+	await expect(feedback).not.toHaveAttribute("hx-select");
+	await expect(feedback).not.toHaveAttribute("hx-swap");
+	const bottom = await feedback.evaluate(
+		(element) => window.innerHeight - element.getBoundingClientRect().bottom,
+	);
+	expect(bottom).toBeCloseTo(16, 0);
+	await expect(feedback).toHaveCSS("padding-left", "18px");
+	await expect(feedback).toHaveCSS("padding-top", "13px");
 });
 
-test("cancel closes the feedback dialog", async ({ page }) => {
-  await page.goto("/");
-  await page.getByRole("link", { name: "Feedback" }).click();
-  await expect(page.locator("#d")).toHaveAttribute("open", "");
-
-  await page.getByRole("button", { name: "CANCEL" }).click();
-  await expect(page.locator("#d")).not.toHaveAttribute("open", "");
-});
-
-test("check feedback", async ({ page }) => {
-  await page.goto("/");
-
-  // Click the get started link.
-  await page.getByRole("link", { name: "Feedback" }).click();
-
-  await expect(page.locator("#d")).toContainText("Tell us what is wrong");
-  await expect(page.locator("#d .modal-box")).toHaveCSS("opacity", "1");
-  await expect(
-    page.locator("#d").getByLabel("Close dialog").first(),
-  ).toBeVisible();
-  await expect(page.locator("#d")).toContainText("SENT WITH THIS REPORT");
-  await expect(page.locator("#d")).toContainText("Home");
-  await expect(page.locator("#d")).toContainText("BUILD");
-  await expect(page.locator("#d")).toContainText(/(development|test) · dev/);
-  await page.getByText("CORRECTION", { exact: true }).click();
-  await expect(page.getByRole("radio", { name: "CORRECTION" })).toBeChecked();
-
-  await page
-    .getByRole("textbox", { name: /YOUR MESSAGE/ })
-    .fill("I am testing your site.");
-  await page
-    .getByRole("textbox", { name: /EMAIL — OPTIONAL/ })
-    .fill("playwright.tester@local.host");
-
-  // Click the submit button.
-  await page.getByRole("button", { name: "SEND REPORT →" }).click();
-
-  await expect(page.locator("#d")).toContainText("Thank you — report received");
+test("navigates to the exact feedback URL without JavaScript", async ({
+	browser,
+}) => {
+	const context = await browser.newContext({ javaScriptEnabled: false });
+	const page = await context.newPage();
+	await page.route(feedbackURL, async (route) =>
+		route.fulfill({
+			status: 200,
+			contentType: "text/html",
+			body: "GitHub issues",
+		}),
+	);
+	await page.goto("/");
+	await page.getByRole("link", { name: "FEEDBACK" }).click();
+	await expect(page).toHaveURL(feedbackURL);
+	await expect(page.locator("body")).toContainText("GitHub issues");
+	await context.close();
 });
