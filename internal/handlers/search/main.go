@@ -2,7 +2,6 @@ package search
 
 import (
 	"bytes"
-	"context"
 	"net/http"
 	"strings"
 
@@ -81,7 +80,7 @@ func render(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 		return utils.ServerFaultError(c)
 	}
 
-	ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, "Search")
+	ctx := tmplUtils.DecorateContext(c.Request.Context(), tmplUtils.TitleKey, "Search")
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "Search artists and artworks in the collection.")
 	var output bytes.Buffer
 	if utils.IsHtmxRequest(c) && c.Request.URL.Path == "/search/results" {

@@ -191,7 +191,7 @@ func EntriesHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 		Entries:      convertRawEntriesToGuestbookEntries(entries),
 	}
 
-	ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, "Guestbook")
+	ctx := tmplUtils.DecorateContext(c.Request.Context(), tmplUtils.TitleKey, "Guestbook")
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "This is the guestbook of the Web Gallery of Art. Please feel free to leave a message.")
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, fullUrl)
 

@@ -2,7 +2,6 @@ package artists
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -147,7 +146,7 @@ func processArtist(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 		return err
 	}
 
-	ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", content.Name, content.BioExcerpt))
+	ctx := tmplUtils.DecorateContext(c.Request.Context(), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", content.Name, content.BioExcerpt))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, artist.GetString("bio"))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgUrlKey, fullUrl)
 	if image := artistOpenGraphImage(content); image != "" {

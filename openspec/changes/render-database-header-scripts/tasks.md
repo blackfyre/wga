@@ -14,3 +14,10 @@
 - [x] 3.1 Run `go vet ./...` and `go test ./...`, and record passing output or resolve failures caused by this change.
 - [x] 3.2 Using disposable test data only, verify a benign marker appears in a normal full-page `<head>`, changes on the next request, and remains absent from an HTMX fragment; also verify the producer and live production records remain byte-for-byte unchanged from their pre-check values.
 - [x] 3.3 Independently review the stored-script execution boundary, collection API rules, failure logging, and OpenSpec conformance, and resolve any material finding before marking the change complete.
+
+## 4. Production Regression Repair
+
+- [x] 4.1 Replace background-rooted Templ contexts in every full-document handler with contexts derived from the current request, while leaving fragment-only paths unchanged; verify a source audit finds no remaining full-layout handler that discards request context.
+- [x] 4.2 Add router-level regression coverage with populated `scripts:header` data and verify representative full-page routes render the fragment once before `</head>` while HTMX fragments remain unchanged.
+- [x] 4.3 Validate the repair from a clean committed baseline plus only the corrective patch using focused tests, `go vet ./...`, and `go test ./...`.
+- [x] 4.4 Verify a fresh seeded runtime preserves the producer row byte-for-byte and renders it on the beta homepage path; obtain independent acceptance review before completing the change.

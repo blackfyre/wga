@@ -2,7 +2,6 @@ package artists
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -126,7 +125,7 @@ func processArtists(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 	content.Pagination = string(pagination.Render())
 
-	ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, "Artists")
+	ctx := tmplUtils.DecorateContext(c.Request.Context(), tmplUtils.TitleKey, "Artists")
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "Check out the artists in the gallery.")
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgUrlKey, utils.AssetUrl(c.Request.URL.String()))
 

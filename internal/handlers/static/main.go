@@ -2,7 +2,6 @@ package static
 
 import (
 	"bytes"
-	"context"
 	"io/fs"
 	"net/http"
 	"os"
@@ -91,7 +90,7 @@ func RegisterHandlers(app *pocketbase.PocketBase, environment config.Environment
 				TOC:     toc,
 			}
 
-			ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, page.GetString("title"))
+			ctx := tmplUtils.DecorateContext(c.Request.Context(), tmplUtils.TitleKey, page.GetString("title"))
 			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, page.GetString("content"))
 			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, fullUrl)
 
@@ -113,7 +112,7 @@ func RegisterHandlers(app *pocketbase.PocketBase, environment config.Environment
 
 			var buffer bytes.Buffer
 
-			err := error_pages.NotFoundPage().Render(context.Background(), &buffer)
+			err := error_pages.NotFoundPage().Render(c.Request.Context(), &buffer)
 
 			if err != nil {
 				app.Logger().Error("Error rendering error page", "error", err)

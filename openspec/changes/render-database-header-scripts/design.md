@@ -4,6 +4,8 @@ The regenerated producer and live WGA databases both contain `scripts:header` wi
 
 Full pages and shared error pages render Templ components with a context derived from the request. No request-time `strings` reader exists. The shared `LayoutBase` owns the document `<head>`, while HTMX responses render fragments without requiring document-head content.
 
+Production verification after the initial implementation found that this assumption was not uniformly true at the committed baseline: several full-page handlers rendered from `context.Background()` and therefore discarded values prepared by request middleware. Only handlers already deriving their render context from the request displayed the trusted fragment.
+
 Templ escapes ordinary string expressions. Rendering operator-supplied script elements therefore requires an explicit use of Templ's trusted raw-HTML boundary. See `specs/database-managed-head-markup/spec.md` for the required behaviour.
 
 ## Goals / Non-Goals
@@ -55,6 +57,14 @@ A missing row and empty content are normal and produce no fragment. Other lookup
 
 This fail-open choice applies only to the optional header fragment. It does not change error handling for the requested page's own data or rendering.
 
+### 5. Preserve request context in every full-document handler
+
+Every handler that renders a full document through `LayoutBase` must derive its Templ context from the current HTTP request before adding page metadata. This preserves trusted head markup and other request-scoped values without coupling feature handlers directly to the strings collection.
+
+The repair updates only context initialisation sites that currently start from `context.Background()`. Fragment-only rendering paths may continue to use a background context when they do not render the shared document layout.
+
+Alternative considered: store trusted markup in process-global state so layouts can recover it after context loss. Rejected because it introduces cross-request mutable state, weakens request isolation, and hides the existing handler contract violation.
+
 ## Risks / Trade-offs
 
 - [A compromised superuser or producer input can execute code on every full page] → Keep all collection API rules superuser-only, expose no new write path, name the trust boundary explicitly, and cover raw rendering with focused tests.
@@ -73,6 +83,7 @@ Independent assurance reviews the stored-script boundary and verifies objective 
 
 - Focused Go tests prove request eligibility, successful context decoration, missing/empty/error behaviour, redacted request-scoped logging, and no lookup for technical or HTMX requests.
 - Layout render tests prove exact one-time raw placement before `</head>`, ordinary absence behaviour, and that no fragment component gains the markup.
+- Router-level integration tests prove representative full-page handlers preserve middleware-provided trusted markup through their real render path.
 - `templ generate` regenerates ignored Go output from the edited Templ source.
 - `go test` runs the focused handler and layout packages, followed by `go vet ./...` and `go test ./...` if the focused evidence passes.
 - A local runtime check temporarily supplies benign marker script content in disposable test data and confirms it appears in a full page head but not an HTMX fragment; production seed data remains unchanged.

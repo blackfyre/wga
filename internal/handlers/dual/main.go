@@ -45,7 +45,7 @@ const (
 
 // renderDualModePage renders the dual-mode comparison view.
 func renderDualModePage(app *pocketbase.PocketBase, c *core.RequestEvent) error {
-	ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, "Dual View")
+	ctx := tmplUtils.DecorateContext(c.Request.Context(), tmplUtils.TitleKey, "Dual View")
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "Compare artists and artworks side by side.")
 	// ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgUrlKey, pHtmxUrl)
 

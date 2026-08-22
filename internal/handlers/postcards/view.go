@@ -3,7 +3,6 @@ package postcards
 import (
 	"bytes"
 	"cmp"
-	"context"
 	"net/http"
 
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
@@ -65,7 +64,7 @@ func viewPostcard(app core.App, c *core.RequestEvent) error {
 		Technique:  aw.GetString("technique"),
 	}
 
-	ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, "Postcard")
+	ctx := tmplUtils.DecorateContext(c.Request.Context(), tmplUtils.TitleKey, "Postcard")
 
 	// c.Response.Header().Set("HX-Push-Url", fullUrl)
 

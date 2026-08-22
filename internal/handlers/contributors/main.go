@@ -2,7 +2,6 @@ package contributors
 
 import (
 	"bytes"
-	"context"
 	"net/http"
 
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
@@ -35,7 +34,7 @@ func RegisterHandlers(app core.App, reader contributorworkflow.Reader) {
 				Contributors: pageContributors(snapshot.Contributors),
 			}
 
-			ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, "Contributors")
+			ctx := tmplUtils.DecorateContext(c.Request.Context(), tmplUtils.TitleKey, "Contributors")
 			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "The people who have contributed to the Web Gallery of Art.")
 			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, fullUrl)
 

@@ -2,7 +2,6 @@ package inspire
 
 import (
 	"bytes"
-	"context"
 	"net/http"
 
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
@@ -90,7 +89,7 @@ func inspirationHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error 
 		})
 	}
 
-	ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, "Inspiration")
+	ctx := tmplUtils.DecorateContext(c.Request.Context(), tmplUtils.TitleKey, "Inspiration")
 
 	var buff bytes.Buffer
 

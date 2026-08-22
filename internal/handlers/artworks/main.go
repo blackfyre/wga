@@ -3,7 +3,6 @@ package artworks
 import (
 	"bytes"
 	"cmp"
-	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -182,7 +181,7 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 	content.Results.Pagination = string(pagination.Render())
 
-	ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, "Artworks Search")
+	ctx := tmplUtils.DecorateContext(c.Request.Context(), tmplUtils.TitleKey, "Artworks Search")
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "On this page you can search for artworks by title, artist, art form, art type and art school!")
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgUrlKey, pHtmxUrl)
 

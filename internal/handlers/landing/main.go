@@ -2,7 +2,6 @@ package landing
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"net/http"
 	"time"
@@ -218,7 +217,7 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 				RecentArtworks:  recentArtworks,
 			}
 
-			ctx := tmplUtils.DecorateContext(context.Background(), tmplUtils.TitleKey, "Web Gallery of Art | Explore artists and artworks")
+			ctx := tmplUtils.DecorateContext(c.Request.Context(), tmplUtils.TitleKey, "Web Gallery of Art | Explore artists and artworks")
 			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "Explore artists, artworks, and side-by-side comparisons in the Web Gallery of Art.")
 
 			//TODO: Fix this
