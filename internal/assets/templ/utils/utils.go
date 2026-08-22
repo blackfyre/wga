@@ -9,6 +9,12 @@ import (
 
 type ContextKey string
 
+// trustedHeadMarkupContextKey is a private typed key for operator-trusted
+// markup rendered verbatim in the document head. It is intentionally distinct
+// from the generic ContextKey so the executable-content trust boundary cannot
+// collide with ordinary string context values.
+type trustedHeadMarkupContextKey struct{}
+
 var TitleKey ContextKey = "title"
 var DescriptionKey ContextKey = "description"
 var EnvironmentKey ContextKey = "environment"
@@ -25,6 +31,20 @@ var TwitterTitleKey ContextKey = "twitter:title"
 var TwitterDescriptionKey ContextKey = "twitter:description"
 var TwitterImageKey ContextKey = "twitter:image"
 var CanonicalUrlKey ContextKey = "canonical:url"
+
+// WithTrustedHeadMarkup returns a context carrying the supplied operator-trusted
+// head markup. The value is immutable and intended only for the shared layout's
+// dedicated raw rendering boundary; it is never parsed, sanitised, or logged.
+func WithTrustedHeadMarkup(c context.Context, markup string) context.Context {
+	return context.WithValue(c, trustedHeadMarkupContextKey{}, markup)
+}
+
+// GetTrustedHeadMarkup returns the trusted head markup stored in the context, or
+// an empty string when no value was stored. Empty content must not render.
+func GetTrustedHeadMarkup(c context.Context) string {
+	markup, _ := c.Value(trustedHeadMarkupContextKey{}).(string)
+	return markup
+}
 
 func AssetUrl(path string) string {
 	return publicurl.Resolve(path)

@@ -63,6 +63,9 @@ templ LayoutBase(bodyClasses string, HtmxTargetArea string) {
 			<meta name="msapplication-TileColor" content="#013365"/>
 			<meta name="msapplication-config" content="/assets/browserconfig.xml"/>
 			<meta name="theme-color" content="#013365"/>
+			if trustedHeadMarkup := utils.GetTrustedHeadMarkup(ctx); trustedHeadMarkup != "" {
+				@templ.Raw(trustedHeadMarkup)
+			}
 		</head>
 		<body class={ bodyClasses } hx-indicator=".progress-indicator" hx-target={ getHtmxDefaultArea(HtmxTargetArea) } hx-select={ getHtmxDefaultArea(HtmxTargetArea) } hx-swap="outerHTML">
 			<div class="progress-indicator h-[3px] bg-primary">

@@ -33,6 +33,8 @@ func RegisterHandlers(app *pocketbase.PocketBase, environment config.Environment
 	app.Logger().Debug("Registering route handlers...")
 	p := bluemonday.NewPolicy()
 
+	registerTrustedHeadMarkupMiddleware(app)
+
 	feedback.RegisterHandlers(app, environment)
 	glossary.RegisterHandlers(app)
 	// registerMusicHandlers(app)

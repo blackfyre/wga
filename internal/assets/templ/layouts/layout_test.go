@@ -97,6 +97,67 @@ func TestLayoutFeedbackLinksToGitHubIssues(t *testing.T) {
 	}
 }
 
+func TestLayoutBaseRendersTrustedHeadMarkupVerbatim(t *testing.T) {
+	const markup = `<script src="/assets/js/trusted.js"></script>`
+
+	ctx := utils.WithTrustedHeadMarkup(context.Background(), markup)
+	var output bytes.Buffer
+	if err := LayoutBase("", "").Render(ctx, &output); err != nil {
+		t.Fatalf("render layout: %v", err)
+	}
+
+	rendered := output.String()
+	if strings.Count(rendered, markup) != 1 {
+		t.Fatalf("trusted markup must render exactly once, got %d occurrences", strings.Count(rendered, markup))
+	}
+	if strings.Contains(rendered, `&lt;script src="/assets/js/trusted.js"&gt;&lt;/script&gt;`) {
+		t.Fatal("trusted markup must not be HTML-escaped")
+	}
+
+	start := strings.Index(rendered, markup)
+	headClose := strings.Index(rendered, "</head>")
+	if start < 0 || headClose < 0 || start+len(markup) != headClose {
+		t.Fatalf("trusted markup must render immediately before </head> (start=%d headClose=%d)", start, headClose)
+	}
+}
+
+func TestLayoutBaseOmitsTrustedHeadMarkupWhenEmpty(t *testing.T) {
+	ctx := utils.WithTrustedHeadMarkup(context.Background(), "")
+
+	var output bytes.Buffer
+	if err := LayoutBase("", "").Render(ctx, &output); err != nil {
+		t.Fatalf("render layout: %v", err)
+	}
+
+	rendered := output.String()
+	// The theme-colour element is the last static head element; an empty trusted
+	// fragment must leave the closing head tag directly adjacent to it.
+	if !strings.Contains(rendered, `<meta name="theme-color" content="#013365"></head>`) {
+		t.Fatal("empty trusted markup must not inject content before </head>")
+	}
+}
+
+func TestLayoutBaseStillEscapesOrdinaryExpressions(t *testing.T) {
+	ctx := utils.WithTrustedHeadMarkup(context.Background(), `<script src="/assets/js/trusted.js"></script>`)
+	ctx = utils.DecorateContext(ctx, utils.TitleKey, `<em>Art</em>`)
+
+	var output bytes.Buffer
+	if err := LayoutBase("", "").Render(ctx, &output); err != nil {
+		t.Fatalf("render layout: %v", err)
+	}
+
+	rendered := output.String()
+	if !strings.Contains(rendered, `&lt;em&gt;Art&lt;/em&gt;`) {
+		t.Fatal("ordinary title expression must remain HTML-escaped")
+	}
+	if strings.Contains(rendered, `<em>Art</em>`) {
+		t.Fatal("ordinary title expression must not be rendered raw")
+	}
+	if !strings.Contains(rendered, `<script src="/assets/js/trusted.js"></script>`) {
+		t.Fatal("trusted markup must still render raw alongside escaped expressions")
+	}
+}
+
 func configureLayoutSentry(t *testing.T, serverDSN string, browserDSN string) {
 	t.Helper()
 	values := map[string]string{
