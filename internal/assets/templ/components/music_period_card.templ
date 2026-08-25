@@ -1,0 +1,36 @@
+package components
+
+// MusicPeriodCard is the validated player-route card projection shared by the
+// artist, Dual, and recipient postcard surfaces. PlayerURL must be a
+// same-origin /player?song=<id> URL supplied by the owning workflow.
+type MusicPeriodCard struct {
+	SongID    string
+	Piece     string
+	PlayerURL string
+}
+
+// MusicPeriodPlayerCard is the future record-card integration contract for the
+// capability-owned player route. PlayerURL must be a validated same-origin
+// /player URL supplied by the owning workflow.
+templ MusicPeriodPlayerCard(songID string, piece string, playerURL string) {
+	<div class="mt-7 border-y border-base-content/15 py-3.5" data-wga-music-card>
+		<div class="flex items-center gap-3">
+			<a
+				href={ templ.SafeURL(playerURL) }
+				target="wga-period-music"
+				data-wga-music={ songID }
+				data-wga-music-state="idle"
+				aria-label={ "Open " + piece + " in the period music player" }
+				class="flex h-9 w-9 shrink-0 items-center justify-center border border-base-content/30"
+			><span aria-hidden="true" data-wga-music-control>▶</span></a>
+			<div class="min-w-0">
+				<p class="font-mono text-(length:--t-10) tracking-[1px] text-muted">PERIOD MUSIC</p>
+				<p class="text-sm leading-relaxed" data-wga-music-label>{ piece }</p>
+			</div>
+		</div>
+		<div class="mt-3 border border-warning/50 bg-warning/10 p-3 text-sm" role="status" data-wga-music-blocked hidden>
+			<p>The period-music player could not be opened. Allow pop-ups for this site, then try again.</p>
+			<button type="button" class="mt-2 font-mono text-(length:--t-10) tracking-[1px] underline" data-wga-music-dismiss>DISMISS</button>
+		</div>
+	</div>
+}

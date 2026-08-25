@@ -1,34 +1,40 @@
 package jsonld
 
 import (
-	"fmt"
+	"strconv"
 
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/blackfyre/wga/internal/utils/url"
 	"github.com/pocketbase/pocketbase/core"
 )
 
-// ArtistJsonLd generates a JSON-LD representation of an artist.
-// It takes an instance of wgaModels.Artist and an echo.Context as input.
-// It returns a Person struct representing the artist in JSON-LD format.
+// ArtistJsonLd generates a JSON-LD representation of an artist. Missing values
+// are omitted rather than invented, and the portrait image resolves against the
+// artist-record delivery profile so it matches the portrait rendered on the
+// record page.
 func ArtistJsonLd(r *core.Record) Person {
 	person := Person{
-		Name:      r.GetString("name"),
-		Url:       utils.AssetUrl("/artists/" + r.GetString("slug") + "-" + r.GetString("id")),
-		BirthDate: fmt.Sprint(r.GetString("year_of_birth")),
-		DeathDate: fmt.Sprint(r.GetString("year_of_death")),
-		PlaceOfBirth: newPlace(Place{
-			Name: r.GetString("place_of_birth"),
-		}),
-		PlaceOfDeath: newPlace(Place{
-			Name: r.GetString("place_of_death"),
-		}),
-		HasOccupation: newOccupation(Occupation{
-			Name: r.GetString("profession"),
-		}),
+		Name:        r.GetString("name"),
+		Url:         utils.AssetUrl("/artists/" + r.GetString("slug") + "-" + r.GetString("id")),
 		Description: utils.StrippedHTML(r.GetString("bio")),
 	}
-	if portraitURL := url.GenerateArtistPortraitURL(r); portraitURL != "" {
+
+	if year := r.GetInt("year_of_birth"); year > 0 {
+		person.BirthDate = strconv.Itoa(year)
+	}
+	if year := r.GetInt("year_of_death"); year > 0 {
+		person.DeathDate = strconv.Itoa(year)
+	}
+	if place := r.GetString("place_of_birth"); place != "" {
+		person.PlaceOfBirth = newPlace(Place{Name: place})
+	}
+	if place := r.GetString("place_of_death"); place != "" {
+		person.PlaceOfDeath = newPlace(Place{Name: place})
+	}
+	if occupation := r.GetString("profession"); occupation != "" {
+		person.HasOccupation = newOccupation(Occupation{Name: occupation})
+	}
+	if portraitURL := url.GenerateArtistPortraitImageURL(r, url.DeliveryProfilePortraitRecordAndWorkFallback, ""); portraitURL != "" {
 		person.Image = utils.AssetUrl(portraitURL)
 	}
 

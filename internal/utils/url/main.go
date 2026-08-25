@@ -12,17 +12,23 @@ import (
 )
 
 const (
-	ThumbnailArtworkTray      = "120x0"
-	ThumbnailArtworkRow       = "200x0"
-	ThumbnailArtworkCardSmall = "400x0"
-	ThumbnailArtworkCard      = "500x0"
-	ThumbnailArtworkPostcard  = "700x0"
-	ThumbnailArtworkFeature   = "900x0"
-	ThumbnailArtworkPlate     = "1400x0"
-	ThumbnailArtworkZoom      = "2000x0"
-	ThumbnailPortraitCard     = "500x0"
-	ThumbnailPortraitRecord   = "600x0"
+	DeliveryProfileItineraryTray                 DeliveryProfile = "120x0"
+	DeliveryProfileSearchRow                     DeliveryProfile = "200x0"
+	DeliveryProfileRelatedTimelineCard           DeliveryProfile = "400x0"
+	DeliveryProfileCardAndArtistIndex            DeliveryProfile = "500x0"
+	DeliveryProfilePortraitRecordAndWorkFallback DeliveryProfile = "600x0"
+	DeliveryProfilePostcardSmallDualPlate        DeliveryProfile = "700x0"
+	DeliveryProfileGuidedTourCard                DeliveryProfile = "800x0"
+	DeliveryProfileFeature                       DeliveryProfile = "900x0"
+	DeliveryProfileTourTitlePlate                DeliveryProfile = "1000x0"
+	DeliveryProfileDualMediumPlate               DeliveryProfile = "1100x0"
+	DeliveryProfileArtworkRecordTourPage         DeliveryProfile = "1400x0"
+	DeliveryProfileDualLargePlate                DeliveryProfile = "1600x0"
+	DeliveryProfileViewer                        DeliveryProfile = "2000x0"
 )
+
+// DeliveryProfile is an approved source-eligible PocketBase thumbnail size.
+type DeliveryProfile string
 
 func GenerateFileUrl(collection string, collectionId string, fileName string, token string) string {
 
@@ -40,7 +46,7 @@ func GenerateFileUrl(collection string, collectionId string, fileName string, to
 	return url
 }
 
-func GenerateThumbUrl(collection string, collectionId string, fileName string, thumbSize string, token string) string {
+func generateThumbURL(collection string, collectionId string, fileName string, thumbSize string, token string) string {
 
 	url := fmt.Sprintf(
 		"/api/files/%s/%s/%s?thumb=%s",
@@ -55,6 +61,86 @@ func GenerateThumbUrl(collection string, collectionId string, fileName string, t
 	}
 
 	return url
+}
+
+// GenerateDeliveryURL returns the original file unless the source is wider than
+// the assigned profile. This prevents PocketBase from generating an upscale.
+func GenerateDeliveryURL(collection string, collectionID string, fileName string, sourceWidth int, profile DeliveryProfile, token string) string {
+	if fileName == "" {
+		return ""
+	}
+
+	targetWidth := profile.width()
+	if sourceWidth <= targetWidth || sourceWidth <= 0 || targetWidth <= 0 {
+		return GenerateFileUrl(collection, collectionID, fileName, token)
+	}
+
+	return generateThumbURL(collection, collectionID, fileName, string(profile), token)
+}
+
+func (p DeliveryProfile) width() int {
+	switch p {
+	case DeliveryProfileItineraryTray:
+		return 120
+	case DeliveryProfileSearchRow:
+		return 200
+	case DeliveryProfileRelatedTimelineCard:
+		return 400
+	case DeliveryProfileCardAndArtistIndex:
+		return 500
+	case DeliveryProfilePortraitRecordAndWorkFallback:
+		return 600
+	case DeliveryProfilePostcardSmallDualPlate:
+		return 700
+	case DeliveryProfileGuidedTourCard:
+		return 800
+	case DeliveryProfileFeature:
+		return 900
+	case DeliveryProfileTourTitlePlate:
+		return 1000
+	case DeliveryProfileDualMediumPlate:
+		return 1100
+	case DeliveryProfileArtworkRecordTourPage:
+		return 1400
+	case DeliveryProfileDualLargePlate:
+		return 1600
+	case DeliveryProfileViewer:
+		return 2000
+	default:
+		return 0
+	}
+}
+
+func GenerateArtworkImageURL(r *core.Record, profile DeliveryProfile, token string) string {
+	if r == nil {
+		return ""
+	}
+
+	return GenerateDeliveryURL(
+		constants.CollectionArtworks,
+		r.Id,
+		r.GetString("image"),
+		r.GetInt("image_width"),
+		profile,
+		token,
+	)
+}
+
+// GenerateArtworkSourceURL returns the original artwork file URL with no
+// thumbnail query. It is used only for the deliberate source-file download, so
+// a record's original filename always resolves to the source itself rather than
+// to a source-eligible rendition.
+func GenerateArtworkSourceURL(r *core.Record) string {
+	if r == nil {
+		return ""
+	}
+
+	filename := r.GetString("image")
+	if filename == "" {
+		return ""
+	}
+
+	return GenerateFileUrl(constants.CollectionArtworks, r.Id, filename, "")
 }
 
 type ArtworkUrlDTO struct {
@@ -88,13 +174,19 @@ func GenerateArtistPortraitURL(r *core.Record) string {
 	return GenerateFileUrl(constants.CollectionArtists, r.Id, portrait, "")
 }
 
-func GenerateArtistPortraitThumbnailURL(r *core.Record, thumbSize string) string {
-	portrait := r.GetString("portrait")
-	if portrait == "" {
+func GenerateArtistPortraitImageURL(r *core.Record, profile DeliveryProfile, token string) string {
+	if r == nil {
 		return ""
 	}
 
-	return GenerateThumbUrl(constants.CollectionArtists, r.Id, portrait, thumbSize, "")
+	return GenerateDeliveryURL(
+		constants.CollectionArtists,
+		r.Id,
+		r.GetString("portrait"),
+		r.GetInt("biography_image_width"),
+		profile,
+		token,
+	)
 }
 
 type ArtistUrlDTO struct {

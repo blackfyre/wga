@@ -1,1 +1,37 @@
 schema: spec-driven
+context: |-
+  This project uses OpenCode with a mission-command multi-agent workflow.
+  Project-wide behaviour and authority rules are defined in AGENTS.md.
+  Active OpenSpec artifacts are the durable source of intent, requirements,
+  technical decisions, task decomposition, and progress for substantive changes.
+  Use British English.
+  Keep process language functional; do not add military role-play prose.
+  Prefer the smallest force and least command depth that can complete the work safely.
+  Never allow delegated work to silently expand scope.
+rules:
+  proposal:
+  - State the problem, purpose, desired end state, in-scope work, and explicit non-goals.
+  - Identify material unknowns, assumptions, risks, and user decisions still required.
+  - Keep implementation detail out unless it is itself a strategic constraint.
+  - Do not broaden the user's request in order to make the proposal more comprehensive.
+  specs:
+  - Define observable behaviour and acceptance conditions, not agent tasks.
+  - Include boundary, failure, authorisation, and data-integrity scenarios when relevant.
+  - Use SHALL for normative requirements.
+  - Do not weaken a requirement to match an implementation limitation; escalate the conflict.
+  design:
+  - Include an Operational Decomposition section for non-trivial changes.
+  - Identify independent workstreams, their Areas of Operations, ownership boundaries, and coordination points.
+  - Identify shared files or contracts that require a single owner.
+  - State which work may execute in parallel and which must be serialised.
+  - Record architecture, dependency, schema, security, and migration decisions that require escalation.
+  - 'Define objective verification: tests, static analysis, runtime checks, or other observable evidence.'
+  - Prefer existing project patterns and the smallest viable design.
+  tasks:
+  - Group tasks by independently executable workstream when useful.
+  - Make dependencies and ordering explicit.
+  - Give each implementation task a concrete verification criterion.
+  - Avoid assigning overlapping write ownership to parallel tasks.
+  - Include integration and independent verification work where risk justifies it.
+  - 'Use standard Markdown task checkboxes: [ ] pending and [x] complete.'
+  - Do not add speculative cleanup, refactoring, or future-proofing tasks.

@@ -3,74 +3,62 @@ package postcards
 import (
 	"bytes"
 	"cmp"
-	"context"
 	"net/http"
 
-	"github.com/blackfyre/wga/internal/assets/templ/components"
+	"github.com/blackfyre/wga/internal/assets/templ/pages"
+	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
 	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/logging"
 	"github.com/blackfyre/wga/internal/utils"
-	"github.com/blackfyre/wga/internal/utils/url"
+	asseturl "github.com/blackfyre/wga/internal/utils/url"
 	"github.com/pocketbase/pocketbase/core"
 )
 
 func sendPostcard(app core.App, c *core.RequestEvent, captcha config.Captcha) error {
-	artworkId := cmp.Or(c.Request.URL.Query().Get("awid"), "")
-
-	if artworkId == "" {
-		logging.RequestLogger(app, c).Warn("Postcard form request rejected",
-			"event", "postcard.form.rejected",
-			"outcome", "missing_artwork_id",
-		)
+	artworkID := cmp.Or(c.Request.URL.Query().Get("awid"), "")
+	if artworkID == "" {
+		logging.RequestLogger(app, c).Warn("Postcard form request rejected", "event", "postcard.form.rejected", "outcome", "missing_artwork_id")
 		return utils.BadRequestError(c)
 	}
-
-	return renderForm(artworkId, app, c, captcha)
+	return renderForm(artworkID, pages.PostcardComposeView{}, "", http.StatusOK, app, c, captcha)
 }
 
-func renderForm(artworkId string, app core.App, c *core.RequestEvent, captcha config.Captcha) error {
-	ctx := context.Background()
+func renderForm(artworkID string, values pages.PostcardComposeView, formError string, status int, app core.App, c *core.RequestEvent, captcha config.Captcha) error {
 	logger := logging.RequestLogger(app, c)
-
-	r, err := app.FindRecordById(constants.CollectionArtworks, artworkId)
-
+	record, err := app.FindFirstRecordByFilter(constants.CollectionArtworks, "id = {:id} && published = true", map[string]any{"id": artworkID})
 	if err != nil {
-		logger.Error("Postcard form artwork lookup failed",
-			"event", "postcard.form.failed",
-			"outcome", "artwork_not_found",
-			"error_type", logging.ErrorType(err),
-			"error", logging.Redact(err),
-		)
+		logger.Warn("Postcard form artwork unavailable", "event", "postcard.form.rejected", "outcome", "artwork_unavailable")
 		return utils.NotFoundError(c)
 	}
-
-	var buf bytes.Buffer
-	var editor components.PostcardEditorDTO
-
-	editor.ImageId = artworkId
-	if r.GetString("image") == "" {
-		editor.Image = utils.AssetUrl("/assets/images/no-image.png")
-	} else {
-		editor.Image = url.GenerateThumbUrl(constants.CollectionArtworks, artworkId, r.GetString("image"), url.ThumbnailArtworkPostcard, "")
-	}
-	editor.Title = r.GetString("title")
-	editor.Comment = r.GetString("comment")
-	editor.Technique = r.GetString("technique")
-	editor.SiteKey = captcha.SiteKey()
-
-	err = components.PostcardEditor(editor).Render(ctx, &buf)
-
-	if err != nil {
-		logger.Error("Postcard form rendering failed",
-			"event", "postcard.form.failed",
-			"artwork_id", r.Id,
-			"outcome", "render_error",
-			"error_type", logging.ErrorType(err),
-			"error", logging.Redact(err),
-		)
+	if errs := app.ExpandRecord(record, []string{"author"}, nil); len(errs) > 0 {
+		logger.Error("Postcard form artwork expansion failed", "event", "postcard.form.failed", "outcome", "expansion_error", "error", logging.Redact(errs))
 		return utils.ServerFaultError(c)
 	}
+	values.ImageID = artworkID
+	values.Title = record.GetString("title")
+	values.Technique = record.GetString("technique")
+	values.SiteKey = captcha.SiteKey()
+	values.Error = formError
+	if author := record.ExpandedOne("author"); author != nil {
+		values.Author = author.GetString("name")
+	}
+	if image := record.GetString("image"); image != "" {
+		values.Image = asseturl.GenerateArtworkImageURL(record, asseturl.DeliveryProfilePostcardSmallDualPlate, "")
+	} else {
+		values.Image = utils.AssetUrl("/assets/images/no-image.png")
+	}
 
-	return c.HTML(http.StatusOK, buf.String())
+	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, "Send a postcard")
+	var buf bytes.Buffer
+	if c.Request.Header.Get("HX-Request") == "true" {
+		err = pages.PostcardComposeDialog(values).Render(ctx, &buf)
+	} else {
+		err = pages.PostcardComposePage(values).Render(ctx, &buf)
+	}
+	if err != nil {
+		logger.Error("Postcard form rendering failed", "event", "postcard.form.failed", "outcome", "render_error", "error_type", logging.ErrorType(err), "error", logging.Redact(err))
+		return utils.ServerFaultError(c)
+	}
+	return c.HTML(status, buf.String())
 }

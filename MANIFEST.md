@@ -1,0 +1,24 @@
+# File Manifest
+
+- `.opencode/agents/advisor-architecture.md`
+- `.opencode/agents/field-commander.md`
+- `.opencode/agents/op-backend.md`
+- `.opencode/agents/op-database.md`
+- `.opencode/agents/op-debug.md`
+- `.opencode/agents/op-docs.md`
+- `.opencode/agents/op-frontend.md`
+- `.opencode/agents/op-generalist.md`
+- `.opencode/agents/op-infrastructure.md`
+- `.opencode/agents/op-mechanical.md`
+- `.opencode/agents/op-recon.md`
+- `.opencode/agents/op-research.md`
+- `.opencode/agents/op-review.md`
+- `.opencode/agents/op-security.md`
+- `.opencode/agents/op-test.md`
+- `.opencode/agents/op-verify.md`
+- `.opencode/agents/squad-lead.md`
+- `AGENTS.md`
+- `AGENTS.patch`
+- `README.md`
+- `opencode.json`
+- `openspec/config.yaml`

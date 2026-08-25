@@ -17,7 +17,7 @@ templ CitationBlock(c Citation) {
 			<h2 id={ "cite-" + c.Key } class="font-mono text-[11px] tracking-[1.5px]">CITE THIS RECORD — BIBTEX</h2>
 			<button type="button" data-copy-bibtex data-copy-target={ "#bibtex-" + c.Key } class="font-mono text-[11px] tracking-[1px] text-primary hover:opacity-70">COPY BIBTEX</button>
 		</div>
-		<pre id={ "bibtex-" + c.Key } class="mt-4 overflow-x-auto border border-base-content/15 bg-base-300 p-4 font-mono text-xs leading-relaxed"><code>{ bibTeX(c) }</code></pre>
+		<pre id={ "bibtex-" + c.Key } class="mt-4 border border-base-content/15 bg-base-300 p-4 font-mono text-xs leading-relaxed" style="display:block; width:100%; max-width:100%; box-sizing:border-box; overflow-x:auto; min-width:0"><code style="display:block; max-width:100%">{ bibTeX(c) }</code></pre>
 		<p class="mt-3 font-mono text-[10px] leading-relaxed text-base-content/50">ACCESSED { citationDate() }. REPLACE THE AUTHOR FIELD WITH THE COMMENTARY AUTHOR WHERE ONE IS NAMED.</p>
 	</section>
 }

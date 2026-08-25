@@ -103,7 +103,7 @@ templ StatisticsBlock(c StatisticsPageDTO) {
 templ artFormSummary(rows []StatisticsArtFormRow) {
 	<div id="art-form-summary" class="overflow-x-auto">
 		<table class="w-full text-sm">
-			<caption class="sr-only">Art form distribution data</caption>
+			<caption class="caption-top pb-3 text-left font-mono text-[10px] tracking-[1px] text-base-content/60">Art form distribution data</caption>
 			<thead class="border-y border-base-content/15 font-mono text-[10px] tracking-[1px] text-base-content/60">
 				<tr>
 					<th scope="col" class="py-3 text-left font-normal">ART FORM</th>
@@ -111,15 +111,35 @@ templ artFormSummary(rows []StatisticsArtFormRow) {
 				</tr>
 			</thead>
 			<tbody>
-				for _, row := range rows {
+				for i, row := range rows {
 					<tr class="border-b border-base-content/15">
-						<th scope="row" class="art-form-label py-3 text-left font-normal">{ row.Name }</th>
+						<th scope="row" class="art-form-label py-3 text-left font-normal">
+							<span class="flex items-center gap-2.5">
+								<span class="h-2.5 w-2.5 shrink-0 border border-base-content/15" style={ "background:" + formTone(i) }></span>
+								<span>{ row.Name }</span>
+							</span>
+						</th>
 						<td class="py-3 text-right font-mono text-[11px]">{ row.Count }</td>
 					</tr>
 				}
 			</tbody>
 		</table>
 	</div>
+}
+
+// formTone returns the Rams series token for an art-form index so each swatch
+// matches the corresponding donut-chart segment colour.
+func formTone(index int) string {
+	tones := []string{
+		"var(--wga-series-0)",
+		"var(--wga-series-1)",
+		"var(--wga-series-2)",
+		"var(--wga-series-3)",
+		"var(--wga-series-4)",
+		"var(--wga-series-5)",
+		"var(--wga-series-6)",
+	}
+	return tones[index%len(tones)]
 }
 
 templ schoolPeriodSummary(id string, caption string, rows []StatisticsSchoolPeriodSummaryRow) {
@@ -129,14 +149,14 @@ templ schoolPeriodSummary(id string, caption string, rows []StatisticsSchoolPeri
 			<thead class="border-y border-base-content/15 font-mono text-[10px] tracking-[1px] text-base-content/60">
 				<tr>
 					<th scope="col" class="py-3 text-left font-normal">BIRTH PERIOD</th>
-					<th scope="col" class="py-3 text-right font-normal">IT</th>
-					<th scope="col" class="py-3 text-right font-normal">FR</th>
-					<th scope="col" class="py-3 text-right font-normal">NL</th>
-					<th scope="col" class="py-3 text-right font-normal">FL</th>
-					<th scope="col" class="py-3 text-right font-normal">DE</th>
-					<th scope="col" class="py-3 text-right font-normal">EN</th>
-					<th scope="col" class="py-3 text-right font-normal">ES</th>
-					<th scope="col" class="py-3 text-right font-normal">OTH</th>
+					<th scope="col" class="py-3 text-right font-normal" title="Italian">IT</th>
+					<th scope="col" class="py-3 text-right font-normal" title="French">FR</th>
+					<th scope="col" class="py-3 text-right font-normal" title="Dutch">NL</th>
+					<th scope="col" class="py-3 text-right font-normal" title="Flemish">FL</th>
+					<th scope="col" class="py-3 text-right font-normal" title="German">DE</th>
+					<th scope="col" class="py-3 text-right font-normal" title="English">EN</th>
+					<th scope="col" class="py-3 text-right font-normal" title="Spanish">ES</th>
+					<th scope="col" class="py-3 text-right font-normal" title="Other">OTH</th>
 					<th scope="col" class="py-3 text-right font-normal">TOTAL</th>
 				</tr>
 			</thead>

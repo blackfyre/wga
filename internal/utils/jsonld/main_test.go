@@ -16,10 +16,52 @@ func TestArtistJsonLdIncludesPortrait(t *testing.T) {
 	}
 }
 
+func TestArtistJsonLdResolvesRecordProfilePortrait(t *testing.T) {
+	artist := testArtistRecord("portrait.jpg")
+	artist.Set("biography_image_width", 601)
+	if got, want := ArtistJsonLd(artist).Image, utils.AssetUrl(urlutils.GenerateDeliveryURL(constants.CollectionArtists, artist.Id, "portrait.jpg", 601, urlutils.DeliveryProfilePortraitRecordAndWorkFallback, "")); got != want {
+		t.Fatalf("JSON-LD image = %q, want %q", got, want)
+	}
+}
+
 func TestArtistJsonLdOmitsMissingPortrait(t *testing.T) {
 	artist := testArtistRecord("")
 	if got := ArtistJsonLd(artist).Image; got != "" {
 		t.Fatalf("JSON-LD image = %q, want empty", got)
+	}
+}
+
+func TestArtistJsonLdOmitsUnknownDatesAndEmptyFields(t *testing.T) {
+	artist := testArtistRecord("")
+	artist.Set("year_of_birth", 0)
+	artist.Set("year_of_death", 0)
+
+	person := ArtistJsonLd(artist)
+	if person.BirthDate != "" {
+		t.Errorf("BirthDate = %q, want empty for unknown birth year", person.BirthDate)
+	}
+	if person.DeathDate != "" {
+		t.Errorf("DeathDate = %q, want empty for unknown death year", person.DeathDate)
+	}
+	if person.PlaceOfBirth.Name != "" {
+		t.Errorf("PlaceOfBirth = %q, want empty", person.PlaceOfBirth.Name)
+	}
+	if person.HasOccupation.Name != "" {
+		t.Errorf("HasOccupation = %q, want empty", person.HasOccupation.Name)
+	}
+}
+
+func TestArtistJsonLdKeepsTruthfulDates(t *testing.T) {
+	artist := testArtistRecord("")
+	artist.Set("year_of_birth", 1606)
+	artist.Set("year_of_death", 1669)
+
+	person := ArtistJsonLd(artist)
+	if person.BirthDate != "1606" {
+		t.Errorf("BirthDate = %q, want 1606", person.BirthDate)
+	}
+	if person.DeathDate != "1669" {
+		t.Errorf("DeathDate = %q, want 1669", person.DeathDate)
 	}
 }
 
@@ -30,6 +72,11 @@ func testArtistRecord(portrait string) *core.Record {
 		&core.TextField{Name: "name"},
 		&core.TextField{Name: "slug"},
 		&core.TextField{Name: "portrait"},
+		&core.NumberField{Name: "year_of_birth"},
+		&core.NumberField{Name: "year_of_death"},
+		&core.TextField{Name: "place_of_birth"},
+		&core.TextField{Name: "place_of_death"},
+		&core.TextField{Name: "profession"},
 	)
 
 	artist := core.NewRecord(artists)

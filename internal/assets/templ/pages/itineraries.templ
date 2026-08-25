@@ -1,0 +1,93 @@
+package pages
+
+import (
+	"fmt"
+	"strconv"
+
+	"github.com/blackfyre/wga/internal/assets/templ/components"
+	"github.com/blackfyre/wga/internal/assets/templ/dto"
+	"github.com/blackfyre/wga/internal/assets/templ/layouts"
+)
+
+// Visitor-made itineraries, deliberately named apart from the editorial
+// "Guided Tours" at /tours: at most fifteen works, narrated by whoever
+// assembled them, deleted one year after publication. The rules block below is
+// the counterpart of the tours facts block — read the two side by side.
+
+templ ItinerariesPage(v dto.ItineraryIndexView) {
+	@layouts.LayoutMain() {
+		<section id="itineraries" class="container mx-auto px-4 pb-20 md:px-0 wga-enter">
+			<p class="mb-3 font-mono text-[11px] tracking-[2px] text-base-content/60">16 — VISITOR ITINERARIES</p>
+
+			<div class="mb-10 flex flex-col justify-between gap-6 md:flex-row md:items-end md:gap-12">
+				<div class="min-w-0 flex-1">
+					<h1 class="text-[32px] font-semibold leading-tight tracking-[-0.5px] md:text-[44px]">Itineraries</h1>
+					<p class="mt-3.5 max-w-[560px] text-base leading-relaxed text-base-content/70">
+						Sequences of up to fifteen works, chosen and annotated by visitors. Separate from the
+						<a href="/tours" hx-get="/tours" class="text-primary">Guided Tours</a>, which are written by
+						the editors, run to dozens of pages, and are kept in revision indefinitely.
+					</p>
+				</div>
+				<a href="/itineraries/new" class="shrink-0 bg-primary px-4 py-3 font-mono text-[11px] tracking-[1.5px] text-primary-content">
+					BUILD AN ITINERARY →
+				</a>
+			</div>
+
+			<dl class="mb-12 grid grid-cols-2 gap-6 border-y border-base-content/15 py-6 md:grid-cols-4 md:gap-8">
+				@itineraryRule("LENGTH", "Fifteen works at most, in any order you choose.")
+				@itineraryRule("NARRATION", "Up to 600 characters of your own text per work.")
+				@itineraryRule("ACCOUNT", "None needed. Publishing is final — there is no edit link.")
+				@itineraryRule("KEPT FOR", "One year from the day it is published, then deleted.")
+			</dl>
+
+			<div class="flex flex-wrap items-baseline justify-between gap-3 border-b border-base-content pb-3">
+				<p class="font-mono text-xs text-base-content/60">{ fmt.Sprintf("%d LISTED PUBLICLY", v.Total) }</p>
+				<p class="font-mono text-[10px] tracking-[1px] text-base-content/40">NEWEST FIRST</p>
+			</div>
+
+			if len(v.Itineraries) == 0 {
+				<div class="border-b border-base-content/15 py-14">
+					<p class="mb-2 text-lg font-semibold">No itineraries are listed yet.</p>
+					<p class="max-w-[380px] text-[15px] leading-relaxed text-base-content/70">
+						Unlisted ones may still exist — they are reachable only by their link.
+					</p>
+				</div>
+			} else {
+				<ul data-kbd-list data-kbd-cols="1">
+					for i, it := range v.Itineraries {
+						<li data-kbd-idx={ strconv.Itoa(i) } data-kbd-href={ it.URL }>
+							@components.KeyboardCaret()
+							<a href={ templ.SafeURL(it.URL) } class="grid grid-cols-1 items-baseline gap-2 border-b border-base-content/15 py-4 transition-colors hover:bg-primary/5 md:grid-cols-[2.4fr_1fr_0.7fr_0.6fr_0.8fr] md:gap-4">
+								<span class="min-w-0">
+									<span class="block text-[17px] font-semibold leading-tight">{ it.Title }</span>
+									if it.Note != "" {
+										<span class="mt-1 block text-sm leading-relaxed text-base-content/60">{ it.Note }</span>
+									}
+								</span>
+								<span class="font-mono text-[11px] text-base-content/70">{ it.Creator }</span>
+								<span class="font-mono text-[11px] text-base-content/70">{ fmt.Sprintf("%d WORKS", it.Count) }</span>
+								<span class="font-mono text-[11px] text-base-content/70">{ it.Duration }</span>
+								<span class="font-mono text-[11px] text-base-content/40">{ it.Published }</span>
+							</a>
+						</li>
+					}
+				</ul>
+			}
+
+			<div class="mt-14 max-w-[560px] border-t border-base-content/15 pt-5">
+				<p class="mb-2.5 font-mono text-[11px] tracking-[1.5px] text-base-content/60">UNLISTED ITINERARIES</p>
+				<p class="text-[15px] leading-relaxed">
+					Makers can keep an itinerary off this page. Unlisted ones stay reachable by their link
+					and are not counted above, but they are purged on the same schedule.
+				</p>
+			</div>
+		</section>
+	}
+}
+
+templ itineraryRule(label string, value string) {
+	<div>
+		<dt class="mb-1.5 font-mono text-[10px] tracking-[1.5px] text-base-content/60">{ label }</dt>
+		<dd class="text-sm leading-snug">{ value }</dd>
+	</div>
+}

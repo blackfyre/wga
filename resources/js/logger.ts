@@ -43,7 +43,12 @@ const createLogger = (() => {
 	const localStorageKey = "AppLoggerLevel";
 
 	// Initialize from localStorage if exists
-	const savedLevel = localStorage.getItem(localStorageKey);
+	let savedLevel: string | null = null;
+	try {
+		savedLevel = localStorage.getItem(localStorageKey);
+	} catch {
+		// Storage can be unavailable in private browsing modes.
+	}
 	if (savedLevel && levels.includes(savedLevel as LogLevel)) {
 		levelIndex = levels.indexOf(savedLevel as LogLevel);
 	}
@@ -52,7 +57,11 @@ const createLogger = (() => {
 		const index = levels.indexOf(newLevel);
 		if (index !== -1) {
 			levelIndex = index;
-			localStorage.setItem(localStorageKey, newLevel);
+			try {
+				localStorage.setItem(localStorageKey, newLevel);
+			} catch {
+				// Storage can be unavailable in private browsing modes.
+			}
 		} else {
 			console.warn(`[Logger] Invalid log level: ${newLevel}`);
 		}

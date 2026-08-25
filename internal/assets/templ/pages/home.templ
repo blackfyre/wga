@@ -40,61 +40,73 @@ templ HomePageContent(c HomePage) {
 		<title>{ utils.GetTitle(ctx) }</title>
 	</head>
 	<section class="home-page">
-		<section class="container mx-auto px-4 pb-20 pt-10 md:px-0">
+		<section class="container mx-auto px-4 pb-20 pt-10 md:px-0" aria-labelledby="home-title">
 			<div class="flex flex-col items-start gap-10 pb-4 md:flex-row md:gap-16">
 				<div class="flex-1">
 					<p class="mb-4 font-mono text-[11px] tracking-[2px] text-base-content/60">00 — PROVIDING EXPERIENCE SINCE 1992</p>
-					<h1 class="mb-5 text-[34px] font-semibold leading-[1.08] tracking-[-1px] md:text-[52px]">Explore artists and artworks<br class="hidden md:inline"/>without losing the thread.</h1>
+					<h1 id="home-title" class="mb-5 text-[34px] font-semibold leading-[1.08] tracking-[-1px] md:text-[52px]">Explore artists and artworks<br class="hidden md:inline"/>without losing the thread.</h1>
 					<p class="mb-8 max-w-[520px] text-[17px] leading-relaxed text-base-content/70">Paintings, sculpture and architecture from the 3rd century to the early 20th, with biographies, commentaries, side-by-side comparison and period music.</p>
-					<div class="flex flex-wrap gap-2.5">
-						<a href="/artists" hx-get="/artists" class="btn btn-primary h-[50px] px-6.5 font-mono text-xs tracking-[1.5px]">BROWSE ARTISTS →</a>
-						<a href="/dual-mode" hx-get="/dual-mode" class="btn btn-outline h-[50px] px-6.5 font-mono text-xs tracking-[1.5px]">COMPARE TWO WORKS →</a>
-					</div>
+					<nav class="flex flex-wrap gap-2.5" aria-label="Discover the collection">
+						<a href="/artists" class="btn btn-primary h-[50px] px-6.5 font-mono text-xs tracking-[1.5px]">BROWSE ARTISTS →</a>
+						<a href="/artworks" class="btn btn-outline h-[50px] px-6.5 font-mono text-xs tracking-[1.5px]">BROWSE ARTWORKS →</a>
+						<a href="/inspire" class="btn btn-outline h-[50px] px-6.5 font-mono text-xs tracking-[1.5px]">FIND INSPIRATION →</a>
+					</nav>
 				</div>
-				if c.FeaturedArtwork.URL != "" {
-					<div class="w-full shrink-0 md:w-[300px]">
-						<a href={ templ.URL(c.FeaturedArtwork.URL) } hx-get={ c.FeaturedArtwork.URL } class="block transition-opacity hover:opacity-70">
+				<aside class="w-full shrink-0 md:w-[300px]" aria-labelledby="work-of-the-day-title">
+					<h2 id="work-of-the-day-title" class="mb-3 font-mono text-[11px] tracking-[1.5px] text-base-content/60">WORK OF THE DAY</h2>
+					if c.FeaturedArtwork.URL != "" {
+						<a href={ templ.URL(c.FeaturedArtwork.URL) } class="block transition-opacity hover:opacity-70">
 							<figure class="flex aspect-[39/44.5] items-end border border-base-content/15 bg-base-300 p-3">
 								if c.FeaturedArtwork.Image != "" {
 									<img src={ c.FeaturedArtwork.Image } alt={ c.FeaturedArtwork.Title } class="h-full w-full object-cover"/>
 								} else {
-									<figcaption class="font-mono text-[9px] tracking-[1px] text-base-content/40">IMAGE — WORK OF THE DAY</figcaption>
+									<figcaption class="font-mono text-[9px] tracking-[1px] text-base-content/40">REPRODUCTION UNAVAILABLE</figcaption>
 								}
 							</figure>
-							<div class="mt-3"><span class="block text-[15px] font-semibold">{ c.FeaturedArtwork.Title }</span><span class="mt-[3px] block font-mono text-[11px] text-base-content/60">{ c.FeaturedArtwork.Artist }{ homeFeaturedArtworkYear(c.FeaturedArtwork.Year) } →</span></div>
+							<div class="mt-3"><span class="block text-[15px] font-semibold">{ c.FeaturedArtwork.Title }</span><span class="mt-[3px] block font-mono text-[11px] text-base-content/60">{ c.FeaturedArtwork.Artist }{ homeArtworkYear(c.FeaturedArtwork.Year) }</span></div>
 						</a>
-					</div>
-				}
+					} else {
+						<p class="border border-base-content/15 p-3 text-[15px] leading-relaxed text-base-content/70">Today’s featured work is not available. Browse the collection to find an artwork.</p>
+					}
+				</aside>
 			</div>
 		</section>
-		<section class="container mx-auto grid grid-cols-2 gap-6 border-y border-base-content/15 px-4 py-7 md:grid-cols-4 md:gap-8 md:px-0">
-			<div><p class="text-[26px] font-semibold tracking-[-0.5px] md:text-[30px]">{ c.ArtworkCount }</p><p class="mt-1.5 font-mono text-[10px] tracking-[1.5px] text-base-content/60">REPRODUCTIONS</p></div>
-			<div><p class="text-[26px] font-semibold tracking-[-0.5px] md:text-[30px]">{ c.ArtistCount }</p><p class="mt-1.5 font-mono text-[10px] tracking-[1.5px] text-base-content/60">ARTISTS</p></div>
-			<div><p class="text-[26px] font-semibold tracking-[-0.5px] md:text-[30px]">{ c.SchoolCount }</p><p class="mt-1.5 font-mono text-[10px] tracking-[1.5px] text-base-content/60">SCHOOLS</p></div>
-			<div><p class="text-[26px] font-semibold tracking-[-0.5px] md:text-[30px]">3rd–19th</p><p class="mt-1.5 font-mono text-[10px] tracking-[1.5px] text-base-content/60">CENTURY</p></div>
+		<section class="border-y border-base-content/15" aria-label="Collection counts">
+			<dl class="container mx-auto grid grid-cols-2 gap-6 px-4 py-7 md:grid-cols-4 md:gap-8 md:px-0">
+				<div class="flex flex-col"><dt class="order-2 mt-1.5 font-mono text-[10px] tracking-[1.5px] text-base-content/60">ARTWORKS</dt><dd class="order-1 text-[26px] font-semibold tracking-[-0.5px] md:text-[30px]">{ c.ArtworkCount }</dd></div>
+				<div class="flex flex-col"><dt class="order-2 mt-1.5 font-mono text-[10px] tracking-[1.5px] text-base-content/60">ARTISTS</dt><dd class="order-1 text-[26px] font-semibold tracking-[-0.5px] md:text-[30px]">{ c.ArtistCount }</dd></div>
+				<div class="flex flex-col"><dt class="order-2 mt-1.5 font-mono text-[10px] tracking-[1.5px] text-base-content/60">SCHOOLS</dt><dd class="order-1 text-[26px] font-semibold tracking-[-0.5px] md:text-[30px]">{ c.SchoolCount }</dd></div>
+				<div class="flex flex-col"><dt class="order-2 mt-1.5 font-mono text-[10px] tracking-[1.5px] text-base-content/60">PERIOD</dt><dd class="order-1 text-[26px] font-semibold tracking-[-0.5px] md:text-[30px]">3RD–19TH</dd></div>
+			</dl>
 		</section>
-		<section class="container mx-auto px-4 pt-12 md:px-0">
-			<div class="flex items-baseline justify-between border-b border-base-content pb-3"><h2 class="font-mono text-[11px] tracking-[1.5px]">RECENT ADDITIONS</h2><a href="/artworks" hx-get="/artworks" class="font-mono text-[11px] tracking-[1px] text-primary">ALL WORKS →</a></div>
-			<ul id="recent-additions" class="grid grid-cols-2 gap-x-4 gap-y-9 pt-7 md:grid-cols-4 md:gap-x-7">
-				for _, artwork := range c.RecentArtworks {
-					<li>
-						<a href={ templ.URL(artwork.URL) } hx-get={ artwork.URL } class="block transition-opacity hover:opacity-70">
-							<figure class="mb-2.5 aspect-[4/5] overflow-hidden bg-base-300">
-								if artwork.Image != "" {
-									<img src={ artwork.Image } alt={ artwork.Title } loading="lazy" class="h-full w-full object-cover"/>
-								}
-							</figure>
-							<span class="block text-sm font-semibold leading-tight">{ artwork.Title }</span>
-							<span class="mt-[3px] block font-mono text-[11px] leading-relaxed text-base-content/60">{ artwork.Artist }{ homeArtworkYear(artwork.Year) }</span>
-						</a>
-					</li>
-				}
-			</ul>
+		<section class="container mx-auto px-4 pt-12 md:px-0" aria-labelledby="recent-additions-title">
+			<div class="flex items-baseline justify-between border-b border-base-content pb-3"><h2 id="recent-additions-title" class="font-mono text-[11px] tracking-[1.5px]">RECENT ADDITIONS</h2><a href="/artworks" class="font-mono text-[11px] tracking-[1px] text-primary">ALL WORKS →</a></div>
+			if len(c.RecentArtworks) > 0 {
+				<ul id="recent-additions" class="grid grid-cols-2 gap-x-4 gap-y-9 pt-7 md:grid-cols-4 md:gap-x-7">
+					for _, artwork := range c.RecentArtworks {
+						<li>
+							<a href={ templ.URL(artwork.URL) } class="block transition-opacity hover:opacity-70">
+								<figure class="mb-2.5 aspect-[4/5] overflow-hidden bg-base-300">
+									if artwork.Image != "" {
+										<img src={ artwork.Image } alt={ artwork.Title } loading="lazy" class="h-full w-full object-cover"/>
+									} else {
+										<figcaption class="p-3 font-mono text-[10px] tracking-[1px] text-base-content/60">REPRODUCTION UNAVAILABLE</figcaption>
+									}
+								</figure>
+								<span class="block text-sm font-semibold leading-tight">{ artwork.Title }</span>
+								<span class="mt-[3px] block font-mono text-[11px] leading-relaxed text-base-content/60">{ artwork.Artist }{ homeArtworkYear(artwork.Year) }</span>
+							</a>
+						</li>
+					}
+				</ul>
+			} else {
+				<p class="py-7 text-base-content/70">No recent additions are available yet.</p>
+			}
 		</section>
-		<section class="container mx-auto grid grid-cols-1 gap-8 px-4 pb-16 pt-16 md:grid-cols-3 md:gap-12 md:px-0">
-			<div class="border-t border-base-content/15 pt-6"><p class="mb-3 font-mono text-[11px] tracking-[1.5px] text-base-content/60">SIDE BY SIDE</p><h3 class="mb-2 text-[22px] font-semibold">Compare two works side by side</h3><p class="mb-3.5 text-[15px] leading-relaxed text-base-content/70">Dual Mode opens two records at once — the same painter across decades, or two treatments of one subject.</p><a href="/dual-mode" hx-get="/dual-mode" class="font-mono text-[11px] tracking-[1px] text-primary transition-opacity hover:opacity-60">OPEN DUAL MODE →</a></div>
-			<div class="border-t border-base-content/15 pt-6"><p class="mb-3 font-mono text-[11px] tracking-[1.5px] text-base-content/60">POSTCARD SERVICE</p><h3 class="mb-2 text-[22px] font-semibold">Send any work as a postcard</h3><p class="mb-3.5 text-[15px] leading-relaxed text-base-content/70">Free, no account, no address kept after delivery. Period music optional.</p><a href="/postcard" hx-get="/postcard" class="font-mono text-[11px] tracking-[1px] text-primary transition-opacity hover:opacity-60">SEND A POSTCARD →</a></div>
-			<div class="border-t border-base-content/15 pt-6"><p class="mb-3 font-mono text-[11px] tracking-[1.5px] text-base-content/60">COMMUNITY</p><h3 class="mb-2 text-[22px] font-semibold">Help sustain the archive</h3><p class="mb-3.5 text-[15px] leading-relaxed text-base-content/70">Contributions, corrections and comments help keep the collection useful.</p><a href="/contributors" hx-get="/contributors" class="font-mono text-[11px] tracking-[1px] text-primary transition-opacity hover:opacity-60">MEET CONTRIBUTORS →</a></div>
+		<section class="container mx-auto grid grid-cols-1 gap-8 px-4 pb-16 pt-16 md:grid-cols-3 md:gap-12 md:px-0" aria-label="More ways to explore">
+			<section class="border-t border-base-content/15 pt-6"><p class="mb-3 font-mono text-[11px] tracking-[1.5px] text-base-content/60">SIDE BY SIDE</p><h2 class="mb-2 text-[22px] font-semibold">Compare two works side by side</h2><p class="mb-3.5 text-[15px] leading-relaxed text-base-content/70">Dual Mode opens two records at once — the same painter across decades, or two treatments of one subject.</p><a href="/dual-mode" class="font-mono text-[11px] tracking-[1px] text-primary transition-opacity hover:opacity-60">OPEN DUAL MODE →</a></section>
+			<section class="border-t border-base-content/15 pt-6"><p class="mb-3 font-mono text-[11px] tracking-[1.5px] text-base-content/60">POSTCARD SERVICE</p><h2 class="mb-2 text-[22px] font-semibold">Send any work as a postcard</h2><p class="mb-3.5 text-[15px] leading-relaxed text-base-content/70">Send a work with a personal note. No account is needed and recipient addresses are not kept after delivery.</p><a href="/postcard" class="font-mono text-[11px] tracking-[1px] text-primary transition-opacity hover:opacity-60">SEND A POSTCARD →</a></section>
+			<section class="border-t border-base-content/15 pt-6"><p class="mb-3 font-mono text-[11px] tracking-[1.5px] text-base-content/60">COMMUNITY</p><h2 class="mb-2 text-[22px] font-semibold">Help sustain the archive</h2><p class="mb-3.5 text-[15px] leading-relaxed text-base-content/70">Contributions, corrections and comments help keep the collection useful.</p><a href="/contributors" class="font-mono text-[11px] tracking-[1px] text-primary transition-opacity hover:opacity-60">MEET CONTRIBUTORS →</a></section>
 		</section>
 	</section>
 }
@@ -105,12 +117,4 @@ func homeArtworkYear(year string) string {
 	}
 
 	return " · " + year
-}
-
-func homeFeaturedArtworkYear(year string) string {
-	if year == "" {
-		return ""
-	}
-
-	return ", " + year
 }

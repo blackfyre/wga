@@ -2,94 +2,135 @@ package postcards
 
 import (
 	"bytes"
-	"cmp"
 	"net/http"
+	"strings"
 
+	"github.com/blackfyre/wga/internal/assets/templ/components"
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
 	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/logging"
 	postcardworkflow "github.com/blackfyre/wga/internal/postcards"
+	"github.com/blackfyre/wga/internal/repositories"
 	"github.com/blackfyre/wga/internal/utils"
-	"github.com/blackfyre/wga/internal/utils/url"
+	asseturl "github.com/blackfyre/wga/internal/utils/url"
 	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/tools/types"
 )
 
 func viewPostcard(app core.App, c *core.RequestEvent) error {
-	postCardId := cmp.Or(c.Request.URL.Query().Get("p"), "nope")
 	logger := logging.RequestLogger(app, c)
-
-	if postCardId == "nope" {
-		logger.Warn("Postcard view rejected",
-			"event", "postcard.view.rejected",
-			"outcome", "missing_postcard_id",
-		)
-		return utils.NotFoundError(c)
+	query := c.Request.URL.Query()
+	if _, explicit := query["token"]; !explicit {
+		return viewPostcardLanding(c)
 	}
-
-	r, err := app.FindRecordById(constants.CollectionPostcards, postCardId)
-
+	// A present token means this is a recipient request regardless of whether the
+	// lookup later succeeds, so confidentiality headers must apply before any
+	// lookup to cover 404 outcomes too.
+	c.Response.Header().Set("Cache-Control", "no-store")
+	c.Response.Header().Set("Referrer-Policy", "no-referrer")
+	token := query.Get("token")
+	view, err := postcardworkflow.FindRecipientView(app, token, types.NowDateTime())
 	if err != nil {
-		logger.Error("Postcard view lookup failed",
-			"event", "postcard.view.failed",
-			"outcome", "postcard_not_found",
-			"error_type", logging.ErrorType(err),
-			"error", logging.Redact(err),
-		)
+		logger.Warn("Postcard view rejected", "event", "postcard.view.rejected", "outcome", "invalid_expired_or_unknown_token")
 		return utils.NotFoundError(c)
 	}
-
-	if errs := app.ExpandRecord(r, []string{"image_id"}, nil); len(errs) > 0 {
-		logger.Error("Postcard view expansion failed",
-			"event", "postcard.view.failed",
-			"outcome", "expansion_error",
-			"error", logging.Redact(errs),
-		)
+	postcard := view.Postcard
+	artwork, err := app.FindFirstRecordByFilter(
+		constants.CollectionArtworks,
+		"id = {:id} && published = true",
+		map[string]any{"id": postcard.GetString("image_id")},
+	)
+	if err != nil {
+		return utils.NotFoundError(c)
+	}
+	if errs := app.ExpandRecord(artwork, []string{"author"}, nil); len(errs) > 0 {
+		logger.Error("Postcard view expansion failed", "event", "postcard.view.failed", "outcome", "expansion_error", "error", logging.Redact(errs))
 		return utils.ServerFaultError(c)
 	}
-
-	aw := r.ExpandedOne("image_id")
-
 	image := utils.AssetUrl("/assets/images/no-image.png")
-	if imageName := aw.GetString("image"); imageName != "" {
-		image = url.GenerateThumbUrl(constants.CollectionArtworks, aw.GetString("id"), imageName, url.ThumbnailArtworkPostcard, "")
+	if imageName := artwork.GetString("image"); imageName != "" {
+		image = asseturl.GenerateArtworkImageURL(artwork, asseturl.DeliveryProfilePostcardSmallDualPlate, "")
 	}
-
+	author := ""
+	if record := artwork.ExpandedOne("author"); record != nil {
+		author = record.GetString("name")
+	}
+	music := resolveRecipientMusic(app, postcard.GetBool("include_music"), artwork)
 	content := pages.PostcardView{
-		SenderName: r.GetString("sender_name"),
-		Message:    r.GetString("message"),
-		Image:      image,
-		Title:      aw.GetString("title"),
-		Comment:    aw.GetString("comment"),
-		Technique:  aw.GetString("technique"),
+		SenderName: postcard.GetString("sender_name"), Message: postcard.GetString("message"), Image: image,
+		Title: artwork.GetString("title"), Comment: artwork.GetString("comment"), Technique: artwork.GetString("technique"), Author: author,
+		Music: music,
 	}
+	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, "Postcard")
+	var buf bytes.Buffer
+	if err := pages.PostcardPage(content).Render(ctx, &buf); err != nil {
+		return utils.ServerFaultError(c)
+	}
+	if err := postcardworkflow.MarkReceived(app, postcard.Id); err != nil {
+		logger.Error("Postcard receipt update failed", "event", "postcard.view.failed", "outcome", "receipt_update_error", "error_type", logging.ErrorType(err), "error", logging.Redact(err))
+	}
+	return c.HTML(http.StatusOK, buf.String())
+}
 
-	ctx := tmplUtils.DecorateContext(c.Request.Context(), tmplUtils.TitleKey, "Postcard")
-
-	// c.Response.Header().Set("HX-Push-Url", fullUrl)
+// viewPostcardLanding renders the tokenless public postcard landing. It does not
+// touch recipient state or bearer material, so it applies no no-store or
+// no-referrer headers.
+func viewPostcardLanding(c *core.RequestEvent) error {
+	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, "Postcards")
+	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "Postcards are composed from published artwork pages. Choose a work to send it as a private link.")
+	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, tmplUtils.AssetUrl("/postcard"))
+	c.Response.Header().Set("HX-Push-Url", "/postcard")
 
 	var buf bytes.Buffer
+	if utils.IsHtmxRequest(c) && !utils.RequestsMainContentArea(c) {
+		err := pages.PostcardLandingContent().Render(ctx, &buf)
+		if err != nil {
+			return utils.ServerFaultError(c)
+		}
+		return c.HTML(http.StatusOK, buf.String())
+	}
 
-	err = pages.PostcardPage(content).Render(ctx, &buf)
-
-	if err != nil {
-		logger.Error("Postcard view rendering failed",
-			"event", "postcard.view.failed",
-			"outcome", "render_error",
-			"error_type", logging.ErrorType(err),
-			"error", logging.Redact(err),
-		)
+	if err := pages.PostcardLandingPage().Render(ctx, &buf); err != nil {
 		return utils.ServerFaultError(c)
 	}
-	if err := postcardworkflow.MarkReceived(app, r.Id); err != nil {
-		logger.Error("Postcard receipt update failed",
-			"event", "postcard.view.failed",
-			"outcome", "receipt_update_error",
-			"error_type", logging.ErrorType(err),
-			"error", logging.Redact(err),
-		)
-		// Receipt tracking is best-effort; still serve the rendered page.
+	return c.HTML(http.StatusOK, buf.String())
+}
+
+// resolveRecipientMusic returns a player-route card only when the postcard
+// opted into music and the artwork's author carries a deterministic period-song
+// match whose song and composer are both published. It never exposes unmatched
+// or unpublished media.
+func resolveRecipientMusic(app core.App, includeMusic bool, artwork *core.Record) components.MusicPeriodCard {
+	if !includeMusic {
+		return components.MusicPeriodCard{}
+	}
+	author := artwork.ExpandedOne("author")
+	if author == nil {
+		return components.MusicPeriodCard{}
+	}
+	song, err := repositories.NewArtistRecordRepository(app).MatchPeriodSong(author.GetInt("year_of_birth"))
+	if err != nil || song == nil {
+		return components.MusicPeriodCard{}
+	}
+	return buildPostcardMusic(song)
+}
+
+// buildPostcardMusic maps a deterministic period-song match onto the validated
+// player-route card, or returns an empty card when no complete match exists.
+func buildPostcardMusic(song *repositories.PeriodSong) components.MusicPeriodCard {
+	if song == nil || song.Record == nil {
+		return components.MusicPeriodCard{}
 	}
 
-	return c.HTML(http.StatusOK, buf.String())
+	piece := strings.TrimSpace(song.Record.GetString("title"))
+	if piece == "" || song.Record.GetString("source") == "" {
+		return components.MusicPeriodCard{}
+	}
+
+	return components.MusicPeriodCard{
+		SongID:    song.Record.Id,
+		Piece:     piece,
+		PlayerURL: "/player?song=" + song.Record.Id,
+	}
 }

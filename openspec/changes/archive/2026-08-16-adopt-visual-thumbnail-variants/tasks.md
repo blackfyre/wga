@@ -15,4 +15,4 @@
 
 - [x] 3.1 Add or update focused URL, handler, migration, and template-facing tests for the authoritative surface mapping and ViewerJS boundary.
 - [x] 3.2 Run the focused Go tests for modified packages, then `go test ./...`; all tests pass.
-- [ ] 3.3 Manually verify against a freshly reset data directory that representative card, row, record, zoom, postcard, and portrait requests use their assigned `Wx0` URLs and no artwork grid opens ViewerJS.
+- [x] 3.3 Manually verify against a freshly reset data directory that representative card, row, record, zoom, postcard, and portrait requests use their assigned `Wx0` URLs and no artwork grid opens ViewerJS.

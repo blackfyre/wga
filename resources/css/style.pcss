@@ -15,6 +15,138 @@
 	height: 20px;
 }
 
+.wga-range {
+	-webkit-appearance: none;
+	appearance: none;
+	background: transparent;
+	pointer-events: none;
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 20px;
+	margin: 0;
+}
+
+.wga-range::-webkit-slider-runnable-track { background: transparent; border: none; height: 20px; }
+.wga-range::-moz-range-track { background: transparent; border: none; height: 20px; }
+.wga-range::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	pointer-events: auto;
+	width: 14px;
+	height: 20px;
+	border: 1px solid var(--color-base-content);
+	background: var(--color-base-100);
+	cursor: ew-resize;
+}
+.wga-range::-moz-range-thumb {
+	pointer-events: auto;
+	width: 14px;
+	height: 20px;
+	border-radius: 0;
+	border: 1px solid var(--color-base-content);
+	background: var(--color-base-100);
+	cursor: ew-resize;
+}
+.wga-range-brush { height: 44px; }
+.wga-range-brush::-webkit-slider-runnable-track { height: 44px; }
+.wga-range-brush::-moz-range-track { height: 44px; }
+.wga-range-brush::-webkit-slider-thumb {
+	width: 11px;
+	height: 44px;
+	border: none;
+	background: var(--color-primary);
+}
+.wga-range-brush::-moz-range-thumb {
+	width: 11px;
+	height: 44px;
+	border: none;
+	background: var(--color-primary);
+}
+
+/* Dual mode: two independent windows on a vertically divided screen. The mode
+   is full-viewport and desktop-only — below 1080px the notice replaces it,
+   which is a media query rather than a device test, so a narrow desktop window
+   gets the same honest answer as a tablet. */
+.wga-dual {
+	position: fixed;
+	inset: 0;
+	z-index: 60;
+	display: flex;
+	flex-direction: column;
+	background: var(--color-base-100);
+	overflow: hidden;
+}
+
+.wga-dual-bar {
+	display: none;
+	align-items: center;
+	justify-content: space-between;
+	gap: 24px;
+	flex-shrink: 0;
+	padding: 11px 22px;
+	border-bottom: 1px solid var(--color-base-content);
+}
+
+.wga-dual-split {
+	display: none;
+}
+
+.wga-dual-narrow {
+	display: flex;
+	flex: 1;
+	align-items: center;
+	justify-content: center;
+	padding: 40px;
+}
+
+/* A pane is half the window, so the window's media query is the wrong one to
+   lay it out with: at the 1080px gate each pane is ~540px — SM by the site's
+   own definition — and the override can open panes narrower still. The pane is
+   a container so its contents can ask about the pane instead. */
+.wga-dual-pane {
+	container-type: inline-size;
+	container-name: pane;
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+}
+
+.wga-dual-pane + .wga-dual-pane {
+	border-left: 1px solid var(--color-base-content);
+}
+
+/* Pane-tier layout. Mirrors the single-window SM rules, keyed on the pane. */
+@container pane (max-width: 719px) {
+	.wga-pane-split { flex-direction: column; gap: 30px; }
+	.wga-pane-aside { width: 100%; }
+	.wga-pane-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	.wga-pane-grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Each window scrolls on its own — that independence is the whole feature. */
+.wga-dual-body {
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
+	overflow-x: hidden;
+	padding: 22px 28px 60px;
+}
+
+@media (min-width: 1080px) {
+	.wga-dual-bar { display: flex; }
+	.wga-dual-split { display: flex; flex: 1; min-height: 0; }
+	.wga-dual-narrow { display: none; }
+}
+
+/* The query measures CSS pixels, so browser zoom reads as a small screen: a wide
+   display at 200% reports a tablet's width and the notice appears. `?wide=1` is
+   the visitor overruling a measurement that cannot tell large type from a small
+   display. */
+.wga-dual[data-wide] .wga-dual-bar { display: flex; }
+.wga-dual[data-wide] .wga-dual-split { display: flex; flex: 1; min-height: 0; }
+.wga-dual[data-wide] .wga-dual-narrow { display: none; }
+
 .wga-kbd-bar {
 	position: fixed;
 	right: 0;
@@ -186,7 +318,9 @@
 
 @theme {
 	--font-sans: "Noto Sans", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+	--font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+	--breakpoint-md: 45rem;
+	--breakpoint-lg: 67.5rem;
 }
 
 @plugin "daisyui/theme" {
@@ -259,17 +393,236 @@
   --noise: 0;
 }
 
-[data-theme="wga_dark"] .text-primary {
-  color: #8fb6de;
+[data-theme="wga-rams"] {
+	color-scheme: light;
 }
 
-[data-theme="wga_dark"] .border-primary {
-  border-color: #8fb6de;
+[data-theme="wga-rams-dark"] {
+	color-scheme: dark;
 }
 
-[data-theme="wga_dark"] :focus-visible {
-  outline-color: #8fb6de;
+@plugin "daisyui/theme" {
+	name: "wga-rams";
+	default: false;
+	prefersdark: false;
+	color-scheme: light;
+	--color-base-100: #f4f2ed;
+	--color-base-200: #e9e6df;
+	--color-base-300: #e4e0d7;
+	--color-base-content: #1c1c1a;
+	--color-primary: #003366;
+	--color-primary-content: #f4f2ed;
+	--color-secondary: #6b6660;
+	--color-secondary-content: #f4f2ed;
+	--color-accent: #1c1c1a;
+	--color-accent-content: #f4f2ed;
+	--color-neutral: #1c1c1a;
+	--color-neutral-content: #f4f2ed;
+	--color-info: #003366;
+	--color-info-content: #f4f2ed;
+	--color-success: #2e5b4a;
+	--color-success-content: #f4f2ed;
+	--color-warning: #8a6d1f;
+	--color-warning-content: #1c1c1a;
+	--color-error: #6b3a2e;
+	--color-error-content: #f4f2ed;
+	--radius-selector: 0;
+	--radius-field: 0;
+	--radius-box: 0;
+	--size-selector: 0.25rem;
+	--size-field: 0.25rem;
+	--border: 1px;
+	--depth: 0;
+	--noise: 0;
 }
+
+@plugin "daisyui/theme" {
+	name: "wga-rams-dark";
+	default: false;
+	prefersdark: false;
+	color-scheme: dark;
+	--color-base-100: #1a1814;
+	--color-base-200: #211f1a;
+	--color-base-300: #302d26;
+	--color-base-content: #edeae1;
+	--color-primary: #2e5a8c;
+	--color-primary-content: #f1eee6;
+	--color-secondary: #948e82;
+	--color-secondary-content: #17160f;
+	--color-accent: #948e82;
+	--color-accent-content: #17160f;
+	--color-neutral: #33302a;
+	--color-neutral-content: #f1eee6;
+	--color-info: #8fb6de;
+	--color-info-content: #17160f;
+	--color-success: #7fae98;
+	--color-success-content: #17160f;
+	--color-warning: #d8b455;
+	--color-warning-content: #17160f;
+	--color-error: #d08a76;
+	--color-error-content: #17160f;
+	--radius-selector: 0;
+	--radius-field: 0;
+	--radius-box: 0;
+	--size-selector: 0.25rem;
+	--size-field: 0.25rem;
+	--border: 1px;
+	--depth: 0;
+	--noise: 0;
+}
+
+[data-theme="wga_light"],
+[data-theme="wga-rams"],
+:root {
+	--t-9: 0.5625rem;
+	--t-95: 0.59375rem;
+	--t-10: 0.625rem;
+	--t-105: 0.65625rem;
+	--t-11: 0.6875rem;
+	--t-115: 0.71875rem;
+	--t-12: 0.75rem;
+	--t-125: 0.78125rem;
+	--t-13: 0.8125rem;
+	--t-135: 0.84375rem;
+	--t-14: 0.875rem;
+	--t-15: 0.9375rem;
+	--t-16: 1rem;
+	--t-17: 1.0625rem;
+	--t-18: 1.125rem;
+	--t-19: 1.1875rem;
+	--t-20: 1.25rem;
+	--t-21: 1.3125rem;
+	--t-22: 1.375rem;
+	--t-26: 1.625rem;
+	--t-27: 1.6875rem;
+	--t-28: 1.75rem;
+	--t-30: 1.875rem;
+	--t-32: 2rem;
+	--t-34: 2.125rem;
+	--t-36: 2.25rem;
+	--t-38: 2.375rem;
+	--t-40: 2.5rem;
+	--t-44: 2.75rem;
+	--t-46: 2.875rem;
+	--t-48: 3rem;
+	--t-52: 3.25rem;
+	--t-56: 3.5rem;
+	--wga-bg: #f4f2ed;
+	--wga-surface: #fbfaf7;
+	--wga-surface-2: #efede7;
+	--wga-fill: #e4e0d7;
+	--wga-fill-line: #c4bfb5;
+	--wga-ink: #1c1c1a;
+	--wga-inv-bg: #1c1c1a;
+	--wga-inv-fg: #f4f2ed;
+	--wga-text: #2a2822;
+	--wga-text-2: #4a463f;
+	--wga-muted: #5f5a54;
+	--wga-faint: #68625b;
+	--wga-faint-2: #7a746c;
+	--wga-accent: #003366;
+	--wga-accent-2: #00264d;
+	--wga-accent-tint: rgb(0 51 102 / 0.05);
+	--wga-accent-tint-2: rgb(0 51 102 / 0.07);
+	--wga-accent-soft: rgb(0 51 102 / 0.4);
+	--wga-accent-soft-2: rgb(0 51 102 / 0.55);
+	--wga-accent-strong: rgb(0 51 102 / 0.9);
+	--wga-rule-soft: rgb(28 28 26 / 0.06);
+	--wga-rule: rgb(28 28 26 / 0.14);
+	--wga-rule-2: rgb(28 28 26 / 0.2);
+	--wga-rule-3: rgb(28 28 26 / 0.25);
+	--wga-rule-4: rgb(28 28 26 / 0.3);
+	--wga-rule-control: rgb(28 28 26 / 0.55);
+	--wga-scrim: rgb(28 28 26 / 0.45);
+	--wga-series-0: #003366;
+	--wga-series-1: #1f5488;
+	--wga-series-2: #3d7aae;
+	--wga-series-3: #6699c4;
+	--wga-series-4: #8fb3d4;
+	--wga-series-5: #b4cbe2;
+	--wga-series-6: #d5e0ec;
+	--wga-lane-movements: #003366;
+	--wga-lane-movements-fg: #f4f2ed;
+	--wga-lane-artists: #1f5488;
+	--wga-lane-artists-fg: #f4f2ed;
+	--wga-lane-works: #3d7aae;
+	--wga-lane-works-fg: #f4f2ed;
+	--wga-lane-buildings: #6699c4;
+	--wga-lane-buildings-fg: #1c1c1a;
+	--wga-lane-events: #5f5a54;
+	--wga-lane-events-fg: #f4f2ed;
+	--wga-lane-music: #8fb3d4;
+	--wga-lane-music-fg: #1c1c1a;
+}
+
+[data-theme="wga_dark"],
+[data-theme="wga-rams-dark"] {
+	--wga-bg: #1a1814;
+	--wga-surface: #211f1a;
+	--wga-surface-2: #262420;
+	--wga-fill: #302d26;
+	--wga-fill-line: #4a463d;
+	--wga-ink: #edeae1;
+	--wga-inv-bg: #33302a;
+	--wga-inv-fg: #f1eee6;
+	--wga-text: #dcd8cd;
+	--wga-text-2: #b8b2a5;
+	--wga-muted: #a49e90;
+	--wga-faint: #9c9689;
+	--wga-faint-2: #837d71;
+	--wga-accent: #8fb6de;
+	--wga-accent-2: #b2cfee;
+	--wga-accent-tint: rgb(143 182 222 / 0.1);
+	--wga-accent-tint-2: rgb(143 182 222 / 0.15);
+	--wga-accent-soft: rgb(143 182 222 / 0.4);
+	--wga-accent-soft-2: rgb(143 182 222 / 0.55);
+	--wga-accent-strong: rgb(46 90 140 / 0.92);
+	--wga-rule-soft: rgb(237 234 225 / 0.08);
+	--wga-rule: rgb(237 234 225 / 0.14);
+	--wga-rule-2: rgb(237 234 225 / 0.2);
+	--wga-rule-3: rgb(237 234 225 / 0.28);
+	--wga-rule-4: rgb(237 234 225 / 0.36);
+	--wga-rule-control: rgb(237 234 225 / 0.55);
+	--wga-scrim: rgb(0 0 0 / 0.62);
+	--wga-series-0: #e4edf5;
+	--wga-series-1: #c6d8e8;
+	--wga-series-2: #a8c2db;
+	--wga-series-3: #89a9cb;
+	--wga-series-4: #6e90b8;
+	--wga-series-5: #57779f;
+	--wga-series-6: #4c6e96;
+	--wga-lane-movements: #a8c2db;
+	--wga-lane-movements-fg: #17160f;
+	--wga-lane-artists: #89a9cb;
+	--wga-lane-artists-fg: #17160f;
+	--wga-lane-works: #6e90b8;
+	--wga-lane-works-fg: #17160f;
+	--wga-lane-buildings: #8fb3d4;
+	--wga-lane-buildings-fg: #17160f;
+	--wga-lane-events: #a49e90;
+	--wga-lane-events-fg: #17160f;
+	--wga-lane-music: #c6d8e8;
+	--wga-lane-music-fg: #17160f;
+}
+
+[data-theme="wga_dark"] .text-primary,
+[data-theme="wga-rams-dark"] .text-primary {
+	color: #8fb6de;
+}
+
+[data-theme="wga_dark"] .border-primary,
+[data-theme="wga-rams-dark"] .border-primary {
+	border-color: #8fb6de;
+}
+
+[data-theme="wga_dark"] :focus-visible,
+[data-theme="wga-rams-dark"] :focus-visible {
+	outline-color: #8fb6de;
+}
+
+.text-muted { color: var(--wga-muted); }
+.text-faint { color: var(--wga-faint); }
+.text-faint-2 { color: var(--wga-faint-2); }
 
 @layer base {
   html {
@@ -296,7 +649,12 @@
 
 @layer components {
   .wga-enter {
-    animation: wga-rise 280ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+    /* `backwards` keeps the rise-in from its start frame without retaining the
+       final `translateY(0)` transform after the animation finishes. A retained
+       transform makes the animated container the containing block for `fixed`
+       descendants (the glossary/help tooltips), which would otherwise anchor
+       against <main> instead of the viewport on narrow screens. */
+    animation: wga-rise 280ms cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
   }
 
   .wga-meta {
@@ -586,9 +944,10 @@ figure.hidden-caption {
 }
 
 #cc-main {
-  --cc-font-family: var(--font-sans);
-  --cc-modal-border-radius: 0;
-  --cc-btn-border-radius: 0;
+	--cc-font-family: var(--font-sans);
+	--cc-modal-border-radius: 0;
+	--cc-btn-border-radius: 0;
+	--cc-modal-transition-duration: 0ms;
   --cc-bg: var(--color-base-100);
   --cc-primary-color: var(--color-base-content);
   --cc-secondary-color: color-mix(in srgb, var(--color-base-content) 72%, transparent);
@@ -612,7 +971,11 @@ figure.hidden-caption {
 }
 
 #cc-main .cm {
-  max-width: 32.5rem;
+	width: min(calc(100vw - 32px), 32.5rem);
+	max-width: 32.5rem;
+	max-height: calc(100dvh - 6rem);
+	padding: clamp(1rem, 4vw, 1.5rem);
+	overflow-y: auto;
 }
 
 #cc-main .cm__title,
@@ -624,8 +987,8 @@ figure.hidden-caption {
 
 #cc-main .cm__desc,
 #cc-main .pm__body {
-  font-size: 0.9375rem;
-  line-height: 1.6;
+	font-size: 1rem;
+	line-height: 1.6;
 }
 
 #cc-main .cm__btn,
@@ -634,6 +997,49 @@ figure.hidden-caption {
   font-size: 0.6875rem;
   font-weight: 400;
   letter-spacing: 0.1em;
+}
+
+#cc-main .cm__btns {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	min-width: 0;
+}
+
+#cc-main .cm__btn--primary {
+	order: -1;
+}
+
+#cc-main .cm__btn,
+#cc-main .pm__btn {
+	min-height: 2.75rem;
+	padding: 0.75rem 1rem;
+}
+
+#cc-main .cm__btn {
+	white-space: normal;
+}
+
+#cc-main .pm {
+	max-width: min(42rem, calc(100vw - 32px));
+}
+
+@media (max-width: 44.999rem) {
+	#cc-main .cm--bottom {
+		bottom: 5rem;
+	}
+}
+
+@media (min-width: 45rem) {
+	#cc-main .cm--bottom.cm--left {
+		bottom: 2rem;
+		left: 2rem;
+	}
+
+	#cc-main .cm__btns {
+		flex-direction: row;
+		justify-content: flex-end;
+	}
 }
 
 /* fix for cookie consent title hover jumping */
@@ -1160,9 +1566,124 @@ a[href]:not(:where(
   @apply absolute top-1 right-1 btn btn-ghost btn-xs btn-circle;
 }
 
+.wga-term,
+.wga-help {
+	position: relative;
+	display: inline-block;
+}
+
+.wga-term {
+	border-bottom: 1px dotted var(--wga-accent-soft-2);
+	color: var(--wga-accent);
+	cursor: help;
+}
+
+.wga-help {
+	width: 1.35em;
+	height: 1.35em;
+	margin-inline-start: 0.35em;
+	border: 1px solid currentColor;
+	color: var(--wga-accent);
+	cursor: help;
+	font-family: var(--font-mono);
+	font-size: var(--t-11);
+	line-height: 1.2;
+	text-align: center;
+	vertical-align: text-top;
+}
+
+.wga-term__tooltip,
+.wga-help__tooltip {
+	position: absolute;
+	z-index: 60;
+	display: grid;
+	width: min(20rem, calc(100vw - 2rem));
+	gap: 0.4rem;
+	padding: 0.75rem;
+	border: 1px solid var(--wga-inv-fg);
+	background: var(--wga-inv-bg);
+	color: var(--wga-inv-fg);
+	font-size: var(--t-14);
+	line-height: 1.45;
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 120ms ease;
+	visibility: hidden;
+}
+
+.wga-term__tooltip {
+	bottom: calc(100% + 0.65rem);
+	left: 0;
+}
+
+.wga-help__tooltip {
+	top: calc(100% + 0.65rem);
+	left: 0;
+}
+
+.wga-term:hover .wga-term__tooltip,
+.wga-term:focus-visible .wga-term__tooltip,
+.wga-help:hover .wga-help__tooltip,
+.wga-help:focus-visible .wga-help__tooltip {
+	opacity: 1;
+	visibility: visible;
+}
+
+.wga-tooltip__meta,
+.wga-tooltip__category {
+	font-family: var(--font-mono);
+	font-size: var(--t-10);
+	letter-spacing: 0.12em;
+}
+
+.wga-tooltip__category {
+	color: color-mix(in oklab, var(--wga-inv-fg) 72%, transparent);
+}
+
+.wga-tooltip__body {
+	overflow-wrap: anywhere;
+}
+
+@media (max-width: 44.999rem) {
+	.wga-term__tooltip,
+	.wga-help__tooltip {
+		position: fixed;
+		left: 1rem;
+		right: 1rem;
+		width: auto;
+	}
+
+	.wga-term__tooltip {
+		bottom: 1rem;
+	}
+
+	.wga-help__tooltip {
+		top: 1rem;
+	}
+}
+
+@media (min-width: 45rem) {
+	.wga-term:last-child .wga-term__tooltip {
+		left: auto;
+		right: 0;
+	}
+}
+
 .container {
-  max-width: 72.5rem;
-  padding-inline: 2.5rem;
+  max-width: 77.5rem;
+  padding-inline: 20px;
+}
+
+@media (min-width: 45rem) {
+  .container {
+    padding-inline: 28px;
+  }
+}
+
+@media (min-width: 67.5rem) {
+  .container {
+    padding-inline: 40px;
+  }
 }
 
 .art-form-label::before {
@@ -1194,8 +1715,87 @@ a[href]:not(:where(
   background: #8a857c;
 }
 
-@media (width >= 48rem) {
-  .container {
-    padding-inline: 0;
+/* Itinerary slideshow (pages.ItineraryViewPage): a fixed dark overlay, so the
+   ordinary layout keeps working underneath and there is no second document
+   shell to maintain. Dark tones are literal — the viewer is deliberately not
+   themed with the site's bone palette. */
+.wga-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 58;
+  display: flex;
+  flex-direction: column;
+  background: #131311;
+  animation: wga-viewer-in 0.2s ease-out;
+}
+
+/* The fixed overlay must not be a fixed descendant of the animated `main`:
+   while `wga-rise` runs, the transform on <main> makes it the containing block
+   for `position: fixed`, collapsing the full-viewport dark root to the (empty)
+   main's zero-height box for the length of the entrance animation and then
+   snapping it back on every stop transition. The viewer page's main is empty
+   (the overlay is out of flow), so the rise is invisible there and is dropped
+   so the overlay anchors to the viewport from its first frame. */
+main:has(.wga-viewer) {
+  animation: none;
+}
+.wga-viewer-stage {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px 20px;
+}
+.wga-viewer-plate {
+  flex: 1;
+  min-height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  margin: 0;
+  background: #1d1b19;
+  border: 1px solid rgb(255 255 255 / 0.12);
+}
+.wga-viewer-panel {
+  width: 100%;
+  flex-shrink: 0;
+  max-height: 46vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 22px 20px 26px;
+  background: #1a1816;
+  border-top: 1px solid rgb(255 255 255 / 0.12);
+}
+@media (min-width: 768px) {
+  .wga-viewer {
+    flex-direction: row;
+  }
+  .wga-viewer-stage {
+    gap: 24px;
+    padding: 32px 40px;
+  }
+  .wga-viewer-plate {
+    min-height: 0;
+  }
+  .wga-viewer-panel {
+    width: 400px;
+    max-height: none;
+    padding: 32px 34px;
+    border-top: none;
+    border-left: 1px solid rgb(255 255 255 / 0.12);
+  }
+}
+@keyframes wga-viewer-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }

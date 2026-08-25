@@ -2,12 +2,15 @@ package utils
 
 import (
 	"context"
+	"net/http"
 	"regexp"
 
 	"github.com/blackfyre/wga/internal/utils/publicurl"
 )
 
 type ContextKey string
+
+type bionicReadingContextKey struct{}
 
 // trustedHeadMarkupContextKey is a private typed key for operator-trusted
 // markup rendered verbatim in the document head. It is intentionally distinct
@@ -31,6 +34,25 @@ var TwitterTitleKey ContextKey = "twitter:title"
 var TwitterDescriptionKey ContextKey = "twitter:description"
 var TwitterImageKey ContextKey = "twitter:image"
 var CanonicalUrlKey ContextKey = "canonical:url"
+
+func ContextFromRequest(request *http.Request) context.Context {
+	if request == nil {
+		return context.WithValue(context.Background(), bionicReadingContextKey{}, false)
+	}
+
+	bionicReading := false
+	cookie, err := request.Cookie("wga_bionic")
+	if err == nil && cookie.Value == "on" {
+		bionicReading = true
+	}
+
+	return context.WithValue(request.Context(), bionicReadingContextKey{}, bionicReading)
+}
+
+func GetBionicReading(c context.Context) bool {
+	bionicReading, ok := c.Value(bionicReadingContextKey{}).(bool)
+	return ok && bionicReading
+}
 
 // WithTrustedHeadMarkup returns a context carrying the supplied operator-trusted
 // head markup. The value is immutable and intended only for the shared layout's

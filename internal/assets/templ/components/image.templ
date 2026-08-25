@@ -8,19 +8,9 @@ templ ImageBase(i dto.Image) {
 			<source media="(max-width: 768px)" srcset={ i.Thumb }/>
 			<source media="(min-width: 769px)" srcset={ i.Thumb }/>
 			<source media="(min-width: 1024px)" srcset={ i.Thumb }/>
-			<img src={ i.Image } alt={ i.Title } loading="lazy" alt={ i.Title + " by" + i.Artist.Name }/>
+			<img src={ i.Image } alt={ i.Title + " by " + i.Artist.Name } loading="lazy"/>
 		</picture>
 		<figcaption>{ i.Title } by { i.Artist.Name } </figcaption>
-	</figure>
-}
-
-// image_big is a template that renders a big image with its title and artist.
-// It takes three parameters: ImageUrl (string) - the URL of the image,
-// Title (string) - the title of the image, and Artist (string) - the artist of the image.
-templ ImageBig(ImageUrl string, ZoomUrl string, Title string, Artist string) {
-	<figure class="image hidden-caption flex h-full w-full items-center justify-center shadow">
-		<img src={ ImageUrl } data-zoom-url={ ZoomUrl } alt={ Title + " by " + Artist } class="max-h-full max-w-full object-contain"/>
-		<figcaption>{ Title } by { Artist }</figcaption>
 	</figure>
 }
 

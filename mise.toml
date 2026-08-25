@@ -3,20 +3,22 @@ bun = "latest"
 go = "1.26.5"
 "go:github.com/a-h/templ/cmd/templ" = "v0.3.1020"
 "go:github.com/air-verse/air" = "latest"
-"http:mailpit" = { version = "1.30.4", url = "https://github.com/axllent/mailpit/releases/download/v{{ version }}/mailpit-linux-amd64.tar.gz", bin = "mailpit", checksum = "sha256:e9c104154c22b83ac4c7d19f9d665a5c933585a3caafcd790805d732fa8d03fb" }
 "github:golangci/golangci-lint" = "latest"
 "aqua:superfly/flyctl" = "latest"
 sqlite = "latest"
 railway = "latest"
+sentry = "latest"
+"github:fossas/fossa-cli" = "latest"
+"aqua:axllent/mailpit" = "latest"
 
 # Git is a system prerequisite because Mise has no cross-platform Git backend.
 [env]
+_.file = ".env"
 WGA_ENV = "development"
 WGA_S3_BUCKET = "wga-assets"
 WGA_S3_REGION = "garage"
 WGA_S3_ACCESS_KEY = "GKlocaluploads"
 WGA_S3_ACCESS_SECRET = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-WGA_S3_ENDPOINT = "http://127.0.0.1:3900"
 WGA_ADMIN_EMAIL = "" # optional bootstrap admin email address
 WGA_ADMIN_PASSWORD = "" # optional bootstrap admin password
 WGA_PROTOCOL = "http" # http or https
@@ -69,6 +71,17 @@ description = "Rebuild, reset local data, start Garage if needed, and restart th
 run = '''
 mise run app:build || exit $?
 rm -rf dist/wga_data
+mkdir -p dist/wga_data
+
+# When WGA_S3_ENDPOINT is unset, PocketBase falls back to local-filesystem
+# storage at <dataDir>/storage. wga-src's staged production output is laid
+# out in the same <collection>/<recordId>/<filename> keys PocketBase expects,
+# so symlinking it in serves real media locally without an upload step.
+if [ -d ../wga-src/out/production/storage ]; then
+  ln -sfn ../../../wga-src/out/production/storage dist/wga_data/storage
+else
+  echo "warning: ../wga-src/out/production/storage not found; skipping storage symlink" >&2
+fi
 
 podman compose up -d garage || exit $?
 for _ in $(seq 1 30); do

@@ -13,6 +13,7 @@ import (
 	"unicode"
 
 	"github.com/blackfyre/wga/internal/assets/templ/error_pages"
+	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
 	"github.com/blackfyre/wga/internal/constants"
 	strip "github.com/grokify/html-strip-tags-go"
 	"github.com/pocketbase/pocketbase"
@@ -298,10 +299,25 @@ func IsHtmxRequest(c *core.RequestEvent) bool {
 	return c.Request.Header.Get("HX-Request") == "true"
 }
 
+// RequestsMainContentArea reports whether an HTMX request targets the shared
+// shell's #mc-area element rather than a feature-owned local target. The shared
+// layout sets hx-target="#mc-area" on <body>, so boosted top-level navigation
+// arrives with HX-Target carrying the target element's id ("mc-area"), while
+// feature-local HTMX requests name their own block ("timeline", "dual-area",
+// "dual-left", and so on). Handlers that render both a full page and a local
+// block use this to return the selectable full #mc-area for shell navigation
+// and the feature block only for owned local targets.
+func RequestsMainContentArea(c *core.RequestEvent) bool {
+	target := strings.TrimSpace(c.Request.Header.Get("HX-Target"))
+	target = strings.TrimPrefix(target, "#")
+
+	return target == "mc-area"
+}
+
 // NotFoundError is a handler that returns a 404 error page.
 func NotFoundError(c *core.RequestEvent) error {
 	var buf bytes.Buffer
-	if err := error_pages.NotFoundPage().Render(c.Request.Context(), &buf); err != nil {
+	if err := error_pages.NotFoundPage().Render(tmplUtils.ContextFromRequest(c.Request), &buf); err != nil {
 		return err
 	}
 	return c.HTML(404, buf.String())
@@ -309,7 +325,7 @@ func NotFoundError(c *core.RequestEvent) error {
 
 func ServerFaultError(c *core.RequestEvent) error {
 	var buf bytes.Buffer
-	if err := error_pages.ServerFaultPage().Render(c.Request.Context(), &buf); err != nil {
+	if err := error_pages.ServerFaultPage().Render(tmplUtils.ContextFromRequest(c.Request), &buf); err != nil {
 		return err
 	}
 	return c.HTML(500, buf.String())
@@ -317,7 +333,7 @@ func ServerFaultError(c *core.RequestEvent) error {
 
 func BadRequestError(c *core.RequestEvent) error {
 	var buf bytes.Buffer
-	if err := error_pages.BadRequestPage().Render(c.Request.Context(), &buf); err != nil {
+	if err := error_pages.BadRequestPage().Render(tmplUtils.ContextFromRequest(c.Request), &buf); err != nil {
 		return err
 	}
 	return c.HTML(400, buf.String())

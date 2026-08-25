@@ -1,0 +1,13 @@
+package components
+
+import "github.com/blackfyre/wga/internal/assets/templ/dto"
+
+templ EmptyState(state dto.EmptyState) {
+	<section class="border-b border-base-content/15 py-14">
+		<h2 class="mb-2 text-lg font-semibold">{ state.Title }</h2>
+		<p class="mb-4 max-w-[380px] text-(length:--t-15) leading-relaxed text-base-content/70 text-pretty">{ state.Message }</p>
+		if state.RecoveryLabel != "" && state.RecoveryHref != "" {
+			<a href={ templ.SafeURL(state.RecoveryHref) } class="font-mono text-(length:--t-11) tracking-[1px] text-primary transition-opacity hover:opacity-60">{ state.RecoveryLabel }</a>
+		}
+	</section>
+}

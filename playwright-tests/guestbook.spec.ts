@@ -1,85 +1,104 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 const entry = {
-  name: "Playwright",
-  email: "playwright@local.host",
-  location: "Testing Grounds",
-  entry: "This is a test entry!",
-  entryTest: /This is a test entry/,
+	name: "Playwright visitor",
+	location: "Testing Grounds",
+	message: "This note must remain private until moderation.",
 };
 
 test("places the guestbook note rail on the desktop right edge", async ({
-  page,
+	page,
 }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/guestbook?year=all");
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await page.goto("/guestbook?year=all");
 
 	const box = await page.locator("aside").boundingBox();
 	expect(box?.width).toBeCloseTo(320, 0);
-	const entries = await page.locator(".gb-entries").boundingBox();
+	const archive = await page.locator('form[hx-get="/guestbook"]').boundingBox();
 	expect((box?.x || 0) + (box?.width || 0)).toBeGreaterThan(
-		(entries?.x || 0) + (entries?.width || 0),
+		(archive?.x || 0) + (archive?.width || 0),
 	);
 });
 
 test("uses the reference guestbook title scale on mobile", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/guestbook");
-
-  await expect(page.getByRole("heading", { name: "Guestbook" })).toHaveCSS(
-    "font-size",
-    "44px",
-  );
-});
-
-test("places guestbook entries before the note form on mobile", async ({
-	page,
-}) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/guestbook?year=all");
-
-	const form = await page.locator("aside").boundingBox();
-	const entries = await page.locator(".gb-entries").boundingBox();
-	expect(entries?.y).toBeLessThan(form?.y || 0);
-});
-
-test("filters and sorts guestbook entries without leaving the page", async ({
-	page,
-}) => {
+	await page.setViewportSize({ width: 390, height: 844 });
 	await page.goto("/guestbook");
 
-	const filters = page.locator('form[hx-get="/guestbook"]');
-	await expect(filters.locator('input[type="search"]')).toBeVisible();
-	await expect(filters.getByText("ALL", { exact: true })).toBeVisible();
-
-	await page.getByRole("link", { name: "NEWEST ↕" }).click();
-	await expect(page).toHaveURL(/sort=oldest/);
-	await expect(page.getByRole("link", { name: "OLDEST ↕" })).toBeVisible();
+	await expect(page.getByRole("heading", { name: "Guestbook" })).toHaveCSS(
+		"font-size",
+		"44px",
+	);
 });
 
-test("test", async ({ page }) => {
-  await page.goto("/");
-  await page
-    .getByRole("navigation", { name: "Primary navigation" })
-    .getByRole("link", { name: "GUESTBOOK", exact: true })
-    .click();
-  await expect(
-    page.getByRole("navigation", { name: "Filter guestbook entries by year" }),
-  ).toBeVisible();
-  await page.getByPlaceholder("Your name", { exact: true }).fill(entry.name);
-  await page.getByPlaceholder("Your name", { exact: true }).press("Tab");
-  await page.getByPlaceholder("Your email", { exact: true }).fill(entry.email);
-  await page.getByPlaceholder("Your email", { exact: true }).press("Tab");
-  await page.getByPlaceholder("Your location").fill(entry.location);
-  await page.getByPlaceholder("Your location").press("Tab");
-  await page
-    .getByPlaceholder("What did you come here to find?")
-    .fill(entry.entry);
-  await page.getByRole("button", { name: "SIGN THE GUESTBOOK →" }).click();
+test("places the archive before the note form on mobile", async ({ page }) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.goto("/guestbook?year=all");
 
-  await expect(page.locator(".toast")).toHaveText(/Message added successfully/);
+	const form = await page.locator("aside").boundingBox();
+	const archive = await page.locator('form[hx-get="/guestbook"]').boundingBox();
+	expect(archive?.y).toBeLessThan(form?.y || 0);
+});
 
-  await expect(page.locator(".gb-entries .gb-entry").nth(0)).toHaveText(
-    entry.entryTest,
-  );
+test("preserves text and year archive state in the URL", async ({ page }) => {
+	await page.goto("/guestbook?year=all");
+
+	const search = page.getByRole("searchbox", { name: "Search entries" });
+	await search.fill("chapel");
+	await expect(page).toHaveURL(/q=chapel/);
+	await expect(page).toHaveURL(/year=all/);
+	await expect(page.getByText(/FOUND$/)).toBeVisible();
+});
+
+test("queues a note without collecting email or publishing it", async ({
+	page,
+}) => {
+	await page.goto("/guestbook?year=all");
+	await expect(page.locator('input[name="sender_email"]')).toHaveCount(0);
+
+	await page.getByLabel("NAME").fill(entry.name);
+	await page.getByLabel("LOCATION").fill(entry.location);
+	await page.getByLabel(/NOTE/).fill(entry.message);
+	await page.getByRole("button", { name: "SIGN THE GUESTBOOK →" }).click();
+
+	await expect(page.getByRole("status")).toContainText("your note is queued");
+	await expect(
+		page.locator(".gb-entry", { hasText: entry.message }),
+	).toHaveCount(0);
+});
+
+test("supports keyboard-only form completion", async ({ page }) => {
+	await page.goto("/guestbook?year=all");
+	await page.getByLabel("NAME").focus();
+	await page.keyboard.type("Keyboard visitor");
+	await page.keyboard.press("Tab");
+	await expect(page.getByLabel("LOCATION")).toBeFocused();
+	await page.keyboard.type("Keyboard location");
+	await page.keyboard.press("Tab");
+	await expect(page.getByLabel(/NOTE/)).toBeFocused();
+	await page.keyboard.type("Keyboard-only private note");
+	await page.keyboard.press("Tab");
+	await page.keyboard.press("Enter");
+	await expect(page.getByRole("status")).toContainText("your note is queued");
+});
+
+test.describe("without JavaScript", () => {
+	test.use({ javaScriptEnabled: false });
+
+	test("submits through the ordinary form and keeps the note private", async ({
+		page,
+	}) => {
+		await page.goto("/guestbook?year=all");
+		const privateMessage = "No-JavaScript private note";
+		await page.getByLabel("NAME").fill("No-JavaScript visitor");
+		await page.getByLabel("LOCATION").fill("No-JavaScript location");
+		await page.getByLabel(/NOTE/).fill(privateMessage);
+		await page.getByRole("button", { name: "SIGN THE GUESTBOOK →" }).click();
+
+		await expect(page).toHaveURL(/\/guestbook\?submitted=1/);
+		await expect(page.getByRole("status")).toContainText("your note is queued");
+		await page.goto("/guestbook?year=all");
+		await expect(
+			page.locator(".gb-entry", { hasText: privateMessage }),
+		).toHaveCount(0);
+	});
 });

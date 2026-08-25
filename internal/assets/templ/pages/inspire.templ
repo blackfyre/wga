@@ -17,16 +17,28 @@ templ InspirationContent(c dto.ImageGrid) {
 	<head>
 		<title>{ utils.GetTitle(ctx) }</title>
 	</head>
-	<section class="container mx-auto px-4 pb-20 pt-10 md:px-0">
+	<section id="inspiration" class="container mx-auto px-4 pb-20 pt-10 md:px-0">
 		<div class="border-b border-base-content pb-8 md:grid md:grid-cols-[minmax(0,1fr)_260px] md:gap-12">
 			<div>
-				<p class="font-mono text-[11px] tracking-[2px] text-base-content/60">DISCOVER / RANDOM SELECTION</p>
-				<h1 class="mt-3 text-[36px] font-semibold tracking-[-0.75px] md:text-[52px]">Random inspiration</h1>
+				<p class="font-mono text-[11px] tracking-[2px] text-base-content/60">07 — INSPIRATION</p>
+				<h1 class="mt-3 text-[36px] font-semibold tracking-[-0.75px] md:text-[52px]">A shuffled slice of the collection</h1>
 			</div>
-			<p class="mt-5 text-[16px] leading-relaxed text-base-content/70 md:mt-8">A changing selection from the collection. Refresh for a new route through the archive.</p>
+			<p class="mt-5 text-[16px] leading-relaxed text-base-content/70 md:mt-8">There is no prescribed order here. Reload or choose another set for a different way into the archive.</p>
 		</div>
-		<section class="pt-10" aria-label="Random artworks">
-			@components.PublicArtworkGrid(c)
+		if len(c) > 0 {
+			<section class="pt-10" aria-label="Shuffled artworks">
+				@components.PublicArtworkGrid(c)
+			</section>
+			<a href="/inspire" hx-get="/inspire" hx-target="#inspiration" hx-select="#inspiration" hx-swap="outerHTML" class="btn btn-outline mt-10">ANOTHER SET</a>
+		} else {
+			<section class="pt-10" aria-label="No inspiration available">
+				<p class="text-lg">There are no published works to explore here yet.</p>
+				<a href="/artworks" class="link link-primary mt-4 inline-block">BROWSE ALL ARTWORKS</a>
+			</section>
+		}
+		<section class="mt-16 border-t border-base-content pt-8">
+			<h2 class="font-mono text-[11px] tracking-[2px] text-base-content/60">IF YOU WANT SOMETHING ORDERED</h2>
+			<p class="mt-4 max-w-2xl leading-relaxed text-base-content/70"><a href="/tours" class="link link-primary">Guided Tours</a> are editor-maintained routes through the collection. <a href="/itineraries" class="link link-primary">Itineraries</a> are journeys made by visitors.</p>
 		</section>
 	</section>
 }

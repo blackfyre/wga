@@ -1,0 +1,241 @@
+package pages
+
+import (
+	"fmt"
+	"strconv"
+
+	"github.com/blackfyre/wga/internal/assets/templ/components"
+	"github.com/blackfyre/wga/internal/assets/templ/dto"
+	"github.com/blackfyre/wga/internal/assets/templ/layouts"
+	"github.com/blackfyre/wga/internal/assets/templ/utils"
+)
+
+// TimelineDensityBar is one decade of the density strip.
+type TimelineDensityBar struct {
+	Decade    string
+	Count     int
+	HeightPct int
+}
+
+// TimelineBand is one art-period span clipped to the selected window.
+type TimelineBand struct {
+	Name        string
+	SpanLabel   string
+	LeftPct     float64
+	WidthPct    float64
+	Description string
+}
+
+// TimelineMark is one published artwork positioned on the window lane.
+type TimelineMark struct {
+	Href    string
+	Label   string
+	LeftPct float64
+}
+
+// TimelineView is the page-owned contract for the collection timeline.
+type TimelineView struct {
+	From       int
+	To         int
+	HasRange   bool
+	RangeLabel string
+	SpanLabel  string
+	HitLabel   string
+
+	Presets     []dto.NavChip
+	WindowRange dto.RangeField
+
+	Density         []TimelineDensityBar
+	Bands           []TimelineBand
+	Marks           []TimelineMark
+	MarksNote       string
+	Works           []dto.Work
+	WorksRangeLabel string
+	HasWorks        bool
+	TotalWorks      int
+	Page            int
+	PageCount       int
+	PrevUrl         string
+	NextUrl         string
+}
+
+templ TimelinePage(c TimelineView) {
+	@layouts.LayoutMain() {
+		@TimelineBlock(c)
+	}
+}
+
+templ TimelineBlock(c TimelineView) {
+	<head>
+		<title>{ utils.GetTitle(ctx) }</title>
+	</head>
+	<section id="timeline" class="container mx-auto px-4 pb-20 pt-10 md:px-0">
+		@components.PageHead("19 — TIMELINE EXPLORER", "Timeline",
+			"Set a window of years and read across the collection: which published works were dated to those years and which art periods were current.")
+		if c.HasRange {
+			<div class="flex flex-wrap items-baseline justify-between gap-4">
+				<div>
+					<p class="text-(length:--t-32) font-semibold leading-tight tracking-[-0.5px] md:text-(length:--t-44)">{ c.RangeLabel }</p>
+					<p class="mt-2 font-mono text-(length:--t-11) tracking-[1px] text-muted" aria-live="polite">{ c.SpanLabel }&nbsp;·&nbsp;{ c.HitLabel }</p>
+				</div>
+			</div>
+			if len(c.Presets) > 0 {
+				<nav aria-label="Timeline presets" class="mt-6 flex flex-wrap gap-1.5">
+					for _, chip := range c.Presets {
+						if chip.Active {
+							<a href={ templ.SafeURL(chip.Href) } class="min-w-0 max-w-full break-words border border-primary bg-primary px-3.5 py-1.5 font-mono text-(length:--t-11) tracking-[1px] text-primary-content transition-colors" aria-current="page" hx-get={ chip.Href } hx-target="#timeline" hx-select="#timeline" hx-swap="outerHTML">{ chip.Label }</a>
+						} else {
+							<a href={ templ.SafeURL(chip.Href) } class="min-w-0 max-w-full break-words border border-control px-3.5 py-1.5 font-mono text-(length:--t-11) tracking-[1px] text-base-content/70 transition-colors hover:border-base-content" hx-get={ chip.Href } hx-target="#timeline" hx-select="#timeline" hx-swap="outerHTML">{ chip.Label }</a>
+						}
+					}
+				</nav>
+			}
+			<form
+				id="timeline-window"
+				action="/timeline"
+				method="GET"
+				hx-get="/timeline"
+				hx-target="#timeline"
+				hx-select="#timeline"
+				hx-swap="outerHTML"
+				hx-trigger="change, input changed delay:300ms from:find input[type=range]"
+			>
+				<div class="mt-8 max-w-[560px]">
+					@components.RangeField(c.WindowRange)
+				</div>
+				<noscript>
+					<button type="submit" class="mt-4 bg-primary px-4 py-2 font-mono text-(length:--t-11) tracking-[1px] text-primary-content">APPLY WINDOW</button>
+				</noscript>
+			</form>
+			<div class="mt-10">
+				<div class="flex h-11 items-end gap-px overflow-hidden border border-base-content/15 bg-base-200/40" aria-hidden="true">
+					for _, bar := range c.Density {
+						<div class="min-w-0 flex-1 bg-primary/60" style={ "height:" + strconv.Itoa(bar.HeightPct) + "%" }></div>
+					}
+				</div>
+				<div class="sr-only">
+					<table>
+						<caption>Catalogue density per decade from { strconv.Itoa(c.From) } to { strconv.Itoa(c.To) }</caption>
+						<thead>
+							<tr>
+								<th scope="col">DECADE</th>
+								<th scope="col">WORKS</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, bar := range c.Density {
+								<tr>
+									<th scope="row">{ bar.Decade }</th>
+									<td>{ strconv.Itoa(bar.Count) }</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+				<p class="mt-2 font-mono text-(length:--t-10) tracking-[1px] text-faint">BARS SHOW CATALOGUE DENSITY PER DECADE</p>
+			</div>
+			if len(c.Bands) > 0 {
+				<section class="mt-10" aria-label="Art periods in this window">
+					<h2 class="font-mono text-(length:--t-11) tracking-[1.5px] text-muted">ART PERIODS IN THIS WINDOW</h2>
+					<ul class="mt-4">
+						for _, band := range c.Bands {
+							<li class="flex flex-wrap items-center gap-4 border-b border-base-content/10 py-2">
+								<span class="w-44 shrink-0 max-w-full break-words text-(length:--t-14) font-semibold">{ band.Name }</span>
+								<div class="relative h-5 flex-1 border border-base-content/10 bg-base-200/40" title={ band.Description }>
+									<div class="absolute top-0 bottom-0 border-x border-primary/40 bg-primary/25" style={ "left:" + pct(band.LeftPct) + "%;width:" + pct(band.WidthPct) + "%" }></div>
+								</div>
+								<span class="w-28 shrink-0 max-w-full break-words text-right font-mono text-(length:--t-11) text-muted">{ band.SpanLabel }</span>
+							</li>
+						}
+					</ul>
+				</section>
+			}
+			<section class="mt-12" aria-label="Works positioned across the window">
+				<h2 class="font-mono text-(length:--t-11) tracking-[1.5px] text-muted">WORKS ACROSS THE WINDOW</h2>
+				<div class="relative mt-4 h-16">
+					<div class="absolute inset-x-0 top-1/2 h-px bg-base-content/30" aria-hidden="true"></div>
+					<ul class="list-none" aria-label={ marksAria(c) }>
+						for _, mark := range c.Marks {
+							<li class="absolute top-1/2 -translate-x-1/2 -translate-y-1/2" style={ "left:" + pct(mark.LeftPct) + "%" }>
+								<a href={ templ.SafeURL(mark.Href) } title={ mark.Label } aria-label={ mark.Label } class="block p-1.5 transition-opacity hover:opacity-60">
+									<span class="block h-2.5 w-2.5 rotate-45 bg-primary"></span>
+								</a>
+							</li>
+						}
+					</ul>
+				</div>
+				<div class="mt-2 flex justify-between font-mono text-(length:--t-10) tracking-[1px] text-faint">
+					<span>{ strconv.Itoa(c.From) }</span>
+					<span>{ strconv.Itoa(c.To) }</span>
+				</div>
+				if c.MarksNote != "" {
+					<p class="mt-2 font-mono text-(length:--t-10) tracking-[1px] text-faint">{ c.MarksNote }</p>
+				}
+			</section>
+			if !c.HasWorks {
+				<div class="mt-12">
+					@components.EmptyState(emptyStateFor(c))
+				</div>
+			} else {
+				<section class="mt-12" aria-label="Works in this window">
+					<div class="flex flex-wrap items-baseline justify-between gap-4 border-b border-base-content pb-2.5">
+						<h2 class="font-mono text-(length:--t-11) tracking-[1.5px]">WORKS IN THIS WINDOW</h2>
+						<p class="font-mono text-(length:--t-10) tracking-[1px] text-faint">{ c.WorksRangeLabel }</p>
+					</div>
+					<ul class="mt-6 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-4">
+						for _, work := range c.Works {
+							<li>@components.WorkCard(work)
+</li>
+						}
+					</ul>
+					if c.PageCount > 1 {
+						<nav class="mt-10 flex items-center justify-between border-t border-base-content/15 pt-5" aria-label="Works pagination">
+							<p class="font-mono text-(length:--t-11) tracking-[1px] text-muted">{ fmt.Sprintf("PAGE %d OF %d", c.Page, c.PageCount) }</p>
+							<div class="flex gap-3.5 font-mono text-(length:--t-11) tracking-[1px]">
+								if c.Page > 1 {
+									<a href={ templ.SafeURL(c.PrevUrl) } hx-get={ c.PrevUrl } hx-target="#timeline" hx-select="#timeline" hx-swap="outerHTML" class="text-primary transition-opacity hover:opacity-60">← PREV</a>
+								} else {
+									<span class="text-faint-2">← PREV</span>
+								}
+								if c.Page < c.PageCount {
+									<a href={ templ.SafeURL(c.NextUrl) } hx-get={ c.NextUrl } hx-target="#timeline" hx-select="#timeline" hx-swap="outerHTML" class="text-primary transition-opacity hover:opacity-60">NEXT →</a>
+								} else {
+									<span class="text-faint-2">NEXT →</span>
+								}
+							</div>
+						</nav>
+					}
+				</section>
+			}
+		} else {
+			@components.EmptyState(emptyStateFor(c))
+		}
+	</section>
+}
+
+// emptyStateFor returns the honest absence state for the current view.
+func emptyStateFor(c TimelineView) dto.EmptyState {
+	if !c.HasRange {
+		return dto.EmptyState{
+			Title:         "No chronology yet",
+			Message:       "The collection has no published works with a known creation date and no approved art-period spans, so there is nothing to plot.",
+			RecoveryLabel: "BROWSE ALL ARTWORKS",
+			RecoveryHref:  "/artworks",
+		}
+	}
+
+	return dto.EmptyState{
+		Title:         "No works in this window",
+		Message:       "No published works are dated inside " + c.RangeLabel + ". Widen the window or reset to the full range.",
+		RecoveryLabel: "SHOW FULL RANGE",
+		RecoveryHref:  "/timeline",
+	}
+}
+
+func marksAria(c TimelineView) string {
+	return "Published works dated between " + strconv.Itoa(c.From) + " and " + strconv.Itoa(c.To)
+}
+
+func pct(value float64) string {
+	return fmt.Sprintf("%.2f", value)
+}

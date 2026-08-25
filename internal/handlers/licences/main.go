@@ -15,7 +15,7 @@ import (
 func RegisterHandlers(app *pocketbase.PocketBase) {
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		se.Router.GET("/open-source-licences", func(c *core.RequestEvent) error {
-			ctx := tmplUtils.DecorateContext(c.Request.Context(), tmplUtils.TitleKey, "Open-source licences")
+			ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, "Open-source licences")
 			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "Third-party software included in the Web Gallery of Art.")
 			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, tmplUtils.AssetUrl("/open-source-licences"))
 			c.Response.Header().Set("HX-Push-Url", utils.GenerateCurrentRelativePageUrl(c))

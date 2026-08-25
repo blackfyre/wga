@@ -35,6 +35,13 @@ func glossarySanitizer() *bluemonday.Policy {
 const (
 	glossaryCacheKey = "glossary:entries"
 	glossaryTTL      = 6 * time.Hour
+
+	// glossaryMaxEntries is the documented conservative ceiling applied to the
+	// in-prose annotation glossary query. The curated glossary holds a few
+	// hundred terms (610 in the release data); 2000 leaves generous headroom
+	// while keeping the fetch bounded. The public glossary page runs its own
+	// unbounded query and is unaffected.
+	glossaryMaxEntries = 2000
 )
 
 // GlossaryEntry represents a single glossary term with its matchable form and definition.
@@ -62,7 +69,7 @@ func GetGlossaryEntries(app *pocketbase.PocketBase) ([]GlossaryEntry, error) {
 		return cached, nil
 	}
 
-	records, err := app.FindRecordsByFilter(constants.CollectionGlossary, "", "+expression", 0, 0)
+	records, err := app.FindRecordsByFilter(constants.CollectionGlossary, "", "+expression", glossaryMaxEntries, 0)
 	if err != nil {
 		return nil, err
 	}

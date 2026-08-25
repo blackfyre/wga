@@ -105,6 +105,84 @@ func TestGlossaryRouteRendersFullAndHTMXResponses(t *testing.T) {
 	}
 }
 
+func TestGlossaryRouteSelectsTargetAwareResponse(t *testing.T) {
+	app := pocketbase.NewWithConfig(pocketbase.Config{DefaultDataDir: t.TempDir()})
+	if err := app.Bootstrap(); err != nil {
+		t.Fatalf("bootstrap test application: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := app.ResetBootstrapState(); err != nil {
+			t.Errorf("reset test application: %v", err)
+		}
+	})
+	createGlossaryCollection(t, app)
+	saveGlossaryTerm(t, app, "Acanthus", "An ornamental leaf.")
+	RegisterHandlers(app)
+
+	router, err := apis.NewRouter(app)
+	if err != nil {
+		t.Fatalf("create router: %v", err)
+	}
+	serveEvent := &core.ServeEvent{App: app, Router: router}
+	if err := app.OnServe().Trigger(serveEvent, func(event *core.ServeEvent) error {
+		mux, err := event.Router.BuildMux()
+		if err != nil {
+			return err
+		}
+
+		full := httptest.NewRecorder()
+		mux.ServeHTTP(full, httptest.NewRequest(http.MethodGet, "/glossary?letter=A", nil))
+		if full.Code != http.StatusOK {
+			t.Errorf("full status = %d, want %d", full.Code, http.StatusOK)
+		}
+		if !strings.Contains(full.Body.String(), "<html") {
+			t.Error("full response should render the full document")
+		}
+		if got := strings.Count(full.Body.String(), `id="mc-area"`); got != 1 {
+			t.Errorf("full response rendered %d #mc-area elements, want exactly 1", got)
+		}
+
+		for _, target := range []string{"mc-area", "#mc-area"} {
+			shell := httptest.NewRecorder()
+			request := httptest.NewRequest(http.MethodGet, "/glossary?letter=A", nil)
+			request.Header.Set("HX-Request", "true")
+			request.Header.Set("HX-Target", target)
+			mux.ServeHTTP(shell, request)
+			if shell.Code != http.StatusOK {
+				t.Errorf("shell(%s) status = %d, want %d", target, shell.Code, http.StatusOK)
+			}
+			if !strings.Contains(shell.Body.String(), "<html") {
+				t.Errorf("shell(%s) must render the full document", target)
+			}
+			if got := strings.Count(shell.Body.String(), `id="mc-area"`); got != 1 {
+				t.Errorf("shell(%s) rendered %d #mc-area elements, want exactly 1", target, got)
+			}
+		}
+
+		local := httptest.NewRecorder()
+		request := httptest.NewRequest(http.MethodGet, "/glossary?q=paint", nil)
+		request.Header.Set("HX-Request", "true")
+		request.Header.Set("HX-Target", "glossary")
+		mux.ServeHTTP(local, request)
+		if local.Code != http.StatusOK {
+			t.Errorf("local status = %d, want %d", local.Code, http.StatusOK)
+		}
+		if strings.Contains(local.Body.String(), "<html") {
+			t.Error("feature-local response should not render the full document")
+		}
+		if got := strings.Count(local.Body.String(), `id="glossary"`); got != 1 {
+			t.Errorf("feature-local response rendered %d #glossary elements, want exactly 1", got)
+		}
+		if strings.Contains(local.Body.String(), `id="mc-area"`) {
+			t.Error("feature-local response must not carry #mc-area")
+		}
+
+		return nil
+	}); err != nil {
+		t.Fatalf("trigger serve event: %v", err)
+	}
+}
+
 func newGlossaryTestApp(t *testing.T) *tests.TestApp {
 	t.Helper()
 

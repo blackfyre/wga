@@ -1,18 +1,195 @@
 package pages
 
 import (
+	"strconv"
+
 	"github.com/blackfyre/wga/internal/assets/templ/components"
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/assets/templ/layouts"
 	"github.com/blackfyre/wga/internal/assets/templ/utils"
 )
 
-templ ArtistPage(c dto.Artist) {
+// ArtistView is the page-owned read model for a public artist record. All
+// URLs are complete and resolved by the owning handler; the template never
+// constructs thumbnail or identity URLs itself.
+type ArtistView struct {
+	Name            string
+	Url             string // canonical relative /artists/{slug}-{id} URL
+	LifeSummary     string
+	Schools         string
+	Period          string
+	Profession      string
+	Aliases         string
+	Portrait        string // complete 600-profile-or-original URL, or ""
+	Bio             string // sanitized, glossary-annotated HTML
+	Works           []dto.Image
+	WorkCount       int
+	WorksURL        string // wider /artworks?artist= catalogue route
+	Selections      []SelectionPreview
+	Music           components.MusicPeriodCard
+	Citation        components.Citation
+	Jsonld          string
+	ShowBreadcrumbs bool
+}
+
+// SelectionPreview is a source-backed curated selection preview on the artist
+// record. All URLs are complete and resolved by the owning handler.
+type SelectionPreview struct {
+	URL             string // stable /artists/{slug}-{id}/selections/{id} route
+	DisplayTitle    string
+	SelectedCount   int
+	CataloguedCount int
+	Commentary      string // sanitized editorial HTML, or ""
+	HasCommentary   bool
+	Works           []dto.Image // bounded representative works
+}
+
+templ ArtistRecordPage(view ArtistView) {
 	@layouts.LayoutMain() {
-		@ArtistBlock(c)
+		@ArtistRecordContent(view)
 	}
 }
 
+// ArtistRecordBlock is the HTMX fragment for an artist record. It carries the
+// main content area id so the shared body-level hx-select/hx-swap contract
+// replaces the whole content area, and pushes the canonical record URL.
+templ ArtistRecordBlock(view ArtistView) {
+	<main id="mc-area" class="wga-enter">
+		@ArtistRecordContent(view)
+	</main>
+}
+
+templ ArtistRecordContent(view ArtistView) {
+	<head>
+		<title>{ utils.GetTitle(ctx) }</title>
+	</head>
+	<section class="container mx-auto px-4 pb-20 pt-10 md:px-0">
+		if view.ShowBreadcrumbs {
+			<nav class="mb-8 font-mono text-[10px] tracking-[1.5px] text-base-content/60" aria-label="Breadcrumb">
+				<a href="/artists" hx-get="/artists" class="hover:text-base-content">ARTISTS</a>
+				<span class="mx-2" aria-hidden="true">/</span>
+				if view.Schools != "" {
+					<span>{ view.Schools }</span>
+					<span class="mx-2" aria-hidden="true">/</span>
+				}
+				<a href={ templ.URL(view.Url) } hx-get={ view.Url } class="text-base-content" aria-current="page">{ view.Name }</a>
+			</nav>
+		}
+		<article class="grid gap-8 md:grid-cols-[minmax(0,1fr)_200px]">
+			<div>
+				<p class="font-mono text-[11px] tracking-[2px] text-base-content/60">02 — ARTIST</p>
+				<h1 class="mt-3 text-[44px] font-semibold leading-[1.05] tracking-[-0.75px] md:text-[52px]">{ view.Name }</h1>
+				<p class="mt-4 font-mono text-[12px] tracking-[1px] text-primary">{ view.LifeSummary }{ artistPeriodSuffix(view) }</p>
+			</div>
+			<figure>
+				@components.Plate(dto.Plate{DisplayURL: view.Portrait, Alt: view.Name, Placeholder: "PORTRAIT — " + view.Name, Aspect: "aspect-square"})
+			</figure>
+		</article>
+		<div class="mt-10 flex flex-col gap-10 border-t border-base-content/15 pt-8 md:flex-row md:gap-16">
+			<aside class="w-full shrink-0 md:w-[300px]">
+				@components.MetaList(artistMetaEntries(view))
+				if view.Music.PlayerURL != "" {
+					@components.MusicPeriodPlayerCard(view.Music.SongID, view.Music.Piece, view.Music.PlayerURL)
+				}
+			</aside>
+			<div class="min-w-0 flex-1">
+				<p class="mb-3 font-mono text-[11px] tracking-[1.5px] text-base-content/60">BIOGRAPHY</p>
+				<div class="content max-w-[620px] text-[16px] leading-[1.7]">
+					@templ.Raw(view.Bio)
+				</div>
+				if len(view.Selections) > 0 {
+					<section class="mt-11 max-w-[860px]" aria-labelledby="artist-selections">
+						<h2 id="artist-selections" class="mb-6 border-t border-base-content/15 pt-[18px] font-mono text-[11px] tracking-[1.5px]">CURATED SELECTIONS</h2>
+						for _, selection := range view.Selections {
+							<article class="mb-10 border-b border-base-content/15 pb-10">
+								<div class="mb-4 flex items-baseline justify-between gap-4 border-b border-base-content/15 pb-[10px]">
+									<h3 class="text-[22px] font-semibold leading-tight">{ selection.DisplayTitle }</h3>
+									<p class="font-mono text-[10px] tracking-[1px] text-base-content/60">{ selectionCounts(selection) }</p>
+								</div>
+								if selection.HasCommentary {
+									<div class="content max-w-[620px] text-[16px] leading-[1.7]">
+										@templ.Raw(selection.Commentary)
+									</div>
+								} else {
+									<p class="max-w-[620px] text-[16px] leading-[1.7] text-base-content/70">Commentary is unavailable for this selection.</p>
+								}
+								if len(selection.Works) > 0 {
+									<div class="mt-6">
+										@components.PublicArtworkGrid(selection.Works)
+									</div>
+								}
+								<a href={ templ.URL(selection.URL) } hx-get={ selection.URL } class="mt-6 inline-block font-mono text-[11px] tracking-[1px] text-primary transition-opacity hover:opacity-60">OPEN SELECTION →</a>
+							</article>
+						}
+					</section>
+				}
+				<section class="mt-11 max-w-[620px]">
+					<div class="mb-5 flex items-baseline justify-between border-t border-base-content/15 pt-[18px]">
+						<h2 class="font-mono text-[11px] tracking-[1.5px]">WORKS IN ARCHIVE</h2>
+						if view.WorkCount > 0 {
+							<p class="font-mono text-[10px] tracking-[1px] text-base-content/60">{ artistWorksSummary(view) }</p>
+						}
+					</div>
+					if view.WorkCount == 0 {
+						<div class="border-b border-base-content/15 py-10">
+							<p class="text-base leading-relaxed text-base-content/70">No published works are in the archive for this artist yet.</p>
+						</div>
+					} else {
+						@components.PublicArtworkGrid(view.Works)
+						if view.WorkCount > len(view.Works) {
+							<a href={ templ.URL(view.WorksURL) } hx-get={ view.WorksURL } class="mt-8 inline-block font-mono text-[11px] tracking-[1px] text-primary transition-opacity hover:opacity-60">VIEW ALL WORKS →</a>
+						}
+					}
+				</section>
+			</div>
+		</div>
+		@components.CitationBlock(view.Citation)
+		@templ.Raw(view.Jsonld)
+	</section>
+}
+
+// artistMetaEntries builds the aside meta rows for an artist record. LIFE
+// always renders (even empty) to match the record's prior always-present
+// life summary; the rest are omitted when the source data carries no value.
+func artistMetaEntries(view ArtistView) []components.MetaEntry {
+	entries := []components.MetaEntry{{Label: "LIFE", Value: view.LifeSummary}}
+	for _, entry := range []components.MetaEntry{
+		{Label: "SCHOOLS", Value: view.Schools},
+		{Label: "PERIOD", Value: view.Period},
+		{Label: "PROFESSION", Value: view.Profession},
+		{Label: "ALIASES", Value: view.Aliases},
+	} {
+		if entry.Value != "" {
+			entries = append(entries, entry)
+		}
+	}
+
+	return entries
+}
+
+func artistPeriodSuffix(view ArtistView) string {
+	if view.Period == "" {
+		return ""
+	}
+
+	return " · " + view.Period
+}
+
+func artistWorksSummary(view ArtistView) string {
+	shown := len(view.Works)
+	if view.WorkCount > shown {
+		return strconv.Itoa(shown) + " OF " + strconv.Itoa(view.WorkCount) + " RECORDS"
+	}
+
+	return strconv.Itoa(view.WorkCount) + " RECORDS"
+}
+
+func selectionCounts(selection SelectionPreview) string {
+	return strconv.Itoa(selection.SelectedCount) + " SELECTED · " + strconv.Itoa(selection.CataloguedCount) + " CATALOGUED"
+}
+
+// ArtistBlock remains for the Dual Mode pane adapter, which still consumes the
+// shared dto.Artist record DTO until Dual Mode records are rebuilt.
 templ ArtistBlock(a dto.Artist) {
 	<head>
 		<title>{ utils.GetTitle(ctx) }</title>

@@ -1,0 +1,39 @@
+package components
+
+import (
+	"github.com/blackfyre/wga/internal/assets/templ/utils"
+)
+
+// AddToItineraryButton renders a progressively enhanced add form on supported
+// published artwork surfaces. The synchroniser token and added state are read
+// from the request context prepared by the central itinerary session
+// middleware; the control renders nothing without a projected session so
+// cookie-less requests never expose a broken form. The ordinary form submit
+// works without JavaScript; HTMX swaps the tray in place.
+templ AddToItineraryButton(artworkID string, variant string) {
+	if csrf := utils.GetItineraryCSRF(ctx); csrf != "" {
+		<form method="post" action="/itineraries/draft/add" class="inline" hx-post="/itineraries/draft/add" hx-target="#itinerary-tray" hx-swap="outerHTML" hx-select="unset">
+			<input type="hidden" name="artwork_id" value={ artworkID }/>
+			<input type="hidden" name="_csrf" value={ csrf }/>
+			if utils.GetItineraryAdded(ctx, artworkID) {
+				<button type="submit" disabled aria-disabled="true" class={ addButtonClass(variant, true) }>ADDED</button>
+			} else {
+				<button type="submit" class={ addButtonClass(variant, false) }>ADD TO ITINERARY</button>
+			}
+		</form>
+	}
+}
+
+func addButtonClass(variant string, added bool) string {
+	class := "border font-mono text-(length:--t-10) tracking-[1px] transition-colors"
+	if added {
+		class += " cursor-not-allowed border-base-content/20 px-3 py-1.5 text-base-content/40"
+	} else {
+		class += " border-control px-3 py-1.5 text-base-content/70 hover:border-base-content"
+	}
+	if variant == "block" {
+		class += " block w-full"
+	}
+
+	return class
+}

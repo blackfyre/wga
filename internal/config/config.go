@@ -2,6 +2,8 @@
 package config
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/mail"
@@ -63,6 +65,17 @@ func (e Environment) IsDevelopment() bool {
 func (e Environment) AllowsCaptchaBypass() bool {
 	return e == EnvironmentDevelopment || e == EnvironmentTest
 }
+
+// ClientIPSource selects how the trusted client identity is resolved for
+// anonymous-write surfaces. direct parses the socket peer and ignores
+// forwarding headers; railway follows the production Railway-edge contract.
+type ClientIPSource string
+
+// Supported client-identity sources.
+const (
+	ClientIPSourceDirect  ClientIPSource = "direct"
+	ClientIPSourceRailway ClientIPSource = "railway"
+)
 
 // PublicURL is the canonical external URL for the application.
 type PublicURL struct {
@@ -187,15 +200,75 @@ func (c Captcha) SiteKey() string {
 
 // Postcards contains the postcard delivery schedule and email settings.
 type Postcards struct {
-	expression string
-	schedule   cron.Schedule
-	Sender     MailSender
-	PublicURL  PublicURL
+	expression   string
+	schedule     cron.Schedule
+	tokenKeyring PostcardTokenKeyring
+	Sender       MailSender
+	PublicURL    PublicURL
 }
 
 // Expression returns the configured postcard delivery schedule.
 func (p Postcards) Expression() string {
 	return p.expression
+}
+
+// TokenKeyring returns the keyring used to protect postcard access tokens.
+func (p Postcards) TokenKeyring() PostcardTokenKeyring {
+	return p.tokenKeyring
+}
+
+// PostcardTokenKey holds an AES-256 key and redacts it when formatted.
+type PostcardTokenKey struct {
+	value [32]byte
+}
+
+// Bytes returns a copy of the key bytes.
+func (k PostcardTokenKey) Bytes() []byte {
+	value := make([]byte, len(k.value))
+	copy(value, k.value[:])
+	return value
+}
+
+// String returns a redacted representation of the key.
+func (PostcardTokenKey) String() string {
+	return "[redacted]"
+}
+
+// GoString returns a redacted Go-syntax representation of the key.
+func (PostcardTokenKey) GoString() string {
+	return "config.PostcardTokenKey([redacted])"
+}
+
+// PostcardTokenKeyring contains versioned postcard token keys.
+type PostcardTokenKeyring struct {
+	activeKeyID string
+	keys        map[string]PostcardTokenKey
+}
+
+// ActiveKeyID returns the identifier used when issuing new tokens.
+func (k PostcardTokenKeyring) ActiveKeyID() string {
+	return k.activeKeyID
+}
+
+// ActiveKey returns the key used when issuing new tokens.
+func (k PostcardTokenKeyring) ActiveKey() PostcardTokenKey {
+	return k.keys[k.activeKeyID]
+}
+
+// Key returns the key identified by keyID for token recovery.
+func (k PostcardTokenKeyring) Key(keyID string) (PostcardTokenKey, bool) {
+	key, ok := k.keys[keyID]
+	return key, ok
+}
+
+// String returns a redacted representation of the keyring.
+func (PostcardTokenKeyring) String() string {
+	return "[redacted]"
+}
+
+// GoString returns a redacted Go-syntax representation of the keyring.
+func (PostcardTokenKeyring) GoString() string {
+	return "config.PostcardTokenKeyring([redacted])"
 }
 
 // Sitemap contains the settings required to generate a sitemap.
@@ -206,11 +279,12 @@ type Sitemap struct {
 
 // Server contains the settings required to run the HTTP application.
 type Server struct {
-	Environment Environment
-	PublicURL   PublicURL
-	Postcards   Postcards
-	Captcha     Captcha
-	Sentry      Sentry
+	Environment    Environment
+	PublicURL      PublicURL
+	ClientIPSource ClientIPSource
+	Postcards      Postcards
+	Captcha        Captcha
+	Sentry         Sentry
 }
 
 // Sitemap returns the sitemap settings derived from the server settings.
@@ -267,13 +341,15 @@ func (m Migrations) SeedSQLitePath() string {
 
 // Config holds parsed application configuration for each runtime capability.
 type Config struct {
-	environment parsed[Environment]
-	publicURL   parsed[PublicURL]
-	sender      parsed[MailSender]
-	postcards   parsed[Postcards]
-	captcha     Captcha
-	sentry      parsed[Sentry]
-	migrations  Migrations
+	environment          parsed[Environment]
+	publicURL            parsed[PublicURL]
+	clientIPSource       parsed[ClientIPSource]
+	sender               parsed[MailSender]
+	postcards            parsed[Postcards]
+	postcardTokenKeyring parsed[PostcardTokenKeyring]
+	captcha              Captcha
+	sentry               parsed[Sentry]
+	migrations           Migrations
 }
 
 // Load reads .env when present, then loads configuration from the environment.
@@ -293,11 +369,16 @@ func LoadFrom(lookup Lookup) Config {
 
 	environment := parseEnvironment(lookup("WGA_ENV"))
 	publicURL := parsePublicURL(lookup)
+	clientIPSource := parseClientIPSource(lookup, environment.value)
 	sender := parseSender(lookup)
 	mailConfig := parseMail(lookup, sender)
 	storage := parseStorage(lookup)
 	administrator := parseAdministrator(lookup)
-	postcards := parsePostcards(lookup, publicURL.value, sender.value)
+	postcardTokenKeyring := parsePostcardTokenKeyring(
+		Secret{value: lookup("WGA_POSTCARD_TOKEN_KEYS")},
+		lookup("WGA_POSTCARD_TOKEN_ACTIVE_KEY_ID"),
+	)
+	postcards := parsePostcards(lookup, publicURL.value, sender.value, postcardTokenKeyring.value)
 	sentryConfig := parseSentry(
 		lookup("WGA_SENTRY_DSN"),
 		lookup("WGA_SENTRY_BROWSER_DSN"),
@@ -309,12 +390,14 @@ func LoadFrom(lookup Lookup) Config {
 	captcha.verify = captcha.secret.Value() != ""
 
 	return Config{
-		environment: environment,
-		publicURL:   publicURL,
-		sender:      sender,
-		postcards:   postcards,
-		captcha:     captcha,
-		sentry:      sentryConfig,
+		environment:          environment,
+		publicURL:            publicURL,
+		clientIPSource:       clientIPSource,
+		sender:               sender,
+		postcards:            postcards,
+		postcardTokenKeyring: postcardTokenKeyring,
+		captcha:              captcha,
+		sentry:               sentryConfig,
 		migrations: Migrations{
 			publicURL:      publicURL,
 			storage:        storage,
@@ -333,11 +416,12 @@ func (c Config) Environment() Environment {
 // Server returns validated settings required to run the HTTP application.
 func (c Config) Server() (Server, error) {
 	server := Server{
-		Environment: c.environment.value,
-		PublicURL:   c.publicURL.value,
-		Postcards:   c.postcards.value,
-		Captcha:     c.captcha,
-		Sentry:      c.sentry.value,
+		Environment:    c.environment.value,
+		PublicURL:      c.publicURL.value,
+		ClientIPSource: c.clientIPSource.value,
+		Postcards:      c.postcards.value,
+		Captcha:        c.captcha,
+		Sentry:         c.sentry.value,
 	}
 
 	senderErr := c.sender.err
@@ -363,11 +447,17 @@ func (c Config) Server() (Server, error) {
 	return server, errors.Join(
 		c.environment.err,
 		c.publicURL.err,
+		c.clientIPSource.err,
 		c.postcards.err,
 		c.sentry.err,
 		senderErr,
 		captchaErr,
 	)
+}
+
+// PostcardTokenKeyring returns the validated keyring used for postcard access tokens.
+func (c Config) PostcardTokenKeyring() (PostcardTokenKeyring, error) {
+	return c.postcardTokenKeyring.value, c.postcardTokenKeyring.err
 }
 
 // parseSentry validates the optional server and browser Sentry DSNs.
@@ -416,6 +506,26 @@ func (c Config) Sitemap() (Sitemap, error) {
 // Migrations returns the configuration needed while applying migrations.
 func (c Config) Migrations() Migrations {
 	return c.migrations
+}
+
+// parseClientIPSource validates the trusted client-identity source. An empty
+// value defaults to direct for development and test, and is otherwise an error
+// so production and staging must select a source explicitly.
+func parseClientIPSource(lookup Lookup, environment Environment) parsed[ClientIPSource] {
+	value := lookup("WGA_CLIENT_IP_SOURCE")
+	if value == "" {
+		if environment.IsDevelopment() || environment == EnvironmentTest {
+			return parsed[ClientIPSource]{value: ClientIPSourceDirect}
+		}
+		return parsed[ClientIPSource]{err: required("WGA_CLIENT_IP_SOURCE")}
+	}
+
+	switch ClientIPSource(value) {
+	case ClientIPSourceDirect, ClientIPSourceRailway:
+		return parsed[ClientIPSource]{value: ClientIPSource(value)}
+	default:
+		return parsed[ClientIPSource]{err: fmt.Errorf("WGA_CLIENT_IP_SOURCE must be direct or railway")}
+	}
 }
 
 // parseEnvironment validates a deployment environment value.
@@ -550,25 +660,128 @@ func parseAdministrator(lookup Lookup) parsed[Administrator] {
 }
 
 // parsePostcards validates the postcard delivery schedule and dependencies.
-func parsePostcards(lookup Lookup, publicURL PublicURL, sender MailSender) parsed[Postcards] {
+func parsePostcards(lookup Lookup, publicURL PublicURL, sender MailSender, tokenKeyring PostcardTokenKeyring) parsed[Postcards] {
 	expression := lookup("WGA_POSTCARD_FREQUENCY")
 	if expression == "" {
 		expression = "*/1 * * * *"
 	}
 
-	schedule, err := cron.ParseStandard(expression)
-	if err != nil {
-		return parsed[Postcards]{err: fmt.Errorf("WGA_POSTCARD_FREQUENCY must be a valid cron expression")}
+	schedule, scheduleErr := cron.ParseStandard(expression)
+	if scheduleErr != nil {
+		scheduleErr = fmt.Errorf("WGA_POSTCARD_FREQUENCY must be a valid cron expression")
 	}
 
 	return parsed[Postcards]{
 		value: Postcards{
-			expression: expression,
-			schedule:   schedule,
-			Sender:     sender,
-			PublicURL:  publicURL,
+			expression:   expression,
+			schedule:     schedule,
+			tokenKeyring: tokenKeyring,
+			Sender:       sender,
+			PublicURL:    publicURL,
 		},
+		err: scheduleErr,
 	}
+}
+
+// parsePostcardTokenKeyring validates the versioned postcard token keys.
+func parsePostcardTokenKeyring(encodedKeys Secret, activeKeyID string) parsed[PostcardTokenKeyring] {
+	var errs []error
+	if encodedKeys.Value() == "" {
+		errs = append(errs, required("WGA_POSTCARD_TOKEN_KEYS"))
+	}
+	if activeKeyID == "" {
+		errs = append(errs, required("WGA_POSTCARD_TOKEN_ACTIVE_KEY_ID"))
+	}
+
+	activeKeyIDValid := activeKeyID == "" || validPostcardTokenKeyID(activeKeyID)
+	if !activeKeyIDValid {
+		errs = append(errs, fmt.Errorf("WGA_POSTCARD_TOKEN_ACTIVE_KEY_ID must be a valid key ID"))
+	}
+
+	keyring := PostcardTokenKeyring{
+		activeKeyID: activeKeyID,
+		keys:        make(map[string]PostcardTokenKey),
+	}
+	if encodedKeys.Value() == "" {
+		return parsed[PostcardTokenKeyring]{value: keyring, err: errors.Join(errs...)}
+	}
+
+	var values map[string]string
+	if err := json.Unmarshal([]byte(encodedKeys.Value()), &values); err != nil {
+		errs = append(errs, fmt.Errorf("WGA_POSTCARD_TOKEN_KEYS must be a JSON object of Base64URL-encoded keys"))
+		return parsed[PostcardTokenKeyring]{value: keyring, err: errors.Join(errs...)}
+	}
+	if len(values) == 0 {
+		errs = append(errs, fmt.Errorf("WGA_POSTCARD_TOKEN_KEYS must contain at least one key"))
+		return parsed[PostcardTokenKeyring]{value: keyring, err: errors.Join(errs...)}
+	}
+
+	keysValid := true
+	for keyID, encodedKey := range values {
+		if !validPostcardTokenKeyID(keyID) {
+			errs = append(errs, fmt.Errorf("WGA_POSTCARD_TOKEN_KEYS contains an invalid key ID"))
+			keysValid = false
+			break
+		}
+
+		decodedKey, err := decodePostcardTokenKey(encodedKey)
+		if err != nil {
+			errs = append(errs, err)
+			keysValid = false
+			break
+		}
+		keyring.keys[keyID] = decodedKey
+	}
+
+	if keysValid && activeKeyID != "" && activeKeyIDValid {
+		if _, ok := keyring.keys[activeKeyID]; !ok {
+			errs = append(errs, fmt.Errorf("WGA_POSTCARD_TOKEN_ACTIVE_KEY_ID must identify a key in WGA_POSTCARD_TOKEN_KEYS"))
+		}
+	}
+
+	return parsed[PostcardTokenKeyring]{value: keyring, err: errors.Join(errs...)}
+}
+
+func validPostcardTokenKeyID(keyID string) bool {
+	if keyID == "" || len(keyID) > 64 {
+		return false
+	}
+
+	for index := 0; index < len(keyID); index++ {
+		character := keyID[index]
+		if character >= 'a' && character <= 'z' {
+			continue
+		}
+		if character >= 'A' && character <= 'Z' {
+			continue
+		}
+		if character >= '0' && character <= '9' {
+			continue
+		}
+		if character == '-' || character == '_' {
+			continue
+		}
+		return false
+	}
+
+	return true
+}
+
+func decodePostcardTokenKey(encodedKey string) (PostcardTokenKey, error) {
+	decoded, err := base64.RawURLEncoding.DecodeString(encodedKey)
+	if err != nil {
+		decoded, err = base64.URLEncoding.DecodeString(encodedKey)
+	}
+	if err != nil {
+		return PostcardTokenKey{}, fmt.Errorf("WGA_POSTCARD_TOKEN_KEYS must contain valid Base64URL-encoded keys")
+	}
+	if len(decoded) != 32 {
+		return PostcardTokenKey{}, fmt.Errorf("WGA_POSTCARD_TOKEN_KEYS must contain 32-byte AES-256 keys")
+	}
+
+	var key PostcardTokenKey
+	copy(key.value[:], decoded)
+	return key, nil
 }
 
 // parseAbsoluteURL validates value as an absolute URL for name.

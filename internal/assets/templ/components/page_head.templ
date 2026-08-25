@@ -1,0 +1,22 @@
+package components
+
+templ PageHead(index string, title string, intro string) {
+	<div class="mb-11">
+		if index != "" {
+			<p class="mb-3 font-mono text-(length:--t-11) tracking-[2px] text-muted">{ index }</p>
+		}
+		<h1 class="mb-3 text-(length:--t-32) font-semibold leading-tight tracking-[-0.5px] md:text-(length:--t-44)">{ title }</h1>
+		if intro != "" {
+			<p class="max-w-[560px] text-base leading-relaxed text-base-content/70 text-pretty">{ intro }</p>
+		}
+	</div>
+}
+
+templ SectionRule(title string, linkLabel string, linkHref string) {
+	<div class="mb-5 flex flex-wrap items-baseline justify-between gap-4 border-b border-base-content pb-2.5">
+		<h2 class="font-mono text-(length:--t-11) tracking-[1.5px]">{ title }</h2>
+		if linkLabel != "" && linkHref != "" {
+			<a href={ templ.SafeURL(linkHref) } class="font-mono text-(length:--t-11) tracking-[1px] text-primary transition-opacity hover:opacity-60">{ linkLabel }</a>
+		}
+	</div>
+}

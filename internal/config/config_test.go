@@ -1,6 +1,8 @@
 package config
 
 import (
+	"bytes"
+	"encoding/base64"
 	"fmt"
 	"strings"
 	"testing"
@@ -53,12 +55,13 @@ func TestServerSentryConfiguration(t *testing.T) {
 
 func TestServerCaptchaPolicy(t *testing.T) {
 	tests := []struct {
-		name        string
-		environment string
-		secret      string
-		siteKey     string
-		wantVerify  bool
-		wantErr     string
+		name           string
+		environment    string
+		secret         string
+		siteKey        string
+		clientIPSource string
+		wantVerify     bool
+		wantErr        string
 	}{
 		{
 			name:        "development permits bypass",
@@ -80,11 +83,12 @@ func TestServerCaptchaPolicy(t *testing.T) {
 			wantErr:     "WGA_RECAPTCHA_SITE_KEY",
 		},
 		{
-			name:        "production verifies configured secret",
-			environment: "production",
-			secret:      "captcha-secret",
-			siteKey:     "captcha-site-key",
-			wantVerify:  true,
+			name:           "production verifies configured secret",
+			environment:    "production",
+			secret:         "captcha-secret",
+			siteKey:        "captcha-site-key",
+			clientIPSource: "railway",
+			wantVerify:     true,
 		},
 	}
 
@@ -94,6 +98,7 @@ func TestServerCaptchaPolicy(t *testing.T) {
 			values["WGA_ENV"] = test.environment
 			values["WGA_RECAPTCHA_SECRET"] = test.secret
 			values["WGA_RECAPTCHA_SITE_KEY"] = test.siteKey
+			values["WGA_CLIENT_IP_SOURCE"] = test.clientIPSource
 
 			server, err := LoadFrom(lookup(values)).Server()
 			if test.wantErr != "" {
@@ -112,6 +117,191 @@ func TestServerCaptchaPolicy(t *testing.T) {
 				t.Fatalf("expected site key %q, got %q", want, got)
 			}
 		})
+	}
+}
+
+func TestServerClientIPSource(t *testing.T) {
+	tests := []struct {
+		name        string
+		environment string
+		source      string
+		want        ClientIPSource
+		wantErr     string
+	}{
+		{name: "development defaults to direct", environment: "development", want: ClientIPSourceDirect},
+		{name: "test defaults to direct", environment: "test", want: ClientIPSourceDirect},
+		{name: "development explicit direct", environment: "development", source: "direct", want: ClientIPSourceDirect},
+		{name: "development explicit railway", environment: "development", source: "railway", want: ClientIPSourceRailway},
+		{name: "production requires explicit source", environment: "production", wantErr: "WGA_CLIENT_IP_SOURCE"},
+		{name: "staging requires explicit source", environment: "staging", wantErr: "WGA_CLIENT_IP_SOURCE"},
+		{name: "production explicit railway", environment: "production", source: "railway", want: ClientIPSourceRailway},
+		{name: "unknown source", environment: "development", source: "forwarded", wantErr: "WGA_CLIENT_IP_SOURCE"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			values := validValues()
+			values["WGA_ENV"] = test.environment
+			values["WGA_CLIENT_IP_SOURCE"] = test.source
+			values["WGA_RECAPTCHA_SECRET"] = "captcha-secret"
+
+			server, err := LoadFrom(lookup(values)).Server()
+			if test.wantErr != "" {
+				if err == nil || !strings.Contains(err.Error(), test.wantErr) {
+					t.Fatalf("expected error containing %q, got %v", test.wantErr, err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected server configuration error: %v", err)
+			}
+			if server.ClientIPSource != test.want {
+				t.Fatalf("client IP source = %q, want %q", server.ClientIPSource, test.want)
+			}
+		})
+	}
+}
+
+func TestPostcardTokenKeyringParsesMultipleKeys(t *testing.T) {
+	activeBytes := bytes.Repeat([]byte{0x22}, 32)
+	previousBytes := bytes.Repeat([]byte{0x11}, 32)
+	values := validValues()
+	values["WGA_POSTCARD_TOKEN_KEYS"] = fmt.Sprintf(
+		`{"v1":%q,"v2":%q}`,
+		base64.RawURLEncoding.EncodeToString(previousBytes),
+		base64.RawURLEncoding.EncodeToString(activeBytes),
+	)
+	values["WGA_POSTCARD_TOKEN_ACTIVE_KEY_ID"] = "v2"
+
+	configuration := LoadFrom(lookup(values))
+	keyring, err := configuration.PostcardTokenKeyring()
+	if err != nil {
+		t.Fatalf("unexpected postcard token keyring error: %v", err)
+	}
+	if got, want := keyring.ActiveKeyID(), "v2"; got != want {
+		t.Fatalf("active key ID = %q, want %q", got, want)
+	}
+	if got := keyring.ActiveKey().Bytes(); !bytes.Equal(got, activeBytes) {
+		t.Fatalf("active key did not match configured key")
+	}
+	previous, ok := keyring.Key("v1")
+	if !ok {
+		t.Fatal("expected previous key to remain available")
+	}
+	if got := previous.Bytes(); !bytes.Equal(got, previousBytes) {
+		t.Fatalf("previous key did not match configured key")
+	}
+	if _, ok := keyring.Key("missing"); ok {
+		t.Fatal("unexpected missing key")
+	}
+
+	returnedBytes := keyring.ActiveKey().Bytes()
+	returnedBytes[0] = 0
+	if got := keyring.ActiveKey().Bytes(); !bytes.Equal(got, activeBytes) {
+		t.Fatal("mutating returned bytes changed the configured key")
+	}
+
+	server, err := configuration.Server()
+	if err != nil {
+		t.Fatalf("unexpected server configuration error: %v", err)
+	}
+	if got, want := server.Postcards.TokenKeyring().ActiveKeyID(), "v2"; got != want {
+		t.Fatalf("server postcard active key ID = %q, want %q", got, want)
+	}
+	if got := fmt.Sprint(keyring); got != "[redacted]" {
+		t.Fatalf("expected redacted keyring, got %q", got)
+	}
+	if got := fmt.Sprint(keyring.ActiveKey()); got != "[redacted]" {
+		t.Fatalf("expected redacted key, got %q", got)
+	}
+}
+
+func TestPostcardTokenKeyringRejectsInvalidConfiguration(t *testing.T) {
+	validKey := base64.RawURLEncoding.EncodeToString(bytes.Repeat([]byte{0x33}, 32))
+	shortKey := base64.RawURLEncoding.EncodeToString(bytes.Repeat([]byte{0x44}, 31))
+	tests := []struct {
+		name      string
+		keys      string
+		activeID  string
+		wantErr   string
+		forbidden []string
+	}{
+		{
+			name:      "missing keys",
+			activeID:  "v1",
+			wantErr:   "WGA_POSTCARD_TOKEN_KEYS must be set",
+			forbidden: []string{"v1"},
+		},
+		{
+			name:      "malformed JSON",
+			keys:      `{"v1":"json-secret-marker"`,
+			activeID:  "v1",
+			wantErr:   "JSON object",
+			forbidden: []string{"json-secret-marker", `{"v1"`},
+		},
+		{
+			name:      "malformed Base64URL",
+			keys:      `{"v1":"base64+secret/marker"}`,
+			activeID:  "v1",
+			wantErr:   "valid Base64URL-encoded keys",
+			forbidden: []string{"base64+secret/marker", "v1"},
+		},
+		{
+			name:      "invalid key ID",
+			keys:      fmt.Sprintf(`{"bad key secret-marker":%q}`, validKey),
+			activeID:  "v1",
+			wantErr:   "invalid key ID",
+			forbidden: []string{"bad key secret-marker", validKey},
+		},
+		{
+			name:      "wrong key length",
+			keys:      fmt.Sprintf(`{"v1":%q}`, shortKey),
+			activeID:  "v1",
+			wantErr:   "32-byte AES-256 keys",
+			forbidden: []string{shortKey, "v1"},
+		},
+		{
+			name:      "missing active ID",
+			keys:      fmt.Sprintf(`{"v1":%q}`, validKey),
+			wantErr:   "WGA_POSTCARD_TOKEN_ACTIVE_KEY_ID must be set",
+			forbidden: []string{validKey, "v1"},
+		},
+		{
+			name:      "missing active key",
+			keys:      fmt.Sprintf(`{"v1":%q}`, validKey),
+			activeID:  "v2-secret-marker",
+			wantErr:   "must identify a key",
+			forbidden: []string{validKey, "v2-secret-marker"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			values := validValues()
+			values["WGA_POSTCARD_TOKEN_KEYS"] = test.keys
+			values["WGA_POSTCARD_TOKEN_ACTIVE_KEY_ID"] = test.activeID
+
+			_, err := LoadFrom(lookup(values)).PostcardTokenKeyring()
+			if err == nil || !strings.Contains(err.Error(), test.wantErr) {
+				t.Fatalf("expected error containing %q, got %v", test.wantErr, err)
+			}
+			for _, forbidden := range test.forbidden {
+				if strings.Contains(err.Error(), forbidden) {
+					t.Fatalf("configuration error exposed a supplied value: %v", err)
+				}
+			}
+		})
+	}
+}
+
+func TestPostcardTokenKeyringValidationIsCapabilitySpecific(t *testing.T) {
+	configuration := LoadFrom(lookup(validValues()))
+
+	if _, err := configuration.Server(); err != nil {
+		t.Fatalf("server should not require postcard token keys: %v", err)
+	}
+	if _, err := configuration.PostcardTokenKeyring(); err == nil {
+		t.Fatal("expected postcard token keyring validation error")
 	}
 }
 

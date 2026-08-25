@@ -11,7 +11,7 @@
         <mj-image
           align="left"
           container-background-color="#013365"
-          src="http://127.0.0.1:8090/assets/images/logo.png"
+          src="{{.LogoUrl}}"
           alt="Web Gallery of Art Logo"
           width="318px"
           padding="0"
@@ -33,8 +33,7 @@
         </mj-button>
 
         <mj-text
-          >The postcard will be indefinitely available to you with the
-          link.</mj-text
+          >This link expires after 30 days, so pick up your postcard soon.</mj-text
         >
       </mj-column>
     </mj-section>

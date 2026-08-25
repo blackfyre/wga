@@ -2,16 +2,16 @@
 
 ### Requirement: Visitor itinerary drafts
 
-The system SHALL maintain one bounded, session-owned itinerary draft and SHALL let a visitor add, remove, order, and narrate its artwork stops.
+The system SHALL maintain one session-owned itinerary draft of at most fifteen stops and SHALL let a visitor add, remove, order, and narrate published artwork stops from supported cards, records, and Dual Mode panes.
 
 #### Scenario: Visitor adds an artwork
 
-- **WHEN** a visitor adds an artwork from a public record
+- **WHEN** a visitor adds a published artwork from a supported public surface
 - **THEN** the system persists it in that visitor's draft and updates the itinerary tray.
 
 ### Requirement: Published itinerary sharing
 
-The system SHALL publish a valid draft to an unguessable, expiring public URL.
+The system SHALL publish a valid draft to an immutable, unguessable public URL with a stated one-year expiry.
 
 #### Scenario: Visitor publishes a draft
 
@@ -20,12 +20,12 @@ The system SHALL publish a valid draft to an unguessable, expiring public URL.
 
 ### Requirement: Safe public itinerary viewing
 
-The system SHALL render published, unexpired, moderated itineraries without exposing draft-session data.
+The system SHALL render published, unexpired, moderated itineraries without exposing draft-session data and SHALL provide a fixed slideshow that loads one stop at a time with server-rendered fallback navigation.
 
 #### Scenario: Visitor opens a shared itinerary
 
 - **WHEN** a visitor opens a valid published itinerary URL
-- **THEN** the system renders its ordered stops and narration in the public layout.
+- **THEN** the system renders its ordered stops and narration through the public slideshow without exposing the draft session.
 
 ### Requirement: Expiry and abuse controls
 

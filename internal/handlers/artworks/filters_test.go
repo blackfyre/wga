@@ -1,6 +1,7 @@
 package artworks
 
 import (
+	"net/url"
 	"strings"
 	"testing"
 )
@@ -84,5 +85,136 @@ func TestFiltersBuildPathOmitsDefaultGridView(t *testing.T) {
 
 	if path != "/artworks" {
 		t.Errorf("path = %q, want /artworks", path)
+	}
+}
+
+func TestFiltersBuildFilterIncludesTechnique(t *testing.T) {
+	filterString, params := (&filters{TechniqueString: "fresco"}).BuildFilter()
+
+	if !strings.Contains(filterString, "technique ~ {:technique}") {
+		t.Errorf("filter %q does not contain technique clause", filterString)
+	}
+	if got := params["technique"]; got != "fresco" {
+		t.Errorf("parameter technique = %q, want %q", got, "fresco")
+	}
+}
+
+func TestFiltersBuildFilterIncludesPeriodAndLocation(t *testing.T) {
+	filterString, params := (&filters{
+		PeriodString:   "periodbaroque1",
+		LocationString: "locflorence01",
+	}).BuildFilter()
+
+	for _, condition := range []string{
+		"art_period_id = {:period}",
+		"current_location_id = {:location}",
+	} {
+		if !strings.Contains(filterString, condition) {
+			t.Errorf("filter %q does not contain %q", filterString, condition)
+		}
+	}
+
+	for key, want := range map[string]string{
+		"period":   "periodbaroque1",
+		"location": "locflorence01",
+	} {
+		if got := params[key]; got != want {
+			t.Errorf("parameter %q = %q, want %q", key, got, want)
+		}
+	}
+}
+
+func TestFiltersBuildFilterCombinesStoredFilters(t *testing.T) {
+	filterString, params := (&filters{
+		SchoolString:    "dutch",
+		ArtFormString:   "painting",
+		TechniqueString: "oil",
+	}).BuildFilter()
+
+	for _, condition := range []string{
+		"school.slug = {:art_school}",
+		"form.slug = {:art_form}",
+		"technique ~ {:technique}",
+	} {
+		if !strings.Contains(filterString, condition) {
+			t.Errorf("filter %q does not contain %q", filterString, condition)
+		}
+	}
+
+	for key, want := range map[string]string{
+		"art_school": "dutch",
+		"art_form":   "painting",
+		"technique":  "oil",
+	} {
+		if got := params[key]; got != want {
+			t.Errorf("parameter %q = %q, want %q", key, got, want)
+		}
+	}
+}
+
+func TestBuildFiltersParsesCatalogueFilters(t *testing.T) {
+	f := buildFilters(url.Values{
+		"art_school": {"dutch"},
+		"period":     {"baroque"},
+		"art_form":   {"painting"},
+		"technique":  {"fresco"},
+		"location":   {"Florence"},
+	})
+
+	if f.SchoolString != "dutch" || f.PeriodString != "baroque" || f.ArtFormString != "painting" || f.TechniqueString != "fresco" || f.LocationString != "Florence" {
+		t.Errorf("parsed filters = %#v", f)
+	}
+}
+
+func TestBuildFiltersRoundTripsPeriodAndLocation(t *testing.T) {
+	f := buildFilters(url.Values{
+		"period":   {"baroque"},
+		"location": {"Florence"},
+	})
+
+	path := f.BuildPath("/artworks")
+	for _, value := range []string{"period=baroque", "location=Florence"} {
+		if !strings.Contains(path, value) {
+			t.Errorf("path %q does not round-trip %q", path, value)
+		}
+	}
+	if strings.Contains(path, "tone") {
+		t.Errorf("path %q must not retain a deferred tone parameter", path)
+	}
+}
+
+func TestFiltersPathOmitsDefaultSortAndDirection(t *testing.T) {
+	path := (&filters{Sort: "catalogue", SortDir: "asc"}).BuildPath("/artworks")
+
+	if path != "/artworks" {
+		t.Errorf("path = %q, want /artworks (default sort and direction omitted)", path)
+	}
+}
+
+func TestFiltersPathEmitsSortAndDirection(t *testing.T) {
+	path := (&filters{Sort: "date", SortDir: "desc"}).BuildPath("/artworks")
+
+	for _, value := range []string{"sort=date", "dir=desc"} {
+		if !strings.Contains(path, value) {
+			t.Errorf("path %q does not contain %q", path, value)
+		}
+	}
+}
+
+func TestForSortResetsPageAndDirection(t *testing.T) {
+	f := buildFilters(url.Values{"sort": {"date"}, "dir": {"desc"}, "page": {"3"}})
+	next := f.forSort("title")
+
+	if next.Sort != "title" || next.SortDir != "asc" || next.Page != "" {
+		t.Errorf("forSort = %#v, want title/asc/empty-page", next)
+	}
+}
+
+func TestForSortPreservesUnrelatedFilters(t *testing.T) {
+	f := buildFilters(url.Values{"q": {"milkmaid"}, "art_school": {"dutch"}, "view": {"list"}})
+	next := f.forSort("artist")
+
+	if next.Query != "milkmaid" || next.SchoolString != "dutch" || next.View != "list" {
+		t.Errorf("forSort lost unrelated filters: %#v", next)
 	}
 }

@@ -20,6 +20,43 @@ type MailpitMessage = {
 	HTML: string;
 };
 
+const syntheticArtworkID = "2225c982be1af02";
+
+test.describe("without JavaScript", () => {
+	test.use({ javaScriptEnabled: false });
+
+	test("postcard composition remains keyboard operable", async ({ page }) => {
+		const response = await page.goto(
+			`/postcard/send?awid=${syntheticArtworkID}`,
+		);
+		expect(response?.status()).toBe(200);
+
+		const form = page.locator("#postcard_create");
+		await expect(form).toHaveAttribute("action", "/postcard");
+		await expect(form).toHaveAttribute("method", "post");
+		await expect(page.getByLabel("YOUR NAME")).toBeVisible();
+		await expect(page.getByLabel("YOUR EMAIL")).toBeVisible();
+		await expect(page.getByLabel("RECIPIENT EMAIL")).toBeVisible();
+		await expect(page.getByLabel(/MESSAGE/)).toBeVisible();
+
+		let reachedSenderName = false;
+		for (let index = 0; index < 30; index += 1) {
+			await page.keyboard.press("Tab");
+			if (
+				await page
+					.getByLabel("YOUR NAME")
+					.evaluate((field) => field === document.activeElement)
+			) {
+				reachedSenderName = true;
+				break;
+			}
+		}
+		expect(reachedSenderName).toBeTruthy();
+		await page.keyboard.type("Keyboard Sender");
+		await expect(page.getByLabel("YOUR NAME")).toHaveValue("Keyboard Sender");
+	});
+});
+
 test("send postcard", async ({ page, request }) => {
 	test.setTimeout(150000);
 
@@ -57,19 +94,17 @@ test("send postcard", async ({ page, request }) => {
 	await expect(page.locator("#d")).toBeVisible();
 
 	await expect(page.locator("#d")).toHaveText(/Send a postcard/);
-	const recipients = page.locator("[name='recipients[]']");
-	await expect(recipients).toHaveCount(1);
-	await page.getByRole("button", { name: "ADD RECIPIENT +" }).click();
-	await expect(recipients).toHaveCount(2);
-	await page.getByRole("button", { name: "REMOVE" }).last().click();
-	await expect(recipients).toHaveCount(1);
+	const recipientField = page.locator("[name='recipient']");
+	await expect(recipientField).toHaveCount(1);
 
 	await page.locator("[name='sender_name']").fill("Playwright Tester");
 	await page
 		.locator("[name='sender_email']")
 		.fill("playwright.tester@local.host"); // this is the postcard sender's email
-	await page.locator("[name='recipients[]']").fill(recipient); // this is the postcard recipient's email
-	await page.locator("trix-editor").fill("I am testing your site.");
+	await recipientField.fill(recipient);
+	await page
+		.locator("textarea[name='message']")
+		.fill("I am testing your site.");
 	// The CI handler skips remote verification but still requires a token.
 	await page.locator("#postcard_create").evaluate((form) => {
 		const token = document.createElement("input");
@@ -79,10 +114,13 @@ test("send postcard", async ({ page, request }) => {
 		form.append(token);
 	});
 
-	await page.getByRole("button", { name: "Send postcard" }).click();
+	await page.getByRole("button", { name: "SEND POSTCARD →" }).click();
 
-	await expect(page.locator(".toast")).toHaveText(
-		/Thank you! Your postcard has been queued for sending!/,
+	await expect(page.locator("#postcard-compose")).toContainText(
+		"Postcard queued",
+	);
+	await expect(page.locator("#postcard-compose")).toContainText(
+		"p••••@local.host",
 	);
 
 	let messageID = "";
@@ -123,11 +161,13 @@ test("send postcard", async ({ page, request }) => {
 		if (!postcardLink) {
 			throw new Error("Postcard link not found");
 		}
+		expect(postcardLink).toContain("/postcard?token=");
+		expect(postcardLink).not.toContain("?p=");
 
 		await page.goto(postcardLink);
-		await expect(page.locator("#mc-area")).toContainText([
+		await expect(page.locator("#postcard-view")).toContainText(
 			"I am testing your site",
-		]);
+		);
 	} finally {
 		if (messageID) {
 			const deleteResponse = await request.delete(
@@ -137,4 +177,12 @@ test("send postcard", async ({ page, request }) => {
 			expect(deleteResponse.ok()).toBeTruthy();
 		}
 	}
+});
+
+test("postcard recipient route denies arbitrary identifiers", async ({
+	page,
+}) => {
+	const response = await page.goto("/postcard?token=0123456789abcde");
+	expect(response?.status()).toBe(404);
+	await expect(page).toHaveURL(/token=0123456789abcde/);
 });

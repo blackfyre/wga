@@ -3,6 +3,7 @@ package layouts
 import (
 	"encoding/json"
 	"github.com/blackfyre/wga/internal/assets/templ/components"
+	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/assets/templ/utils"
 	"github.com/blackfyre/wga/internal/observability"
 )
@@ -46,12 +47,30 @@ templ LayoutBase(bodyClasses string, HtmxTargetArea string) {
 				<link rel="canonical" href={ utils.GetCanonicalUrl(ctx) }/>
 			}
 			<script>
+				(function () {
+					let savedTheme;
 				try {
-					const savedTheme = window.localStorage.getItem("wga-theme");
-					if (savedTheme === "wga_light" || savedTheme === "wga_dark") {
-						document.documentElement.dataset.theme = savedTheme;
-					}
+					savedTheme = window.localStorage.getItem("wga-theme");
 				} catch {}
+				let cookieTheme;
+				for (const cookie of document.cookie.split("; ")) {
+					if (cookie === "wga_theme=light") {
+						cookieTheme = "light";
+					}
+					if (cookie === "wga_theme=dark") {
+						cookieTheme = "dark";
+					}
+				}
+				let theme = "wga-rams";
+				if (savedTheme === "dark" || savedTheme === "wga_dark") {
+					theme = "wga-rams-dark";
+				} else if (savedTheme !== "light" && savedTheme !== "wga_light" && cookieTheme === "dark") {
+					theme = "wga-rams-dark";
+				} else if (savedTheme !== "light" && savedTheme !== "wga_light" && cookieTheme !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+					theme = "wga-rams-dark";
+					}
+					document.documentElement.dataset.theme = theme;
+				})();
 			</script>
 			<link rel="stylesheet" href="/assets/css/style.css"/>
 			<link rel="apple-touch-icon" sizes="180x180" href="/assets/images/apple-touch-icon.png"/>
@@ -72,7 +91,7 @@ templ LayoutBase(bodyClasses string, HtmxTargetArea string) {
 				<div class="indeterminate"></div>
 			</div>
 			{ children... }
-			<dialog id="d" class="modal m-auto border border-base-content p-0 text-base-content backdrop:bg-base-content/30"></dialog>
+			<dialog id="d" aria-label="Dialog" aria-modal="true" class="modal m-auto border border-base-content p-0 text-base-content backdrop:bg-base-content/30"></dialog>
 			@components.KeyboardLayer()
 			<a
 				href="https://github.com/blackfyre/wga/issues?q=sort%3Aupdated-desc+is%3Aissue+state%3Aopen+"
@@ -95,11 +114,22 @@ templ LayoutMain() {
 			</section>
 		}
 		@components.TopNav()
-		<main id="mc-area" class="wga-enter">
+		<main id="mc-area" class={ itineraryMainClass(utils.GetItineraryTray(ctx)) }>
 			{ children... }
 		</main>
+		@components.ItineraryTray(utils.GetItineraryTray(ctx), false)
 		@components.Footer()
 	}
+}
+
+// itineraryMainClass reserves a bottom offset only while the itinerary tray is
+// non-empty, so the fixed tray never covers page content when it is hidden.
+func itineraryMainClass(tray dto.ItineraryTrayView) string {
+	if tray.Count > 0 {
+		return "wga-enter pb-20"
+	}
+
+	return "wga-enter"
 }
 
 templ LayoutSlim() {

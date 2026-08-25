@@ -58,6 +58,47 @@ func TestMarshalStatsCoalescesConcurrentFetches(t *testing.T) {
 	}
 }
 
+func TestSummarizeArtFormRowsPreservesNameAndCount(t *testing.T) {
+	rows := summarizeArtFormRows([]repositories.ArtFormDistribution{
+		{Name: "Painting", Count: 7},
+		{Name: "Sculpture", Count: 3},
+	})
+
+	if len(rows) != 2 {
+		t.Fatalf("art form rows = %d, want 2", len(rows))
+	}
+	if rows[0].Name != "Painting" || rows[0].Count != 7 {
+		t.Errorf("first art form = %#v", rows[0])
+	}
+	if rows[1].Name != "Sculpture" || rows[1].Count != 3 {
+		t.Errorf("second art form = %#v", rows[1])
+	}
+}
+
+func TestSummarizeSchoolPeriodRowsPreservesTotal(t *testing.T) {
+	raw := []repositories.SchoolPeriodRow{
+		{PeriodStart: 1500, School: "Italian", Count: 3},
+		{PeriodStart: 1500, School: "French", Count: 2},
+		{PeriodStart: 1500, School: "Other", Count: 1},
+		{PeriodStart: 1550, School: "Dutch", Count: 4},
+	}
+
+	rawTotal := 0
+	for _, row := range raw {
+		rawTotal += row.Count
+	}
+
+	summary := summarizeSchoolPeriodRows(raw)
+	summaryTotal := 0
+	for _, row := range summary {
+		summaryTotal += row.Total
+	}
+
+	if summaryTotal != rawTotal {
+		t.Errorf("summary total = %d, want %d", summaryTotal, rawTotal)
+	}
+}
+
 func TestSummarizeSchoolPeriodRowsBuildsPeriodMatrix(t *testing.T) {
 	rows := summarizeSchoolPeriodRows([]repositories.SchoolPeriodRow{
 		{PeriodStart: 1500, School: "Italian", Count: 3},

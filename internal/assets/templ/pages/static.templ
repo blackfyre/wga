@@ -1,6 +1,7 @@
 package pages
 
 import (
+	"github.com/blackfyre/wga/internal/assets/templ/components"
 	"github.com/blackfyre/wga/internal/assets/templ/layouts"
 	"github.com/blackfyre/wga/internal/assets/templ/utils"
 )
@@ -27,27 +28,30 @@ templ StaticPage(sp StaticPageDTO) {
 	}
 }
 
+// staticPageIndex selects the route-identity kicker from the page's own URL,
+// never from the editable title.
+func staticPageIndex(url string) string {
+	switch url {
+	case "/pages/about":
+		return "14 — ABOUT THE COLLECTION"
+	case "/pages/privacy-policy":
+		return "06 — GENERAL CONTENT"
+	default:
+		return "PUBLIC INFORMATION"
+	}
+}
+
 templ StaticPageBlock(sp StaticPageDTO) {
 	<section class="container mx-auto px-4 pb-20 pt-10 md:px-0">
-		if sp.Title == "About" {
-			<p class="mb-3 font-mono text-[11px] tracking-[2px] text-base-content/60">14 — ABOUT THE COLLECTION</p>
-			<h1 class="mb-3 text-[44px] font-semibold tracking-[-0.5px]">{ sp.Title }</h1>
-			<p class="mb-12 max-w-[560px] text-[17px] leading-relaxed text-base-content/70">What this archive contains, how it is organised, and the terms under which it may be used.</p>
-		} else if sp.Url == "/pages/privacy-policy" {
-			<p class="mb-3 font-mono text-[11px] tracking-[2px] text-base-content/60">06 — GENERAL CONTENT</p>
-			<h1 class="text-[44px] font-semibold tracking-[-0.5px]">{ sp.Title }</h1>
-		} else {
-			<p class="mb-3 font-mono text-[11px] tracking-[2px] text-base-content/60">PUBLIC INFORMATION</p>
-			<h1 class="text-[44px] font-semibold tracking-[-0.5px]">{ sp.Title }</h1>
-		}
-		<div class={ "flex flex-col gap-10 md:flex-row md:gap-16", templ.KV("mt-10", sp.Title != "About") }>
+		@components.PageHead(staticPageIndex(sp.Url), sp.Title, "")
+		<div class="flex flex-col gap-10 md:flex-row md:gap-16">
 			if len(sp.TOC) > 0 {
 				<nav class="w-full shrink-0 md:sticky md:top-8 md:w-52 md:self-start" aria-label="Contents">
-					<p class="mb-3 font-mono text-[10px] tracking-[1.5px] text-base-content/60">CONTENTS</p>
+					<p class="mb-3 font-mono text-(length:--t-10) tracking-[1.5px] text-muted">CONTENTS</p>
 					<ol class="border-t border-base-content/15">
 						for _, item := range sp.TOC {
 							<li class={ "border-b border-base-content/15", templ.KV("pl-4", item.Level == 3) }>
-								<a class="block py-2.5 font-mono text-xs text-base-content/70 hover:text-primary" href={ templ.URL("#" + item.ID) }>{ item.Title }</a>
+								<a class="block py-2.5 font-mono text-xs text-base-content/70 transition-colors hover:text-primary" href={ templ.URL("#" + item.ID) }>{ item.Title }</a>
 							</li>
 						}
 					</ol>

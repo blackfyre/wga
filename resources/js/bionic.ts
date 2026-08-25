@@ -1,11 +1,14 @@
 const STORAGE_KEY = "wga-bionic";
 const PROSE_SELECTOR = "p, [data-bionic]";
 const SKIP_SELECTOR =
-	"[data-bionic-mark], b, strong, [data-bionic='off'], nav, footer, figure, [class~='font-mono'], code, pre, form, button, input, select, textarea";
+	"[data-bionic-mark], b, strong, em, i, mark, [data-bionic='off'], nav, footer, figure, [class~='font-mono'], code, pre, form, button, input, select, textarea";
 const WORD = /([A-Za-z\u00C0-\u024F\u2019']+)/;
 const LETTER = /[A-Za-z\u00C0-\u024F]/;
 
-type HtmxLoadEvent = CustomEvent<{ elt: Element }>;
+type HtmxAfterSwapEvent = CustomEvent<{ target?: Element }>;
+
+let initialised = false;
+let enabled = false;
 
 function wordHeadLength(word: string): number {
 	if (word.length <= 3) {
@@ -74,6 +77,7 @@ function clear(): void {
 	)) {
 		mark.replaceWith(document.createTextNode(mark.dataset.bionicSource || ""));
 	}
+	document.body.normalize();
 }
 
 function stored(): boolean {
@@ -106,16 +110,14 @@ function updateControls(on: boolean): void {
 }
 
 function set(on: boolean, persist: boolean): void {
+	enabled = on;
 	if (persist) {
 		try {
-			if (on) {
-				window.localStorage.setItem(STORAGE_KEY, "on");
-			} else {
-				window.localStorage.setItem(STORAGE_KEY, "off");
-			}
+			window.localStorage.setItem(STORAGE_KEY, on ? "on" : "off");
 		} catch {
 			// Storage can be unavailable in private browsing modes.
 		}
+		document.cookie = `wga_bionic=${on ? "on" : "off"}; path=/; max-age=31536000; samesite=lax`;
 	}
 
 	document.documentElement.dataset.bionicReading = String(on);
@@ -128,6 +130,10 @@ function set(on: boolean, persist: boolean): void {
 }
 
 export function initBionicReading(): void {
+	if (initialised) {
+		return;
+	}
+	initialised = true;
 	set(stored(), false);
 
 	document.addEventListener("click", (event) => {
@@ -139,15 +145,16 @@ export function initBionicReading(): void {
 			return;
 		}
 
-		set(!stored(), true);
+		set(!enabled, true);
 	});
 
-	document.body.addEventListener("htmx:load", (event) => {
-		if (!stored()) {
+	document.addEventListener("htmx:afterSwap", (event) => {
+		updateControls(enabled);
+		if (!enabled) {
 			return;
 		}
 
-		const target = (event as HtmxLoadEvent).detail.elt;
+		const target = (event as HtmxAfterSwapEvent).detail.target;
 		if (target) {
 			apply(target);
 		}

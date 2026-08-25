@@ -38,6 +38,11 @@ func TestStatisticsBlockRendersAccessibleSummaries(t *testing.T) {
 		`id="art-form-summary"`,
 		`id="artworks-period-summary"`,
 		`id="artists-period-summary"`,
+		`class="caption-top`,
+		"Art form distribution data",
+		`title="Italian"`,
+		`title="Other"`,
+		"background:var(--wga-series-0)",
 		"Painting",
 		"1500–1549",
 		"IT",
@@ -46,5 +51,9 @@ func TestStatisticsBlockRendersAccessibleSummaries(t *testing.T) {
 		if !strings.Contains(rendered, expected) {
 			t.Errorf("expected rendered statistics to contain %q\ngot: %s", expected, rendered)
 		}
+	}
+
+	if strings.Contains(rendered, `class="sr-only"`) {
+		t.Errorf("expected no sr-only caption on the statistics tables\ngot: %s", rendered)
 	}
 }

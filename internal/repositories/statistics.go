@@ -60,7 +60,7 @@ func (r *StatisticsRepository) GetArtworksBySchoolAndPeriod() ([]SchoolPeriodRow
 		JOIN Artists ar ON je_a.value = ar.id
 		CROSS JOIN json_each(aw.school) je_s
 		JOIN Schools s ON je_s.value = s.id
-		WHERE aw.published IS true AND ar.year_of_birth > 0
+		WHERE aw.published IS true AND ar.published IS true AND ar.year_of_birth > 0
 		GROUP BY period_start, school_label
 		ORDER BY period_start, count DESC
 	`).All(&rows)

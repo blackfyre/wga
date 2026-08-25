@@ -1,0 +1,401 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/blackfyre/wga/internal/assets/templ/components"
+	"github.com/blackfyre/wga/internal/assets/templ/dto"
+	"github.com/blackfyre/wga/internal/assets/templ/layouts"
+	"github.com/blackfyre/wga/internal/assets/templ/utils"
+)
+
+templ ToursPage(view dto.TourIndex) {
+	@layouts.LayoutMain() {
+		@ToursBlock(view)
+	}
+}
+
+templ ToursBlock(view dto.TourIndex) {
+	<head><title>{ utils.GetTitle(ctx) }</title></head>
+	<section id="tours" class="container mx-auto px-4 pb-20 pt-10 md:px-0 wga-enter">
+		<p class="font-mono text-[11px] uppercase tracking-widest text-base-content/60">Guided Tours</p>
+		<h1 class="mt-3 text-4xl font-semibold leading-tight md:text-5xl">Guided Tours</h1>
+		<p class="mt-4 max-w-2xl leading-relaxed text-base-content/75">Tours are permanent, revisioned works by named editors. They have a fixed page sequence for focused reading. Visitor itineraries are personal, shorter routes through selected works and expire after their stated lifetime.</p>
+		<p class="mt-3"><a href="/itineraries" hx-get="/itineraries" class="link link-primary">Browse visitor itineraries</a></p>
+
+		@tourFacts()
+
+		<nav aria-label="Tour filters" class="mt-8 flex flex-wrap gap-2">
+			for _, filter := range view.Filters {
+				<a href={ templ.SafeURL(filter.Href) } hx-get={ filter.Href } hx-target="#tours" hx-select="#tours" hx-swap="outerHTML" class={ "border px-3 py-2 font-mono text-[11px] uppercase tracking-wider", templ.KV("border-primary bg-primary text-primary-content", filter.Active), templ.KV("border-base-content/25", !filter.Active) } aria-current={ currentPage(filter.Active) }>{ filter.Label }</a>
+			}
+		</nav>
+
+		if len(view.Rebuilt) > 0 {
+			<div class="mt-12 flex flex-wrap items-baseline justify-between gap-3 border-b border-base-content/25 pb-3">
+				<p class="font-mono text-[11px] tracking-[1.5px]">REBUILT PAGE BY PAGE</p>
+				<p class="font-mono text-[10px] tracking-[1px] text-base-content/50">{ fmt.Sprintf("%d TOURS PUBLISHED", len(view.Rebuilt)) }</p>
+			</div>
+			<ul class="mt-8 grid gap-8 md:grid-cols-2">
+				for _, tour := range view.Rebuilt {
+					<li class="border-t border-base-content/25 pt-4">
+						<a href={ templ.SafeURL("/tours/" + tour.Slug) } hx-get={ "/tours/" + tour.Slug } class="group block">
+							if tour.ImageURL != "" {
+								<img src={ tour.ImageURL } alt="" loading="lazy" class="aspect-[4/3] w-full bg-base-200 object-cover"/>
+							}
+							<div class="mt-4 flex flex-wrap justify-between gap-2 font-mono text-[11px] uppercase tracking-[1.5px] text-base-content/60">
+								<span>{ tour.Kind } · #{ tour.Number }</span>
+								<span>{ tour.Revision }</span>
+							</div>
+							<h2 class="mt-2 text-2xl font-semibold group-hover:underline">{ tour.Title }</h2>
+							<p class="mt-2 text-sm text-base-content/65">Edited by { tour.Editor }</p>
+							<p class="mt-3 leading-relaxed text-base-content/75">{ tour.Blurb }</p>
+							<p class="mt-3 font-mono text-[10px] tracking-[1px] text-primary">{ tourPageCount(tour.Pages) } · { tourScope(tour) }</p>
+						</a>
+					</li>
+				}
+			</ul>
+		}
+
+		if len(view.Original) > 0 {
+			<div class="mt-14 flex flex-wrap items-baseline justify-between gap-3 border-b border-base-content/25 pb-3">
+				<p class="font-mono text-[11px] tracking-[1.5px]">THE REST OF THE SERIES</p>
+				<p class="font-mono text-[10px] tracking-[1px] text-base-content/50">{ fmt.Sprintf("%d IN THE ORIGINAL LAYOUT", len(view.Original)) }</p>
+			</div>
+			<ul>
+				for _, tour := range view.Original {
+					<li>
+						<a href={ templ.SafeURL("/tours/" + tour.Slug) } hx-get={ "/tours/" + tour.Slug } class="grid grid-cols-1 gap-1.5 border-b border-base-content/15 py-4 hover:bg-primary/5 md:grid-cols-[1fr_2fr_1fr_1fr] md:items-baseline md:gap-4">
+							<span class="font-mono text-[11px] tracking-[1px] text-base-content/60">TOUR #{ tour.Number }</span>
+							<span class="min-w-0">
+								<span class="block font-semibold leading-tight">{ tour.Title }</span>
+								<span class="mt-1 block text-sm leading-relaxed text-base-content/60">{ tour.Blurb }</span>
+							</span>
+							<span class="font-mono text-[11px] text-base-content/70">{ tour.Kind }</span>
+							<span class="font-mono text-[11px] text-base-content/50">{ tour.Revision }</span>
+						</a>
+					</li>
+				}
+			</ul>
+		}
+
+		if len(view.Rebuilt) == 0 && len(view.Original) == 0 {
+			<div class="mt-12 border-y border-base-content/15 py-10">
+				<h2 class="text-xl font-semibold">No published tours yet</h2>
+				<p class="mt-2 max-w-xl text-base-content/70">The editorial tour collection is empty. No scraped or prototype material is published without an approved revision.</p>
+			</div>
+		}
+	</section>
+}
+
+templ tourFacts() {
+	<dl class="mb-12 grid grid-cols-2 gap-6 border-y border-base-content/15 py-6 md:grid-cols-4 md:gap-8">
+		@tourFact("WRITTEN BY", "The editors, under their own names, revised as the collection grows.")
+		@tourFact("SHAPE", "A walk of numbered pages: text, plates, index pages, sub-tours.")
+		@tourFact("LENGTH", "Rebuilt tours state their derived page count on their cards; original-layout tours keep their original form.")
+		@tourFact("READING", "Rebuilt tours read page by page; the rest remain in their original layout.")
+		@tourFact("LIFETIME", "Permanent. Tours are corrected and re-dated, never removed; visitor itineraries expire.")
+	</dl>
+}
+
+templ TourPage(view dto.TourPage) {
+	@layouts.LayoutMain() {
+		@TourBlock(view)
+	}
+}
+
+templ TourBlock(view dto.TourPage) {
+	<head><title>{ utils.GetTitle(ctx) }</title></head>
+	<article id="tour" data-tour-reading class="container mx-auto px-4 pb-20 pt-8 md:px-0 wga-enter">
+		@tourBar(view)
+
+		<div class="mt-6 flex flex-col items-start gap-9 lg:flex-row">
+			@tourRail(view)
+
+			<div class="min-w-0 flex-1">
+				if view.PageType == "title" {
+					@tourTitle(view)
+				}
+				if view.PageType == "text" {
+					@tourTextPage(view)
+				}
+				if view.PageType == "picture" {
+					@tourPicture(view)
+				}
+				if view.PageType == "list" {
+					@tourIndex(view)
+				}
+				if view.PageType == "sources" {
+					@tourSources(view)
+				}
+				@tourFoot(view)
+			</div>
+		</div>
+	</article>
+}
+
+templ tourBar(view dto.TourPage) {
+	<div class="flex flex-wrap items-baseline justify-between gap-2 border-b border-base-content/15 pb-2.5">
+		<p class="min-w-0 font-mono text-[11px] tracking-[1.5px]">
+			<a href="/tours" hx-get="/tours" class="text-primary">GUIDED TOURS</a>
+			<span class="mx-2 text-base-content/50">/</span>
+			<span>TOUR #{ view.Number }</span>
+			<span class="mx-2 text-base-content/50">/</span>
+			<span class="uppercase text-base-content/60">{ tourSectionLabel(view) }</span>
+		</p>
+		<p class="flex items-baseline gap-5">
+			if view.TotalPages > 1 {
+				<span class="hidden font-mono text-[10px] tracking-[1px] text-base-content/50 lg:inline">← → TO TURN THE PAGE</span>
+			}
+			<span class="font-mono text-[11px] tracking-[1.5px]">
+				{ fmt.Sprintf("PAGE %02d OF %02d", view.Address, view.TotalPages) }
+			</span>
+		</p>
+	</div>
+	<div class="h-0.5 bg-base-content/15" role="progressbar" aria-valuenow={ fmt.Sprintf("%d", view.Address) } aria-valuemax={ fmt.Sprintf("%d", view.TotalPages) }>
+		<div class="h-full bg-primary" style={ "width:" + tourPercent(view) }></div>
+	</div>
+}
+
+templ tourRail(view dto.TourPage) {
+	<details class="w-full lg:sticky lg:top-24 lg:w-[228px] lg:shrink-0" open>
+		<summary class="mb-1.5 flex cursor-pointer items-baseline justify-between gap-3 border-b border-base-content/15 pb-2.5 font-mono text-[10px] tracking-[1.5px] text-base-content/60 lg:cursor-default">
+			<span>CONTENTS</span>
+			<span class="lg:hidden">{ tourPageCount(view.TotalPages) }</span>
+		</summary>
+		<ol>
+			for i, item := range view.Contents {
+				if item.SectionID != "" && (i == 0 || view.Contents[i-1].SectionID != item.SectionID) {
+					<li class="pt-4 pb-1.5 font-mono text-[10px] uppercase tracking-[1.5px] text-base-content/60">{ item.Section }</li>
+				}
+				<li>
+					<a href={ templ.SafeURL(item.Href) } hx-get={ item.Href } hx-target="#tour" hx-select="#tour" hx-swap="outerHTML" aria-current={ currentPage(item.Current) } class={ "block border-l-2 py-1.5 pl-3", templ.KV("border-primary font-semibold text-primary", item.Current), templ.KV("border-transparent hover:border-base-content/30 hover:text-primary", !item.Current) }>
+						<span class="font-mono text-[10px] text-base-content/55">{ fmt.Sprintf("%02d", item.Number) }</span>
+						<span class="ml-2 leading-snug">{ item.Title }</span>
+					</a>
+				</li>
+			}
+		</ol>
+	</details>
+}
+
+templ tourTitle(view dto.TourPage) {
+	<div>
+		@components.Plate(dto.Plate{DisplayURL: view.DisplayURL, Alt: view.TourTitle, Label: "IMAGE — " + view.TourTitle, Placeholder: "IMAGE — " + view.TourTitle, Aspect: "aspect-[4/3] md:aspect-video mb-7", Contain: false})
+		<p class="mb-3 font-mono text-[11px] tracking-[1.5px] text-base-content/60">{ view.Kind } · TOUR #{ view.Number }</p>
+		<h1 class="text-4xl font-semibold leading-tight md:text-5xl">{ view.PageTitle }</h1>
+		<p class="mt-4 max-w-[60ch] text-lg leading-relaxed text-base-content/70">{ view.Blurb }</p>
+
+		<dl class="mb-7 mt-7 grid grid-cols-2 gap-5 border-t border-base-content/25 py-5 md:grid-cols-3 md:gap-7">
+			@tourFact("EDITOR", view.Editor)
+			@tourFact("FIRST PUBLISHED", tourYear(view.PublishedYear))
+			@tourFact("LAST REVISED", tourRevised(view))
+		</dl>
+
+		if view.PresentationStatus == "original" {
+			<div class="max-w-[620px] border-t border-base-content/15 pt-6">
+				<p class="mb-3 font-mono text-[11px] tracking-[1.5px] text-base-content/60">STILL IN ITS ORIGINAL LAYOUT</p>
+				<p class="text-base leading-relaxed text-base-content/70">This tour has not yet been rebuilt page by page. It stays published exactly as it was written, and nothing has been withdrawn — the rebuild is a matter of layout, not of content.</p>
+				if view.LegacyURL != "" {
+					<p class="mt-4"><a href={ templ.SafeURL(view.LegacyURL) } rel="noopener noreferrer" class="link link-primary">Open the original tour</a></p>
+				} else {
+					<p class="mt-4 text-base-content/65">No safe original destination is available.</p>
+				}
+			</div>
+		} else {
+			if view.NextURL != "" {
+				<a href={ templ.SafeURL(view.NextURL) } hx-get={ view.NextURL } hx-target="#tour" hx-select="#tour" hx-swap="outerHTML" class="btn btn-primary font-mono text-[11px] tracking-[1.5px]">START THE TOUR →</a>
+			}
+		}
+		<p class="mt-6 font-mono text-[10px] tracking-[1px] text-base-content/50">{ tourColophon(view) }</p>
+	</div>
+}
+
+templ tourTextPage(view dto.TourPage) {
+	<div>
+		@tourPageHead(view)
+		<h1 class="mb-5 text-3xl font-semibold leading-tight md:text-4xl">{ view.PageTitle }</h1>
+		@tourBlocks(view.Blocks)
+	</div>
+}
+
+templ tourPageHead(view dto.TourPage) {
+	<div class="mb-3.5 flex flex-wrap items-baseline justify-between gap-4">
+		<p class="font-mono text-[11px] uppercase tracking-[1.5px] text-base-content/60">{ tourSectionLabel(view) }</p>
+		if view.Dateline != "" {
+			<p class="font-mono text-[11px] tracking-[1px] text-base-content/50">{ view.Dateline }</p>
+		}
+	</div>
+}
+
+templ tourBlocks(blocks []dto.TourBlock) {
+	<div class="max-w-2xl space-y-5 leading-relaxed">
+		for _, block := range blocks {
+			if block.Kind == "quote" {
+				<blockquote class="border-l-4 border-primary pl-5 text-lg">@templ.Raw(block.HTML)
+</blockquote>
+			} else if block.Kind == "note" {
+				<aside class="border border-base-content/20 p-4">@templ.Raw(block.HTML)
+</aside>
+			} else {
+				<div class="content">@templ.Raw(block.HTML)
+</div>
+			}
+		}
+	</div>
+}
+
+templ tourPicture(view dto.TourPage) {
+	<div>
+		<figure class="mb-4">
+			@components.Plate(dto.Plate{DisplayURL: view.DisplayURL, ZoomURL: view.ZoomURL, Alt: view.ArtworkAlt, Label: "IMAGE — " + view.ArtworkAlt, Placeholder: "IMAGE — " + view.ArtworkAlt, Aspect: "h-[300px] md:h-[460px] items-center justify-center", Contain: true})
+		</figure>
+		<h1 class="text-3xl font-semibold leading-tight md:text-4xl">{ view.PageTitle }</h1>
+		if view.ArtworkCredit != "" {
+			<p class="mb-6 mt-2 font-mono text-[11px] leading-relaxed text-base-content/60">{ view.ArtworkCredit }</p>
+		}
+		@tourBlocks(view.Blocks)
+		if view.ArtworkURL != "" {
+			<p class="mt-6"><a href={ templ.SafeURL(view.ArtworkURL) } hx-get={ view.ArtworkURL } class="font-mono text-[11px] tracking-[1px] text-primary">OPEN THE FULL RECORD →</a></p>
+		}
+	</div>
+}
+
+templ tourIndex(view dto.TourPage) {
+	<div>
+		@tourPageHead(view)
+		<h1 class="text-3xl font-semibold leading-tight md:text-4xl">{ view.PageTitle }</h1>
+		<div class="content max-w-2xl leading-relaxed">
+			@tourBlocks(view.Blocks)
+		</div>
+		<ul class="mt-8 border-t border-base-content/25" data-kbd-list data-kbd-cols="1">
+			for _, row := range view.IndexRows {
+				<li>
+					if row.TargetPath != "" {
+						<a href={ templ.SafeURL(row.TargetPath) } hx-get={ row.TargetPath } data-kbd-idx class="grid grid-cols-1 gap-1 border-b border-base-content/15 py-3.5 hover:bg-primary/5 md:grid-cols-[1.5fr_0.8fr_2.4fr] md:items-baseline md:gap-4">
+							<span class="font-semibold leading-tight">{ row.Name }</span>
+							<span class="font-mono text-[11px] text-base-content/60">{ row.Dates }</span>
+							<span class="text-sm leading-snug text-base-content/70">{ row.Note }</span>
+						</a>
+					} else {
+						<div class="grid grid-cols-1 gap-1 border-b border-base-content/15 py-3.5 md:grid-cols-[1.5fr_0.8fr_2.4fr] md:items-baseline md:gap-4">
+							<span class="font-semibold leading-tight">{ row.Name }</span>
+							<span class="font-mono text-[11px] text-base-content/60">{ row.Dates }</span>
+							<span class="text-sm leading-snug text-base-content/70">{ row.Note }</span>
+						</div>
+					}
+				</li>
+			}
+		</ul>
+	</div>
+}
+
+templ tourSources(view dto.TourPage) {
+	<div>
+		<p class="mb-3.5 font-mono text-[11px] tracking-[1.5px] text-base-content/60">END OF THE TOUR</p>
+		<h1 class="text-3xl font-semibold leading-tight md:text-4xl">Sources</h1>
+		<p class="mb-6 mt-4 max-w-[62ch] text-base leading-relaxed text-base-content/70">What this tour was written from. Attributions follow the literature below.</p>
+		<ol class="border-t border-base-content/25">
+			for i, source := range view.Sources {
+				<li class="grid grid-cols-[34px_1fr] items-baseline gap-2.5 border-b border-base-content/15 py-3">
+					<span class="font-mono text-[11px] text-base-content/50">{ fmt.Sprintf("%02d", i+1) }</span>
+					<span class="text-sm leading-relaxed text-base-content/70">{ source.Citation }</span>
+				</li>
+			}
+		</ol>
+		<p class="mt-6 font-mono text-[10px] tracking-[1px] text-base-content/50">{ tourColophon(view) }</p>
+	</div>
+}
+
+templ tourFoot(view dto.TourPage) {
+	<nav aria-label="Tour pages" class="mt-14 grid grid-cols-1 gap-3 border-t border-base-content/25 pt-5 md:grid-cols-2 md:gap-5">
+		if view.PreviousURL != "" {
+			<a href={ templ.SafeURL(view.PreviousURL) } hx-get={ view.PreviousURL } hx-target="#tour" hx-select="#tour" hx-swap="outerHTML" rel="prev" data-tour-nav="prev" class="py-3.5 hover:opacity-60">
+				<span class="mb-1 block font-mono text-[10px] tracking-[1.5px] text-base-content/60">← BACK</span>
+				<span class="block font-semibold leading-tight">{ view.PreviousLabel }</span>
+			</a>
+		} else {
+			<span></span>
+		}
+		if view.NextURL != "" {
+			<a href={ templ.SafeURL(view.NextURL) } hx-get={ view.NextURL } hx-target="#tour" hx-select="#tour" hx-swap="outerHTML" rel="next" data-tour-nav="next" class="py-3.5 hover:opacity-60 md:text-right">
+				<span class="mb-1 block font-mono text-[10px] tracking-[1.5px] text-primary">NEXT PAGE →</span>
+				<span class="block font-semibold leading-tight">{ view.NextLabel }</span>
+			</a>
+		} else {
+			<span></span>
+		}
+	</nav>
+}
+
+templ tourFact(label string, value string) {
+	<div>
+		<dt class="font-mono text-[10px] tracking-[1.5px] text-base-content/60">{ label }</dt>
+		<dd class="mt-1 text-sm leading-snug">{ value }</dd>
+	</div>
+}
+
+func currentPage(active bool) string {
+	if active {
+		return "page"
+	}
+	return ""
+}
+
+func tourSectionLabel(view dto.TourPage) string {
+	if view.PageType == "title" {
+		return "TITLE PAGE"
+	}
+	if view.PageType == "sources" {
+		return "SOURCES"
+	}
+	if view.Section != "" {
+		return view.Section
+	}
+	return ""
+}
+
+func tourPercent(view dto.TourPage) string {
+	if view.TotalPages == 0 {
+		return "0%"
+	}
+	return fmt.Sprintf("%.1f%%", float64(view.Address)/float64(view.TotalPages)*100)
+}
+
+func tourYear(year int) string {
+	if year <= 0 {
+		return ""
+	}
+	return fmt.Sprintf("%d", year)
+}
+
+func tourRevised(view dto.TourPage) string {
+	if view.RevisedYear > 0 {
+		return fmt.Sprintf("%d", view.RevisedYear)
+	}
+	return "Not since publication"
+}
+
+func tourColophon(view dto.TourPage) string {
+	if view.RevisedYear > 0 {
+		return "© Web Gallery of Art. This tour was updated in " + fmt.Sprintf("%d", view.RevisedYear) + "."
+	}
+	if view.PublishedYear > 0 {
+		return "© Web Gallery of Art. Published " + fmt.Sprintf("%d", view.PublishedYear) + "; not revised since."
+	}
+	return "© Web Gallery of Art."
+}
+
+func tourPageCount(total int) string {
+	if total == 1 {
+		return "1 PAGE"
+	}
+	return fmt.Sprintf("%d PAGES", total)
+}
+
+func tourScope(tour dto.TourCard) string {
+	if tour.Scope != "" {
+		return tour.Scope
+	}
+	return "SCOPE NOT YET APPROVED"
+}

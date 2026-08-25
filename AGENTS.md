@@ -27,7 +27,7 @@
 - Create `.env` from `.env.example` (`mise run app:init-env`). `godotenv.Load()` reads the default `.env` from the process working directory: `code:run` uses the repository root, while `app:run` changes into `dist/`.
 - `wga_data` is likewise relative to the process working directory. `app:run` uses `dist/wga_data`; clear the data directory used by the launcher rather than assuming root `wga_data` is the active one.
 - `mise run dev` brings up the Podman Compose Mailpit and Garage services, then starts JS/CSS/Templ watchers, but not the application server. Start it separately with `code:run`, or use `app:build` followed by `app:run`.
-- `app:build` runs `bun install`, `bun run build`, `templ generate`, `go mod tidy`, then builds `dist/wga`. The embedded synthetic-data migration initialises a fresh data directory on first server start. `seed:images` is registered only when `WGA_ENV=development`.
+- `app:build` runs `bun install`, `bun run build`, `templ generate`, `go mod tidy`, then builds `dist/wga`. The embedded synthetic-data migration initialises a fresh data directory on first server start if not configured otherwise. `seed:images` is registered only when `WGA_ENV=development`.
 
 ## Verification and workflow
 
@@ -39,3 +39,10 @@
 - PR titles must use one of the Conventional Commit types enforced by `.github/workflows/pr-validation.yml`: `feat`, `fix`, `docs`, `test`, `ci`, `refactor`, `perf`, `chore`, `revert`, or `build`.
 - Non-`main` deployment runs only when the head commit message contains `deploy-dev`; release tags matching `v*.*.*` invoke GoReleaser.
 - When changing repository documentation, read `docs/documentation-maintenance.md` and `docs/development-guide.md`; the maintenance guide identifies the authoritative config and CI sources, including the Mailpit service and `MAILPIT_URL` endpoint.
+
+## Model-family assurance
+
+- For material or high-risk changes, use different model families for substantive implementation and final assurance where practical: DeepSeek implementation uses OpenAI review or verification; OpenAI implementation uses DeepSeek review or verification.
+- Apply this especially to authentication, authorisation, tenancy/isolation, security boundaries, database migrations, financial behaviour, concurrency, infrastructure, public API changes, difficult debugging, and large cross-component changes.
+- Do not require cross-family assurance for trivial or deterministic work. Agents from the same model family are not independent evidence merely because they have different role prompts.
+- Objective verification remains stronger evidence than either model family: runtime behaviour; compiler/type checker; database constraints; static analysis; automated tests; source inspection; then model judgement.

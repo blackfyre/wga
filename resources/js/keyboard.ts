@@ -17,6 +17,8 @@ let numberBuffer = "";
 let numberTimer = 0;
 let suggestTimer = 0;
 let request: AbortController | null = null;
+let paletteInvoker: HTMLElement | null = null;
+let helpInvoker: HTMLElement | null = null;
 
 const editableTarget = (target: EventTarget | null) => {
 	if (!(target instanceof HTMLElement)) {
@@ -34,6 +36,49 @@ const help = () => document.querySelector<HTMLDialogElement>("#keyboard-help");
 const mobileNavigation = () =>
 	document.querySelector<HTMLDetailsElement>("[data-kbd-mobile-navigation]");
 
+const nonKeyboardDialogOpen = () => {
+	for (const dialog of document.querySelectorAll<HTMLDialogElement>("dialog")) {
+		if (
+			dialog.open &&
+			dialog.id !== "keyboard-palette" &&
+			dialog.id !== "keyboard-help"
+		) {
+			return true;
+		}
+	}
+	return false;
+};
+
+const visible = (element: HTMLElement) => element.getClientRects().length > 0;
+
+const restoreFocus = (invoker: HTMLElement | null) => {
+	if (invoker?.isConnected) {
+		invoker.focus();
+	}
+};
+
+const clearNumberBuffer = () => {
+	numberBuffer = "";
+	window.clearTimeout(numberTimer);
+	const readout = document.querySelector<HTMLElement>("#kbd-num");
+	if (readout) {
+		readout.textContent = "";
+	}
+};
+
+const applyKeycaps = () => {
+	const isMac = navigator.platform.includes("Mac");
+	for (const keycap of document.querySelectorAll<HTMLElement>(
+		"[data-kbd-modifier]",
+	)) {
+		if (isMac) {
+			keycap.textContent = "⌘K";
+		} else {
+			keycap.textContent = "CTRL K";
+		}
+	}
+};
+
 const readScreens = () => {
 	const holder = document.querySelector<HTMLElement>("#kbd-screens");
 	if (!holder) {
@@ -50,14 +95,30 @@ const markUsed = () => {
 	document.documentElement.dataset.kbdOn = "true";
 };
 
-const list = () => document.querySelector<HTMLElement>("[data-kbd-list]");
+const list = () => {
+	for (const candidate of document.querySelectorAll<HTMLElement>(
+		"[data-kbd-list]",
+	)) {
+		if (!visible(candidate)) {
+			continue;
+		}
+		const candidateRows =
+			candidate.querySelectorAll<HTMLElement>("[data-kbd-idx]");
+		if ([...candidateRows].some((row) => visible(row))) {
+			return candidate;
+		}
+	}
+	return null;
+};
 
 const rows = () => {
 	const currentList = list();
 	if (!currentList) {
 		return [];
 	}
-	return [...currentList.querySelectorAll<HTMLElement>("[data-kbd-idx]")];
+	return [
+		...currentList.querySelectorAll<HTMLElement>("[data-kbd-idx]"),
+	].filter((row) => visible(row));
 };
 
 const columns = () => {
@@ -65,9 +126,10 @@ const columns = () => {
 	if (!currentList) {
 		return 1;
 	}
-	const value = window.matchMedia("(min-width: 768px)").matches
-		? (currentList.dataset.kbdColsMd ?? currentList.dataset.kbdCols)
-		: currentList.dataset.kbdCols;
+	let value = currentList.dataset.kbdCols;
+	if (window.matchMedia("(min-width: 768px)").matches) {
+		value = currentList.dataset.kbdColsMd ?? currentList.dataset.kbdCols;
+	}
 	const parsed = Number(value ?? "1");
 	if (!Number.isFinite(parsed) || parsed < 1) {
 		return 1;
@@ -76,6 +138,11 @@ const columns = () => {
 };
 
 const paintCaret = () => {
+	for (const row of document.querySelectorAll<HTMLElement>(
+		"[data-kbd-caret]",
+	)) {
+		row.removeAttribute("data-kbd-caret");
+	}
 	for (const [index, row] of rows().entries()) {
 		row.toggleAttribute("data-kbd-caret", index === caret);
 	}
@@ -89,7 +156,7 @@ const clearCaret = () => {
 const moveCaret = (delta: number) => {
 	const currentRows = rows();
 	if (currentRows.length === 0) {
-		return;
+		return false;
 	}
 	if (caret < 0) {
 		caret = 0;
@@ -98,25 +165,34 @@ const moveCaret = (delta: number) => {
 	}
 	markUsed();
 	paintCaret();
+	let behavior: ScrollBehavior = "smooth";
+	if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+		behavior = "auto";
+	}
 	currentRows[caret].scrollIntoView({
 		block: "nearest",
-		behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-			? "auto"
-			: "smooth",
+		behavior,
 	});
+	return true;
 };
 
 const openMarked = () => {
 	const row = rows()[caret];
 	if (!row) {
-		return;
+		return false;
 	}
-	const href =
-		row.dataset.kbdHref ??
-		row.querySelector<HTMLAnchorElement>("a[href]")?.href;
+	let href = row.dataset.kbdHref;
+	if (!href && row instanceof HTMLAnchorElement) {
+		href = row.href;
+	}
+	if (!href) {
+		href = row.querySelector<HTMLAnchorElement>("a[href]")?.href;
+	}
 	if (href) {
 		navigate(href);
+		return true;
 	}
+	return false;
 };
 
 const navigate = (href: string) => {
@@ -150,8 +226,10 @@ const paintPick = () => {
 };
 
 const closePalette = () => {
-	palette()?.close();
+	window.clearTimeout(suggestTimer);
 	request?.abort();
+	request = null;
+	palette()?.close();
 };
 
 const closeHelp = () => {
@@ -167,6 +245,9 @@ const openPalette = () => {
 	markUsed();
 	pick = 0;
 	if (!dialog.open) {
+		if (document.activeElement instanceof HTMLElement) {
+			paletteInvoker = document.activeElement;
+		}
 		dialog.showModal();
 	}
 	const field = dialog.querySelector<HTMLInputElement>("[data-kbd-query]");
@@ -185,37 +266,44 @@ const openHelp = () => {
 	closePalette();
 	markUsed();
 	if (!dialog.open) {
+		if (document.activeElement instanceof HTMLElement) {
+			helpInvoker = document.activeElement;
+		}
 		dialog.showModal();
 	}
 	dialog.querySelector<HTMLElement>("[data-keyboard-close]")?.focus();
 };
 
 const loadSuggestions = async (query: string, limit: number) => {
-	const target = document.querySelector<HTMLElement>(
-		"#kbd-palette-records",
-	);
+	const target = document.querySelector<HTMLElement>("#kbd-palette-records");
 	if (!target || limit < 1) {
 		return;
 	}
 	request?.abort();
-	request = new AbortController();
+	const controller = new AbortController();
+	request = controller;
 	const path = target.dataset.kbdSuggest ?? "/keyboard/suggestions";
 	try {
 		const response = await fetch(
 			`${path}?q=${encodeURIComponent(query)}&limit=${limit}`,
-			{ headers: { "HX-Request": "true" }, signal: request.signal },
+			{ headers: { "HX-Request": "true" }, signal: controller.signal },
 		);
-		if (!response.ok) {
+		if (!response.ok || request !== controller) {
 			return;
 		}
 		target.innerHTML = await response.text();
+		if (request !== controller) {
+			return;
+		}
 		pick = 0;
 		paintPick();
 	} catch (error) {
 		if (error instanceof DOMException && error.name === "AbortError") {
 			return;
 		}
-		target.replaceChildren();
+		if (request === controller) {
+			target.replaceChildren();
+		}
 	}
 };
 
@@ -239,9 +327,7 @@ const filterPalette = (query: string) => {
 		}
 	}
 
-	const records = document.querySelector<HTMLElement>(
-		"#kbd-palette-records",
-	);
+	const records = document.querySelector<HTMLElement>("#kbd-palette-records");
 	if (!records) {
 		paintPick();
 		return;
@@ -312,22 +398,56 @@ const numberKey = (event: KeyboardEvent) => {
 const closeTransientState = () => {
 	closePalette();
 	closeHelp();
-	document.querySelector<HTMLDialogElement>("#d")?.close();
-	document.querySelector<HTMLDialogElement>("#artist_lookup")?.close();
 	mobileNavigation()?.removeAttribute("open");
 	clearCaret();
+	clearNumberBuffer();
 };
 
 const focusSearch = () => {
 	const navigation = mobileNavigation();
-	if (navigation?.offsetParent !== null) {
+	if (navigation && window.matchMedia("(max-width: 44.999rem)").matches) {
 		navigation.setAttribute("open", "");
+		const field =
+			navigation.querySelector<HTMLInputElement>("[data-kbd-search]");
+		field?.focus();
+		field?.select();
+		return;
 	}
-	const field = navigation?.open
-		? navigation.querySelector<HTMLInputElement>("[data-kbd-search]")
-		: document.querySelector<HTMLInputElement>("[data-kbd-search]");
-	field?.focus();
-	field?.select();
+	for (const field of document.querySelectorAll<HTMLInputElement>(
+		"[data-kbd-search]",
+	)) {
+		if (visible(field)) {
+			field.focus();
+			field.select();
+			return;
+		}
+	}
+};
+
+const closeMobileNavigationForDesktop = () => {
+	const navigation = mobileNavigation();
+	if (!navigation || !navigation.hasAttribute("open")) {
+		return;
+	}
+	const active = document.activeElement;
+	const focusWasInside =
+		active === null ||
+		active === document.body ||
+		active === document.documentElement ||
+		(active instanceof HTMLElement &&
+			(navigation.contains(active) || !visible(active)));
+	navigation.removeAttribute("open");
+	if (!focusWasInside) {
+		return;
+	}
+	for (const field of document.querySelectorAll<HTMLInputElement>(
+		"[data-kbd-search]",
+	)) {
+		if (visible(field) && !navigation.contains(field)) {
+			field.focus();
+			return;
+		}
+	}
 };
 
 export const initKeyboardNavigation = () => {
@@ -336,6 +456,15 @@ export const initKeyboardNavigation = () => {
 	}
 	document.documentElement.dataset.keyboardNavigationReady = "true";
 	screens = readScreens();
+	applyKeycaps();
+
+	window
+		.matchMedia("(min-width: 45rem)")
+		.addEventListener("change", (event) => {
+			if (event.matches) {
+				closeMobileNavigationForDesktop();
+			}
+		});
 
 	document.addEventListener("click", (event) => {
 		const target = event.target instanceof Element ? event.target : null;
@@ -368,6 +497,34 @@ export const initKeyboardNavigation = () => {
 		}
 	});
 
+	document.addEventListener(
+		"close",
+		(event) => {
+			if (!(event.target instanceof HTMLDialogElement)) {
+				return;
+			}
+			if (event.target.id === "keyboard-palette") {
+				window.clearTimeout(suggestTimer);
+				request?.abort();
+				request = null;
+				pick = 0;
+				const field =
+					event.target.querySelector<HTMLInputElement>("[data-kbd-query]");
+				if (field) {
+					field.value = "";
+				}
+				filterPalette("");
+				restoreFocus(paletteInvoker);
+				paletteInvoker = null;
+			}
+			if (event.target.id === "keyboard-help") {
+				restoreFocus(helpInvoker);
+				helpInvoker = null;
+			}
+		},
+		true,
+	);
+
 	document.addEventListener("keydown", (event) => {
 		const modified = event.metaKey || event.ctrlKey;
 		if (modified && event.key.toLowerCase() === "k") {
@@ -379,12 +536,20 @@ export const initKeyboardNavigation = () => {
 			paletteKey(event);
 			return;
 		}
+		if (nonKeyboardDialogOpen()) {
+			return;
+		}
 		if (event.key === "Escape") {
 			event.preventDefault();
 			if (editableTarget(event.target)) {
 				(event.target as HTMLElement).blur();
 			}
+			const navigation = mobileNavigation();
+			const navigationWasOpen = navigation?.hasAttribute("open") ?? false;
 			closeTransientState();
+			if (navigationWasOpen) {
+				navigation?.querySelector<HTMLElement>("summary")?.focus();
+			}
 			return;
 		}
 		if (editableTarget(event.target)) {
@@ -408,33 +573,34 @@ export const initKeyboardNavigation = () => {
 			markUsed();
 			return;
 		}
+		let moved = false;
 		if (event.key === "ArrowDown" || event.key.toLowerCase() === "j") {
-			event.preventDefault();
-			moveCaret(columns());
-			return;
+			moved = moveCaret(columns());
 		}
 		if (event.key === "ArrowUp" || event.key.toLowerCase() === "k") {
-			event.preventDefault();
-			moveCaret(-columns());
-			return;
+			moved = moveCaret(-columns());
 		}
-		if (event.key === "ArrowRight") {
-			event.preventDefault();
-			moveCaret(1);
-			return;
+		if (event.key === "ArrowRight" || event.key.toLowerCase() === "l") {
+			moved = moveCaret(1);
 		}
-		if (event.key === "ArrowLeft") {
+		if (event.key === "ArrowLeft" || event.key.toLowerCase() === "h") {
+			moved = moveCaret(-1);
+		}
+		if (moved) {
 			event.preventDefault();
-			moveCaret(-1);
 			return;
 		}
 		if (
 			event.key === "Enter" &&
-			!(event.target instanceof HTMLElement && event.target.matches("a, button, summary"))
+			!(
+				event.target instanceof HTMLElement &&
+				event.target.matches("a, button, summary")
+			)
 		) {
-			event.preventDefault();
-			openMarked();
-			return;
+			if (openMarked()) {
+				event.preventDefault();
+				return;
+			}
 		}
 		if (/^[0-9]$/.test(event.key)) {
 			event.preventDefault();
@@ -456,5 +622,7 @@ export const initKeyboardNavigation = () => {
 	document.addEventListener("htmx:afterSettle", () => {
 		screens = readScreens();
 		clearCaret();
+		clearNumberBuffer();
+		applyKeycaps();
 	});
 };

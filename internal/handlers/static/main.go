@@ -2,18 +2,20 @@ package static
 
 import (
 	"bytes"
+	"database/sql"
+	"errors"
 	"io/fs"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/blackfyre/wga/internal/assets"
-	"github.com/blackfyre/wga/internal/assets/templ/error_pages"
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
 	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/constants"
+	"github.com/blackfyre/wga/internal/logging"
 	"github.com/blackfyre/wga/internal/utils"
-	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 )
@@ -37,7 +39,7 @@ func shouldRegisterVisualOverhaul(environment config.Environment) bool {
 // The static pages are retrieved from the database based on the slug parameter in the URL.
 // If the request is an Htmx request, only the content block is rendered, otherwise the entire page is rendered.
 // The function returns an error if there was a problem registering the routes.
-func RegisterHandlers(app *pocketbase.PocketBase, environment config.Environment) {
+func RegisterHandlers(app core.App, environment config.Environment) {
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		if shouldRegisterVisualOverhaul(environment) {
 			se.Router.GET("/tmp/visual-overhaul", func(c *core.RequestEvent) error {
@@ -64,64 +66,123 @@ func RegisterHandlers(app *pocketbase.PocketBase, environment config.Environment
 
 		// "Static" pages
 		se.Router.GET("/pages/{slug}", func(c *core.RequestEvent) error {
-
-			slug := c.Request.PathValue("slug")
-			fullUrl := tmplUtils.AssetUrl("/pages/" + slug)
-			pushUrl := utils.GenerateCurrentRelativePageUrl(c)
-
-			page, err := app.FindFirstRecordByData(constants.CollectionStaticPages, "slug", slug)
-
-			if err != nil {
-				app.Logger().Error("Error retrieving static page", "page", slug, "error", err)
-
-				return utils.NotFoundError(c)
-			}
-
-			contentHTML, toc, err := withTableOfContents(page.GetString("content"))
-			if err != nil {
-				app.Logger().Error("Error generating static page table of contents", "page", slug, "error", err)
-				return utils.ServerFaultError(c)
-			}
-
-			content := pages.StaticPageDTO{
-				Title:   page.GetString("title"),
-				Content: contentHTML,
-				Url:     "/pages/" + page.GetString("slug"),
-				TOC:     toc,
-			}
-
-			ctx := tmplUtils.DecorateContext(c.Request.Context(), tmplUtils.TitleKey, page.GetString("title"))
-			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, page.GetString("content"))
-			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, fullUrl)
-
-			c.Response.Header().Set("HX-Push-Url", pushUrl)
-
-			var buf bytes.Buffer
-
-			if err := pages.StaticPage(content).Render(ctx, &buf); err != nil {
-				app.Logger().Error("Error rendering static page", "page", slug, "error", err)
-				return c.HTML(500, "Internal server error")
-			}
-
-			return c.HTML(200, buf.String())
-
+			return staticPageHandler(app, c)
 		})
 
 		se.Router.GET("/error_404", func(c *core.RequestEvent) error {
 			c.Response.Header().Set("HX-Push-Url", "/error_404")
-
-			var buffer bytes.Buffer
-
-			err := error_pages.NotFoundPage().Render(c.Request.Context(), &buffer)
-
-			if err != nil {
-				app.Logger().Error("Error rendering error page", "error", err)
-				return c.HTML(500, "Internal server error")
-			}
-
-			return c.HTML(404, buffer.String())
+			return utils.NotFoundError(c)
 		})
+
+		// The landing home route is registered as "GET /", which in Go's
+		// ServeMux doubles as a catch-all for every unmatched GET/HEAD path.
+		// This middleware recognises that fall-through after matching and
+		// turns it into the correct public or technical 404, leaving the root
+		// home request, every known route and all non-GET methods untouched.
+		se.Router.BindFunc(publicRouteFallback)
 
 		return se.Next()
 	})
+}
+
+func staticPageHandler(app core.App, c *core.RequestEvent) error {
+	slug := c.Request.PathValue("slug")
+	fullUrl := tmplUtils.AssetUrl("/pages/" + slug)
+	pushUrl := utils.GenerateCurrentRelativePageUrl(c)
+
+	page, err := app.FindFirstRecordByData(constants.CollectionStaticPages, "slug", slug)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return utils.NotFoundError(c)
+		}
+
+		return staticPageServerError(app, c, "fetch_error", err)
+	}
+
+	contentHTML, toc, err := withTableOfContents(page.GetString("content"))
+	if err != nil {
+		return staticPageServerError(app, c, "contents_error", err)
+	}
+
+	content := pages.StaticPageDTO{
+		Title:   page.GetString("title"),
+		Content: contentHTML,
+		Url:     "/pages/" + page.GetString("slug"),
+		TOC:     toc,
+	}
+
+	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, page.GetString("title"))
+	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, page.GetString("content"))
+	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, fullUrl)
+
+	c.Response.Header().Set("HX-Push-Url", pushUrl)
+
+	var buf bytes.Buffer
+
+	if err := pages.StaticPage(content).Render(ctx, &buf); err != nil {
+		return staticPageServerError(app, c, "render_error", err)
+	}
+
+	return c.HTML(http.StatusOK, buf.String())
+}
+
+// landingHomePattern is the ServeMux pattern registered by the landing home
+// route. Because it is a bare "GET /" subtree, it also matches every
+// unmatched GET/HEAD path, which is how the middleware below distinguishes a
+// genuine home request from a public fall-through.
+const landingHomePattern = "GET /"
+
+// publicRouteFallback is a router middleware that runs after ServeMux has
+// matched the request. When the request matched the landing home pattern but
+// is not actually for "/", it was a fall-through. Only an actual GET miss on a
+// public path receives the shared HTML 404; every other fall-through (HEAD or
+// any non-GET method, plus technical boundaries) keeps PocketBase's native
+// 404/405 shape. Root home and all known routes proceed unchanged.
+func publicRouteFallback(e *core.RequestEvent) error {
+	if e.Request.Pattern == landingHomePattern && e.Request.URL.Path != "/" {
+		if e.Request.Method == http.MethodGet && !isReservedBoundary(e.Request.URL.Path) {
+			return utils.NotFoundError(e)
+		}
+
+		return e.NotFoundError("", nil)
+	}
+
+	return e.Next()
+}
+
+// staticPageServerError logs a request-scoped failure with the internal detail
+// confined to redacted/error-type fields and returns the shared server-fault page.
+func staticPageServerError(app core.App, c *core.RequestEvent, outcome string, err error) error {
+	logging.RequestLogger(app, c).Error("Static page request failed",
+		"event", "static_page.request.failed",
+		"outcome", outcome,
+		"page", c.Request.PathValue("slug"),
+		"error_type", logging.ErrorType(err),
+		"error", logging.Redact(err),
+	)
+
+	return utils.ServerFaultError(c)
+}
+
+// reservedBoundaryPrefixes are path roots owned by PocketBase or the
+// application's technical surfaces. Requests under them must retain their
+// native API/static semantics instead of the public HTML 404 page.
+var reservedBoundaryPrefixes = []string{
+	"/api",
+	"/_",
+	"/assets",
+	"/sitemap",
+	"/tmp/visual-overhaul",
+}
+
+// isReservedBoundary reports whether path names a technical boundary that must
+// not be answered with the public HTML 404 page.
+func isReservedBoundary(path string) bool {
+	for _, prefix := range reservedBoundaryPrefixes {
+		if path == prefix || strings.HasPrefix(path, prefix+"/") {
+			return true
+		}
+	}
+
+	return false
 }

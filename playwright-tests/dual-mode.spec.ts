@@ -1,563 +1,135 @@
-import { type Route, expect, test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+
+// Dual mode markup contract. The 1080px narrow gate and the `[data-wide]`
+// override are CSS-driven (.wga-dual-narrow / .wga-dual-split / .wga-dual-bar);
+// the owning serial integration supplies that stylesheet. Until then these
+// checks assert the deterministic markup the CSS keys on: two independently
+// addressable panes, the narrow notice and its override link, and ordinary
+// no-JavaScript links and forms for the per-pane index controls.
 
 const artistOnePath = "/artists/synthetic-artist-01-ad32608c6e36b2e";
 const artistOneArtworkPath =
 	"/artists/synthetic-artist-01-ad32608c6e36b2e/synthetic-artwork-01-01-2225c982be1af02";
-const artistTwoPath = "/artists/synthetic-artist-02-2236bdd57f7492e";
 
-const dualModeURL = (
-	left: string,
-	right: string,
-	leftRenderTo = "right",
-	rightRenderTo = "left",
-) =>
-	`/dual-mode?left=${encodeURIComponent(left)}&right=${encodeURIComponent(right)}&left_render_to=${leftRenderTo}&right_render_to=${rightRenderTo}`;
-
-const expectDualModeState = async (
-	page,
-	left: string,
-	right: string,
-	leftRenderTo = "right",
-	rightRenderTo = "left",
-) => {
-	await expect(page).toHaveURL(
-		(url) =>
-			url.pathname === "/dual-mode" &&
-			url.searchParams.get("left") === left &&
-			url.searchParams.get("right") === right &&
-			url.searchParams.get("left_render_to") === leftRenderTo &&
-			url.searchParams.get("right_render_to") === rightRenderTo,
-	);
-};
-
-const paneTargetControls = (page, side: string) =>
-	page.getByRole("navigation", { name: `Open ${side} links in` });
-
-const artworkSearchForm = (page) =>
-	page.locator("form[action='/artworks/results']");
-
-test("loads an artist through the chooser and opens its artwork in the other pane", async ({
+test("dual mode renders two independent panes and the narrow notice", async ({
 	page,
 }) => {
 	await page.goto("/dual-mode");
 
-	await expect(page.locator("#left")).toContainText(
-		"Choose content for comparison",
-	);
-	await expect(page.locator("#right")).toContainText(
-		"Choose content for comparison",
-	);
+	const root = page.locator("#dual-area");
+	await expect(root).toHaveAttribute("class", /wga-dual/);
+	await expect(root).not.toHaveAttribute("data-wide", "");
+
+	await expect(page.locator("#dual-left")).toHaveCount(1);
+	await expect(page.locator("#dual-right")).toHaveCount(1);
+
+	const narrow = page.locator(".wga-dual-narrow");
+	await expect(narrow).toHaveCount(1);
 	await expect(
-		paneTargetControls(page, "left").getByRole("link", {
-			name: "Other pane",
-		}),
-	).toHaveAttribute("aria-current", "true");
-	await expect(page.locator("#artistList")).toHaveCount(0);
-
-	await page.getByRole("button", { name: "Choose left" }).click();
-	const lookupResponse = page.waitForResponse((response) =>
-		response.url().includes("/dual-mode/lookup"),
-	);
-	await page.getByLabel("Search collection").fill("Synthetic Artist 01");
-	await lookupResponse;
-	await page
-		.getByRole("button", { name: "Synthetic Artist 01", exact: true })
-		.click();
-
-	await expect(page).toHaveURL(/\/dual-mode\?.*left=/);
-	await expect(page.locator("#left h1")).toContainText("Synthetic Artist 01");
-
-	await page
-		.locator("#left")
-		.getByRole("link", { name: "VIEW WORK →" })
-		.first()
-		.click();
-
-	await expect(page.locator("#dual-area")).toHaveCount(1);
-	await expect(page.locator("#left h1")).toContainText("Synthetic Artist 01");
-	await expect(page.locator("#right")).not.toContainText(
-		"Choose content for comparison",
-	);
+		narrow.getByRole("heading", { name: "This mode needs a wide screen" }),
+	).toBeVisible();
+	await expect(
+		narrow.locator("a", { hasText: "OPEN IT ANYWAY" }),
+	).toHaveAttribute("href", "/dual-mode?wide=1");
+	await expect(
+		narrow.locator("a", { hasText: "LEAVE DUAL MODE" }),
+	).toHaveAttribute("href", "/artists");
 });
 
-test("loads an artwork through the chooser and preserves Dual Mode state", async ({
+test("the wide override is explicit and reversible in the URL", async ({
 	page,
 }) => {
-	await page.goto(dualModeURL(artistOnePath, "default", "left", "right"));
-	await page.getByRole("button", { name: "Choose right" }).click();
-	await page.getByLabel("Search for").selectOption("artwork");
+	await page.goto("/dual-mode?wide=1");
+	await expect(page.locator("#dual-area")).toHaveAttribute("data-wide", "");
 
-	const lookupResponse = page.waitForResponse((response) =>
-		response.url().includes("/dual-mode/lookup"),
-	);
-	await page.getByLabel("Search collection").fill("Synthetic Artwork");
-	await lookupResponse;
-
-	const artworkResult = page.getByRole("button", {
-		name: /Synthetic Artwork 01-01/,
-	});
-	await expect(artworkResult).toContainText("Synthetic Artist 01");
-	await artworkResult.click();
-
-	await expectDualModeState(
-		page,
-		artistOnePath,
-		artistOneArtworkPath,
-		"left",
-		"right",
-	);
-	await expect(page.locator("#right h1")).toContainText(
-		"Synthetic Artwork 01-01",
-	);
+	// Leaving dual mode is an ordinary link back to the collection.
+	await expect(
+		page.locator(".wga-dual-bar a", { hasText: "EXIT" }),
+	).toHaveAttribute("href", "/artists");
 });
 
-test("loads an artwork search result into the selected pane", async ({
+test("both panes default to the artist index with independent filters", async ({
 	page,
 }) => {
-	await page.goto(dualModeURL(artistOnePath, artistTwoPath, "left", "right"));
-	await page.getByRole("link", { name: "Search left artworks" }).click();
+	await page.goto("/dual-mode?wide=1");
 
-	await expect(page).toHaveURL(
-		(url) =>
-			url.pathname === "/artworks" &&
-			url.searchParams.get("dual_left") === artistOnePath &&
-			url.searchParams.get("dual_right") === artistTwoPath &&
-			url.searchParams.get("dual_target") === "left",
-	);
+	await expect(
+		page.locator("#dual-left").getByRole("heading", { name: "Artists" }),
+	).toBeVisible();
+	await expect(
+		page.locator("#dual-right").getByRole("heading", { name: "Artists" }),
+	).toBeVisible();
 
-	const resultsResponse = page.waitForResponse(
-		(response) =>
-			response.url().includes("/artworks/results") &&
-			response.request().headers()["hx-request"] === "true",
-	);
-	await artworkSearchForm(page)
-		.getByRole("searchbox", { name: "TITLE OR ARTIST" })
-		.fill("Synthetic Artwork 01-01");
-	await resultsResponse;
-
-	const clear = page.getByRole("link", { name: "Reset" });
-	await expect(clear).toHaveAttribute("href", /dual_target=left/);
-	const clearResponse = page.waitForResponse(
-		(response) =>
-			response.url().includes("/artworks?") &&
-			response.request().headers()["hx-request"] === "true",
-	);
-	await clear.click();
-	await clearResponse;
-	await expect(page).toHaveURL(
-		(url) =>
-			url.pathname === "/artworks" &&
-			url.searchParams.get("dual_left") === artistOnePath &&
-			url.searchParams.get("dual_right") === artistTwoPath &&
-			url.searchParams.get("dual_target") === "left",
-	);
-
-	const secondResultsResponse = page.waitForResponse(
-		(response) =>
-			response.url().includes("/artworks/results") &&
-			response.request().headers()["hx-request"] === "true",
-	);
-	await artworkSearchForm(page)
-		.getByRole("searchbox", { name: "TITLE OR ARTIST" })
-		.fill("Synthetic Artwork 01-01");
-	await secondResultsResponse;
-
-	await page
-		.getByRole("link", {
-			name: "Open Synthetic Artwork 01-01 in left pane",
-		})
-		.click();
-
-	await expectDualModeState(
-		page,
-		artistOneArtworkPath,
-		artistTwoPath,
-		"left",
-		"right",
-	);
-	await expect(page.locator("#left h1")).toContainText(
-		"Synthetic Artwork 01-01",
-	);
-});
-
-test("shows accessible lookup query states", async ({ page }) => {
-	await page.goto("/dual-mode");
-	await page.getByRole("button", { name: "Choose left" }).click();
-
-	const results = page.locator("#dual-lookup-results");
-	await expect(results).toContainText("Start typing to search artists.");
-
-	const shortQueryResponse = page.waitForResponse((response) =>
-		response.url().includes("/dual-mode/lookup"),
-	);
-	await page.getByLabel("Search collection").fill("a");
-	await shortQueryResponse;
-	await expect(results).toContainText(
-		"Enter at least two characters to search.",
-	);
-
-	const noResultResponse = page.waitForResponse((response) =>
-		response.url().includes("/dual-mode/lookup"),
-	);
-	await page.getByLabel("Search collection").fill("wga-no-match");
-	await noResultResponse;
-	await expect(results).toContainText("No artists match");
-});
-
-test("cancels an active lookup when the chooser closes", async ({ page }) => {
-	let delayedRoute: Route | null = null;
-	await page.route("**/dual-mode/lookup**", (route) => {
-		delayedRoute = route;
-	});
-
-	await page.goto("/dual-mode");
-	await page.getByRole("button", { name: "Choose left" }).click();
-
-	const lookupRequest = page.waitForRequest((request) =>
-		request.url().includes("/dual-mode/lookup"),
-	);
-	await page.getByLabel("Search collection").fill("Synthetic Artist 01");
-	await lookupRequest;
-	await expect.poll(() => delayedRoute).not.toBeNull();
-	await page.keyboard.press("Escape");
-	await expect(page.locator("#artist_lookup")).not.toHaveAttribute("open", "");
-
-	if (!delayedRoute) {
-		throw new Error("Expected delayed lookup route");
+	// The per-pane index form is a plain GET form so filtering works without
+	// JavaScript; htmx only enhances it.
+	for (const side of ["left", "right"]) {
+		const form = page.locator(`form#dual-filters-${side}`);
+		await expect(form).toHaveAttribute("action", "/dual-mode");
+		await expect(form).toHaveAttribute("method", "GET");
 	}
-
-	await delayedRoute.fulfill({
-		body: "<p>Delayed lookup result</p>",
-		contentType: "text/html",
-	});
-	await page.waitForTimeout(100);
-
-	await expect(page.locator("#dual-lookup-results")).toContainText(
-		"Start typing to search artists.",
-	);
 });
 
-test("persists a same-pane target choice", async ({ page }) => {
-	await page.goto(`/dual-mode?left=${artistOnePath}&right=default`);
-
-	const leftTargets = paneTargetControls(page, "left");
-	await expect(
-		leftTargets.getByRole("link", { name: "Other pane" }),
-	).toHaveAttribute("aria-current", "true");
-	await leftTargets.getByRole("link", { name: "This pane" }).click();
-
-	await expect(page).toHaveURL(/left_render_to=left/);
-	await page.reload();
-	await expect(
-		leftTargets.getByRole("link", { name: "This pane" }),
-	).toHaveAttribute("aria-current", "true");
-
-	await page
-		.locator("#left")
-		.getByRole("link", { name: "VIEW WORK →" })
-		.first()
-		.click();
-
-	await expect(page.locator("#dual-area")).toHaveCount(1);
-	await expect(page.locator("#left .card-actions")).toHaveCount(0);
-	await expect(page.locator("#right")).toContainText(
-		"Choose content for comparison",
-	);
-});
-
-test("keeps a valid pane when the other selected record is missing", async ({
+test("an artist and its work render as complete records with citations", async ({
 	page,
 }) => {
 	await page.goto(
-		`/dual-mode?left=/artists/missing-000000000000000&right=${artistOnePath}`,
+		`/dual-mode?left=${encodeURIComponent(artistOnePath)}&right=${encodeURIComponent(artistOneArtworkPath)}&wide=1`,
 	);
 
-	await expect(page.locator("#left")).toContainText(
-		"Choose content for comparison",
-	);
-	await expect(page.locator("#right h1")).toContainText("Synthetic Artist 01");
+	await expect(
+		page.locator("#dual-left").getByRole("heading", {
+			name: "Synthetic Artist 01",
+		}),
+	).toBeVisible();
+	await expect(page.locator("#dual-left")).toContainText("CITE THIS RECORD");
+	await expect(page.locator("#dual-left")).toContainText("BIOGRAPHY");
+
+	await expect(
+		page.locator("#dual-right").getByRole("heading", {
+			name: "Synthetic Artwork 01-01",
+		}),
+	).toBeVisible();
+	await expect(page.locator("#dual-right")).toContainText("IMAGE SIZE");
+	await expect(page.locator("#dual-right")).toContainText("CITE THIS RECORD");
 });
 
-test("stacks comparison panes on a small screen", async ({ page }) => {
-	await page.setViewportSize({ width: 767, height: 900 });
-	await page.goto("/dual-mode");
-
-	await expect(page.locator("#dual-area")).toBeVisible();
-	await expect(page.locator("#left")).toContainText(
-		"Choose content for comparison",
-	);
-	await expect(page.locator("#right")).toContainText(
-		"Choose content for comparison",
-	);
-});
-
-test("updates pane state through enhanced operation links", async ({
+test("each pane keeps its own routing toggle and the bar swaps windows", async ({
 	page,
 }) => {
-	const operations = page.getByRole("navigation", { name: "Pane operations" });
-
-	await page.goto(dualModeURL(artistOnePath, artistTwoPath));
-	const reverseResponse = page.waitForResponse(
-		(response) =>
-			response.url().includes("/dual-mode") &&
-			response.request().headers()["hx-request"] === "true",
-	);
-	await operations
-		.getByRole("link", { name: "Reverse panes", exact: true })
-		.click();
-	await reverseResponse;
-	await expect(page.locator("#left h1")).toContainText("Synthetic Artist 02");
-	await expect(page.locator("#right h1")).toContainText("Synthetic Artist 01");
-	await expectDualModeState(page, artistTwoPath, artistOnePath);
-
-	await page.goto(dualModeURL(artistOnePath, artistTwoPath));
-	await operations
-		.getByRole("link", { name: "Copy left to right", exact: true })
-		.click();
-	await expectDualModeState(page, artistOnePath, artistOnePath);
-	await expect(page.locator("#right h1")).toContainText("Synthetic Artist 01");
-
-	await page.goto(dualModeURL(artistOnePath, artistTwoPath));
-	await operations
-		.getByRole("link", { name: "Copy right to left", exact: true })
-		.click();
-	await expectDualModeState(page, artistTwoPath, artistTwoPath);
-	await expect(page.locator("#left h1")).toContainText("Synthetic Artist 02");
-
-	await page.goto(dualModeURL(artistOnePath, artistTwoPath));
-	await operations
-		.getByRole("link", { name: "Clear left", exact: true })
-		.click();
-	await expectDualModeState(page, "default", artistTwoPath);
-	await expect(page.locator("#left")).toContainText(
-		"Choose content for comparison",
+	await page.goto(
+		`/dual-mode?left=${encodeURIComponent(artistOnePath)}&wide=1`,
 	);
 
-	await page.goto(dualModeURL(artistOnePath, artistTwoPath));
-	await operations
-		.getByRole("link", { name: "Clear right", exact: true })
-		.click();
-	await expectDualModeState(page, artistOnePath, "default");
-	await expect(page.locator("#right")).toContainText(
-		"Choose content for comparison",
-	);
-
-	await page.goto(dualModeURL(artistOnePath, artistTwoPath));
-	await operations
-		.getByRole("link", { name: "Standard view", exact: true })
-		.click();
-	await expect(page).toHaveURL(/\/$/);
-});
-
-test("loads pane paths through enhanced forms", async ({ page }) => {
-	const leftForm = page.getByRole("form", { name: "Load left pane" });
-	const rightForm = page.getByRole("form", { name: "Load right pane" });
-
-	await page.goto(dualModeURL(artistOnePath, artistTwoPath));
-	await expect(leftForm.getByLabel("Load left pane path")).toHaveValue(
-		artistOnePath,
-	);
-	const leftResponse = page.waitForResponse(
-		(response) =>
-			response.url().includes("/dual-mode") &&
-			response.request().headers()["hx-request"] === "true",
-	);
-	await leftForm.getByLabel("Load left pane path").fill(artistTwoPath);
-	await leftForm
-		.getByRole("button", { name: "Load left", exact: true })
-		.click();
-	await leftResponse;
-	await expectDualModeState(page, artistTwoPath, artistTwoPath);
-	await expect(page.locator("#left h1")).toContainText("Synthetic Artist 02");
-
-	await page.goto(dualModeURL(artistOnePath, artistTwoPath, "left", "right"));
-	await rightForm.getByLabel("Load right pane path").fill(artistOnePath);
-	await rightForm
-		.getByRole("button", { name: "Load right", exact: true })
-		.click();
-	await expectDualModeState(
-		page,
-		artistOnePath,
-		artistOnePath,
-		"left",
-		"right",
-	);
-	await expect(page.locator("#right h1")).toContainText("Synthetic Artist 01");
-
-	await page.goto(dualModeURL(artistOnePath, artistTwoPath, "left", "right"));
-	await leftForm.getByLabel("Load left pane path").fill(artistOneArtworkPath);
-	await leftForm
-		.getByRole("button", { name: "Load left", exact: true })
-		.click();
-	await expectDualModeState(
-		page,
-		artistOneArtworkPath,
-		artistTwoPath,
-		"left",
-		"right",
-	);
-	await expect(page.locator("#left h1")).toContainText(
-		"Synthetic Artwork 01-01",
-	);
-
-	await page.goto(dualModeURL(artistOnePath, artistTwoPath));
-	await leftForm
-		.getByLabel("Load left pane path")
-		.fill("/pages/privacy-policy");
-	await leftForm
-		.getByRole("button", { name: "Load left", exact: true })
-		.click();
-	await expectDualModeState(page, "default", artistTwoPath);
-	await expect(page.locator("#left")).toContainText(
-		"Choose content for comparison",
-	);
-});
-
-test("updates pane targets through enhanced links", async ({ page }) => {
-	await page.goto(dualModeURL(artistOnePath, artistTwoPath));
-	const leftTargets = paneTargetControls(page, "left");
-	const targetResponse = page.waitForResponse(
-		(response) =>
-			response.url().includes("/dual-mode") &&
-			response.request().headers()["hx-request"] === "true",
-	);
-	await leftTargets.getByRole("link", { name: "This pane" }).click();
-	await targetResponse;
-	await expectDualModeState(page, artistOnePath, artistTwoPath, "left", "left");
+	// Link routing is a per-pane state toggle rendered as an ordinary link with
+	// selected-link semantics (aria-current), not a toggle button (aria-pressed).
+	await expect(page.locator("#dual-left a[aria-pressed]")).toHaveCount(0);
 	await expect(
-		leftTargets.getByRole("link", { name: "This pane" }),
-	).toHaveAttribute("aria-current", "true");
+		page
+			.locator("#dual-left", { hasText: "LINKS OPEN IN" })
+			.locator("a[aria-current]"),
+	).toHaveCount(1);
 
-	await page.goto(dualModeURL(artistOnePath, artistTwoPath));
-	const rightTargets = paneTargetControls(page, "right");
-	await rightTargets.getByRole("link", { name: "This pane" }).click();
-	await expectDualModeState(
-		page,
-		artistOnePath,
-		artistTwoPath,
-		"right",
-		"right",
-	);
-
-	await rightTargets.getByRole("link", { name: "Other pane" }).click();
-	await expectDualModeState(
-		page,
-		artistOnePath,
-		artistTwoPath,
-		"right",
-		"left",
-	);
+	// The top bar exposes the global swap action as a link carrying full state.
+	await expect(
+		page.locator(".wga-dual-bar a", { hasText: "SWAP WINDOWS" }),
+	).toHaveAttribute("href", /^\/dual-mode/);
 });
 
-test.describe("Dual Mode operations without JavaScript", () => {
+test.describe("dual mode without JavaScript", () => {
 	test.use({ javaScriptEnabled: false });
 
-	test("falls back to the reverse-pane href", async ({ page }) => {
-		await page.goto(dualModeURL(artistOnePath, artistTwoPath));
-		await page
-			.getByRole("navigation", { name: "Pane operations" })
-			.getByRole("link", { name: "Reverse panes", exact: true })
-			.click();
+	test("keeps ordinary index links and a GET filter form", async ({ page }) => {
+		await page.goto("/dual-mode");
 
-		await expectDualModeState(page, artistTwoPath, artistOnePath);
-		await expect(page.locator("#left h1")).toContainText("Synthetic Artist 02");
-		await expect(page.locator("#right h1")).toContainText(
-			"Synthetic Artist 01",
+		await expect(page.locator("#dual-left")).toHaveCount(1);
+		await expect(page.locator("#dual-right")).toHaveCount(1);
+
+		await expect(page.locator("form#dual-filters-left")).toHaveAttribute(
+			"action",
+			"/dual-mode",
 		);
-	});
-
-	test("changes pane targets through standard hrefs", async ({ page }) => {
-		await page.goto(dualModeURL(artistOnePath, artistTwoPath));
-		await paneTargetControls(page, "left")
-			.getByRole("link", { name: "This pane" })
-			.click();
-		await expectDualModeState(
-			page,
-			artistOnePath,
-			artistTwoPath,
-			"left",
-			"left",
-		);
-
-		await page
-			.locator("#left")
-			.getByRole("link", { name: "VIEW WORK →" })
-			.first()
-			.click();
-		await expect(page.locator("#right h1")).toContainText(
-			"Synthetic Artist 02",
-		);
-
-		await page.goto(dualModeURL(artistOnePath, artistTwoPath));
-		await paneTargetControls(page, "right")
-			.getByRole("link", { name: "This pane" })
-			.click();
-		await expectDualModeState(
-			page,
-			artistOnePath,
-			artistTwoPath,
-			"right",
-			"right",
-		);
-	});
-
-	test("loads a right pane path through a standard GET form", async ({
-		page,
-	}) => {
-		await page.goto(dualModeURL(artistOnePath, artistTwoPath));
-		const rightForm = page.getByRole("form", { name: "Load right pane" });
-		await rightForm.getByLabel("Load right pane path").fill(artistOnePath);
-		await rightForm
-			.getByRole("button", { name: "Load right", exact: true })
-			.click();
-
-		await expectDualModeState(page, artistOnePath, artistOnePath);
-		await expect(page.locator("#right h1")).toContainText(
-			"Synthetic Artist 01",
-		);
-	});
-
-	test("loads a left pane path through a standard GET form", async ({
-		page,
-	}) => {
-		await page.goto(dualModeURL(artistOnePath, artistTwoPath));
-		const leftForm = page.getByRole("form", { name: "Load left pane" });
-		await leftForm.getByLabel("Load left pane path").fill(artistTwoPath);
-		await leftForm
-			.getByRole("button", { name: "Load left", exact: true })
-			.click();
-
-		await expectDualModeState(page, artistTwoPath, artistTwoPath);
-		await expect(page.locator("#left h1")).toContainText("Synthetic Artist 02");
-	});
-
-	test("loads an artwork search result through standard links", async ({
-		page,
-	}) => {
-		await page.goto(dualModeURL(artistOnePath, artistTwoPath, "left", "right"));
-		await page.getByRole("link", { name: "Search right artworks" }).click();
-
-		await artworkSearchForm(page)
-			.getByRole("searchbox", { name: "TITLE OR ARTIST" })
-			.fill("Synthetic Artwork 01-01");
-		await artworkSearchForm(page)
-			.getByRole("button", { name: "APPLY FILTERS", exact: true })
-			.click({ force: true, noWaitAfter: true });
-		await page
-			.getByRole("link", {
-				name: "Open Synthetic Artwork 01-01 in right pane",
-			})
-			.click({ force: true, noWaitAfter: true });
-
-		await expectDualModeState(
-			page,
-			artistOnePath,
-			artistOneArtworkPath,
-			"left",
-			"right",
-		);
-		await expect(page.locator("#right h1")).toContainText(
-			"Synthetic Artwork 01-01",
-		);
+		await expect(
+			page.locator(".wga-dual-bar a", { hasText: "SWAP WINDOWS" }),
+		).toHaveAttribute("href", /^\/dual-mode/);
 	});
 });

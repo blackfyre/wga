@@ -1,0 +1,95 @@
+package components
+
+import (
+	"fmt"
+
+	"github.com/blackfyre/wga/internal/assets/templ/dto"
+)
+
+templ RangeField(field dto.RangeField) {
+	<fieldset class={ templ.KV("py-5", !field.Brush) }>
+		<legend class="font-mono text-(length:--t-10) tracking-[1.5px] text-muted">{ field.Label }</legend>
+		<div class="mb-4 mt-2 flex items-baseline justify-end">
+			<output id={ field.FromID + "-to-" + field.ToID + "-output" } for={ field.FromID + " " + field.ToID } class="font-mono text-xs">{ rangeValue(rangeFrom(field)) }–{ rangeValue(rangeTo(field)) }</output>
+		</div>
+		<div class={ "relative", templ.KV("h-11", field.Brush), templ.KV("h-5", !field.Brush) }>
+			if field.Brush {
+				<span class="absolute top-0 bottom-0 border-x-2 border-primary bg-primary/10" role="presentation" style={ rangeFillStyle(field) }></span>
+			} else {
+				<span class="absolute top-[9px] right-0 left-0 h-px bg-base-content/30" role="presentation"></span>
+			}
+			if !field.Brush {
+				<span class="absolute top-[9px] h-[3px] bg-primary" role="presentation" style={ rangeFillStyle(field) }></span>
+			}
+			<input id={ field.FromID } name={ field.FromName } type="range" min={ rangeValue(rangeMin(field)) } max={ rangeValue(rangeMax(field)) } step={ rangeValue(rangeStep(field)) } value={ rangeValue(rangeFrom(field)) } aria-label="Range starts" aria-describedby={ field.FromID + "-to-" + field.ToID + "-output" } class={ "wga-range", templ.KV("wga-range-brush", field.Brush) }/>
+			<input id={ field.ToID } name={ field.ToName } type="range" min={ rangeValue(rangeMin(field)) } max={ rangeValue(rangeMax(field)) } step={ rangeValue(rangeStep(field)) } value={ rangeValue(rangeTo(field)) } aria-label="Range ends" aria-describedby={ field.FromID + "-to-" + field.ToID + "-output" } class={ "wga-range", templ.KV("wga-range-brush", field.Brush) }/>
+		</div>
+		<div class="mt-2 flex justify-between font-mono text-(length:--t-10) text-faint">
+			<span>{ rangeValue(rangeMin(field)) }</span>
+			<span>{ rangeValue(rangeMax(field)) }</span>
+		</div>
+	</fieldset>
+}
+
+func rangeValue(value int) string {
+	return fmt.Sprintf("%d", value)
+}
+func rangeMin(field dto.RangeField) int {
+	if field.Min <= field.Max {
+		return field.Min
+	}
+
+	return field.Max
+}
+
+func rangeMax(field dto.RangeField) int {
+	if field.Max >= field.Min {
+		return field.Max
+	}
+
+	return field.Min
+}
+
+func rangeStep(field dto.RangeField) int {
+	if field.Step > 0 {
+		return field.Step
+	}
+
+	return 1
+}
+
+func rangeFrom(field dto.RangeField) int {
+	return clampRangeValue(field.FromValue, rangeMin(field), rangeMax(field))
+}
+
+func rangeTo(field dto.RangeField) int {
+	return clampRangeValue(field.ToValue, rangeMin(field), rangeMax(field))
+}
+
+func clampRangeValue(value int, min int, max int) int {
+	if value < min {
+		return min
+	}
+	if value > max {
+		return max
+	}
+
+	return value
+}
+
+func rangeFillStyle(field dto.RangeField) string {
+	min := rangeMin(field)
+	max := rangeMax(field)
+	if min == max {
+		return "left:0;right:0"
+	}
+
+	span := float64(max - min)
+	from := float64(rangeFrom(field)-min) / span * 100
+	to := float64(rangeTo(field)-min) / span * 100
+	if from > to {
+		from, to = to, from
+	}
+
+	return fmt.Sprintf("left:%.2f%%;right:%.2f%%", from, 100-to)
+}

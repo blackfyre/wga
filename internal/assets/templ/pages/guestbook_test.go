@@ -3,8 +3,11 @@ package pages
 import (
 	"bytes"
 	"context"
+	"html"
 	"strings"
 	"testing"
+
+	"github.com/blackfyre/wga/internal/assets/templ/dto"
 )
 
 func TestGuestbookBlockAlwaysRendersSigningLink(t *testing.T) {
@@ -44,6 +47,66 @@ func TestGuestbookBlockAlwaysRendersSigningLink(t *testing.T) {
 				t.Errorf("sign link present = %t, want %t", got, tt.wantSignLink)
 			}
 		})
+	}
+}
+
+func TestGuestbookFormSupportsNoJavaScriptWithoutCollectingEmail(t *testing.T) {
+	var output bytes.Buffer
+	if err := GuestbookEntryForm(GuestbookFormView{}).Render(context.Background(), &output); err != nil {
+		t.Fatalf("render guestbook form: %v", err)
+	}
+
+	markup := output.String()
+	for _, required := range []string{
+		`action="/guestbook/add"`,
+		`method="post"`,
+		`name="sender_name"`,
+		`name="location"`,
+		`name="message"`,
+		`AN APPROVED NOTE BECOMES A PUBLIC ARCHIVE RECORD WHILE APPROVAL REMAINS IN FORCE.`,
+		`UNREVIEWED AND REJECTED NOTES EXPIRE AFTER 90 DAYS.`,
+		`href="/pages/privacy-policy"`,
+	} {
+		if !strings.Contains(markup, required) {
+			t.Errorf("form does not contain %q", required)
+		}
+	}
+	if strings.Contains(markup, `name="sender_email"`) {
+		t.Fatal("guestbook form collects an email address")
+	}
+}
+
+func TestGuestbookEntryEscapesMessageAndRendersHistoricalMetadata(t *testing.T) {
+	entry := dto.GuestbookEntry{
+		Name:     "Jane",
+		Location: "Delft",
+		Created:  "2025-06-02",
+		Message:  `<script>alert("private")</script>`,
+	}
+	var output bytes.Buffer
+	if err := GuestbookEntry(entry, 0).Render(context.Background(), &output); err != nil {
+		t.Fatalf("render guestbook entry: %v", err)
+	}
+
+	markup := output.String()
+	if strings.Contains(markup, "<script>") {
+		t.Fatal("guestbook message rendered as trusted HTML")
+	}
+	if !strings.Contains(markup, html.EscapeString(entry.Message)) {
+		t.Fatalf("escaped message missing: %s", markup)
+	}
+	for _, required := range []string{"Jane", "Delft", `<time datetime="2025-06-02">2025-06-02</time>`, `data-kbd-idx="0"`} {
+		if !strings.Contains(markup, required) {
+			t.Errorf("entry does not contain %q", required)
+		}
+	}
+}
+
+func TestGuestbookURLPreservesSearchYearAndBoundedShow(t *testing.T) {
+	view := GuestbookView{Query: "blue chapel"}
+	got := guestbookURL(view, "2025", 20)
+	if got != "/guestbook?q=blue+chapel&show=20&year=2025" {
+		t.Fatalf("guestbook URL = %q", got)
 	}
 }
 

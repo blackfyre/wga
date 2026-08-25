@@ -26,7 +26,23 @@ Load deployment configuration through `internal/config`. Feature code must not r
 
 Configuration is resolved at process startup. Required settings must fail validation before the application serves traffic or starts scheduled work. Keep secrets out of errors, debug output, and logs.
 
+Postcard delivery requires `WGA_POSTCARD_TOKEN_KEYS`, a secret JSON object mapping key IDs to unpadded Base64URL-encoded 32-byte keys, and `WGA_POSTCARD_TOKEN_ACTIVE_KEY_ID`, which names the key used for new envelopes. Generate each key independently with `python3 -c 'import base64, secrets; print(base64.urlsafe_b64encode(secrets.token_bytes(32)).rstrip(b"=").decode())'`, then inject the resulting value through the deployment secret mechanism rather than committing it to `.env.example`. Server startup rejects a missing or invalid keyring; errors, logs, and operator commands must not print keys, bearer tokens, or token envelopes.
+
+Rotate postcard token keys in this order:
+
+1. Add the new key under a new key ID while retaining every key referenced by live envelopes.
+2. Set `WGA_POSTCARD_TOKEN_ACTIVE_KEY_ID` to the new ID and restart the server so newly queued postcards use it.
+3. Run `dist/wga postcards rewrap-token-key --from <old-id>` against the intended data directory; use `--limit` to bound a smaller batch when required, then repeat until the aggregate count is zero.
+4. Verify the command reports only aggregate counts, no live envelope still references the old ID, and postcard delivery remains healthy.
+5. Take and verify the required backup after rewrapping.
+6. Retain the old key until every backup that can restore an old-key envelope has passed its retention window.
+7. Remove the old key, restart, and confirm configuration validation and postcard delivery again.
+
+WGA's current data-directory model resets the database between runs. Treat the baseline schema migrations as the complete contract for a fresh database: update the baseline field definition when a field's current shape changes, rather than adding a migration solely to modify historical state that is never retained.
+
 Use S3-compatible object storage for durable uploaded files. Do not make a local filesystem path the production system of record. Classify new file types as public or restricted; treat an unclassified type as restricted, and require authorisation plus time-bounded access for restricted files.
+
+Anonymous-write admission (visitor itineraries, and future participation surfaces) resolves a trusted client identity through `WGA_CLIENT_IP_SOURCE`. `direct` parses and canonicalises the socket peer (`RemoteAddr`) and ignores forwarding headers; `railway` is the production Railway-edge contract and requires exactly one syntactically valid `X-Railway-Edge` marker plus exactly one parseable `X-Real-IP`, ignores `X-Forwarded-For`, and fails closed on anything else. Development and test default to `direct`; production and staging must select a source explicitly. The resolver (`internal/requesttrust`) neither persists nor logs the raw client address — it is hashed by callers before use in admission limits.
 
 ## Scheduled and external work
 
@@ -55,3 +71,9 @@ Use Conventional Commit types for commits and pull-request titles. Keep document
 `cmd/generate-licences` discovers Go modules with `go list -deps -json ./cmd/wga`, JavaScript packages from `dist/browser-metafile.json`, browser-CSS imports, and declared third-party code bundled inside package artefacts. It validates discovery against the manifest, then writes the embedded notice page at `internal/assets/views/open-source-licences.html` and the release artefact at `dist/wga.cdx.json`.
 
 Run `go run ./cmd/generate-licences` after `bun run build` and `go tool templ generate`. When a dependency changes, run `go run ./cmd/generate-licences --bootstrap`, then review every changed SPDX identifier, full licence text, and required NOTICE or attribution material before committing the manifest and notice page. Do not edit generated HTML or SBOM output directly. `mise run app:build` and GoReleaser run the generator automatically; release archives include `wga.cdx.json` alongside the binary.
+
+## FOSSA analysis
+
+`.fossa.yml` scopes FOSSA analysis to the root Go and frontend dependency manifests and excludes `.opencode` tooling metadata. Use `fossa list-targets` only to identify candidate targets: it does not apply configured filters. Use `fossa analyze --output --json` to verify the configured analysis without uploading a revision.
+
+`docs/fossa-licensing-evidence.md` records the current compiled-source findings for `modernc.org/libc@v1.74.1` and `modernc.org/sqlite@v1.54.0`. The findings remain unresolved pending legal review. Do not create a FOSSA exception, policy approval, licence-data correction, or credentialed CI policy gate from that evidence. Repeat the FOSSA match and build-selection review whenever either module version changes.

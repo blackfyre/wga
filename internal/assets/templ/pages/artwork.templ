@@ -19,7 +19,18 @@ func artworkMetaEntries(aw dto.Artwork) []components.MetaEntry {
 			entries = append(entries, entry)
 		}
 	}
+
 	return entries
+}
+
+// artworkMusicPiece composes the composer-and-piece label for the period-music
+// card from the source-backed composer and piece values.
+func artworkMusicPiece(aw dto.Artwork) string {
+	if aw.Music.Composer != "" {
+		return aw.Music.Composer + " — " + aw.Music.Piece
+	}
+
+	return aw.Music.Piece
 }
 
 templ ArtworkPage(aw dto.Artwork) {
@@ -47,9 +58,25 @@ templ ArtworkBlock(aw dto.Artwork) {
 			</nav>
 		}
 		<div class="flex flex-col gap-8 md:flex-row md:items-start md:gap-16">
-			<div data-viewer data-viewer-no-navbar class="flex h-[340px] min-w-0 flex-1 items-center justify-center border border-base-content/15 bg-base-300 p-6 md:h-[560px]">
-				@components.ImageBig(aw.Image.Image, aw.Image.Zoom, aw.Image.Title, aw.Artist.Name)
-			</div>
+			<figure class="w-full min-w-0 md:flex-1">
+				@components.Plate(dto.Plate{DisplayURL: aw.Image.Image, ZoomURL: aw.Image.Zoom, Alt: aw.Title, Label: "IMAGE — " + aw.Title, Placeholder: "IMAGE — " + aw.Title, Aspect: "", Contain: true})
+				<figcaption>
+					<div class="mt-4 flex flex-wrap items-baseline justify-between gap-4 border-b border-base-content pb-2.5">
+						<span class="font-mono text-(length:--t-11) tracking-[1.5px]">THIS REPRODUCTION</span>
+						if aw.SourceURL != "" {
+							<a href={ aw.SourceURL } target="_blank" rel="noopener noreferrer" class="font-mono text-(length:--t-11) tracking-[1px] text-primary transition-opacity hover:opacity-60">DOWNLOAD THE FULL FILE ↓</a>
+						}
+					</div>
+					if aw.ReproFile != "" {
+						<dl class="grid grid-cols-2 gap-4.5 pt-4 md:grid-cols-3 md:gap-6">
+							@reproRule("FILE", aw.ReproFile)
+						</dl>
+					}
+					if aw.ReproductionSourceURL != "" {
+						<a href={ templ.SafeURL(aw.ReproductionSourceURL) } target="_blank" rel="noopener noreferrer" class="mt-4 inline-block font-mono text-(length:--t-11) tracking-[1px] text-primary transition-opacity hover:opacity-60">VIEW ORIGINAL AT WEB GALLERY OF ART ↗</a>
+					}
+				</figcaption>
+			</figure>
 			<article class="w-full shrink-0 md:w-[380px]">
 				<p class="font-mono text-[11px] tracking-[2px] text-base-content/60">03 — ARTWORK</p>
 				<h1 class="mt-4 text-[44px] font-semibold leading-[1.08] tracking-[-0.5px]">{ aw.Title }</h1>
@@ -64,8 +91,15 @@ templ ArtworkBlock(aw dto.Artwork) {
 						</a>
 					</p>
 				}
-				<div class="mt-7">@components.MetaList(artworkMetaEntries(aw))</div>
+				<div class="mt-7">
+					@components.MetaList(artworkMetaEntries(aw))
+				</div>
 				<a href="#" hx-on:click="wga.dialog.open();" hx-get={ `/postcard/send?awid=` + aw.Id } hx-target="#d" hx-swap="innerHTML" hx-select=".modal-box, form[method=dialog].modal-backdrop" class="mt-7 flex w-full justify-center bg-primary px-5 py-3.5 font-mono text-[11px] tracking-[1.5px] text-primary-content hover:opacity-85">SEND AS POSTCARD →</a>
+				@components.AddToItineraryButton(aw.Id, "block")
+				@artworkPaletteBlock(aw)
+				if aw.Music.Available {
+					@components.MusicPeriodPlayerCard(aw.Music.SongID, artworkMusicPiece(aw), aw.Music.PlayerURL)
+				}
 			</article>
 		</div>
 		<div class="mt-14 flex flex-col gap-8 border-t border-base-content/15 pt-8 md:flex-row md:gap-16">
@@ -73,19 +107,84 @@ templ ArtworkBlock(aw dto.Artwork) {
 				<p class="font-mono text-[11px] tracking-[1.5px] text-base-content/60">COMMENTARY</p>
 				<p class="mt-3 font-mono text-[10px] leading-relaxed text-base-content/50">UNDERLINED TERMS ARE DEFINED IN THE GLOSSARY.</p>
 			</div>
-			<div class="content max-w-[620px] text-[16px] leading-[1.7]">
-				@templ.Raw(aw.Comment)
-			</div>
+			if aw.HasCommentary {
+				<div class="content max-w-[620px] text-[16px] leading-[1.7]">
+					@templ.Raw(aw.SourceComment)
+				</div>
+			} else {
+				<p class="max-w-[620px] text-[16px] leading-[1.7] text-base-content/70">Commentary is unavailable for this artwork.</p>
+			}
 		</div>
 		if aw.CitationKey != "" {
 			@components.CitationBlock(components.Citation{Key: aw.CitationKey, Title: aw.CitationTitle, URL: aw.CitationURL})
 		}
-		if len(aw.RelatedWorks) > 0 {
-			<section class="mt-14 border-t border-base-content/15 pt-5">
-				<h2 class="mb-5 font-mono text-[11px] tracking-[1.5px]">OTHER WORKS BY { aw.Artist.Name }</h2>
-				@components.PublicArtworkGrid(aw.RelatedWorks)
-			</section>
-		}
+		@artworkRelatedBlock(aw)
 	</section>
 	@templ.Raw(aw.Jsonld)
+}
+
+// artworkPaletteBlock renders the compact image-derived colour palette with a
+// truthful indicative disclaimer. When no palette is recorded it states the
+// unavailable state explicitly rather than omitting the section.
+templ artworkPaletteBlock(aw dto.Artwork) {
+	<div class="border-b border-base-content/15 py-3">
+		<p class="font-mono text-(length:--t-11) tracking-[1px] text-muted">PALETTE</p>
+		if len(aw.Palette) > 0 {
+			<div class="mt-2.5 h-5" style="display:flex; width:100%; max-width:100%; overflow:hidden">
+				for _, swatch := range aw.Palette {
+					<span class="h-full" style={ "background:" + swatch.Hex + "; min-width:0; flex:1" } aria-hidden="true"></span>
+				}
+			</div>
+			<div class="mt-2" style="display:flex; flex-wrap:wrap; max-width:100%; column-gap:1rem; row-gap:0.25rem">
+				for _, swatch := range aw.Palette {
+					<span class="font-mono text-(length:--t-10) tracking-[0.5px] text-base-content/70" style="min-width:0; max-width:100%; overflow-wrap:anywhere">{ swatch.Hex }</span>
+				}
+			</div>
+			<p class="mt-2 font-mono text-(length:--t-10) leading-relaxed text-faint">SAMPLED FROM THE IMAGE — INDICATIVE, NOT A PIGMENT ANALYSIS.</p>
+		} else {
+			<p class="mt-2 text-sm leading-relaxed text-base-content/70">Not recorded.</p>
+		}
+	</div>
+}
+
+// artworkRelatedBlock renders the four related-work basis links, the active
+// basis connection heading, up to four related cards, and the honest sparse
+// explanation and alternative link. It is omitted when no basis state exists.
+templ artworkRelatedBlock(aw dto.Artwork) {
+	if len(aw.Related.Bases) > 0 {
+		<section class="mt-14 border-t border-base-content/15 pt-5" aria-labelledby="related-works-heading">
+			<div class="mb-5 flex flex-wrap items-baseline justify-between gap-4">
+				<h2 id="related-works-heading" class="font-mono text-[11px] tracking-[1.5px]">{ aw.Related.Connection }</h2>
+				<nav class="flex flex-wrap gap-1.5" aria-label="Related works basis">
+					for _, basis := range aw.Related.Bases {
+						if basis.Active {
+							<a href={ templ.SafeURL(basis.URL) } hx-get={ basis.URL } hx-target={ aw.HxTarget } class="border border-primary bg-primary px-3.5 py-1.5 font-mono text-(length:--t-11) tracking-[1px] text-primary-content" aria-current="page">{ basis.Label }</a>
+						} else {
+							<a href={ templ.SafeURL(basis.URL) } hx-get={ basis.URL } hx-target={ aw.HxTarget } class="border border-control px-3.5 py-1.5 font-mono text-(length:--t-11) tracking-[1px] text-base-content/70 transition-colors hover:border-base-content">{ basis.Label }</a>
+						}
+					}
+				</nav>
+			</div>
+			if len(aw.RelatedWorks) > 0 {
+				@components.PublicArtworkGrid(aw.RelatedWorks)
+			}
+			if aw.Related.Sparse {
+				<div class="mt-6 border-t border-base-content/15 pt-4">
+					<p class="max-w-[620px] text-sm leading-relaxed text-base-content/70">{ aw.Related.SparseNote }</p>
+					if aw.Related.AlternativeURL != "" {
+						<a href={ templ.SafeURL(aw.Related.AlternativeURL) } hx-get={ aw.Related.AlternativeURL } hx-target={ aw.HxTarget } class="mt-3 inline-block font-mono text-[11px] tracking-[1px] text-primary transition-opacity hover:opacity-60">TRY { aw.Related.Alternative } →</a>
+					}
+				</div>
+			}
+		</section>
+	}
+}
+
+// reproRule is one labelled reproduction-metadata cell inside the artwork
+// figcaption's definition list.
+templ reproRule(label string, value string) {
+	<div>
+		<dt class="mb-1.5 font-mono text-(length:--t-10) tracking-[1.5px] text-muted">{ label }</dt>
+		<dd class="text-sm leading-snug">{ value }</dd>
+	</div>
 }

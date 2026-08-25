@@ -3,10 +3,14 @@ package migrations
 import (
 	"database/sql"
 	"errors"
+	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
 
+	"github.com/blackfyre/wga/internal/utils/seed"
+	"github.com/blackfyre/wga/resources/synthetic"
 	"github.com/pocketbase/pocketbase/core"
 )
 
@@ -31,6 +35,7 @@ func TestSyntheticSeedMigrationImportsBaselineSchema(t *testing.T) {
 		"art_periods":    32,
 		"artists":        10,
 		"artworks":       27,
+		"art_selections": 2,
 		"glossary":       5,
 		"guestbook":      2,
 		"music_composer": 2,
@@ -124,7 +129,7 @@ func TestSyntheticSeedMigrationImportsBaselineSchema(t *testing.T) {
 	if err != nil {
 		t.Fatalf("find artworks collection: %v", err)
 	}
-	for _, fieldName := range []string{"date_text", "source_url", "source_image_path"} {
+	for _, fieldName := range []string{"date_text", "source_image_path"} {
 		if artworks.Fields.GetByName(fieldName) != nil {
 			t.Fatalf("expected no %s artwork field", fieldName)
 		}
@@ -159,7 +164,7 @@ func TestSyntheticSeedMigrationImportsBaselineSchema(t *testing.T) {
 	if err != nil {
 		t.Fatalf("find artist: %v", err)
 	}
-	if got, want := artist.GetString("name"), "Synthetic Artist 02"; got != want {
+	if got, want := artist.GetString("name"), "SYNTHETIC ARTIST 02"; got != want {
 		t.Fatalf("expected artist name %q, got %q", want, got)
 	}
 	if !strings.Contains(artist.GetString("bio"), "Synthetic Artist 02") {
@@ -167,6 +172,32 @@ func TestSyntheticSeedMigrationImportsBaselineSchema(t *testing.T) {
 	}
 	if len(artist.GetStringSlice("school")) != 1 {
 		t.Fatal("expected artist school relation")
+	}
+
+	selection, err := app.FindRecordById("art_selections", "ra01b4fda068382")
+	if err != nil {
+		t.Fatalf("find supplied-commentary synthetic selection: %v", err)
+	}
+	if !selection.GetBool("published") {
+		t.Fatal("expected published synthetic selection")
+	}
+	if got, want := selection.GetString("commentary"), "<p>Synthetic fixture commentary for browser coverage.</p>"; got != want {
+		t.Fatalf("synthetic selection commentary = %q, want %q", got, want)
+	}
+	if got, want := selection.GetStringSlice("artworks"), []string{"5b71fb4c2c5fa71", "778ed0ab7a62b62"}; !slices.Equal(got, want) {
+		t.Fatalf("synthetic selection artwork order = %v, want %v", got, want)
+	}
+	missingCommentary, err := app.FindRecordById("art_selections", "r71ee5b06e7865f")
+	if err != nil {
+		t.Fatalf("find missing-commentary synthetic selection: %v", err)
+	}
+	if got := missingCommentary.GetString("commentary"); got != "" {
+		t.Fatalf("missing-commentary synthetic selection commentary = %q, want empty", got)
+	}
+	for _, fieldName := range []string{"biography_image_width", "biography_image_height"} {
+		if _, ok := artists.Fields.GetByName(fieldName).(*core.NumberField); !ok {
+			t.Fatalf("expected artists.%s numeric field", fieldName)
+		}
 	}
 
 	artwork, err := app.FindRecordById("artworks", "07561d2efd0a6db")
@@ -178,6 +209,17 @@ func TestSyntheticSeedMigrationImportsBaselineSchema(t *testing.T) {
 	}
 	if got, want := artwork.GetInt("year"), 1911; got != want {
 		t.Fatalf("expected artwork year %d, got %d", want, got)
+	}
+	if got, want := artwork.GetInt("image_width"), 512; got != want {
+		t.Fatalf("expected artwork image width %d, got %d", want, got)
+	}
+	if got, want := artwork.GetInt("image_height"), 1024; got != want {
+		t.Fatalf("expected artwork image height %d, got %d", want, got)
+	}
+	for _, fieldName := range []string{"image_width", "image_height"} {
+		if _, ok := artworks.Fields.GetByName(fieldName).(*core.NumberField); !ok {
+			t.Fatalf("expected artworks.%s numeric field", fieldName)
+		}
 	}
 
 	about, err := app.FindFirstRecordByData("static_pages", "slug", "about")
@@ -242,6 +284,78 @@ func TestSyntheticSeedMigrationSkipsPopulatedTarget(t *testing.T) {
 	}
 	if _, err := app.FindRecordById("strings", custom.Id); err != nil {
 		t.Fatalf("find existing content: %v", err)
+	}
+}
+
+func TestSyntheticSeedImportExternalSQLite(t *testing.T) {
+	data, err := synthetic.Files.ReadFile("wga-test.sqlite")
+	if err != nil {
+		t.Fatalf("read synthetic source: %v", err)
+	}
+	sourcePath := filepath.Join(t.TempDir(), "wga-src.sqlite")
+	if err := os.WriteFile(sourcePath, data, 0o600); err != nil {
+		t.Fatalf("write external source: %v", err)
+	}
+	source, err := sql.Open("sqlite", sourcePath)
+	if err != nil {
+		t.Fatalf("open external source: %v", err)
+	}
+	defer source.Close()
+	if _, err := source.Exec(`
+		UPDATE artists
+		SET biography_image_output_path = 'Artists/2236bdd57f7492e/portrait.jpg',
+			biography_image_width = 500,
+			biography_image_height = 750
+		WHERE id = '2236bdd57f7492e'
+	`); err != nil {
+		t.Fatalf("add external portrait source data: %v", err)
+	}
+
+	app := newMigrationTestApp(t, t.TempDir())
+	t.Cleanup(func() {
+		if err := app.ResetBootstrapState(); err != nil {
+			t.Error(err)
+		}
+	})
+	if err := createCurrentSchema(app); err != nil {
+		t.Fatalf("create baseline schema: %v", err)
+	}
+	if err := addArtistSelections(app); err != nil {
+		t.Fatalf("create artist selections collection: %v", err)
+	}
+	if err := addCollectionData(app); err != nil {
+		t.Fatalf("create collection-data collections/fields: %v", err)
+	}
+	if err := addArtworkSourceFields(app); err != nil {
+		t.Fatalf("create artwork source/colour fields: %v", err)
+	}
+	if err := seed.Import(app, sourcePath); err != nil {
+		t.Fatalf("import external SQLite source: %v", err)
+	}
+
+	artist, err := app.FindRecordById("artists", "2236bdd57f7492e")
+	if err != nil {
+		t.Fatalf("find imported artist: %v", err)
+	}
+	if got, want := artist.GetString("portrait"), "portrait.jpg"; got != want {
+		t.Fatalf("external artist portrait = %q, want %q", got, want)
+	}
+	if got, want := artist.GetInt("biography_image_width"), 500; got != want {
+		t.Fatalf("external artist biography image width = %d, want %d", got, want)
+	}
+	if got, want := artist.GetInt("biography_image_height"), 750; got != want {
+		t.Fatalf("external artist biography image height = %d, want %d", got, want)
+	}
+
+	artwork, err := app.FindRecordById("artworks", "07561d2efd0a6db")
+	if err != nil {
+		t.Fatalf("find imported artwork: %v", err)
+	}
+	if got, want := artwork.GetInt("image_width"), 512; got != want {
+		t.Fatalf("external artwork image width = %d, want %d", got, want)
+	}
+	if got, want := artwork.GetInt("image_height"), 1024; got != want {
+		t.Fatalf("external artwork image height = %d, want %d", got, want)
 	}
 }
 

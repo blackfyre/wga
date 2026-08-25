@@ -1,35 +1,108 @@
 package seed
 
-import "testing"
+import (
+	"strings"
+	"testing"
 
-func TestCenturyForPeriod(t *testing.T) {
-	tests := []struct {
-		period string
-		want   string
-	}{
-		{period: "12th century", want: "12"},
-		{period: "Baroque", want: "18"},
-	}
+	"github.com/pocketbase/pocketbase/core"
+)
 
-	for _, test := range tests {
-		t.Run(test.period, func(t *testing.T) {
-			got, err := centuryForPeriod(test.period)
-			if err != nil {
-				t.Fatalf("centuryForPeriod(%q): %v", test.period, err)
-			}
-			if got != test.want {
-				t.Fatalf("centuryForPeriod(%q) = %q, want %q", test.period, got, test.want)
-			}
-		})
+// validArtworksContractCollection builds the artworks collection with the
+// concrete field types and relation cardinality the importer expects.
+func validArtworksContractCollection() *core.Collection {
+	collection := core.NewBaseCollection("Artworks")
+	collection.Id = "artworks"
+	collection.Fields.Add(
+		&core.NumberField{Name: "source_row"},
+		&core.NumberField{Name: "date_start"},
+		&core.NumberField{Name: "date_end"},
+		&core.BoolField{Name: "is_circa"},
+		&core.TextField{Name: "date_qualifier"},
+		&core.TextField{Name: "timeframe_text"},
+		&core.RelationField{Name: "current_location_id", CollectionId: "locations", MinSelect: 0, MaxSelect: 1},
+		&core.RelationField{Name: "art_period_id", CollectionId: "art_periods", MinSelect: 0, MaxSelect: 1},
+		&core.TextField{Name: "source_url"},
+		&core.TextField{Name: "source_path"},
+		&core.TextField{Name: "source_comment"},
+		&core.JSONField{Name: "colour_palette"},
+		&core.JSONField{Name: "colour_signature"},
+		&core.TextField{Name: "colour_profile_version"},
+		&core.TextField{Name: "colour_image_hash"},
+	)
+	return collection
+}
+
+// validSelectionsContractCollection builds the art_selections collection with
+// the relation targets and cardinality the importer and read-model expect.
+func validSelectionsContractCollection() *core.Collection {
+	collection := core.NewBaseCollection("Art_selections")
+	collection.Id = "art_selections"
+	collection.Fields.Add(
+		&core.RelationField{Name: "artist", CollectionId: "artists", MinSelect: 1, MaxSelect: 1},
+		&core.RelationField{Name: "artworks", CollectionId: "artworks", MinSelect: 1, MaxSelect: 1000},
+	)
+	return collection
+}
+
+func TestValidateSourceFieldContractsAcceptsBaseline(t *testing.T) {
+	artworks := validArtworksContractCollection()
+	selections := validSelectionsContractCollection()
+
+	if err := validateSourceFieldContracts(artworks, selections); err != nil {
+		t.Fatalf("expected baseline contracts to pass, got %v", err)
 	}
 }
 
-func TestUniqueArtistSlug(t *testing.T) {
-	used := map[string]struct{}{}
-	if got, want := uniqueArtistSlug(used, "Marco d' Oggiono", "first"), "marco-d-oggiono"; got != want {
-		t.Fatalf("first slug = %q, want %q", got, want)
+func TestValidateSourceFieldContractsRejectsWrongScalarType(t *testing.T) {
+	artworks := validArtworksContractCollection()
+	artworks.Fields.RemoveByName("source_row")
+	artworks.Fields.Add(&core.TextField{Name: "source_row"})
+	selections := validSelectionsContractCollection()
+
+	err := validateSourceFieldContracts(artworks, selections)
+	if err == nil || !strings.Contains(err.Error(), "source_row") {
+		t.Fatalf("expected wrong scalar type error for source_row, got %v", err)
 	}
-	if got, want := uniqueArtistSlug(used, "Marco d' Oggiono", "second"), "marco-d-oggiono-second"; got != want {
-		t.Fatalf("second slug = %q, want %q", got, want)
+}
+
+func TestValidateSourceFieldContractsRejectsWrongRelationCollection(t *testing.T) {
+	artworks := validArtworksContractCollection()
+	artworks.Fields.RemoveByName("current_location_id")
+	artworks.Fields.Add(&core.RelationField{Name: "current_location_id", CollectionId: "schools", MinSelect: 0, MaxSelect: 1})
+	selections := validSelectionsContractCollection()
+
+	err := validateSourceFieldContracts(artworks, selections)
+	if err == nil || !strings.Contains(err.Error(), "targets") {
+		t.Fatalf("expected wrong relation collection error, got %v", err)
+	}
+}
+
+func TestValidateSourceFieldContractsRejectsWrongCardinality(t *testing.T) {
+	artworks := validArtworksContractCollection()
+	artworks.Fields.RemoveByName("art_period_id")
+	artworks.Fields.Add(&core.RelationField{Name: "art_period_id", CollectionId: "art_periods", MinSelect: 0, MaxSelect: 10})
+	selections := validSelectionsContractCollection()
+
+	err := validateSourceFieldContracts(artworks, selections)
+	if err == nil || !strings.Contains(err.Error(), "cardinality") {
+		t.Fatalf("expected wrong cardinality error, got %v", err)
+	}
+}
+
+func TestValidateSourceFieldContractsRejectsWrongSelectionRelation(t *testing.T) {
+	artworks := validArtworksContractCollection()
+
+	wrongTarget := validSelectionsContractCollection()
+	wrongTarget.Fields.RemoveByName("artist")
+	wrongTarget.Fields.Add(&core.RelationField{Name: "artist", CollectionId: "schools", MinSelect: 1, MaxSelect: 1})
+	if err := validateSourceFieldContracts(artworks, wrongTarget); err == nil || !strings.Contains(err.Error(), "targets") {
+		t.Fatalf("expected wrong selection relation target error, got %v", err)
+	}
+
+	wrongCardinality := validSelectionsContractCollection()
+	wrongCardinality.Fields.RemoveByName("artworks")
+	wrongCardinality.Fields.Add(&core.RelationField{Name: "artworks", CollectionId: "artworks", MinSelect: 0, MaxSelect: 10})
+	if err := validateSourceFieldContracts(artworks, wrongCardinality); err == nil || !strings.Contains(err.Error(), "cardinality") {
+		t.Fatalf("expected wrong selection cardinality error, got %v", err)
 	}
 }

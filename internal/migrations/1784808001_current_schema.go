@@ -77,6 +77,8 @@ func createCurrentSchema(app core.App) error {
 			MaxSize:   5 * 1024 * 1024,
 			Thumbs:    []string{"500x0", "600x0"},
 		},
+		numberField("biography_image_width", false),
+		numberField("biography_image_height", false),
 		boolField("published", true),
 	)); err != nil {
 		return err
@@ -103,6 +105,8 @@ func createCurrentSchema(app core.App) error {
 		editorField("comment", false),
 		boolField("published", false),
 		fileField("image", []string{"image/jpeg", "image/png"}, 5*1024*1024, []string{"120x0", "200x0", "400x0", "500x0", "600x0", "700x0", "800x0", "900x0", "1000x0", "1100x0", "1400x0", "1600x0", "2000x0"}, false),
+		numberField("image_width", false),
+		numberField("image_height", false),
 	)); err != nil {
 		return err
 	}

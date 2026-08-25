@@ -4,12 +4,9 @@ import (
 	"bytes"
 	"net/http"
 
-	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
-	"github.com/blackfyre/wga/internal/constants"
+	"github.com/blackfyre/wga/internal/logging"
 	"github.com/blackfyre/wga/internal/utils"
-	"github.com/blackfyre/wga/internal/utils/url"
-	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 
@@ -17,86 +14,27 @@ import (
 )
 
 func inspirationHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error {
-
-	artPieces, err := app.FindRecordsByFilter(constants.CollectionArtworks, "published = true", "@random", 50, 0, dbx.Params{})
-
+	content, err := inspirationWorks(app)
 	if err != nil {
-		app.Logger().Error("Error getting random artworks", "error", err.Error())
+		logging.RequestLogger(app, c).Error("Build inspiration page", "error", err)
 		return utils.ServerFaultError(c)
 	}
 
-	content := dto.ImageGrid{}
-
-	for _, artPiece := range artPieces {
-		if len(content) == 10 {
-			break
-		}
-
-		artworkId := artPiece.GetString("id")
-		authorIds := artPiece.GetStringSlice("author")
-		authorId := ""
-
-		for _, id := range authorIds {
-			if id != "" {
-				authorId = id
-				break
-			}
-		}
-
-		if authorId == "" {
-			app.Logger().Warn("Skipping artwork without author", "artworkId", artworkId)
-			continue
-		}
-
-		artist, err := app.FindRecordById(constants.CollectionArtists, authorId)
-
-		if err != nil {
-			app.Logger().Error("Error getting artist for artwork", "artworkId", artworkId, "error", err.Error())
-			continue
-		}
-
-		imageUrl := utils.AssetUrl("/assets/images/no-image.png")
-		thumbUrl := imageUrl
-		imageName := artPiece.GetString("image")
-
-		if imageName != "" {
-			imageUrl = url.GenerateThumbUrl(constants.CollectionArtworks, artworkId, imageName, url.ThumbnailArtworkCard, "")
-			thumbUrl = imageUrl
-		}
-
-		content = append(content, dto.Image{
-			Url: url.GenerateFullArtworkUrl(url.ArtworkUrlDTO{
-				ArtistId:     artist.GetString("id"),
-				ArtistName:   artist.GetString("name"),
-				ArtworkTitle: artPiece.GetString("title"),
-				ArtworkId:    artPiece.GetString("id"),
-			}),
-			Image:     imageUrl,
-			Thumb:     thumbUrl,
-			Comment:   artPiece.GetString("comment"),
-			Title:     artPiece.GetString("title"),
-			Technique: artPiece.GetString("technique"),
-			Id:        artworkId,
-			Artist: dto.Artist{
-				Id:   artist.Id,
-				Name: artist.GetString("name"),
-				Url: url.GenerateArtistUrl(url.ArtistUrlDTO{
-					ArtistId:   artist.Id,
-					ArtistName: artist.GetString("name"),
-				}),
-				Profession: artist.GetString("profession"),
-			},
-		})
-	}
-
-	ctx := tmplUtils.DecorateContext(c.Request.Context(), tmplUtils.TitleKey, "Inspiration")
+	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, "Inspiration")
+	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "Explore a shuffled selection of works from the Web Gallery of Art collection.")
+	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgUrlKey, tmplUtils.AssetUrl("/inspire"))
 
 	var buff bytes.Buffer
 
 	c.Response.Header().Set("HX-Push-Url", "/inspire")
-	err = pages.InspirePage(content).Render(ctx, &buff)
+	if utils.IsHtmxRequest(c) && !utils.RequestsMainContentArea(c) {
+		err = pages.InspirationContent(content).Render(ctx, &buff)
+	} else {
+		err = pages.InspirePage(content).Render(ctx, &buff)
+	}
 
 	if err != nil {
+		logging.RequestLogger(app, c).Error("Render inspiration page", "error", err)
 		return utils.ServerFaultError(c)
 	}
 

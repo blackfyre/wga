@@ -6,7 +6,7 @@ test("groups artist and work matches", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "ARTISTS" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "WORKS" })).toBeVisible();
   const artist = page
-    .getByRole("link", { name: /^Synthetic Artist 01/ })
+    .getByRole("link", { name: /^SYNTHETIC ARTIST 01/ })
     .first();
   await expect(artist).toBeVisible();
   await expect(
@@ -33,6 +33,6 @@ test("updates grouped results while typing", async ({ page }) => {
   await page.locator("#search").getByRole("searchbox").fill("Synthetic");
   await response;
   await expect(page.locator("#global-search-results")).toContainText(
-    "Synthetic Artist 01",
+    "SYNTHETIC ARTIST 01",
   );
 });

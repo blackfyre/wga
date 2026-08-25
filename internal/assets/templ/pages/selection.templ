@@ -1,0 +1,114 @@
+package pages
+
+import (
+	"strconv"
+
+	"github.com/blackfyre/wga/internal/assets/templ/components"
+	"github.com/blackfyre/wga/internal/assets/templ/dto"
+	"github.com/blackfyre/wga/internal/assets/templ/layouts"
+	"github.com/blackfyre/wga/internal/assets/templ/utils"
+)
+
+// SelectionView is the page-owned read model for a source-backed curated artist
+// selection. All URLs are complete and resolved by the owning handler; the
+// template never constructs identity or image URLs itself.
+type SelectionView struct {
+	ArtistName      string
+	ArtistURL       string // canonical /artists/{slug}-{id} URL
+	DisplayTitle    string
+	Context         string
+	Commentary      string // sanitized editorial HTML
+	HasCommentary   bool
+	Works           []dto.Image
+	WorkCount       int
+	OtherSelections []SelectionLink
+	HoldingURL      string // wider /artworks?artist= catalogue route
+	Url             string // canonical /artists/{slug}-{id}/selections/{id} URL
+	Citation        components.Citation
+	ShowBreadcrumbs bool
+}
+
+// SelectionLink is a same-artist selection entry in the reading sidebar.
+type SelectionLink struct {
+	URL   string
+	Title string
+}
+
+templ SelectionPage(view SelectionView) {
+	@layouts.LayoutMain() {
+		@SelectionContent(view)
+	}
+}
+
+templ SelectionContent(view SelectionView) {
+	<head>
+		<title>{ utils.GetTitle(ctx) }</title>
+	</head>
+	<section class="container mx-auto px-4 pb-20 pt-10 md:px-0">
+		if view.ShowBreadcrumbs {
+			<nav class="mb-8 font-mono text-[10px] tracking-[1.5px] text-base-content/60" aria-label="Breadcrumb">
+				<a href="/artists" class="hover:text-base-content">ARTISTS</a>
+				<span class="mx-2" aria-hidden="true">/</span>
+				<a href={ templ.URL(view.ArtistURL) } class="hover:text-base-content">{ view.ArtistName }</a>
+				<span class="mx-2" aria-hidden="true">/</span>
+				<span class="text-base-content" aria-current="page">{ view.DisplayTitle }</span>
+			</nav>
+		}
+		<article class="grid gap-10 md:grid-cols-[minmax(0,1fr)_220px]">
+			<div class="min-w-0">
+				<p class="font-mono text-[11px] tracking-[2px] text-base-content/60">03 — SELECTION</p>
+				<h1 class="mt-3 text-[34px] font-semibold leading-[1.08] tracking-[-0.75px] md:text-[44px]">{ view.DisplayTitle }</h1>
+				if view.Context != "" {
+					<p class="mt-3 font-mono text-[11px] tracking-[1.5px] text-primary">{ view.Context }</p>
+				}
+				<section class="mt-9 border-t border-base-content/15 pt-7" aria-labelledby="selection-commentary">
+					<h2 id="selection-commentary" class="font-mono text-[11px] tracking-[1.5px]">COMMENTARY</h2>
+					if view.HasCommentary {
+						<div class="content mt-4 max-w-[620px] text-[16px] leading-[1.7]">
+							@templ.Raw(view.Commentary)
+						</div>
+					} else {
+						<p class="mt-4 max-w-[620px] text-[16px] leading-[1.7] text-base-content/70">Commentary is unavailable for this selection.</p>
+					}
+				</section>
+				<section class="mt-11 max-w-[860px]" aria-labelledby="selection-works">
+					<div class="mb-5 flex items-baseline justify-between border-t border-base-content/15 pt-[18px]">
+						<h2 id="selection-works" class="font-mono text-[11px] tracking-[1.5px]">SELECTED WORKS</h2>
+						<p class="font-mono text-[10px] tracking-[1px] text-base-content/60">{ selectionWorksSummary(view) }</p>
+					</div>
+				if len(view.Works) == 0 {
+					<p class="border-b border-base-content/15 py-10 text-base leading-relaxed text-base-content/70">No selected works are available for this selection.</p>
+				} else {
+					@components.PublicArtworkGrid(view.Works)
+				}
+				if view.HoldingURL != "" {
+					<a href={ templ.URL(view.HoldingURL) } class="mt-8 inline-block font-mono text-[11px] tracking-[1px] text-primary transition-opacity hover:opacity-60">VIEW FULL HOLDING →</a>
+				}
+				</section>
+			</div>
+			<aside class="w-full shrink-0 md:w-[220px]">
+				if len(view.OtherSelections) > 0 {
+					<p class="font-mono text-[10px] tracking-[1.5px] text-base-content/60">OTHER SELECTIONS</p>
+					<nav class="mt-3" aria-label="Other selections">
+						<ul class="space-y-2">
+							for _, link := range view.OtherSelections {
+								<li>
+									<a href={ templ.URL(link.URL) } class="text-sm leading-snug text-primary transition-opacity hover:opacity-60">{ link.Title }</a>
+								</li>
+							}
+						</ul>
+					</nav>
+				}
+			</aside>
+		</article>
+		@components.CitationBlock(view.Citation)
+	</section>
+}
+
+func selectionWorksSummary(view SelectionView) string {
+	if view.WorkCount <= 0 {
+		return "0 RECORDS"
+	}
+
+	return strconv.Itoa(view.WorkCount) + " RECORDS"
+}

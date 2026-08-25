@@ -2,24 +2,40 @@ package artists
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"html"
 	"net/http"
+	neturl "net/url"
+	"path"
 	"strconv"
 	"strings"
 
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
+	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/constants"
-	"github.com/blackfyre/wga/internal/errs"
+	"github.com/blackfyre/wga/internal/repositories"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/blackfyre/wga/internal/utils/glossary"
 	"github.com/blackfyre/wga/internal/utils/jsonld"
 	"github.com/blackfyre/wga/internal/utils/url"
+	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 )
+
+// findPublishedArtwork returns the published artwork with the given id, or
+// sql.ErrNoRows when it is missing or unpublished.
+func findPublishedArtwork(app *pocketbase.PocketBase, id string) (*core.Record, error) {
+	return app.FindRecordById(constants.CollectionArtworks, id, func(q *dbx.SelectQuery) error {
+		q.AndWhere(dbx.NewExp("published = true"))
+		return nil
+	})
+}
 
 // processArtwork processes the artwork based on the given context and PocketBase application.
 // It retrieves the artist and artwork information, generates JSON-LD content, and renders the HTML template.
@@ -31,7 +47,7 @@ import (
 // - app: The PocketBase application instance.
 // Returns:
 // - An error if any error occurs during the processing, or nil if the processing is successful.
-func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase) error {
+func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase, environment config.Environment) error {
 	artistSlug := c.Request.PathValue("name")
 	artworkSlug := c.Request.PathValue("awid")
 
@@ -39,12 +55,14 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 	artistSlugParts := strings.Split(artistSlug, "-")
 	artistId := artistSlugParts[len(artistSlugParts)-1]
 
-	artist, err := app.FindRecordById(constants.CollectionArtists, artistId)
+	artist, err := repositories.NewArtistRecordRepository(app).FindPublishedArtist(artistId)
 
-	// If the artist is not found, return a not found error
+	// If the artist is not found or unpublished, return an indistinguishable 404.
 	if err != nil {
-		app.Logger().Error("Artist not found: ", artistSlug, err)
-		return errs.ErrArtistNotFound
+		if !errors.Is(err, sql.ErrNoRows) {
+			app.Logger().Error("Artist not found: ", artistSlug, err)
+		}
+		return utils.NotFoundError(c)
 	}
 
 	// Generate the expected slug for the artist
@@ -54,12 +72,14 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 	artworkSlugParts := strings.Split(artworkSlug, "-")
 	artworkId := artworkSlugParts[len(artworkSlugParts)-1]
 
-	// find the artwork by id
-	aw, err := app.FindRecordById(constants.CollectionArtworks, artworkId)
+	// find the artwork by id, published only
+	aw, err := findPublishedArtwork(app, artworkId)
 
 	if err != nil {
-		app.Logger().Error("Error finding artwork: ", artworkSlug, err)
-		return errs.ErrArtworkNotFound
+		if !errors.Is(err, sql.ErrNoRows) {
+			app.Logger().Error("Error finding artwork: ", artworkSlug, err)
+		}
+		return utils.NotFoundError(c)
 	}
 
 	belongsToArtist := false
@@ -70,7 +90,7 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 		}
 	}
 	if !belongsToArtist {
-		return errs.ErrArtworkNotFound
+		return utils.NotFoundError(c)
 	}
 
 	// Generate the expected slug for the artwork
@@ -78,9 +98,14 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 
 	expectedPageUrl := "/artists/" + expectedArtistSlug + "/" + expectedArtworkSlug
 
+	// Parse and normalise the related-work basis from the query, falling back to
+	// BY ARTIST for an absent or unknown value.
+	basis := repositories.ParseRelatedWorkBasis(c.Request.URL.Query().Get("basis"))
+	canonicalURL := relatedWorkURL(expectedPageUrl, basis)
+
 	// Redirect to the correct URL if either slug is not correct
 	if artistSlug != expectedArtistSlug || artworkSlug != expectedArtworkSlug {
-		return c.Redirect(http.StatusMovedPermanently, expectedPageUrl)
+		return c.Redirect(http.StatusMovedPermanently, canonicalURL)
 	}
 
 	var img dto.Image
@@ -90,8 +115,8 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 	img.Comment = aw.GetString("comment")
 	img.Technique = aw.GetString("technique")
 	if aw.GetString("image") != "" {
-		img.Image = url.GenerateThumbUrl(constants.CollectionArtworks, aw.GetString("id"), aw.GetString("image"), url.ThumbnailArtworkPlate, "")
-		img.Zoom = url.GenerateThumbUrl(constants.CollectionArtworks, aw.GetString("id"), aw.GetString("image"), url.ThumbnailArtworkZoom, "")
+		img.Image = url.GenerateArtworkImageURL(aw, url.DeliveryProfileArtworkRecordTourPage, "")
+		img.Zoom = url.GenerateArtworkImageURL(aw, url.DeliveryProfileViewer, "")
 		img.Thumb = img.Image
 	} else {
 		img.Image = utils.AssetUrl("/assets/images/no-image.png")
@@ -123,10 +148,13 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 			}),
 		},
 		ShowBreadcrumbs: true,
+		ReproFile:       artworkReproductionFile(aw),
+		SourceURL:       url.GenerateArtworkSourceURL(aw),
 	}
 	populateArtworkMetadata(app, aw, &content)
 	populateArtworkCitation(&content)
-	content.RelatedWorks = relatedArtworkImages(app, artist, aw.Id, content.HxTarget)
+	populateArtworkSourceData(app, aw, &content, environment)
+	populateArtworkRelated(app, aw, &content, basis, expectedPageUrl)
 
 	school := artist.GetStringSlice("school")
 
@@ -146,12 +174,12 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 
 	}
 
-	// Annotate comment with glossary terms
+	// Annotate the source-backed commentary with glossary terms.
 	glossaryEntries, glossaryErr := glossary.GetGlossaryEntries(app)
 	if glossaryErr != nil {
 		app.Logger().Warn("Failed to load glossary entries", "error", glossaryErr)
 	} else {
-		content.Comment = glossary.AnnotateHTML(content.Comment, glossaryEntries)
+		content.SourceComment = glossary.AnnotateHTML(content.SourceComment, glossaryEntries)
 	}
 
 	jsonLd := jsonld.ArtworkJsonLd(aw, artist)
@@ -164,12 +192,12 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 
 	content.Jsonld = fmt.Sprintf(`<script type="application/ld+json">%s</script>`, marshalled)
 
-	ctx := tmplUtils.DecorateContext(c.Request.Context(), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", content.Title, content.Name))
+	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", content.Title, content.Name))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, aw.GetString("comment"))
-	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, expectedPageUrl)
+	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, utils.AssetUrl(canonicalURL))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgImageKey, utils.AssetUrl(content.Image.Image))
 
-	c.Response.Header().Set("HX-Push-Url", expectedPageUrl)
+	c.Response.Header().Set("HX-Push-Url", canonicalURL)
 
 	var buff bytes.Buffer
 
@@ -199,8 +227,8 @@ func RenderArtworkContent(app *pocketbase.PocketBase, c *core.RequestEvent, artw
 	img.Comment = artwork.GetString("comment")
 	img.Technique = artwork.GetString("technique")
 	if artwork.GetString("image") != "" {
-		img.Image = url.GenerateThumbUrl(constants.CollectionArtworks, artwork.GetString("id"), artwork.GetString("image"), url.ThumbnailArtworkPlate, "")
-		img.Zoom = url.GenerateThumbUrl(constants.CollectionArtworks, artwork.GetString("id"), artwork.GetString("image"), url.ThumbnailArtworkZoom, "")
+		img.Image = url.GenerateArtworkImageURL(artwork, url.DeliveryProfileArtworkRecordTourPage, "")
+		img.Zoom = url.GenerateArtworkImageURL(artwork, url.DeliveryProfileViewer, "")
 	} else {
 		img.Image = utils.AssetUrl("/assets/images/no-image.png")
 		img.Zoom = img.Image
@@ -296,28 +324,139 @@ func artworkLocationAndDimensions(comment string) (string, string) {
 }
 
 func populateArtworkCitation(artwork *dto.Artwork) {
-	slug := utils.Slugify(artwork.Title)
-	artwork.CitationKey = "wga-" + slug
+	artwork.CitationKey = "wga-" + artwork.Id
 	artwork.CitationTitle = fmt.Sprintf("%s by %s", artwork.Title, artwork.Artist.Name)
-	artwork.CitationURL = utils.AssetUrl("/artworks/" + slug)
+	artwork.CitationURL = utils.AssetUrl(artwork.Url)
 }
 
-func relatedArtworkImages(app *pocketbase.PocketBase, artist *core.Record, currentArtworkID string, hxTarget string) dto.ImageGrid {
-	works, err := utils.FindArtworksByAuthorID(app, artist.Id)
-	if err != nil {
-		app.Logger().Warn("Failed to find related artworks", "artist_id", artist.Id, "error", err)
-		return nil
+// artworkReproductionFile builds the truthful reproduction-file summary from
+// the record's recorded source dimensions and image filename. It returns an
+// empty string when no dimensions are recorded, so the artwork record never
+// fabricates a file caption.
+func artworkReproductionFile(artwork *core.Record) string {
+	width := artwork.GetInt("image_width")
+	height := artwork.GetInt("image_height")
+	format := artworkImageFormat(artwork.GetString("image"))
+
+	if width <= 0 || height <= 0 {
+		return format
 	}
 
+	summary := fmt.Sprintf("%d × %d px", width, height)
+	if format != "" {
+		summary += " · " + format
+	}
+
+	return summary
+}
+
+// artworkImageFormat maps a stored image filename extension to its display
+// format, or returns "" for unknown extensions.
+func artworkImageFormat(filename string) string {
+	switch strings.ToLower(path.Ext(filename)) {
+	case ".jpg", ".jpeg":
+		return "JPEG"
+	case ".png":
+		return "PNG"
+	default:
+		return ""
+	}
+}
+
+// populateArtworkSourceData fills the reproduction source, palette,
+// commentary, and music fields of the artwork DTO from the persisted record.
+// Every value is source-backed; absent values remain empty so presentation
+// never invents content. The producer's WGA reproduction source link is a
+// development-only convenience for verifying provenance against the source
+// site, so it is populated only in local development and stays empty in
+// every deployed environment.
+func populateArtworkSourceData(app *pocketbase.PocketBase, artwork *core.Record, content *dto.Artwork, environment config.Environment) {
+	if environment.IsDevelopment() {
+		content.ReproductionSourceURL = canonicalWGAArtworkSourceURL(artwork.GetString("source_url"))
+	}
+	content.SourceComment = artworkCommentaryHTML(artwork.GetString("source_comment"))
+	content.HasCommentary = artwork.GetString("source_comment") != ""
+	content.Palette = parseArtworkPalette(artwork)
+	content.Music = buildArtworkMusic(app, artwork)
+}
+
+// canonicalWGAArtworkSourceURL accepts only the producer's canonical WGA HTML
+// paths or their HTTPS form. Values outside that narrow contract are omitted so
+// a record cannot claim unsupported provenance or link to an arbitrary host.
+func canonicalWGAArtworkSourceURL(value string) string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return ""
+	}
+
+	if strings.HasPrefix(value, "html/") {
+		value = "https://www.wga.hu/" + value
+	}
+
+	parsed, err := neturl.Parse(value)
+	if err != nil || parsed.Scheme != "https" || !strings.EqualFold(parsed.Hostname(), "www.wga.hu") || parsed.Port() != "" || parsed.User != nil || parsed.RawQuery != "" || parsed.Fragment != "" {
+		return ""
+	}
+	if !strings.HasPrefix(parsed.Path, "/html/") || strings.Contains(parsed.Path, "..") {
+		return ""
+	}
+
+	return parsed.String()
+}
+
+// artworkCommentaryHTML converts the raw source commentary to safe display HTML:
+// escaped text split into paragraphs on blank lines. The glossary annotation is
+// applied separately, after this conversion.
+func artworkCommentaryHTML(sourceComment string) string {
+	if sourceComment == "" {
+		return ""
+	}
+
+	escaped := html.EscapeString(sourceComment)
+	paragraphs := strings.Split(escaped, "\n\n")
+	for i, paragraph := range paragraphs {
+		paragraph = strings.TrimSpace(strings.ReplaceAll(paragraph, "\n", "<br/>"))
+		paragraphs[i] = "<p>" + paragraph + "</p>"
+	}
+
+	return strings.Join(paragraphs, "")
+}
+
+// populateArtworkRelated resolves the active related-work basis and fills the
+// related-work images and basis controls into the artwork DTO.
+func populateArtworkRelated(app *pocketbase.PocketBase, artwork *core.Record, content *dto.Artwork, basis repositories.RelatedWorkBasis, baseURL string) {
+	result, err := repositories.NewRelatedWorkResolver(app).Resolve(artwork, basis)
+	if err != nil {
+		app.Logger().Warn("Failed to resolve related artworks", "artwork_id", artwork.Id, "error", err)
+	}
+
+	content.RelatedWorks = buildRelatedWorkImages(app, result.Works, content.HxTarget)
+	content.Related = buildRelatedWorkState(result.Basis, content, artwork, baseURL)
+}
+
+// buildRelatedWorkImages maps resolver records onto the related-work card
+// projection using the source-eligible related-card profile and the canonical
+// per-work artwork URL.
+func buildRelatedWorkImages(app *pocketbase.PocketBase, works []*core.Record, hxTarget string) dto.ImageGrid {
 	related := dto.ImageGrid{}
 	for _, work := range works {
-		if work.Id == currentArtworkID || len(related) == 4 {
-			continue
-		}
-
 		image := utils.AssetUrl("/assets/images/no-image.png")
 		if imageName := work.GetString("image"); imageName != "" {
-			image = url.GenerateThumbUrl(constants.CollectionArtworks, work.Id, imageName, url.ThumbnailArtworkCardSmall, "")
+			image = url.GenerateArtworkImageURL(work, url.DeliveryProfileRelatedTimelineCard, "")
+		}
+
+		artistName, artistID := resolveWorkArtist(app, work)
+		workURL := url.GenerateArtworkUrl(url.ArtworkUrlDTO{
+			ArtworkTitle: work.GetString("title"),
+			ArtworkId:    work.Id,
+		})
+		if artistName != "" {
+			workURL = url.GenerateFullArtworkUrl(url.ArtworkUrlDTO{
+				ArtistName:   artistName,
+				ArtistId:     artistID,
+				ArtworkTitle: work.GetString("title"),
+				ArtworkId:    work.Id,
+			})
 		}
 
 		related = append(related, dto.Image{
@@ -325,16 +464,185 @@ func relatedArtworkImages(app *pocketbase.PocketBase, artist *core.Record, curre
 			Title:     work.GetString("title"),
 			Image:     image,
 			Technique: work.GetString("technique"),
-			Url: url.GenerateFullArtworkUrl(url.ArtworkUrlDTO{
-				ArtistName:   artist.GetString("name"),
-				ArtistId:     artist.Id,
-				ArtworkTitle: work.GetString("title"),
-				ArtworkId:    work.Id,
-			}),
-			Artist:   dto.Artist{Name: artist.GetString("name")},
-			HxTarget: hxTarget,
+			Url:       workURL,
+			Artist:    dto.Artist{Name: artistName},
+			HxTarget:  hxTarget,
 		})
 	}
 
 	return related
+}
+
+// resolveWorkArtist returns the first published author's display name and id for
+// a work, or empty values when the work has no published author. Unpublished
+// authors are skipped so a related card never leaks unpublished artist data or
+// links to an unpublished artist record.
+func resolveWorkArtist(app *pocketbase.PocketBase, work *core.Record) (string, string) {
+	authorIDs := work.GetStringSlice("author")
+	repo := repositories.NewArtistRecordRepository(app)
+	for _, authorID := range authorIDs {
+		artist, err := repo.FindPublishedArtist(authorID)
+		if err != nil {
+			continue
+		}
+		return artist.GetString("name"), artist.Id
+	}
+
+	return "", ""
+}
+
+// parseArtworkPalette reads the compact image-derived palette from the persisted
+// JSON field. Malformed or absent values yield an empty palette.
+func parseArtworkPalette(artwork *core.Record) []dto.ColourSwatch {
+	data, err := json.Marshal(artwork.Get("colour_palette"))
+	if err != nil {
+		return nil
+	}
+
+	var entries []struct {
+		Hex    string `json:"hex"`
+		Weight int    `json:"weight"`
+	}
+	if err := json.Unmarshal(data, &entries); err != nil {
+		return nil
+	}
+
+	swatches := make([]dto.ColourSwatch, 0, len(entries))
+	for _, entry := range entries {
+		if entry.Hex == "" {
+			continue
+		}
+		swatches = append(swatches, dto.ColourSwatch{Hex: entry.Hex, Weight: entry.Weight})
+	}
+
+	return swatches
+}
+
+// buildArtworkMusic derives the deterministic period-music card from the
+// artwork's known creation date. An unknown date or missing published match
+// yields an unavailable card.
+func buildArtworkMusic(app *pocketbase.PocketBase, artwork *core.Record) dto.MusicPeriod {
+	song, err := repositories.NewArtistRecordRepository(app).MatchPeriodSong(artwork.GetInt("date_start"))
+	if err != nil {
+		app.Logger().Warn("Failed to match period music", "artwork_id", artwork.Id, "error", err)
+		return dto.MusicPeriod{}
+	}
+	if song == nil || song.Record == nil {
+		return dto.MusicPeriod{}
+	}
+
+	piece := strings.TrimSpace(song.Record.GetString("title"))
+	if piece == "" || song.Record.GetString("source") == "" {
+		return dto.MusicPeriod{}
+	}
+
+	return dto.MusicPeriod{
+		Available: true,
+		SongID:    song.Record.Id,
+		Piece:     piece,
+		Composer:  song.Composer,
+		PlayerURL: "/player?song=" + song.Record.Id,
+	}
+}
+
+// buildRelatedWorkState assembles the basis controls, connection heading, and
+// sparse-result explanation for the active basis.
+func buildRelatedWorkState(basis repositories.RelatedWorkBasis, content *dto.Artwork, artwork *core.Record, baseURL string) dto.RelatedWorkState {
+	state := dto.RelatedWorkState{
+		ActiveBasis: string(basis),
+		Connection:  relatedConnection(basis, content.Artist.Name, artwork.GetInt("date_start")),
+		Sparse:      len(content.RelatedWorks) < relatedWorksLimit,
+		Bases:       relatedWorkBases(baseURL, basis),
+	}
+	if state.Sparse {
+		state.SparseNote = relatedSparseNote(basis)
+		state.Alternative, state.AlternativeURL = relatedAlternative(basis, baseURL)
+	}
+
+	return state
+}
+
+// relatedWorkLimit is the resolver's bounded result cap, used to detect sparse
+// results (fewer than the cap).
+const relatedWorksLimit = 4
+
+// relatedWorkURL appends the basis query for a non-default basis so the URL
+// restores the active basis; the default basis keeps the plain canonical URL.
+func relatedWorkURL(baseURL string, basis repositories.RelatedWorkBasis) string {
+	if basis.IsDefault() {
+		return baseURL
+	}
+
+	return baseURL + "?basis=" + string(basis)
+}
+
+// relatedWorkBases returns the four basis controls with labels and canonical
+// URLs, marking the active one.
+func relatedWorkBases(baseURL string, active repositories.RelatedWorkBasis) []dto.RelatedWorkBasis {
+	order := []struct {
+		value repositories.RelatedWorkBasis
+		label string
+	}{
+		{repositories.RelatedByArtist, "BY ARTIST"},
+		{repositories.RelatedByCollection, "SAME COLLECTION"},
+		{repositories.RelatedByPeriod, "SAME PERIOD"},
+		{repositories.RelatedByPalette, "SIMILAR PALETTE"},
+	}
+
+	bases := make([]dto.RelatedWorkBasis, 0, len(order))
+	for _, basis := range order {
+		bases = append(bases, dto.RelatedWorkBasis{
+			Value:  string(basis.value),
+			Label:  basis.label,
+			URL:    relatedWorkURL(baseURL, basis.value),
+			Active: basis.value == active,
+		})
+	}
+
+	return bases
+}
+
+// relatedConnection returns the truthful section heading for the active basis.
+func relatedConnection(basis repositories.RelatedWorkBasis, artistName string, dateStart int) string {
+	switch basis {
+	case repositories.RelatedByCollection:
+		return "SAME COLLECTION"
+	case repositories.RelatedByPalette:
+		return "WORKS WITH A SIMILAR PALETTE"
+	case repositories.RelatedByPeriod:
+		if dateStart > 0 {
+			return fmt.Sprintf("ARTISTS WORKING %d–%d", dateStart-relatedPeriodWindow, dateStart+relatedPeriodWindow)
+		}
+		return "ARTISTS FROM THE SAME PERIOD"
+	default:
+		return "OTHER WORKS BY " + strings.ToUpper(artistName)
+	}
+}
+
+// relatedPeriodWindow matches the resolver's forty-year SAME PERIOD window.
+const relatedPeriodWindow = 40
+
+// relatedSparseNote returns the honest sparse-result explanation for the active
+// basis.
+func relatedSparseNote(basis repositories.RelatedWorkBasis) string {
+	switch basis {
+	case repositories.RelatedByCollection:
+		return "The archive catalogues no further works from this collection."
+	case repositories.RelatedByPalette:
+		return "The archive holds no comparable published colour profile."
+	case repositories.RelatedByPeriod:
+		return "No other artist is catalogued within forty years of this work."
+	default:
+		return "The archive catalogues no further works by this artist."
+	}
+}
+
+// relatedAlternative returns the label and URL of the basis most likely to
+// supply records when the active basis is sparse.
+func relatedAlternative(basis repositories.RelatedWorkBasis, baseURL string) (string, string) {
+	if basis == repositories.RelatedByPalette {
+		return "BY ARTIST", relatedWorkURL(baseURL, repositories.RelatedByArtist)
+	}
+
+	return "SIMILAR PALETTE", relatedWorkURL(baseURL, repositories.RelatedByPalette)
 }

@@ -1,49 +1,75 @@
 package components
 
+import "github.com/blackfyre/wga/internal/assets/templ/utils"
+
 templ Footer() {
 	<footer class="border-t border-base-content/15 pb-15 pt-10">
-		<div class="container mx-auto grid grid-cols-2 gap-8 px-4 text-sm md:grid-cols-[1.6fr_1fr_1fr_1fr] md:px-0">
-			<div>
+		<div class="container mx-auto grid grid-cols-2 gap-8 px-4 text-sm lg:grid-cols-[1.6fr_1fr_1fr_1fr] md:px-0">
+			<div class="min-w-0">
 				<p class="mb-3 font-mono text-[11px] tracking-[1.5px]">WEB GALLERY OF ART</p>
 				<p class="max-w-[280px] text-sm leading-relaxed text-base-content/70">A searchable archive of European fine art, decorative art and architecture, 3rd century to the early 20th. Open source, maintained by contributors.</p>
 			</div>
-			<div>
+			<div class="min-w-0">
 				<p class="mb-3 font-mono text-[11px] tracking-[1.5px] text-base-content/60">BROWSE</p>
-				<ul class="space-y-1 text-sm leading-[2.1] text-base-content/70">
+				<ul class="space-y-1 wrap-anywhere text-sm leading-[2.1] text-base-content/70">
 					<li><a class="hover:text-primary" href="/artists" hx-get="/artists">Artists</a></li>
 					<li><a class="hover:text-primary" href="/artworks" hx-get="/artworks">Artworks</a></li>
+					<li><a class="hover:text-primary" href="/timeline">Timeline</a></li>
 					<li><a class="hover:text-primary" href="/inspire" hx-get="/inspire">Inspiration</a></li>
+					<li><a class="hover:text-primary" href="/tours">Guided tours</a></li>
+					<li><a class="hover:text-primary" href="/itineraries">Itineraries</a></li>
 					<li><a class="hover:text-primary" href="/glossary">Glossary</a></li>
 				</ul>
 			</div>
-			<div>
+			<div class="min-w-0">
 				<p class="mb-3 font-mono text-[11px] tracking-[1.5px] text-base-content/60">SERVICES</p>
-				<ul class="space-y-1 text-sm leading-[2.1] text-base-content/70">
-				<li><a class="hover:text-primary" href="/postcard" hx-get="/postcard">Postcards</a></li>
+				<ul class="space-y-1 wrap-anywhere text-sm leading-[2.1] text-base-content/70">
+					<li><a class="hover:text-primary" href="/postcard" hx-get="/postcard">Postcards</a></li>
 					<li>Period music</li>
 					<li><a class="hover:text-primary" href="/dual-mode" hx-get="/dual-mode">Dual mode</a></li>
 					<li><a class="hover:text-primary" href="/guestbook" hx-get="/guestbook">Guestbook</a></li>
 				</ul>
 			</div>
-			<div>
+			<div class="min-w-0">
 				<p class="mb-3 font-mono text-[11px] tracking-[1.5px] text-base-content/60">ABOUT</p>
-				<ul class="space-y-1 text-sm leading-[2.1] text-base-content/70">
+				<ul class="space-y-1 wrap-anywhere text-sm leading-[2.1] text-base-content/70">
 					<li><a class="hover:text-primary" href="/pages/privacy-policy" hx-get="/pages/privacy-policy">Privacy policy</a></li>
 					<li><a class="hover:text-primary" href="/pages/about" hx-get="/pages/about">About the collection</a></li>
 					<li><a class="hover:text-primary" href="/statistics" hx-get="/statistics">Statistics</a></li>
 					<li><a class="hover:text-primary" href="/contributors" hx-get="/contributors">Contributors</a></li>
-					<li><a class="hover:text-primary" href="/open-source-licences" hx-get="/open-source-licences">Open-source licences</a></li>
-					<li><a class="hover:text-primary" data-cc="show-preferencesModal" href="#">Cookie settings</a></li>
+					<li>Open-source licences</li>
+					<li><a aria-hidden="true" class="hidden hover:text-primary" data-cc="show-preferencesModal" data-wga-cookie-settings href="#" tabindex="-1">Cookie settings</a></li>
 					<li>Contact</li>
 				</ul>
 			</div>
 		</div>
-		<div class="container mx-auto mt-8 flex items-center justify-between gap-4 px-4 md:px-0">
-			<p class="font-mono text-[10px] tracking-[0.5px] text-base-content/50">© WEB GALLERY OF ART, CREATED BY EMIL KRÉN AND DANIEL MARX</p>
-			<div data-wga-bionic-control class="hidden shrink-0 items-center gap-2">
-				<span class="font-mono text-[10px] tracking-[1px] text-base-content/60">READING</span>
-				<button type="button" role="switch" aria-label="Bionic reading" aria-checked="false" data-wga-bionic-toggle class="border border-base-content/20 bg-base-100 px-2 py-1 font-mono text-[10px] tracking-[1px] text-base-content/75 transition-colors hover:text-base-content">BIONIC</button>
+		<div class="container mx-auto mt-8 flex flex-wrap items-center justify-between gap-4 px-4 md:px-0">
+			<p class="min-w-0 font-mono text-[10px] tracking-[0.5px] text-base-content/50">© WEB GALLERY OF ART, CREATED BY EMIL KRÉN AND DANIEL MARX</p>
+			<div class="flex flex-wrap items-center gap-4">
+				@ThemeToggle()
+				@BionicReadingToggle(utils.GetBionicReading(ctx))
 			</div>
 		</div>
 	</footer>
+}
+
+templ BionicReadingToggle(on bool) {
+	<div data-wga-bionic-control class="hidden items-center gap-2">
+		<span class="font-mono text-[10px] tracking-[1px] text-base-content/60">READING</span>
+		if on {
+			<button type="button" role="switch" aria-label="Bionic reading" aria-checked="true" data-wga-bionic-toggle class="border border-primary bg-primary px-2 py-1 font-mono text-[10px] tracking-[1px] text-primary-content transition-colors hover:text-base-content">BIONIC</button>
+		} else {
+			<button type="button" role="switch" aria-label="Bionic reading" aria-checked="false" data-wga-bionic-toggle class="border border-base-content/20 bg-base-100 px-2 py-1 font-mono text-[10px] tracking-[1px] text-base-content/75 transition-colors hover:text-base-content">BIONIC</button>
+		}
+	</div>
+}
+
+templ ThemeToggle() {
+	<div aria-hidden="true" class="hidden flex-wrap items-center gap-[10px]" data-wga-theme-toggle>
+		<span class="font-mono text-[10px] tracking-[1.5px] text-base-content/60">APPEARANCE</span>
+		<div class="flex gap-px bg-base-content/20" role="group" aria-label="Colour scheme">
+			<button type="button" data-wga-theme="light" aria-pressed="false" class="cursor-pointer bg-base-100 px-2 py-[5px] font-mono text-[9px] tracking-[1.5px] text-base-content/75 transition-colors hover:text-base-content">LIGHT</button>
+			<button type="button" data-wga-theme="dark" aria-pressed="false" class="cursor-pointer bg-base-100 px-2 py-[5px] font-mono text-[9px] tracking-[1.5px] text-base-content/75 transition-colors hover:text-base-content">DARK</button>
+		</div>
+	</div>
 }

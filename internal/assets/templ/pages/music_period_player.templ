@@ -1,0 +1,42 @@
+package pages
+
+type MusicPeriodPlayerView struct {
+	SongID     string
+	Composer   string
+	Piece      string
+	Source     string
+	WindowName string
+}
+
+templ MusicPeriodPlayerPage(view MusicPeriodPlayerView) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<title>{ view.Piece } — Period music</title>
+			<link rel="stylesheet" href="/assets/css/style.css"/>
+		</head>
+		<body
+			class="min-h-screen bg-base-100 p-6 text-base-content"
+			data-wga-music-player
+			data-wga-music-song={ view.SongID }
+			data-wga-music-piece={ view.Piece }
+			data-wga-music-window={ view.WindowName }
+		>
+			<main class="mx-auto max-w-sm border border-base-content/20 p-6" aria-labelledby="music-period-player-title">
+				<p class="mb-3 font-mono text-(length:--t-10) tracking-[1.5px] text-muted">PERIOD MUSIC</p>
+				<h1 id="music-period-player-title" class="text-(length:--t-24) leading-tight">{ view.Piece }</h1>
+				if view.Composer != "" {
+					<p class="mt-2 text-sm text-base-content/65">{ view.Composer }</p>
+				}
+				<audio class="mt-6 w-full" controls preload="metadata" src={ view.Source } data-wga-music-audio>
+					<a href={ templ.SafeURL(view.Source) }>Open the audio recording</a>
+				</audio>
+				<p class="mt-4 text-sm leading-relaxed text-base-content/65">Playback starts only when you use the audio controls.</p>
+				<button type="button" class="mt-6 border border-base-content/30 px-4 py-2 font-mono text-(length:--t-10) tracking-[1px]" data-wga-music-close>CLOSE PLAYER</button>
+			</main>
+			<script type="module" src="/assets/js/app.js"></script>
+		</body>
+	</html>
+}

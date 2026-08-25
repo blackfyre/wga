@@ -1,8 +1,16 @@
 package glossary
 
 import (
+	"context"
+	"database/sql"
+	"fmt"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/pocketbase/dbx"
+	"github.com/pocketbase/pocketbase"
+	"github.com/pocketbase/pocketbase/core"
 )
 
 func TestCleanExpression(t *testing.T) {
@@ -224,5 +232,62 @@ func TestIndexWholeWord(t *testing.T) {
 				t.Errorf("indexWholeWord(%q, %q) = %d, want %d", tt.text, tt.term, got, tt.expected)
 			}
 		})
+	}
+}
+
+func TestGetGlossaryEntriesAppliesBoundedLimit(t *testing.T) {
+	app := pocketbase.NewWithConfig(pocketbase.Config{DefaultDataDir: t.TempDir()})
+	if err := app.Bootstrap(); err != nil {
+		t.Fatalf("bootstrap test app: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := app.ResetBootstrapState(); err != nil {
+			t.Errorf("reset test app: %v", err)
+		}
+	})
+
+	glossary := core.NewBaseCollection("Glossary")
+	glossary.Id = "glossary"
+	glossary.MarkAsNew()
+	glossary.Fields.Add(
+		&core.TextField{Name: "expression", Required: true},
+		&core.TextField{Name: "definition", Required: true},
+	)
+	if err := app.Save(glossary); err != nil {
+		t.Fatalf("save glossary collection: %v", err)
+	}
+
+	var captured []string
+	log := func(_ context.Context, _ time.Duration, sql string, _ *sql.Rows, _ error) {
+		captured = append(captured, sql)
+	}
+
+	concurrent := app.ConcurrentDB().(*dbx.DB)
+	nonconcurrent, _ := app.NonconcurrentDB().(*dbx.DB)
+	concurrent.QueryLogFunc = log
+	if nonconcurrent != nil {
+		nonconcurrent.QueryLogFunc = log
+	}
+	defer func() {
+		concurrent.QueryLogFunc = nil
+		if nonconcurrent != nil {
+			nonconcurrent.QueryLogFunc = nil
+		}
+	}()
+
+	if _, err := GetGlossaryEntries(app); err != nil {
+		t.Fatalf("get glossary entries: %v", err)
+	}
+
+	want := fmt.Sprintf("LIMIT %d", glossaryMaxEntries)
+	found := false
+	for _, query := range captured {
+		if strings.Contains(strings.ToUpper(query), want) {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Errorf("expected glossary query to apply %q, captured queries: %v", want, captured)
 	}
 }

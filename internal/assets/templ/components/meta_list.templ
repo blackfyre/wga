@@ -1,17 +1,17 @@
 package components
 
-type MetaEntry struct {
-	Label string
-	Value string
-}
+import "github.com/blackfyre/wga/internal/assets/templ/dto"
+
+type MetaEntry = dto.MetaEntry
 
 templ MetaList(entries []MetaEntry) {
 	<dl class="border-t border-base-content/15">
 		for _, entry := range entries {
 			<div class="flex items-baseline justify-between gap-4 border-b border-base-content/15 py-3">
-				<dt class="font-mono text-[10px] tracking-[1.2px] text-base-content/60">{ entry.Label }</dt>
-				<dd class="text-right text-sm">{ entry.Value }</dd>
+				<dt class="font-mono text-(length:--t-11) tracking-[1px] text-muted" style="flex-shrink:0">{ entry.Label }</dt>
+				<dd class="text-right text-sm" style="min-width:0; max-width:100%; overflow-wrap:anywhere">{ entry.Value }</dd>
 			</div>
 		}
+		{ children... }
 	</dl>
 }

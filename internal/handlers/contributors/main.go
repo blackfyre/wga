@@ -3,6 +3,7 @@ package contributors
 import (
 	"bytes"
 	"net/http"
+	"net/url"
 
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
@@ -34,7 +35,7 @@ func RegisterHandlers(app core.App, reader contributorworkflow.Reader) {
 				Contributors: pageContributors(snapshot.Contributors),
 			}
 
-			ctx := tmplUtils.DecorateContext(c.Request.Context(), tmplUtils.TitleKey, "Contributors")
+			ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, "Contributors")
 			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "The people who have contributed to the Web Gallery of Art.")
 			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, fullUrl)
 
@@ -63,13 +64,30 @@ func pageContributors(contributors []contributorworkflow.Contributor) []pages.Gi
 	for index, contributor := range contributors {
 		pageContributors[index] = pages.GithubContributor{
 			Login:         contributor.Login,
-			AvatarURL:     contributor.AvatarURL,
-			HTMLURL:       contributor.HTMLURL,
+			AvatarURL:     safeAbsoluteURL(contributor.AvatarURL),
+			HTMLURL:       safeAbsoluteURL(contributor.HTMLURL),
 			Contributions: contributor.Contributions,
 		}
 	}
 
 	return pageContributors
+}
+
+// safeAbsoluteURL returns raw only when it is an absolute HTTP(S) URL with a
+// host. Any other value, including relative, protocol-relative, non-HTTP
+// scheme, or empty input, resolves to an empty string so the template omits
+// the avatar or profile anchor rather than rendering an untrusted URL.
+func safeAbsoluteURL(raw string) string {
+	if raw == "" {
+		return ""
+	}
+
+	parsed, err := url.Parse(raw)
+	if err != nil || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") {
+		return ""
+	}
+
+	return raw
 }
 
 func contributorServerError(app core.App, c *core.RequestEvent, outcome string, err error) error {
@@ -80,5 +98,5 @@ func contributorServerError(app core.App, c *core.RequestEvent, outcome string, 
 		"error", logging.Redact(err),
 	)
 
-	return c.InternalServerError("Unable to load contributors.", nil)
+	return utils.ServerFaultError(c)
 }

@@ -127,13 +127,13 @@ func renderGlossary(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 		Terms:          filterGlossaryTerms(allTerms, query),
 	}
 
-	ctx := tmplUtils.DecorateContext(c.Request.Context(), tmplUtils.TitleKey, "Glossary")
+	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, "Glossary")
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "Definitions of terms used in the Web Gallery of Art collection.")
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, tmplUtils.AssetUrl(c.Request.URL.String()))
 	c.Response.Header().Set("HX-Push-Url", utils.GenerateCurrentRelativePageUrl(c))
 
 	var buffer bytes.Buffer
-	if utils.IsHtmxRequest(c) {
+	if utils.IsHtmxRequest(c) && !utils.RequestsMainContentArea(c) {
 		err = pages.GlossaryBlock(view).Render(ctx, &buffer)
 	} else {
 		err = pages.GlossaryPage(view).Render(ctx, &buffer)

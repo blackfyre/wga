@@ -1,7 +1,19 @@
 import * as CookieConsent from "vanilla-cookieconsent";
 
-export const initCookieConsent = () => {
-	CookieConsent.run({
+const revealSettingsControl = () => {
+	for (const control of document.querySelectorAll<HTMLElement>(
+		"[data-wga-cookie-settings]",
+	)) {
+		control.classList.remove("hidden");
+		control.removeAttribute("aria-hidden");
+		control.removeAttribute("tabindex");
+	}
+};
+
+const hasConsentUI = () => document.querySelector("#cc-main .cm") !== null;
+
+export const initCookieConsent = async () => {
+	const result = (await CookieConsent.run({
 		guiOptions: {
 			consentModal: {
 				layout: "box inline",
@@ -59,5 +71,12 @@ export const initCookieConsent = () => {
 				},
 			},
 		},
-	});
+	})) as unknown;
+
+	if (result === false || (!hasConsentUI() && !CookieConsent.validConsent())) {
+		return false;
+	}
+
+	revealSettingsControl();
+	return true;
 };

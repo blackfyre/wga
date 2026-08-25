@@ -94,6 +94,9 @@ func suggestions(app *pocketbase.PocketBase, query string, limit int) ([]compone
 			Href:  url.GenerateArtistUrl(url.ArtistUrlDTO{ArtistId: artist.Id, ArtistName: artist.GetString("name")}),
 		})
 	}
+	if len(rows) >= limit {
+		return rows, nil
+	}
 
 	artworks, err := app.FindRecordsByFilter(constants.CollectionArtworks, "published = true && author:length > 0 && title ~ {:query}", "+title,+id", limit-len(rows), 0, params)
 	if err != nil {

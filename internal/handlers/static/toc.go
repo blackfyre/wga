@@ -53,21 +53,55 @@ func collectHeadings(node *html.Node, items *[]pages.StaticPageTOCItem, usedIDs 
 }
 
 func headingID(node *html.Node, title string, usedIDs map[string]int) string {
-	for _, attribute := range node.Attr {
-		if attribute.Key == "id" && attribute.Val != "" {
-			usedIDs[attribute.Val]++
-			return attribute.Val
+	base := ""
+	idIndex := -1
+
+	for index, attribute := range node.Attr {
+		if attribute.Key != "id" {
+			continue
 		}
+
+		idIndex = index
+		if attribute.Val != "" {
+			base = attribute.Val
+		}
+		break
 	}
 
-	id := utils.Slugify(title)
-	if count := usedIDs[id]; count > 0 {
-		id = fmt.Sprintf("%s-%d", id, count+1)
+	if base == "" {
+		base = utils.Slugify(title)
 	}
-	usedIDs[id]++
-	node.Attr = append(node.Attr, html.Attribute{Key: "id", Val: id})
+	if base == "" {
+		base = "section"
+	}
+
+	id := uniqueID(base, usedIDs)
+
+	if idIndex >= 0 {
+		node.Attr[idIndex].Val = id
+	} else {
+		node.Attr = append(node.Attr, html.Attribute{Key: "id", Val: id})
+	}
 
 	return id
+}
+
+// uniqueID returns base when it has not been used yet, otherwise the first
+// base-N suffix that is still unused. It records every assignment so later
+// headings resolve deterministically, including three or more duplicates.
+func uniqueID(base string, usedIDs map[string]int) string {
+	if usedIDs[base] == 0 {
+		usedIDs[base] = 1
+		return base
+	}
+
+	for number := 2; ; number++ {
+		candidate := fmt.Sprintf("%s-%d", base, number)
+		if usedIDs[candidate] == 0 {
+			usedIDs[candidate] = 1
+			return candidate
+		}
+	}
 }
 
 func textContent(node *html.Node) string {

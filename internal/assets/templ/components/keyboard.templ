@@ -12,18 +12,24 @@ type KeyboardScreen struct {
 	Href  string `json:"href"`
 }
 
-var KeyboardScreens = []KeyboardScreen{
-	{Key: "H", Num: "00", Label: "HOME", Href: "/"},
+var keyboardScreens = []KeyboardScreen{
+	{Key: "O", Num: "00", Label: "HOME", Href: "/"},
 	{Key: "A", Num: "01", Label: "ARTIST INDEX", Href: "/artists"},
 	{Key: "P", Num: "04", Label: "POSTCARD SERVICE", Href: "/postcard"},
+	{Key: "E", Num: "06", Label: "GENERAL CONTENT", Href: "/pages/privacy-policy"},
 	{Key: "I", Num: "07", Label: "INSPIRATION", Href: "/inspire"},
+	{Key: "S", Num: "08", Label: "SEARCH RESULTS", Href: "/search"},
 	{Key: "D", Num: "09", Label: "DUAL MODE", Href: "/dual-mode"},
 	{Key: "G", Num: "10", Label: "GUESTBOOK", Href: "/guestbook"},
 	{Key: "C", Num: "11", Label: "CONTRIBUTORS", Href: "/contributors"},
 	{Key: "W", Num: "12", Label: "ARTWORK SEARCH", Href: "/artworks"},
-	{Key: "L", Num: "13", Label: "GLOSSARY", Href: "/glossary"},
+	{Key: "Y", Num: "13", Label: "GLOSSARY", Href: "/glossary"},
 	{Key: "B", Num: "14", Label: "ABOUT THE COLLECTION", Href: "/pages/about"},
 	{Key: "N", Num: "15", Label: "STATISTICS", Href: "/statistics"},
+	{Key: "V", Num: "16", Label: "VISITOR ITINERARIES", Href: "/itineraries"},
+	{Key: "R", Num: "17", Label: "ITINERARY BUILDER", Href: "/itineraries/new"},
+	{Key: "M", Num: "19", Label: "TIMELINE EXPLORER", Href: "/timeline"},
+	{Key: "U", Num: "20", Label: "GUIDED TOURS", Href: "/tours"},
 }
 
 type KeyboardSuggestion struct {
@@ -38,20 +44,21 @@ templ KeyboardLayer() {
 		<span class="font-mono text-[10px] tracking-[1.5px] text-base-content">KEYBOARD</span>
 		<span class="h-3 w-px bg-base-content/25" aria-hidden="true"></span>
 		<span class="flex items-center gap-1.5"><span class="wga-kbd-key">↑↓</span><span class="font-mono text-[10px] tracking-[1px] text-base-content/60">MOVE</span></span>
-		<span class="flex items-center gap-1.5"><span class="wga-kbd-key">⌘K</span><span class="font-mono text-[10px] tracking-[1px] text-base-content/60">GO TO</span></span>
+		<span class="flex items-center gap-1.5"><span class="wga-kbd-key" data-kbd-modifier>CTRL K</span><span class="font-mono text-[10px] tracking-[1px] text-base-content/60">GO TO</span></span>
 		<span class="flex items-center gap-1.5"><span class="wga-kbd-key">/</span><span class="font-mono text-[10px] tracking-[1px] text-base-content/60">SEARCH</span></span>
 		<span class="flex-1"></span>
 		<span id="kbd-num" class="font-mono text-[10px] tracking-[1.5px] text-primary"></span>
 		<button type="button" data-keyboard-help class="font-mono text-[10px] tracking-[1px] text-primary">? ALL KEYS</button>
 	</div>
-	<dialog id="keyboard-palette" class="wga-kbd-dialog" aria-label="Go to">
+	<dialog id="keyboard-palette" class="wga-kbd-dialog" aria-labelledby="keyboard-palette-title">
 		<div class="wga-kbd-palette">
 			<div class="flex items-center gap-3 border-b border-base-content px-5 py-4">
-				<span class="shrink-0 font-mono text-[10px] tracking-[1.5px] text-base-content/60">GO TO</span>
+				<span id="keyboard-palette-title" class="shrink-0 font-mono text-[10px] tracking-[1.5px] text-base-content/60">GO TO</span>
 				<input type="search" data-kbd-query autocomplete="off" placeholder="Section, artist or work" aria-label="Search sections, artists and works" class="min-w-0 flex-1 border-0 bg-transparent p-0 text-base outline-none"/>
+				<button type="button" data-keyboard-close aria-label="Close Go to" class="font-mono text-sm text-base-content/60">✕</button>
 			</div>
 			<div id="kbd-palette-results" class="max-h-[46vh] overflow-y-auto overscroll-contain">
-				for _, screen := range KeyboardScreens {
+				for _, screen := range keyboardScreens {
 					<a href={ templ.URL(screen.Href) } data-kbd-item="section" data-kbd-key={ screen.Key } data-kbd-num={ screen.Num } data-kbd-label={ screen.Label } data-kbd-href={ screen.Href } class="wga-kbd-row">
 						<span class="w-16 shrink-0 font-mono text-[10px] tracking-[1px] text-base-content/60">SECTION</span>
 						<span class="min-w-0 flex-1 truncate font-mono text-[11px] tracking-[1px]">{ screen.Label }</span>
@@ -60,16 +67,17 @@ templ KeyboardLayer() {
 				}
 				<div id="kbd-palette-records" data-kbd-suggest="/keyboard/suggestions"></div>
 			</div>
-			<div class="border-t border-base-content/15 px-5 py-3 font-mono text-[10px] tracking-[1px] text-base-content/60">↑↓ MOVE · ↵ GO · ESC CLOSE</div>
+			<div class="border-t border-base-content/15 px-5 py-3 font-mono text-[10px] tracking-[1px] text-base-content/60">↑↓/TAB MOVE · ↵ GO · ESC CLOSE</div>
 		</div>
 	</dialog>
 	<dialog id="keyboard-help" class="wga-kbd-dialog" aria-labelledby="keyboard-help-title">
 		<div class="wga-kbd-help">
 			<div class="flex items-start justify-between gap-6 border-b border-base-content pb-4"><div><p class="mb-2 font-mono text-[10px] tracking-[1.5px] text-base-content/60">KEYBOARD</p><h2 id="keyboard-help-title" class="text-[22px] font-semibold">Moving without the mouse</h2></div><button type="button" data-keyboard-close aria-label="Close shortcuts" class="font-mono text-sm text-base-content/60">✕</button></div>
-			<div class="mt-6 grid gap-6 md:grid-cols-2"><div><p class="border-b border-base-content/15 pb-2 font-mono text-[10px] tracking-[1px] text-base-content/60">BROWSING</p><p class="border-b border-base-content/10 py-2 text-sm"><kbd>↑ ↓ / J K</kbd> Move a row</p><p class="border-b border-base-content/10 py-2 text-sm"><kbd>← →</kbd> Move one record</p><p class="border-b border-base-content/10 py-2 text-sm"><kbd>↵</kbd> Open the marked record</p><p class="border-b border-base-content/10 py-2 text-sm"><kbd>ESC</kbd> Clear the marker or close</p></div><div><p class="border-b border-base-content/15 pb-2 font-mono text-[10px] tracking-[1px] text-base-content/60">FINDING</p><p class="border-b border-base-content/10 py-2 text-sm"><kbd>/</kbd> Focus search</p><p class="border-b border-base-content/10 py-2 text-sm"><kbd>⌘K</kbd> Open Go to</p><p class="border-b border-base-content/10 py-2 text-sm"><kbd>00–15</kbd> Go to a section</p><p class="border-b border-base-content/10 py-2 text-sm"><kbd>?</kbd> Open this help</p></div></div>
+			<div class="mt-6 grid gap-6 md:grid-cols-2"><div><p class="border-b border-base-content/15 pb-2 font-mono text-[10px] tracking-[1px] text-base-content/60">BROWSING</p><p class="border-b border-base-content/10 py-2 text-sm"><kbd>↑ ↓ / J K</kbd> Move a row when a list is available</p><p class="border-b border-base-content/10 py-2 text-sm"><kbd>← →</kbd> Move one record when a list is available</p><p class="border-b border-base-content/10 py-2 text-sm"><kbd>↵</kbd> Open the marked record</p><p class="border-b border-base-content/10 py-2 text-sm"><kbd>ESC</kbd> Clear a marker, blur search, or close a safe transient surface</p></div><div><p class="border-b border-base-content/15 pb-2 font-mono text-[10px] tracking-[1px] text-base-content/60">FINDING</p><p class="border-b border-base-content/10 py-2 text-sm"><kbd>/</kbd> Focus visible search; opens mobile navigation first</p><p class="border-b border-base-content/10 py-2 text-sm"><kbd data-kbd-modifier>CTRL K</kbd> Open Go to</p><p class="border-b border-base-content/10 py-2 text-sm"><kbd>00–20</kbd> Go to a section</p><p class="border-b border-base-content/10 py-2 text-sm"><kbd>?</kbd> Open or close this help</p></div></div>
+			<div class="mt-6 grid gap-6 md:grid-cols-2"><div><p class="border-b border-base-content/15 pb-2 font-mono text-[10px] tracking-[1px] text-base-content/60">GO TO</p><p class="border-b border-base-content/10 py-2 text-sm"><kbd>↑ ↓ / TAB</kbd> Choose a result</p><p class="border-b border-base-content/10 py-2 text-sm"><kbd>↵</kbd> Follow the selected result</p></div><div><p class="border-b border-base-content/15 pb-2 font-mono text-[10px] tracking-[1px] text-base-content/60">CONTEXTUAL</p><p class="border-b border-base-content/10 py-2 text-sm">Artwork viewer: open an artwork image, then use its visible close control or <kbd>ESC</kbd>.</p><p class="border-b border-base-content/10 py-2 text-sm">Guided tours: while reading a tour, <kbd>←</kbd> turns to the previous page and <kbd>→</kbd> turns to the next page; not a global shortcut, and ignored in editable controls or while the artwork viewer owns the keyboard.</p></div></div>
 			<div class="mt-6">
 				<p class="border-b border-base-content/15 pb-2 font-mono text-[10px] tracking-[1px] text-base-content/60">SECTIONS</p>
-				for _, screen := range KeyboardScreens {
+				for _, screen := range keyboardScreens {
 					<p class="border-b border-base-content/10 py-2 text-sm"><kbd>{ screen.Key }</kbd> { fmt.Sprintf("%s · %s", screen.Num, screen.Label) }</p>
 				}
 			</div>
@@ -88,7 +96,7 @@ templ KeyboardSuggestionRows(rows []KeyboardSuggestion) {
 }
 
 func keyboardScreensJSON() string {
-	payload, err := json.Marshal(KeyboardScreens)
+	payload, err := json.Marshal(keyboardScreens)
 	if err != nil {
 		return "[]"
 	}

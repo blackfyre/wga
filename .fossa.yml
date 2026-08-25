@@ -1,0 +1,8 @@
+version: 3
+
+project:
+  locator: custom+40901/git@github.com:blackfyre/wga.git
+
+paths:
+  exclude:
+    - .opencode

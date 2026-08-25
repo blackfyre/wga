@@ -1,6 +1,33 @@
 package pages
 
-import "github.com/blackfyre/wga/internal/assets/templ/layouts"
+import (
+	"github.com/blackfyre/wga/internal/assets/templ/components"
+	"github.com/blackfyre/wga/internal/assets/templ/layouts"
+	"github.com/blackfyre/wga/internal/assets/templ/utils"
+)
+
+const PostcardMessageLimit = 300
+
+type PostcardComposeView struct {
+	ImageID       string
+	Image         string
+	Title         string
+	Author        string
+	Technique     string
+	SenderName    string
+	SenderEmail   string
+	Recipient     string
+	Message       string
+	IncludeMusic  bool
+	SiteKey       string
+	Error         string
+}
+
+type PostcardConfirmationView struct {
+	MaskedRecipient string
+	ViewURL          string
+	Expires          string
+}
 
 type PostcardView struct {
 	Message    string
@@ -10,32 +37,110 @@ type PostcardView struct {
 	Technique  string
 	Author     string
 	SenderName string
+	Music      components.MusicPeriodCard
 }
 
-templ PostcardPage(p PostcardView) {
+templ PostcardComposePage(v PostcardComposeView) {
 	@layouts.LayoutMain() {
-		@PostcardBlock(p)
+		@PostcardComposeBlock(v)
 	}
 }
 
-	templ PostcardBlock(p PostcardView) {
-		<section class="container mx-auto px-4 pb-20 pt-10 md:px-0">
-			<p class="mb-3 font-mono text-[11px] tracking-[2px] text-base-content/60">05 — POSTCARD RECEIVED</p>
-			<h1 class="mb-10 text-[44px] font-semibold leading-tight tracking-[-0.5px] md:text-[48px]">You have received a postcard</h1>
-			<article class="max-w-[700px] border border-base-content/15 bg-base-100">
-				<div class="aspect-video border-b border-base-content/15 bg-base-300"><img src={ p.Image } alt={ p.Title + " by " + p.Author } class="h-full w-full object-cover"/></div>
-				<div class="grid gap-8 p-6 md:grid-cols-[minmax(0,1fr)_220px]">
-					<div>
-						<p class="mb-3 font-mono text-[10px] tracking-[1px] text-base-content/60">FROM { p.SenderName }</p>
-						<div class="content text-[17px] leading-relaxed">@templ.Raw(p.Message)</div>
-					</div>
-					<div class="border-t border-base-content/15 pt-6 md:border-t-0 md:border-l md:pl-6 md:pt-0">
-						<h2 class="text-[15px] font-semibold leading-tight">{ p.Title }</h2>
-						<p class="mt-1 font-mono text-[11px] leading-relaxed text-base-content/60">{ p.Author }<br/>{ p.Technique }</p>
-						<div class="content mt-4 text-sm leading-relaxed">@templ.Raw(p.Comment)</div>
-					</div>
+templ PostcardComposeDialog(v PostcardComposeView) {
+	@components.DialogBody() {
+		@PostcardComposeBlock(v)
+	}
+}
+
+templ PostcardComposeBlock(v PostcardComposeView) {
+	<section id="postcard-compose" class="container mx-auto px-4 pb-20 pt-10 md:px-0">
+		<p class="mb-3 font-mono text-[11px] tracking-[2px] text-base-content/60">04 — POSTCARD SERVICE</p>
+		<h1 class="mb-3 text-[30px] font-semibold tracking-[-0.5px] md:text-[40px]">Send a postcard</h1>
+		<p class="mb-10 max-w-[520px] text-base leading-relaxed text-base-content/70">Free service. The recipient receives a private link to the artwork with your message. The link expires after 30 days and the email address is removed after delivery.</p>
+		<div class="flex flex-col items-start gap-10 md:flex-row md:gap-14">
+			<figure class="w-full shrink-0 md:w-[260px]">
+				<div class="aspect-[39/44.5] border border-base-content/15 bg-base-300"><img src={ v.Image } alt={ v.Title + " by " + v.Author } class="h-full w-full object-cover"/></div>
+				<h2 class="mt-3 text-[15px] font-semibold">{ v.Title }</h2>
+				if v.Author != "" {
+					<p class="mt-1 font-mono text-[11px] text-base-content/60">{ v.Author }</p>
+				}
+				<a href="/artworks" hx-get="/artworks" class="mt-3 inline-block font-mono text-[11px] tracking-[1px] text-primary">CHANGE ARTWORK →</a>
+			</figure>
+			<form id="postcard_create" action="/postcard" method="post" hx-post="/postcard" hx-target="#postcard-compose" hx-select="#postcard-compose" hx-swap="outerHTML" class="w-full max-w-[440px] flex-1">
+				<input type="hidden" name="image_id" value={ v.ImageID }/>
+				if v.Error != "" {
+					<p role="alert" class="mb-5 border border-error px-4 py-3 text-sm text-error">{ v.Error }</p>
+				}
+				<div class="mb-5 grid gap-5 sm:grid-cols-2">
+					<label class="block font-mono text-[11px] tracking-[1px]">YOUR NAME<input class="mt-2 w-full border-b border-base-content bg-transparent px-0 py-2 text-sm" name="sender_name" value={ v.SenderName } maxlength="120" required autocomplete="name"/></label>
+					<label class="block font-mono text-[11px] tracking-[1px]">YOUR EMAIL<input class="mt-2 w-full border-b border-base-content bg-transparent px-0 py-2 text-sm" type="email" name="sender_email" value={ v.SenderEmail } maxlength="254" required autocomplete="email"/></label>
 				</div>
-			</article>
-			<a href="/artists" hx-get="/artists" class="mt-7 inline-block font-mono text-[11px] tracking-[1px] text-primary hover:opacity-70">BROWSE THE ARCHIVE →</a>
-		</section>
+				<label class="mb-5 block font-mono text-[11px] tracking-[1px]">RECIPIENT EMAIL<input class="mt-2 w-full border-b border-base-content bg-transparent px-0 py-2 text-sm" type="email" name="recipient" value={ v.Recipient } maxlength="254" required autocomplete="email"/></label>
+				<label class="mb-6 block font-mono text-[11px] tracking-[1px]">MESSAGE — 300 CHARACTERS AT MOST<textarea class="mt-2 min-h-[110px] w-full resize-y border border-base-content/30 bg-transparent p-3 font-sans text-sm leading-relaxed" name="message" maxlength="300" required>{ v.Message }</textarea></label>
+				<label class="mb-6 flex items-center gap-3 border-y border-base-content/15 py-3.5 text-sm"><input type="checkbox" name="include_music" value="true" checked?={ v.IncludeMusic }/><span>Include period music</span></label>
+				<label aria-hidden="true" class="hpt" for="name">Leave empty</label><input aria-hidden="true" class="hpt" tabindex="-1" autocomplete="off" id="name" name="name"/>
+				<label aria-hidden="true" class="hpt" for="email">Leave empty</label><input aria-hidden="true" class="hpt" tabindex="-1" autocomplete="off" id="email" name="email"/>
+				if v.SiteKey != "" {
+					<script src="https://www.google.com/recaptcha/api.js" async defer></script><div class="g-recaptcha" data-sitekey={ v.SiteKey }></div>
+				} else { <input type="hidden" name="g-recaptcha-response" value="dev"/> }
+				<button type="submit" class="mt-6 w-full bg-primary px-6 py-4 font-mono text-xs tracking-[1.5px] text-primary-content">SEND POSTCARD →</button>
+			</form>
+		</div>
+	</section>
+}
+
+templ PostcardConfirmationPage(v PostcardConfirmationView) {
+	@layouts.LayoutMain() { @PostcardConfirmationBlock(v) }
+}
+
+templ PostcardConfirmationDialog(v PostcardConfirmationView) {
+	@components.DialogBody() { @PostcardConfirmationBlock(v) }
+}
+
+templ PostcardConfirmationBlock(v PostcardConfirmationView) {
+	<section id="postcard-compose" class="container mx-auto max-w-[520px] px-4 pb-20 pt-10 md:px-0">
+		<p aria-hidden="true" class="mb-6 flex h-11 w-11 items-center justify-center border border-primary font-mono text-lg text-primary">✓</p>
+		<h1 class="mb-3 text-[28px] font-semibold">Postcard queued</h1>
+		<p class="mb-2 leading-relaxed">Delivery is being prepared for <span class="font-mono text-sm">{ v.MaskedRecipient }</span>.</p>
+		<p class="mb-7 text-sm text-base-content/60">The private link remains valid until { v.Expires }.</p>
+		<a href={ templ.URL(v.ViewURL) } class="font-mono text-xs tracking-[1px] text-primary">VIEW THE POSTCARD →</a>
+	</section>
+}
+
+templ PostcardLandingPage() {
+	@layouts.LayoutMain() { @PostcardLandingContent() }
+}
+
+templ PostcardLandingContent() {
+	<head>
+		<title>{ utils.GetTitle(ctx) }</title>
+	</head>
+	<section id="postcard-landing" class="container mx-auto px-4 pb-20 pt-10 md:px-0">
+		<p class="mb-3 font-mono text-[11px] tracking-[2px] text-base-content/60">POSTCARDS</p>
+		<h1 class="mb-3 text-[44px] font-semibold leading-tight tracking-[-0.5px]">Postcards</h1>
+		<p class="mb-10 max-w-[560px] text-base leading-relaxed text-base-content/70">Postcards are composed from published artwork pages. Choose a work from the collection to send it to a recipient as a private link with your message.</p>
+		<a href="/artworks" hx-get="/artworks" class="inline-block bg-primary px-6 py-4 font-mono text-xs tracking-[1.5px] text-primary-content hover:opacity-85">BROWSE ARTWORKS →</a>
+	</section>
+}
+
+templ PostcardPage(p PostcardView) {
+	@layouts.LayoutMain() { @PostcardBlock(p) }
+}
+
+templ PostcardBlock(p PostcardView) {
+	<section id="postcard-view" class="container mx-auto px-4 pb-20 pt-10 md:px-0">
+		<p class="mb-3 font-mono text-[11px] tracking-[2px] text-base-content/60">05 — POSTCARD RECEIVED</p>
+		<h1 class="mb-10 text-[44px] font-semibold leading-tight tracking-[-0.5px] md:text-[48px]">You have received a postcard</h1>
+		<article class="max-w-[700px] border border-base-content/15 bg-base-100">
+			<div class="aspect-video border-b border-base-content/15 bg-base-300"><img src={ p.Image } alt={ p.Title + " by " + p.Author } class="h-full w-full object-cover"/></div>
+			<div class="grid gap-8 p-6 md:grid-cols-[minmax(0,1fr)_220px]">
+				<div><p class="mb-3 font-mono text-[10px] tracking-[1px] text-base-content/60">FROM { p.SenderName }</p><div class="content text-[17px] leading-relaxed">@templ.Raw(p.Message)</div></div>
+				<div class="border-t border-base-content/15 pt-6 md:border-l md:border-t-0 md:pl-6 md:pt-0"><h2 class="text-[15px] font-semibold leading-tight">{ p.Title }</h2><p class="mt-1 font-mono text-[11px] leading-relaxed text-base-content/60">{ p.Author }<br/>{ p.Technique }</p><div class="content mt-4 text-sm leading-relaxed">@templ.Raw(p.Comment)</div></div>
+			</div>
+			if p.Music.PlayerURL != "" {
+				@components.MusicPeriodPlayerCard(p.Music.SongID, p.Music.Piece, p.Music.PlayerURL)
+			}
+		</article>
+		<a href="/artists" hx-get="/artists" class="mt-7 inline-block font-mono text-[11px] tracking-[1px] text-primary">BROWSE THE ARCHIVE →</a>
+	</section>
 }

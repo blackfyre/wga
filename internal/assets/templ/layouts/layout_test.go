@@ -97,6 +97,61 @@ func TestLayoutFeedbackLinksToGitHubIssues(t *testing.T) {
 	}
 }
 
+func TestLayoutMainRetainsSharedMounts(t *testing.T) {
+	var output bytes.Buffer
+	if err := LayoutMain().Render(context.Background(), &output); err != nil {
+		t.Fatalf("render main layout: %v", err)
+	}
+
+	rendered := output.String()
+	for _, expected := range []string{
+		`id="mc-area"`,
+		`<dialog id="d" aria-label="Dialog" aria-modal="true"`,
+		`href="https://github.com/blackfyre/wga/issues?q=sort%3Aupdated-desc+is%3Aissue+state%3Aopen+"`,
+		`wga-feedback-anchor`,
+		`id="toast-container"`,
+		`id="keyboard-palette"`,
+		`src="/assets/js/app.js"`,
+	} {
+		if !strings.Contains(rendered, expected) {
+			t.Fatalf("expected shared layout mount %q", expected)
+		}
+	}
+	feedback := rendered[strings.Index(rendered, `class="wga-feedback-anchor`):]
+	if strings.Contains(feedback, `hx-get="/feedback"`) || strings.Contains(feedback, `hx-on:click="wga.dialog.open()"`) || strings.Contains(feedback, `href="#"`) {
+		t.Fatal("feedback control must be an ordinary external link")
+	}
+}
+
+func TestLayoutBaseAppliesThemeBeforeStylesheet(t *testing.T) {
+	var output bytes.Buffer
+	if err := LayoutBase("", "").Render(context.Background(), &output); err != nil {
+		t.Fatalf("render layout: %v", err)
+	}
+
+	rendered := output.String()
+	script := strings.Index(rendered, `<script>`)
+	stylesheet := strings.Index(rendered, `<link rel="stylesheet" href="/assets/css/style.css">`)
+	if script < 0 || stylesheet < 0 || script > stylesheet {
+		t.Fatal("expected theme script before stylesheet")
+	}
+	for _, expected := range []string{
+		`"light"`,
+		`"dark"`,
+		`"wga_light"`,
+		`"wga_dark"`,
+		`"wga_theme=light"`,
+		`"wga_theme=dark"`,
+		`"wga-rams"`,
+		`"wga-rams-dark"`,
+		`prefers-color-scheme: dark`,
+	} {
+		if !strings.Contains(rendered[script:stylesheet], expected) {
+			t.Fatalf("expected inline theme script to handle %q", expected)
+		}
+	}
+}
+
 func TestLayoutBaseRendersTrustedHeadMarkupVerbatim(t *testing.T) {
 	const markup = `<script src="/assets/js/trusted.js"></script>`
 

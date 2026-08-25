@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -40,15 +41,17 @@ func TestLoadBiographiesUsesArtistFieldsWhenLegacyTableIsAbsent(t *testing.T) {
 
 func TestLoadArtistsPortraitPath(t *testing.T) {
 	tests := []struct {
-		name      string
-		hasColumn bool
-		portrait  string
-		want      string
-		wantErr   bool
+		name          string
+		hasOutputPath bool
+		portrait      string
+		want          string
+		wantErr       bool
+		width         int
+		height        int
 	}{
-		{name: "without portrait column"},
-		{name: "with portrait path", hasColumn: true, portrait: "artists/artist/portrait.jpg", want: "portrait.jpg"},
-		{name: "with unsafe portrait path", hasColumn: true, portrait: "../portrait.jpg", wantErr: true},
+		{name: "without required portrait output column", wantErr: true, width: 500, height: 750},
+		{name: "with portrait path", hasOutputPath: true, portrait: "artists/artist/portrait.jpg", want: "portrait.jpg", width: 500, height: 750},
+		{name: "with unsafe portrait path", hasOutputPath: true, portrait: "../portrait.jpg", wantErr: true, width: 500, height: 750},
 	}
 
 	for _, test := range tests {
@@ -59,8 +62,8 @@ func TestLoadArtistsPortraitPath(t *testing.T) {
 			}
 			defer closeDatabase(db)
 
-			schema := `CREATE TABLE artists (id TEXT PRIMARY KEY, display_name TEXT, birth_year INTEGER, death_year INTEGER, birth_place TEXT, death_place TEXT`
-			if test.hasColumn {
+			schema := `CREATE TABLE artists (id TEXT PRIMARY KEY, source_display_name TEXT, birth_year INTEGER, death_year INTEGER, birth_place TEXT, death_place TEXT, biography_image_width INTEGER, biography_image_height INTEGER`
+			if test.hasOutputPath {
 				schema += `, biography_image_output_path TEXT`
 			}
 			schema += `)`
@@ -68,10 +71,10 @@ func TestLoadArtistsPortraitPath(t *testing.T) {
 				t.Fatalf("create artists: %v", err)
 			}
 
-			if test.hasColumn {
-				_, err = db.Exec(`INSERT INTO artists VALUES ('artist', 'Artist', NULL, NULL, NULL, NULL, ?)`, test.portrait)
+			if test.hasOutputPath {
+				_, err = db.Exec(`INSERT INTO artists VALUES ('artist', 'Artist', NULL, NULL, NULL, NULL, ?, ?, ?)`, test.width, test.height, test.portrait)
 			} else {
-				_, err = db.Exec(`INSERT INTO artists VALUES ('artist', 'Artist', NULL, NULL, NULL, NULL)`)
+				_, err = db.Exec(`INSERT INTO artists VALUES ('artist', 'Artist', NULL, NULL, NULL, NULL, ?, ?)`, test.width, test.height)
 			}
 			if err != nil {
 				t.Fatalf("insert artist: %v", err)
@@ -82,6 +85,9 @@ func TestLoadArtistsPortraitPath(t *testing.T) {
 				if err == nil {
 					t.Fatal("expected portrait path error")
 				}
+				if !test.hasOutputPath && !strings.Contains(err.Error(), "biography_image_output_path") {
+					t.Fatalf("expected missing portrait output column error, got %v", err)
+				}
 				return
 			}
 			if err != nil {
@@ -90,7 +96,53 @@ func TestLoadArtistsPortraitPath(t *testing.T) {
 			if got := artists[0].Portrait; got != test.want {
 				t.Fatalf("portrait = %q, want %q", got, test.want)
 			}
+			if got := artists[0].BiographyImageWidth; got != test.width {
+				t.Fatalf("biography image width = %d, want %d", got, test.width)
+			}
+			if got := artists[0].BiographyImageHeight; got != test.height {
+				t.Fatalf("biography image height = %d, want %d", got, test.height)
+			}
 		})
+	}
+}
+
+func TestLoadArtworksImageDimensions(t *testing.T) {
+	db, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatalf("open database: %v", err)
+	}
+	defer closeDatabase(db)
+
+	if _, err := db.Exec(`
+		CREATE TABLE artworks (
+			id TEXT PRIMARY KEY,
+			author_id TEXT,
+			title TEXT,
+			date_text TEXT,
+			technique TEXT,
+			dimensions TEXT,
+			location TEXT,
+			output_image_path TEXT,
+			image_width INTEGER,
+			image_height INTEGER,
+			school_id TEXT,
+			form_id TEXT,
+			type_id TEXT
+		);
+		INSERT INTO artworks VALUES ('artwork', 'artist', 'Artwork', '1900', 'Oil', NULL, 'Gallery', 'artwork.jpg', 1200, 800, NULL, 'form', NULL);
+	`); err != nil {
+		t.Fatalf("create artwork: %v", err)
+	}
+
+	artworks, err := loadArtworks(db)
+	if err != nil {
+		t.Fatalf("load artworks: %v", err)
+	}
+	if got, want := artworks[0].ImageWidth, 1200; got != want {
+		t.Fatalf("image width = %d, want %d", got, want)
+	}
+	if got, want := artworks[0].ImageHeight, 800; got != want {
+		t.Fatalf("image height = %d, want %d", got, want)
 	}
 }
 
@@ -122,6 +174,46 @@ func TestPreseededSourceFile(t *testing.T) {
 	}
 	if !file.preseededAssets {
 		t.Fatal("expected preseeded asset")
+	}
+}
+
+func TestLoadPreseededSourceFilesSkipsImageLessArtwork(t *testing.T) {
+	data := sourceData{
+		artworkFiles: map[string]sourceFile{},
+		musicFiles:   map[string]sourceFile{},
+		artworks: []sourceArtwork{
+			{ID: "rwork0000000001", ImagePath: ""},
+			{ID: "rwork0000000002", ImagePath: "artworks/rwork0000000002/image.jpg"},
+		},
+	}
+
+	if err := loadPreseededSourceFiles(&data); err != nil {
+		t.Fatalf("load preseeded source files: %v", err)
+	}
+
+	if _, ok := data.artworkFiles["rwork0000000001"]; ok {
+		t.Fatal("image-less artwork should have no source file entry")
+	}
+	file, ok := data.artworkFiles["rwork0000000002"]
+	if !ok {
+		t.Fatal("artwork with an image path should have a source file entry")
+	}
+	if got, want := file.name, "image.jpg"; got != want {
+		t.Fatalf("file name = %q, want %q", got, want)
+	}
+}
+
+func TestLoadPreseededSourceFilesRejectsUnsafeArtworkPath(t *testing.T) {
+	data := sourceData{
+		artworkFiles: map[string]sourceFile{},
+		musicFiles:   map[string]sourceFile{},
+		artworks: []sourceArtwork{
+			{ID: "rwork0000000001", ImagePath: "../image.jpg"},
+		},
+	}
+
+	if err := loadPreseededSourceFiles(&data); err == nil {
+		t.Fatal("expected unsafe artwork path error")
 	}
 }
 

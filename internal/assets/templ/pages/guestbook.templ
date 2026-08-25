@@ -12,13 +12,24 @@ import (
 type GuestbookView struct {
 	Total        int
 	Query        string
-	Sort         string
 	Shown        int
 	ScopeTotal   int
 	SelectedYear string
 	CurrentYear  string
 	YearOptions  []string
 	Entries      dto.GuestbookEntries
+	Form         GuestbookFormView
+}
+
+type GuestbookFormView struct {
+	Name          string
+	Location      string
+	Message       string
+	NameError     string
+	LocationError string
+	MessageError  string
+	FormError     string
+	Submitted     bool
 }
 
 templ GuestbookPage(v GuestbookView) {
@@ -35,7 +46,7 @@ templ GuestbookBlock(v GuestbookView) {
 
 		<div class="flex flex-col-reverse gap-10 md:flex-row md:items-start md:gap-14">
 			<aside class="w-full shrink-0 border-t border-base-content/15 pt-5 md:order-2 md:w-[320px]">
-				@GuestbookEntryForm()
+				@GuestbookEntryForm(v.Form)
 			</aside>
 
 			<div class="min-w-0 flex-1 md:order-1">
@@ -45,7 +56,6 @@ templ GuestbookBlock(v GuestbookView) {
 						<p class="whitespace-nowrap font-mono text-[11px] text-base-content/60" aria-live="polite">{ strconv.Itoa(v.ScopeTotal) } FOUND</p>
 					</div>
 					<input type="hidden" name="year" value={ v.SelectedYear }/>
-					<input type="hidden" name="sort" value={ v.Sort }/>
 					<div>
 						<p class="mb-3 font-mono text-[10px] tracking-[1.5px] text-base-content/60">JUMP TO YEAR</p>
 						<nav class="flex flex-wrap gap-1.5" aria-label="Filter guestbook entries by year">
@@ -57,16 +67,15 @@ templ GuestbookBlock(v GuestbookView) {
 					</div>
 					<noscript><button type="submit" class="mt-4 bg-primary px-4 py-3 font-mono text-[11px] tracking-[1.5px] text-primary-content">SEARCH</button></noscript>
 				</form>
-				<div class="flex items-baseline justify-between gap-4 border-b border-base-content pb-3 font-mono text-[11px] tracking-[1.5px]">
+				<div class="border-b border-base-content pb-3 font-mono text-[11px] tracking-[1.5px]">
 					<p>{ guestbookHeading(v.SelectedYear) }</p>
-					<a href={ templ.URL(guestbookURL(v, v.SelectedYear, otherSort(v.Sort), 0)) } hx-get={ guestbookURL(v, v.SelectedYear, otherSort(v.Sort), 0) } hx-target="#guestbook" hx-select="#guestbook" hx-swap="outerHTML" class="text-primary">{ guestbookSortLabel(v.Sort) } ↕</a>
 				</div>
 				if len(v.Entries) > 0 {
 					@GuestbookEntries(v.Entries)
 					<div class="mt-6 flex items-center justify-between gap-4">
 						<p class="font-mono text-[11px] text-base-content/60">SHOWING { strconv.Itoa(v.Shown) } OF { strconv.Itoa(v.ScopeTotal) }</p>
 						if v.Shown < v.ScopeTotal {
-							<a href={ templ.URL(guestbookURL(v, v.SelectedYear, v.Sort, v.Shown + 10)) } hx-get={ guestbookURL(v, v.SelectedYear, v.Sort, v.Shown + 10) } hx-target="#guestbook" hx-select="#guestbook" hx-swap="outerHTML" class="border border-base-content/25 px-3.5 py-2 font-mono text-[11px] tracking-[1px]">LOAD 10 MORE →</a>
+							<a href={ templ.URL(guestbookURL(v, v.SelectedYear, v.Shown + 10)) } hx-get={ guestbookURL(v, v.SelectedYear, v.Shown + 10) } hx-target="#guestbook" hx-select="#guestbook" hx-swap="outerHTML" class="border border-base-content/25 px-3.5 py-2 font-mono text-[11px] tracking-[1px]">LOAD 10 MORE →</a>
 						} else {
 							<p class="font-mono text-[11px] tracking-[1px] text-base-content/40">ALL SHOWN</p>
 						}
@@ -82,38 +91,49 @@ templ GuestbookBlock(v GuestbookView) {
 	</section>
 }
 
-templ GuestbookEntryForm() {
-	<form id="guestbook-entry-form" hx-post="/guestbook/add" hx-target="#guestbook-entry-form" hx-swap="outerHTML" hx-disabled-elt="input,button,textarea">
-		<p class="mb-5 font-mono text-[11px] tracking-[1.5px] text-base-content/60">LEAVE A NOTE</p>
-		<div class="mb-6 flex flex-col gap-5">
-			<label class="block"><span class="mb-2 block font-mono text-[10px] tracking-[1.5px] text-base-content/60">NAME</span><input type="text" class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2 text-[15px] outline-none focus:ring-0" placeholder="Your name" name="sender_name" autocomplete="name" id="sender_name" required/></label>
-			<label class="block"><span class="mb-2 block font-mono text-[10px] tracking-[1.5px] text-base-content/60">EMAIL</span><input type="email" class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2 text-[15px] outline-none focus:ring-0" placeholder="Your email" name="sender_email" autocomplete="email" id="sender_email" required/></label>
-			<label class="block"><span class="mb-2 block font-mono text-[10px] tracking-[1.5px] text-base-content/60">LOCATION</span><input type="text" class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2 text-[15px] outline-none focus:ring-0" placeholder="Your location" name="location" autocomplete="location" required/></label>
-			<label class="block"><span class="mb-2 block font-mono text-[10px] tracking-[1.5px] text-base-content/60">NOTE</span><textarea class="min-h-28 w-full border border-base-content/30 bg-transparent p-3 text-[15px] leading-relaxed" id="message" name="message" placeholder="What did you come here to find?" required></textarea></label>
+templ GuestbookEntryForm(v GuestbookFormView) {
+	if v.Submitted {
+		<div id="guestbook-entry-form" class="border border-base-content/25 p-5" role="status" tabindex="-1">
+			<p class="mb-2 text-lg font-semibold">Thank you — your note is queued.</p>
+			<p class="text-sm leading-relaxed text-base-content/70">An editor will review it before it appears in the archive.</p>
 		</div>
-		<label aria-hidden="true" class="hpt" for="name"></label>
-		<input
-			aria-hidden="true"
-			class="hpt"
-			autocomplete="off"
-			type="text"
-			id="name"
-			name="name"
-			placeholder="Enter your name"
-		/>
-		<label aria-hidden="true" class="hpt" for="email"></label>
-		<input
-			aria-hidden="true"
-			class="hpt"
-			autocomplete="off"
-			type="email"
-			id="email"
-			name="email"
-			placeholder="Enter your email"
-		/>
-		<button class="w-full bg-primary px-4 py-3 font-mono text-[11px] tracking-[1.5px] text-primary-content" type="submit">SIGN THE GUESTBOOK →</button>
-		<p class="mt-3 font-mono text-[10px] leading-relaxed text-base-content/50">ENTRIES ARE MODERATED BEFORE PUBLICATION. EMAIL ADDRESSES ARE NOT SHOWN.</p>
-	</form>
+	} else {
+		<form id="guestbook-entry-form" action="/guestbook/add" method="post" hx-post="/guestbook/add" hx-target="#guestbook" hx-select="#guestbook" hx-swap="outerHTML" hx-disabled-elt="input,button,textarea">
+			<p class="mb-5 font-mono text-[11px] tracking-[1.5px] text-base-content/60">LEAVE A NOTE</p>
+			if v.FormError != "" {
+				<p class="mb-5 border border-error p-3 text-sm text-error" role="alert">{ v.FormError }</p>
+			}
+			<div class="mb-6 flex flex-col gap-5">
+				<label class="block">
+					<span class="mb-2 block font-mono text-[10px] tracking-[1.5px] text-base-content/60">NAME</span>
+					<input type="text" class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2 text-[15px] outline-none focus:ring-0" placeholder="Your name" name="sender_name" autocomplete="name" id="sender_name" value={ v.Name } maxlength="100" aria-invalid={ invalidField(v.NameError) } aria-describedby={ errorID("sender_name", v.NameError) } required/>
+					if v.NameError != "" {
+						<span id="sender_name-error" class="mt-1 block text-sm text-error">{ v.NameError }</span>
+					}
+				</label>
+				<label class="block">
+					<span class="mb-2 block font-mono text-[10px] tracking-[1.5px] text-base-content/60">LOCATION</span>
+					<input type="text" class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2 text-[15px] outline-none focus:ring-0" placeholder="Your location" name="location" autocomplete="address-level2" id="location" value={ v.Location } maxlength="120" aria-invalid={ invalidField(v.LocationError) } aria-describedby={ errorID("location", v.LocationError) } required/>
+					if v.LocationError != "" {
+						<span id="location-error" class="mt-1 block text-sm text-error">{ v.LocationError }</span>
+					}
+				</label>
+				<label class="block">
+					<span class="mb-2 block font-mono text-[10px] tracking-[1.5px] text-base-content/60">NOTE — 1,000 CHARACTERS AT MOST</span>
+					<textarea class="min-h-28 w-full border border-base-content/30 bg-transparent p-3 text-[15px] leading-relaxed" id="message" name="message" placeholder="What did you come here to find?" maxlength="1000" aria-invalid={ invalidField(v.MessageError) } aria-describedby={ errorID("message", v.MessageError) } required>{ v.Message }</textarea>
+					if v.MessageError != "" {
+						<span id="message-error" class="mt-1 block text-sm text-error">{ v.MessageError }</span>
+					}
+				</label>
+			</div>
+			<label aria-hidden="true" class="hpt" for="name"></label>
+			<input aria-hidden="true" class="hpt" autocomplete="off" type="text" id="name" name="name" tabindex="-1"/>
+			<label aria-hidden="true" class="hpt" for="email"></label>
+			<input aria-hidden="true" class="hpt" autocomplete="off" type="email" id="email" name="email" tabindex="-1"/>
+			<button class="w-full bg-primary px-4 py-3 font-mono text-[11px] tracking-[1.5px] text-primary-content" type="submit">SIGN THE GUESTBOOK →</button>
+			<p class="mt-3 font-mono text-[10px] leading-relaxed text-base-content/50">ENTRIES ARE MODERATED BEFORE PUBLICATION. AN APPROVED NOTE BECOMES A PUBLIC ARCHIVE RECORD WHILE APPROVAL REMAINS IN FORCE. UNREVIEWED AND REJECTED NOTES EXPIRE AFTER 90 DAYS. SEE THE <a href="/pages/privacy-policy" class="underline">PRIVACY POLICY</a>.</p>
+		</form>
+	}
 }
 
 templ GuestbookEntries(entries dto.GuestbookEntries) {
@@ -128,8 +148,8 @@ templ GuestbookEntries(entries dto.GuestbookEntries) {
 
 templ GuestbookYearLink(v GuestbookView, value string, label string) {
 	<a
-		href={ templ.URL(guestbookURL(v, value, v.Sort, 0)) }
-		hx-get={ guestbookURL(v, value, v.Sort, 0) }
+		href={ templ.URL(guestbookURL(v, value, 0)) }
+		hx-get={ guestbookURL(v, value, 0) }
 		hx-target="#guestbook"
 		hx-select="#guestbook"
 		hx-swap="outerHTML"
@@ -152,10 +172,15 @@ templ GuestbookEntry(entry dto.GuestbookEntry, index int) {
 					Anonymous
 				}
 			</h4>
-			<p class="text-right font-mono text-[11px] text-base-content/60">{ entry.Location } · { entry.Created }</p>
+			<p class="text-right font-mono text-[11px] text-base-content/60">
+				if entry.Location != "" {
+					{ entry.Location } ·
+				}
+				<time datetime={ entry.Created }>{ entry.Created }</time>
+			</p>
 		</div>
-		<div class="text-base leading-relaxed text-base-content/80">
-			@templ.Raw(entry.Message)
+		<div class="whitespace-pre-line text-base leading-relaxed text-base-content/80">
+			{ entry.Message }
 		</div>
 	</div>
 }
@@ -168,36 +193,17 @@ func guestbookAriaCurrent(active bool) string {
 	return "false"
 }
 
-func guestbookURL(v GuestbookView, year string, sort string, show int) string {
+func guestbookURL(v GuestbookView, year string, show int) string {
 	values := url.Values{}
 	if v.Query != "" {
 		values.Set("q", v.Query)
 	}
 	values.Set("year", year)
-	if sort == "oldest" {
-		values.Set("sort", sort)
-	}
 	if show > 10 {
 		values.Set("show", strconv.Itoa(show))
 	}
 
 	return "/guestbook?" + values.Encode()
-}
-
-func otherSort(sort string) string {
-	if sort == "newest" {
-		return "oldest"
-	}
-
-	return "newest"
-}
-
-func guestbookSortLabel(sort string) string {
-	if sort == "oldest" {
-		return "OLDEST"
-	}
-
-	return "NEWEST"
 }
 
 func guestbookHeading(year string) string {
@@ -206,4 +212,20 @@ func guestbookHeading(year string) string {
 	}
 
 	return "ENTRIES FROM " + year
+}
+
+func invalidField(message string) string {
+	if message != "" {
+		return "true"
+	}
+
+	return "false"
+}
+
+func errorID(field string, message string) string {
+	if message == "" {
+		return ""
+	}
+
+	return field + "-error"
 }

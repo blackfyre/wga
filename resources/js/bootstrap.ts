@@ -5,9 +5,17 @@ import htmx from "htmx.org";
 import warningSign from "../assets/warning-sign.svg";
 import { initBionicReading } from "./bionic";
 import { initCookieConsent } from "./cookieconsent";
+import { initDualHorizontalScroll } from "./dual";
+import {
+	countdown as itineraryCountdown,
+	registerItineraryHelpers,
+} from "./itinerary";
 import { initKeyboardNavigation } from "./keyboard";
 import logger from "./logger";
+import { initPeriodMusic } from "./music";
 import { initStatisticsChart } from "./statistics";
+import { registerTourHelpers } from "./tours";
+import { viewerImageURL } from "./viewer";
 
 logger.setNamespace("WGA");
 logger.setLevel("debug");
@@ -61,6 +69,9 @@ type wgaWindow = {
 		countdown: (field: HTMLTextAreaElement) => void;
 		setPlaceholder: (field: HTMLInputElement) => void;
 	};
+	itinerary: {
+		countdown: (field: HTMLTextAreaElement, outputId: string) => void;
+	};
 };
 
 type wgaInternals = {
@@ -69,7 +80,6 @@ type wgaInternals = {
 		toastContainer: HTMLElement | null;
 	};
 	existingCloners: HTMLElement[];
-	dialogDefaultContent: string;
 	eventListeners: (() => void)[];
 	func: {
 		cloner: () => void;
@@ -156,6 +166,9 @@ type ThemeChoice = "light" | "dark";
 const storedTheme = (): ThemeChoice | null => {
 	try {
 		const theme = window.localStorage.getItem("wga-theme");
+		if (theme === "light" || theme === "dark") {
+			return theme;
+		}
 		if (theme === "wga_light") {
 			return "light";
 		}
@@ -168,8 +181,23 @@ const storedTheme = (): ThemeChoice | null => {
 	return null;
 };
 
+const cookieTheme = (): ThemeChoice | null => {
+	for (const cookie of document.cookie.split("; ")) {
+		if (cookie === "wga_theme=light") {
+			return "light";
+		}
+		if (cookie === "wga_theme=dark") {
+			return "dark";
+		}
+	}
+	return null;
+};
+
 const applyTheme = (choice: ThemeChoice) => {
-	const theme = choice === "dark" ? "wga_dark" : "wga_light";
+	let theme = "wga-rams";
+	if (choice === "dark") {
+		theme = "wga-rams-dark";
+	}
 	document.documentElement.dataset.theme = theme;
 	for (const toggle of document.querySelectorAll<HTMLElement>(
 		"[data-wga-theme]",
@@ -183,16 +211,49 @@ const applyTheme = (choice: ThemeChoice) => {
 	}
 };
 
-const initThemeToggle = () => {
+const resolvedTheme = (): ThemeChoice => {
 	const choice = storedTheme();
 	if (choice) {
-		applyTheme(choice);
-	} else {
-		applyTheme(
-			window.matchMedia("(prefers-color-scheme: dark)").matches
-				? "dark"
-				: "light",
-		);
+		return choice;
+	}
+	const cookieChoice = cookieTheme();
+	if (cookieChoice) {
+		return cookieChoice;
+	}
+	if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+		return "dark";
+	}
+	return "light";
+};
+
+const setTheme = (choice: ThemeChoice) => {
+	try {
+		window.localStorage.setItem("wga-theme", choice);
+	} catch {
+		// Storage can be unavailable in private browsing modes.
+	}
+	document.cookie = `wga_theme=${choice}; path=/; max-age=31536000; samesite=lax`;
+	applyTheme(choice);
+};
+
+const clearTheme = () => {
+	try {
+		window.localStorage.removeItem("wga-theme");
+	} catch {
+		// Storage can be unavailable in private browsing modes.
+	}
+	document.cookie = "wga_theme=; path=/; max-age=0; samesite=lax";
+	applyTheme(resolvedTheme());
+};
+
+const initThemeToggle = () => {
+	applyTheme(resolvedTheme());
+	for (const control of document.querySelectorAll<HTMLElement>(
+		"[data-wga-theme-toggle]",
+	)) {
+		control.classList.remove("hidden");
+		control.classList.add("flex");
+		control.removeAttribute("aria-hidden");
 	}
 
 	document.addEventListener("click", (event) => {
@@ -205,25 +266,43 @@ const initThemeToggle = () => {
 		if (choice !== "light" && choice !== "dark") {
 			return;
 		}
-		applyTheme(choice);
-		try {
-			window.localStorage.setItem("wga-theme", `wga_${choice}`);
-		} catch {}
+		setTheme(choice);
+	});
+
+	window
+		.matchMedia("(prefers-color-scheme: dark)")
+		.addEventListener("change", () => {
+			if (!storedTheme() && !cookieTheme()) {
+				applyTheme(resolvedTheme());
+			}
+		});
+
+	document.addEventListener("htmx:afterSwap", () => {
+		applyTheme(resolvedTheme());
 	});
 };
 
 const syncMobileNavigation = () => {
 	const currentPath = window.location.pathname;
-	for (const link of document.querySelectorAll<HTMLAnchorElement>(
-		"[data-mobile-navigation] a",
-	)) {
-		const active =
-			link.pathname === currentPath ||
-			(link.pathname !== "/" && currentPath.startsWith(`${link.pathname}/`));
-		link.classList.toggle("bg-primary", active);
-		link.classList.toggle("text-primary-content", active);
-		link.classList.toggle("pl-3", active);
-		if (active) {
+	const links = Array.from(
+		document.querySelectorAll<HTMLAnchorElement>("[data-mobile-navigation] a"),
+	);
+	let active: HTMLAnchorElement | null = null;
+	for (const link of links) {
+		const path = link.pathname;
+		const matches =
+			path === currentPath ||
+			(path !== "/" && currentPath.startsWith(`${path}/`));
+		if (matches && (active === null || path.length > active.pathname.length)) {
+			active = link;
+		}
+	}
+	for (const link of links) {
+		const isActive = link === active;
+		link.classList.toggle("bg-primary", isActive);
+		link.classList.toggle("text-primary-content", isActive);
+		link.classList.toggle("pl-3", isActive);
+		if (isActive) {
 			link.setAttribute("aria-current", "page");
 		} else {
 			link.removeAttribute("aria-current");
@@ -268,6 +347,201 @@ const feedbackSetPlaceholder = (field: HTMLInputElement) => {
 		label.classList.toggle("text-primary-content", choice.checked);
 		label.classList.toggle("border-base-content/25", !choice.checked);
 	}
+};
+
+const dialogState: {
+	invoker: HTMLElement | null;
+} = {
+	invoker: null,
+};
+
+const isFocusable = (element: HTMLElement) => {
+	return !element.hasAttribute("disabled") && document.body.contains(element);
+};
+
+const restoreDialogFocus = () => {
+	if (dialogState.invoker && isFocusable(dialogState.invoker)) {
+		dialogState.invoker.focus();
+	}
+	dialogState.invoker = null;
+};
+
+const labelDialog = (dialog: HTMLDialogElement) => {
+	const title = dialog.querySelector<HTMLElement>("[data-dialog-title]");
+	if (!title) {
+		return;
+	}
+
+	if (!title.id) {
+		title.id = "d-title";
+	}
+	dialog.setAttribute("aria-labelledby", title.id);
+	dialog.removeAttribute("aria-label");
+};
+
+const focusDialog = (dialog: HTMLDialogElement) => {
+	labelDialog(dialog);
+	const initialFocus = dialog.querySelector<HTMLElement>(
+		"[data-dialog-initial-focus], [autofocus], input:not([type=hidden]), textarea, select, button, [href]",
+	);
+	initialFocus?.focus();
+};
+
+const trapDialogFocus = (event: KeyboardEvent) => {
+	if (event.key !== "Tab") {
+		return;
+	}
+
+	const dialog = event.currentTarget;
+	if (!(dialog instanceof HTMLDialogElement)) {
+		return;
+	}
+	const focusables = viewerFocusables(dialog);
+	if (focusables.length === 0) {
+		event.preventDefault();
+		dialog.focus();
+		return;
+	}
+
+	const first = focusables[0];
+	const last = focusables[focusables.length - 1];
+	if (event.shiftKey && document.activeElement === first) {
+		event.preventDefault();
+		last.focus();
+	}
+	if (!event.shiftKey && document.activeElement === last) {
+		event.preventDefault();
+		first.focus();
+	}
+};
+
+const showDialog = () => {
+	const dialog = wgaInternal.els.dialog;
+	if (!dialog || !dialog.querySelector(".modal-box")) {
+		return;
+	}
+
+	if (!dialog.open) {
+		dialog.showModal();
+	}
+	window.requestAnimationFrame(() => focusDialog(dialog));
+};
+
+const initPublicDialog = () => {
+	const dialog = wgaInternal.els.dialog;
+	if (!dialog || dialog.dataset.wgaDialogBound === "true") {
+		return;
+	}
+
+	dialog.addEventListener("close", () => {
+		dialog.innerHTML = "";
+		restoreDialogFocus();
+	});
+	dialog.addEventListener("keydown", trapDialogFocus);
+	document.addEventListener("htmx:afterSwap", (event) => {
+		const detail = (event as CustomEvent<{ target: Element }>).detail;
+		if (detail.target === dialog) {
+			showDialog();
+		}
+	});
+	dialog.dataset.wgaDialogBound = "true";
+};
+
+type InertElement = {
+	element: HTMLElement;
+	inert: boolean;
+};
+
+let viewerInvoker: HTMLElement | null = null;
+let viewerSurface: HTMLElement | null = null;
+let viewerInertElements: InertElement[] = [];
+let activeViewer: Viewer | null = null;
+
+const viewerFocusables = (surface: HTMLElement) => {
+	return Array.from(
+		surface.querySelectorAll<HTMLElement>(
+			"button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])",
+		),
+	);
+};
+
+const setViewerBackgroundInert = (surface: HTMLElement) => {
+	viewerInertElements = [];
+	for (const child of document.body.children) {
+		if (!(child instanceof HTMLElement) || child === surface) {
+			continue;
+		}
+		viewerInertElements.push({ element: child, inert: child.inert });
+		child.inert = true;
+	}
+};
+
+const restoreViewerBackground = () => {
+	for (const entry of viewerInertElements) {
+		entry.element.inert = entry.inert;
+	}
+	viewerInertElements = [];
+};
+
+const trapViewerFocus = (event: KeyboardEvent) => {
+	if (!viewerSurface) {
+		return;
+	}
+	if (event.key === "Escape") {
+		event.preventDefault();
+		event.stopImmediatePropagation();
+		activeViewer?.hide();
+		return;
+	}
+	if (event.key !== "Tab") {
+		return;
+	}
+
+	const focusables = viewerFocusables(viewerSurface);
+	if (focusables.length === 0) {
+		event.preventDefault();
+		viewerSurface.focus();
+		return;
+	}
+
+	const first = focusables[0];
+	const last = focusables[focusables.length - 1];
+	if (event.shiftKey && document.activeElement === first) {
+		event.preventDefault();
+		last.focus();
+	}
+	if (!event.shiftKey && document.activeElement === last) {
+		event.preventDefault();
+		first.focus();
+	}
+};
+
+const configureViewerSurface = (label: string, viewer: Viewer) => {
+	const surface = document.querySelector<HTMLElement>(".wga-viewer-surface");
+	if (!surface) {
+		return;
+	}
+
+	viewerSurface = surface;
+	activeViewer = viewer;
+	surface.setAttribute("role", "dialog");
+	surface.setAttribute("aria-modal", "true");
+	surface.setAttribute("aria-label", label);
+	setViewerBackgroundInert(surface);
+
+	let close = surface.querySelector<HTMLButtonElement>("[data-viewer-close]");
+	if (!close) {
+		close = document.createElement("button");
+		close.type = "button";
+		close.dataset.viewerClose = "true";
+		close.className =
+			"absolute right-4 top-4 z-10 border border-current bg-base-100 px-3 py-2 font-mono text-[11px] tracking-[1.5px] text-base-content";
+		close.setAttribute("aria-label", "Close artwork viewer");
+		close.textContent = "CLOSE";
+		close.addEventListener("click", () => viewer.hide());
+		surface.appendChild(close);
+	}
+	close.focus();
 };
 
 const deepMerge = (target: object, source: object): object => {
@@ -600,7 +874,6 @@ const wgaInternal: wgaInternals = {
 		toastContainer: null,
 	},
 	existingCloners: [],
-	dialogDefaultContent: "",
 	eventListeners: [
 		() => {
 			logger.debug("Setting up toast event listener");
@@ -629,6 +902,9 @@ const wgaInternal: wgaInternals = {
 				wgaInternal.func.cloner();
 				wgaInternal.func.dualLookupModal();
 				wgaInternal.func.glossary();
+				registerItineraryHelpers();
+				initPeriodMusic();
+				registerTourHelpers();
 				void maybeInitStatisticsCharts();
 			});
 			document.body.addEventListener("htmx:beforeSwap", () => {
@@ -753,7 +1029,7 @@ const wgaInternal: wgaInternals = {
 						for (const el of removeMe) {
 							const removeMe = () => {
 								// Find the closest .field element
-							const field = el.closest("label");
+								const field = el.closest("label");
 
 								// Remove the field
 								field?.remove();
@@ -770,31 +1046,68 @@ const wgaInternal: wgaInternals = {
 		},
 		viewer: () => {
 			logger.debug("Setting up ViewerJS functionality");
-			const elements = document.querySelectorAll("[data-viewer]");
-			if (elements.length > 0) {
-				for (const element of elements) {
-					const e = element as HTMLElement;
-					new Viewer(e, {
-						url: "data-zoom-url",
-						navbar: !e.hasAttribute("data-viewer-no-navbar"),
-						toolbar: {
-							zoomIn: 1,
-							zoomOut: 1,
-							oneToOne: 1,
-							reset: 1,
-							prev: 1,
-							play: {
-								show: 1,
-								size: "large",
-							},
-							next: 1,
-							rotateLeft: 1,
-							rotateRight: 1,
-							flipHorizontal: 0,
-							flipVertical: 0,
+			const elements = document.querySelectorAll<HTMLElement>(
+				"[data-viewer]:not([data-viewer-bound])",
+			);
+			for (const element of elements) {
+				const label =
+					element.dataset.viewerLabel ||
+					element.querySelector("img")?.alt ||
+					"Artwork viewer";
+				const reducedMotion = window.matchMedia(
+					"(prefers-reduced-motion: reduce)",
+				).matches;
+				const viewer = new Viewer(element, {
+					url: viewerImageURL,
+					className: "wga-viewer-surface",
+					navbar: !element.hasAttribute("data-viewer-no-navbar"),
+					transition: !reducedMotion,
+					toolbar: {
+						zoomIn: 1,
+						zoomOut: 1,
+						oneToOne: 1,
+						reset: 1,
+						prev: 1,
+						play: {
+							show: 1,
+							size: "large",
 						},
-					});
+						next: 1,
+						rotateLeft: 1,
+						rotateRight: 1,
+						flipHorizontal: 0,
+						flipVertical: 0,
+					},
+				});
+				element.addEventListener("shown", () => {
+					configureViewerSurface(label, viewer);
+				});
+				element.addEventListener("hidden", () => {
+					restoreViewerBackground();
+					viewerSurface = null;
+					activeViewer = null;
+					if (viewerInvoker && isFocusable(viewerInvoker)) {
+						viewerInvoker.focus();
+					}
+					viewerInvoker = null;
+				});
+				const openViewer = (event: Event) => {
+					event.preventDefault();
+					viewerInvoker = element;
+					viewer.show();
+				};
+				element.addEventListener("click", openViewer);
+				element.addEventListener("keydown", (event) => {
+					if (event.key === "Enter" || event.key === " ") {
+						openViewer(event);
+					}
+				});
+				if (!(element instanceof HTMLAnchorElement)) {
+					element.tabIndex = 0;
+					element.setAttribute("role", "button");
+					element.setAttribute("aria-label", label);
 				}
+				element.dataset.viewerBound = "true";
 			}
 		},
 		toast: (message, type) => {
@@ -877,9 +1190,15 @@ const wgaInternal: wgaInternals = {
 			htmx.process(document.body);
 			wgaInternal.setup.htmx();
 			wgaInternal.setup.elements();
+			initPublicDialog();
 			wgaInternal.func.glossary();
 			wgaInternal.func.copyBibTeX();
 			wgaInternal.func.artworkYearRange();
+			wgaInternal.func.viewer();
+			registerItineraryHelpers();
+			initPeriodMusic();
+			registerTourHelpers();
+			initDualHorizontalScroll();
 			void maybeInitStatisticsCharts();
 
 			// Run all event listeners
@@ -1043,20 +1362,21 @@ const wgaInternal: wgaInternals = {
 			wgaInternal.els.toastContainer = document.getElementById(
 				"toast-container",
 			) as HTMLElement;
-			wgaInternal.dialogDefaultContent =
-				wgaInternal.els.dialog?.innerHTML || "";
 		},
 	},
 };
 
 (() => {
 	logger.debug("Initializing WGA");
-	initCookieConsent();
+	void initCookieConsent().catch((error) => {
+		logger.error("Failed to initialise Cookie Consent", error);
+	});
 	initKeyboardNavigation();
 	initThemeToggle();
 	initBionicReading();
 	syncMobileNavigation();
 	document.addEventListener("htmx:afterSettle", syncMobileNavigation);
+	window.addEventListener("keydown", trapViewerFocus, true);
 	wgaInternal.func.init();
 })();
 
@@ -1066,26 +1386,17 @@ window.wga = {
 		 * Opens the dialog.
 		 */
 		open() {
-			// Open the dialog
-			setTimeout(() => {
-				logger.debug("Opening dialog");
-				wgaInternal.els.dialog?.showModal();
-			}, 500);
+			const active = document.activeElement;
+			if (active instanceof HTMLElement) {
+				dialogState.invoker = active;
+			}
 		},
 		/**
 		 * Closes the dialog and resets its content.
 		 */
 		close() {
 			logger.debug("Closing dialog");
-			// Close the dialog
 			wgaInternal.els.dialog?.close();
-			// Reset the dialog content
-			setTimeout(() => {
-				if (wgaInternal.els.dialog) {
-					logger.debug("Resetting dialog content");
-					wgaInternal.els.dialog.innerHTML = wgaInternal.dialogDefaultContent;
-				}
-			}, 500);
 		},
 	},
 	dual: {
@@ -1148,6 +1459,22 @@ window.wga = {
 		},
 		setPlaceholder(field: HTMLInputElement) {
 			feedbackSetPlaceholder(field);
+		},
+	},
+	itinerary: {
+		countdown(field: HTMLTextAreaElement, outputId: string) {
+			itineraryCountdown(field, outputId);
+		},
+	},
+	theme: {
+		set(choice: ThemeChoice) {
+			setTheme(choice);
+		},
+		clear() {
+			clearTheme();
+		},
+		current() {
+			return resolvedTheme();
 		},
 	},
 	music: {

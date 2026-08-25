@@ -1,6 +1,6 @@
 # Web Gallery of Art
 
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fblackfyre%2Fwga.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fblackfyre%2Fwga?ref=badge_shield)
+[![FOSSA Status](https://app.fossa.com/api/projects/custom%2B40901%2Fgit%40github.com%3Ablackfyre%2Fwga.git.svg?type=shield)](https://app.fossa.com/projects/custom%2B40901%2Fgit%40github.com%3Ablackfyre%2Fwga.git?ref=badge_shield)
 ![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/blackfyre/wga?utm_source=oss&utm_medium=github&utm_campaign=blackfyre%2Fwga&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)
 
 ## Introduction
@@ -137,6 +137,9 @@ mise run dev
 
 `mise run dev` brings up the Podman Compose Mailpit and Garage services, then starts the frontend and template watchers. Mailpit exposes SMTP on port 1025 and its HTTP API on port 8025; Playwright reads `MAILPIT_URL` to query captured messages. Garage exposes S3-compatible storage on port 3900. In another terminal, start the application with `mise run code:run`, or run `mise run app:build` followed by `mise run app:run`. `mise run app:reset` brings up and waits for Garage while rebuilding and replacing `dist/wga_data`.
 
+For the manual production data hand-off, including validation of the paired
+SQLite/storage bundle before startup, see [Release data provisioning](docs/release-data-provisioning.md).
+
 If you only need asset watchers, use the package scripts directly:
 
 ```bash
@@ -163,6 +166,6 @@ mise run app:init-env
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+This project is licensed under the Apache License 2.0 - see the [LICENSE.md](LICENSE.md) file for details.
 
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fblackfyre%2Fwga.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fblackfyre%2Fwga?ref=badge_large)
+[![FOSSA Status](https://app.fossa.com/api/projects/custom%2B40901%2Fgit%40github.com%3Ablackfyre%2Fwga.git.svg?type=large)](https://app.fossa.com/projects/custom%2B40901%2Fgit%40github.com%3Ablackfyre%2Fwga.git?ref=badge_large)

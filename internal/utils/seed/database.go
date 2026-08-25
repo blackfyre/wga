@@ -27,13 +27,20 @@ var syntheticTargetCollections = []targetCollection{
 	{name: "art_forms", fields: []string{"name", "slug"}},
 	{name: "art_types", fields: []string{"name", "slug"}},
 	{name: "art_periods", fields: []string{"name", "slug", "start", "end", "description"}},
+	{name: constants.CollectionLocations, fields: []string{"name", "city", "country", "museum", "is_public"}},
 	{name: constants.CollectionArtists, fields: []string{
 		"name", "slug", "bio", "year_of_birth", "year_of_death", "place_of_birth", "place_of_death",
 		"exact_year_of_birth", "exact_year_of_death", "profession", "known_place_of_birth",
-		"known_place_of_death", "school", "portrait", "published",
+		"known_place_of_death", "school", "portrait", "biography_image_width", "biography_image_height", "published",
 	}},
 	{name: constants.CollectionArtworks, fields: []string{
-		"title", "author", "form", "type", "technique", "school", "comment", "published", "image",
+		"title", "author", "form", "type", "technique", "school", "comment", "published", "image", "image_width", "image_height",
+		"source_row", "date_start", "date_end", "is_circa", "date_qualifier", "timeframe_text",
+		"current_location_id", "art_period_id",
+		"source_url", "source_path", "source_comment", "colour_palette", "colour_signature", "colour_profile_version", "colour_image_hash",
+	}},
+	{name: constants.CollectionSelections, fields: []string{
+		"artist", "title", "context", "display_title", "commentary", "artworks", "source_path", "source_hash", "content_hash", "published",
 	}},
 	{name: "glossary", fields: []string{"expression", "definition"}},
 	{name: constants.CollectionGuestbook, fields: []string{"name", "email", "location", "message"}},
@@ -78,10 +85,16 @@ func Import(app core.App, sqlitePath string) error {
 	if err := importSyntheticArtPeriods(app, data.artPeriods); err != nil {
 		return err
 	}
+	if err := importSyntheticLocations(app, data.locations); err != nil {
+		return err
+	}
 	if err := importSyntheticArtists(app, data, paths.preseededAssets); err != nil {
 		return err
 	}
-	if err := importSyntheticArtworks(app, data); err != nil {
+	if err := importSyntheticArtworks(app, data, paths.preseededAssets); err != nil {
+		return err
+	}
+	if err := importSyntheticSelections(app, data.selections); err != nil {
 		return err
 	}
 	if err := importSyntheticGlossary(app, data.glossaryEntries); err != nil {
@@ -115,11 +128,82 @@ func validateTargetCollections(app core.App, data sourceData) error {
 		collections[target.name] = collection
 	}
 
+	if err := validateSourceFieldContracts(collections[constants.CollectionArtworks], collections[constants.CollectionSelections]); err != nil {
+		return err
+	}
+
 	if err := validateFileFieldSizes(collections[constants.CollectionArtworks], "image", data.artworkFiles); err != nil {
 		return err
 	}
 
 	return validateFileFieldSizes(collections["music_song"], "source", data.musicFiles)
+}
+
+// validateSourceFieldContracts fails closed unless the source-imported artwork
+// and selection fields carry the concrete PocketBase types, relation targets,
+// and cardinality the importer writes. Artworks are saved through
+// SaveNoValidate for preseeded sources, so a schema mismatch here would corrupt
+// the import silently; it is rejected before any record is saved. Selection
+// relation cardinality is enforced because the selection read-model depends on
+// the single-artist and multi-artwork shapes.
+func validateSourceFieldContracts(artworks *core.Collection, selections *core.Collection) error {
+	for _, check := range []struct {
+		name string
+		typ  string
+	}{
+		{"source_row", core.FieldTypeNumber},
+		{"date_start", core.FieldTypeNumber},
+		{"date_end", core.FieldTypeNumber},
+		{"is_circa", core.FieldTypeBool},
+		{"date_qualifier", core.FieldTypeText},
+		{"timeframe_text", core.FieldTypeText},
+		{"source_url", core.FieldTypeText},
+		{"source_path", core.FieldTypeText},
+		{"source_comment", core.FieldTypeText},
+		{"colour_palette", core.FieldTypeJSON},
+		{"colour_signature", core.FieldTypeJSON},
+		{"colour_profile_version", core.FieldTypeText},
+		{"colour_image_hash", core.FieldTypeText},
+	} {
+		field := artworks.Fields.GetByName(check.name)
+		if field == nil {
+			return fmt.Errorf("artworks field %q is missing", check.name)
+		}
+		if field.Type() != check.typ {
+			return fmt.Errorf("artworks field %q has type %q, want %q", check.name, field.Type(), check.typ)
+		}
+	}
+
+	if err := validateRelationContract(artworks, "current_location_id", "locations", 0, 1); err != nil {
+		return err
+	}
+	if err := validateRelationContract(artworks, "art_period_id", "art_periods", 0, 1); err != nil {
+		return err
+	}
+	if err := validateRelationContract(selections, "artist", "artists", 1, 1); err != nil {
+		return err
+	}
+	if err := validateRelationContract(selections, "artworks", "artworks", 1, 1000); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func validateRelationContract(collection *core.Collection, name string, wantCollection string, wantMin int, wantMax int) error {
+	field := collection.Fields.GetByName(name)
+	relation, ok := field.(*core.RelationField)
+	if !ok {
+		return fmt.Errorf("collection %q field %q is not a relation field", collection.Id, name)
+	}
+	if relation.CollectionId != wantCollection {
+		return fmt.Errorf("collection %q field %q targets %q, want %q", collection.Id, name, relation.CollectionId, wantCollection)
+	}
+	if relation.MinSelect != wantMin || relation.MaxSelect != wantMax {
+		return fmt.Errorf("collection %q field %q cardinality [%d,%d], want [%d,%d]", collection.Id, name, relation.MinSelect, relation.MaxSelect, wantMin, wantMax)
+	}
+
+	return nil
 }
 
 func validateFileFieldSizes(collection *core.Collection, fieldName string, files map[string]sourceFile) error {
@@ -207,6 +291,32 @@ func importSyntheticArtPeriods(app core.App, items []sourceArtPeriod) error {
 	return nil
 }
 
+// importSyntheticLocations records the producer locations taxonomy. City and
+// country are optional and remain unset when the producer leaves them empty.
+func importSyntheticLocations(app core.App, items []sourceLocation) error {
+	for _, item := range items {
+		record, err := newRecord(app, constants.CollectionLocations, item.ID)
+		if err != nil {
+			return err
+		}
+
+		record.Set("name", item.Name)
+		if item.City != "" {
+			record.Set("city", item.City)
+		}
+		if item.Country != "" {
+			record.Set("country", item.Country)
+		}
+		record.Set("museum", item.Museum)
+		record.Set("is_public", item.IsPublic)
+		if err := app.Save(record); err != nil {
+			return fmt.Errorf("save location %q: %w", item.ID, err)
+		}
+	}
+
+	return nil
+}
+
 func importSyntheticArtists(app core.App, data sourceData, preseededAssets bool) error {
 	professionNames := make(map[string]string, len(data.professions))
 	for _, profession := range data.professions {
@@ -238,6 +348,8 @@ func importSyntheticArtists(app core.App, data sourceData, preseededAssets bool)
 		record.Set("known_place_of_death", knownPlace(item.DeathPlace))
 		record.Set("school", data.artistSchools[item.ID])
 		record.Set("profession", joinedProfessionNames(data.artistProfessions[item.ID], professionNames))
+		record.Set("biography_image_width", item.BiographyImageWidth)
+		record.Set("biography_image_height", item.BiographyImageHeight)
 		if item.Portrait != "" {
 			record.Set("portrait", item.Portrait)
 		}
@@ -261,11 +373,11 @@ func uniqueArtistSlug(used map[string]struct{}, name string, id string) string {
 	return slug
 }
 
-func importSyntheticArtworks(app core.App, data sourceData) error {
+func importSyntheticArtworks(app core.App, data sourceData, preseededAssets bool) error {
 	for _, item := range data.artworks {
-		file, ok := data.artworkFiles[item.ID]
-		if !ok {
-			return fmt.Errorf("artwork %q has no source file", item.ID)
+		file, hasFile := data.artworkFiles[item.ID]
+		if item.ImagePath != "" && !hasFile {
+			return fmt.Errorf("artwork %q declares image %q but has no source file", item.ID, item.ImagePath)
 		}
 		record, err := newRecord(app, constants.CollectionArtworks, item.ID)
 		if err != nil {
@@ -284,7 +396,48 @@ func importSyntheticArtworks(app core.App, data sourceData) error {
 		record.Set("technique", item.Technique)
 		record.Set("comment", artworkComment(item))
 		record.Set("published", true)
-		if file.preseededAssets {
+		record.Set("image_width", item.ImageWidth)
+		record.Set("image_height", item.ImageHeight)
+		record.Set("source_row", item.SourceRow)
+		record.Set("date_start", item.DateStart)
+		record.Set("date_end", item.DateEnd)
+		record.Set("is_circa", item.IsCirca)
+		if item.DateQualifier != "" {
+			record.Set("date_qualifier", item.DateQualifier)
+		}
+		if item.TimeframeText != "" {
+			record.Set("timeframe_text", item.TimeframeText)
+		}
+		if item.CurrentLocationID != "" {
+			record.Set("current_location_id", []string{item.CurrentLocationID})
+		}
+		if item.ArtPeriodID != "" {
+			record.Set("art_period_id", []string{item.ArtPeriodID})
+		}
+		if item.SourceURL != "" {
+			record.Set("source_url", item.SourceURL)
+		}
+		if item.SourcePath != "" {
+			record.Set("source_path", item.SourcePath)
+		}
+		if item.SourceComment != "" {
+			record.Set("source_comment", item.SourceComment)
+		}
+		if len(item.ColourPalette) > 0 {
+			record.Set("colour_palette", item.ColourPalette)
+		}
+		if item.ColourSignature != nil {
+			record.Set("colour_signature", *item.ColourSignature)
+		}
+		if item.ColourProfileVersion != "" {
+			record.Set("colour_profile_version", item.ColourProfileVersion)
+		}
+		if item.ColourImageHash != "" {
+			record.Set("colour_image_hash", item.ColourImageHash)
+		}
+		if item.ImagePath == "" {
+			// image-less artwork: leave the image file field unset
+		} else if file.preseededAssets {
 			record.Set("image", file.name)
 		} else {
 			image, err := filesystem.NewFileFromBytes(file.content, file.name)
@@ -294,8 +447,36 @@ func importSyntheticArtworks(app core.App, data sourceData) error {
 			record.Set("image", image)
 		}
 
-		if err := saveSeedRecord(app, record, file.preseededAssets); err != nil {
+		if err := saveSeedRecord(app, record, preseededAssets); err != nil {
 			return fmt.Errorf("save artwork %q: %w", item.ID, err)
+		}
+	}
+
+	return nil
+}
+
+// importSyntheticSelections records the flat producer selection contract,
+// preserving the ordered artwork membership and the supplied commentary bytes.
+func importSyntheticSelections(app core.App, items []sourceSelection) error {
+	for _, item := range items {
+		record, err := newRecord(app, constants.CollectionSelections, item.ID)
+		if err != nil {
+			return err
+		}
+
+		record.Set("artist", []string{item.ArtistID})
+		record.Set("title", item.Title)
+		record.Set("context", item.Context)
+		record.Set("display_title", item.DisplayTitle)
+		record.Set("commentary", item.Commentary)
+		record.Set("artworks", item.ArtworkIDs)
+		record.Set("source_path", item.SourcePath)
+		record.Set("source_hash", item.SourceHash)
+		record.Set("content_hash", item.ContentHash)
+		record.Set("published", item.Published)
+
+		if err := app.Save(record); err != nil {
+			return fmt.Errorf("save selection %q: %w", item.ID, err)
 		}
 	}
 
@@ -477,6 +658,12 @@ func joinedProfessionNames(ids []string, names map[string]string) string {
 }
 
 func artworkComment(artwork sourceArtwork) string {
+	if artwork.Comment != "" {
+		return artwork.Comment
+	}
+
+	// No enriched commentary: retain the truthful source/metadata summary
+	// (date, location, dimensions) rather than inventing prose.
 	parts := []string{artwork.DateText, artwork.Location}
 	if artwork.Dimensions != "" {
 		parts = append(parts, artwork.Dimensions)

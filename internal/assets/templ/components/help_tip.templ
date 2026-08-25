@@ -1,0 +1,24 @@
+package components
+
+templ GlossaryTerm(term string, category string, definition string) {
+	<dfn class="wga-term" role="note" tabindex="0" aria-label={ term + ": " + definition } data-bionic="off">
+		{ term }
+		<span class="wga-term__tooltip" aria-hidden="true">
+			<span class="wga-tooltip__meta">GLOSSARY</span>
+			if category != "" {
+				<span class="wga-tooltip__category">{ category }</span>
+			}
+			<span class="wga-tooltip__body">{ definition }</span>
+		</span>
+	</dfn>
+}
+
+templ HelpTip(label string, body string) {
+	<span class="wga-help" role="note" tabindex="0" aria-label={ label + ": " + body } data-bionic="off">
+		?
+		<span class="wga-help__tooltip" aria-hidden="true">
+			<span class="wga-tooltip__meta">{ label }</span>
+			<span class="wga-tooltip__body">{ body }</span>
+		</span>
+	</span>
+}

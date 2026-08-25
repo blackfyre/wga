@@ -1,0 +1,40 @@
+package components
+
+import "github.com/blackfyre/wga/internal/assets/templ/dto"
+
+templ ChipGroup(group dto.ChipGroup) {
+	<fieldset class={ templ.KV("border-b border-base-content/15 py-5", !group.Inline) }>
+		<legend class={ "font-mono text-(length:--t-11) tracking-[1.5px] text-muted", templ.KV("mb-3", group.Note == ""), templ.KV("mb-1.5", group.Note != "") }>{ group.Legend }</legend>
+		if group.Note != "" {
+			<p class="mb-3 font-mono text-(length:--t-10) leading-relaxed text-faint">{ group.Note }</p>
+		}
+		<div class="flex flex-wrap gap-1.5">
+			for _, option := range group.Options {
+				<label class={ "cursor-pointer border border-control px-3.5 py-1.5 font-mono text-(length:--t-11) tracking-[1px] transition-colors hover:border-base-content", templ.KV("border-primary bg-primary text-primary-content", option.Checked), templ.KV("text-base-content/70", !option.Checked) }>
+					<input type="radio" name={ group.Name } value={ option.Value } class="sr-only" checked?={ option.Checked }/>
+					{ option.Label }
+				</label>
+			}
+		</div>
+	</fieldset>
+}
+
+templ NavChips(chips []dto.NavChip) {
+	<nav aria-label="Browse by category" class="flex flex-wrap gap-1.5">
+		for _, chip := range chips {
+			if chip.Active {
+				if chip.HxTarget != "" {
+					<a href={ templ.SafeURL(chip.Href) } class="border border-primary bg-primary px-3.5 py-1.5 font-mono text-(length:--t-11) tracking-[1px] text-primary-content transition-colors" aria-current="page" hx-get={ chip.Href } hx-target={ chip.HxTarget }>{ chip.Label }</a>
+				} else {
+					<a href={ templ.SafeURL(chip.Href) } class="border border-primary bg-primary px-3.5 py-1.5 font-mono text-(length:--t-11) tracking-[1px] text-primary-content transition-colors" aria-current="page">{ chip.Label }</a>
+				}
+			} else {
+				if chip.HxTarget != "" {
+					<a href={ templ.SafeURL(chip.Href) } class="border border-control px-3.5 py-1.5 font-mono text-(length:--t-11) tracking-[1px] text-base-content/70 transition-colors hover:border-base-content" hx-get={ chip.Href } hx-target={ chip.HxTarget }>{ chip.Label }</a>
+				} else {
+					<a href={ templ.SafeURL(chip.Href) } class="border border-control px-3.5 py-1.5 font-mono text-(length:--t-11) tracking-[1px] text-base-content/70 transition-colors hover:border-base-content">{ chip.Label }</a>
+				}
+			}
+		}
+	</nav>
+}

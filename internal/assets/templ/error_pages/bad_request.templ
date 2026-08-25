@@ -1,6 +1,9 @@
 package error_pages
 
-import "github.com/blackfyre/wga/internal/assets/templ/layouts"
+import (
+	"github.com/blackfyre/wga/internal/assets/templ/components"
+	"github.com/blackfyre/wga/internal/assets/templ/layouts"
+)
 
 templ BadRequestPage() {
 	@layouts.LayoutMain() {
@@ -11,9 +14,10 @@ templ BadRequestPage() {
 
 templ BadRequestBlock() {
 	<section class="container mx-auto px-4 py-20 md:px-0 md:py-32">
-		<p class="font-mono text-[11px] tracking-[2px] text-base-content/60">400 — BAD REQUEST</p>
-		<h1 class="mt-4 max-w-xl text-[38px] font-semibold leading-tight tracking-[-0.5px] md:text-[56px]">That request is not supported.</h1>
-		<p class="mt-5 max-w-lg leading-relaxed text-base-content/70">Please return to the collection and try the action again.</p>
-		<a href="/" hx-get="/" class="mt-8 inline-block bg-primary px-5 py-3 font-mono text-[11px] tracking-[1.5px] text-primary-content">RETURN TO THE GALLERY →</a>
+		@components.PageHead("400 — BAD REQUEST", "That request is not supported.", "Please return to the collection and try the action again.")
+		<div class="flex flex-wrap gap-2.5">
+			<a href="/" class="btn btn-primary font-mono text-(length:--t-11) tracking-[1.5px]">RETURN TO THE GALLERY →</a>
+			<a href="/artworks" class="btn btn-outline font-mono text-(length:--t-11) tracking-[1.5px]">BROWSE ALL ARTWORKS →</a>
+		</div>
 	</section>
 }

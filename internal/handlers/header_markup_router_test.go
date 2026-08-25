@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/handlers/artists"
 	"github.com/blackfyre/wga/internal/handlers/landing"
-	"github.com/blackfyre/wga/internal/handlers/search"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
@@ -138,8 +138,7 @@ func TestFullPageRoutesRenderTrustedHeadMarkup(t *testing.T) {
 
 	registerTrustedHeadMarkupMiddleware(app)
 	landing.RegisterHandlers(app)
-	artists.RegisterHandlers(app)
-	search.RegisterHandlers(app)
+	artists.RegisterHandlers(app, config.EnvironmentTest)
 
 	router, err := apis.NewRouter(app)
 	if err != nil {
@@ -180,9 +179,9 @@ func TestFullPageRoutesRenderTrustedHeadMarkup(t *testing.T) {
 			assertMarkerOnceBeforeHead(t, artistIndex.Body.String())
 		}
 
-		fragment := serve("/search/results", true)
+		fragment := serve("/artists", true)
 		if fragment.Code != http.StatusOK {
-			t.Errorf("search results fragment status = %d, want %d", fragment.Code, http.StatusOK)
+			t.Errorf("artist index fragment status = %d, want %d", fragment.Code, http.StatusOK)
 		} else {
 			body := fragment.Body.String()
 			if strings.Contains(body, trustedHeadRouterMarker) {

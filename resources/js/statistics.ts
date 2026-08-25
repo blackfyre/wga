@@ -22,29 +22,46 @@ Chart.register(
 	Legend,
 );
 
-const donutPalette = [
-	"#003366",
-	"#2a5580",
-	"#54789a",
-	"#7e9ab5",
-	"#a8bccf",
-	"#8a857c",
+// Rams theme tokens are read from the root element at chart-build time so the
+// charts follow the active light/dark theme, including theme changes while the
+// page is open.
+const seriesTones = [
+	"--wga-series-0",
+	"--wga-series-1",
+	"--wga-series-2",
+	"--wga-series-3",
+	"--wga-series-4",
+	"--wga-series-5",
+	"--wga-series-6",
 ];
 
-const schoolColors: Record<string, string> = {
-	Italian: "#003366",
-	French: "#1c4d80",
-	Dutch: "#356a99",
-	Flemish: "#5786af",
-	German: "#7ba1c4",
-	English: "#9fbbd6",
-	Spanish: "#c0d2e4",
-	Other: "#8a857c",
-};
+function resolveTone(name: string): string {
+	const value = getComputedStyle(document.documentElement)
+		.getPropertyValue(name)
+		.trim();
+	return value || "#999999";
+}
 
-const chartText = "#1c1c1a";
-const chartMutedText = "#6b6660";
-const chartRule = "rgba(28, 28, 26, 0.15)";
+const chartText = (): string => resolveTone("--wga-text");
+const chartMutedText = (): string => resolveTone("--wga-muted");
+const chartRule = (): string => resolveTone("--wga-rule");
+
+function chartAnimation(): false | undefined {
+	if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+		return false;
+	}
+	return undefined;
+}
+
+// animationLabel records the resolved animation mode on the canvas so browser
+// tests can assert the non-animated reduced-motion path without relying on
+// Chart.js internals.
+function animationLabel(animation: false | undefined): string {
+	if (animation === false) {
+		return "none";
+	}
+	return "animated";
+}
 
 // Preferred display order — Other always last
 const schoolOrder = [
@@ -57,6 +74,17 @@ const schoolOrder = [
 	"Spanish",
 	"Other",
 ];
+
+const schoolTones: Record<string, string> = {
+	Italian: "--wga-series-0",
+	French: "--wga-series-1",
+	Dutch: "--wga-series-2",
+	Flemish: "--wga-series-3",
+	German: "--wga-series-4",
+	English: "--wga-series-5",
+	Spanish: "--wga-series-6",
+	Other: "--wga-fill-line",
+};
 
 type SchoolPeriodRow = { period_start: number; school: string; count: number };
 
@@ -103,7 +131,11 @@ function initDonutChart(): void {
 	const data = readJson("art-form-data") as { name: string; count: number }[];
 	if (data.length === 0) return;
 
-	const colors = data.map((_, i) => donutPalette[i % donutPalette.length]);
+	const colors = data.map((_, i) =>
+		resolveTone(seriesTones[i % seriesTones.length]),
+	);
+	const border = resolveTone("--wga-bg");
+	const animation = chartAnimation();
 
 	chartInstances["art-form-chart"] = new Chart(canvas, {
 		type: "doughnut",
@@ -113,13 +145,14 @@ function initDonutChart(): void {
 				{
 					data: data.map((d) => d.count),
 					backgroundColor: colors,
-					borderColor: colors.map((c) => `${c}cc`),
+					borderColor: border,
 					borderWidth: 1,
 				},
 			],
 		},
 		options: {
 			responsive: true,
+			animation,
 			plugins: {
 				legend: {
 					display: false,
@@ -139,6 +172,7 @@ function initDonutChart(): void {
 			},
 		},
 	});
+	canvas.dataset.chartAnimation = animationLabel(animation);
 }
 
 function buildStackedBarChart(
@@ -170,9 +204,11 @@ function buildStackedBarChart(
 			);
 			return row ? row.count : 0;
 		}),
-		backgroundColor: schoolColors[school] ?? "#999",
+		backgroundColor: resolveTone(schoolTones[school] ?? "--wga-fill-line"),
 		stack: "stack",
 	}));
+
+	const animation = chartAnimation();
 
 	chartInstances[canvasId] = new Chart(canvas, {
 		type: "bar",
@@ -180,24 +216,28 @@ function buildStackedBarChart(
 		options: {
 			responsive: true,
 			aspectRatio: 2,
+			animation,
 			scales: {
 				x: {
 					stacked: true,
-					border: { color: chartRule },
+					border: { color: chartRule() },
 					grid: { display: false },
 					ticks: {
-						color: chartMutedText,
-						font: { family: "ui-monospace, SF Mono, Menlo, monospace", size: 10 },
+						color: chartMutedText(),
+						font: {
+							family: "ui-monospace, SF Mono, Menlo, monospace",
+							size: 10,
+						},
 						maxRotation: 45,
 						minRotation: 45,
 					},
 				},
 				y: {
 					stacked: true,
-					border: { color: chartRule },
-					grid: { color: chartRule },
-					ticks: { color: chartMutedText },
-					title: { color: chartText, display: true, text: totalLabel },
+					border: { color: chartRule() },
+					grid: { color: chartRule() },
+					ticks: { color: chartMutedText() },
+					title: { color: chartText(), display: true, text: totalLabel },
 				},
 			},
 			plugins: {
@@ -205,8 +245,11 @@ function buildStackedBarChart(
 					position: "bottom",
 					labels: {
 						boxWidth: 10,
-						color: chartMutedText,
-						font: { family: "ui-monospace, SF Mono, Menlo, monospace", size: 11 },
+						color: chartMutedText(),
+						font: {
+							family: "ui-monospace, SF Mono, Menlo, monospace",
+							size: 11,
+						},
 					},
 				},
 				tooltip: {
@@ -223,9 +266,28 @@ function buildStackedBarChart(
 			},
 		},
 	});
+	canvas.dataset.chartAnimation = animationLabel(animation);
+}
+
+let themeObserver: MutationObserver | null = null;
+
+// Rebuilds the charts whenever the active theme changes so their colours stay
+// in sync with the Rams light/dark tokens while the page is open.
+function watchThemeChanges(): void {
+	if (themeObserver) {
+		return;
+	}
+	themeObserver = new MutationObserver(() => {
+		initStatisticsChart();
+	});
+	themeObserver.observe(document.documentElement, {
+		attributes: true,
+		attributeFilter: ["data-theme"],
+	});
 }
 
 export function initStatisticsChart(): void {
+	watchThemeChanges();
 	requestAnimationFrame(() => {
 		initDonutChart();
 		buildStackedBarChart(

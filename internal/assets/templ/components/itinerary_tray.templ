@@ -1,0 +1,42 @@
+package components
+
+import (
+	"strconv"
+
+	"github.com/blackfyre/wga/internal/assets/templ/dto"
+)
+
+// ItineraryTray is the persistent itinerary tray rendered by the shared
+// layout. It always mounts an #itinerary-tray element so add controls can
+// target it, and only presents the bar once the draft has stops. Set oob to
+// render the element as an HTMX out-of-band swap for mutation responses.
+templ ItineraryTray(tray dto.ItineraryTrayView, oob bool) {
+	<div id="itinerary-tray" if oob { hx-swap-oob="true" }>
+		if tray.Count > 0 {
+			<div class="fixed inset-x-0 bottom-0 z-40 border-t border-base-content/15 bg-base-100">
+				<div class="container mx-auto flex items-center gap-3 px-4 py-2 md:px-0">
+					<div class="flex items-center gap-1.5" aria-hidden="true">
+						for _, thumb := range tray.Thumbs {
+							if thumb != "" {
+								<img src={ thumb } alt="" class="h-9 w-9 border border-base-content/15 bg-base-300 object-cover"/>
+							}
+						}
+					</div>
+					<p class="min-w-0 flex-1 font-mono text-(length:--t-11) tracking-[1px] text-base-content/70">
+						<span class="font-semibold text-base-content">{ trayLabel(tray.Count) }</span>
+						<span class="hidden sm:inline"> — SAVED TO YOUR ITINERARY</span>
+					</p>
+					<a href={ tray.BuilderURL } class="shrink-0 border border-base-content/25 px-3 py-1.5 font-mono text-(length:--t-10) tracking-[1px] text-base-content/70 transition-colors hover:border-base-content">OPEN</a>
+				</div>
+			</div>
+		}
+	</div>
+}
+
+func trayLabel(count int) string {
+	if count == 1 {
+		return "1 STOP"
+	}
+
+	return strconv.Itoa(count) + " STOPS"
+}

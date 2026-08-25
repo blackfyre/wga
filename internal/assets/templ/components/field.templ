@@ -1,0 +1,69 @@
+package components
+
+import (
+	"strconv"
+
+	"github.com/blackfyre/wga/internal/assets/templ/dto"
+)
+
+templ Field(field dto.Field) {
+	<div class="grid gap-2">
+		<label for={ field.ID } class="font-mono text-(length:--t-11) tracking-[1px] text-muted">{ field.Label }</label>
+		if field.Type == "textarea" {
+			if field.MaxLength > 0 {
+				<textarea id={ field.ID } name={ field.Name } rows={ fieldRows(field) } maxlength={ fieldMaxLength(field) } placeholder={ field.Placeholder } class="min-h-[120px] w-full resize-y border border-base-content/30 bg-transparent p-3 text-(length:--t-15) leading-relaxed outline-none focus:ring-0" required?={ field.Required } if field.Hint != "" || field.Error != "" { aria-describedby={ fieldDescriptionID(field) } }>{ field.Value }</textarea>
+			} else {
+				<textarea id={ field.ID } name={ field.Name } rows={ fieldRows(field) } placeholder={ field.Placeholder } class="min-h-[120px] w-full resize-y border border-base-content/30 bg-transparent p-3 text-(length:--t-15) leading-relaxed outline-none focus:ring-0" required?={ field.Required } if field.Hint != "" || field.Error != "" { aria-describedby={ fieldDescriptionID(field) } }>{ field.Value }</textarea>
+			}
+		} else {
+			if field.MaxLength > 0 {
+				<input id={ field.ID } name={ field.Name } type={ fieldType(field) } value={ field.Value } maxlength={ fieldMaxLength(field) } placeholder={ field.Placeholder } class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2.5 text-(length:--t-15) outline-none focus:ring-0" required?={ field.Required } if field.Hint != "" || field.Error != "" { aria-describedby={ fieldDescriptionID(field) } }/>
+			} else {
+				<input id={ field.ID } name={ field.Name } type={ fieldType(field) } value={ field.Value } placeholder={ field.Placeholder } class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2.5 text-(length:--t-15) outline-none focus:ring-0" required?={ field.Required } if field.Hint != "" || field.Error != "" { aria-describedby={ fieldDescriptionID(field) } }/>
+			}
+		}
+		if field.Hint != "" || field.Error != "" {
+			<p id={ fieldDescriptionID(field) } class="text-(length:--t-12) text-base-content/60" role={ fieldErrorRole(field) }>{ fieldDescription(field) }</p>
+		}
+	</div>
+}
+
+func fieldType(field dto.Field) string {
+	if field.Type != "" {
+		return field.Type
+	}
+
+	return "text"
+}
+
+func fieldRows(field dto.Field) int {
+	if field.Rows > 0 {
+		return field.Rows
+	}
+
+	return 4
+}
+
+func fieldMaxLength(field dto.Field) string {
+	return strconv.Itoa(field.MaxLength)
+}
+
+func fieldDescriptionID(field dto.Field) string {
+	return field.ID + "-description"
+}
+
+func fieldDescription(field dto.Field) string {
+	if field.Error != "" {
+		return field.Error
+	}
+
+	return field.Hint
+}
+
+func fieldErrorRole(field dto.Field) string {
+	if field.Error != "" {
+		return "alert"
+	}
+
+	return ""
+}

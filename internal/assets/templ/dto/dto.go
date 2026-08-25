@@ -3,7 +3,6 @@ package dto
 type Artist struct {
 	Id              string
 	Name            string
-	BornDied        string
 	Schools         string
 	Profession      string
 	Url             string
@@ -14,27 +13,6 @@ type Artist struct {
 	Works           ImageGrid
 	HxTarget        string
 	ShowBreadcrumbs bool
-}
-
-type ArtistsView struct {
-	Count              string
-	Artists            []Artist
-	Pagination         string
-	Jsonld             string
-	QueryStr           string
-	HxTarget           string
-	SchoolOptions      []ArtistFilterOption
-	PeriodOptions      []ArtistFilterOption
-	ProfessionOptions  []ArtistFilterOption
-	SelectedSchool     string
-	SelectedPeriod     string
-	SelectedProfession string
-	SelectedLetter     string
-}
-
-type ArtistFilterOption struct {
-	Value string
-	Label string
 }
 
 type Artwork struct {
@@ -54,8 +32,71 @@ type Artwork struct {
 	Url             string
 	HxTarget        string
 	ShowBreadcrumbs bool
+	// ReproFile is the truthful reproduction file summary (dimensions and
+	// format derived from the record's source dimensions and image filename).
+	// It is empty when no reproduction dimensions are recorded, so the artwork
+	// template never fabricates a file caption.
+	ReproFile string
+	// SourceURL is the original artwork file URL (no thumbnail query), used only
+	// for the deliberate source-file download. Empty when the record has no
+	// image filename.
+	SourceURL string
+	// ReproductionSourceURL is the approved canonical WGA record source URL. It
+	// is empty when the producer value is absent or fails the allow-list policy.
+	ReproductionSourceURL string
+	// Palette is the compact image-derived colour palette (hex and quantised
+	// weight). Empty when no palette profile is recorded.
+	Palette []ColourSwatch
+	// HasCommentary reports whether source-backed commentary exists. AI-generated
+	// or metadata-only text is never surfaced as commentary.
+	HasCommentary bool
+	// SourceComment is the raw source commentary, or "" when absent.
+	SourceComment string
+	// Related carries the active related-work basis, connection heading, sparse
+	// state, and alternative link.
+	Related RelatedWorkState
+	// Music is the deterministic period-music card for the artwork's creation
+	// date, or an unavailable card when no published match exists.
+	Music MusicPeriod
 	Image
 	Artist
+}
+
+// ColourSwatch is one compact image-derived palette entry: a hex colour and its
+// quantised share weight.
+type ColourSwatch struct {
+	Hex    string
+	Weight int
+}
+
+// RelatedWorkBasis is one of the four related-work basis controls.
+type RelatedWorkBasis struct {
+	Value  string // "artist", "collection", "palette", "period"
+	Label  string // "BY ARTIST", "SAME COLLECTION", "SIMILAR PALETTE", "SAME PERIOD"
+	URL    string // canonical URL; the default basis omits the query parameter
+	Active bool
+}
+
+// RelatedWorkState carries the active related-work basis, its connection
+// heading, and the sparse-result explanation and alternative link.
+type RelatedWorkState struct {
+	ActiveBasis    string
+	Connection     string
+	Sparse         bool
+	SparseNote     string
+	Alternative    string
+	AlternativeURL string
+	Bases          []RelatedWorkBasis
+}
+
+// MusicPeriod is the deterministic period-music card for one artwork. Available
+// is false when no published matching song exists.
+type MusicPeriod struct {
+	Available bool
+	SongID    string
+	Piece     string
+	Composer  string
+	PlayerURL string
 }
 
 type ArtworkSearchDTO struct {

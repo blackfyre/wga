@@ -1,8 +1,11 @@
 package pages
 
 import (
-	"regexp"
+	"context"
+	"fmt"
+	"io"
 	"strconv"
+	"unicode"
 
 	"github.com/blackfyre/wga/internal/assets/templ/components"
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
@@ -10,101 +13,371 @@ import (
 	"github.com/blackfyre/wga/internal/assets/templ/utils"
 )
 
-templ ArtistsPageFull(c dto.ArtistsView) {
+// ArtistLetter is one cell of the index alphabet navigation.
+type ArtistLetter struct {
+	Label    string
+	Href     string
+	Enabled  bool
+	Selected bool
+}
+
+// ArtistRow is the grid/list projection of a single indexed artist.
+type ArtistRow struct {
+	URL       string
+	Name      string
+	Dates     string
+	School    string
+	Period    string
+	Form      string
+	Thumb     string
+	Available bool
+}
+
+// ArtistsView is the page-owned contract for the artist index.
+type ArtistsView struct {
+	Letters       []ArtistLetter
+	Schools       []dto.ChipOption
+	Periods       []dto.ChipOption
+	NameField     dto.Field
+	BornRange     dto.RangeField
+	HasBirthBounds bool
+	NameQuery     string
+	SelectedLetter string
+	View          string
+	Sort          string
+	SortLabel     string
+	GridUrl       string
+	ListUrl       string
+	SortUrl       string
+	AllUrl        string
+	ResetUrl      string
+	PrevUrl       string
+	NextUrl       string
+	FilterNote    string
+	Total         int
+	Page          int
+	PageCount     int
+	Artists       []ArtistRow
+	Jsonld        string
+}
+
+templ ArtistsPage(c ArtistsView) {
 	@layouts.LayoutMain() {
-		@ArtistsPageBlock(c)
+		@ArtistsBlock(c)
 	}
 }
 
-func HighlightArtistName(name string, query string) string {
-	if query == "" {
-		return name
-	}
-	re := regexp.MustCompile(`(?mis)` + regexp.QuoteMeta(query))
-	return re.ReplaceAllStringFunc(name, func(s string) string {
-		return "<mark>" + s + "</mark>"
-	})
-}
-
-templ ArtistsPageBlock(c dto.ArtistsView) {
+templ ArtistsBlock(c ArtistsView) {
 	<head>
 		<title>{ utils.GetTitle(ctx) }</title>
 	</head>
-	<section class="container mx-auto px-4 pb-20 pt-10 md:px-0">
-		<p class="mb-3 font-mono text-[11px] tracking-[2px] text-base-content/60">01 — ARTIST INDEX</p>
-		<h1 class="mb-3 text-[44px] font-semibold leading-[1.1] tracking-[-0.5px]">Artists</h1>
-		<p class="max-w-[540px] leading-relaxed text-base-content/70">Painters, sculptors and architects in the collection. Browse alphabetically, or filter by school and period.</p>
-		<form action="/artists" method="GET" class="py-5">
-			<div class="flex flex-wrap gap-1 border-b border-base-content/15 pb-5" aria-label="Filter artists by letter">
-				<button type="submit" name="letter" value="" class="px-2 py-1 font-mono text-[11px] tracking-[1px]">ALL</button>
-				for _, letter := range []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"} {
-					<button type="submit" name="letter" value={ letter } class={ "px-2 py-1 font-mono text-[11px] tracking-[1px]", templ.KV("bg-neutral text-neutral-content", c.SelectedLetter == letter) } aria-current={ glossaryAriaCurrent(c.SelectedLetter == letter) }>{ letter }</button>
+	<section id="artists" class="container mx-auto px-4 pb-20 pt-10 md:px-0 wga-enter">
+		@components.PageHead("01 — ARTIST INDEX", "Artists",
+			"Painters, sculptors and architects in the collection. Browse alphabetically, or filter by school and period.")
+
+		<nav class="mt-10 flex flex-wrap gap-[2px] border-b border-base-content/15 pb-5" aria-label="Filter artists by letter">
+			<a
+				href={ templ.URL(c.AllUrl) }
+				hx-get={ c.AllUrl }
+				hx-target="#artists"
+				hx-select="#artists"
+				hx-swap="outerHTML"
+				class={ "px-[11px] py-1.5 font-mono text-xs tracking-[1px] transition-colors", templ.KV("bg-neutral text-neutral-content", c.SelectedLetter == ""), templ.KV("text-base-content/70 hover:text-base-content", c.SelectedLetter != "") }
+				aria-current={ artistsAriaCurrent(c.SelectedLetter == "") }
+			>ALL</a>
+			for _, letter := range c.Letters {
+				if letter.Enabled {
+					<a
+						href={ templ.URL(letter.Href) }
+						hx-get={ letter.Href }
+						hx-target="#artists"
+						hx-select="#artists"
+						hx-swap="outerHTML"
+						class={ "px-[11px] py-1.5 font-mono text-xs tracking-[1px] transition-colors", templ.KV("bg-neutral text-neutral-content", letter.Selected), templ.KV("text-base-content/70 hover:text-base-content", !letter.Selected) }
+						aria-current={ artistsAriaCurrent(letter.Selected) }
+					>{ letter.Label }</a>
+				} else {
+					<span aria-disabled="true" class="px-[11px] py-1.5 font-mono text-xs tracking-[1px] text-faint-2">{ letter.Label }</span>
 				}
+			}
+		</nav>
+
+		<form
+			id="artist-filters"
+			action="/artists"
+			method="GET"
+			hx-get="/artists"
+			hx-target="#artists"
+			hx-select="#artists"
+			hx-swap="outerHTML"
+			hx-trigger="change, input changed delay:300ms from:find input[type=search], input changed delay:300ms from:find input[type=range]"
+		>
+			if c.SelectedLetter != "" {
+				<input type="hidden" name="letter" value={ c.SelectedLetter }/>
+			}
+			if c.View != "" && c.View != "grid" {
+				<input type="hidden" name="view" value={ c.View }/>
+			}
+			if c.Sort != "" && c.Sort != "az" {
+				<input type="hidden" name="sort" value={ c.Sort }/>
+			}
+			<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 py-5 border-b border-base-content/15">
+				@components.ChipGroup(dto.ChipGroup{Legend: "SCHOOL", Name: "school", Inline: true, Options: c.Schools})
+				<div class="flex flex-wrap items-center gap-2 shrink-0">
+					<span class="font-mono text-(length:--t-11) tracking-[1px] text-muted mr-1.5">VIEW</span>
+					<a
+						href={ templ.URL(c.GridUrl) }
+						hx-get={ c.GridUrl }
+						hx-target="#artists"
+						hx-select="#artists"
+						hx-swap="outerHTML"
+						class={ "border px-3.5 py-1.5 font-mono text-(length:--t-11) tracking-[1px] transition-colors", templ.KV("border-primary bg-primary text-primary-content", c.View != "list"), templ.KV("border-control text-base-content/70 hover:border-base-content", c.View == "list") }
+						aria-current={ artistsAriaCurrent(c.View != "list") }
+					>GRID</a>
+					<a
+						href={ templ.URL(c.ListUrl) }
+						hx-get={ c.ListUrl }
+						hx-target="#artists"
+						hx-select="#artists"
+						hx-swap="outerHTML"
+						class={ "border px-3.5 py-1.5 font-mono text-(length:--t-11) tracking-[1px] transition-colors", templ.KV("border-primary bg-primary text-primary-content", c.View == "list"), templ.KV("border-control text-base-content/70 hover:border-base-content", c.View != "list") }
+						aria-current={ artistsAriaCurrent(c.View == "list") }
+					>LIST</a>
+				</div>
 			</div>
-			<div class="grid gap-4 py-5 md:grid-cols-4">
-				<label><span class="font-mono text-[10px] tracking-[1px] text-base-content/60">SEARCH</span><input type="search" class="mt-2 w-full border-0 border-b border-base-content bg-transparent px-0 py-2 text-sm outline-none" name="q" value={ c.QueryStr } placeholder="Find an artist"/></label>
-				<label>
-					<span class="font-mono text-[10px] tracking-[1px] text-base-content/60">SCHOOL</span>
-					<select class="mt-2 w-full border-0 border-b border-base-content bg-transparent py-2 text-sm" name="school">
-						<option value="">All schools</option>
-						for _, option := range c.SchoolOptions {
-							<option value={ option.Value } selected?={ c.SelectedSchool == option.Value }>{ option.Label }</option>
-						}
-					</select>
-				</label>
-				<label>
-					<span class="font-mono text-[10px] tracking-[1px] text-base-content/60">PERIOD</span>
-					<select class="mt-2 w-full border-0 border-b border-base-content bg-transparent py-2 text-sm" name="period">
-						<option value="">All periods</option>
-						for _, option := range c.PeriodOptions {
-							<option value={ option.Value } selected?={ c.SelectedPeriod == option.Value }>{ option.Label }</option>
-						}
-					</select>
-				</label>
-				<label>
-					<span class="font-mono text-[10px] tracking-[1px] text-base-content/60">PROFESSION</span>
-					<select class="mt-2 w-full border-0 border-b border-base-content bg-transparent py-2 text-sm" name="profession">
-						<option value="">All professions</option>
-						for _, option := range c.ProfessionOptions {
-							<option value={ option.Value } selected?={ c.SelectedProfession == option.Value }>{ option.Label }</option>
-						}
-					</select>
-				</label>
+
+			<div class="flex flex-col md:flex-row gap-8 md:gap-12 py-6 border-b border-base-content/15">
+				<div class="flex-1 min-w-0">
+					@components.Field(c.NameField)
+				</div>
+				<div class="flex-[1.4] min-w-0">
+					@components.ChipGroup(dto.ChipGroup{Legend: "PERIOD", Name: "period", Inline: true, Options: c.Periods})
+				</div>
+				<div class="flex-1 min-w-0">
+					if c.HasBirthBounds {
+						@components.RangeField(c.BornRange)
+					}
+				</div>
 			</div>
-			<button type="submit" class="bg-primary px-4 py-2 font-mono text-[11px] tracking-[1px] text-primary-content">FILTER ARTISTS</button>
+
+			<noscript>
+				<button type="submit" class="bg-primary px-4 py-2 font-mono text-[11px] tracking-[1px] text-primary-content mt-4">APPLY FILTERS</button>
+			</noscript>
 		</form>
-		@ArtistsSearchResults(c)
+
+		<div class="flex items-baseline justify-between py-4 pb-7">
+			<p class="font-mono text-xs text-muted" aria-live="polite">
+				{ fmt.Sprintf("%d ARTISTS", c.Total) } { c.FilterNote }
+			</p>
+			<a
+				href={ templ.URL(c.SortUrl) }
+				hx-get={ c.SortUrl }
+				hx-target="#artists"
+				hx-select="#artists"
+				hx-swap="outerHTML"
+				class="font-mono text-xs text-primary hover:opacity-60 transition-opacity"
+			>SORT: { c.SortLabel } ↕</a>
+		</div>
+
+		if len(c.Artists) == 0 {
+			<div class="border-b border-base-content/15 py-14">
+				<h2 class="mb-2 text-lg font-semibold">No artists match these filters.</h2>
+				<p class="mb-4 max-w-[380px] text-(length:--t-15) leading-relaxed text-base-content/70 text-pretty">Widen the birth-year range or clear the school and period filters — the index is uneven across periods.</p>
+				<a
+					href={ templ.URL(c.ResetUrl) }
+					hx-get={ c.ResetUrl }
+					hx-target="#artists"
+					hx-select="#artists"
+					hx-swap="outerHTML"
+					class="font-mono text-(length:--t-11) tracking-[1px] text-primary transition-opacity hover:opacity-60"
+				>RESET FILTERS →</a>
+			</div>
+		} else if c.View == "list" {
+			<div class="overflow-x-auto">
+				<table class="table table-sm min-w-[640px]" data-kbd-list data-kbd-cols="1">
+					<caption class="sr-only">Artists in the collection</caption>
+					<thead>
+						<tr class="font-mono text-(length:--t-10) tracking-[1.5px] text-muted">
+							<th scope="col">NAME</th>
+							<th scope="col">DATES</th>
+							<th scope="col">SCHOOL</th>
+							<th scope="col">PERIOD</th>
+							<th scope="col">FORM</th>
+						</tr>
+					</thead>
+					<tbody>
+						for index, artist := range c.Artists {
+							if artist.Available {
+								<tr class="transition-colors hover:bg-primary/5">
+									<th scope="row" class="font-semibold text-(length:--t-15)" data-kbd-idx={ strconv.Itoa(navigableIndex(c.Artists, index)) } data-kbd-href={ artist.URL }>
+										@components.KeyboardCaret()
+										<a href={ templ.URL(artist.URL) } hx-get={ artist.URL }>@ArtistName(artist.Name, c.NameQuery)</a>
+									</th>
+									<td class="font-mono text-xs text-base-content/70">{ artist.Dates }</td>
+									<td class="font-mono text-xs text-base-content/70">{ artist.School }</td>
+									<td class="font-mono text-xs text-base-content/70">{ periodLabel(artist.Period) }</td>
+									<td class="font-mono text-xs text-base-content/70">{ artist.Form }</td>
+								</tr>
+							} else {
+								<tr class="opacity-50">
+									<th scope="row" class="font-semibold text-(length:--t-15)">
+										<span>@ArtistName(artist.Name, c.NameQuery)</span>
+										<span class="mt-0.5 block font-mono text-(length:--t-9) tracking-[1px] text-faint">NOT DIGITISED</span>
+									</th>
+									<td class="font-mono text-xs text-base-content/70">{ artist.Dates }</td>
+									<td class="font-mono text-xs text-base-content/70">{ artist.School }</td>
+									<td class="font-mono text-xs text-base-content/70">{ periodLabel(artist.Period) }</td>
+									<td class="font-mono text-xs text-base-content/70">{ artist.Form }</td>
+								</tr>
+							}
+						}
+					</tbody>
+				</table>
+			</div>
+		} else {
+			<ul class="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 md:gap-x-7" data-kbd-list data-kbd-cols="2" data-kbd-cols-md="3">
+				for index, artist := range c.Artists {
+					if artist.Available {
+						<li data-kbd-idx={ strconv.Itoa(navigableIndex(c.Artists, index)) } data-kbd-href={ artist.URL }>
+							@components.KeyboardCaret()
+							<a href={ templ.URL(artist.URL) } hx-get={ artist.URL } class="block transition-opacity hover:opacity-70">
+								@components.Plate(dto.Plate{DisplayURL: artist.Thumb, Alt: "Portrait of " + artist.Name, Placeholder: "PORTRAIT — " + artist.Name, Aspect: "aspect-square mb-3.5", Contain: false})
+								<span class="mb-1 block text-(length:--t-17) font-semibold">@ArtistName(artist.Name, c.NameQuery)</span>
+								<span class="block font-mono text-(length:--t-11) leading-relaxed text-muted">
+									{ artist.Dates }
+									<br/>
+									{ schoolPeriod(artist.School, artist.Period) }
+								</span>
+							</a>
+						</li>
+					} else {
+						<li class="opacity-50">
+							<div class="block">
+								@components.Plate(dto.Plate{DisplayURL: artist.Thumb, Alt: "Portrait of " + artist.Name, Placeholder: "PORTRAIT — " + artist.Name, Aspect: "aspect-square mb-3.5", Contain: false})
+								<span class="mb-1 block text-(length:--t-17) font-semibold">@ArtistName(artist.Name, c.NameQuery)</span>
+								<span class="block font-mono text-(length:--t-11) leading-relaxed text-muted">
+									{ artist.Dates }
+									<br/>
+									{ schoolPeriod(artist.School, artist.Period) }
+								</span>
+								<span class="mt-1 block font-mono text-(length:--t-9) tracking-[1px] text-faint">NOT DIGITISED</span>
+							</div>
+						</li>
+					}
+				}
+			</ul>
+		}
+
+		if c.PageCount > 1 {
+			<nav class="mt-10 flex items-center justify-between border-t border-base-content/15 pt-5" aria-label="Pagination">
+				<p class="font-mono text-xs text-muted">{ fmt.Sprintf("PAGE %d OF %d", c.Page, c.PageCount) }</p>
+				<div class="flex gap-3.5 font-mono text-xs tracking-[1px]">
+					if c.Page > 1 {
+						<a href={ templ.URL(c.PrevUrl) } hx-get={ c.PrevUrl } hx-target="#artists" hx-select="#artists" hx-swap="outerHTML" class="text-primary transition-opacity hover:opacity-60">← PREV</a>
+					} else {
+						<span class="text-faint-2">← PREV</span>
+					}
+					if c.Page < c.PageCount {
+						<a href={ templ.URL(c.NextUrl) } hx-get={ c.NextUrl } hx-target="#artists" hx-select="#artists" hx-swap="outerHTML" class="text-primary transition-opacity hover:opacity-60">NEXT →</a>
+					} else {
+						<span class="text-faint-2">NEXT →</span>
+					}
+				</div>
+			</nav>
+		}
+
+		if c.Jsonld != "" {
+			@templ.Raw(c.Jsonld)
+		}
 	</section>
 }
 
-templ artistsTable(list []dto.Artist, query string) {
-	<div class="grid grid-cols-2 gap-x-4 gap-y-9 md:grid-cols-4 md:gap-x-7" data-kbd-list data-kbd-cols="2" data-kbd-cols-md="4">
-		for index, a := range list {
-			<a href={ templ.SafeURL(a.Url) } hx-get={ a.Url } hx-target={ a.HxTarget } data-kbd-idx={ strconv.Itoa(index) } data-kbd-href={ a.Url } class="block transition-opacity hover:opacity-70">
-				@components.KeyboardCaret()
-				<figure class="flex aspect-square items-end overflow-hidden border border-base-content/15 bg-base-300 p-3">
-					if a.Portrait != "" {
-						<img src={ a.Portrait } alt={ a.Name } loading="lazy" class="h-full w-full object-cover"/>
-					} else {
-						<figcaption class="font-mono text-[9px] tracking-[1px] text-base-content/40">PORTRAIT — { a.Name }</figcaption>
-					}
-				</figure>
-				<p class="mt-3 text-[17px] font-semibold leading-tight">@templ.Raw(HighlightArtistName(a.Name, query))</p>
-				<p class="mt-[3px] font-mono text-[11px] leading-relaxed text-base-content/60">{ a.BornDied }<br/>{ a.Schools }</p>
-			</a>
-		}
-	</div>
+// ArtistName renders an artist name with the matched search query wrapped in a
+// mark element. All dynamic content is escaped; the markup itself is static, so
+// script-like names and search strings cannot inject markup.
+func ArtistName(name string, query string) templ.Component {
+	before, match, after := splitNameHighlight(name, query)
+	escaped := templ.EscapeString(before)
+	if match != "" {
+		escaped += "<mark>" + templ.EscapeString(match) + "</mark>" + templ.EscapeString(after)
+	}
+	content := escaped
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
+		_, err := io.WriteString(w, content)
+		return err
+	})
 }
 
-templ ArtistsSearchResults(c dto.ArtistsView) {
-	<div id="search-results">
-		<p class="py-4 font-mono text-xs text-base-content/60">{ c.Count } ARTISTS</p>
-		<div class="table-container">
-			@artistsTable(c.Artists, c.QueryStr)
-		</div>
-		<nav class="pagination mt-7 font-mono text-[11px] tracking-[1px]" role="navigation" aria-label="pagination">
-			@templ.Raw(c.Pagination)
-		</nav>
-		@templ.Raw(c.Jsonld)
-	</div>
+func splitNameHighlight(name string, query string) (string, string, string) {
+	if query == "" {
+		return name, "", ""
+	}
+
+	// Match case-insensitively over runes so a match found in a lowercased
+	// string is sliced from the original by rune index. Lowercasing can change
+	// a name's byte and rune length (for example "İ" folds to "i"+combining
+	// dot), so byte indexes obtained from the folded string must never be used
+	// to slice the original.
+	nameRunes := []rune(name)
+	queryRunes := []rune(query)
+	if len(queryRunes) == 0 || len(queryRunes) > len(nameRunes) {
+		return name, "", ""
+	}
+
+	for i := 0; i+len(queryRunes) <= len(nameRunes); i++ {
+		matched := true
+		for j := 0; j < len(queryRunes); j++ {
+			if unicode.ToLower(nameRunes[i+j]) != unicode.ToLower(queryRunes[j]) {
+				matched = false
+				break
+			}
+		}
+		if matched {
+			return string(nameRunes[:i]), string(nameRunes[i : i+len(queryRunes)]), string(nameRunes[i+len(queryRunes):])
+		}
+	}
+
+	return name, "", ""
+}
+
+func artistsAriaCurrent(active bool) string {
+	if active {
+		return "page"
+	}
+
+	return "false"
+}
+
+// navigableIndex returns the sequential keyboard index of the artist at
+// position `current`, counting only available (navigable) rows before it. It
+// keeps data-kbd-idx values contiguous for the caret-list contract while
+// unavailable rows remain outside the navigation set.
+func navigableIndex(artists []ArtistRow, current int) int {
+	index := 0
+	for i := 0; i < current; i++ {
+		if artists[i].Available {
+			index++
+		}
+	}
+
+	return index
+}
+
+func periodLabel(period string) string {
+	if period == "" {
+		return "—"
+	}
+
+	return period
+}
+
+func schoolPeriod(school string, period string) string {
+	if school == "" {
+		return period
+	}
+	if period == "" {
+		return school
+	}
+
+	return school + " · " + period
 }

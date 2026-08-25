@@ -1,0 +1,71 @@
+package pages
+
+import (
+	"strconv"
+
+	"github.com/blackfyre/wga/internal/assets/templ/dto"
+	"github.com/blackfyre/wga/internal/assets/templ/layouts"
+)
+
+// Shown once, immediately after publishing. There is no account and no edit
+// link, so this page is the only place the URL is ever handed over — say so
+// plainly and put the expiry date on the record.
+
+templ ItineraryPublishedPage(view dto.ItineraryPublishedView) {
+	@layouts.LayoutMain() {
+		<section id="itinerary-published" class="container mx-auto px-4 pb-20 md:px-0 wga-enter">
+			<p class="mb-3 font-mono text-[11px] tracking-[2px] text-base-content/60">— ITINERARY PUBLISHED</p>
+			<p aria-hidden="true" class="my-6 flex h-11 w-11 items-center justify-center border-[1.5px] border-primary font-mono text-lg text-primary">✓</p>
+			<h1 class="mb-3 text-[32px] font-semibold leading-tight tracking-[-0.5px] md:text-[44px]">{ view.Title }</h1>
+			<p class="mb-11 max-w-[520px] text-base leading-relaxed text-base-content/70">The link below is the only way back to it. Copy it somewhere safe before you close this page.</p>
+
+			<div class="flex max-w-[640px] flex-col gap-3.5 border border-base-content/15 bg-base-200 p-4 md:flex-row md:items-center md:gap-5 md:p-5">
+				<p id="itinerary-url" class="min-w-0 flex-1 break-all font-mono text-[13px] leading-relaxed">{ view.URL }</p>
+				<button type="button" data-copy-itinerary data-copy-target="#itinerary-url" class="shrink-0 border border-base-content px-3.5 py-2.5 font-mono text-[10px] tracking-[1.5px] transition-opacity hover:opacity-70">COPY LINK</button>
+			</div>
+
+			<dl class="mt-9 max-w-[640px] border-t border-base-content">
+				@publishedRow("WORKS", strconv.Itoa(view.StopCount)+" of 15", false)
+				@publishedRow("ESTIMATED DURATION", view.Duration, false)
+				@publishedRow("MAKER", view.Creator, false)
+				if view.Listed {
+					@publishedRow("VISIBILITY", "Listed publicly", false)
+				} else {
+					@publishedRow("VISIBILITY", "Link only", false)
+				}
+				@publishedRow("PUBLISHED", view.Published, false)
+				@publishedRow("AVAILABLE UNTIL", view.Expires, true)
+			</dl>
+
+			<div class="mt-8 flex flex-col gap-2 md:flex-row">
+				<a href={ templ.SafeURL(view.TokenURL) } class="inline-block bg-primary px-4 py-3 font-mono text-[11px] tracking-[1.5px] text-primary-content">OPEN THE SLIDESHOW →</a>
+				<a href="/itineraries" class="inline-block border border-base-content/25 px-4 py-3 font-mono text-[11px] tracking-[1.5px] text-base-content/70 transition-colors hover:border-base-content">ALL ITINERARIES</a>
+			</div>
+
+			<div class="mt-12 max-w-[520px] border-t border-base-content/15 pt-5">
+				<p class="mb-2.5 font-mono text-[10px] tracking-[1.5px] text-base-content/60">ONE YEAR FROM TODAY</p>
+				<p class="text-[15px] leading-relaxed">
+					On { view.Expires } the itinerary and its narration are deleted and the link stops working. The works themselves stay in the archive at their own addresses.
+				</p>
+			</div>
+		</section>
+	}
+}
+
+templ publishedRow(label string, value string, accent bool) {
+	<div class="flex items-baseline justify-between gap-4 border-b border-base-content/15 py-3">
+		<dt class="font-mono text-[10px] tracking-[1.5px] text-base-content/60">{ label }</dt>
+		<dd class={ "font-mono text-xs", templ.KV("text-primary", accent), templ.KV("text-base-content/70", !accent) }>{ value }</dd>
+	</div>
+}
+
+templ ItineraryExpiredPage() {
+	@layouts.LayoutMain() {
+		<section class="container mx-auto px-4 pb-20 pt-10 md:px-0">
+			<p class="mb-3 font-mono text-[11px] tracking-[2px] text-base-content/60">— EXPIRED</p>
+			<h1 class="mb-3 text-[44px] font-semibold leading-tight tracking-[-0.5px]">This itinerary has expired</h1>
+			<p class="mb-11 max-w-[540px] text-base leading-relaxed text-base-content/70">Published itineraries are kept for one year and then removed. This one is no longer available.</p>
+			<a href="/itineraries" class="border border-base-content/25 px-4 py-3 font-mono text-[11px] tracking-[1.5px] text-base-content/70 transition-colors hover:border-base-content">BROWSE ITINERARIES →</a>
+		</section>
+	}
+}
