@@ -49,7 +49,7 @@ Tests will exercise returned, wrapped, recorded, and panic failures containing r
 
 ### Embed one explicit release value in the image for both runtimes
 
-The Docker build will derive its immutable release from `git rev-parse HEAD`. The Go linker will embed it in `internal/buildinfo.Version`; the server monitor and browser layout will use that embedded value. The browser layout will expose only the release alongside its already-public DSN and environment.
+The Docker build will receive Railway's immutable `RAILWAY_GIT_COMMIT_SHA` through a non-secret build argument. The Go linker will embed it in `internal/buildinfo.Version`; the server monitor and browser layout will use that embedded value. The browser layout will expose only the release alongside its already-public DSN and environment.
 
 Embedding the release in the image rather than reading a runtime setting guarantees that the server event and rendered browser metadata refer to the exact artefact Railway runs. A release is operational metadata, not a secret.
 
