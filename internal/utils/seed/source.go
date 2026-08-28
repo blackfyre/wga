@@ -17,6 +17,7 @@ import (
 	"strings"
 
 	"github.com/blackfyre/wga/resources/synthetic"
+	"github.com/pocketbase/pocketbase/tools/filesystem"
 	_ "modernc.org/sqlite"
 )
 
@@ -1195,9 +1196,9 @@ func isSHA256Hex(value string) bool {
 	return true
 }
 
-func loadSourceFiles(paths sourcePaths, data *sourceData) error {
+func loadSourceFiles(paths sourcePaths, storage *filesystem.System, data *sourceData) error {
 	if paths.preseededAssets {
-		return loadPreseededSourceFiles(paths.storageRoot, data)
+		return loadPreseededSourceFiles(paths.storageRoot, storage, data)
 	}
 
 	return loadEmbeddedSourceFiles(paths.storage, data)
@@ -1209,12 +1210,12 @@ func loadSourceFiles(paths sourcePaths, data *sourceData) error {
 // a valid image-less artwork and simply has no file entry; a declared non-empty
 // path must resolve to a safe relative storage path whose staged original is a
 // present, non-empty, regular file, or the import fails closed.
-func loadPreseededSourceFiles(storageRoot string, data *sourceData) error {
+func loadPreseededSourceFiles(storageRoot string, storage *filesystem.System, data *sourceData) error {
 	for _, artwork := range data.artworks {
 		if artwork.ImagePath == "" {
 			continue
 		}
-		file, err := preseededArtworkFile(storageRoot, artwork.ImagePath)
+		file, err := preseededArtworkFile(storageRoot, storage, artwork.ImagePath)
 		if err != nil {
 			return fmt.Errorf("artwork %q storage path: %w", artwork.ID, err)
 		}
@@ -1242,17 +1243,24 @@ func preseededSourceFile(value string) (sourceFile, error) {
 }
 
 // preseededArtworkFile resolves the preseeded artwork storage filename and
-// records the exact byte size of the paired staged original. The size is
-// statted from the staged file itself — never inferred from the filename,
-// extension, or dimensions. Both the storage root and the staged original are
-// resolved to their canonical absolute paths with symlinks followed, and the
-// resolved original must remain inside the resolved root, so a file or
-// parent-directory symlink escape fails the import closed. A missing,
-// non-regular, or empty declared original likewise fails closed.
-func preseededArtworkFile(storageRoot string, value string) (sourceFile, error) {
+// records its exact byte size. Configured PocketBase storage is authoritative;
+// an external seed without configured object storage uses its paired local
+// staged original instead.
+func preseededArtworkFile(storageRoot string, storage *filesystem.System, value string) (sourceFile, error) {
 	sourcePath, err := safeRelativePath(value)
 	if err != nil {
 		return sourceFile{}, err
+	}
+	if storage != nil {
+		attributes, err := storage.Attributes(sourcePath)
+		if err != nil {
+			return sourceFile{}, fmt.Errorf("read configured storage object %q: %w", sourcePath, err)
+		}
+		if attributes.Size == 0 {
+			return sourceFile{}, fmt.Errorf("configured storage object %q is empty", sourcePath)
+		}
+
+		return sourceFile{name: path.Base(sourcePath), preseededAssets: true, size: attributes.Size}, nil
 	}
 
 	absRoot, err := filepath.Abs(storageRoot)
