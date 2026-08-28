@@ -16,6 +16,7 @@ rules:
   - Do not broaden the user's request in order to make the proposal more comprehensive.
   specs:
   - Define observable behaviour and acceptance conditions, not agent tasks.
+  - For server-rendered frontend behaviour, describe observable page, fragment, validation, and progressive-navigation outcomes rather than component names or `hx-*` implementation details, unless those details are architectural constraints.
   - Include boundary, failure, authorisation, and data-integrity scenarios when relevant.
   - Use SHALL for normative requirements.
   - Do not weaken a requirement to match an implementation limitation; escalate the conflict.
@@ -26,11 +27,13 @@ rules:
   - State which work may execute in parallel and which must be serialised.
   - Record architecture, dependency, schema, security, and migration decisions that require escalation.
   - 'Define objective verification: tests, static analysis, runtime checks, or other observable evidence.'
+  - For Go templ + HTMX interactions, identify the relevant request, response fragment, target/swap contract, and full-page behaviour when those boundaries change.
   - Prefer existing project patterns and the smallest viable design.
   tasks:
   - Group tasks by independently executable workstream when useful.
   - Make dependencies and ordering explicit.
   - Give each implementation task a concrete verification criterion.
+  - For templ or HTMX changes, name the established generation, build, test, or browser checks needed to prove the observable behaviour.
   - Avoid assigning overlapping write ownership to parallel tasks.
   - Include integration and independent verification work where risk justifies it.
   - 'Use standard Markdown task checkboxes: [ ] pending and [x] complete.'

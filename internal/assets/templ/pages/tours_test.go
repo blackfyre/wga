@@ -20,12 +20,49 @@ func TestToursPageExplainsEditorialContractAndEmptyState(t *testing.T) {
 	}
 	body := output.String()
 	for _, expected := range []string{"permanent, revisioned works by named editors", "Visitor itineraries", "expire", "No published tours yet", `href="/itineraries"`, `href="/tours?kind=survey"`, "Survey", "Artist", "Site", "Theme",
-		"WRITTEN BY", "SHAPE", "LENGTH", "READING", "LIFETIME",
-		"under their own names", "page by page", "never removed; visitor itineraries expire",
-		"Rebuilt tours state their derived page count on their cards; original-layout tours keep their original form.",
+		"WRITTEN BY", "SHAPE", "SOURCES", "UPKEEP",
+		"under their own names", "Each tour cites its bibliography; attributions follow the literature.", "Permanent. Tours are corrected and re-dated, never removed.",
 	} {
 		if !strings.Contains(body, expected) {
 			t.Errorf("missing %q", expected)
+		}
+	}
+}
+
+func TestToursPageFactsMatchReferenceFourItemComposition(t *testing.T) {
+	view := dto.TourIndex{Filters: []dto.TourFilter{{Label: "All", Href: "/tours", Active: true}}}
+	var output bytes.Buffer
+	if err := ToursPage(view).Render(context.Background(), &output); err != nil {
+		t.Fatal(err)
+	}
+	body := output.String()
+
+	// Exactly the four reference facts, paired with the Itineraries block.
+	for _, label := range []string{">WRITTEN BY<", ">SHAPE<", ">SOURCES<", ">UPKEEP<"} {
+		if !strings.Contains(body, label) {
+			t.Errorf("missing fact label %q", label)
+		}
+	}
+	for _, value := range []string{
+		"The editors, under their own names, revised as the collection grows.",
+		"A walk of numbered pages: text, plates, index pages, sub-tours.",
+		"Each tour cites its bibliography; attributions follow the literature.",
+		"Permanent. Tours are corrected and re-dated, never removed.",
+	} {
+		if !strings.Contains(body, value) {
+			t.Errorf("missing fact value %q", value)
+		}
+	}
+	if got := strings.Count(body, "<dt"); got != 4 {
+		t.Errorf("fact count = %d, want 4", got)
+	}
+	for _, removed := range []string{
+		"Rebuilt tours state their derived page count on their cards; original-layout tours keep their original form.",
+		"Rebuilt tours read page by page; the rest remain in their original layout.",
+		"never removed; visitor itineraries expire",
+	} {
+		if strings.Contains(body, removed) {
+			t.Errorf("obsolete fact copy %q must not be present", removed)
 		}
 	}
 }

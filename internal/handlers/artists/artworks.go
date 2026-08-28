@@ -138,7 +138,9 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase, environmen
 		Image: img,
 		Artist: dto.Artist{
 			Id:              artist.GetString("id"),
-			Name:            artist.GetString("name"),
+			FilingName:      artist.GetString("filing_name"),
+			ShortName:       artist.GetString("short_name"),
+			Name:            artist.GetString("filing_name"),
 			Bio:             artist.GetString("bio"),
 			Profession:      artist.GetString("profession"),
 			ShowBreadcrumbs: true,
@@ -192,7 +194,7 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase, environmen
 
 	content.Jsonld = fmt.Sprintf(`<script type="application/ld+json">%s</script>`, marshalled)
 
-	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", content.Title, content.Name))
+	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", content.Title, content.FilingName))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, aw.GetString("comment"))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, utils.AssetUrl(canonicalURL))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgImageKey, utils.AssetUrl(content.Image.Image))
@@ -264,7 +266,9 @@ func RenderArtworkContent(app *pocketbase.PocketBase, c *core.RequestEvent, artw
 
 		content.Artist = dto.Artist{
 			Id:              artist.GetString("id"),
-			Name:            artist.GetString("name"),
+			FilingName:      artist.GetString("filing_name"),
+			ShortName:       artist.GetString("short_name"),
+			Name:            artist.GetString("filing_name"),
 			Bio:             artist.GetString("bio"),
 			Profession:      artist.GetString("profession"),
 			ShowBreadcrumbs: showBreadcrumbs,
@@ -325,14 +329,14 @@ func artworkLocationAndDimensions(comment string) (string, string) {
 
 func populateArtworkCitation(artwork *dto.Artwork) {
 	artwork.CitationKey = "wga-" + artwork.Id
-	artwork.CitationTitle = fmt.Sprintf("%s by %s", artwork.Title, artwork.Artist.Name)
+	artwork.CitationTitle = fmt.Sprintf("%s by %s", artwork.Title, artwork.Artist.FilingName)
 	artwork.CitationURL = utils.AssetUrl(artwork.Url)
 }
 
 // artworkReproductionFile builds the truthful reproduction-file summary from
-// the record's recorded source dimensions and image filename. It returns an
-// empty string when no dimensions are recorded, so the artwork record never
-// fabricates a file caption.
+// independently available source dimensions, image format, and file weight.
+// Absent facts are omitted; it returns an empty string only when no supported
+// evidence exists, so the artwork record never fabricates a file caption.
 func artworkReproductionFile(artwork *core.Record) string {
 	width := artwork.GetInt("image_width")
 	height := artwork.GetInt("image_height")
@@ -363,16 +367,21 @@ func artworkImageFormat(filename string) string {
 	}
 }
 
-// populateArtworkSourceData fills the reproduction source, palette,
-// commentary, and music fields of the artwork DTO from the persisted record.
-// Every value is source-backed; absent values remain empty so presentation
-// never invents content. The producer's WGA reproduction source link is a
-// development-only convenience for verifying provenance against the source
-// site, so it is populated only in local development and stays empty in
-// every deployed environment.
-func populateArtworkSourceData(app *pocketbase.PocketBase, artwork *core.Record, content *dto.Artwork, environment config.Environment) {
-	if environment.IsDevelopment() {
-		content.ReproductionSourceURL = canonicalWGAArtworkSourceURL(artwork.GetString("source_url"))
+// populateArtworkSourceData fills the file weight, palette, commentary, and
+// music fields of the artwork DTO from the persisted record. Every value is
+// source-backed; absent values remain empty so presentation never invents
+// content. No reproduction source or licence claim is ever populated: the
+// records hold no such field, and the plate must not claim provenance the
+// archive cannot back. The environment parameter is retained only because
+// callers (including the release acceptance suite) pass it positionally.
+func populateArtworkSourceData(app *pocketbase.PocketBase, artwork *core.Record, content *dto.Artwork, _ config.Environment) {
+	content.OriginalFileBytes = artwork.GetInt("image_size_bytes")
+	if content.OriginalFileBytes > 0 {
+		if content.ReproFile == "" {
+			content.ReproFile = formatFileSize(content.OriginalFileBytes)
+		} else {
+			content.ReproFile += " · " + formatFileSize(content.OriginalFileBytes)
+		}
 	}
 	content.SourceComment = artworkCommentaryHTML(artwork.GetString("source_comment"))
 	content.HasCommentary = artwork.GetString("source_comment") != ""
@@ -380,28 +389,26 @@ func populateArtworkSourceData(app *pocketbase.PocketBase, artwork *core.Record,
 	content.Music = buildArtworkMusic(app, artwork)
 }
 
-// canonicalWGAArtworkSourceURL accepts only the producer's canonical WGA HTML
-// paths or their HTTPS form. Values outside that narrow contract are omitted so
-// a record cannot claim unsupported provenance or link to an arbitrary host.
-func canonicalWGAArtworkSourceURL(value string) string {
-	value = strings.TrimSpace(value)
-	if value == "" {
-		return ""
-	}
+// formatFileSize renders a byte count in decimal SI units with one decimal
+// place, matching the accepted reference FILE presentation (e.g. "1.4 MB").
+// The exact byte count remains available in OriginalFileBytes.
+func formatFileSize(bytes int) string {
+	const (
+		kilobyte = 1_000
+		megabyte = 1_000_000
+		gigabyte = 1_000_000_000
+	)
 
-	if strings.HasPrefix(value, "html/") {
-		value = "https://www.wga.hu/" + value
+	switch {
+	case bytes >= gigabyte:
+		return fmt.Sprintf("%.1f GB", float64(bytes)/float64(gigabyte))
+	case bytes >= megabyte:
+		return fmt.Sprintf("%.1f MB", float64(bytes)/float64(megabyte))
+	case bytes >= kilobyte:
+		return fmt.Sprintf("%.1f kB", float64(bytes)/float64(kilobyte))
+	default:
+		return fmt.Sprintf("%d B", bytes)
 	}
-
-	parsed, err := neturl.Parse(value)
-	if err != nil || parsed.Scheme != "https" || !strings.EqualFold(parsed.Hostname(), "www.wga.hu") || parsed.Port() != "" || parsed.User != nil || parsed.RawQuery != "" || parsed.Fragment != "" {
-		return ""
-	}
-	if !strings.HasPrefix(parsed.Path, "/html/") || strings.Contains(parsed.Path, "..") {
-		return ""
-	}
-
-	return parsed.String()
 }
 
 // artworkCommentaryHTML converts the raw source commentary to safe display HTML:
@@ -431,7 +438,7 @@ func populateArtworkRelated(app *pocketbase.PocketBase, artwork *core.Record, co
 	}
 
 	content.RelatedWorks = buildRelatedWorkImages(app, result.Works, content.HxTarget)
-	content.Related = buildRelatedWorkState(result.Basis, content, artwork, baseURL)
+	content.Related = buildRelatedWorkState(result.Basis, result.Holding, content, artwork, baseURL)
 }
 
 // buildRelatedWorkImages maps resolver records onto the related-work card
@@ -445,14 +452,14 @@ func buildRelatedWorkImages(app *pocketbase.PocketBase, works []*core.Record, hx
 			image = url.GenerateArtworkImageURL(work, url.DeliveryProfileRelatedTimelineCard, "")
 		}
 
-		artistName, artistID := resolveWorkArtist(app, work)
+		routeName, filingName, shortName, artistID := resolveWorkArtist(app, work)
 		workURL := url.GenerateArtworkUrl(url.ArtworkUrlDTO{
 			ArtworkTitle: work.GetString("title"),
 			ArtworkId:    work.Id,
 		})
-		if artistName != "" {
+		if routeName != "" {
 			workURL = url.GenerateFullArtworkUrl(url.ArtworkUrlDTO{
-				ArtistName:   artistName,
+				ArtistName:   routeName,
 				ArtistId:     artistID,
 				ArtworkTitle: work.GetString("title"),
 				ArtworkId:    work.Id,
@@ -465,19 +472,23 @@ func buildRelatedWorkImages(app *pocketbase.PocketBase, works []*core.Record, hx
 			Image:     image,
 			Technique: work.GetString("technique"),
 			Url:       workURL,
-			Artist:    dto.Artist{Name: artistName},
-			HxTarget:  hxTarget,
+			Artist: dto.Artist{
+				FilingName: filingName,
+				ShortName:  shortName,
+				Name:       filingName,
+			},
+			HxTarget: hxTarget,
 		})
 	}
 
 	return related
 }
 
-// resolveWorkArtist returns the first published author's display name and id for
+// resolveWorkArtist returns the first published author's route, filing, short name and id for
 // a work, or empty values when the work has no published author. Unpublished
 // authors are skipped so a related card never leaks unpublished artist data or
 // links to an unpublished artist record.
-func resolveWorkArtist(app *pocketbase.PocketBase, work *core.Record) (string, string) {
+func resolveWorkArtist(app *pocketbase.PocketBase, work *core.Record) (string, string, string, string) {
 	authorIDs := work.GetStringSlice("author")
 	repo := repositories.NewArtistRecordRepository(app)
 	for _, authorID := range authorIDs {
@@ -485,10 +496,10 @@ func resolveWorkArtist(app *pocketbase.PocketBase, work *core.Record) (string, s
 		if err != nil {
 			continue
 		}
-		return artist.GetString("name"), artist.Id
+		return artist.GetString("name"), artist.GetString("filing_name"), artist.GetString("short_name"), artist.Id
 	}
 
-	return "", ""
+	return "", "", "", ""
 }
 
 // parseArtworkPalette reads the compact image-derived palette from the persisted
@@ -545,12 +556,12 @@ func buildArtworkMusic(app *pocketbase.PocketBase, artwork *core.Record) dto.Mus
 	}
 }
 
-// buildRelatedWorkState assembles the basis controls, connection heading, and
-// sparse-result explanation for the active basis.
-func buildRelatedWorkState(basis repositories.RelatedWorkBasis, content *dto.Artwork, artwork *core.Record, baseURL string) dto.RelatedWorkState {
+// buildRelatedWorkState assembles the basis controls, connection heading,
+// sparse-result explanation, and counted holding link for the active basis.
+func buildRelatedWorkState(basis repositories.RelatedWorkBasis, holding *repositories.RelatedWorkHolding, content *dto.Artwork, artwork *core.Record, baseURL string) dto.RelatedWorkState {
 	state := dto.RelatedWorkState{
 		ActiveBasis: string(basis),
-		Connection:  relatedConnection(basis, content.Artist.Name, artwork.GetInt("date_start")),
+		Connection:  relatedConnection(basis, content.Artist.ShortName, artwork.GetInt("date_start")),
 		Sparse:      len(content.RelatedWorks) < relatedWorksLimit,
 		Bases:       relatedWorkBases(baseURL, basis),
 	}
@@ -558,8 +569,41 @@ func buildRelatedWorkState(basis repositories.RelatedWorkBasis, content *dto.Art
 		state.SparseNote = relatedSparseNote(basis)
 		state.Alternative, state.AlternativeURL = relatedAlternative(basis, baseURL)
 	}
+	// The holding count includes the current record, so it must exceed the
+	// rendered sample by more than one before the link adds anything beyond
+	// the current work itself.
+	if holding != nil && holding.Count > len(content.RelatedWorks)+1 {
+		if u := relatedHoldingURL(holding); u != "" {
+			state.Holding = &dto.RelatedWorkHoldingLink{
+				Label: relatedHoldingLabel(holding.Count),
+				URL:   u,
+			}
+		}
+	}
 
 	return state
+}
+
+// relatedHoldingURL builds the artwork-search holding link from the resolver's
+// filterable holding. Only the artist, venue, and period filter keys are
+// accepted; any other key yields no link so a holding can never produce an
+// arbitrary query string.
+func relatedHoldingURL(holding *repositories.RelatedWorkHolding) string {
+	switch holding.QueryKey {
+	case "artist", "venue", "period":
+		values := neturl.Values{}
+		values.Set(holding.QueryKey, holding.QueryValue)
+		return "/artworks?" + values.Encode()
+	default:
+		return ""
+	}
+}
+
+// relatedHoldingLabel returns the counted holding link label. The count is the
+// artwork-search total for the filter (including the current record), matching
+// the search result total exactly.
+func relatedHoldingLabel(count int) string {
+	return fmt.Sprintf("FIND MORE %d IN THE ARTWORK SEARCH →", count)
 }
 
 // relatedWorkLimit is the resolver's bounded result cap, used to detect sparse

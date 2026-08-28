@@ -1,11 +1,13 @@
 package seed
 
 import (
+	"bytes"
 	"database/sql"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"testing/fstest"
 )
 
 func TestLoadBiographiesUsesArtistFieldsWhenLegacyTableIsAbsent(t *testing.T) {
@@ -62,7 +64,7 @@ func TestLoadArtistsPortraitPath(t *testing.T) {
 			}
 			defer closeDatabase(db)
 
-			schema := `CREATE TABLE artists (id TEXT PRIMARY KEY, source_display_name TEXT, birth_year INTEGER, death_year INTEGER, birth_place TEXT, death_place TEXT, biography_image_width INTEGER, biography_image_height INTEGER`
+			schema := `CREATE TABLE artists (id TEXT PRIMARY KEY, source_display_name TEXT, display_name TEXT, birth_year INTEGER, death_year INTEGER, birth_place TEXT, death_place TEXT, biography_image_width INTEGER, biography_image_height INTEGER`
 			if test.hasOutputPath {
 				schema += `, biography_image_output_path TEXT`
 			}
@@ -72,9 +74,9 @@ func TestLoadArtistsPortraitPath(t *testing.T) {
 			}
 
 			if test.hasOutputPath {
-				_, err = db.Exec(`INSERT INTO artists VALUES ('artist', 'Artist', NULL, NULL, NULL, NULL, ?, ?, ?)`, test.width, test.height, test.portrait)
+				_, err = db.Exec(`INSERT INTO artists VALUES ('artist', 'ARTIST, Example', 'Example Artist', NULL, NULL, NULL, NULL, ?, ?, ?)`, test.width, test.height, test.portrait)
 			} else {
-				_, err = db.Exec(`INSERT INTO artists VALUES ('artist', 'Artist', NULL, NULL, NULL, NULL, ?, ?)`, test.width, test.height)
+				_, err = db.Exec(`INSERT INTO artists VALUES ('artist', 'ARTIST, Example', 'Example Artist', NULL, NULL, NULL, NULL, ?, ?)`, test.width, test.height)
 			}
 			if err != nil {
 				t.Fatalf("insert artist: %v", err)
@@ -103,6 +105,150 @@ func TestLoadArtistsPortraitPath(t *testing.T) {
 				t.Fatalf("biography image height = %d, want %d", got, test.height)
 			}
 		})
+	}
+}
+
+func TestLoadArtistsCarriesFilingAndShortNamesVerbatim(t *testing.T) {
+	tests := []struct {
+		name       string
+		filingName string
+		shortName  string
+	}{
+		{name: "comma filing form", filingName: "VERMEER, Johannes", shortName: "Johannes Vermeer"},
+		{name: "mononym", filingName: "MODERNO", shortName: "Moderno"},
+		{name: "filing without comma", filingName: "LEONARDO da Vinci", shortName: "Leonardo da Vinci"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			db, err := sql.Open("sqlite", ":memory:")
+			if err != nil {
+				t.Fatalf("open database: %v", err)
+			}
+			defer closeDatabase(db)
+
+			if _, err := db.Exec(`
+				CREATE TABLE artists (
+					id TEXT PRIMARY KEY,
+					source_display_name TEXT,
+					display_name TEXT,
+					birth_year INTEGER,
+					death_year INTEGER,
+					birth_place TEXT,
+					death_place TEXT,
+					biography_image_output_path TEXT,
+					biography_image_width INTEGER,
+					biography_image_height INTEGER
+				);
+			`); err != nil {
+				t.Fatalf("create artists: %v", err)
+			}
+			if _, err := db.Exec(
+				`INSERT INTO artists VALUES ('artist', ?, ?, NULL, NULL, NULL, NULL, NULL, 500, 750)`,
+				test.filingName, test.shortName,
+			); err != nil {
+				t.Fatalf("insert artist: %v", err)
+			}
+
+			artists, err := loadArtists(db)
+			if err != nil {
+				t.Fatalf("load artists: %v", err)
+			}
+			if len(artists) != 1 {
+				t.Fatalf("artist count = %d, want 1", len(artists))
+			}
+			if got, want := artists[0].DisplayName, test.filingName; got != want {
+				t.Fatalf("display (filing) name = %q, want %q verbatim", got, want)
+			}
+			if got, want := artists[0].ShortName, test.shortName; got != want {
+				t.Fatalf("short name = %q, want %q verbatim", got, want)
+			}
+		})
+	}
+}
+
+func TestLoadArtistsRejectsBlankIdentityFields(t *testing.T) {
+	tests := []struct {
+		name       string
+		filingName string
+		shortName  string
+		wantField  string
+	}{
+		{name: "blank filing name", filingName: "   ", shortName: "Moderno", wantField: "source_display_name"},
+		{name: "blank short name", filingName: "MODERNO", shortName: "", wantField: "display_name"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			db, err := sql.Open("sqlite", ":memory:")
+			if err != nil {
+				t.Fatalf("open database: %v", err)
+			}
+			defer closeDatabase(db)
+
+			if _, err := db.Exec(`
+				CREATE TABLE artists (
+					id TEXT PRIMARY KEY,
+					source_display_name TEXT,
+					display_name TEXT,
+					birth_year INTEGER,
+					death_year INTEGER,
+					birth_place TEXT,
+					death_place TEXT,
+					biography_image_output_path TEXT,
+					biography_image_width INTEGER,
+					biography_image_height INTEGER
+				);
+			`); err != nil {
+				t.Fatalf("create artists: %v", err)
+			}
+			if _, err := db.Exec(
+				`INSERT INTO artists VALUES ('artist', ?, ?, NULL, NULL, NULL, NULL, NULL, 500, 750)`,
+				test.filingName, test.shortName,
+			); err != nil {
+				t.Fatalf("insert artist: %v", err)
+			}
+
+			_, err = loadArtists(db)
+			if err == nil {
+				t.Fatal("expected blank identity field error")
+			}
+			if !strings.Contains(err.Error(), test.wantField) {
+				t.Fatalf("expected error mentioning %q, got %v", test.wantField, err)
+			}
+		})
+	}
+}
+
+func TestLoadArtistsRejectsMissingShortNameColumn(t *testing.T) {
+	db, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatalf("open database: %v", err)
+	}
+	defer closeDatabase(db)
+
+	// A pre-identity export lacks the display_name column entirely.
+	if _, err := db.Exec(`
+		CREATE TABLE artists (
+			id TEXT PRIMARY KEY,
+			source_display_name TEXT,
+			birth_year INTEGER,
+			death_year INTEGER,
+			birth_place TEXT,
+			death_place TEXT,
+			biography_image_output_path TEXT,
+			biography_image_width INTEGER,
+			biography_image_height INTEGER
+		);
+	`); err != nil {
+		t.Fatalf("create artists: %v", err)
+	}
+	if _, err := db.Exec(`INSERT INTO artists VALUES ('artist', 'ARTIST, Example', NULL, NULL, NULL, NULL, NULL, 500, 750)`); err != nil {
+		t.Fatalf("insert artist: %v", err)
+	}
+
+	if _, err := loadArtists(db); err == nil {
+		t.Fatal("expected missing display_name column error")
 	}
 }
 
@@ -178,6 +324,16 @@ func TestPreseededSourceFile(t *testing.T) {
 }
 
 func TestLoadPreseededSourceFilesSkipsImageLessArtwork(t *testing.T) {
+	root := t.TempDir()
+	content := []byte("staged artwork bytes")
+	filePath := filepath.Join(root, "artworks", "rwork0000000002", "image.jpg")
+	if err := os.MkdirAll(filepath.Dir(filePath), 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	if err := os.WriteFile(filePath, content, 0o600); err != nil {
+		t.Fatalf("write staged original: %v", err)
+	}
+
 	data := sourceData{
 		artworkFiles: map[string]sourceFile{},
 		musicFiles:   map[string]sourceFile{},
@@ -187,7 +343,7 @@ func TestLoadPreseededSourceFilesSkipsImageLessArtwork(t *testing.T) {
 		},
 	}
 
-	if err := loadPreseededSourceFiles(&data); err != nil {
+	if err := loadPreseededSourceFiles(root, &data); err != nil {
 		t.Fatalf("load preseeded source files: %v", err)
 	}
 
@@ -201,6 +357,9 @@ func TestLoadPreseededSourceFilesSkipsImageLessArtwork(t *testing.T) {
 	if got, want := file.name, "image.jpg"; got != want {
 		t.Fatalf("file name = %q, want %q", got, want)
 	}
+	if got, want := file.size, int64(len(content)); got != want {
+		t.Fatalf("file size = %d, want %d", got, want)
+	}
 }
 
 func TestLoadPreseededSourceFilesRejectsUnsafeArtworkPath(t *testing.T) {
@@ -212,8 +371,135 @@ func TestLoadPreseededSourceFilesRejectsUnsafeArtworkPath(t *testing.T) {
 		},
 	}
 
-	if err := loadPreseededSourceFiles(&data); err == nil {
+	if err := loadPreseededSourceFiles(t.TempDir(), &data); err == nil {
 		t.Fatal("expected unsafe artwork path error")
+	}
+}
+
+func TestPreseededArtworkFileRecordsStagedByteSize(t *testing.T) {
+	root := t.TempDir()
+	content := []byte("staged original image bytes")
+	filePath := filepath.Join(root, "artworks", "rwork0000000001", "image.jpg")
+	if err := os.MkdirAll(filepath.Dir(filePath), 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	if err := os.WriteFile(filePath, content, 0o600); err != nil {
+		t.Fatalf("write staged original: %v", err)
+	}
+
+	file, err := preseededArtworkFile(root, "artworks/rwork0000000001/image.jpg")
+	if err != nil {
+		t.Fatalf("preseeded artwork file: %v", err)
+	}
+	if got, want := file.name, "image.jpg"; got != want {
+		t.Fatalf("file name = %q, want %q", got, want)
+	}
+	if got, want := file.size, int64(len(content)); got != want {
+		t.Fatalf("file size = %d, want %d", got, want)
+	}
+	if !file.preseededAssets {
+		t.Fatal("expected preseeded asset")
+	}
+}
+
+func TestPreseededArtworkFileRejectsMissingOriginal(t *testing.T) {
+	if _, err := preseededArtworkFile(t.TempDir(), "artworks/rwork0000000001/image.jpg"); err == nil {
+		t.Fatal("expected missing staged original error")
+	}
+}
+
+func TestPreseededArtworkFileRejectsNonRegularOriginal(t *testing.T) {
+	root := t.TempDir()
+	dir := filepath.Join(root, "artworks", "rwork0000000001", "image.jpg")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+
+	if _, err := preseededArtworkFile(root, "artworks/rwork0000000001/image.jpg"); err == nil {
+		t.Fatal("expected non-regular staged original error")
+	}
+}
+
+func TestPreseededArtworkFileRejectsEmptyOriginal(t *testing.T) {
+	root := t.TempDir()
+	filePath := filepath.Join(root, "artworks", "rwork0000000001", "image.jpg")
+	if err := os.MkdirAll(filepath.Dir(filePath), 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	if err := os.WriteFile(filePath, []byte{}, 0o600); err != nil {
+		t.Fatalf("write empty staged original: %v", err)
+	}
+
+	if _, err := preseededArtworkFile(root, "artworks/rwork0000000001/image.jpg"); err == nil {
+		t.Fatal("expected empty staged original error")
+	}
+}
+
+func TestPreseededArtworkFileRejectsFileSymlinkEscape(t *testing.T) {
+	root := t.TempDir()
+	outside := filepath.Join(t.TempDir(), "escaped.jpg")
+	if err := os.WriteFile(outside, []byte("outside root bytes"), 0o600); err != nil {
+		t.Fatalf("write outside file: %v", err)
+	}
+
+	linkDir := filepath.Join(root, "artworks", "rwork0000000001")
+	if err := os.MkdirAll(linkDir, 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	if err := os.Symlink(outside, filepath.Join(linkDir, "image.jpg")); err != nil {
+		t.Fatalf("symlink file: %v", err)
+	}
+
+	if _, err := preseededArtworkFile(root, "artworks/rwork0000000001/image.jpg"); err == nil {
+		t.Fatal("expected file symlink escape error")
+	}
+}
+
+func TestPreseededArtworkFileRejectsParentSymlinkEscape(t *testing.T) {
+	root := t.TempDir()
+	outsideDir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(outsideDir, "image.jpg"), []byte("outside parent bytes"), 0o600); err != nil {
+		t.Fatalf("write outside file: %v", err)
+	}
+
+	parent := filepath.Join(root, "artworks")
+	if err := os.MkdirAll(parent, 0o755); err != nil {
+		t.Fatalf("mkdir artworks: %v", err)
+	}
+	if err := os.Symlink(outsideDir, filepath.Join(parent, "rwork0000000001")); err != nil {
+		t.Fatalf("symlink parent: %v", err)
+	}
+
+	if _, err := preseededArtworkFile(root, "artworks/rwork0000000001/image.jpg"); err == nil {
+		t.Fatal("expected parent-directory symlink escape error")
+	}
+}
+
+func TestLoadEmbeddedSourceFilesRecordsByteSize(t *testing.T) {
+	content := []byte("embedded source image bytes")
+	storage := fstest.MapFS{
+		"Artworks/rwork0000000001/image.jpg": &fstest.MapFile{Data: content},
+	}
+	data := sourceData{
+		artworkFiles: map[string]sourceFile{},
+		musicFiles:   map[string]sourceFile{},
+		artworks: []sourceArtwork{
+			{ID: "rwork0000000001"},
+		},
+	}
+
+	if err := loadEmbeddedSourceFiles(storage, &data); err != nil {
+		t.Fatalf("load embedded source files: %v", err)
+	}
+	file, ok := data.artworkFiles["rwork0000000001"]
+	if !ok {
+		t.Fatal("artwork should have a source file entry")
+	}
+	if got, want := file.size, int64(len(content)); got != want {
+		t.Fatalf("file size = %d, want %d", got, want)
+	}
+	if !bytes.Equal(file.content, content) {
+		t.Fatal("file content should match embedded bytes")
 	}
 }
 

@@ -1,5 +1,11 @@
 import { type Locator, type Page, expect, test } from "@playwright/test";
 
+import {
+	expectNoPageErrors,
+	guardPageErrors,
+	resetErrorCapture,
+} from "./helpers/page-errors";
+
 const shellWidths = [390, 834, 1440] as const;
 const deferredHrefs = [
 	"/timeline",
@@ -49,7 +55,31 @@ async function tabTo(page: Page, target: Locator) {
 	throw new Error("target was not reachable with Tab");
 }
 
+async function assertNoDuplicateIds(page: Page) {
+	const duplicates = await page.evaluate(() => {
+		const seen = new Set<string>();
+		const repeated = new Set<string>();
+		for (const element of document.querySelectorAll<HTMLElement>("[id]")) {
+			if (seen.has(element.id)) {
+				repeated.add(element.id);
+			}
+			seen.add(element.id);
+		}
+		return [...repeated];
+	});
+	expect(duplicates).toEqual([]);
+}
+
 test.describe("shared public shell", () => {
+	test.beforeEach(async ({ page }) => {
+		resetErrorCapture();
+		guardPageErrors(page);
+	});
+
+	test.afterEach(() => {
+		expectNoPageErrors();
+	});
+
 	test("composes identity, navigation, and footer by viewport tier", async ({
 		page,
 	}) => {
@@ -182,7 +212,14 @@ test.describe("shared public shell", () => {
 		await expect(page).toHaveURL(/\/artists$/);
 
 		await page.goto("/");
-		const dark = page.getByRole("button", { name: "DARK", exact: true });
+		const preferencesOpen = page.locator("[data-wga-preferences-open]");
+		await tabTo(page, preferencesOpen);
+		await page.keyboard.press("Enter");
+		await expect(page.locator("#wga-preferences")).toHaveJSProperty(
+			"open",
+			true,
+		);
+		const dark = page.locator('[data-wga-scheme="dark"]');
 		await tabTo(page, dark);
 		await expect(dark).toBeFocused();
 		await expect(dark).toHaveCSS("outline-style", /solid|dotted|dashed/);
@@ -195,8 +232,19 @@ test.describe("shared public shell", () => {
 		await tabTo(page, bionic);
 		await page.keyboard.press("Space");
 		await expect(bionic).toHaveAttribute("aria-checked", "true");
+		// Focus stays trapped inside the preferences dialog on Shift+Tab.
 		await page.keyboard.press("Shift+Tab");
-		await expect(dark).toBeFocused();
+		const focusInsideDialog = await page.evaluate(
+			() => document.activeElement?.closest("#wga-preferences") !== null,
+		);
+		expect(focusInsideDialog).toBe(true);
+		// Escape closes the dialog and restores focus to the footer trigger.
+		await page.keyboard.press("Escape");
+		await expect(page.locator("#wga-preferences")).toHaveJSProperty(
+			"open",
+			false,
+		);
+		await expect(preferencesOpen).toBeFocused();
 	});
 
 	test("keeps Rams dark roles readable at every shell tier", async ({
@@ -205,7 +253,8 @@ test.describe("shared public shell", () => {
 		for (const width of shellWidths) {
 			await page.setViewportSize({ width, height: 900 });
 			await page.goto("/");
-			await page.getByRole("button", { name: "DARK", exact: true }).click();
+			await page.locator("[data-wga-preferences-open]").click();
+			await page.locator('[data-wga-scheme="dark"]').click();
 			await expect(page.locator("html")).toHaveAttribute(
 				"data-theme",
 				"wga-rams-dark",
@@ -258,22 +307,24 @@ test.describe("shared public shell", () => {
 		}
 	});
 
-	test("keeps landmarks and controls reachable at 200 percent and 400 percent reflow", async ({
+	test("keeps landmarks and controls reachable at 200 percent text", async ({
 		page,
 	}) => {
+		const relevant = page.locator(
+			"header, main, footer, header a[href], footer a[href], header button, footer button, header summary, footer summary",
+		);
+
 		await page.setViewportSize({ width: 390, height: 844 });
 		await page.goto("/");
-		const cookieAccept = page.getByRole("button", { name: /accept/i }).first();
-		if ((await cookieAccept.count()) > 0) {
-			await cookieAccept.click();
-		}
 		await page.evaluate(() => {
 			document.documentElement.style.fontSize = "2em";
 		});
+		expect(
+			await page.evaluate(
+				() => getComputedStyle(document.documentElement).fontSize,
+			),
+		).toBe("32px");
 		await assertNoHorizontalOverflow(page);
-		let relevant = page.locator(
-			"header, main, footer, header a[href], footer a[href], header button, footer button, header summary, footer summary",
-		);
 		await assertInBounds(relevant, 390);
 		await expect(page.locator("header")).toBeVisible();
 		await expect(page.getByRole("main")).toBeVisible();
@@ -281,22 +332,57 @@ test.describe("shared public shell", () => {
 		await expect(
 			page.getByRole("link", { name: "Artists" }).last(),
 		).toBeVisible();
+	});
 
-		await page.setViewportSize({ width: 320, height: 844 });
-		await page.evaluate(() => {
-			document.documentElement.style.fontSize = "1em";
-		});
-		await assertNoHorizontalOverflow(page);
-		relevant = page.locator(
+	test("enlarges the computed root text at a true 400 percent", async ({
+		page,
+	}) => {
+		const relevant = page.locator(
 			"header, main, footer, header a[href], footer a[href], header button, footer button, header summary, footer summary",
 		);
-		await assertInBounds(relevant, 320);
+
+		await page.setViewportSize({ width: 1280, height: 900 });
+		await page.goto("/");
+		await page.evaluate(() => {
+			document.documentElement.style.fontSize = "4em";
+		});
+		// The enlargement must be real: the computed root font-size is four
+		// times the browser default, not merely a set style that no-ops.
+		expect(
+			await page.evaluate(
+				() => getComputedStyle(document.documentElement).fontSize,
+			),
+		).toBe("64px");
+		await assertNoHorizontalOverflow(page);
+		await assertInBounds(relevant, 1280);
 		await expect(page.locator("header")).toBeVisible();
 		await expect(page.getByRole("main")).toBeVisible();
 		await expect(page.locator("footer")).toBeVisible();
 		await expect(
 			page.getByRole("link", { name: "Artists" }).last(),
 		).toBeVisible();
+	});
+
+	test("reflows without horizontal overflow at the effective 400 percent narrow viewport", async ({
+		page,
+	}) => {
+		// 400% text at a 1280px reference viewport yields an effective 320px
+		// content width (WCAG 1.4.10). Exercise that width directly so narrow
+		// reflow is proven independently of root text scaling.
+		const relevant = page.locator(
+			"header, main, footer, header a[href], footer a[href], header button, footer button, header summary, footer summary",
+		);
+
+		await page.setViewportSize({ width: 320, height: 900 });
+		await page.goto("/");
+		await page.evaluate(() => {
+			document.documentElement.style.fontSize = "4em";
+		});
+		await assertNoHorizontalOverflow(page);
+		await assertInBounds(relevant, 320);
+		await expect(page.locator("header")).toBeVisible();
+		await expect(page.getByRole("main")).toBeVisible();
+		await expect(page.locator("footer")).toBeVisible();
 	});
 
 	test("retains native disclosure and honest unavailable controls without JavaScript", async ({
@@ -307,6 +393,7 @@ test.describe("shared public shell", () => {
 			viewport: { width: 390, height: 844 },
 		});
 		const page = await context.newPage();
+		guardPageErrors(page);
 		await page.goto("/");
 		const menu = page.locator("header details[data-kbd-mobile-navigation]");
 		await expect(menu).not.toHaveAttribute("open", "");
@@ -315,12 +402,109 @@ test.describe("shared public shell", () => {
 		await expect(
 			menu.getByRole("link", { name: "ARTISTS", exact: true }),
 		).toBeVisible();
-		await expect(page.locator("[data-wga-theme-toggle]")).toBeHidden();
+		await expect(page.locator("[data-wga-preferences-control]")).toBeHidden();
+		await expect(page.locator("[data-wga-preferences-open]")).toBeHidden();
 		await expect(page.locator("[data-wga-cookie-settings]")).toBeHidden();
 		await expect(page.locator("[data-wga-cookie-settings]")).toHaveAttribute(
 			"tabindex",
 			"-1",
 		);
 		await context.close();
+	});
+
+	test("mounts one main area, unique ids, and an honest tray/toast stack", async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.goto("/");
+
+		await expect(page.locator("#mc-area")).toHaveCount(1);
+		await assertNoDuplicateIds(page);
+
+		await expect(page.locator("#itinerary-tray")).toHaveCount(1);
+		await expect(page.locator("#toast-container")).toHaveCount(1);
+
+		// With an empty draft the tray bar is absent and the fixed toast
+		// container keeps its base class without a tray-clearance offset.
+		await expect(page.locator("#itinerary-tray [role='region']")).toHaveCount(
+			0,
+		);
+		await expect(page.locator("#toast-container")).toHaveClass(/toast/);
+		await expect(page.locator("#toast-container")).not.toHaveClass(/bottom-28/);
+		await expect(page.locator("#mc-area")).not.toHaveClass(/pb-28/);
+
+		// Public toast notifications stack in the shared container in order.
+		await page.evaluate(() => {
+			document.body.dispatchEvent(
+				new CustomEvent("notification:toast", {
+					detail: { closeDialog: false, message: "First", type: "info" },
+				}),
+			);
+			document.body.dispatchEvent(
+				new CustomEvent("notification:toast", {
+					detail: { closeDialog: false, message: "Second", type: "success" },
+				}),
+			);
+		});
+		const toasts = page.locator("#toast-container [role='alert']");
+		await expect(toasts).toHaveCount(2);
+		await expect(toasts.nth(0)).toContainText("First");
+		await expect(toasts.nth(1)).toContainText("Second");
+	});
+
+	test("reserves layout and stacks toasts above the active itinerary tray", async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.goto("/inspire");
+
+		// A deterministic synthetic-work add drives the real HTMX add workflow,
+		// producing both an active tray and a real toast from the response.
+		const add = page
+			.locator("section[aria-label='Shuffled artworks'] article")
+			.first()
+			.getByRole("button", { name: "ADD TO AN ITINERARY +" });
+		await add.scrollIntoViewIfNeeded();
+		await add.click();
+
+		const tray = page.locator("#itinerary-tray");
+		await expect(tray.locator("[role='region']")).toHaveCount(1);
+		await expect(tray).toContainText("ITINERARY DRAFT · 1 OF 15");
+
+		// The non-empty tray reserves bottom clearance on both the main area
+		// and the fixed toast container, mirroring the server-side offsets.
+		await expect(page.locator("#mc-area")).toHaveClass(/pb-28/);
+		await expect(page.locator("#toast-container")).toHaveClass(/bottom-28/);
+
+		const toasts = page.locator("#toast-container [role='alert']");
+		await expect(toasts).toHaveCount(1);
+		await expect(toasts).toContainText("Added to your itinerary.");
+
+		// A second toast stacks in order above the first, inside the tray-lifted
+		// container.
+		await page.evaluate(() => {
+			document.body.dispatchEvent(
+				new CustomEvent("notification:toast", {
+					detail: { closeDialog: false, message: "Second", type: "success" },
+				}),
+			);
+		});
+		await expect(toasts).toHaveCount(2);
+		await expect(toasts.nth(0)).toContainText("Added to your itinerary.");
+		await expect(toasts.nth(1)).toContainText("Second");
+
+		// Geometry: every stacked toast sits fully above the fixed tray bar,
+		// never rendering behind it.
+		const trayBox = await tray.locator("[role='region']").boundingBox();
+		expect(trayBox).not.toBeNull();
+		if (trayBox) {
+			for (const toast of await toasts.all()) {
+				const box = await toast.boundingBox();
+				expect(box).not.toBeNull();
+				if (box) {
+					expect(box.y + box.height).toBeLessThanOrEqual(trayBox.y + 1);
+				}
+			}
+		}
 	});
 });

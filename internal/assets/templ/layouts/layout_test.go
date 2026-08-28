@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/assets/templ/utils"
 	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/observability"
@@ -97,6 +98,46 @@ func TestLayoutFeedbackLinksToGitHubIssues(t *testing.T) {
 	}
 }
 
+func TestLayoutMainReservesSpaceForTray(t *testing.T) {
+	tests := []struct {
+		name       string
+		tray       dto.ItineraryTrayView
+		mainClass  string
+		toastClass string
+	}{
+		{
+			name:       "non-empty tray reserves bottom space",
+			tray:       dto.ItineraryTrayView{Count: 1, BuilderURL: "/itineraries/new"},
+			mainClass:  `id="mc-area" class="wga-enter pb-28 md:pb-20"`,
+			toastClass: `class="toast bottom-28 md:bottom-20" id="toast-container"`,
+		},
+		{
+			name:       "empty tray reserves no bottom space",
+			tray:       dto.ItineraryTrayView{},
+			mainClass:  `id="mc-area" class="wga-enter"`,
+			toastClass: `class="toast" id="toast-container"`,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ctx := utils.WithItineraryProjection(context.Background(), "csrf-token", test.tray, nil)
+			var output bytes.Buffer
+			if err := LayoutMain().Render(ctx, &output); err != nil {
+				t.Fatalf("render main layout: %v", err)
+			}
+
+			rendered := output.String()
+			if !strings.Contains(rendered, test.mainClass) {
+				t.Errorf("expected main class %q", test.mainClass)
+			}
+			if !strings.Contains(rendered, test.toastClass) {
+				t.Errorf("expected toast class %q", test.toastClass)
+			}
+		})
+	}
+}
+
 func TestLayoutMainRetainsSharedMounts(t *testing.T) {
 	var output bytes.Buffer
 	if err := LayoutMain().Render(context.Background(), &output); err != nil {
@@ -140,10 +181,14 @@ func TestLayoutBaseAppliesThemeBeforeStylesheet(t *testing.T) {
 		`"dark"`,
 		`"wga_light"`,
 		`"wga_dark"`,
-		`"wga_theme=light"`,
-		`"wga_theme=dark"`,
+		`"wga-palette"`,
+		`"wga_palette"`,
+		`"wga-theme"`,
+		`"wga_theme"`,
 		`"wga-rams"`,
 		`"wga-rams-dark"`,
+		`"wga-baroque"`,
+		`"wga-tokyo"`,
 		`prefers-color-scheme: dark`,
 	} {
 		if !strings.Contains(rendered[script:stylesheet], expected) {

@@ -75,31 +75,7 @@ func TestSummarizeArtFormRowsPreservesNameAndCount(t *testing.T) {
 	}
 }
 
-func TestSummarizeSchoolPeriodRowsPreservesTotal(t *testing.T) {
-	raw := []repositories.SchoolPeriodRow{
-		{PeriodStart: 1500, School: "Italian", Count: 3},
-		{PeriodStart: 1500, School: "French", Count: 2},
-		{PeriodStart: 1500, School: "Other", Count: 1},
-		{PeriodStart: 1550, School: "Dutch", Count: 4},
-	}
-
-	rawTotal := 0
-	for _, row := range raw {
-		rawTotal += row.Count
-	}
-
-	summary := summarizeSchoolPeriodRows(raw)
-	summaryTotal := 0
-	for _, row := range summary {
-		summaryTotal += row.Total
-	}
-
-	if summaryTotal != rawTotal {
-		t.Errorf("summary total = %d, want %d", summaryTotal, rawTotal)
-	}
-}
-
-func TestSummarizeSchoolPeriodRowsBuildsPeriodMatrix(t *testing.T) {
+func TestSummarizeSchoolPeriodRowsFormatsPeriodLabels(t *testing.T) {
 	rows := summarizeSchoolPeriodRows([]repositories.SchoolPeriodRow{
 		{PeriodStart: 1500, School: "Italian", Count: 3},
 		{PeriodStart: 1500, School: "French", Count: 2},
@@ -107,13 +83,23 @@ func TestSummarizeSchoolPeriodRowsBuildsPeriodMatrix(t *testing.T) {
 		{PeriodStart: 1550, School: "Dutch", Count: 4},
 	})
 
-	if len(rows) != 2 {
-		t.Fatalf("period rows = %d, want 2", len(rows))
+	if len(rows) != 4 {
+		t.Fatalf("period rows = %d, want 4", len(rows))
 	}
-	if rows[0].Period != "1500–1549" || rows[0].Italian != 3 || rows[0].French != 2 || rows[0].Other != 1 || rows[0].Total != 6 {
-		t.Errorf("first period = %#v", rows[0])
+
+	want := []struct {
+		period string
+		school string
+		count  int
+	}{
+		{"1500–1549", "Italian", 3},
+		{"1500–1549", "French", 2},
+		{"1500–1549", "Other", 1},
+		{"1550–1599", "Dutch", 4},
 	}
-	if rows[1].Period != "1550–1599" || rows[1].Dutch != 4 || rows[1].Total != 4 {
-		t.Errorf("second period = %#v", rows[1])
+	for i, row := range rows {
+		if row.Period != want[i].period || row.School != want[i].school || row.Count != want[i].count {
+			t.Errorf("row %d = %#v, want %#v", i, row, want[i])
+		}
 	}
 }

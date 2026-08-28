@@ -21,14 +21,15 @@ func renderSelection(t *testing.T, view SelectionView) string {
 
 func TestSelectionContentRendersTitleCommentaryAndWorks(t *testing.T) {
 	rendered := renderSelection(t, SelectionView{
-		ArtistName:      "Dürer",
-		ArtistURL:       "/artists/durer-artistone000001",
-		DisplayTitle:    "Dürer: Paintings",
-		Context:         "Dürer",
-		Commentary:      "<p>An editorial lede.</p>",
-		HasCommentary:   true,
-		WorkCount:       1,
-		ShowBreadcrumbs: true,
+		ArtistFilingName: "Dürer, Albrecht",
+		ArtistShortName:  "Dürer",
+		ArtistURL:        "/artists/durer-artistone000001",
+		DisplayTitle:     "Dürer: Paintings",
+		Context:          "Dürer",
+		Commentary:       "<p>An editorial lede.</p>",
+		HasCommentary:    true,
+		WorkCount:        1,
+		ShowBreadcrumbs:  true,
 		Works: dto.ImageGrid{{
 			Id: "workone00000001", Title: "A Painting",
 			Url:    "/artists/durer-artistone000001/a-painting-workone00000001",
@@ -41,7 +42,7 @@ func TestSelectionContentRendersTitleCommentaryAndWorks(t *testing.T) {
 	for _, expected := range []string{
 		"Dürer: Paintings",
 		"An editorial lede.",
-		"SELECTION",
+		"21 — SELECTION",
 		"SELECTED WORKS",
 		"A Painting",
 		"VIEW FULL HOLDING",
@@ -53,6 +54,47 @@ func TestSelectionContentRendersTitleCommentaryAndWorks(t *testing.T) {
 	}
 	if count := strings.Count(rendered, "<h1"); count != 1 {
 		t.Errorf("expected exactly one h1, got %d", count)
+	}
+}
+
+func TestSelectionContentRendersSectionTwentyOne(t *testing.T) {
+	rendered := renderSelection(t, SelectionView{DisplayTitle: "Dürer: Paintings"})
+
+	if !strings.Contains(rendered, "21 — SELECTION") {
+		t.Error("selection reading page must identify section 21")
+	}
+	if strings.Contains(rendered, "03 — SELECTION") {
+		t.Error("selection reading page must not use the obsolete section 03 label")
+	}
+}
+
+func TestSelectionContentRendersResponsiveWorkCardGrid(t *testing.T) {
+	rendered := renderSelection(t, SelectionView{
+		DisplayTitle: "Dürer: Paintings",
+		WorkCount:    2,
+		Works: dto.ImageGrid{
+			{
+				Id: "workone00000001", Title: "A Painting",
+				Url:    "/artists/durer-artistone000001/a-painting-workone00000001",
+				Image:  "/api/files/artworks/workone00000001/painting.jpg",
+				Artist: dto.Artist{Name: "Dürer"},
+			},
+			{
+				Id: "workone00000002", Title: "B Painting",
+				Url:    "/artists/durer-artistone000001/b-painting-workone00000002",
+				Image:  "/api/files/artworks/workone00000002/painting.jpg",
+				Artist: dto.Artist{Name: "Dürer"},
+			},
+		},
+	})
+
+	if !strings.Contains(rendered, `class="grid grid-cols-2 md:grid-cols-4 gap-x-4 md:gap-x-6 gap-y-8"`) {
+		t.Error("selection works must render in the reference two-column/four-column work-card grid")
+	}
+	for _, forbidden := range []string{"grid-cols-1", "sm:grid-cols-2", "md:grid-cols-2", "lg:grid-cols-3", "xl:grid-cols-4"} {
+		if strings.Contains(rendered, forbidden) {
+			t.Errorf("selection work grid must not expose shared-grid breakpoint %q", forbidden)
+		}
 	}
 }
 

@@ -1,7 +1,11 @@
 package dto
 
 type Artist struct {
-	Id              string
+	Id         string
+	FilingName string
+	ShortName  string
+	// Name remains for unrelated legacy consumers. New identity presentation
+	// must use FilingName or ShortName explicitly.
 	Name            string
 	Schools         string
 	Profession      string
@@ -32,18 +36,19 @@ type Artwork struct {
 	Url             string
 	HxTarget        string
 	ShowBreadcrumbs bool
-	// ReproFile is the truthful reproduction file summary (dimensions and
-	// format derived from the record's source dimensions and image filename).
-	// It is empty when no reproduction dimensions are recorded, so the artwork
-	// template never fabricates a file caption.
+	// ReproFile is the truthful reproduction file summary: recorded dimensions,
+	// the filename-derived format, and the human-readable exact byte count in
+	// decimal SI. Independently absent facts are omitted. It is empty only when
+	// no supported reproduction evidence exists, so the artwork template never
+	// fabricates a file caption.
 	ReproFile string
 	// SourceURL is the original artwork file URL (no thumbnail query), used only
 	// for the deliberate source-file download. Empty when the record has no
 	// image filename.
 	SourceURL string
-	// ReproductionSourceURL is the approved canonical WGA record source URL. It
-	// is empty when the producer value is absent or fails the allow-list policy.
-	ReproductionSourceURL string
+	// OriginalFileBytes is the source-backed byte count of the original artwork
+	// file. It is zero when no original file is recorded.
+	OriginalFileBytes int
 	// Palette is the compact image-derived colour palette (hex and quantised
 	// weight). Empty when no palette profile is recorded.
 	Palette []ColourSwatch
@@ -78,7 +83,8 @@ type RelatedWorkBasis struct {
 }
 
 // RelatedWorkState carries the active related-work basis, its connection
-// heading, and the sparse-result explanation and alternative link.
+// heading, the sparse-result explanation and alternative link, and the counted
+// artwork-search holding link for filterable bases.
 type RelatedWorkState struct {
 	ActiveBasis    string
 	Connection     string
@@ -87,6 +93,17 @@ type RelatedWorkState struct {
 	Alternative    string
 	AlternativeURL string
 	Bases          []RelatedWorkBasis
+	// Holding is the counted artwork-search holding link, non-nil only when the
+	// active basis is a filter the search can express and the holding exceeds
+	// the rendered sample. Palette similarity never exposes one.
+	Holding *RelatedWorkHoldingLink
+}
+
+// RelatedWorkHoldingLink is the counted artwork-search holding link presented
+// below the related-work sample.
+type RelatedWorkHoldingLink struct {
+	Label string // counted label, e.g. "FIND MORE 11 IN THE ARTWORK SEARCH →"
+	URL   string // "/artworks?" route with the basis filter preserved
 }
 
 // MusicPeriod is the deterministic period-music card for one artwork. Available

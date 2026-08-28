@@ -13,7 +13,8 @@ import (
 // URLs are complete and resolved by the owning handler; the template never
 // constructs thumbnail or identity URLs itself.
 type ArtistView struct {
-	Name            string
+	FilingName      string
+	ShortName       string
 	Url             string // canonical relative /artists/{slug}-{id} URL
 	LifeSummary     string
 	Schools         string
@@ -72,17 +73,17 @@ templ ArtistRecordContent(view ArtistView) {
 					<span>{ view.Schools }</span>
 					<span class="mx-2" aria-hidden="true">/</span>
 				}
-				<a href={ templ.URL(view.Url) } hx-get={ view.Url } class="text-base-content" aria-current="page">{ view.Name }</a>
+				<a href={ templ.URL(view.Url) } hx-get={ view.Url } class="text-base-content" aria-current="page">{ view.ShortName }</a>
 			</nav>
 		}
 		<article class="grid gap-8 md:grid-cols-[minmax(0,1fr)_200px]">
 			<div>
 				<p class="font-mono text-[11px] tracking-[2px] text-base-content/60">02 — ARTIST</p>
-				<h1 class="mt-3 text-[44px] font-semibold leading-[1.05] tracking-[-0.75px] md:text-[52px]">{ view.Name }</h1>
+				<h1 class="mt-3 text-[44px] font-semibold leading-[1.05] tracking-[-0.75px] md:text-[52px]">{ view.FilingName }</h1>
 				<p class="mt-4 font-mono text-[12px] tracking-[1px] text-primary">{ view.LifeSummary }{ artistPeriodSuffix(view) }</p>
 			</div>
 			<figure>
-				@components.Plate(dto.Plate{DisplayURL: view.Portrait, Alt: view.Name, Placeholder: "PORTRAIT — " + view.Name, Aspect: "aspect-square"})
+				@components.Plate(dto.Plate{DisplayURL: view.Portrait, Alt: view.FilingName, Placeholder: "PORTRAIT — " + view.FilingName, Aspect: "aspect-square"})
 			</figure>
 		</article>
 		<div class="mt-10 flex flex-col gap-10 border-t border-base-content/15 pt-8 md:flex-row md:gap-16">
@@ -137,7 +138,7 @@ templ ArtistRecordContent(view ArtistView) {
 					} else {
 						@components.PublicArtworkGrid(view.Works)
 						if view.WorkCount > len(view.Works) {
-							<a href={ templ.URL(view.WorksURL) } hx-get={ view.WorksURL } class="mt-8 inline-block font-mono text-[11px] tracking-[1px] text-primary transition-opacity hover:opacity-60">VIEW ALL WORKS →</a>
+							<a href={ templ.URL(view.WorksURL) } hx-get={ view.WorksURL } class="mt-8 inline-block font-mono text-[11px] tracking-[1px] text-primary transition-opacity hover:opacity-60">FIND MORE BY { view.ShortName } IN THE ARTWORK SEARCH →</a>
 						}
 					}
 				</section>
@@ -203,22 +204,22 @@ templ ArtistBlock(a dto.Artist) {
 					<span>{ a.Schools }</span>
 					<span class="mx-2" aria-hidden="true">/</span>
 				}
-				<a href={ templ.URL(a.Url) } hx-get={ a.Url } hx-target={ a.HxTarget } class="text-base-content" aria-current="page">{ a.Name }</a>
+				<a href={ templ.URL(a.Url) } hx-get={ a.Url } hx-target={ a.HxTarget } class="text-base-content" aria-current="page">{ a.ShortName }</a>
 			</nav>
 		}
 		<article class="grid gap-8 md:grid-cols-[minmax(0,1fr)_200px]">
 			<div>
 				<p class="font-mono text-[11px] tracking-[2px] text-base-content/60">02 — ARTIST</p>
-				<h1 class="mt-3 text-[44px] font-semibold leading-[1.05] tracking-[-0.75px] md:text-[52px]">{ a.Name }</h1>
+				<h1 class="mt-3 text-[44px] font-semibold leading-[1.05] tracking-[-0.75px] md:text-[52px]">{ a.FilingName }</h1>
 				<p class="mt-4 font-mono text-[12px] tracking-[1px] text-primary">{ a.BioExcerpt } · { a.Schools }</p>
 			</div>
 			if a.Portrait != "" {
 				<figure class="aspect-square overflow-hidden border border-base-content/15 bg-base-300">
-					<img src={ a.Portrait } alt={ a.Name } class="h-full w-full object-cover"/>
+					<img src={ a.Portrait } alt={ a.FilingName } class="h-full w-full object-cover"/>
 				</figure>
 			} else {
 				<figure class="flex aspect-square items-end border border-base-content/15 bg-base-300 p-3">
-					<figcaption class="font-mono text-[9px] tracking-[1px] text-base-content/40">PORTRAIT — { a.Name }</figcaption>
+					<figcaption class="font-mono text-[9px] tracking-[1px] text-base-content/40">PORTRAIT — { a.FilingName }</figcaption>
 				</figure>
 			}
 		</article>

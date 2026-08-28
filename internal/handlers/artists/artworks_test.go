@@ -54,7 +54,7 @@ func TestPopulateArtworkCitation(t *testing.T) {
 		Title: "Girl with a Pearl Earring",
 		Url:   "/artists/johannes-vermeer-artist00001/girl-with-a-pearl-earring-07561d2efd0a6db",
 		Artist: dto.Artist{
-			Name: "Johannes Vermeer",
+			FilingName: "Vermeer, Johannes",
 		},
 	}
 	populateArtworkCitation(&artwork)
@@ -62,7 +62,7 @@ func TestPopulateArtworkCitation(t *testing.T) {
 	if artwork.CitationKey != "wga-07561d2efd0a6db" {
 		t.Errorf("CitationKey = %q", artwork.CitationKey)
 	}
-	if artwork.CitationTitle != "Girl with a Pearl Earring by Johannes Vermeer" {
+	if artwork.CitationTitle != "Girl with a Pearl Earring by Vermeer, Johannes" {
 		t.Errorf("CitationTitle = %q", artwork.CitationTitle)
 	}
 	if artwork.CitationURL != "https://gallery.example/artists/johannes-vermeer-artist00001/girl-with-a-pearl-earring-07561d2efd0a6db" {
@@ -241,9 +241,9 @@ func TestPopulateArtworkSourceDataUsesSourceComment(t *testing.T) {
 	if content.SourceComment != "<p>Raw source.</p>" {
 		t.Errorf("SourceComment = %q, want <p>Raw source.</p>", content.SourceComment)
 	}
-	if content.ReproductionSourceURL != "https://www.wga.hu/html/v/vermeer/girl.html" {
-		t.Errorf("ReproductionSourceURL = %q", content.ReproductionSourceURL)
-	}
+	// No reproduction source or licence claim is ever populated; the DTO no
+	// longer carries such a field, so the persisted source_url cannot surface
+	// a public provenance link.
 
 	// The enriched comment field must not drive HasCommentary.
 	record.Set("source_comment", "")
@@ -258,10 +258,10 @@ func TestPopulateArtworkSourceDataUsesSourceComment(t *testing.T) {
 	}
 }
 
-// TestPopulateArtworkSourceDataHidesReproductionSourceOutsideDevelopment
-// proves the WGA reproduction source link is populated only in local
-// development, regardless of a safe, allow-listed source_url.
-func TestPopulateArtworkSourceDataHidesReproductionSourceOutsideDevelopment(t *testing.T) {
+// TestPopulateArtworkSourceDataAppendsFileWeight proves the reproduction FILE
+// summary gains the human-readable decimal-SI weight only when both the byte
+// count and a reproduction file are recorded, and never invents either.
+func TestPopulateArtworkSourceDataAppendsFileWeight(t *testing.T) {
 	app := pocketbase.NewWithConfig(pocketbase.Config{DefaultDataDir: t.TempDir()})
 	if err := app.Bootstrap(); err != nil {
 		t.Fatalf("bootstrap: %v", err)
@@ -280,43 +280,113 @@ func TestPopulateArtworkSourceDataHidesReproductionSourceOutsideDevelopment(t *t
 		&core.TextField{Name: "comment"},
 		&core.JSONField{Name: "colour_palette"},
 		&core.NumberField{Name: "date_start"},
+		&core.NumberField{Name: "image_size_bytes"},
 	)
 	record := core.NewRecord(collection)
-	record.Set("source_url", "html/v/vermeer/girl.html")
+	record.Set("image_size_bytes", 1_400_000)
 
-	for _, environment := range []config.Environment{config.EnvironmentTest, config.EnvironmentStaging, config.EnvironmentProduction} {
-		content := dto.Artwork{}
-		populateArtworkSourceData(app, record, &content, environment)
-		if content.ReproductionSourceURL != "" {
-			t.Errorf("environment %q: ReproductionSourceURL = %q, want empty outside development", environment, content.ReproductionSourceURL)
+	content := dto.Artwork{ReproFile: "1,861 × 2,663 px · JPEG"}
+	populateArtworkSourceData(app, record, &content, config.EnvironmentDevelopment)
+	if content.OriginalFileBytes != 1_400_000 {
+		t.Errorf("OriginalFileBytes = %d, want exact 1400000", content.OriginalFileBytes)
+	}
+	if content.ReproFile != "1,861 × 2,663 px · JPEG · 1.4 MB" {
+		t.Errorf("ReproFile = %q, want dimensions · format · 1.4 MB", content.ReproFile)
+	}
+
+	record.Set("image_size_bytes", 0)
+	content = dto.Artwork{ReproFile: "1,861 × 2,663 px · JPEG"}
+	populateArtworkSourceData(app, record, &content, config.EnvironmentDevelopment)
+	if content.ReproFile != "1,861 × 2,663 px · JPEG" {
+		t.Errorf("zero weight must not append a size, got %q", content.ReproFile)
+	}
+}
+
+// TestPopulateArtworkSourceDataAssemblesFileEvidenceIndependently proves the
+// reproduction FILE summary assembles dimensions, recognised format, and the
+// positive exact byte weight independently: a missing fact must never suppress
+// another factual field.
+func TestPopulateArtworkSourceDataAssemblesFileEvidenceIndependently(t *testing.T) {
+	app := pocketbase.NewWithConfig(pocketbase.Config{DefaultDataDir: t.TempDir()})
+	if err := app.Bootstrap(); err != nil {
+		t.Fatalf("bootstrap: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := app.ResetBootstrapState(); err != nil {
+			t.Error(err)
+		}
+	})
+
+	collection := core.NewBaseCollection("Artworks")
+	collection.Fields.Add(&core.NumberField{Name: "image_size_bytes"})
+	record := core.NewRecord(collection)
+
+	for _, test := range []struct {
+		name    string
+		bytes   int
+		summary string
+		want    string
+	}{
+		{name: "weight only", bytes: 1_400_000, summary: "", want: "1.4 MB"},
+		{name: "format only", bytes: 1_400_000, summary: "JPEG", want: "JPEG · 1.4 MB"},
+		{name: "dimensions only", bytes: 1_400_000, summary: "1200 × 800 px", want: "1200 × 800 px · 1.4 MB"},
+		{name: "all facts", bytes: 1_400_000, summary: "1200 × 800 px · JPEG", want: "1200 × 800 px · JPEG · 1.4 MB"},
+		{name: "zero bytes adds nothing", bytes: 0, summary: "1200 × 800 px · JPEG", want: "1200 × 800 px · JPEG"},
+		{name: "absent all omits file", bytes: 0, summary: "", want: ""},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			record.Set("image_size_bytes", test.bytes)
+			content := dto.Artwork{ReproFile: test.summary}
+			populateArtworkSourceData(app, record, &content, config.EnvironmentDevelopment)
+			if content.OriginalFileBytes != test.bytes {
+				t.Errorf("OriginalFileBytes = %d, want exact %d", content.OriginalFileBytes, test.bytes)
+			}
+			if content.ReproFile != test.want {
+				t.Errorf("ReproFile = %q, want %q", content.ReproFile, test.want)
+			}
+		})
+	}
+}
+
+func TestFormatFileSize(t *testing.T) {
+	for _, test := range []struct {
+		bytes int
+		want  string
+	}{
+		{999, "999 B"},
+		{1_000, "1.0 kB"},
+		{1_400_000, "1.4 MB"},
+		{12_400_000, "12.4 MB"},
+		{987_654, "987.7 kB"},
+		{1_400_000_000, "1.4 GB"},
+	} {
+		if got := formatFileSize(test.bytes); got != test.want {
+			t.Errorf("formatFileSize(%d) = %q, want %q", test.bytes, got, test.want)
 		}
 	}
 }
 
-func TestCanonicalWGAArtworkSourceURLFailsClosed(t *testing.T) {
-	for _, test := range []struct {
-		name  string
-		value string
-		want  string
-	}{
-		{name: "producer relative html path", value: "html/v/vermeer/girl.html", want: "https://www.wga.hu/html/v/vermeer/girl.html"},
-		{name: "exact HTTPS canonical html path", value: "https://www.wga.hu/html/v/vermeer/girl.html", want: "https://www.wga.hu/html/v/vermeer/girl.html"},
-		{name: "HTTP scheme", value: "http://www.wga.hu/html/v/vermeer/girl.html"},
-		{name: "non-WGA host", value: "https://example.com/html/v/vermeer/girl.html"},
-		{name: "deceptive subdomain", value: "https://www.wga.hu.example.com/html/v/vermeer/girl.html"},
-		{name: "lookalike host", value: "https://wwwwga.hu/html/v/vermeer/girl.html"},
-		{name: "explicit port", value: "https://www.wga.hu:8443/html/v/vermeer/girl.html"},
-		{name: "userinfo credentials", value: "https://user:pass@www.wga.hu/html/v/vermeer/girl.html"},
-		{name: "query string", value: "https://www.wga.hu/html/v/vermeer/girl.html?download=1"},
-		{name: "fragment", value: "https://www.wga.hu/html/v/vermeer/girl.html#section"},
-		{name: "path traversal", value: "https://www.wga.hu/html/v/../admin.html"},
-		{name: "non-html path", value: "https://www.wga.hu/other/girl.html"},
-	} {
-		t.Run(test.name, func(t *testing.T) {
-			if got := canonicalWGAArtworkSourceURL(test.value); got != test.want {
-				t.Errorf("canonicalWGAArtworkSourceURL(%q) = %q, want %q", test.value, got, test.want)
-			}
-		})
+func TestRelatedHoldingURL(t *testing.T) {
+	if got := relatedHoldingURL(&repositories.RelatedWorkHolding{QueryKey: "artist", QueryValue: "Vermeer, Johannes"}); got != "/artworks?artist=Vermeer%2C+Johannes" {
+		t.Errorf("artist holding URL = %q", got)
+	}
+	if got := relatedHoldingURL(&repositories.RelatedWorkHolding{QueryKey: "venue", QueryValue: "location0001"}); got != "/artworks?venue=location0001" {
+		t.Errorf("venue holding URL = %q", got)
+	}
+	if got := relatedHoldingURL(&repositories.RelatedWorkHolding{QueryKey: "period", QueryValue: "period00001"}); got != "/artworks?period=period00001" {
+		t.Errorf("period holding URL = %q", got)
+	}
+	if got := relatedHoldingURL(&repositories.RelatedWorkHolding{QueryKey: "palette", QueryValue: "x"}); got != "" {
+		t.Errorf("palette holding URL = %q, want empty (ranking-only)", got)
+	}
+	if got := relatedHoldingURL(&repositories.RelatedWorkHolding{QueryKey: "artist", QueryValue: "a&b=c"}); got != "/artworks?artist=a%26b%3Dc" {
+		t.Errorf("holding URL must URL-encode the value, got %q", got)
+	}
+}
+
+func TestRelatedHoldingLabel(t *testing.T) {
+	if got := relatedHoldingLabel(11); got != "FIND MORE 11 IN THE ARTWORK SEARCH →" {
+		t.Errorf("relatedHoldingLabel(11) = %q", got)
 	}
 }
 
@@ -333,14 +403,16 @@ func TestResolveWorkArtistChoosesPublishedAuthor(t *testing.T) {
 
 	saveRecordCollection(t, app, core.NewBaseCollection("Artists"), "artists",
 		&core.TextField{Name: "name"},
+		&core.TextField{Name: "filing_name"},
+		&core.TextField{Name: "short_name"},
 		&core.TextField{Name: "slug"},
 		&core.BoolField{Name: "published"},
 	)
 	saveRecordRecord(t, app, "artists", "artistunpub0001", map[string]any{
-		"name": "Unpublished", "slug": "unpublished", "published": false,
+		"name": "Unpublished", "filing_name": "Unpublished, Filing", "short_name": "Unpublished", "slug": "unpublished", "published": false,
 	})
 	saveRecordRecord(t, app, "artists", "artistpub000001", map[string]any{
-		"name": "Published", "slug": "published", "published": true,
+		"name": "Published Route", "filing_name": "Published, Filing", "short_name": "Published", "slug": "published", "published": true,
 	})
 
 	works := core.NewBaseCollection("Artworks")
@@ -348,15 +420,15 @@ func TestResolveWorkArtistChoosesPublishedAuthor(t *testing.T) {
 	work := core.NewRecord(works)
 	work.Set("author", []string{"artistunpub0001", "artistpub000001"})
 
-	name, id := resolveWorkArtist(app, work)
-	if name != "Published" || id != "artistpub000001" {
-		t.Errorf("resolveWorkArtist = %q/%q, want Published/artistpub000001", name, id)
+	routeName, filingName, shortName, id := resolveWorkArtist(app, work)
+	if routeName != "Published Route" || filingName != "Published, Filing" || shortName != "Published" || id != "artistpub000001" {
+		t.Errorf("resolveWorkArtist = %q/%q/%q/%q, want route/filing/short/id", routeName, filingName, shortName, id)
 	}
 
 	// When every author is unpublished, no byline or link is produced.
 	workOnlyUnpublished := core.NewRecord(works)
 	workOnlyUnpublished.Set("author", []string{"artistunpub0001"})
-	if name, id := resolveWorkArtist(app, workOnlyUnpublished); name != "" || id != "" {
-		t.Errorf("resolveWorkArtist(only unpublished) = %q/%q, want empty", name, id)
+	if routeName, filingName, shortName, id := resolveWorkArtist(app, workOnlyUnpublished); routeName != "" || filingName != "" || shortName != "" || id != "" {
+		t.Errorf("resolveWorkArtist(only unpublished) = %q/%q/%q/%q, want empty", routeName, filingName, shortName, id)
 	}
 }

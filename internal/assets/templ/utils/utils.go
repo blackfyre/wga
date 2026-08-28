@@ -4,19 +4,21 @@ import (
 	"context"
 	"net/http"
 	"regexp"
+	"strings"
 
+	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/utils/publicurl"
 )
 
 type ContextKey string
-
-type bionicReadingContextKey struct{}
 
 // trustedHeadMarkupContextKey is a private typed key for operator-trusted
 // markup rendered verbatim in the document head. It is intentionally distinct
 // from the generic ContextKey so the executable-content trust boundary cannot
 // collide with ordinary string context values.
 type trustedHeadMarkupContextKey struct{}
+
+type requestPathContextKey struct{}
 
 var TitleKey ContextKey = "title"
 var DescriptionKey ContextKey = "description"
@@ -37,21 +39,81 @@ var CanonicalUrlKey ContextKey = "canonical:url"
 
 func ContextFromRequest(request *http.Request) context.Context {
 	if request == nil {
-		return context.WithValue(context.Background(), bionicReadingContextKey{}, false)
+		ctx := context.WithValue(context.Background(), preferencesContextKey{}, dto.Preferences{Palette: dto.DefaultPaletteKey})
+		return context.WithValue(ctx, requestPathContextKey{}, "")
 	}
 
-	bionicReading := false
-	cookie, err := request.Cookie("wga_bionic")
-	if err == nil && cookie.Value == "on" {
-		bionicReading = true
-	}
-
-	return context.WithValue(request.Context(), bionicReadingContextKey{}, bionicReading)
+	ctx := context.WithValue(request.Context(), preferencesContextKey{}, readPreferences(request))
+	return context.WithValue(ctx, requestPathContextKey{}, request.URL.Path)
 }
 
-func GetBionicReading(c context.Context) bool {
-	bionicReading, ok := c.Value(bionicReadingContextKey{}).(bool)
-	return ok && bionicReading
+// RequestPath returns the request URL path captured for shared template rendering.
+func RequestPath(c context.Context) string {
+	path, _ := c.Value(requestPathContextKey{}).(string)
+	return normalizePath(path)
+}
+
+// IsPathActive reports whether candidate is the most specific destination that
+// owns the request path. A root destination owns only the root; all other
+// destinations own their path and children on a path boundary. Public artist
+// artwork records are an alias for the ARTWORKS shell destination.
+func IsPathActive(c context.Context, candidate string, destinations []string) bool {
+	current := navigationPath(RequestPath(c))
+	candidate = normalizePath(candidate)
+	if current == "" || candidate == "" {
+		return false
+	}
+
+	active := ""
+	for _, destination := range destinations {
+		destination = normalizePath(destination)
+		if !pathOwns(destination, current) {
+			continue
+		}
+		if len(destination) > len(active) {
+			active = destination
+		}
+	}
+
+	return candidate == active
+}
+
+// navigationPath resolves public record routes to their top-level shell
+// destination. Singular and plural artist aliases share this ownership: artist
+// records and selections belong to ARTISTS, while artwork records belong to
+// ARTWORKS.
+func navigationPath(value string) string {
+	value = normalizePath(value)
+	parts := strings.Split(strings.Trim(value, "/"), "/")
+	if len(parts) == 3 && (parts[0] == "artist" || parts[0] == "artists") && parts[2] != "selections" {
+		return "/artworks"
+	}
+	if len(parts) >= 2 && (parts[0] == "artist" || parts[0] == "artists") {
+		return "/artists"
+	}
+
+	return value
+}
+
+func normalizePath(value string) string {
+	if value == "" {
+		return ""
+	}
+	if !strings.HasPrefix(value, "/") {
+		value = "/" + value
+	}
+	if value != "/" {
+		value = strings.TrimRight(value, "/")
+	}
+	return value
+}
+
+func pathOwns(destination string, current string) bool {
+	if destination == "/" {
+		return current == "/"
+	}
+
+	return current == destination || strings.HasPrefix(current, destination+"/")
 }
 
 // WithTrustedHeadMarkup returns a context carrying the supplied operator-trusted

@@ -42,14 +42,14 @@ templ HomePageContent(c HomePage) {
 	<section class="home-page">
 		<section class="container mx-auto px-4 pb-20 pt-10 md:px-0" aria-labelledby="home-title">
 			<div class="flex flex-col items-start gap-10 pb-4 md:flex-row md:gap-16">
-				<div class="flex-1">
+				<div class="w-full min-w-0 flex-1 md:w-auto">
 					<p class="mb-4 font-mono text-[11px] tracking-[2px] text-base-content/60">00 — PROVIDING EXPERIENCE SINCE 1992</p>
 					<h1 id="home-title" class="mb-5 text-[34px] font-semibold leading-[1.08] tracking-[-1px] md:text-[52px]">Explore artists and artworks<br class="hidden md:inline"/>without losing the thread.</h1>
 					<p class="mb-8 max-w-[520px] text-[17px] leading-relaxed text-base-content/70">Paintings, sculpture and architecture from the 3rd century to the early 20th, with biographies, commentaries, side-by-side comparison and period music.</p>
 					<nav class="flex flex-wrap gap-2.5" aria-label="Discover the collection">
-						<a href="/artists" class="btn btn-primary h-[50px] px-6.5 font-mono text-xs tracking-[1.5px]">BROWSE ARTISTS →</a>
-						<a href="/artworks" class="btn btn-outline h-[50px] px-6.5 font-mono text-xs tracking-[1.5px]">BROWSE ARTWORKS →</a>
-						<a href="/inspire" class="btn btn-outline h-[50px] px-6.5 font-mono text-xs tracking-[1.5px]">FIND INSPIRATION →</a>
+						<a href="/artists" class="btn btn-primary h-auto min-h-[50px] max-w-full whitespace-normal wrap-anywhere px-6.5 font-mono text-xs tracking-[1.5px]">BROWSE ARTISTS →</a>
+						<a href="/artworks" class="btn btn-outline h-auto min-h-[50px] max-w-full whitespace-normal wrap-anywhere px-6.5 font-mono text-xs tracking-[1.5px]">BROWSE ARTWORKS →</a>
+						<a href="/inspire" class="btn btn-outline h-auto min-h-[50px] max-w-full whitespace-normal wrap-anywhere px-6.5 font-mono text-xs tracking-[1.5px]">FIND INSPIRATION →</a>
 					</nav>
 				</div>
 				<aside class="w-full shrink-0 md:w-[300px]" aria-labelledby="work-of-the-day-title">

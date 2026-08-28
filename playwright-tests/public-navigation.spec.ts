@@ -1,5 +1,20 @@
 import { expect, test } from "@playwright/test";
 
+import {
+	expectNoPageErrors,
+	guardPageErrors,
+	resetErrorCapture,
+} from "./helpers/page-errors";
+
+test.beforeEach(async ({ page }) => {
+	resetErrorCapture();
+	guardPageErrors(page);
+});
+
+test.afterEach(() => {
+	expectNoPageErrors();
+});
+
 test("desktop navigation opens the catalogue", async ({ page }) => {
 	await page.goto("/");
 	await page
@@ -9,6 +24,27 @@ test("desktop navigation opens the catalogue", async ({ page }) => {
 
 	await expect(page).toHaveURL(/\/artworks$/);
 	await expect(page.getByRole("heading", { name: "Artworks" })).toBeVisible();
+});
+
+test("footer links navigate through real HTMX requests", async ({ page }) => {
+	await page.goto("/");
+	const htmxRequests: string[] = [];
+	page.on("request", (request) => {
+		if (request.headers()["hx-request"] === "true") {
+			htmxRequests.push(request.url());
+		}
+	});
+
+	// A footer link carries an ordinary href plus hx-get; clicking it must be
+	// a genuine HTMX swap of #mc-area, not a synthetic lifecycle event or a
+	// full document reload.
+	await page.locator("footer a[href='/artists']").click();
+
+	await expect(page).toHaveURL(/\/artists$/);
+	await expect(page.getByRole("heading", { name: "Artists" })).toBeVisible();
+	expect(htmxRequests.some((url) => new URL(url).pathname === "/artists")).toBe(
+		true,
+	);
 });
 
 test("desktop navigation underline sits on the navigation edge", async ({
@@ -75,16 +111,23 @@ test("desktop header controls share the search baseline", async ({ page }) => {
 	expect(Math.max(...bottoms) - Math.min(...bottoms)).toBeLessThanOrEqual(1);
 });
 
-test("header search submits a global query", async ({ page }) => {
+test("header search submits a global query and reports an honest empty result", async ({
+	page,
+}) => {
 	await page.goto("/");
-	await page
-		.getByRole("searchbox", { name: "Search collection" })
-		.fill("Synthetic Artwork 01-01");
+	const query = "no-such-record-zzz-0000";
+	await page.getByRole("searchbox", { name: "Search collection" }).fill(query);
 	await page.getByRole("button", { name: "SEARCH", exact: true }).click();
 
-	await expect(page).toHaveURL(/\/search\?q=Synthetic\+Artwork\+01-01/);
+	await expect(page).toHaveURL(/\/search\?q=no-such-record-zzz-0000/);
+	await expect(page.locator("#global-search-results")).toBeVisible();
+	await expect(page.locator("#global-search-results")).toContainText("ARTISTS");
+	await expect(page.locator("#global-search-results")).toContainText("WORKS");
 	await expect(page.locator("#global-search-results")).toContainText(
-		"Synthetic Artwork 01-01",
+		"No artist matches that.",
+	);
+	await expect(page.locator("#global-search-results")).toContainText(
+		"No work matches that.",
 	);
 });
 
@@ -141,21 +184,29 @@ for (const viewport of [
 	{ width: 375, height: 812 },
 	{ width: 390, height: 844 },
 ]) {
-	test(`mobile disclosure keeps the logo fixed and paints a full-width opaque panel at ${viewport.width}px`, async ({ page }) => {
+	test(`mobile disclosure keeps the logo fixed and paints a full-width opaque panel at ${viewport.width}px`, async ({
+		page,
+	}) => {
 		await page.setViewportSize(viewport);
 		await page.goto("/");
 
 		const menu = page.locator("header details[data-kbd-mobile-navigation]");
-		const summary = menu.locator("summary[aria-label='Open primary navigation']");
+		const summary = menu.locator(
+			"summary[aria-label='Open primary navigation']",
+		);
 		const logo = page.locator("header a[href='/'][class*='col-start-1']");
 		const nav = menu.locator("nav[data-mobile-navigation]");
 
-		const closedLogoTop = await logo.evaluate((element) => element.getBoundingClientRect().top);
+		const closedLogoTop = await logo.evaluate(
+			(element) => element.getBoundingClientRect().top,
+		);
 
 		await summary.click();
 		await expect(menu).toHaveAttribute("open", "");
 
-		const openLogoTop = await logo.evaluate((element) => element.getBoundingClientRect().top);
+		const openLogoTop = await logo.evaluate(
+			(element) => element.getBoundingClientRect().top,
+		);
 		expect(Math.abs(openLogoTop - closedLogoTop)).toBeLessThanOrEqual(1);
 
 		const logoBox = await logo.boundingBox();
@@ -179,7 +230,9 @@ for (const viewport of [
 		expect(Math.abs(navRight - gridRight)).toBeLessThanOrEqual(1);
 
 		// panel background is opaque
-		const backgroundColor = await nav.evaluate((element) => getComputedStyle(element).backgroundColor);
+		const backgroundColor = await nav.evaluate(
+			(element) => getComputedStyle(element).backgroundColor,
+		);
 		expect(backgroundColorAlpha(backgroundColor)).toBe(1);
 
 		// logo and toggle do not intersect (the verifier failing case)
@@ -231,12 +284,16 @@ for (const viewport of [
 	{ width: 375, height: 812 },
 	{ width: 390, height: 844 },
 ]) {
-	test(`mobile toggle hit-tests across its full surface and toggles at ${viewport.width}px`, async ({ page }) => {
+	test(`mobile toggle hit-tests across its full surface and toggles at ${viewport.width}px`, async ({
+		page,
+	}) => {
 		await page.setViewportSize(viewport);
 		await page.goto("/");
 
 		const menu = page.locator("header details[data-kbd-mobile-navigation]");
-		const summary = menu.locator("summary[aria-label='Open primary navigation']");
+		const summary = menu.locator(
+			"summary[aria-label='Open primary navigation']",
+		);
 		const box = await summary.boundingBox();
 		expect(box).not.toBeNull();
 		if (!box) {
@@ -259,7 +316,9 @@ for (const viewport of [
 			const hitsSummary = await page.evaluate(
 				({ x, y }) => {
 					const element = document.elementFromPoint(x, y);
-					return !!element?.closest("summary[aria-label='Open primary navigation']");
+					return !!element?.closest(
+						"summary[aria-label='Open primary navigation']",
+					);
 				},
 				{ x: box.x + probe.dx, y: box.y + probe.dy },
 			);
@@ -346,6 +405,7 @@ test("reduced motion removes page-enter animation delay", async ({ page }) => {
 test("navigation works without JavaScript", async ({ browser }) => {
 	const context = await browser.newContext({ javaScriptEnabled: false });
 	const page = await context.newPage();
+	guardPageErrors(page);
 	await page.goto("/");
 	await page
 		.getByRole("navigation", { name: "Primary navigation" })
@@ -501,6 +561,7 @@ test("mobile disclosure toggles by touch and closes on link tap", async ({
 		hasTouch: true,
 	});
 	const page = await context.newPage();
+	guardPageErrors(page);
 	await page.goto("/");
 	const menu = page.locator("header details[data-kbd-mobile-navigation]");
 	await menu.locator("summary[aria-label='Open primary navigation']").tap();
@@ -517,11 +578,13 @@ test("open mobile navigation stays in bounds in dark mode", async ({
 }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	await page.goto("/");
-	await page.getByRole("button", { name: "DARK", exact: true }).click();
+	await page.locator("[data-wga-preferences-open]").click();
+	await page.locator('[data-wga-scheme="dark"]').click();
 	await expect(page.locator("html")).toHaveAttribute(
 		"data-theme",
 		"wga-rams-dark",
 	);
+	await page.keyboard.press("Escape");
 	const menu = page.locator("header details[data-kbd-mobile-navigation]");
 	await menu.locator("summary[aria-label='Open primary navigation']").click();
 	await expect(menu).toHaveAttribute("open", "");
@@ -547,6 +610,7 @@ test("mobile navigation works without JavaScript", async ({ browser }) => {
 		viewport: { width: 390, height: 844 },
 	});
 	const page = await context.newPage();
+	guardPageErrors(page);
 	await page.goto("/");
 	const menu = page.locator("header details[data-kbd-mobile-navigation]");
 	await menu.locator("summary[aria-label='Open primary navigation']").click();
@@ -559,7 +623,6 @@ test("mobile navigation works without JavaScript", async ({ browser }) => {
 	await expect(page.getByRole("heading", { name: "Artists" })).toBeVisible();
 	await context.close();
 });
-
 
 function backgroundColorAlpha(color: string): number {
 	const match = color.match(/rgba?\(([^)]+)\)/);

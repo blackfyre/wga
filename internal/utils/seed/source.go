@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -22,6 +23,7 @@ import (
 type sourcePaths struct {
 	sqlitePath      string
 	storage         iofs.FS
+	storageRoot     string
 	preseededAssets bool
 	cleanup         func() error
 }
@@ -29,6 +31,7 @@ type sourcePaths struct {
 type sourceFile struct {
 	name            string
 	content         []byte
+	size            int64
 	preseededAssets bool
 }
 
@@ -79,9 +82,14 @@ type sourceLocation struct {
 	IsPublic bool
 }
 
+// sourceArtist is one producer artists record. DisplayName carries the
+// encyclopaedic filing form from source_display_name, while ShortName carries
+// the supplied short form from display_name. Both are preserved verbatim; the
+// importer never parses, reverses, or reconstructs either value.
 type sourceArtist struct {
 	ID                   string
 	DisplayName          string
+	ShortName            string
 	BirthYear            int
 	DeathYear            int
 	BirthPlace           string
@@ -216,6 +224,7 @@ func externalSourcePaths(sqlitePath string) (sourcePaths, error) {
 
 	return sourcePaths{
 		sqlitePath:      sqlitePath,
+		storageRoot:     filepath.Join(filepath.Dir(sqlitePath), "storage"),
 		preseededAssets: true,
 	}, nil
 }
@@ -448,9 +457,13 @@ func loadLocations(db *sql.DB) ([]sourceLocation, error) {
 	return items, rows.Err()
 }
 
+// loadArtists reads the producer artists records, carrying both the
+// encyclopaedic filing form (source_display_name) and the supplied short form
+// (display_name) verbatim. A missing display_name column, a NULL value, or a
+// blank form fails closed rather than fabricating an identity.
 func loadArtists(db *sql.DB) ([]sourceArtist, error) {
 	rows, err := db.Query(`
-		SELECT id, source_display_name, COALESCE(birth_year, 0), COALESCE(death_year, 0),
+		SELECT id, source_display_name, display_name, COALESCE(birth_year, 0), COALESCE(death_year, 0),
 			COALESCE(birth_place, ''), COALESCE(death_place, ''), COALESCE(biography_image_output_path, ''),
 			COALESCE(biography_image_width, 0), COALESCE(biography_image_height, 0)
 		FROM artists
@@ -468,6 +481,7 @@ func loadArtists(db *sql.DB) ([]sourceArtist, error) {
 		if err := rows.Scan(
 			&item.ID,
 			&item.DisplayName,
+			&item.ShortName,
 			&item.BirthYear,
 			&item.DeathYear,
 			&item.BirthPlace,
@@ -477,6 +491,12 @@ func loadArtists(db *sql.DB) ([]sourceArtist, error) {
 			&item.BiographyImageHeight,
 		); err != nil {
 			return nil, fmt.Errorf("scan artists: %w", err)
+		}
+		if strings.TrimSpace(item.DisplayName) == "" {
+			return nil, fmt.Errorf("artist %q has a blank source_display_name", item.ID)
+		}
+		if strings.TrimSpace(item.ShortName) == "" {
+			return nil, fmt.Errorf("artist %q has a blank display_name", item.ID)
 		}
 		if portraitPath != "" {
 			file, err := preseededSourceFile(portraitPath)
@@ -1173,22 +1193,24 @@ func isSHA256Hex(value string) bool {
 
 func loadSourceFiles(paths sourcePaths, data *sourceData) error {
 	if paths.preseededAssets {
-		return loadPreseededSourceFiles(data)
+		return loadPreseededSourceFiles(paths.storageRoot, data)
 	}
 
 	return loadEmbeddedSourceFiles(paths.storage, data)
 }
 
 // loadPreseededSourceFiles resolves the preseeded storage filename for each
-// source record. An artwork with no image metadata is a valid image-less
-// artwork and simply has no file entry; a declared non-empty path must resolve
-// to a safe relative storage path or the import fails closed.
-func loadPreseededSourceFiles(data *sourceData) error {
+// source record and, for image-backed artworks, stats the paired staged
+// original to record its exact byte size. An artwork with no image metadata is
+// a valid image-less artwork and simply has no file entry; a declared non-empty
+// path must resolve to a safe relative storage path whose staged original is a
+// present, non-empty, regular file, or the import fails closed.
+func loadPreseededSourceFiles(storageRoot string, data *sourceData) error {
 	for _, artwork := range data.artworks {
 		if artwork.ImagePath == "" {
 			continue
 		}
-		file, err := preseededSourceFile(artwork.ImagePath)
+		file, err := preseededArtworkFile(storageRoot, artwork.ImagePath)
 		if err != nil {
 			return fmt.Errorf("artwork %q storage path: %w", artwork.ID, err)
 		}
@@ -1215,6 +1237,56 @@ func preseededSourceFile(value string) (sourceFile, error) {
 	return sourceFile{name: path.Base(sourcePath), preseededAssets: true}, nil
 }
 
+// preseededArtworkFile resolves the preseeded artwork storage filename and
+// records the exact byte size of the paired staged original. The size is
+// statted from the staged file itself — never inferred from the filename,
+// extension, or dimensions. Both the storage root and the staged original are
+// resolved to their canonical absolute paths with symlinks followed, and the
+// resolved original must remain inside the resolved root, so a file or
+// parent-directory symlink escape fails the import closed. A missing,
+// non-regular, or empty declared original likewise fails closed.
+func preseededArtworkFile(storageRoot string, value string) (sourceFile, error) {
+	sourcePath, err := safeRelativePath(value)
+	if err != nil {
+		return sourceFile{}, err
+	}
+
+	absRoot, err := filepath.Abs(storageRoot)
+	if err != nil {
+		return sourceFile{}, fmt.Errorf("resolve storage root %q: %w", storageRoot, err)
+	}
+	resolvedRoot, err := filepath.EvalSymlinks(absRoot)
+	if err != nil {
+		return sourceFile{}, fmt.Errorf("resolve storage root %q: %w", storageRoot, err)
+	}
+
+	resolvedCandidate, err := filepath.EvalSymlinks(filepath.Join(resolvedRoot, sourcePath))
+	if err != nil {
+		return sourceFile{}, fmt.Errorf("resolve staged original %q: %w", sourcePath, err)
+	}
+
+	rel, err := filepath.Rel(resolvedRoot, resolvedCandidate)
+	if err != nil {
+		return sourceFile{}, fmt.Errorf("staged original %q escapes storage root: %w", sourcePath, err)
+	}
+	if rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) || filepath.IsAbs(rel) {
+		return sourceFile{}, fmt.Errorf("staged original %q escapes storage root", sourcePath)
+	}
+
+	info, err := os.Stat(resolvedCandidate)
+	if err != nil {
+		return sourceFile{}, fmt.Errorf("stat staged original %q: %w", sourcePath, err)
+	}
+	if !info.Mode().IsRegular() {
+		return sourceFile{}, fmt.Errorf("staged original %q is not a regular file", sourcePath)
+	}
+	if info.Size() == 0 {
+		return sourceFile{}, fmt.Errorf("staged original %q is empty", sourcePath)
+	}
+
+	return sourceFile{name: path.Base(sourcePath), preseededAssets: true, size: info.Size()}, nil
+}
+
 func loadEmbeddedSourceFiles(storage iofs.FS, data *sourceData) error {
 	for _, artwork := range data.artworks {
 		filename, err := singleSourceFile(storage, path.Join("Artworks", artwork.ID))
@@ -1225,7 +1297,7 @@ func loadEmbeddedSourceFiles(storage iofs.FS, data *sourceData) error {
 		if err != nil {
 			return fmt.Errorf("artwork %q storage: %w", artwork.ID, err)
 		}
-		data.artworkFiles[artwork.ID] = sourceFile{name: filename, content: content}
+		data.artworkFiles[artwork.ID] = sourceFile{name: filename, content: content, size: int64(len(content))}
 	}
 
 	for _, track := range data.musicTracks {

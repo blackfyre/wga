@@ -46,13 +46,16 @@ test("artist record renders metadata, biography, works, music, and citation", as
 	await page.goto(artistRecordPath);
 
 	await expect(page.locator("h1")).toHaveText("SYNTHETIC ARTIST 01");
+	await expect(page.locator("nav[aria-label='Breadcrumb']")).toContainText(
+		"Synthetic Artist 01",
+	);
 	await expect(page.getByText("02 — ARTIST")).toBeVisible();
 	await expect(page.getByText("PORTRAIT — SYNTHETIC ARTIST 01")).toBeVisible();
 
 	const aside = page.locator("aside");
 	await expect(aside.getByText("LIFE")).toBeVisible();
 	await expect(
-		aside.getByText("b. 1801 Test City, d. 1851 Test City"),
+		aside.getByText("b. 1801 Test City · d. 1851 Test City"),
 	).toBeVisible();
 	await expect(aside.getByText("American")).toBeVisible();
 	await expect(aside.getByText("Romanticism")).toBeVisible();
@@ -63,7 +66,28 @@ test("artist record renders metadata, biography, works, music, and citation", as
 	await expect(page.getByText("4 RECORDS")).toBeVisible();
 
 	await expect(page.getByText("CITE THIS RECORD — BIBTEX")).toBeVisible();
-	await expect(page.getByText("PERIOD MUSIC")).toBeVisible();
+	await expect(
+		page.locator("[data-wga-music-card]").getByText("PERIOD MUSIC"),
+	).toBeVisible();
+});
+
+test("artist and artwork identities use filing, short, and middot forms", async ({
+	page,
+}) => {
+	await page.goto(artistRecordPath);
+	await expect(page.locator("h1")).toHaveText("SYNTHETIC ARTIST 01");
+	await expect(
+		page.locator("nav[aria-label='Breadcrumb'] a").last(),
+	).toHaveText("Synthetic Artist 01");
+
+	const workLink = page
+		.locator("a", { hasText: "Synthetic Artwork 01-01" })
+		.first();
+	await workLink.click();
+	await expect(page).toHaveURL(/synthetic-artwork-01-01/);
+	await expect(page.locator("article").first()).toContainText(
+		"SYNTHETIC ARTIST 01 · 1902",
+	);
 });
 
 test("artist record shows the period-music card as an ordinary named-window link", async ({
@@ -71,11 +95,14 @@ test("artist record shows the period-music card as an ordinary named-window link
 }) => {
 	await page.goto(artistRecordPath);
 
-	const card = page.locator("a[target='wga-period-music']");
+	const card = page.locator("[data-wga-music-card]");
 	await expect(card).toHaveCount(1);
 	await expect(card).toContainText("PERIOD MUSIC");
 	await expect(card).toContainText("Ballade No. 1, Op. 23");
-	await expect(card).toHaveAttribute("href", /^\/api\/files\/music_song\//);
+	await expect(card.locator("a[target='wga-period-music']")).toHaveAttribute(
+		"href",
+		/^\/player\?song=/,
+	);
 	await expect(card).not.toHaveAttribute("autoplay", /.*/);
 });
 
@@ -170,7 +197,6 @@ test("artist record works and breadcrumb use ordinary links", async ({
 		hasText: "ARTISTS",
 	});
 	await expect(breadcrumb).toHaveAttribute("href", "/artists");
-	await expect(breadcrumb).not.toHaveAttribute("hx-get", /.*/);
 
 	const workLink = page
 		.locator("a", { hasText: "Synthetic Artwork 01-01" })
@@ -257,10 +283,31 @@ test.describe("artist record without JavaScript", () => {
 		await page.goto(artistRecordPath);
 
 		await expect(page.locator("h1")).toHaveText("SYNTHETIC ARTIST 01");
-		await expect(page.getByText("PERIOD MUSIC")).toBeVisible();
-		await expect(page.locator("a[target='wga-period-music']")).toHaveCount(1);
+		await expect(
+			page.locator("nav[aria-label='Breadcrumb'] a").last(),
+		).toHaveText("Synthetic Artist 01");
+		await expect(page.locator("aside")).toContainText(
+			"b. 1801 Test City · d. 1851 Test City",
+		);
+		const musicCard = page.locator("[data-wga-music-card]");
+		await expect(musicCard).toHaveCount(1);
+		await expect(musicCard.getByText("PERIOD MUSIC")).toBeVisible();
 		await expect(page.getByText("CITE THIS RECORD — BIBTEX")).toBeVisible();
 		await expect(page.getByText("4 RECORDS")).toBeVisible();
+	});
+
+	test("keeps the breadcrumb as an ordinary navigable link", async ({
+		page,
+	}) => {
+		await page.goto(artistRecordPath);
+		await settleEntryAnimation(page);
+		const breadcrumb = page.locator("nav[aria-label='Breadcrumb'] a", {
+			hasText: "ARTISTS",
+		});
+		await expect(breadcrumb).toHaveAttribute("href", "/artists");
+		await breadcrumb.click();
+		await expect(page).toHaveURL("/artists");
+		await expect(page.locator("h1")).toHaveText("Artists");
 	});
 });
 

@@ -25,6 +25,8 @@ type timelineStore interface {
 	countWorks(from int, to int) (int, error)
 	dateSpans(from int, to int) ([]dateSpan, error)
 	listWorks(from int, to int, limit int, offset int) ([]artworkRow, error)
+	countArtists(from int, to int) (int, error)
+	listArtists(from int, to int, limit int) ([]artistRow, error)
 }
 
 // buildTimelineView loads the approved chronology and assembles the page-owned
@@ -59,6 +61,7 @@ func buildTimelineView(store timelineStore, values url.Values) (pages.TimelineVi
 		win.page = 1
 		view.HasRange = false
 		view.Page = win.page
+		view.Lanes = buildLanes(0, 0, 0)
 		return view, win.path(min, max), nil
 	}
 
@@ -102,6 +105,16 @@ func buildTimelineView(store timelineStore, values url.Values) (pages.TimelineVi
 		}
 	}
 
+	artistTotal, err := store.countArtists(win.from, win.to)
+	if err != nil {
+		return pages.TimelineView{}, "", err
+	}
+
+	artistRows, err := store.listArtists(win.from, win.to, markCap)
+	if err != nil {
+		return pages.TimelineView{}, "", err
+	}
+
 	view.RangeLabel = formatRange(win.from, win.to)
 	view.SpanLabel = fmt.Sprintf("%d YEARS", spanYears(win.from, win.to))
 	view.HitLabel = fmt.Sprintf("%d WORKS", total)
@@ -125,6 +138,8 @@ func buildTimelineView(store timelineStore, values url.Values) (pages.TimelineVi
 	view.Bands = buildBands(periods, win.from, win.to)
 	view.Marks = buildMarks(markRows, win.from, win.to)
 	view.Works = buildWorks(workRows, win.from, win.to)
+	view.Artists = buildArtists(artistRows)
+	view.Lanes = buildLanes(len(view.Bands), artistTotal, total)
 
 	view.TotalWorks = total
 	view.Page = win.page
@@ -308,6 +323,61 @@ func buildMarks(rows []artworkRow, from int, to int) []pages.TimelineMark {
 	}
 
 	return marks
+}
+
+// buildArtists projects each bounded artist row onto the artists lane. The
+// entry is linked canonically when its published public record exists and its
+// meta carries the stored birth year, which is the sole positioning datum.
+func buildArtists(rows []artistRow) []pages.TimelineArtist {
+	artists := make([]pages.TimelineArtist, 0, len(rows))
+	for _, row := range rows {
+		artists = append(artists, pages.TimelineArtist{
+			Href: artistURL(row),
+			Name: row.FilingName,
+			Meta: artistBirthLabel(row.YearOfBirth),
+		})
+	}
+
+	return artists
+}
+
+// artistURL returns the canonical public artist-record URL for the row.
+func artistURL(row artistRow) string {
+	return wgaurl.GenerateArtistUrl(wgaurl.ArtistUrlDTO{
+		ArtistName: row.Name,
+		ArtistId:   row.ID,
+	})
+}
+
+// artistBirthLabel renders the stored birth year as a presentational label.
+func artistBirthLabel(year int) string {
+	return "b. " + strconv.Itoa(year)
+}
+
+// buildLanes assembles the six reference lanes in fixed order with their
+// per-window counts and honest states. Artists, works, and movements are
+// approved source-backed lanes, so they are SHOWN when they resolve entries and
+// EMPTY otherwise. Buildings, events, and music have no approved deterministic
+// date/span or linkage evidence, so they are always UNAVAILABLE.
+func buildLanes(movementCount int, artistCount int, workCount int) []pages.TimelineLane {
+	return []pages.TimelineLane{
+		{Key: pages.LaneKeyArtists, Label: "ARTISTS", Count: artistCount, State: laneStateFor(artistCount)},
+		{Key: pages.LaneKeyWorks, Label: "WORKS", Count: workCount, State: laneStateFor(workCount)},
+		{Key: pages.LaneKeyMovements, Label: "MOVEMENTS", Count: movementCount, State: laneStateFor(movementCount)},
+		{Key: pages.LaneKeyBuildings, Label: "BUILDINGS", Count: 0, State: pages.LaneStateUnavailable},
+		{Key: pages.LaneKeyEvents, Label: "EVENTS", Count: 0, State: pages.LaneStateUnavailable},
+		{Key: pages.LaneKeyMusic, Label: "MUSIC", Count: 0, State: pages.LaneStateUnavailable},
+	}
+}
+
+// laneStateFor reports the honest state for a source-backed lane given its
+// resolved entry count.
+func laneStateFor(count int) string {
+	if count > 0 {
+		return pages.LaneStateShown
+	}
+
+	return pages.LaneStateEmpty
 }
 
 // buildWorks projects one already-bounded works page into the card panel.

@@ -12,7 +12,7 @@ type PostcardComposeView struct {
 	ImageID       string
 	Image         string
 	Title         string
-	Author        string
+	ArtistFilingName string
 	Technique     string
 	SenderName    string
 	SenderEmail   string
@@ -35,7 +35,7 @@ type PostcardView struct {
 	Title      string
 	Comment    string
 	Technique  string
-	Author     string
+	ArtistFilingName string
 	SenderName string
 	Music      components.MusicPeriodCard
 }
@@ -48,6 +48,11 @@ templ PostcardComposePage(v PostcardComposeView) {
 
 templ PostcardComposeDialog(v PostcardComposeView) {
 	@components.DialogBody() {
+		<div class="flex items-start justify-end border-b border-base-content pb-4">
+			<form method="dialog">
+				<button type="submit" data-dialog-close data-dialog-initial-focus class="font-mono text-sm text-base-content/60 hover:text-base-content" aria-label="Close">✕</button>
+			</form>
+		</div>
 		@PostcardComposeBlock(v)
 	}
 }
@@ -55,14 +60,14 @@ templ PostcardComposeDialog(v PostcardComposeView) {
 templ PostcardComposeBlock(v PostcardComposeView) {
 	<section id="postcard-compose" class="container mx-auto px-4 pb-20 pt-10 md:px-0">
 		<p class="mb-3 font-mono text-[11px] tracking-[2px] text-base-content/60">04 — POSTCARD SERVICE</p>
-		<h1 class="mb-3 text-[30px] font-semibold tracking-[-0.5px] md:text-[40px]">Send a postcard</h1>
+		<h1 id="postcard-compose-title" data-dialog-title class="mb-3 text-[30px] font-semibold tracking-[-0.5px] md:text-[40px]">Send a postcard</h1>
 		<p class="mb-10 max-w-[520px] text-base leading-relaxed text-base-content/70">Free service. The recipient receives a private link to the artwork with your message. The link expires after 30 days and the email address is removed after delivery.</p>
 		<div class="flex flex-col items-start gap-10 md:flex-row md:gap-14">
 			<figure class="w-full shrink-0 md:w-[260px]">
-				<div class="aspect-[39/44.5] border border-base-content/15 bg-base-300"><img src={ v.Image } alt={ v.Title + " by " + v.Author } class="h-full w-full object-cover"/></div>
+				<div class="aspect-[39/44.5] border border-base-content/15 bg-base-300"><img src={ v.Image } alt={ v.Title + " by " + v.ArtistFilingName } class="h-full w-full object-cover"/></div>
 				<h2 class="mt-3 text-[15px] font-semibold">{ v.Title }</h2>
-				if v.Author != "" {
-					<p class="mt-1 font-mono text-[11px] text-base-content/60">{ v.Author }</p>
+				if v.ArtistFilingName != "" {
+					<p class="mt-1 font-mono text-[11px] text-base-content/60">{ v.ArtistFilingName }</p>
 				}
 				<a href="/artworks" hx-get="/artworks" class="mt-3 inline-block font-mono text-[11px] tracking-[1px] text-primary">CHANGE ARTWORK →</a>
 			</figure>
@@ -94,13 +99,20 @@ templ PostcardConfirmationPage(v PostcardConfirmationView) {
 }
 
 templ PostcardConfirmationDialog(v PostcardConfirmationView) {
-	@components.DialogBody() { @PostcardConfirmationBlock(v) }
+	@components.DialogBody() {
+		<div class="flex items-start justify-end border-b border-base-content pb-4">
+			<form method="dialog">
+				<button type="submit" data-dialog-close data-dialog-initial-focus class="font-mono text-sm text-base-content/60 hover:text-base-content" aria-label="Close">✕</button>
+			</form>
+		</div>
+		@PostcardConfirmationBlock(v)
+	}
 }
 
 templ PostcardConfirmationBlock(v PostcardConfirmationView) {
 	<section id="postcard-compose" class="container mx-auto max-w-[520px] px-4 pb-20 pt-10 md:px-0">
 		<p aria-hidden="true" class="mb-6 flex h-11 w-11 items-center justify-center border border-primary font-mono text-lg text-primary">✓</p>
-		<h1 class="mb-3 text-[28px] font-semibold">Postcard queued</h1>
+		<h1 id="postcard-confirmation-title" data-dialog-title class="mb-3 text-[28px] font-semibold">Postcard queued</h1>
 		<p class="mb-2 leading-relaxed">Delivery is being prepared for <span class="font-mono text-sm">{ v.MaskedRecipient }</span>.</p>
 		<p class="mb-7 text-sm text-base-content/60">The private link remains valid until { v.Expires }.</p>
 		<a href={ templ.URL(v.ViewURL) } class="font-mono text-xs tracking-[1px] text-primary">VIEW THE POSTCARD →</a>
@@ -132,10 +144,10 @@ templ PostcardBlock(p PostcardView) {
 		<p class="mb-3 font-mono text-[11px] tracking-[2px] text-base-content/60">05 — POSTCARD RECEIVED</p>
 		<h1 class="mb-10 text-[44px] font-semibold leading-tight tracking-[-0.5px] md:text-[48px]">You have received a postcard</h1>
 		<article class="max-w-[700px] border border-base-content/15 bg-base-100">
-			<div class="aspect-video border-b border-base-content/15 bg-base-300"><img src={ p.Image } alt={ p.Title + " by " + p.Author } class="h-full w-full object-cover"/></div>
+			<div class="aspect-video border-b border-base-content/15 bg-base-300"><img src={ p.Image } alt={ p.Title + " by " + p.ArtistFilingName } class="h-full w-full object-cover"/></div>
 			<div class="grid gap-8 p-6 md:grid-cols-[minmax(0,1fr)_220px]">
 				<div><p class="mb-3 font-mono text-[10px] tracking-[1px] text-base-content/60">FROM { p.SenderName }</p><div class="content text-[17px] leading-relaxed">@templ.Raw(p.Message)</div></div>
-				<div class="border-t border-base-content/15 pt-6 md:border-l md:border-t-0 md:pl-6 md:pt-0"><h2 class="text-[15px] font-semibold leading-tight">{ p.Title }</h2><p class="mt-1 font-mono text-[11px] leading-relaxed text-base-content/60">{ p.Author }<br/>{ p.Technique }</p><div class="content mt-4 text-sm leading-relaxed">@templ.Raw(p.Comment)</div></div>
+				<div class="border-t border-base-content/15 pt-6 md:border-l md:border-t-0 md:pl-6 md:pt-0"><h2 class="text-[15px] font-semibold leading-tight">{ p.Title }</h2><p class="mt-1 font-mono text-[11px] leading-relaxed text-base-content/60">{ p.ArtistFilingName }<br/>{ p.Technique }</p><div class="content mt-4 text-sm leading-relaxed">@templ.Raw(p.Comment)</div></div>
 			</div>
 			if p.Music.PlayerURL != "" {
 				@components.MusicPeriodPlayerCard(p.Music.SongID, p.Music.Piece, p.Music.PlayerURL)

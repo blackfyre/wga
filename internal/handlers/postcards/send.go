@@ -40,9 +40,12 @@ func renderForm(artworkID string, values pages.PostcardComposeView, formError st
 	values.Technique = record.GetString("technique")
 	values.SiteKey = captcha.SiteKey()
 	values.Error = formError
-	if author := record.ExpandedOne("author"); author != nil {
-		values.Author = author.GetString("name")
+	author := record.ExpandedOne("author")
+	if !hasCompleteArtistIdentity(author) {
+		logger.Warn("Postcard form artwork author unavailable", "event", "postcard.form.rejected", "outcome", "artist_identity_unavailable")
+		return utils.NotFoundError(c)
 	}
+	values.ArtistFilingName = author.GetString("filing_name")
 	if image := record.GetString("image"); image != "" {
 		values.Image = asseturl.GenerateArtworkImageURL(record, asseturl.DeliveryProfilePostcardSmallDualPlate, "")
 	} else {

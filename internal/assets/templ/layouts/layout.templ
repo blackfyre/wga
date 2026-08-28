@@ -46,32 +46,7 @@ templ LayoutBase(bodyClasses string, HtmxTargetArea string) {
 			if utils.GetCanonicalUrl(ctx) != "" {
 				<link rel="canonical" href={ utils.GetCanonicalUrl(ctx) }/>
 			}
-			<script>
-				(function () {
-					let savedTheme;
-				try {
-					savedTheme = window.localStorage.getItem("wga-theme");
-				} catch {}
-				let cookieTheme;
-				for (const cookie of document.cookie.split("; ")) {
-					if (cookie === "wga_theme=light") {
-						cookieTheme = "light";
-					}
-					if (cookie === "wga_theme=dark") {
-						cookieTheme = "dark";
-					}
-				}
-				let theme = "wga-rams";
-				if (savedTheme === "dark" || savedTheme === "wga_dark") {
-					theme = "wga-rams-dark";
-				} else if (savedTheme !== "light" && savedTheme !== "wga_light" && cookieTheme === "dark") {
-					theme = "wga-rams-dark";
-				} else if (savedTheme !== "light" && savedTheme !== "wga_light" && cookieTheme !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches) {
-					theme = "wga-rams-dark";
-					}
-					document.documentElement.dataset.theme = theme;
-				})();
-			</script>
+			@templ.Raw(dto.ThemeResolverScript())
 			<link rel="stylesheet" href="/assets/css/style.css"/>
 			<link rel="apple-touch-icon" sizes="180x180" href="/assets/images/apple-touch-icon.png"/>
 			<link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32x32.png"/>
@@ -97,7 +72,7 @@ templ LayoutBase(bodyClasses string, HtmxTargetArea string) {
 				href="https://github.com/blackfyre/wga/issues?q=sort%3Aupdated-desc+is%3Aissue+state%3Aopen+"
 				class="wga-feedback-anchor fixed right-4 bottom-4 z-50 bg-neutral px-4.5 py-[13px] font-mono text-[11px] tracking-[1.5px] text-neutral-content transition-colors hover:bg-primary md:right-8 md:bottom-8"
 			>FEEDBACK</a>
-			<div class="toast" id="toast-container"></div>
+			<div class={ toastContainerClass(utils.GetItineraryTray(ctx)) } id="toast-container"></div>
 			<script type="module" src="/assets/js/app.js"></script>
 		</body>
 	</html>
@@ -126,10 +101,21 @@ templ LayoutMain() {
 // non-empty, so the fixed tray never covers page content when it is hidden.
 func itineraryMainClass(tray dto.ItineraryTrayView) string {
 	if tray.Count > 0 {
-		return "wga-enter pb-20"
+		return "wga-enter pb-28 md:pb-20"
 	}
 
 	return "wga-enter"
+}
+
+// toastContainerClass lifts the fixed toast container clear of the itinerary
+// tray only while the tray is non-empty, mirroring itineraryMainClass so a
+// notification cannot render behind the bar.
+func toastContainerClass(tray dto.ItineraryTrayView) string {
+	if tray.Count > 0 {
+		return "toast bottom-28 md:bottom-20"
+	}
+
+	return "toast"
 }
 
 templ LayoutSlim() {

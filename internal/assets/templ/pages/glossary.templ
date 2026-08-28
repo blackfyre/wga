@@ -1,6 +1,7 @@
 package pages
 
 import (
+	"github.com/blackfyre/wga/internal/assets/templ/components"
 	"github.com/blackfyre/wga/internal/assets/templ/layouts"
 	"github.com/blackfyre/wga/internal/assets/templ/utils"
 )
@@ -28,9 +29,7 @@ templ GlossaryBlock(view GlossaryView) {
 		<title>{ utils.GetTitle(ctx) }</title>
 	</head>
 	<section id="glossary" class="container mx-auto px-4 pb-20 pt-10 md:px-0 wga-enter">
-		<p class="mb-3 font-mono text-[11px] tracking-[2px] text-base-content/60">13 — GLOSSARY</p>
-		<h1 class="mb-3 text-[44px] font-semibold leading-tight tracking-[-0.5px]">Glossary</h1>
-		<p class="max-w-[540px] text-base leading-relaxed text-base-content/70">Terms used in the commentaries and catalogue entries.</p>
+		@components.PageHead("13 — GLOSSARY", "Glossary", "Terms used in the commentaries and catalogue entries.")
 
 		<nav class="mt-10 flex flex-wrap gap-[2px] border-b border-base-content/15 pb-5" aria-label="Filter terms by letter">
 			<a

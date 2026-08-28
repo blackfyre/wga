@@ -1,6 +1,9 @@
 package repositories
 
 import (
+	"database/sql"
+	"errors"
+
 	"github.com/blackfyre/wga/internal/constants"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
@@ -8,6 +11,23 @@ import (
 )
 
 const recentEligibleArtworkLimit = 4
+
+// landingArtistIdentity is the fail-closed predicate for a home-page artist:
+// the encyclopaedic filing form must be present before an artwork byline can
+// be rendered. Prior-bootstrap records carry a blank filing_name and are
+// denied rather than presented with an empty byline.
+const landingArtistIdentity = "TRIM(artist.filing_name) != '' AND TRIM(artist.short_name) != ''"
+
+func landingIdentityFieldsPresent(app core.App) (bool, error) {
+	artists, err := app.FindCachedCollectionByNameOrId("artists")
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, nil
+		}
+		return false, err
+	}
+	return artists.Fields.GetByName("filing_name") != nil && artists.Fields.GetByName("short_name") != nil, nil
+}
 
 type LandingRepository struct {
 	app *pocketbase.PocketBase
@@ -32,6 +52,7 @@ type landingArtworkRow struct {
 	ArtworkImageWidth int    `db:"artwork_image_width"`
 	ArtistID          string `db:"artist_id"`
 	ArtistName        string `db:"artist_name"`
+	ArtistFilingName  string `db:"artist_filing_name"`
 }
 
 func NewLandingRepository(app *pocketbase.PocketBase) *LandingRepository {
@@ -39,8 +60,15 @@ func NewLandingRepository(app *pocketbase.PocketBase) *LandingRepository {
 }
 
 func (r *LandingRepository) CountPublishedArtists() (int, error) {
+	present, err := landingIdentityFieldsPresent(r.app)
+	if err != nil {
+		return 0, err
+	}
+	if !present {
+		return 0, nil
+	}
 	row := countRow{}
-	err := r.app.DB().NewQuery("SELECT COUNT(*) as c FROM Artists WHERE published IS true").One(&row)
+	err = r.app.DB().NewQuery("SELECT COUNT(*) as c FROM Artists AS artist WHERE artist.published IS true AND " + landingArtistIdentity).One(&row)
 	if err != nil {
 		return 0, err
 	}
@@ -69,12 +97,19 @@ func (r *LandingRepository) CountSchools() (int, error) {
 }
 
 func (r *LandingRepository) CountEligibleArtworks() (int, error) {
+	present, err := landingIdentityFieldsPresent(r.app)
+	if err != nil {
+		return 0, err
+	}
+	if !present {
+		return 0, nil
+	}
 	row := countRow{}
-	err := r.app.DB().NewQuery(`
+	err = r.app.DB().NewQuery(`
 		SELECT COUNT(*) AS c
 		FROM Artworks AS artwork
 		INNER JOIN Artists AS artist ON artist.id = json_extract(artwork.author, '$[0]')
-		WHERE artwork.published IS true AND artist.published IS true
+		WHERE artwork.published IS true AND artist.published IS true AND ` + landingArtistIdentity + `
 	`).One(&row)
 	if err != nil {
 		return 0, err
@@ -90,9 +125,16 @@ func (r *LandingRepository) FindEligibleArtworkByOffset(offset int) (*LandingArt
 	if offset < 0 {
 		return nil, nil
 	}
+	present, err := landingIdentityFieldsPresent(r.app)
+	if err != nil {
+		return nil, err
+	}
+	if !present {
+		return nil, nil
+	}
 
 	rows := []landingArtworkRow{}
-	err := r.app.DB().NewQuery(`
+	err = r.app.DB().NewQuery(`
 		SELECT
 			artwork.id AS artwork_id,
 			artwork.title AS artwork_title,
@@ -100,10 +142,11 @@ func (r *LandingRepository) FindEligibleArtworkByOffset(offset int) (*LandingArt
 			artwork.image AS artwork_image,
 			artwork.image_width AS artwork_image_width,
 			artist.id AS artist_id,
-			artist.name AS artist_name
+			artist.name AS artist_name,
+			artist.filing_name AS artist_filing_name
 		FROM Artworks AS artwork
 		INNER JOIN Artists AS artist ON artist.id = json_extract(artwork.author, '$[0]')
-		WHERE artwork.published IS true AND artist.published IS true
+		WHERE artwork.published IS true AND artist.published IS true AND ` + landingArtistIdentity + `
 		ORDER BY artwork.id ASC
 		LIMIT 1 OFFSET {:offset}
 	`).Bind(dbx.Params{"offset": offset}).All(&rows)
@@ -125,8 +168,15 @@ func (r *LandingRepository) FindEligibleArtworkByOffset(offset int) (*LandingArt
 // ListRecentEligibleArtworks returns at most four published artworks whose
 // first authors are present and published, newest first.
 func (r *LandingRepository) ListRecentEligibleArtworks() ([]LandingArtwork, error) {
+	present, err := landingIdentityFieldsPresent(r.app)
+	if err != nil {
+		return nil, err
+	}
+	if !present {
+		return []LandingArtwork{}, nil
+	}
 	rows := []landingArtworkRow{}
-	err := r.app.DB().NewQuery(`
+	err = r.app.DB().NewQuery(`
 		SELECT
 			artwork.id AS artwork_id,
 			artwork.title AS artwork_title,
@@ -134,10 +184,11 @@ func (r *LandingRepository) ListRecentEligibleArtworks() ([]LandingArtwork, erro
 			artwork.image AS artwork_image,
 			artwork.image_width AS artwork_image_width,
 			artist.id AS artist_id,
-			artist.name AS artist_name
+			artist.name AS artist_name,
+			artist.filing_name AS artist_filing_name
 		FROM Artworks AS artwork
 		INNER JOIN Artists AS artist ON artist.id = json_extract(artwork.author, '$[0]')
-		WHERE artwork.published IS true AND artist.published IS true
+		WHERE artwork.published IS true AND artist.published IS true AND ` + landingArtistIdentity + `
 		ORDER BY artwork.created DESC, artwork.id ASC
 		LIMIT 4
 	`).All(&rows)
@@ -170,6 +221,7 @@ func (r *LandingRepository) landingArtworks(rows []landingArtworkRow) ([]Landing
 		artist := core.NewRecord(artists)
 		artist.Id = row.ArtistID
 		artist.Set("name", row.ArtistName)
+		artist.Set("filing_name", row.ArtistFilingName)
 
 		result = append(result, LandingArtwork{Artwork: artwork, Artist: artist})
 	}

@@ -7,8 +7,10 @@ import (
 )
 
 templ RangeField(field dto.RangeField) {
-	<fieldset class={ templ.KV("py-5", !field.Brush) }>
-		<legend class="font-mono text-(length:--t-10) tracking-[1.5px] text-muted">{ field.Label }</legend>
+	<fieldset class={ templ.KV("py-5", !field.Brush && !field.Inline) }>
+		if !field.Inline {
+			<legend class="font-mono text-(length:--t-10) tracking-[1.5px] text-muted">{ field.Label }</legend>
+		}
 		<div class="mb-4 mt-2 flex items-baseline justify-end">
 			<output id={ field.FromID + "-to-" + field.ToID + "-output" } for={ field.FromID + " " + field.ToID } class="font-mono text-xs">{ rangeValue(rangeFrom(field)) }–{ rangeValue(rangeTo(field)) }</output>
 		</div>

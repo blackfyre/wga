@@ -471,7 +471,7 @@ func buildArtistIndexView(app *pocketbase.PocketBase, values neturl.Values) (pag
 	for _, entry := range indexed {
 		artists = append(artists, pages.ArtistRow{
 			URL:       urlutils.GenerateArtistUrlFromRecord(entry.Record),
-			Name:      entry.Record.GetString("name"),
+			Name:      entry.Record.GetString("filing_name"),
 			Dates:     formatArtistDates(entry.Record.GetInt("year_of_birth"), entry.Record.GetInt("year_of_death")),
 			School:    resolveSchoolNames(entry.Record.GetStringSlice("school"), schoolByID),
 			Period:    periodForBirth(periods, entry.Record.GetInt("year_of_birth")),

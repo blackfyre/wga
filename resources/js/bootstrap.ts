@@ -3,7 +3,25 @@ import Viewer from "viewerjs";
 import "htmx.org";
 import htmx from "htmx.org";
 import warningSign from "../assets/warning-sign.svg";
-import { initBionicReading } from "./bionic";
+import {
+	type Palette,
+	type Scheme,
+	clearPalette,
+	clearScheme,
+	closePreferences,
+	currentPalette,
+	currentScheme,
+	initialiseAppearancePreferences,
+	openPreferences,
+	setPalette,
+	setScheme,
+} from "./appearance";
+import {
+	currentBionicReading,
+	initBionicReading,
+	setBionicReading,
+	toggleBionicReading,
+} from "./bionic";
 import { initCookieConsent } from "./cookieconsent";
 import { initDualHorizontalScroll } from "./dual";
 import {
@@ -13,6 +31,7 @@ import {
 import { initKeyboardNavigation } from "./keyboard";
 import logger from "./logger";
 import { initPeriodMusic } from "./music";
+import { closeMobileNavigation, syncNavigation } from "./public-shell";
 import { initStatisticsChart } from "./statistics";
 import { registerTourHelpers } from "./tours";
 import { viewerImageURL } from "./viewer";
@@ -71,6 +90,25 @@ type wgaWindow = {
 	};
 	itinerary: {
 		countdown: (field: HTMLTextAreaElement, outputId: string) => void;
+	};
+	theme: {
+		set: (scheme: Scheme) => void;
+		clear: () => void;
+		current: () => Scheme;
+	};
+	palette: {
+		set: (palette: Palette) => void;
+		clear: () => void;
+		current: () => Palette;
+	};
+	bionic: {
+		set: (on: boolean) => void;
+		toggle: () => void;
+		current: () => boolean;
+	};
+	preferences: {
+		open: () => void;
+		close: () => void;
 	};
 };
 
@@ -160,155 +198,6 @@ interface ToastEvent extends Event {
 		type: "info" | "alert" | "warning" | "error" | "success";
 	};
 }
-
-type ThemeChoice = "light" | "dark";
-
-const storedTheme = (): ThemeChoice | null => {
-	try {
-		const theme = window.localStorage.getItem("wga-theme");
-		if (theme === "light" || theme === "dark") {
-			return theme;
-		}
-		if (theme === "wga_light") {
-			return "light";
-		}
-		if (theme === "wga_dark") {
-			return "dark";
-		}
-	} catch {
-		return null;
-	}
-	return null;
-};
-
-const cookieTheme = (): ThemeChoice | null => {
-	for (const cookie of document.cookie.split("; ")) {
-		if (cookie === "wga_theme=light") {
-			return "light";
-		}
-		if (cookie === "wga_theme=dark") {
-			return "dark";
-		}
-	}
-	return null;
-};
-
-const applyTheme = (choice: ThemeChoice) => {
-	let theme = "wga-rams";
-	if (choice === "dark") {
-		theme = "wga-rams-dark";
-	}
-	document.documentElement.dataset.theme = theme;
-	for (const toggle of document.querySelectorAll<HTMLElement>(
-		"[data-wga-theme]",
-	)) {
-		const active = toggle.dataset.wgaTheme === choice;
-		toggle.setAttribute("aria-pressed", String(active));
-		toggle.classList.toggle("bg-primary", active);
-		toggle.classList.toggle("text-primary-content", active);
-		toggle.classList.toggle("bg-base-100", !active);
-		toggle.classList.toggle("text-base-content/75", !active);
-	}
-};
-
-const resolvedTheme = (): ThemeChoice => {
-	const choice = storedTheme();
-	if (choice) {
-		return choice;
-	}
-	const cookieChoice = cookieTheme();
-	if (cookieChoice) {
-		return cookieChoice;
-	}
-	if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-		return "dark";
-	}
-	return "light";
-};
-
-const setTheme = (choice: ThemeChoice) => {
-	try {
-		window.localStorage.setItem("wga-theme", choice);
-	} catch {
-		// Storage can be unavailable in private browsing modes.
-	}
-	document.cookie = `wga_theme=${choice}; path=/; max-age=31536000; samesite=lax`;
-	applyTheme(choice);
-};
-
-const clearTheme = () => {
-	try {
-		window.localStorage.removeItem("wga-theme");
-	} catch {
-		// Storage can be unavailable in private browsing modes.
-	}
-	document.cookie = "wga_theme=; path=/; max-age=0; samesite=lax";
-	applyTheme(resolvedTheme());
-};
-
-const initThemeToggle = () => {
-	applyTheme(resolvedTheme());
-	for (const control of document.querySelectorAll<HTMLElement>(
-		"[data-wga-theme-toggle]",
-	)) {
-		control.classList.remove("hidden");
-		control.classList.add("flex");
-		control.removeAttribute("aria-hidden");
-	}
-
-	document.addEventListener("click", (event) => {
-		const target = event.target instanceof Element ? event.target : null;
-		const toggle = target?.closest<HTMLElement>("[data-wga-theme]");
-		if (!toggle) {
-			return;
-		}
-		const choice = toggle.dataset.wgaTheme;
-		if (choice !== "light" && choice !== "dark") {
-			return;
-		}
-		setTheme(choice);
-	});
-
-	window
-		.matchMedia("(prefers-color-scheme: dark)")
-		.addEventListener("change", () => {
-			if (!storedTheme() && !cookieTheme()) {
-				applyTheme(resolvedTheme());
-			}
-		});
-
-	document.addEventListener("htmx:afterSwap", () => {
-		applyTheme(resolvedTheme());
-	});
-};
-
-const syncMobileNavigation = () => {
-	const currentPath = window.location.pathname;
-	const links = Array.from(
-		document.querySelectorAll<HTMLAnchorElement>("[data-mobile-navigation] a"),
-	);
-	let active: HTMLAnchorElement | null = null;
-	for (const link of links) {
-		const path = link.pathname;
-		const matches =
-			path === currentPath ||
-			(path !== "/" && currentPath.startsWith(`${path}/`));
-		if (matches && (active === null || path.length > active.pathname.length)) {
-			active = link;
-		}
-	}
-	for (const link of links) {
-		const isActive = link === active;
-		link.classList.toggle("bg-primary", isActive);
-		link.classList.toggle("text-primary-content", isActive);
-		link.classList.toggle("pl-3", isActive);
-		if (isActive) {
-			link.setAttribute("aria-current", "page");
-		} else {
-			link.removeAttribute("aria-current");
-		}
-	}
-};
 
 const feedbackCountdown = (field: HTMLTextAreaElement) => {
 	const output = document.getElementById("feedback-chars");
@@ -439,8 +328,8 @@ const initPublicDialog = () => {
 	});
 	dialog.addEventListener("keydown", trapDialogFocus);
 	document.addEventListener("htmx:afterSwap", (event) => {
-		const detail = (event as CustomEvent<{ target: Element }>).detail;
-		if (detail.target === dialog) {
+		const detail = (event as CustomEvent<{ target?: Element }>).detail;
+		if (detail?.target === dialog) {
 			showDialog();
 		}
 	});
@@ -1372,10 +1261,11 @@ const wgaInternal: wgaInternals = {
 		logger.error("Failed to initialise Cookie Consent", error);
 	});
 	initKeyboardNavigation();
-	initThemeToggle();
+	initialiseAppearancePreferences();
 	initBionicReading();
-	syncMobileNavigation();
-	document.addEventListener("htmx:afterSettle", syncMobileNavigation);
+	syncNavigation();
+	document.addEventListener("click", closeMobileNavigation);
+	document.addEventListener("htmx:afterSettle", syncNavigation);
 	window.addEventListener("keydown", trapViewerFocus, true);
 	wgaInternal.func.init();
 })();
@@ -1467,14 +1357,44 @@ window.wga = {
 		},
 	},
 	theme: {
-		set(choice: ThemeChoice) {
-			setTheme(choice);
+		set(scheme: Scheme) {
+			setScheme(scheme);
 		},
 		clear() {
-			clearTheme();
+			clearScheme();
 		},
 		current() {
-			return resolvedTheme();
+			return currentScheme();
+		},
+	},
+	palette: {
+		set(palette: Palette) {
+			setPalette(palette);
+		},
+		clear() {
+			clearPalette();
+		},
+		current() {
+			return currentPalette();
+		},
+	},
+	bionic: {
+		set(on: boolean) {
+			setBionicReading(on);
+		},
+		toggle() {
+			toggleBionicReading();
+		},
+		current() {
+			return currentBionicReading();
+		},
+	},
+	preferences: {
+		open() {
+			openPreferences();
+		},
+		close() {
+			closePreferences();
 		},
 	},
 	music: {

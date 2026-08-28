@@ -65,11 +65,28 @@ func TestArtistJsonLdKeepsTruthfulDates(t *testing.T) {
 	}
 }
 
+func TestArtistJsonLdUsesFilingName(t *testing.T) {
+	artist := testArtistRecord("")
+	if got, want := ArtistJsonLd(artist).Name, "ARTIST, Portrait"; got != want {
+		t.Fatalf("JSON-LD name = %q, want filing form %q", got, want)
+	}
+}
+
+func TestArtistJsonLdOmitsBlankFilingName(t *testing.T) {
+	artist := testArtistRecord("")
+	artist.Set("filing_name", "")
+	if got := ArtistJsonLd(artist).Name; got != "" {
+		t.Fatalf("JSON-LD name = %q, want empty (blank identity omitted)", got)
+	}
+}
+
 func testArtistRecord(portrait string) *core.Record {
 	artists := core.NewBaseCollection("Artists")
 	artists.Id = constants.CollectionArtists
 	artists.Fields.Add(
 		&core.TextField{Name: "name"},
+		&core.TextField{Name: "filing_name"},
+		&core.TextField{Name: "short_name"},
 		&core.TextField{Name: "slug"},
 		&core.TextField{Name: "portrait"},
 		&core.NumberField{Name: "year_of_birth"},
@@ -81,7 +98,9 @@ func testArtistRecord(portrait string) *core.Record {
 
 	artist := core.NewRecord(artists)
 	artist.Id = "artist"
-	artist.Set("name", "Portrait Artist")
+	artist.Set("name", "Legacy Name")
+	artist.Set("filing_name", "ARTIST, Portrait")
+	artist.Set("short_name", "Portrait")
 	artist.Set("slug", "portrait-artist")
 	artist.Set("portrait", portrait)
 	return artist

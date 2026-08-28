@@ -81,7 +81,7 @@ func suggestionLimitFor(value string) int {
 
 func suggestions(app *pocketbase.PocketBase, query string, limit int) ([]components.KeyboardSuggestion, error) {
 	params := dbx.Params{"query": query}
-	artists, err := app.FindRecordsByFilter(constants.CollectionArtists, "published = true && name ~ {:query}", "+name,+id", limit, 0, params)
+	artists, err := app.FindRecordsByFilter(constants.CollectionArtists, "published = true && filing_name != '' && short_name != '' && filing_name ~ {:query}", "+filing_name,+id", limit, 0, params)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +90,7 @@ func suggestions(app *pocketbase.PocketBase, query string, limit int) ([]compone
 	for _, artist := range artists {
 		rows = append(rows, components.KeyboardSuggestion{
 			Kind:  "ARTIST",
-			Label: artistLabel(artist.GetString("name"), artist.GetInt("year_of_birth"), artist.GetInt("year_of_death")),
+			Label: artistLabel(artist.GetString("filing_name"), artist.GetInt("year_of_birth"), artist.GetInt("year_of_death")),
 			Href:  url.GenerateArtistUrl(url.ArtistUrlDTO{ArtistId: artist.Id, ArtistName: artist.GetString("name")}),
 		})
 	}
@@ -108,9 +108,12 @@ func suggestions(app *pocketbase.PocketBase, query string, limit int) ([]compone
 		if err != nil {
 			return nil, err
 		}
+		if artist.GetString("filing_name") == "" || artist.GetString("short_name") == "" {
+			continue
+		}
 		rows = append(rows, components.KeyboardSuggestion{
 			Kind:  "WORK",
-			Label: artwork.GetString("title") + " · " + artist.GetString("name"),
+			Label: artwork.GetString("title") + " · " + artist.GetString("filing_name"),
 			Href: url.GenerateFullArtworkUrl(url.ArtworkUrlDTO{
 				ArtistId: artist.Id, ArtistName: artist.GetString("name"), ArtworkId: artwork.Id, ArtworkTitle: artwork.GetString("title"),
 			}),

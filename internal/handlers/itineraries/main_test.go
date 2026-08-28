@@ -136,7 +136,7 @@ func TestHtmxMutationsReturnFragmentAndOobTargets(t *testing.T) {
 		t.Fatalf("add status = %d, want 200", add.Code)
 	}
 	body := add.Body.String()
-	if !strings.Contains(body, `<div id="itinerary-tray">`) {
+	if !strings.Contains(body, `<div id="itinerary-tray"`) {
 		t.Error("add response must target the tray as the primary swap")
 	}
 	if strings.Contains(body, `id="itinerary-tray" hx-swap-oob`) {
@@ -158,7 +158,7 @@ func TestHtmxMutationsReturnFragmentAndOobTargets(t *testing.T) {
 	if strings.Contains(body, `id="itinerary-builder" hx-swap-oob`) {
 		t.Error("clear builder must not be OOB; it is the primary target")
 	}
-	if !strings.Contains(body, `<div id="itinerary-tray" hx-swap-oob="true"></div>`) {
+	if !strings.Contains(body, `<div id="itinerary-tray" hx-swap-oob="true"`) {
 		t.Error("clear response must empty the tray OOB")
 	}
 }
@@ -986,6 +986,8 @@ func installSchema(t *testing.T, app *pocketbase.PocketBase) {
 	artists.Fields.Add(
 		&core.TextField{Name: "name"},
 		&core.TextField{Name: "slug"},
+		&core.TextField{Name: "filing_name"},
+		&core.TextField{Name: "short_name"},
 	)
 	if err := app.Save(artists); err != nil {
 		t.Fatalf("create artists collection: %v", err)
@@ -995,6 +997,8 @@ func installSchema(t *testing.T, app *pocketbase.PocketBase) {
 	artist.Id = "ar0000000000001"
 	artist.Set("name", "Test Artist")
 	artist.Set("slug", "test-artist")
+	artist.Set("filing_name", "ARTIST, Test")
+	artist.Set("short_name", "Test Artist")
 	if err := app.Save(artist); err != nil {
 		t.Fatalf("create artist: %v", err)
 	}

@@ -42,6 +42,8 @@ func newArtistRecordApp(t *testing.T) *pocketbase.PocketBase {
 	artists.MarkAsNew()
 	artists.Fields.Add(
 		&core.TextField{Name: "name", Required: true},
+		&core.TextField{Name: "filing_name"},
+		&core.TextField{Name: "short_name"},
 		&core.TextField{Name: "slug"},
 		&core.EditorField{Name: "bio"},
 		&core.NumberField{Name: "year_of_birth"},
@@ -129,6 +131,14 @@ func saveRecordRecord(t *testing.T, app *pocketbase.PocketBase, collection strin
 	}
 	record := core.NewRecord(coll)
 	record.Id = id
+	if collection == "artists" {
+		if _, ok := fields["filing_name"]; !ok {
+			fields["filing_name"] = fields["name"]
+		}
+		if _, ok := fields["short_name"]; !ok {
+			fields["short_name"] = fields["name"]
+		}
+	}
 	for key, value := range fields {
 		record.Set(key, value)
 	}
@@ -184,18 +194,20 @@ func seedPublishedArtist(t *testing.T, app *pocketbase.PocketBase) {
 	saveRecordRecord(t, app, "schools", "schooldutch0001", map[string]any{"name": "Dutch", "slug": "dutch"})
 	saveRecordRecord(t, app, "art_periods", "periodbaroque01", map[string]any{"name": "Baroque", "slug": "baroque", "start": 1600, "end": 1750})
 	saveRecordRecord(t, app, "artists", "artistone000001", map[string]any{
-		"name":                 "Synthetic Artist",
-		"slug":                 "synthetic-artist",
-		"bio":                  "<p>He trained in the <strong>workshop</strong> and used chiaroscuro.</p><script>alert(1)</script>",
-		"year_of_birth":        1606,
-		"year_of_death":        1669,
-		"place_of_birth":       "Leiden",
-		"place_of_death":       "Amsterdam",
-		"profession":           "painter",
-		"school":               []string{"schooldutch0001"},
-		"portrait":             "portrait.jpg",
+		"name":                  "Synthetic Artist",
+		"filing_name":           "Artist, Synthetic",
+		"short_name":            "Synthetic",
+		"slug":                  "synthetic-artist",
+		"bio":                   "<p>He trained in the <strong>workshop</strong> and used chiaroscuro.</p><script>alert(1)</script>",
+		"year_of_birth":         1606,
+		"year_of_death":         1669,
+		"place_of_birth":        "Leiden",
+		"place_of_death":        "Amsterdam",
+		"profession":            "painter",
+		"school":                []string{"schooldutch0001"},
+		"portrait":              "portrait.jpg",
 		"biography_image_width": 800,
-		"published":            true,
+		"published":             true,
 	})
 	saveRecordRecord(t, app, "artworks", "artworkone00001", map[string]any{
 		"title": "Alpha Work", "author": []string{"artistone000001"}, "published": true, "image": "alpha.jpg", "image_width": 900,
@@ -248,7 +260,7 @@ func TestArtistRecordRouteRendersFullAndHTMX(t *testing.T) {
 	if full.Code != http.StatusOK {
 		t.Fatalf("full status = %d, want 200", full.Code)
 	}
-	if !strings.Contains(full.Body.String(), "<html") || !strings.Contains(full.Body.String(), "Synthetic Artist") {
+	if !strings.Contains(full.Body.String(), "<html") || !strings.Contains(full.Body.String(), "Artist, Synthetic") {
 		t.Error("full response should render the complete document")
 	}
 	if got := full.Header().Get("HX-Push-Url"); got != "/artists/synthetic-artist-artistone000001" {
@@ -264,7 +276,7 @@ func TestArtistRecordRouteRendersFullAndHTMX(t *testing.T) {
 	if !strings.Contains(partial.Body.String(), `<main id="mc-area"`) {
 		t.Error("HTMX response should render the main content area block")
 	}
-	if !strings.Contains(partial.Body.String(), "Synthetic Artist") {
+	if !strings.Contains(partial.Body.String(), "Artist, Synthetic") {
 		t.Error("HTMX response should render the artist record")
 	}
 }
@@ -282,10 +294,13 @@ func TestArtistRecordViewResolvesMetadataPortraitAndParity(t *testing.T) {
 		t.Fatalf("build view: %v", err)
 	}
 
-	if view.Name != "Synthetic Artist" {
-		t.Errorf("name = %q", view.Name)
+	if view.FilingName != "Artist, Synthetic" {
+		t.Errorf("filing name = %q", view.FilingName)
 	}
-	if view.LifeSummary != "b. 1606 Leiden, d. 1669 Amsterdam" {
+	if view.ShortName != "Synthetic" {
+		t.Errorf("short name = %q", view.ShortName)
+	}
+	if view.LifeSummary != "b. 1606 Leiden · d. 1669 Amsterdam" {
 		t.Errorf("life summary = %q", view.LifeSummary)
 	}
 	if view.Schools != "Dutch" {
@@ -303,7 +318,7 @@ func TestArtistRecordViewResolvesMetadataPortraitAndParity(t *testing.T) {
 	if view.WorkCount != 2 {
 		t.Errorf("work count = %d, want 2 (unpublished excluded)", view.WorkCount)
 	}
-	if view.WorksURL != "/artworks?artist=Synthetic+Artist" {
+	if view.WorksURL != "/artworks?artist=Artist%2C+Synthetic" {
 		t.Errorf("works URL = %q", view.WorksURL)
 	}
 	if view.Citation.Key != "wga-synthetic-artist" {

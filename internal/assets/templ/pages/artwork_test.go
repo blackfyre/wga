@@ -33,12 +33,12 @@ func sampleArtwork() dto.Artwork {
 			Title: "Girl with a Pearl Earring",
 		},
 		Artist: dto.Artist{
-			Name: "Johannes Vermeer",
-			Url:  "/artists/johannes-vermeer-artist00000001",
+			FilingName: "Vermeer, Johannes",
+			ShortName:  "Vermeer",
+			Url:        "/artists/johannes-vermeer-artist00000001",
 		},
-		ReproFile: "4,095 × 4,801 px · JPEG",
+		ReproFile: "4,095 × 4,801 px · JPEG · 12.4 MB",
 		SourceURL: "/api/files/artworks/" + artworkTestID + "/work.jpg",
-		ReproductionSourceURL: "https://www.wga.hu/html/v/vermeer/girl.html",
 	}
 }
 
@@ -101,7 +101,7 @@ func TestArtworkBlockAddToItineraryUsesUnsetSentinel(t *testing.T) {
 		`hx-swap="outerHTML"`,
 		`hx-select="unset"`,
 		`name="artwork_id" value="` + artworkTestID + `"`,
-		"ADD TO ITINERARY",
+		"ADD TO AN ITINERARY +",
 	} {
 		if !strings.Contains(rendered, expected) {
 			t.Errorf("artwork add control does not contain %q", expected)
@@ -155,23 +155,23 @@ func TestArtworkBlockDownloadUsesSourceNotRendition(t *testing.T) {
 	}
 }
 
-func TestArtworkBlockRendersSafeCanonicalReproductionSource(t *testing.T) {
+// TestArtworkBlockNeverRendersReproductionSourceOrLicence proves the record
+// reproduction caption exposes no public source or licence claim. The source
+// URL and licence are deliberately absent from the DTO, so no such presentation
+// can exist.
+func TestArtworkBlockNeverRendersReproductionSourceOrLicence(t *testing.T) {
 	rendered := renderArtworkBlock(t, sampleArtwork(), context.Background())
 
-	for _, expected := range []string{
+	for _, absent := range []string{
 		"VIEW ORIGINAL AT WEB GALLERY OF ART",
-		`href="https://www.wga.hu/html/v/vermeer/girl.html"`,
-		`target="_blank" rel="noopener noreferrer"`,
+		"wga.hu",
+		"LICENCE",
+		"LICENSE",
+		"SOURCE",
 	} {
-		if !strings.Contains(rendered, expected) {
-			t.Errorf("canonical provenance link does not contain %q", expected)
+		if strings.Contains(rendered, absent) {
+			t.Errorf("artwork reproduction caption must not expose %q", absent)
 		}
-	}
-
-	aw := sampleArtwork()
-	aw.ReproductionSourceURL = ""
-	if rendered := renderArtworkBlock(t, aw, context.Background()); strings.Contains(rendered, "VIEW ORIGINAL AT WEB GALLERY OF ART") {
-		t.Error("canonical provenance link must be omitted without an approved source URL")
 	}
 }
 
@@ -209,7 +209,8 @@ func TestArtworkBlockEscapesSourceURL(t *testing.T) {
 }
 
 // TestArtworkBlockOmitsReproductionFileWhenUnknown proves the FILE cell is not
-// rendered when no reproduction dimensions are recorded (no fabricated content).
+// rendered when no supported reproduction evidence is recorded (no fabricated
+// content); independently absent facts may still be omitted from the summary.
 func TestArtworkBlockOmitsReproductionFileWhenUnknown(t *testing.T) {
 	aw := sampleArtwork()
 	aw.ReproFile = ""
@@ -225,13 +226,13 @@ func TestArtworkBlockOmitsReproductionFileWhenUnknown(t *testing.T) {
 }
 
 // TestArtworkBlockRendersPostcardBeforeItinerary proves the reference action
-// order: SEND AS POSTCARD precedes ADD TO ITINERARY.
+// order: SEND AS POSTCARD precedes ADD TO AN ITINERARY +.
 func TestArtworkBlockRendersPostcardBeforeItinerary(t *testing.T) {
 	ctx := tmplUtils.WithItineraryProjection(context.Background(), "csrf-token", dto.ItineraryTrayView{}, map[string]bool{})
 	rendered := renderArtworkBlock(t, sampleArtwork(), ctx)
 
 	postcard := strings.Index(rendered, "SEND AS POSTCARD")
-	itinerary := strings.Index(rendered, "ADD TO ITINERARY")
+	itinerary := strings.Index(rendered, "ADD TO AN ITINERARY +")
 	if postcard < 0 || itinerary < 0 {
 		t.Fatal("expected both postcard and itinerary controls")
 	}
@@ -498,5 +499,43 @@ func TestArtworkBlockRendersRelatedCards(t *testing.T) {
 	}
 	if strings.Contains(rendered, "The archive catalogues no further works") {
 		t.Error("artwork must not render a sparse note when the basis is not sparse")
+	}
+}
+
+func TestArtworkBlockRendersCountedHoldingLink(t *testing.T) {
+	aw := relatedSampleArtwork()
+	aw.Related.Sparse = false
+	aw.Related.Holding = &dto.RelatedWorkHoldingLink{
+		Label: "FIND MORE 11 IN THE ARTWORK SEARCH →",
+		URL:   "/artworks?artist=Vermeer%2C+Johannes",
+	}
+
+	rendered := renderArtworkBlock(t, aw, context.Background())
+
+	for _, expected := range []string{
+		"FIND MORE 11 IN THE ARTWORK SEARCH →",
+		`href="/artworks?artist=Vermeer%2C+Johannes"`,
+		`hx-get="/artworks?artist=Vermeer%2C+Johannes"`,
+	} {
+		if !strings.Contains(rendered, expected) {
+			t.Errorf("artwork related block does not contain holding link %q", expected)
+		}
+	}
+}
+
+func TestArtworkBlockOmitsHoldingWithoutState(t *testing.T) {
+	aw := relatedSampleArtwork()
+	rendered := renderArtworkBlock(t, aw, context.Background())
+
+	if strings.Contains(rendered, "IN THE ARTWORK SEARCH") {
+		t.Error("artwork must not render a holding link without holding state")
+	}
+}
+
+func TestArtworkBlockRendersReproductionFileWeight(t *testing.T) {
+	rendered := renderArtworkBlock(t, sampleArtwork(), context.Background())
+
+	if !strings.Contains(rendered, "4,095 × 4,801 px · JPEG · 12.4 MB") {
+		t.Error("artwork FILE cell must render dimensions, format, and decimal-SI weight")
 	}
 }

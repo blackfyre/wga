@@ -78,7 +78,7 @@ func dailyArtworkIndex(date time.Time, count int) int {
 func featuredArtwork(work repositories.LandingArtwork) pages.HomeFeaturedArtwork {
 	return pages.HomeFeaturedArtwork{
 		Title:  work.Artwork.GetString("title"),
-		Artist: work.Artist.GetString("name"),
+		Artist: work.Artist.GetString("filing_name"),
 		Year:   work.Artwork.GetString("year"),
 		URL:    artworkURL(work),
 		Image:  url.GenerateArtworkImageURL(work.Artwork, url.DeliveryProfileFeature, ""),
@@ -88,7 +88,7 @@ func featuredArtwork(work repositories.LandingArtwork) pages.HomeFeaturedArtwork
 func recentArtwork(work repositories.LandingArtwork) pages.HomeRecentArtwork {
 	return pages.HomeRecentArtwork{
 		Title:  work.Artwork.GetString("title"),
-		Artist: work.Artist.GetString("name"),
+		Artist: work.Artist.GetString("filing_name"),
 		Year:   work.Artwork.GetString("year"),
 		URL:    artworkURL(work),
 		Image:  url.GenerateArtworkImageURL(work.Artwork, url.DeliveryProfileCardAndArtistIndex, ""),

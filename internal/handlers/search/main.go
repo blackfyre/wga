@@ -18,16 +18,16 @@ import (
 const resultsPerKind = 10
 
 func searchView(app *pocketbase.PocketBase, term string) (pages.SearchView, error) {
-	artistFilter := "published = true"
-	artworkFilter := "published = true && author:length > 0"
+	artistFilter := "published = true && filing_name != '' && short_name != ''"
+	artworkFilter := "published = true && author:length > 0 && author.filing_name != '' && author.short_name != ''"
 	params := dbx.Params{}
 	if term != "" {
 		params["query"] = term
-		artistFilter += " && (name ~ {:query} || profession ~ {:query} || school.name ~ {:query})"
-		artworkFilter += " && (title ~ {:query} || author.name ~ {:query} || school.name ~ {:query})"
+		artistFilter += " && (filing_name ~ {:query} || profession ~ {:query} || school.name ~ {:query})"
+		artworkFilter += " && (title ~ {:query} || author.filing_name ~ {:query} || school.name ~ {:query})"
 	}
 
-	artists, err := app.FindRecordsByFilter(constants.CollectionArtists, artistFilter, "+name", resultsPerKind, 0, params)
+	artists, err := app.FindRecordsByFilter(constants.CollectionArtists, artistFilter, "+filing_name", resultsPerKind, 0, params)
 	if err != nil {
 		return pages.SearchView{}, err
 	}
@@ -48,7 +48,7 @@ func searchView(app *pocketbase.PocketBase, term string) (pages.SearchView, erro
 	view := pages.SearchView{Term: term, ArtistTotal: artistTotal, WorkTotal: workTotal}
 	for _, artist := range artists {
 		view.Artists = append(view.Artists, pages.SearchArtist{
-			Name:   artist.GetString("name"),
+			Name:   artist.GetString("filing_name"),
 			Dates:  utils.NormalizedBirthDeathActivity(artist),
 			School: utils.RenderSchoolNames(app, artist.GetStringSlice("school")),
 			Href:   url.GenerateArtistUrlFromRecord(artist),
@@ -62,7 +62,7 @@ func searchView(app *pocketbase.PocketBase, term string) (pages.SearchView, erro
 		}
 		view.Works = append(view.Works, pages.SearchWork{
 			Title:  work.GetString("title"),
-			Artist: author.GetString("name"),
+			Artist: author.GetString("filing_name"),
 			Href: url.GenerateFullArtworkUrl(url.ArtworkUrlDTO{
 				ArtistId: author.Id, ArtistName: author.GetString("name"), ArtworkId: work.Id, ArtworkTitle: work.GetString("title"),
 			}),

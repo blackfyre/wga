@@ -1,5 +1,20 @@
 import { expect, test } from "@playwright/test";
 
+import {
+	expectNoPageErrors,
+	guardPageErrors,
+	resetErrorCapture,
+} from "./helpers/page-errors";
+
+test.beforeEach(async ({ page }) => {
+	resetErrorCapture();
+	guardPageErrors(page);
+});
+
+test.afterEach(() => {
+	expectNoPageErrors();
+});
+
 test.describe("bionic reading", () => {
 	test.describe("without JavaScript", () => {
 		test.use({ javaScriptEnabled: false });
@@ -19,6 +34,7 @@ test.describe("bionic reading", () => {
 
 	test("switches, restores, and remembers eligible prose", async ({ page }) => {
 		await page.goto("/");
+		await page.locator("[data-wga-preferences-open]").click();
 
 		const toggle = page.getByRole("switch", { name: "Bionic reading" });
 		const prose = page.locator("main p:not(.font-mono)").first();
@@ -40,6 +56,7 @@ test.describe("bionic reading", () => {
 			"wga_bionic=on",
 		);
 		await page.reload();
+		await page.locator("[data-wga-preferences-open]").click();
 		await expect(toggle).toHaveAttribute("aria-checked", "true");
 		await expect(prose.locator("[data-bionic-mark]")).not.toHaveCount(0);
 
@@ -67,13 +84,74 @@ test.describe("bionic reading", () => {
 			});
 		});
 		await page.goto("/");
+		await page.locator("[data-wga-preferences-open]").click();
 		await expect(
 			page.getByRole("switch", { name: "Bionic reading" }),
 		).toHaveAttribute("aria-checked", "false");
 	});
 
+	test("restores a cookie-only enabled preference after initialisation", async ({
+		page,
+	}) => {
+		await page.addInitScript(() => {
+			localStorage.removeItem("wga-bionic");
+			document.cookie = "wga_bionic=on; path=/";
+		});
+		await page.goto("/");
+
+		await expect(page.locator("html")).toHaveAttribute(
+			"data-bionic-reading",
+			"true",
+		);
+		await page.locator("[data-wga-preferences-open]").click();
+		await expect(
+			page.getByRole("switch", { name: "Bionic reading" }),
+		).toHaveAttribute("aria-checked", "true");
+		await expect(
+			page
+				.locator("main p:not(.font-mono)")
+				.first()
+				.locator("[data-bionic-mark]"),
+		).not.toHaveCount(0);
+	});
+
+	test("restores a cookie-enabled preference when localStorage is blocked", async ({
+		page,
+	}) => {
+		await page.addInitScript(() => {
+			Object.defineProperty(window, "localStorage", {
+				value: {
+					getItem: () => {
+						throw new Error("blocked");
+					},
+					setItem: () => {
+						throw new Error("blocked");
+					},
+				},
+			});
+			document.cookie = "wga_bionic=on; path=/";
+		});
+		await page.goto("/");
+
+		await expect(page.locator("html")).toHaveAttribute(
+			"data-bionic-reading",
+			"true",
+		);
+		await page.locator("[data-wga-preferences-open]").click();
+		await expect(
+			page.getByRole("switch", { name: "Bionic reading" }),
+		).toHaveAttribute("aria-checked", "true");
+		await expect(
+			page
+				.locator("main p:not(.font-mono)")
+				.first()
+				.locator("[data-bionic-mark]"),
+		).not.toHaveCount(0);
+	});
+
 	test("limits the transformation to eligible prose", async ({ page }) => {
 		await page.goto("/");
+		await page.locator("[data-wga-preferences-open]").click();
 
 		await page.evaluate(() => {
 			const fixture = document.createElement("section");
@@ -196,6 +274,7 @@ test.describe("bionic reading", () => {
 			});
 		});
 		await page.goto("/");
+		await page.locator("[data-wga-preferences-open]").click();
 		const toggle = page.getByRole("switch", { name: "Bionic reading" });
 		await expect(toggle).toHaveAttribute("aria-checked", "false");
 		await expect(page.locator("[data-wga-bionic-control]")).toHaveClass(/flex/);

@@ -32,12 +32,12 @@ func TestSanitizeSelectionCommentaryStripsScripts(t *testing.T) {
 }
 
 func TestSelectionDescriptionPrefersCommentary(t *testing.T) {
-	view := pages.SelectionView{Commentary: "<p>An editorial lede.</p>", ArtistName: "Dürer"}
+	view := pages.SelectionView{Commentary: "<p>An editorial lede.</p>", ArtistShortName: "Dürer"}
 	if got := selectionDescription(view); got != "An editorial lede." {
 		t.Fatalf("description = %q, want stripped commentary", got)
 	}
 
-	empty := pages.SelectionView{ArtistName: "Dürer"}
+	empty := pages.SelectionView{ArtistShortName: "Dürer"}
 	if got := selectionDescription(empty); got != "Curated selection of works by Dürer" {
 		t.Fatalf("description = %q, want fallback", got)
 	}

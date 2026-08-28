@@ -1,6 +1,8 @@
 package pages
 
 import (
+	"fmt"
+
 	"github.com/blackfyre/wga/internal/assets/templ/layouts"
 	"github.com/blackfyre/wga/internal/assets/templ/utils"
 )
@@ -16,19 +18,6 @@ type StatisticsSchoolPeriodRow struct {
 	Count  int
 }
 
-type StatisticsSchoolPeriodSummaryRow struct {
-	Period   string
-	Italian  int
-	French   int
-	Dutch    int
-	Flemish  int
-	German   int
-	English  int
-	Spanish  int
-	Other    int
-	Total    int
-}
-
 type StatisticsPageDTO struct {
 	ArtistCount           string
 	ArtworkCount          string
@@ -36,8 +25,31 @@ type StatisticsPageDTO struct {
 	ArtworksPeriodData    string
 	ArtistsPeriodData     string
 	ArtFormSummary        []StatisticsArtFormRow
-	ArtworksPeriodSummary []StatisticsSchoolPeriodSummaryRow
-	ArtistsPeriodSummary  []StatisticsSchoolPeriodSummaryRow
+	ArtworksPeriodSummary []StatisticsSchoolPeriodRow
+	ArtistsPeriodSummary  []StatisticsSchoolPeriodRow
+}
+
+// schoolOrder mirrors resources/js/statistics.ts so the CSS bars and the
+// Chart.js stacks agree on order and tone. "Other" is always last.
+var schoolOrder = []string{"Italian", "French", "Dutch", "Flemish", "German", "English", "Spanish", "Other"}
+
+// schoolTone is a tonal ramp of the primary, not a categorical palette. "Other"
+// is a hatch rather than a tone: a category that means "we do not know" must
+// never read as a school.
+var schoolTone = map[string]string{
+	"Italian": "var(--wga-series-0)",
+	"French":  "var(--wga-series-1)",
+	"Dutch":   "var(--wga-series-2)",
+	"Flemish": "var(--wga-series-3)",
+	"German":  "var(--wga-series-4)",
+	"English": "var(--wga-series-5)",
+	"Spanish": "var(--wga-series-6)",
+	"Other":   "repeating-linear-gradient(135deg, var(--wga-faint) 0 2px, transparent 2px 5px)",
+}
+
+var schoolShort = map[string]string{
+	"Italian": "IT", "French": "FR", "Dutch": "NL", "Flemish": "FL",
+	"German": "DE", "English": "EN", "Spanish": "ES", "Other": "OTH",
 }
 
 templ StatisticsPage(c StatisticsPageDTO) {
@@ -69,6 +81,11 @@ templ StatisticsBlock(c StatisticsPageDTO) {
 				<h2 class="text-xl font-semibold">Art form distribution</h2>
 				<p class="font-mono text-[10px] tracking-[1px] text-base-content/60">ARTWORKS BY FORM</p>
 			</div>
+			if len(c.ArtFormSummary) > 0 {
+				<noscript>
+					@artFormBars(c.ArtFormSummary)
+				</noscript>
+			}
 			<div class="mt-8 flex flex-col items-start gap-9 md:flex-row md:gap-14">
 				<div class="w-[210px] shrink-0 self-center md:w-[240px] md:self-start">
 					<canvas id="art-form-chart" role="img" aria-label="Art form distribution chart" aria-describedby="art-form-summary"></canvas>
@@ -84,7 +101,13 @@ templ StatisticsBlock(c StatisticsPageDTO) {
 				<p class="font-mono text-[10px] tracking-[1px] text-base-content/60">STACKED BY SCHOOL · BIRTH PERIOD</p>
 			</div>
 			<canvas id="artworks-by-period-chart" class="mt-8" role="img" aria-label="Artworks by school and period chart" aria-describedby="artworks-period-summary"></canvas>
-			@schoolPeriodSummary("artworks-period-summary", "Artworks by school and birth period data", c.ArtworksPeriodSummary)
+			if len(c.ArtworksPeriodSummary) > 0 {
+				<noscript>
+					@StatisticsPeriodBars(c.ArtworksPeriodSummary)
+				</noscript>
+				@schoolLegend()
+			}
+			@schoolPeriodSummary("artworks-period-summary", "Artworks by school and birth period data", "No published artworks are grouped by school and birth period.", c.ArtworksPeriodSummary)
 		</section>
 		<section>
 			<div class="flex flex-wrap items-baseline justify-between gap-4 border-b border-base-content pb-3">
@@ -92,7 +115,13 @@ templ StatisticsBlock(c StatisticsPageDTO) {
 				<p class="font-mono text-[10px] tracking-[1px] text-base-content/60">STACKED BY SCHOOL · BIRTH PERIOD</p>
 			</div>
 			<canvas id="artists-by-period-chart" class="mt-8" role="img" aria-label="Artists by school and period chart" aria-describedby="artists-period-summary"></canvas>
-			@schoolPeriodSummary("artists-period-summary", "Artists by school and birth period data", c.ArtistsPeriodSummary)
+			if len(c.ArtistsPeriodSummary) > 0 {
+				<noscript>
+					@StatisticsPeriodBars(c.ArtistsPeriodSummary)
+				</noscript>
+				@schoolLegend()
+			}
+			@schoolPeriodSummary("artists-period-summary", "Artists by school and birth period data", "No published artists are grouped by school and birth period.", c.ArtistsPeriodSummary)
 		</section>
 		<div id="art-form-data" hidden data-json={ c.ArtFormData }></div>
 		<div id="artworks-period-data" hidden data-json={ c.ArtworksPeriodData }></div>
@@ -100,30 +129,132 @@ templ StatisticsBlock(c StatisticsPageDTO) {
 	</section>
 }
 
+// artFormBars is the no-JS equivalent of the art-form donut: one horizontal,
+// proportional bar per art form, scaled to its share of the total so relative
+// values stay visible without a canvas script.
+templ artFormBars(rows []StatisticsArtFormRow) {
+	<ul class="mt-8 flex flex-col gap-3" aria-hidden="true">
+		for i, row := range rows {
+			<li class="flex items-center gap-3">
+				<span class="h-2.5 w-2.5 shrink-0 border border-base-content/15" style={ "background:" + formTone(i) }></span>
+				<span class="w-[120px] shrink-0 truncate text-sm md:w-[140px]">{ row.Name }</span>
+				<div class="h-3 min-w-0 flex-1 overflow-hidden bg-base-content/10">
+					<span class="block h-full" style={ fmt.Sprintf("width:%.3f%%;background:%s", artFormSharePct(rows, row.Count), formTone(i)) }></span>
+				</div>
+				<span class="shrink-0 font-mono text-[11px] text-base-content/60">{ artFormShare(rows, row.Count) }</span>
+			</li>
+		}
+	</ul>
+}
+
+// artFormSummary doubles as the chart legend: a tone swatch per row, the count,
+// and the share of the total so the donut's relative values survive without a
+// canvas script.
 templ artFormSummary(rows []StatisticsArtFormRow) {
 	<div id="art-form-summary" class="overflow-x-auto">
-		<table class="w-full text-sm">
-			<caption class="caption-top pb-3 text-left font-mono text-[10px] tracking-[1px] text-base-content/60">Art form distribution data</caption>
-			<thead class="border-y border-base-content/15 font-mono text-[10px] tracking-[1px] text-base-content/60">
-				<tr>
-					<th scope="col" class="py-3 text-left font-normal">ART FORM</th>
-					<th scope="col" class="py-3 text-right font-normal">ARTWORKS</th>
-				</tr>
-			</thead>
-			<tbody>
-				for i, row := range rows {
-					<tr class="border-b border-base-content/15">
-						<th scope="row" class="art-form-label py-3 text-left font-normal">
-							<span class="flex items-center gap-2.5">
-								<span class="h-2.5 w-2.5 shrink-0 border border-base-content/15" style={ "background:" + formTone(i) }></span>
-								<span>{ row.Name }</span>
-							</span>
-						</th>
-						<td class="py-3 text-right font-mono text-[11px]">{ row.Count }</td>
+		if len(rows) == 0 {
+			<p class="py-6 text-[15px] leading-relaxed text-base-content/70" role="status">No published artworks are grouped by art form.</p>
+		} else {
+			<table class="w-full text-sm">
+				<caption class="caption-top pb-3 text-left font-mono text-[10px] tracking-[1px] text-base-content/60">Art form distribution data</caption>
+				<thead class="border-y border-base-content/15 font-mono text-[10px] tracking-[1px] text-base-content/60">
+					<tr>
+						<th scope="col" class="py-3 text-left font-normal">ART FORM</th>
+						<th scope="col" class="py-3 text-right font-normal">ARTWORKS</th>
+						<th scope="col" class="py-3 text-right font-normal">SHARE</th>
 					</tr>
-				}
-			</tbody>
-		</table>
+				</thead>
+				<tbody>
+					for i, row := range rows {
+						<tr class="border-b border-base-content/15">
+							<th scope="row" class="art-form-label py-3 text-left font-normal">
+								<span class="flex items-center gap-2.5">
+									<span class="h-2.5 w-2.5 shrink-0 border border-base-content/15" style={ "background:" + formTone(i) }></span>
+									<span>{ row.Name }</span>
+								</span>
+							</th>
+							<td class="py-3 text-right font-mono text-[11px]">{ row.Count }</td>
+							<td class="py-3 text-right font-mono text-[11px] text-base-content/60">{ artFormShare(rows, row.Count) }</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		}
+	</div>
+}
+
+// schoolLegend names each school with its tone swatch so the canvas and the
+// CSS bars share one legend, with or without JavaScript.
+templ schoolLegend() {
+	<ul class="mt-6 flex flex-wrap gap-x-5 gap-y-2 border-t border-base-content/15 pt-4">
+		for _, school := range schoolOrder {
+			<li class="flex items-center gap-[7px]">
+				<span class="h-2.5 w-2.5 shrink-0 border border-base-content/15" style={ "background:" + schoolTone[school] }></span>
+				<span class="font-mono text-[10px] tracking-[0.5px] text-base-content/70">{ school }</span>
+			</li>
+		}
+	</ul>
+}
+
+// schoolPeriodSummary renders the cross-tab: one row per birth period, one
+// column per school, plus a period total. When there are no rows it renders a
+// visible, announced absence state instead of an empty table.
+templ schoolPeriodSummary(id string, caption string, emptyMessage string, rows []StatisticsSchoolPeriodRow) {
+	<div id={ id } class="overflow-x-auto">
+		if len(rows) == 0 {
+			<p class="py-6 text-[15px] leading-relaxed text-base-content/70" role="status">{ emptyMessage }</p>
+		} else {
+			<table class="min-w-[560px] text-sm">
+				<caption class="caption-top pb-3 text-left font-mono text-[10px] tracking-[1px] text-base-content/60">{ caption }</caption>
+				<thead class="border-y border-base-content/15 font-mono text-[10px] tracking-[1px] text-base-content/60">
+					<tr>
+						<th scope="col" class="py-3 text-left font-normal">BIRTH PERIOD</th>
+						for _, school := range schoolOrder {
+							<th scope="col" class="py-3 text-right font-normal" title={ school }>{ schoolShort[school] }</th>
+						}
+						<th scope="col" class="py-3 text-right font-normal">TOTAL</th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, period := range periodsOf(rows) {
+						<tr class="border-b border-base-content/15">
+							<th scope="row" class="py-3 text-left font-mono text-[11px] font-normal">{ period }</th>
+							for _, school := range schoolOrder {
+								<td class="py-3 text-right font-mono text-[11px]">{ countFor(rows, period, school) }</td>
+							}
+							<td class="py-3 text-right font-mono text-[11px]">{ periodTotal(rows, period) }</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		}
+	</div>
+}
+
+// StatisticsPeriodBars is a no-JS alternative to the Chart.js canvas: CSS
+// stacked columns built from the same summary rows. Columns sit on a single
+// chronological axis inside a horizontally scrollable track, so any number of
+// periods renders without wrapping or document overflow. The segments sit in
+// their own flex track so each height resolves against the track, not the
+// wrapper — otherwise the readout and label steal space and the tallest
+// columns get clamped to the same height.
+templ StatisticsPeriodBars(rows []StatisticsSchoolPeriodRow) {
+	<div class="mt-8 overflow-x-auto" aria-hidden="true">
+		<div class="flex h-[190px] min-w-max items-stretch gap-[5px] md:h-[260px] md:gap-3">
+			for _, period := range periodsOf(rows) {
+				<div class="group flex h-full w-16 shrink-0 flex-col md:w-20">
+					<p class="mb-2 shrink-0 whitespace-nowrap text-center font-mono text-[10px] tracking-[0.5px] text-transparent transition-colors group-hover:text-primary">{ periodTotal(rows, period) }</p>
+					<div class="flex min-h-0 flex-1 flex-col justify-end">
+						for _, school := range schoolOrder {
+							if countFor(rows, period, school) > 0 {
+								<span class="block shrink-0 border-t border-base-100 opacity-[0.82] transition-opacity group-hover:opacity-100" style={ fmt.Sprintf("height:%.3f%%;background:%s", barShare(rows, period, school), schoolTone[school]) }></span>
+							}
+						}
+					</div>
+					<p class="mt-2.5 shrink-0 whitespace-nowrap text-center font-mono text-[10px] tracking-[0.5px] text-base-content/60 transition-colors group-hover:text-base-content">{ period }</p>
+				</div>
+			}
+		</div>
 	</div>
 }
 
@@ -142,40 +273,72 @@ func formTone(index int) string {
 	return tones[index%len(tones)]
 }
 
-templ schoolPeriodSummary(id string, caption string, rows []StatisticsSchoolPeriodSummaryRow) {
-	<div id={ id } class="overflow-x-auto">
-		<table class="min-w-[560px] text-sm">
-			<caption class="caption-top pb-3 text-left font-mono text-[10px] tracking-[1px] text-base-content/60">{ caption }</caption>
-			<thead class="border-y border-base-content/15 font-mono text-[10px] tracking-[1px] text-base-content/60">
-				<tr>
-					<th scope="col" class="py-3 text-left font-normal">BIRTH PERIOD</th>
-					<th scope="col" class="py-3 text-right font-normal" title="Italian">IT</th>
-					<th scope="col" class="py-3 text-right font-normal" title="French">FR</th>
-					<th scope="col" class="py-3 text-right font-normal" title="Dutch">NL</th>
-					<th scope="col" class="py-3 text-right font-normal" title="Flemish">FL</th>
-					<th scope="col" class="py-3 text-right font-normal" title="German">DE</th>
-					<th scope="col" class="py-3 text-right font-normal" title="English">EN</th>
-					<th scope="col" class="py-3 text-right font-normal" title="Spanish">ES</th>
-					<th scope="col" class="py-3 text-right font-normal" title="Other">OTH</th>
-					<th scope="col" class="py-3 text-right font-normal">TOTAL</th>
-				</tr>
-			</thead>
-			<tbody>
-				for _, row := range rows {
-					<tr class="border-b border-base-content/15">
-						<th scope="row" class="py-3 text-left font-mono text-[11px] font-normal">{ row.Period }</th>
-						<td class="py-3 text-right font-mono text-[11px]">{ row.Italian }</td>
-						<td class="py-3 text-right font-mono text-[11px]">{ row.French }</td>
-						<td class="py-3 text-right font-mono text-[11px]">{ row.Dutch }</td>
-						<td class="py-3 text-right font-mono text-[11px]">{ row.Flemish }</td>
-						<td class="py-3 text-right font-mono text-[11px]">{ row.German }</td>
-						<td class="py-3 text-right font-mono text-[11px]">{ row.English }</td>
-						<td class="py-3 text-right font-mono text-[11px]">{ row.Spanish }</td>
-						<td class="py-3 text-right font-mono text-[11px]">{ row.Other }</td>
-						<td class="py-3 text-right font-mono text-[11px]">{ row.Total }</td>
-					</tr>
-				}
-			</tbody>
-		</table>
-	</div>
+func artFormTotal(rows []StatisticsArtFormRow) int {
+	total := 0
+	for _, row := range rows {
+		total += row.Count
+	}
+	return total
+}
+
+func artFormSharePct(rows []StatisticsArtFormRow, count int) float64 {
+	total := artFormTotal(rows)
+	if total == 0 {
+		return 0
+	}
+	return float64(count) / float64(total) * 100
+}
+
+func artFormShare(rows []StatisticsArtFormRow, count int) string {
+	if artFormTotal(rows) == 0 {
+		return "—"
+	}
+	return fmt.Sprintf("%.1f%%", artFormSharePct(rows, count))
+}
+
+// periodsOf keeps the order the repository query returns (ORDER BY period_start).
+func periodsOf(rows []StatisticsSchoolPeriodRow) []string {
+	seen := map[string]bool{}
+	periods := []string{}
+	for _, row := range rows {
+		if !seen[row.Period] {
+			seen[row.Period] = true
+			periods = append(periods, row.Period)
+		}
+	}
+	return periods
+}
+
+func countFor(rows []StatisticsSchoolPeriodRow, period string, school string) int {
+	for _, row := range rows {
+		if row.Period == period && row.School == school {
+			return row.Count
+		}
+	}
+	return 0
+}
+
+func periodTotal(rows []StatisticsSchoolPeriodRow, period string) int {
+	total := 0
+	for _, row := range rows {
+		if row.Period == period {
+			total += row.Count
+		}
+	}
+	return total
+}
+
+// barShare scales a segment against the largest period total, so columns are
+// comparable across the whole chart.
+func barShare(rows []StatisticsSchoolPeriodRow, period string, school string) float64 {
+	max := 0
+	for _, p := range periodsOf(rows) {
+		if t := periodTotal(rows, p); t > max {
+			max = t
+		}
+	}
+	if max == 0 {
+		return 0
+	}
+	return float64(countFor(rows, period, school)) / float64(max) * 100
 }

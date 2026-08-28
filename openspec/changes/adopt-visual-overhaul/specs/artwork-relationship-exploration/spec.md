@@ -8,11 +8,18 @@ The system SHALL let visitors select BY ARTIST, SAME COLLECTION, SIMILAR PALETTE
 - **THEN** the record renders that basis's related works and a shared URL restores the same basis.
 
 ### Requirement: Related-work results state their connection and limits
-The system SHALL render no more than four related works for the active basis, state the basis-specific connection, and explain sparse results with a link to the basis most likely to return records.
+The system SHALL resolve up to eight related candidates, render the four closest-date works as an explicit sample for the active basis, state the basis-specific connection, and explain sparse results without fabricating or duplicating cards.
 
 #### Scenario: Active basis has fewer than four records
 - **WHEN** the active related-work query returns fewer than four published works
 - **THEN** the remaining space explains the archive limit and does not fabricate or duplicate cards.
+
+### Requirement: Filterable relationship bases link to the complete holding
+The system SHALL provide a counted `FIND MORE … IN THE ARTWORK SEARCH` link for artist, collection, and period bases using the corresponding server-generated artwork-search filter URL. Palette similarity SHALL remain a record-level ranking basis and SHALL not claim a complete filterable holding.
+
+#### Scenario: Visitor follows a sampled relationship
+- **WHEN** the active artist, collection, or period basis has more matching published works than the rendered sample
+- **THEN** the record states the total matching holding and links to the artwork search with that basis's filter preserved.
 
 ### Requirement: Palette similarity uses published image-derived data
 The system SHALL calculate SIMILAR PALETTE from the real dataset's supported colour profile and SHALL exclude the current artwork and unpublished records.

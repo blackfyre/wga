@@ -14,7 +14,9 @@ import (
 func TestTimelineRouteRendersFullAndHTMX(t *testing.T) {
 	app := newTimelineApp(t)
 
-	saveTimelineRecord(t, app, "artists", "artistpub000001", map[string]any{"name": "An Artist", "published": true})
+	saveTimelineRecord(t, app, "artists", "artistpub000001", map[string]any{
+		"name": "An Artist", "filing_name": "Artist, An", "short_name": "An Artist", "year_of_birth": 1600, "published": true,
+	})
 	saveTimelineRecord(t, app, "art_periods", "periodbaro00001", map[string]any{
 		"name": "Baroque", "start": 1500, "end": 1750, "description": "a period",
 	})
@@ -55,6 +57,14 @@ func TestTimelineRouteRendersFullAndHTMX(t *testing.T) {
 		}
 		if !strings.Contains(body, "Timeline") || !strings.Contains(body, "Visible Work") {
 			t.Error("full response did not render the timeline content")
+		}
+		for _, expected := range []string{"ARTISTS", "WORKS", "MOVEMENTS", "BUILDINGS", "EVENTS", "MUSIC", "ARTISTS IN THIS WINDOW", "Artist, An", "b. 1600", "UNAVAILABLE"} {
+			if !strings.Contains(body, expected) {
+				t.Errorf("full response missing lane contract %q", expected)
+			}
+		}
+		if !strings.Contains(body, `href="/artists/an-artist-artistpub000001"`) {
+			t.Error("full response missing canonical artist lane route")
 		}
 		if got := strings.Count(body, `id="mc-area"`); got != 1 {
 			t.Errorf("full response rendered %d #mc-area elements, want exactly 1", got)
@@ -97,6 +107,11 @@ func TestTimelineRouteRendersFullAndHTMX(t *testing.T) {
 		if !strings.Contains(partial.Body.String(), `id="timeline"`) {
 			t.Error("HTMX response should render the timeline block")
 		}
+		for _, expected := range []string{"ARTISTS", "WORKS", "MOVEMENTS", "BUILDINGS", "EVENTS", "MUSIC", "UNAVAILABLE"} {
+			if !strings.Contains(partial.Body.String(), expected) {
+				t.Errorf("HTMX response missing lane contract %q", expected)
+			}
+		}
 		if strings.Contains(partial.Body.String(), `id="mc-area"`) {
 			t.Error("feature-local timeline response must not carry #mc-area")
 		}
@@ -113,7 +128,9 @@ func TestTimelineRouteRendersFullAndHTMX(t *testing.T) {
 func TestTimelineRouteRendersNoJavascriptFormAndLinks(t *testing.T) {
 	app := newTimelineApp(t)
 
-	saveTimelineRecord(t, app, "artists", "artistpub000001", map[string]any{"name": "An Artist", "published": true})
+	saveTimelineRecord(t, app, "artists", "artistpub000001", map[string]any{
+		"name": "An Artist", "filing_name": "Artist, An", "short_name": "An Artist", "year_of_birth": 1600, "published": true,
+	})
 	saveTimelineRecord(t, app, "artworks", "artworkon000001", map[string]any{
 		"title": "Visible Work", "author": []string{"artistpub000001"}, "published": true,
 		"date_start": 1600,
@@ -150,6 +167,14 @@ func TestTimelineRouteRendersNoJavascriptFormAndLinks(t *testing.T) {
 			`class="sr-only"`,
 			"DECADE",
 			"WORKS",
+			"ARTISTS",
+			"MOVEMENTS",
+			"BUILDINGS",
+			"EVENTS",
+			"MUSIC",
+			"No approved source-backed building records have been supplied",
+			"No approved source-backed historical-event records have been supplied",
+			"no approved art-period mapping",
 		} {
 			if !strings.Contains(body, expected) {
 				t.Errorf("no-JS response does not contain %q", expected)
@@ -157,6 +182,87 @@ func TestTimelineRouteRendersNoJavascriptFormAndLinks(t *testing.T) {
 		}
 		if strings.Contains(body, "VIEW ALL WORKS") {
 			t.Error("timeline must not render the unfiltered /artworks continuation")
+		}
+
+		return nil
+	}); err != nil {
+		t.Fatalf("trigger serve event: %v", err)
+	}
+}
+
+func TestTimelineRouteNoJavascriptSelectedWindowKeepsPublishedChronologyAndUnavailableEvidenceHonest(t *testing.T) {
+	app := newTimelineApp(t)
+
+	saveTimelineRecord(t, app, "artists", "artistpub000001", map[string]any{
+		"name": "An Artist", "filing_name": "Artist, An", "short_name": "An Artist", "year_of_birth": 1600, "published": true,
+	})
+	saveTimelineRecord(t, app, "art_periods", "periodbaro00001", map[string]any{
+		"name": "Baroque", "start": 1500, "end": 1750, "description": "approved period",
+	})
+	saveTimelineRecord(t, app, "artworks", "artworkvis00001", map[string]any{
+		"title": "Published Work", "author": []string{"artistpub000001"}, "published": true,
+		"date_start": 1600, "date_end": 1610,
+	})
+	// A raw qualifier is not an approved music/building/event source record.
+	// It must not be promoted into fabricated chronology by the timeline.
+	saveTimelineRecord(t, app, "artworks", "artqualifier001", map[string]any{
+		"title": "Raw Period Text Only", "author": []string{"artistpub000001"}, "published": true,
+		"date_start": 1605, "date_qualifier": "Renaissance",
+	})
+	saveTimelineRecord(t, app, "artworks", "artworkhidden01", map[string]any{
+		"title": "Unpublished Work", "author": []string{"artistpub000001"}, "published": false,
+		"date_start": 1602,
+	})
+
+	RegisterHandlers(app)
+
+	router, err := apis.NewRouter(app)
+	if err != nil {
+		t.Fatalf("create router: %v", err)
+	}
+	serveEvent := &core.ServeEvent{App: app, Router: router}
+	if err := app.OnServe().Trigger(serveEvent, func(event *core.ServeEvent) error {
+		mux, err := event.Router.BuildMux()
+		if err != nil {
+			return err
+		}
+
+		recorder := httptest.NewRecorder()
+		mux.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/timeline?from=1600&to=1610", nil))
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("selected no-JS status = %d, want 200", recorder.Code)
+		}
+		body := recorder.Body.String()
+		for _, expected := range []string{
+			"1600–1610",
+			"Published Work",
+			"Raw Period Text Only",
+			"Artist, An",
+			"b. 1600",
+			`href="/artists/an-artist-artistpub000001"`,
+			`action="/timeline"`,
+			`method="GET"`,
+			`name="from"`,
+			`name="to"`,
+			"APPLY WINDOW",
+		} {
+			if !strings.Contains(body, expected) {
+				t.Errorf("selected no-JS response does not contain %q", expected)
+			}
+		}
+		if strings.Contains(body, "Unpublished Work") {
+			t.Error("selected timeline rendered an unpublished artwork")
+		}
+		for _, fabricated := range []string{
+			"war broke out",
+			"revolution",
+			"battle of",
+			"Columbus",
+			"Renaissance music",
+		} {
+			if strings.Contains(body, fabricated) {
+				t.Errorf("selected timeline rendered unsupported evidence %q", fabricated)
+			}
 		}
 
 		return nil

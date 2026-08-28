@@ -149,7 +149,9 @@ func loadViewer(app core.App, record *core.Record, stops []*core.Record, index i
 		}
 		if errs := app.ExpandRecord(artwork, []string{"author"}, nil); len(errs) == 0 {
 			if author := artwork.ExpandedOne("author"); author != nil {
-				view.StopArtist = author.GetString("name")
+				if hasCompleteItineraryArtistIdentity(author) {
+					view.StopArtist = author.GetString("filing_name")
+				}
 			}
 		}
 	}
@@ -165,8 +167,11 @@ func viewerPlate(app core.App, artwork *core.Record) dto.Plate {
 
 	if errs := app.ExpandRecord(artwork, []string{"author"}, nil); len(errs) == 0 {
 		if author := artwork.ExpandedOne("author"); author != nil {
-			alt = artwork.GetString("title") + " by " + author.GetString("name")
-			label = alt
+			if hasCompleteItineraryArtistIdentity(author) {
+				shortName := author.GetString("short_name")
+				alt = artwork.GetString("title") + " by " + shortName
+				label = alt
+			}
 		}
 	}
 

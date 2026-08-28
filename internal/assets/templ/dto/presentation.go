@@ -80,6 +80,9 @@ type RangeField struct {
 	Max       int
 	Step      int
 	Brush     bool
+	// Inline omits the inner legend and outer padding for a range that sits
+	// inside a collapsible facet whose summary already names the field.
+	Inline bool
 }
 
 // EmptyState describes a visible absence with an optional recovery link.

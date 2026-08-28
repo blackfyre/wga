@@ -28,6 +28,7 @@ func validArtworksContractCollection() *core.Collection {
 		&core.JSONField{Name: "colour_signature"},
 		&core.TextField{Name: "colour_profile_version"},
 		&core.TextField{Name: "colour_image_hash"},
+		&core.NumberField{Name: "image_size_bytes"},
 	)
 	return collection
 }

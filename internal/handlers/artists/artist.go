@@ -222,8 +222,10 @@ func RenderArtistContent(app *pocketbase.PocketBase, c *core.RequestEvent, artis
 	schools := utils.RenderSchoolNames(app, artist.GetStringSlice("school"))
 
 	content := dto.Artist{
-		Name: artist.GetString("name"),
-		Bio:  artist.GetString("bio"),
+		FilingName: artist.GetString("filing_name"),
+		ShortName:  artist.GetString("short_name"),
+		Name:       artist.GetString("filing_name"),
+		Bio:        artist.GetString("bio"),
 		BioExcerpt: utils.NormalizedBioExcerpt(utils.BioExcerptDTO{
 			YearOfBirth:       artist.GetInt("year_of_birth"),
 			ExactYearOfBirth:  artist.GetString("exact_year_of_birth"),
@@ -328,7 +330,7 @@ func processArtist(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 		return utils.ServerFaultError(c)
 	}
 
-	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", view.Name, view.LifeSummary))
+	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", view.FilingName, view.LifeSummary))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, artist.GetString("bio"))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, utils.AssetUrl(fullUrl))
 	if image := artistOpenGraphImage(view); image != "" {
@@ -400,7 +402,8 @@ func buildArtistRecordView(app *pocketbase.PocketBase, artist *core.Record) (pag
 	}
 
 	view := pages.ArtistView{
-		Name:            artist.GetString("name"),
+		FilingName:      artist.GetString("filing_name"),
+		ShortName:       artist.GetString("short_name"),
 		Url:             "/artists/" + expectedSlug,
 		LifeSummary:     artistLifeSummary(artist),
 		Schools:         strings.Join(schoolNames, ", "),
@@ -411,7 +414,7 @@ func buildArtistRecordView(app *pocketbase.PocketBase, artist *core.Record) (pag
 		Bio:             bio,
 		Works:           buildRecordWorkImages(artist, works),
 		WorkCount:       workCount,
-		WorksURL:        buildArtistWorksURL(artist.GetString("name")),
+		WorksURL:        buildArtistWorksURL(artist.GetString("filing_name")),
 		Selections:      selections,
 		Music:           buildRecordMusic(periodSong),
 		Citation:        buildArtistCitation(artist, expectedSlug),
@@ -447,7 +450,7 @@ func artistLifeSummary(artist *core.Record) string {
 		parts = append(parts, "d. "+yearAndPlace(death, artist.GetString("place_of_death")))
 	}
 
-	return strings.Join(parts, ", ")
+	return strings.Join(parts, " · ")
 }
 
 func yearAndPlace(year int, place string) string {
@@ -472,7 +475,7 @@ func resolveAliases(app *pocketbase.PocketBase, ids []string) string {
 
 	names := make([]string, 0, len(records))
 	for _, record := range records {
-		if name := record.GetString("name"); name != "" {
+		if name := record.GetString("filing_name"); name != "" {
 			names = append(names, name)
 		}
 	}
@@ -503,7 +506,11 @@ func buildRecordWorkImages(artist *core.Record, works []*core.Record) dto.ImageG
 				ArtworkTitle: work.GetString("title"),
 				ArtworkId:    work.GetString("id"),
 			}),
-			Artist: dto.Artist{Name: artist.GetString("name")},
+			Artist: dto.Artist{
+				FilingName: artist.GetString("filing_name"),
+				ShortName:  artist.GetString("short_name"),
+				Name:       artist.GetString("filing_name"),
+			},
 		})
 	}
 
@@ -511,9 +518,12 @@ func buildRecordWorkImages(artist *core.Record, works []*core.Record) dto.ImageG
 }
 
 // buildArtistWorksURL returns the wider catalogue route filtered to the
-// artist's canonical display name.
-func buildArtistWorksURL(name string) string {
-	return "/artworks?artist=" + neturl.QueryEscape(name)
+// artist's authoritative filing name.
+func buildArtistWorksURL(filingName string) string {
+	values := neturl.Values{}
+	values.Set("artist", filingName)
+
+	return "/artworks?" + values.Encode()
 }
 
 // selectionPreviewWorkLimit bounds the representative works shown in an artist
@@ -598,7 +608,7 @@ func buildRecordMusic(song *repositories.PeriodSong) components.MusicPeriodCard 
 func buildArtistCitation(artist *core.Record, expectedSlug string) components.Citation {
 	return components.Citation{
 		Key:   "wga-" + artist.GetString("slug"),
-		Title: artist.GetString("name"),
+		Title: artist.GetString("filing_name"),
 		URL:   utils.AssetUrl("/artists/" + expectedSlug),
 	}
 }

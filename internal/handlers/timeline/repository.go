@@ -25,6 +25,26 @@ type artPeriod struct {
 	description string
 }
 
+// artistRow is the bounded projection of a published artist with a known birth
+// year for the timeline's artist lane.
+type artistRow struct {
+	ID          string `db:"id"`
+	Name        string `db:"name"`
+	FilingName  string `db:"filing_name"`
+	YearOfBirth int    `db:"year_of_birth"`
+}
+
+// publishedArtistLaneWhere is the predicate a published artist must satisfy
+// before it is linked from the timeline: a positive stored birth year and both
+// authoritative identity fields. The identity clause mirrors the canonical
+// public-record condition used by the artist index/record surfaces, so an
+// artist entry is only linked when its published public record resolves.
+const publishedArtistLaneWhere = `
+		published = true
+		AND year_of_birth > 0
+		AND filing_name IS NOT NULL AND TRIM(filing_name) != ''
+		AND short_name IS NOT NULL AND TRIM(short_name) != ''`
+
 // artworkRow is the bounded projection of a published artwork for the timeline.
 type artworkRow struct {
 	ID         string `db:"id"`
@@ -135,6 +155,53 @@ func (r *repository) dateSpans(from int, to int) ([]dateSpan, error) {
 			AND (CASE WHEN aw.date_end > 0 THEN aw.date_end ELSE aw.date_start END) >= {:from}
 		ORDER BY aw.date_start ASC`,
 	).Bind(dbx.Params{"from": from, "to": to}).All(&rows)
+	if err != nil {
+		return nil, err
+	}
+
+	return rows, nil
+}
+
+// countArtists returns the number of published artists whose known birth year
+// falls inside the inclusive window [from, to].
+func (r *repository) countArtists(from int, to int) (int, error) {
+	row := countRow{}
+	err := r.app.DB().NewQuery(`
+		SELECT COUNT(*) AS count
+		FROM Artists
+		WHERE` + publishedArtistLaneWhere + `
+			AND year_of_birth >= {:from}
+			AND year_of_birth <= {:to}`,
+	).Bind(dbx.Params{"from": from, "to": to}).One(&row)
+	if err != nil {
+		return 0, err
+	}
+
+	return row.Count, nil
+}
+
+// listArtists returns at most limit published artists whose known birth year
+// falls inside the inclusive window [from, to], ordered deterministically by
+// birth year, then filing name, then id.
+func (r *repository) listArtists(from int, to int, limit int) ([]artistRow, error) {
+	if limit <= 0 {
+		return []artistRow{}, nil
+	}
+
+	rows := []artistRow{}
+	err := r.app.DB().NewQuery(`
+		SELECT
+			id AS id,
+			name AS name,
+			filing_name AS filing_name,
+			year_of_birth AS year_of_birth
+		FROM Artists
+		WHERE` + publishedArtistLaneWhere + `
+			AND year_of_birth >= {:from}
+			AND year_of_birth <= {:to}
+		ORDER BY year_of_birth ASC, filing_name ASC, id ASC
+		LIMIT {:limit}`,
+	).Bind(dbx.Params{"from": from, "to": to, "limit": limit}).All(&rows)
 	if err != nil {
 		return nil, err
 	}

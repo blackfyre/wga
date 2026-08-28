@@ -32,12 +32,14 @@ var syntheticTargetCollections = []targetCollection{
 		"name", "slug", "bio", "year_of_birth", "year_of_death", "place_of_birth", "place_of_death",
 		"exact_year_of_birth", "exact_year_of_death", "profession", "known_place_of_birth",
 		"known_place_of_death", "school", "portrait", "biography_image_width", "biography_image_height", "published",
+		"filing_name", "short_name",
 	}},
 	{name: constants.CollectionArtworks, fields: []string{
 		"title", "author", "form", "type", "technique", "school", "comment", "published", "image", "image_width", "image_height",
 		"source_row", "date_start", "date_end", "is_circa", "date_qualifier", "timeframe_text",
 		"current_location_id", "art_period_id",
 		"source_url", "source_path", "source_comment", "colour_palette", "colour_signature", "colour_profile_version", "colour_image_hash",
+		"image_size_bytes",
 	}},
 	{name: constants.CollectionSelections, fields: []string{
 		"artist", "title", "context", "display_title", "commentary", "artworks", "source_path", "source_hash", "content_hash", "published",
@@ -164,6 +166,7 @@ func validateSourceFieldContracts(artworks *core.Collection, selections *core.Co
 		{"colour_signature", core.FieldTypeJSON},
 		{"colour_profile_version", core.FieldTypeText},
 		{"colour_image_hash", core.FieldTypeText},
+		{"image_size_bytes", core.FieldTypeNumber},
 	} {
 		field := artworks.Fields.GetByName(check.name)
 		if field == nil {
@@ -336,6 +339,8 @@ func importSyntheticArtists(app core.App, data sourceData, preseededAssets bool)
 		}
 
 		record.Set("name", item.DisplayName)
+		record.Set("filing_name", item.DisplayName)
+		record.Set("short_name", item.ShortName)
 		record.Set("slug", uniqueArtistSlug(usedSlugs, item.DisplayName, item.ID))
 		record.Set("bio", biographies[item.ID].BiographyHTML)
 		record.Set("year_of_birth", item.BirthYear)
@@ -437,14 +442,17 @@ func importSyntheticArtworks(app core.App, data sourceData, preseededAssets bool
 		}
 		if item.ImagePath == "" {
 			// image-less artwork: leave the image file field unset
-		} else if file.preseededAssets {
-			record.Set("image", file.name)
 		} else {
-			image, err := filesystem.NewFileFromBytes(file.content, file.name)
-			if err != nil {
-				return fmt.Errorf("create artwork %q image: %w", item.ID, err)
+			record.Set("image_size_bytes", file.size)
+			if file.preseededAssets {
+				record.Set("image", file.name)
+			} else {
+				image, err := filesystem.NewFileFromBytes(file.content, file.name)
+				if err != nil {
+					return fmt.Errorf("create artwork %q image: %w", item.ID, err)
+				}
+				record.Set("image", image)
 			}
-			record.Set("image", image)
 		}
 
 		if err := saveSeedRecord(app, record, preseededAssets); err != nil {

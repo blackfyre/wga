@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/blackfyre/wga/internal/assets"
+	"github.com/blackfyre/wga/internal/assets/templ/components"
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
 	"github.com/blackfyre/wga/internal/config"
@@ -52,6 +53,9 @@ func RegisterHandlers(app core.App, environment config.Environment) {
 				c.Response.Header().Set("Cache-Control", "no-store")
 				return c.Blob(http.StatusOK, "text/html; charset=utf-8", content)
 			})
+			se.Router.GET("/tmp/visual-overhaul/footer", func(c *core.RequestEvent) error {
+				return visualOverhaulFooterFixture(app, c)
+			})
 		}
 
 		// Assets
@@ -83,6 +87,27 @@ func RegisterHandlers(app core.App, environment config.Environment) {
 
 		return se.Next()
 	})
+}
+
+// visualOverhaulFooterFixture supplies a server-rendered footer fixture for
+// development-only browser coverage. An HTMX request receives only the footer
+// fragment; direct navigation receives a minimal document whose initial button
+// performs an outer footer swap against the same endpoint.
+func visualOverhaulFooterFixture(app core.App, c *core.RequestEvent) error {
+	ctx := tmplUtils.ContextFromRequest(c.Request)
+	var footer bytes.Buffer
+	if err := components.Footer().Render(ctx, &footer); err != nil {
+		return staticPageServerError(app, c, "visual_overhaul_footer_render_error", err)
+	}
+
+	c.Response.Header().Set("Cache-Control", "no-store")
+	c.Response.Header().Set("Vary", "HX-Request")
+	if c.Request.Header.Get("HX-Request") == "true" {
+		return c.HTML(http.StatusOK, footer.String())
+	}
+
+	page := `<!doctype html><html><head><meta charset="utf-8"><script type="module" src="/assets/js/app.js"></script></head><body><main><button type="button" hx-get="/tmp/visual-overhaul/footer" hx-target="footer" hx-swap="outerHTML">Replace footer</button></main>` + footer.String() + `</body></html>`
+	return c.HTML(http.StatusOK, page)
 }
 
 func staticPageHandler(app core.App, c *core.RequestEvent) error {

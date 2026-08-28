@@ -3,6 +3,8 @@ package dual
 import (
 	"bytes"
 	"context"
+	"database/sql"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	neturl "net/url"
@@ -714,6 +716,48 @@ func TestResolveDualLookupKind(t *testing.T) {
 	}
 }
 
+// TestDualLookupAndResolutionExcludeBlankIdentity proves the dual-mode artist
+// lookup, artwork-author batch, and direct artist resolution all deny artists
+// missing either authoritative identity field.
+func TestDualLookupAndResolutionExcludeBlankIdentity(t *testing.T) {
+	app := newDualTestApp(t)
+	saveDualRecord(t, app, "artists", "artcomplete0000", map[string]any{
+		"name": "Complete Legacy", "filing_name": "Complete, Filing", "short_name": "Complete", "published": true,
+	})
+	saveDualRecord(t, app, "artists", "artblanksho0000", map[string]any{
+		"name": "Blank Short Legacy", "filing_name": "Blank, Short Filing", "short_name": "", "published": true,
+	})
+	saveDualRecord(t, app, "artists", "artblankfil0000", map[string]any{
+		"name": "Blank Filing Legacy", "filing_name": "", "short_name": "Blank", "published": true,
+	})
+
+	results, err := getArtistLookupResults(app, "filing")
+	if err != nil {
+		t.Fatalf("artist lookup: %v", err)
+	}
+	if len(results) != 1 || results[0].Label != "Complete, Filing" {
+		t.Fatalf("artist lookup = %+v, want only [Complete, Filing]", results)
+	}
+
+	saveDualRecord(t, app, "artworks", "workblank100000", map[string]any{
+		"title": "Blank Short Work", "author": []string{"artblanksho0000"}, "published": true, "image": "x.jpg", "image_width": 100,
+	})
+	workResults, err := getArtworkLookupResults(app, "blank short")
+	if err != nil {
+		t.Fatalf("artwork lookup: %v", err)
+	}
+	if len(workResults) != 0 {
+		t.Fatalf("artwork lookup = %+v, want none (blank-author work excluded)", workResults)
+	}
+
+	if _, err := findPublishedArtist(app, "artblankfil0000"); !errors.Is(err, sql.ErrNoRows) {
+		t.Errorf("blank-filing artist resolution = %v, want sql.ErrNoRows", err)
+	}
+	if _, err := findPublishedArtist(app, "artblanksho0000"); !errors.Is(err, sql.ErrNoRows) {
+		t.Errorf("blank-short artist resolution = %v, want sql.ErrNoRows", err)
+	}
+}
+
 // ---------------------------------------------------------------------------
 // Test app and record-building integration
 // ---------------------------------------------------------------------------
@@ -748,6 +792,8 @@ func newDualTestApp(t *testing.T) *pocketbase.PocketBase {
 	artists.MarkAsNew()
 	artists.Fields.Add(
 		&core.TextField{Name: "name", Required: true},
+		&core.TextField{Name: "filing_name"},
+		&core.TextField{Name: "short_name"},
 		&core.TextField{Name: "slug"},
 		&core.EditorField{Name: "bio"},
 		&core.NumberField{Name: "year_of_birth"},
@@ -815,6 +861,14 @@ func saveDualRecord(t *testing.T, app *pocketbase.PocketBase, collection string,
 	}
 	record := core.NewRecord(coll)
 	record.Id = id
+	if collection == "artists" {
+		if _, ok := fields["filing_name"]; !ok {
+			fields["filing_name"] = fields["name"]
+		}
+		if _, ok := fields["short_name"]; !ok {
+			fields["short_name"] = fields["name"]
+		}
+	}
 	for key, value := range fields {
 		record.Set(key, value)
 	}
@@ -828,16 +882,18 @@ func seedDualArtistAndWork(t *testing.T, app *pocketbase.PocketBase) {
 	saveDualRecord(t, app, "schools", "schooldutch0001", map[string]any{"name": "Dutch", "slug": "dutch"})
 	saveDualRecord(t, app, "art_periods", "periodbaroque01", map[string]any{"name": "Baroque", "start": 1600, "end": 1750})
 	saveDualRecord(t, app, "artists", "artistone000001", map[string]any{
-		"name":          "Rembrandt",
-		"slug":          "rembrandt",
-		"bio":           "<p>A master of chiaroscuro.</p>",
-		"year_of_birth": 1606,
-		"year_of_death": 1669,
-		"profession":    "painter",
-		"school":        []string{"schooldutch0001"},
-		"portrait":      "portrait.jpg",
+		"name":                  "Rembrandt",
+		"filing_name":           "Rijn, Rembrandt van",
+		"short_name":            "Rembrandt",
+		"slug":                  "rembrandt",
+		"bio":                   "<p>A master of chiaroscuro.</p>",
+		"year_of_birth":         1606,
+		"year_of_death":         1669,
+		"profession":            "painter",
+		"school":                []string{"schooldutch0001"},
+		"portrait":              "portrait.jpg",
 		"biography_image_width": 800,
-		"published":     true,
+		"published":             true,
 	})
 	saveDualRecord(t, app, "artworks", "artworkone00001", map[string]any{
 		"title":       "The Night Watch",
@@ -906,6 +962,21 @@ func TestBuildDualWorkRecordImageRenditionAndCitation(t *testing.T) {
 	if largeRecord.PlateClass != "h-[680px]" {
 		t.Fatalf("large plate class = %q", largeRecord.PlateClass)
 	}
+
+	// The smallest study choice hands off to the 700px profile while the
+	// deliberate viewer remains independently fixed at 2000px.
+	smallPane := pane
+	smallPane.size = sizeSmall
+	smallRecord, _, _, err := buildDualWorkRecord(app, "right", smallPane, state, ref)
+	if err != nil {
+		t.Fatalf("build small work record: %v", err)
+	}
+	if !strings.Contains(smallRecord.Image, "thumb=700x0") {
+		t.Fatalf("small image should use 700x0 profile, got %q", smallRecord.Image)
+	}
+	if !strings.Contains(smallRecord.Zoom, "thumb=2000x0") {
+		t.Fatalf("small viewer should use 2000x0 profile, got %q", smallRecord.Zoom)
+	}
 }
 
 func TestBuildDualWorkRecordFallsBackToOriginalWhenNarrower(t *testing.T) {
@@ -935,6 +1006,12 @@ func TestBuildDualWorkRecordFallsBackToOriginalWhenNarrower(t *testing.T) {
 	if !strings.Contains(record.Image, "/api/files/artworks/artworktwo00001/small.jpg") {
 		t.Fatalf("image should be the original file URL, got %q", record.Image)
 	}
+	if strings.Contains(record.Zoom, "thumb=") {
+		t.Fatalf("narrow viewer should use the original file, got %q", record.Zoom)
+	}
+	if record.Zoom != record.Image {
+		t.Fatalf("narrow display and viewer should share original URL: display=%q viewer=%q", record.Image, record.Zoom)
+	}
 }
 
 func TestBuildDualArtistRecordCitationIsCanonical(t *testing.T) {
@@ -955,8 +1032,8 @@ func TestBuildDualArtistRecordCitationIsCanonical(t *testing.T) {
 		t.Fatalf("build artist record: %v", err)
 	}
 
-	if record.Name != "Rembrandt" {
-		t.Fatalf("artist name = %q", record.Name)
+	if record.FilingName != "Rijn, Rembrandt van" {
+		t.Fatalf("artist filing name = %q", record.FilingName)
 	}
 	if strings.Contains(record.Citation.URL, "/dual-mode") {
 		t.Fatalf("citation must not reference the interactive route, got %q", record.Citation.URL)
@@ -1383,11 +1460,11 @@ func TestDualModeBlockRendersNoJavascriptControls(t *testing.T) {
 				IndexHref: "/dual-mode",
 				RouteHref: "/dual-mode?left_render_to=left",
 				Index: pages.DualIndexView{
-					View:     "list",
-					AllUrl:   "/dual-mode",
-					GridHref: "/dual-mode?l_view=grid",
-					ListHref: "/dual-mode",
-					SortHref: "/dual-mode?l_sort=za",
+					View:      "list",
+					AllUrl:    "/dual-mode",
+					GridHref:  "/dual-mode?l_view=grid",
+					ListHref:  "/dual-mode",
+					SortHref:  "/dual-mode?l_sort=za",
 					SortLabel: "A–Z",
 					Letters:   []pages.DualLetter{{Label: "A", Href: "/dual-mode?l_letter=A", Enabled: true}},
 					SchoolGroup: dto.ChipGroup{
@@ -1495,7 +1572,7 @@ func TestDualIndexAndRecordParity(t *testing.T) {
 
 	var row *pages.DualArtistRow
 	for i := range indexView.Artists {
-		if indexView.Artists[i].Name == "Rembrandt" {
+		if indexView.Artists[i].Name == "Rijn, Rembrandt van" {
 			row = &indexView.Artists[i]
 			break
 		}
@@ -1525,8 +1602,8 @@ func TestDualIndexAndRecordParity(t *testing.T) {
 	if err != nil {
 		t.Fatalf("build artist record: %v", err)
 	}
-	if record.Name != "Rembrandt" {
-		t.Fatalf("record name = %q, want index name", record.Name)
+	if record.FilingName != "Rijn, Rembrandt van" {
+		t.Fatalf("record filing name = %q, want index name", record.FilingName)
 	}
 	if len(record.Works) != 1 || record.Works[0].Title != "The Night Watch" {
 		t.Fatalf("record works = %+v, want the single published work", record.Works)
@@ -1633,13 +1710,13 @@ func TestBuildDualIndexViewSortsDeterministically(t *testing.T) {
 	}
 
 	az := names(sortAZ)
-	if len(az) != 2 || az[0] != "Rembrandt" || az[1] != "Vermeer" {
-		t.Fatalf("name-ascending order = %v, want [Rembrandt Vermeer]", az)
+	if len(az) != 2 || az[0] != "Rijn, Rembrandt van" || az[1] != "Vermeer" {
+		t.Fatalf("name-ascending order = %v, want [Rijn, Rembrandt van Vermeer]", az)
 	}
 
 	za := names(sortZA)
-	if len(za) != 2 || za[0] != "Vermeer" || za[1] != "Rembrandt" {
-		t.Fatalf("name-descending order = %v, want [Vermeer Rembrandt]", za)
+	if len(za) != 2 || za[0] != "Vermeer" || za[1] != "Rijn, Rembrandt van" {
+		t.Fatalf("name-descending order = %v, want [Vermeer Rijn, Rembrandt van]", za)
 	}
 }
 

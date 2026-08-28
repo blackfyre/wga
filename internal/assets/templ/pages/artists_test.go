@@ -98,6 +98,35 @@ func TestArtistsBlockRendersAllAndAlphabetInOrder(t *testing.T) {
 	}
 }
 
+func TestArtistsBlockAlphabetNavWrapsAndDoesNotClip(t *testing.T) {
+	rendered := renderArtistsBlock(t, sampleView())
+
+	// The alphabet nav must stay a wrapping flex container so every letter
+	// reflows onto further rows at enlarged text. Masking it with an overflow
+	// clip would hide the letters that do not fit one row instead of wrapping.
+	const label = `aria-label="Filter artists by letter"`
+	labelIndex := strings.Index(rendered, label)
+	if labelIndex < 0 {
+		t.Fatalf("expected an alphabet nav labelled %q", label)
+	}
+
+	openIndex := strings.LastIndex(rendered[:labelIndex], "<nav")
+	if openIndex < 0 {
+		t.Fatal("expected an alphabet <nav> opening tag before the label")
+	}
+
+	openTag := rendered[openIndex : labelIndex+strings.Index(rendered[labelIndex:], ">")+1]
+
+	if !strings.Contains(openTag, "flex-wrap") {
+		t.Errorf("alphabet nav must wrap at enlarged text; opening tag %q", openTag)
+	}
+	for _, mask := range []string{"overflow-hidden", "overflow-x-hidden", "overflow-x-auto", "overflow-x-clip"} {
+		if strings.Contains(openTag, mask) {
+			t.Errorf("alphabet nav must wrap rather than clip: %q appears in opening tag %q", mask, openTag)
+		}
+	}
+}
+
 func TestArtistsBlockDisablesEmptyLettersAndMarksActive(t *testing.T) {
 	view := sampleView()
 	view.Letters = []ArtistLetter{
@@ -222,6 +251,25 @@ func TestArtistsBlockRendersUnavailableListRowWithoutLink(t *testing.T) {
 	}
 	if !strings.Contains(rendered, "NOT DIGITISED") {
 		t.Error("expected NOT DIGITISED marker in list row")
+	}
+}
+
+func TestArtistsBlockGridNameBreaksLongFilingNames(t *testing.T) {
+	view := sampleView()
+	view.Artists = []ArtistRow{
+		{URL: "/artists/available-a-1", Name: "ABILDGAARD, Nicolai", Available: true},
+		{URL: "/artists/unavailable-b-1", Name: "ADRIAENSSEN, Alexander", Available: false},
+	}
+	rendered := renderArtistsBlock(t, view)
+
+	// The encyclopaedic filing form ("SURNAME, Given Names") produces long
+	// unbreakable surname tokens that otherwise overflow the two-column grid at
+	// enlarged text. Both the available and unavailable name spans must carry
+	// break-words so the filing name wraps without altering its content.
+	for _, name := range []string{"ABILDGAARD, Nicolai", "ADRIAENSSEN, Alexander"} {
+		if !strings.Contains(rendered, `text-(length:--t-17) font-semibold break-words">`+name+"</span>") {
+			t.Errorf("expected grid name %q to carry break-words wrapping", name)
+		}
 	}
 }
 

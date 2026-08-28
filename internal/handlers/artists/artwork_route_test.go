@@ -13,14 +13,13 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
-// newArtworkRouteApp builds the route test app in local development, where the
-// WGA reproduction source link is populated.
-func newArtworkRouteApp(t *testing.T) (*pocketbase.PocketBase, func(string) *httptest.ResponseRecorder) {
+// newArtworkRouteApp builds the route test app in local development.
+func newArtworkRouteApp(t *testing.T) (*pocketbase.PocketBase, func(string, ...bool) *httptest.ResponseRecorder) {
 	t.Helper()
 	return newArtworkRouteAppWithEnvironment(t, config.EnvironmentDevelopment)
 }
 
-func newArtworkRouteAppWithEnvironment(t *testing.T, environment config.Environment) (*pocketbase.PocketBase, func(string) *httptest.ResponseRecorder) {
+func newArtworkRouteAppWithEnvironment(t *testing.T, environment config.Environment) (*pocketbase.PocketBase, func(string, ...bool) *httptest.ResponseRecorder) {
 	t.Helper()
 
 	app := pocketbase.NewWithConfig(pocketbase.Config{DefaultDataDir: t.TempDir()})
@@ -67,6 +66,8 @@ func newArtworkRouteAppWithEnvironment(t *testing.T, environment config.Environm
 	)
 	saveRecordCollection(t, app, core.NewBaseCollection("Artists"), constants.CollectionArtists,
 		&core.TextField{Name: "name"},
+		&core.TextField{Name: "filing_name"},
+		&core.TextField{Name: "short_name"},
 		&core.TextField{Name: "slug"},
 		&core.TextField{Name: "bio"},
 		&core.TextField{Name: "profession"},
@@ -91,6 +92,7 @@ func newArtworkRouteAppWithEnvironment(t *testing.T, environment config.Environm
 		&core.TextField{Name: "image"},
 		&core.NumberField{Name: "image_width"},
 		&core.NumberField{Name: "image_height"},
+		&core.NumberField{Name: "image_size_bytes"},
 		&core.NumberField{Name: "source_row"},
 		&core.NumberField{Name: "date_start"},
 		&core.NumberField{Name: "date_end"},
@@ -114,7 +116,7 @@ func newArtworkRouteAppWithEnvironment(t *testing.T, environment config.Environm
 	})
 	saveRecordRecord(t, app, constants.CollectionArtworks, "workone00000001", map[string]any{
 		"title": "A Painting", "author": []string{"artistone000001"}, "published": true,
-		"form": []string{}, "image": "painting.jpg", "image_width": 800,
+		"form": []string{}, "image": "painting.jpg", "image_width": 800, "image_size_bytes": 123456,
 	})
 
 	RegisterHandlers(app, environment)
@@ -134,9 +136,13 @@ func newArtworkRouteAppWithEnvironment(t *testing.T, environment config.Environm
 		t.Fatalf("build mux: %v", err)
 	}
 
-	request := func(path string) *httptest.ResponseRecorder {
+	request := func(path string, htmx ...bool) *httptest.ResponseRecorder {
 		recorder := httptest.NewRecorder()
-		mux.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, path, nil))
+		req := httptest.NewRequest(http.MethodGet, path, nil)
+		if len(htmx) > 0 && htmx[0] {
+			req.Header.Set("HX-Request", "true")
+		}
+		mux.ServeHTTP(recorder, req)
 		return recorder
 	}
 
@@ -160,58 +166,80 @@ func TestArtworkRouteRendersFullPageWithDefaultBasis(t *testing.T) {
 	}
 }
 
-func TestArtworkRouteRendersCanonicalWGAProvenanceOnlyForSafeSource(t *testing.T) {
-	app, request := newArtworkRouteApp(t)
-	artwork, err := app.FindRecordById(constants.CollectionArtworks, "workone00000001")
-	if err != nil {
-		t.Fatalf("find artwork: %v", err)
-	}
-	artwork.Set("source_url", "html/a/artist/painting.html")
-	if err := app.Save(artwork); err != nil {
-		t.Fatalf("save artwork source URL: %v", err)
-	}
-
-	path := "/artists/synthetic-artist-artistone000001/a-painting-workone00000001"
-	recorder := request(path)
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("status = %d, want 200", recorder.Code)
-	}
-	body := recorder.Body.String()
-	for _, expected := range []string{
-		"VIEW ORIGINAL AT WEB GALLERY OF ART",
-		`href="https://www.wga.hu/html/a/artist/painting.html"`,
-		`target="_blank"`,
-		`rel="noopener noreferrer"`,
-		"DOWNLOAD THE FULL FILE",
+func TestArtworkRouteNeverRendersSourceClaimsAndKeepsFullFile(t *testing.T) {
+	for _, environment := range []config.Environment{
+		config.EnvironmentDevelopment,
+		config.EnvironmentTest,
+		config.EnvironmentStaging,
+		config.EnvironmentProduction,
 	} {
-		if !strings.Contains(body, expected) {
-			t.Errorf("response missing %q", expected)
-		}
-	}
+		t.Run(string(environment), func(t *testing.T) {
+			app, request := newArtworkRouteAppWithEnvironment(t, environment)
+			artwork, err := app.FindRecordById(constants.CollectionArtworks, "workone00000001")
+			if err != nil {
+				t.Fatalf("find artwork: %v", err)
+			}
 
-	artwork.Set("source_url", "https://example.com/html/a/artist/painting.html")
-	if err := app.Save(artwork); err != nil {
-		t.Fatalf("save unsafe artwork source URL: %v", err)
-	}
-	recorder = request(path)
-	if strings.Contains(recorder.Body.String(), "VIEW ORIGINAL AT WEB GALLERY OF ART") {
-		t.Error("unsafe producer source URL must fail closed")
+			for _, sourceURL := range []string{
+				"html/a/artist/painting.html",
+				"https://example.com/html/a/artist/painting.html",
+			} {
+				artwork.Set("source_url", sourceURL)
+				if err := app.Save(artwork); err != nil {
+					t.Fatalf("save artwork source URL: %v", err)
+				}
+
+				recorder := request("/artists/synthetic-artist-artistone000001/a-painting-workone00000001")
+				if recorder.Code != http.StatusOK {
+					t.Fatalf("status = %d, want 200", recorder.Code)
+				}
+				body := recorder.Body.String()
+				recordSection := body
+				if start := strings.Index(body, "<figure"); start >= 0 {
+					recordSection = body[start:]
+				}
+				if end := strings.Index(recordSection, "</figure>"); end >= 0 {
+					recordSection = recordSection[:end]
+				}
+				if strings.Contains(recordSection, "VIEW ORIGINAL AT WEB GALLERY OF ART") {
+					t.Errorf("%s source URL must not render a public source claim", sourceURL)
+				}
+				if strings.Contains(strings.ToUpper(recordSection), "LICENCE") {
+					t.Errorf("%s source URL must not render a public licence claim", sourceURL)
+				}
+				if strings.Contains(recordSection, sourceURL) {
+					t.Errorf("%s source URL must not render in the artwork record", sourceURL)
+				}
+				if !strings.Contains(body, "DOWNLOAD THE FULL FILE") {
+					t.Errorf("%s source URL must retain the full-file link", sourceURL)
+				}
+			}
+		})
 	}
 }
 
-// TestArtworkRouteHidesWGAProvenanceOutsideDevelopment proves the WGA
-// reproduction source link is a local-development convenience: it must not
-// render in any deployed environment, even for a safe, allow-listed source
-// URL, while the deliberate source-file download stays available everywhere.
-func TestArtworkRouteHidesWGAProvenanceOutsideDevelopment(t *testing.T) {
-	app, request := newArtworkRouteAppWithEnvironment(t, config.EnvironmentProduction)
+func TestArtworkRouteRendersRecordIdentityDateAndEvidenceBackedFile(t *testing.T) {
+	app, request := newArtworkRouteApp(t)
+	artist, err := app.FindRecordById(constants.CollectionArtists, "artistone000001")
+	if err != nil {
+		t.Fatalf("find artist: %v", err)
+	}
+	artist.Set("filing_name", "Surname, Given")
+	artist.Set("short_name", "Given")
+	if err := app.Save(artist); err != nil {
+		t.Fatalf("save artist identity: %v", err)
+	}
 	artwork, err := app.FindRecordById(constants.CollectionArtworks, "workone00000001")
 	if err != nil {
 		t.Fatalf("find artwork: %v", err)
 	}
-	artwork.Set("source_url", "html/a/artist/painting.html")
+	artwork.Set("image_width", 1200)
+	artwork.Set("image_height", 800)
+	artwork.Set("image_size_bytes", 1_400_000)
+	artwork.Set("date_start", 1900)
+	artwork.Set("year", 1900)
 	if err := app.Save(artwork); err != nil {
-		t.Fatalf("save artwork source URL: %v", err)
+		t.Fatalf("save artwork evidence: %v", err)
 	}
 
 	recorder := request("/artists/synthetic-artist-artistone000001/a-painting-workone00000001")
@@ -219,11 +247,47 @@ func TestArtworkRouteHidesWGAProvenanceOutsideDevelopment(t *testing.T) {
 		t.Fatalf("status = %d, want 200", recorder.Code)
 	}
 	body := recorder.Body.String()
-	if strings.Contains(body, "VIEW ORIGINAL AT WEB GALLERY OF ART") {
-		t.Error("WGA provenance link must not render outside local development")
+	for _, expected := range []string{
+		"Given",
+		"Surname, Given · 1900",
+		"1200 × 800 px · JPEG · 1.4 MB",
+		"DOWNLOAD THE FULL FILE",
+	} {
+		if !strings.Contains(body, expected) {
+			t.Errorf("expected response to contain %q", expected)
+		}
 	}
-	if !strings.Contains(body, "DOWNLOAD THE FULL FILE") {
-		t.Error("the deliberate source-file download must still render outside development")
+	if strings.Contains(body, "Given, Surname") {
+		t.Error("artwork route must not reconstruct the artist filing name")
+	}
+}
+
+func TestArtworkRouteRendersCountedHoldingAndFullHTMXParity(t *testing.T) {
+	app, request := newArtworkRouteApp(t)
+	titles := []string{"Related Work A", "Related Work B", "Related Work C", "Related Work D", "Related Work E"}
+	for i, id := range []string{"related00000001", "related00000002", "related00000003", "related00000004", "related00000005"} {
+		saveRecordRecord(t, app, constants.CollectionArtworks, id, map[string]any{
+			"title": titles[i], "author": []string{"artistone000001"}, "published": true,
+			"form": []string{}, "image": "related.jpg", "date_start": 1900 + i,
+		})
+	}
+
+	full := request("/artists/synthetic-artist-artistone000001/a-painting-workone00000001")
+	fragment := request("/artists/synthetic-artist-artistone000001/a-painting-workone00000001", true)
+	if full.Code != http.StatusOK || fragment.Code != http.StatusOK {
+		t.Fatalf("full/HTMX status = %d/%d, want 200/200", full.Code, fragment.Code)
+	}
+	if !strings.Contains(full.Body.String(), "FIND MORE 6 IN THE ARTWORK SEARCH") {
+		t.Error("full response must expose the counted artist holding")
+	}
+	if !strings.Contains(full.Body.String(), `href="/artworks?artist=Synthetic+Artist"`) {
+		t.Error("holding link must preserve the artist filter")
+	}
+	if !strings.Contains(fragment.Body.String(), "A Painting") || !strings.Contains(fragment.Body.String(), "FIND MORE 6 IN THE ARTWORK SEARCH") {
+		t.Error("HTMX response must preserve the canonical artwork record and holding")
+	}
+	if got := fragment.Header().Get("HX-Push-Url"); got != "/artists/synthetic-artist-artistone000001/a-painting-workone00000001" {
+		t.Errorf("HTMX HX-Push-Url = %q, want canonical artwork URL", got)
 	}
 }
 

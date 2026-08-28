@@ -1,8 +1,10 @@
 package repositories
 
 import (
+	"strings"
 	"testing"
 
+	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tests"
 )
@@ -43,6 +45,8 @@ func newArtistIndexTestApp(t *testing.T) *tests.TestApp {
 	artists.MarkAsNew()
 	artists.Fields.Add(
 		&core.TextField{Id: "artist_name", Name: "name", Required: true},
+		&core.TextField{Id: "artist_filing_name", Name: "filing_name"},
+		&core.TextField{Id: "artist_short_name", Name: "short_name"},
 		&core.NumberField{Id: "artist_yob", Name: "year_of_birth"},
 		&core.NumberField{Id: "artist_yod", Name: "year_of_death"},
 		&core.TextField{Id: "artist_profession", Name: "profession"},
@@ -102,14 +106,18 @@ func saveArtistIndexPeriod(t *testing.T, app *tests.TestApp, id, name string, st
 }
 
 type artistIndexArtistSeed struct {
-	id         string
-	name       string
-	birth      int
-	death      int
-	profession string
-	portrait   string
-	schools    []string
-	published  bool
+	id          string
+	name        string
+	filingName  string
+	shortName   string
+	blankFiling bool
+	blankShort  bool
+	birth       int
+	death       int
+	profession  string
+	portrait    string
+	schools     []string
+	published   bool
 }
 
 func saveArtistIndexArtist(t *testing.T, app *tests.TestApp, seed artistIndexArtistSeed) {
@@ -121,6 +129,16 @@ func saveArtistIndexArtist(t *testing.T, app *tests.TestApp, seed artistIndexArt
 	record := core.NewRecord(collection)
 	record.Id = seed.id
 	record.Set("name", seed.name)
+	filingName := seed.filingName
+	if filingName == "" && !seed.blankFiling {
+		filingName = seed.name
+	}
+	shortName := seed.shortName
+	if shortName == "" && !seed.blankShort {
+		shortName = seed.name
+	}
+	record.Set("filing_name", filingName)
+	record.Set("short_name", shortName)
 	record.Set("year_of_birth", seed.birth)
 	record.Set("year_of_death", seed.death)
 	record.Set("profession", seed.profession)
@@ -147,6 +165,53 @@ func saveArtistIndexArtwork(t *testing.T, app *tests.TestApp, id string, authors
 	record.Set("published", published)
 	if err := app.Save(record); err != nil {
 		t.Fatalf("save artwork %s: %v", id, err)
+	}
+}
+
+// newArtistIndexLegacyTestApp builds a pre-migration app whose artists
+// collection lacks one or both authoritative identity fields, mirroring the
+// malformed instances the fail-closed guard must tolerate.
+func newArtistIndexLegacyTestApp(t *testing.T, withFilingName bool) *tests.TestApp {
+	t.Helper()
+	app, err := tests.NewTestApp()
+	if err != nil {
+		t.Fatalf("create test app: %v", err)
+	}
+	t.Cleanup(app.Cleanup)
+
+	artists := core.NewBaseCollection("Artists")
+	artists.Id = "test_artists"
+	artists.MarkAsNew()
+	artists.Fields.Add(
+		&core.TextField{Id: "artist_name", Name: "name", Required: true},
+		&core.NumberField{Id: "artist_yob", Name: "year_of_birth"},
+		&core.BoolField{Id: "artist_published", Name: "published"},
+	)
+	if withFilingName {
+		artists.Fields.Add(&core.TextField{Id: "artist_filing_name", Name: "filing_name"})
+	}
+	if err := app.Save(artists); err != nil {
+		t.Fatalf("save artists collection: %v", err)
+	}
+
+	return app
+}
+
+// saveLegacyArtistIndexArtist persists a published artist using only the fields
+// present in the legacy (identity-less) artists schema.
+func saveLegacyArtistIndexArtist(t *testing.T, app *tests.TestApp, id, name string) {
+	t.Helper()
+	collection, err := app.FindCollectionByNameOrId("artists")
+	if err != nil {
+		t.Fatalf("find artists: %v", err)
+	}
+	record := core.NewRecord(collection)
+	record.Id = id
+	record.Set("name", name)
+	record.Set("year_of_birth", 1606)
+	record.Set("published", true)
+	if err := app.Save(record); err != nil {
+		t.Fatalf("save legacy artist %s: %v", id, err)
 	}
 }
 
@@ -255,6 +320,242 @@ func TestArtistIndexRepositoryListsAvailableLetters(t *testing.T) {
 		if letters[i] != want[i] {
 			t.Errorf("letters[%d] = %q, want %q", i, letters[i], want[i])
 		}
+	}
+}
+
+func TestArtistIndexRepositoryUsesAuthoritativeFilingName(t *testing.T) {
+	app := newArtistIndexTestApp(t)
+	saveArtistIndexArtist(t, app, artistIndexArtistSeed{id: "artistalpha0001", name: "Zulu Route Name", filingName: "Alpha, Filing", shortName: "Alpha", published: true})
+	saveArtistIndexArtist(t, app, artistIndexArtistSeed{id: "artistzulu00001", name: "Alpha Route Name", filingName: "Zulu, Filing", shortName: "Zulu", published: true})
+
+	repo := NewArtistIndexRepository(app)
+	artists, err := repo.ListArtists(ArtistIndexFilter{Query: "alpha", Letter: "A", Sort: ArtistSortNameAsc, Limit: 100})
+	if err != nil {
+		t.Fatalf("list artists: %v", err)
+	}
+	if got := names(artists); len(got) != 1 || got[0] != "Alpha, Filing" {
+		t.Fatalf("filing-name filter result = %v, want [Alpha, Filing]", got)
+	}
+
+	all, err := repo.ListArtists(ArtistIndexFilter{Sort: ArtistSortNameAsc, Limit: 100})
+	if err != nil {
+		t.Fatalf("list all artists: %v", err)
+	}
+	if got := names(all); len(got) != 2 || got[0] != "Alpha, Filing" || got[1] != "Zulu, Filing" {
+		t.Fatalf("filing-name sort = %v", got)
+	}
+
+	letters, err := repo.ListAvailableLetters(ArtistIndexFilter{})
+	if err != nil {
+		t.Fatalf("list letters: %v", err)
+	}
+	if len(letters) != 2 || letters[0] != "A" || letters[1] != "Z" {
+		t.Fatalf("filing-name letters = %v, want [A Z]", letters)
+	}
+}
+
+func TestArtistIndexRepositoryFoldsAccentedFilingInitials(t *testing.T) {
+	app := newArtistIndexTestApp(t)
+	// The four real non-ASCII producer filing initials: three Á and one Ś.
+	saveArtistIndexArtist(t, app, artistIndexArtistSeed{id: "artaccenta00001", name: "Legacy Álvares", filingName: "ÁLVARES, Baltasar", shortName: "Baltasar Álvares", published: true})
+	saveArtistIndexArtist(t, app, artistIndexArtistSeed{id: "artaccenta00002", name: "Legacy Ángel", filingName: "ÁNGEL, Pedro", shortName: "Pedro Ángel", published: true})
+	saveArtistIndexArtist(t, app, artistIndexArtistSeed{id: "artaccenta00003", name: "Legacy Cubero", filingName: "ÁLVAREZ Y CUBERO, José", shortName: "José Álvarez Y Cubero", published: true})
+	saveArtistIndexArtist(t, app, artistIndexArtistSeed{id: "artaccents00001", name: "Legacy Ślewiński", filingName: "ŚLEWIŃSKI, Władisław", shortName: "Władisław Ślewiński", published: true})
+	saveArtistIndexArtist(t, app, artistIndexArtistSeed{id: "artplain0000001", name: "Alice", filingName: "Alice", shortName: "Alice", published: true})
+
+	repo := NewArtistIndexRepository(app)
+
+	letters, err := repo.ListAvailableLetters(ArtistIndexFilter{})
+	if err != nil {
+		t.Fatalf("list letters: %v", err)
+	}
+	for _, want := range []string{"A", "S"} {
+		if !containsString(letters, want) {
+			t.Errorf("letters = %v, want to include %q", letters, want)
+		}
+	}
+	for _, absent := range []string{"Á", "Ś"} {
+		if containsString(letters, absent) {
+			t.Errorf("letters = %v, must not leak non-ASCII initial %q", letters, absent)
+		}
+	}
+
+	// The letter filter reaches every accented record and renders it verbatim.
+	aArtists, err := repo.ListArtists(ArtistIndexFilter{Letter: "A", Limit: 100})
+	if err != nil {
+		t.Fatalf("list A artists: %v", err)
+	}
+	if got := names(aArtists); len(got) != 4 {
+		t.Fatalf("A artists = %v, want the three accented filings plus Alice", got)
+	} else if got[0] != "Alice" {
+		t.Errorf("A artists first = %q, want plain Alice first under A", got[0])
+	}
+	joined := strings.Join(names(aArtists), "|")
+	for _, want := range []string{"ÁLVARES, Baltasar", "ÁNGEL, Pedro", "ÁLVAREZ Y CUBERO, José"} {
+		if !strings.Contains(joined, want) {
+			t.Errorf("A artists %q missing verbatim filing %q", joined, want)
+		}
+	}
+
+	sArtists, err := repo.ListArtists(ArtistIndexFilter{Letter: "S", Limit: 100})
+	if err != nil {
+		t.Fatalf("list S artists: %v", err)
+	}
+	if got := names(sArtists); len(got) != 1 || got[0] != "ŚLEWIŃSKI, Władisław" {
+		t.Errorf("S artists = %v, want [ŚLEWIŃSKI, Władisław] verbatim", got)
+	}
+
+	// Count and list stay consistent per letter.
+	for _, letter := range []string{"A", "S"} {
+		count, err := repo.CountArtists(ArtistIndexFilter{Letter: letter})
+		if err != nil {
+			t.Fatalf("count %s artists: %v", letter, err)
+		}
+		listed, err := repo.ListArtists(ArtistIndexFilter{Letter: letter, Limit: 100})
+		if err != nil {
+			t.Fatalf("list %s artists: %v", letter, err)
+		}
+		if count != len(listed) {
+			t.Errorf("letter %s count = %d, list = %d, want consistent", letter, count, len(listed))
+		}
+	}
+}
+
+func containsString(values []string, want string) bool {
+	for _, value := range values {
+		if value == want {
+			return true
+		}
+	}
+	return false
+}
+
+func TestFilingLetterExpressionBindsSelectedLetter(t *testing.T) {
+	params := dbx.Params{}
+	sql := filingLetterExpression("A").Build(nil, params)
+
+	if !strings.Contains(sql, "filing_name LIKE {:letter}") {
+		t.Errorf("sql = %q, want a bound {:letter} placeholder for the selected letter", sql)
+	}
+	if strings.Contains(sql, "LIKE 'A%'") {
+		t.Errorf("sql = %q, must not interpolate the selected letter as a literal", sql)
+	}
+	if got := params["letter"]; got != "A%" {
+		t.Errorf("bound letter param = %v, want %q", got, "A%")
+	}
+	// The fixed producer fold initial stays an embedded safe literal.
+	if !strings.Contains(sql, "'Á%'") {
+		t.Errorf("sql = %q, want the fixed Á fold literal", sql)
+	}
+}
+
+func TestArtistIndexRepositoryLetterCannotAlterQuery(t *testing.T) {
+	app := newArtistIndexTestApp(t)
+	saveArtistIndexArtist(t, app, artistIndexArtistSeed{id: "artalice0000000", name: "Alice", published: true})
+	saveArtistIndexArtist(t, app, artistIndexArtistSeed{id: "artbob000000000", name: "Bob", published: true})
+
+	repo := NewArtistIndexRepository(app)
+
+	// A hostile letter that, were it interpolated, would broaden the predicate
+	// to every published row must instead be bound as a literal LIKE prefix and
+	// match nothing.
+	hostile := "X' OR published = true OR filing_name LIKE 'X"
+	artists, err := repo.ListArtists(ArtistIndexFilter{Letter: hostile, Limit: 100})
+	if err != nil {
+		t.Fatalf("list artists with hostile letter: %v", err)
+	}
+	if len(artists) != 0 {
+		t.Fatalf("hostile letter matched %d artists = %v, want 0 (letter must be bound)", len(artists), artistIDs(artists))
+	}
+}
+
+func TestArtistIndexRepositoryExcludesBlankIdentity(t *testing.T) {
+	app := newArtistIndexTestApp(t)
+	saveArtistIndexArtist(t, app, artistIndexArtistSeed{id: "artcomplete0000", name: "Complete Legacy", filingName: "Complete, Filing", shortName: "Complete", birth: 1500, published: true})
+	saveArtistIndexArtist(t, app, artistIndexArtistSeed{id: "artblankfil0000", name: "Blank Filing Legacy", blankFiling: true, shortName: "Blank Filing", birth: 1400, published: true})
+	saveArtistIndexArtist(t, app, artistIndexArtistSeed{id: "artblanksho0000", name: "Blank Short Legacy", filingName: "Blank, Short Filing", blankShort: true, birth: 1600, published: true})
+
+	repo := NewArtistIndexRepository(app)
+
+	count, err := repo.CountArtists(ArtistIndexFilter{Limit: 100})
+	if err != nil {
+		t.Fatalf("count artists: %v", err)
+	}
+	if count != 1 {
+		t.Errorf("count = %d, want 1 (blank identity excluded)", count)
+	}
+
+	artists, err := repo.ListArtists(ArtistIndexFilter{Limit: 100})
+	if err != nil {
+		t.Fatalf("list artists: %v", err)
+	}
+	if got := artistIDs(artists); len(got) != 1 || got[0] != "artcomplete0000" {
+		t.Fatalf("list = %v, want only [artcomplete0000] (blank identity excluded)", got)
+	}
+
+	letters, err := repo.ListAvailableLetters(ArtistIndexFilter{})
+	if err != nil {
+		t.Fatalf("list letters: %v", err)
+	}
+	if len(letters) != 1 || letters[0] != "C" {
+		t.Fatalf("letters = %v, want [C] (blank identity excluded)", letters)
+	}
+
+	minYear, maxYear, err := repo.BirthYearBounds()
+	if err != nil {
+		t.Fatalf("birth year bounds: %v", err)
+	}
+	if minYear != 1500 || maxYear != 1500 {
+		t.Errorf("bounds = (%d, %d), want (1500, 1500) (blank identity excluded)", minYear, maxYear)
+	}
+}
+
+func TestArtistIndexRepositoryFailsClosedWithoutIdentityFields(t *testing.T) {
+	for _, tc := range []struct {
+		name           string
+		withFilingName bool
+	}{
+		{name: "neither identity field", withFilingName: false},
+		{name: "missing short_name only", withFilingName: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			app := newArtistIndexLegacyTestApp(t, tc.withFilingName)
+			saveLegacyArtistIndexArtist(t, app, "artlegacy000000", "Legacy Artist")
+
+			repo := NewArtistIndexRepository(app)
+
+			count, err := repo.CountArtists(ArtistIndexFilter{})
+			if err != nil {
+				t.Fatalf("count artists: %v", err)
+			}
+			if count != 0 {
+				t.Errorf("count = %d, want 0 (missing identity fields)", count)
+			}
+
+			artists, err := repo.ListArtists(ArtistIndexFilter{Limit: 100})
+			if err != nil {
+				t.Fatalf("list artists: %v", err)
+			}
+			if len(artists) != 0 {
+				t.Errorf("artists = %#v, want empty (missing identity fields)", artists)
+			}
+
+			letters, err := repo.ListAvailableLetters(ArtistIndexFilter{})
+			if err != nil {
+				t.Fatalf("list letters: %v", err)
+			}
+			if len(letters) != 0 {
+				t.Errorf("letters = %v, want empty (missing identity fields)", letters)
+			}
+
+			minYear, maxYear, err := repo.BirthYearBounds()
+			if err != nil {
+				t.Fatalf("birth year bounds: %v", err)
+			}
+			if minYear != 0 || maxYear != 0 {
+				t.Errorf("bounds = (%d, %d), want (0, 0) (missing identity fields)", minYear, maxYear)
+			}
+		})
 	}
 }
 
@@ -443,7 +744,7 @@ func artistIDs(artists []IndexedArtist) []string {
 func names(artists []IndexedArtist) []string {
 	values := make([]string, len(artists))
 	for i, artist := range artists {
-		values[i] = artist.Record.GetString("name")
+		values[i] = artist.Record.GetString("filing_name")
 	}
 	return values
 }

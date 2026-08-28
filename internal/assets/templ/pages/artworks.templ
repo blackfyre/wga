@@ -54,8 +54,9 @@ type ArtworkSearchView struct {
 	TypeGroup       dto.ChipGroup
 	PeriodGroup     dto.ChipGroup
 	LocationGroup   dto.ChipGroup
-	YearFrom        string
-	YearTo          string
+	Facets          ArtworkSearchFacets
+	Sort            string
+	Dir             string
 	ClearUrl        string
 	DualModeContext *ArtworkSearchDualMode
 	HxTarget        string
@@ -69,11 +70,29 @@ templ ArtworkSearchPage(s ArtworkSearchView) {
 	}
 }
 
+templ artworkSearchFacet(facet ArtworkSearchFacet) {
+	<details open?={ facet.Open } class={ "group py-3.5", templ.KV("border-b border-base-content/15", !facet.Last) }>
+		<summary class="flex cursor-pointer list-none items-baseline justify-between gap-2.5 marker:hidden [&::-webkit-details-marker]:hidden">
+			<span class="font-mono text-[10px] tracking-[1.5px] text-base-content/60">{ facet.Label }</span>
+			<span class="flex min-w-0 items-baseline gap-2">
+				<span class={ "max-w-[116px] truncate font-mono text-[10px] tracking-[1px]", templ.KV("font-semibold text-base-content", facet.Active), templ.KV("text-base-content/60", !facet.Active) }>{ facet.Summary }</span>
+				<span class="w-2 text-center font-mono text-xs text-base-content/60" aria-hidden="true">
+					<span class="group-open:hidden">+</span>
+					<span class="hidden group-open:inline">−</span>
+				</span>
+			</span>
+		</summary>
+		<div class="mt-3">
+			{ children... }
+		</div>
+	</details>
+}
+
 templ ArtworkSeachFilterBlock(b ArtworkSearchView) {
 	<form
 		id="artwork-filters"
-		action="/artworks/results"
-		hx-get="/artworks/results"
+		action="/artworks"
+		hx-get="/artworks"
 		hx-disabled-elt="button"
 		hx-target={ b.HxTarget }
 		hx-select={ b.HxTarget }
@@ -81,9 +100,18 @@ templ ArtworkSeachFilterBlock(b ArtworkSearchView) {
 		hx-indicator="#artwork-search-indicator"
 		hx-sync="this:replace"
 		method="GET"
-		hx-trigger="change, input changed delay:300ms from:find input[type=search], input changed delay:300ms from:find input[type=range]"
+		hx-trigger="change, input changed delay:300ms"
 		class="w-full"
 	>
+		if b.Sort != "catalogue" {
+			<input type="hidden" name="sort" value={ b.Sort }/>
+		}
+		if b.Dir != "asc" {
+			<input type="hidden" name="dir" value={ b.Dir }/>
+		}
+		if b.Results.View != "grid" {
+			<input type="hidden" name="view" value={ b.Results.View }/>
+		}
 		if b.DualModeContext != nil {
 			<input type="hidden" name="dual_left" value={ b.DualModeContext.LeftPath }/>
 			<input type="hidden" name="dual_right" value={ b.DualModeContext.RightPath }/>
@@ -92,54 +120,88 @@ templ ArtworkSeachFilterBlock(b ArtworkSearchView) {
 			<input type="hidden" name="dual_target" value={ b.DualModeContext.Target }/>
 		}
 		<div class="flex items-baseline justify-between border-b border-base-content pb-3">
-			<p class="font-mono text-[11px] tracking-[1.5px]">FILTERS</p>
+			<p class="font-mono text-[11px] tracking-[1.5px]">
+				FILTERS
+				if b.Facets.ActiveCount > 0 {
+					<span class="text-primary">{ artworkActiveCountLabel(b.Facets.ActiveCount) }</span>
+				}
+			</p>
 			if b.DualModeContext != nil {
 				<a class="font-mono text-[10px] tracking-[1px] text-primary transition-opacity hover:opacity-60" href={ b.ClearUrl } hx-get={ b.ClearUrl } hx-target="#mc-area" hx-select="#mc-area" hx-swap="outerHTML">RESET</a>
 			} else {
 				<a class="font-mono text-[10px] tracking-[1px] text-primary transition-opacity hover:opacity-60" href={ b.ClearUrl }>RESET</a>
 			}
 		</div>
-		<label class="block border-b border-base-content/15 py-5">
-			<span class="mb-2.5 block font-mono text-[10px] tracking-[1.5px] text-base-content/60">TITLE OR ARTIST</span>
-			<input
-				class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2 text-sm outline-none focus:ring-0"
-				type="search"
-				id="artwork-query"
-				data-keyboard-page-search
-				name="q"
-				placeholder="e.g. milkmaid"
-				value={ b.NameField.Value }
-			/>
-		</label>
-		<label class="block border-b border-base-content/15 py-5">
-			<span class="mb-2.5 block font-mono text-[10px] tracking-[1.5px] text-base-content/60">TECHNIQUE</span>
-			<input
-				class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2 text-sm outline-none focus:ring-0"
-				type="search"
-				id="artwork-technique"
-				name="technique"
-				placeholder="e.g. oil on canvas"
-				value={ b.TechniqueField.Value }
-			/>
-		</label>
-		@components.ChipGroup(b.SchoolGroup)
-		@components.ChipGroup(b.FormGroup)
-		@components.ChipGroup(b.TypeGroup)
-		@components.ChipGroup(b.PeriodGroup)
-		@components.ChipGroup(b.LocationGroup)
-		<fieldset class="py-5">
-			<div class="mb-4 flex items-baseline justify-between">
-				<legend class="font-mono text-[10px] tracking-[1.5px] text-base-content/60">YEAR RANGE</legend>
-				<output class="font-mono text-xs" for="year_from year_to">{ b.YearFrom }–{ b.YearTo }</output>
+		@artworkSearchFacet(b.Facets.Query) {
+			<label class="block">
+				<span class="sr-only">{ b.NameField.Label }</span>
+				<input
+					class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2 text-sm outline-none focus:ring-0"
+					type="search"
+					id="artwork-query"
+					data-keyboard-page-search
+					name="q"
+					placeholder="e.g. milkmaid"
+					value={ b.NameField.Value }
+				/>
+			</label>
+		}
+		@artworkSearchFacet(b.Facets.Technique) {
+			<label class="block">
+				<span class="sr-only">{ b.TechniqueField.Label }</span>
+				<input
+					class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2 text-sm outline-none focus:ring-0"
+					type="search"
+					id="artwork-technique"
+					name="technique"
+					placeholder="e.g. oil on canvas"
+					value={ b.TechniqueField.Value }
+				/>
+			</label>
+		}
+		@artworkSearchFacet(b.Facets.School) {
+			@components.ChipGroup(b.SchoolGroup)
+		}
+		@artworkSearchFacet(b.Facets.Form) {
+			@components.ChipGroup(b.FormGroup)
+		}
+		@artworkSearchFacet(b.Facets.Type) {
+			@components.ChipGroup(b.TypeGroup)
+		}
+		@artworkSearchFacet(b.Facets.Period) {
+			@components.ChipGroup(b.PeriodGroup)
+		}
+		@artworkSearchFacet(b.Facets.Collection.Facet) {
+			<label class="block">
+				<span class="sr-only">{ b.Facets.Collection.QueryField.Label }</span>
+				<input
+					type="search"
+					name={ b.Facets.Collection.QueryField.Name }
+					value={ b.Facets.Collection.QueryField.Value }
+					placeholder={ b.Facets.Collection.QueryField.Placeholder }
+					class="w-full border-0 border-b border-base-content/30 bg-transparent px-0 py-1.5 text-sm outline-none focus:ring-0"
+				/>
+			</label>
+			<div class="mt-3 max-h-[196px] overflow-y-auto overscroll-contain border-t border-base-content/10">
+				<label class="flex cursor-pointer items-baseline justify-between gap-2.5 border-b border-base-content/10 py-1.5 text-sm leading-snug transition-colors hover:text-primary">
+					<input type="radio" name={ b.Facets.Collection.Name } value="" checked?={ !b.Facets.Collection.Facet.Active } class="sr-only"/>
+					<span>ALL</span>
+				</label>
+				for _, option := range b.Facets.Collection.Options {
+					<label class={ "flex cursor-pointer items-baseline justify-between gap-2.5 border-b border-base-content/10 py-1.5 text-sm leading-snug transition-colors hover:text-primary", templ.KV("font-semibold text-base-content", option.Selected), templ.KV("text-base-content/70", !option.Selected) }>
+						<input type="radio" name={ b.Facets.Collection.Name } value={ option.Value } checked?={ option.Selected } class="sr-only"/>
+						<span>{ option.Label }</span>
+						<span class={ "shrink-0 font-mono text-[10px]", templ.KV("text-base-content", option.Selected), templ.KV("text-base-content/60", !option.Selected) }>{ option.Count }</span>
+					</label>
+				}
 			</div>
-			<div class="artwork-year-range" data-artwork-year-range>
-				<div class="artwork-year-range-track"></div>
-				<div class="artwork-year-range-fill bg-primary"></div>
-				<input class="artwork-year-range-input" type="range" id="year_from" name="year_from" min="200" max="1900" value={ b.YearFrom } aria-label="Earliest year"/>
-				<input class="artwork-year-range-input" type="range" id="year_to" name="year_to" min="200" max="1900" value={ b.YearTo } aria-label="Latest year"/>
-			</div>
-			<div class="mt-2 flex justify-between font-mono text-[10px] text-base-content/50"><span>200</span><span>1900</span></div>
-		</fieldset>
+			if b.Facets.Collection.Note != "" {
+				<p class="mt-2.5 font-mono text-[10px] leading-relaxed text-base-content/60">{ b.Facets.Collection.Note }</p>
+			}
+		}
+		@artworkSearchFacet(b.Facets.Year) {
+			@components.RangeField(b.Facets.YearRange)
+		}
 		<noscript><button type="submit" class="w-full bg-primary px-4 py-3 font-mono text-[11px] tracking-[1px] text-primary-content">APPLY FILTERS</button></noscript>
 		<div id="artwork-search-indicator" class="htmx-indicator rounded-box border border-base-300 bg-base-200/70 p-3 text-sm text-base-content/80">
 			Searching the collection...
@@ -154,8 +216,8 @@ templ ArtworkSortControl(r ArtworkSearchResultsView) {
 			<a
 				href={ templ.SafeURL(option.Href) }
 				hx-get={ option.Href }
-				hx-target="#artwork-search-results"
-				hx-select="#artwork-search-results"
+				hx-target="#artwork-search"
+				hx-select="#artwork-search"
 				hx-swap="outerHTML"
 				class={ "border px-3.5 py-1.5 font-mono text-[11px] tracking-[1px] transition-colors", templ.KV("border-primary bg-primary text-primary-content", option.Active), templ.KV("border-base-content/25 text-base-content/70 hover:border-base-content", !option.Active) }
 				aria-pressed={ fmt.Sprint(option.Active) }
@@ -164,8 +226,8 @@ templ ArtworkSortControl(r ArtworkSearchResultsView) {
 		<a
 			href={ templ.SafeURL(r.SortToggleUrl) }
 			hx-get={ r.SortToggleUrl }
-			hx-target="#artwork-search-results"
-			hx-select="#artwork-search-results"
+			hx-target="#artwork-search"
+			hx-select="#artwork-search"
 			hx-swap="outerHTML"
 			aria-label="Reverse sort direction"
 			class="font-mono text-[10px] tracking-[1px] whitespace-nowrap px-2.5 py-1.5 border border-base-content/25 text-base-content/70 hover:border-base-content hover:text-base-content transition-colors"
@@ -182,8 +244,8 @@ templ ArtworkSearchResults(r ArtworkSearchResultsView) {
 			<div class="flex flex-col items-start gap-3 md:flex-row md:items-center md:gap-5">
 				@ArtworkSortControl(r)
 				<div class="flex items-center gap-2">
-					<a href={ templ.SafeURL(r.GridUrl) } hx-get={ r.GridUrl } hx-target="#artwork-search-results" hx-select="#artwork-search-results" hx-swap="outerHTML" class={ "border px-3.5 py-1.5 font-mono text-[11px] tracking-[1px] transition-colors", templ.KV("border-primary bg-primary text-primary-content", r.View == "grid"), templ.KV("border-base-content/25 text-base-content/70 hover:border-base-content", r.View != "grid") } aria-pressed={ fmt.Sprint(r.View == "grid") }>GRID</a>
-					<a href={ templ.SafeURL(r.ListUrl) } hx-get={ r.ListUrl } hx-target="#artwork-search-results" hx-select="#artwork-search-results" hx-swap="outerHTML" class={ "border px-3.5 py-1.5 font-mono text-[11px] tracking-[1px] transition-colors", templ.KV("border-primary bg-primary text-primary-content", r.View == "list"), templ.KV("border-base-content/25 text-base-content/70 hover:border-base-content", r.View != "list") } aria-pressed={ fmt.Sprint(r.View == "list") }>LIST</a>
+					<a href={ templ.SafeURL(r.GridUrl) } hx-get={ r.GridUrl } hx-target="#artwork-search" hx-select="#artwork-search" hx-swap="outerHTML" class={ "border px-3.5 py-1.5 font-mono text-[11px] tracking-[1px] transition-colors", templ.KV("border-primary bg-primary text-primary-content", r.View == "grid"), templ.KV("border-base-content/25 text-base-content/70 hover:border-base-content", r.View != "grid") } aria-pressed={ fmt.Sprint(r.View == "grid") }>GRID</a>
+					<a href={ templ.SafeURL(r.ListUrl) } hx-get={ r.ListUrl } hx-target="#artwork-search" hx-select="#artwork-search" hx-swap="outerHTML" class={ "border px-3.5 py-1.5 font-mono text-[11px] tracking-[1px] transition-colors", templ.KV("border-primary bg-primary text-primary-content", r.View == "list"), templ.KV("border-base-content/25 text-base-content/70 hover:border-base-content", r.View != "list") } aria-pressed={ fmt.Sprint(r.View == "list") }>LIST</a>
 				</div>
 			</div>
 		</div>
@@ -201,7 +263,7 @@ templ ArtworkSearchResults(r ArtworkSearchResultsView) {
 								<img src={ artwork.Thumb } alt={ artwork.Title } class="h-full w-full object-cover"/>
 							</figure>
 							<p class="text-sm font-semibold leading-tight">{ artwork.Title }</p>
-							<p class="mt-[3px] font-mono text-[11px] leading-relaxed text-base-content/60">{ artwork.Artist.Name }<br/>{ artwork.Technique }</p>
+							<p class="mt-[3px] font-mono text-[11px] leading-relaxed text-base-content/60">{ artwork.Artist.FilingName }<br/>{ artwork.Technique }</p>
 						</a>
 					}
 				</div>
@@ -236,6 +298,12 @@ func artworkMatchCount(total int) string {
 	return fmt.Sprintf("%d WORKS MATCH", total)
 }
 
+// artworkActiveCountLabel renders the compact filter-count readout next to the
+// FILTERS heading. It is absent entirely when no result-shaping filter is set.
+func artworkActiveCountLabel(count int) string {
+	return " · " + strconv.Itoa(count) + " ACTIVE"
+}
+
 templ ArtworkSearchResultList(artworks dto.ImageGrid) {
 	<ul data-kbd-list data-kbd-cols="1" data-view="list">
 		for index, artwork := range artworks {
@@ -243,7 +311,7 @@ templ ArtworkSearchResultList(artworks dto.ImageGrid) {
 				<a href={ templ.SafeURL(artwork.Url) } hx-get={ artwork.Url } data-kbd-idx={ strconv.Itoa(index) } data-kbd-href={ artwork.Url } class="flex items-center gap-4 border-b border-base-content/15 py-3.5 transition-colors hover:bg-primary/5">
 					@components.KeyboardCaret()
 					<img src={ artwork.Thumb } alt={ artwork.Title } class="h-[54px] w-11 shrink-0 border border-base-content/15 bg-base-300 object-cover"/>
-					<span class="min-w-0 flex-1"><span class="block text-[15px] font-semibold leading-tight">{ artwork.Title }</span><span class="mt-[3px] block font-mono text-[11px] text-base-content/60">{ artwork.Artist.Name }</span></span>
+					<span class="min-w-0 flex-1"><span class="block text-[15px] font-semibold leading-tight">{ artwork.Title }</span><span class="mt-[3px] block font-mono text-[11px] text-base-content/60">{ artwork.Artist.FilingName }</span></span>
 					<span class="hidden shrink-0 font-mono text-[11px] text-base-content/70 md:block">{ artwork.Technique }</span>
 				</a>
 			</li>

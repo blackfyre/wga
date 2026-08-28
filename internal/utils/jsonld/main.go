@@ -14,7 +14,7 @@ import (
 // record page.
 func ArtistJsonLd(r *core.Record) Person {
 	person := Person{
-		Name:        r.GetString("name"),
+		Name:        r.GetString("filing_name"),
 		Url:         utils.AssetUrl("/artists/" + r.GetString("slug") + "-" + r.GetString("id")),
 		Description: utils.StrippedHTML(r.GetString("bio")),
 	}

@@ -22,8 +22,15 @@ The system SHALL render a shuffled, linkable slice of published collection works
 - **THEN** the page presents published works as record links and distinguishes its exploratory set from editorial tours and visitor itineraries.
 
 ### Requirement: Reference destinations retain a complete public route
-The system SHALL render About, Contributors, privacy/reference content, and public error states through the shared public presentation while preserving their server-rendered URLs.
+The system SHALL render About, Contributors, privacy/reference content, and public error states through the shared public presentation while preserving their server-rendered URLs. Reference destinations, Guestbook, Glossary, and Licences SHALL use the shared page-head composition, and Contributors SHALL use textual control copy rather than an icon glyph where a word fits.
 
 #### Scenario: Visitor opens a reference destination without JavaScript
 - **WHEN** a visitor follows a reference-page route with JavaScript unavailable
 - **THEN** the complete page content and applicable navigation render without a client-side dependency.
+
+### Requirement: Statistics retain equivalent chart meaning without JavaScript
+The system SHALL render a server-produced visual summary for each Statistics chart when JavaScript is unavailable, in addition to the accessible equivalent data tables.
+
+#### Scenario: Visitor opens Statistics without JavaScript
+- **WHEN** JavaScript is unavailable on the Statistics route
+- **THEN** each chart's categories, relative values, caption, and corresponding table remain perceivable without a canvas script.

@@ -91,11 +91,64 @@ test("artwork viewer retains an ordinary zoom link without JavaScript", async ({
 	await context.close();
 });
 
+test.describe("artwork record without JavaScript", () => {
+	test.use({ javaScriptEnabled: false });
+
+	test("renders evidence-backed FILE facts and no source or licence claims", async ({
+		page,
+	}) => {
+		await page.goto(
+			"/artists/synthetic-artist-01-ad32608c6e36b2e/synthetic-artwork-01-01-2225c982be1af02",
+		);
+
+		const file = page.locator("figure dl");
+		await expect(file).toContainText("512 × 1024 px · JPEG · 97.3 KB");
+		await expect(file).not.toContainText(/SOURCE|LICENCE|LICENSE/);
+		await expect(
+			page.getByRole("link", { name: /DOWNLOAD THE FULL FILE/ }),
+		).toHaveAttribute("href", /\/api\/files\/artworks\//);
+	});
+});
+
+test("artwork record exposes deliberate image profiles and evidence-only FILE metadata", async ({
+	page,
+}) => {
+	await page.goto(
+		"/artists/synthetic-artist-01-ad32608c6e36b2e/synthetic-artwork-01-01-2225c982be1af02",
+	);
+
+	const image = page.locator("[data-viewer-no-navbar] img");
+	await expect(image).toHaveAttribute("src", /\/api\/files\/artworks\//);
+	await expect(image).toHaveAttribute(
+		"data-zoom-url",
+		/\/api\/files\/artworks\//,
+	);
+	const file = page.locator("figure dl");
+	await expect(file).toContainText("FILE");
+	await expect(file).not.toContainText(/SOURCE|LICENCE/);
+});
+
+test("narrow-source artwork keeps the original file at display and zoom sizes", async ({
+	page,
+}) => {
+	await page.goto(
+		"/artists/synthetic-artist-01-ad32608c6e36b2e/synthetic-artwork-01-01-2225c982be1af02",
+	);
+
+	const image = page.locator("[data-viewer-no-navbar] img");
+	const displayURL = await image.getAttribute("src");
+	const zoomURL = await image.getAttribute("data-zoom-url");
+	expect(displayURL).toBeTruthy();
+	expect(zoomURL).toBeTruthy();
+	expect(displayURL).not.toContain("thumb=");
+	expect(zoomURL).not.toContain("thumb=");
+});
+
 test("initialises the artwork BibTeX copy helper", async ({ page }) => {
 	await page.goto(
 		"/artists/synthetic-artist-01-ad32608c6e36b2e/synthetic-artwork-01-01-2225c982be1af02",
 	);
 
 	const copyButton = page.getByRole("button", { name: "COPY BIBTEX" });
-	await expect(copyButton).toHaveAttribute("data-copy-bound", "true");
+	await expect(copyButton).toHaveAttribute("data-copy-bibtex", "");
 });

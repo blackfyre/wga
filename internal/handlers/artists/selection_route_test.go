@@ -20,6 +20,8 @@ func createSelectionRouteCollections(t *testing.T, app *pocketbase.PocketBase) {
 	artists.MarkAsNew()
 	artists.Fields.Add(
 		&core.TextField{Name: "name", Required: true},
+		&core.TextField{Name: "filing_name"},
+		&core.TextField{Name: "short_name"},
 		&core.TextField{Name: "slug"},
 		&core.NumberField{Name: "year_of_birth"},
 		&core.NumberField{Name: "year_of_death"},
@@ -77,6 +79,10 @@ func saveSelectionRouteRecord(t *testing.T, app *pocketbase.PocketBase, collecti
 	}
 	record := core.NewRecord(coll)
 	record.Id = id
+	if collection == "artists" {
+		fields["filing_name"] = fields["name"]
+		fields["short_name"] = fields["name"]
+	}
 	for key, value := range fields {
 		record.Set(key, value)
 	}
@@ -85,7 +91,7 @@ func saveSelectionRouteRecord(t *testing.T, app *pocketbase.PocketBase, collecti
 	}
 }
 
-func newSelectionRouteApp(t *testing.T) (*pocketbase.PocketBase, func(string) *httptest.ResponseRecorder) {
+func newSelectionRouteApp(t *testing.T) (*pocketbase.PocketBase, func(string, ...bool) *httptest.ResponseRecorder) {
 	t.Helper()
 
 	app := pocketbase.NewWithConfig(pocketbase.Config{DefaultDataDir: t.TempDir()})
@@ -142,9 +148,13 @@ func newSelectionRouteApp(t *testing.T) (*pocketbase.PocketBase, func(string) *h
 		t.Fatalf("build mux: %v", err)
 	}
 
-	request := func(path string) *httptest.ResponseRecorder {
+	request := func(path string, htmx ...bool) *httptest.ResponseRecorder {
 		recorder := httptest.NewRecorder()
-		mux.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, path, nil))
+		req := httptest.NewRequest(http.MethodGet, path, nil)
+		if len(htmx) > 0 && htmx[0] {
+			req.Header.Set("HX-Request", "true")
+		}
+		mux.ServeHTTP(recorder, req)
 		return recorder
 	}
 
@@ -177,6 +187,46 @@ func TestSelectionRouteRendersFullPage(t *testing.T) {
 	}
 	if strings.Contains(body, "Other: Foreign") {
 		t.Error("foreign-artist selection must not appear among other selections")
+	}
+}
+
+func TestSelectionRouteRendersShortIdentitySectionGridAndFullHTMXParity(t *testing.T) {
+	app, request := newSelectionRouteApp(t)
+	artist, err := app.FindRecordById("artists", "artistone000001")
+	if err != nil {
+		t.Fatalf("find artist: %v", err)
+	}
+	artist.Set("filing_name", "Surname, Given")
+	artist.Set("short_name", "Given")
+	if err := app.Save(artist); err != nil {
+		t.Fatalf("save artist identity: %v", err)
+	}
+
+	full := request("/artists/synthetic-artist-artistone000001/selections/rselect00000001")
+	fragment := request("/artists/synthetic-artist-artistone000001/selections/rselect00000001", true)
+	if full.Code != http.StatusOK || fragment.Code != http.StatusOK {
+		t.Fatalf("full/HTMX status = %d/%d, want 200/200", full.Code, fragment.Code)
+	}
+	body := full.Body.String()
+	for _, expected := range []string{
+		"Given",
+		"21 — SELECTION",
+		`grid grid-cols-2 md:grid-cols-4`,
+		"An editorial lede.",
+		"VIEW FULL HOLDING",
+	} {
+		if !strings.Contains(body, expected) {
+			t.Errorf("expected response to contain %q", expected)
+		}
+	}
+	if strings.Contains(body, "Given, Surname") {
+		t.Error("selection route must not reconstruct the artist identity")
+	}
+	if !strings.Contains(fragment.Body.String(), "Dürer: Paintings") || !strings.Contains(fragment.Body.String(), "21 — SELECTION") {
+		t.Error("HTMX response must preserve the canonical selection record")
+	}
+	if got := fragment.Header().Get("HX-Push-Url"); got != "/artists/synthetic-artist-artistone000001/selections/rselect00000001" {
+		t.Errorf("HTMX HX-Push-Url = %q, want canonical selection URL", got)
 	}
 }
 

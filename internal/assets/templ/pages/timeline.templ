@@ -26,12 +26,52 @@ type TimelineBand struct {
 	Description string
 }
 
-// TimelineMark is one published artwork positioned on the window lane.
+// TimelineMark is one published artwork positioned on the works lane. Href and
+// Label are supplied by the owning workflow; LeftPct is the workflow-computed
+// position and is never derived in the template.
 type TimelineMark struct {
 	Href    string
 	Label   string
 	LeftPct float64
 }
+
+// TimelineArtist is one backend-supplied entry on the artists lane: a published
+// artist linked to its canonical public record route, with the stored birth year
+// as the sole positioning datum. Href, Name, and Meta are all supplied by the
+// owning workflow; the template never derives dates, names, or routes.
+type TimelineArtist struct {
+	Href string
+	Name string
+	Meta string
+}
+
+// TimelineLane is one of the six reference timeline lanes. Count is the truthful
+// number of entries the owning workflow has resolved in the window; State is one
+// of the LaneState* constants and records whether the lane is SHOWN, EMPTY, or
+// honestly UNAVAILABLE.
+type TimelineLane struct {
+	Key   string // LaneKey* constant
+	Label string
+	Count int
+	State string // LaneState* constant
+}
+
+// Timeline lane keys, in fixed reference order.
+const (
+	LaneKeyArtists   = "artists"
+	LaneKeyWorks     = "works"
+	LaneKeyMovements = "movements"
+	LaneKeyBuildings = "buildings"
+	LaneKeyEvents    = "events"
+	LaneKeyMusic     = "music"
+)
+
+// Timeline lane states reported by the owning workflow.
+const (
+	LaneStateUnavailable = "unavailable"
+	LaneStateShown       = "shown"
+	LaneStateEmpty       = "empty"
+)
 
 // TimelineView is the page-owned contract for the collection timeline.
 type TimelineView struct {
@@ -57,6 +97,9 @@ type TimelineView struct {
 	PageCount       int
 	PrevUrl         string
 	NextUrl         string
+
+	Lanes   []TimelineLane
+	Artists []TimelineArtist
 }
 
 templ TimelinePage(c TimelineView) {
@@ -72,6 +115,7 @@ templ TimelineBlock(c TimelineView) {
 	<section id="timeline" class="container mx-auto px-4 pb-20 pt-10 md:px-0">
 		@components.PageHead("19 — TIMELINE EXPLORER", "Timeline",
 			"Set a window of years and read across the collection: which published works were dated to those years and which art periods were current.")
+		@timelineLanes(c)
 		if c.HasRange {
 			<div class="flex flex-wrap items-baseline justify-between gap-4">
 				<div>
@@ -150,6 +194,7 @@ templ TimelineBlock(c TimelineView) {
 					</ul>
 				</section>
 			}
+			@timelineArtists(c)
 			<section class="mt-12" aria-label="Works positioned across the window">
 				<h2 class="font-mono text-(length:--t-11) tracking-[1.5px] text-muted">WORKS ACROSS THE WINDOW</h2>
 				<div class="relative mt-4 h-16">
@@ -182,9 +227,9 @@ templ TimelineBlock(c TimelineView) {
 						<h2 class="font-mono text-(length:--t-11) tracking-[1.5px]">WORKS IN THIS WINDOW</h2>
 						<p class="font-mono text-(length:--t-10) tracking-[1px] text-faint">{ c.WorksRangeLabel }</p>
 					</div>
-					<ul class="mt-6 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-4">
+					<ul class="mt-6 grid min-w-0 grid-cols-1 gap-x-4 gap-y-10 min-[400px]:grid-cols-2 md:grid-cols-4">
 						for _, work := range c.Works {
-							<li>@components.WorkCard(work)
+							<li class="min-w-0">@components.WorkCard(work)
 </li>
 						}
 					</ul>
@@ -207,9 +252,65 @@ templ TimelineBlock(c TimelineView) {
 					}
 				</section>
 			}
+			@timelineUnavailableLane("BUILDINGS IN THIS WINDOW", "No approved source-backed building records have been supplied, so no buildings are shown.")
+			@timelineUnavailableLane("EVENTS IN THIS WINDOW", "No approved source-backed historical-event records have been supplied, so no events are shown.")
+			@timelineUnavailableLane("MUSIC IN THIS WINDOW", "The music collection has no approved art-period mapping, so no period music is shown.")
 		} else {
 			@components.EmptyState(emptyStateFor(c))
+			@timelineUnavailableLane("BUILDINGS IN THIS WINDOW", "No approved source-backed building records have been supplied, so no buildings are shown.")
+			@timelineUnavailableLane("EVENTS IN THIS WINDOW", "No approved source-backed historical-event records have been supplied, so no events are shown.")
+			@timelineUnavailableLane("MUSIC IN THIS WINDOW", "The music collection has no approved art-period mapping, so no period music is shown.")
 		}
+	</section>
+}
+
+// timelineLanes renders the six reference lanes as a count summary. Each lane
+// shows its truthful count, label, and honest state; the grid is
+// server-rendered and read in document order, so it needs no JavaScript.
+templ timelineLanes(c TimelineView) {
+	if len(c.Lanes) > 0 {
+		<section class="mt-8" aria-label="Timeline lanes">
+			<ul class="grid grid-cols-2 gap-px border border-base-content/15 bg-base-content/15 md:grid-cols-6">
+				for _, lane := range c.Lanes {
+					<li class="bg-base-100 px-3.5 py-3.5">
+						<span class="block text-(length:--t-26) font-semibold tracking-[-0.5px]">{ laneCountLabel(lane) }</span>
+						<span class="mt-1.5 block font-mono text-(length:--t-10) tracking-[1.5px] text-muted">{ lane.Label }</span>
+						<span class="mt-1 block font-mono text-(length:--t-9) tracking-[1px] text-faint-2">{ laneStateLabel(lane) }</span>
+					</li>
+				}
+			</ul>
+		</section>
+	}
+}
+
+// timelineArtists renders the artists lane: each backend-supplied artist entry
+// links to its canonical public record and shows the stored birth year. An empty
+// lane states its honest absence. The template never derives dates, names, or
+// routes.
+templ timelineArtists(c TimelineView) {
+	<section class="mt-12" aria-label="Artists in this window">
+		<h2 class="font-mono text-(length:--t-11) tracking-[1.5px] text-muted">ARTISTS IN THIS WINDOW</h2>
+		if len(c.Artists) > 0 {
+			<ul class="mt-4 divide-y divide-base-content/10 border-y border-base-content/10">
+				for _, artist := range c.Artists {
+					<li class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-2.5">
+						<a href={ templ.SafeURL(artist.Href) } class="min-w-0 max-w-full break-words text-(length:--t-15) font-semibold text-base-content transition-opacity hover:opacity-60">{ artist.Name }</a>
+						<span class="shrink-0 font-mono text-(length:--t-11) tracking-[1px] text-muted">{ artist.Meta }</span>
+					</li>
+				}
+			</ul>
+		} else {
+			<p class="mt-4 max-w-[560px] text-(length:--t-15) leading-relaxed text-base-content/70 text-pretty">No artists are dated inside this window.</p>
+		}
+	</section>
+}
+
+// timelineUnavailableLane renders one lane that has no approved deterministic
+// source: a labelled heading plus the precise availability explanation.
+templ timelineUnavailableLane(label string, note string) {
+	<section class="mt-10" aria-label={ label }>
+		<h2 class="font-mono text-(length:--t-11) tracking-[1.5px] text-muted">{ label }</h2>
+		<p class="mt-4 max-w-[560px] text-(length:--t-15) leading-relaxed text-base-content/70 text-pretty">{ note }</p>
 	</section>
 }
 
@@ -238,4 +339,29 @@ func marksAria(c TimelineView) string {
 
 func pct(value float64) string {
 	return fmt.Sprintf("%.2f", value)
+}
+
+// laneStateLabel maps the owning workflow's lane state onto the visible honest
+// state: UNAVAILABLE when no approved source exists, EMPTY when the source
+// exists but resolves nothing in the window, and SHOWN otherwise.
+func laneStateLabel(lane TimelineLane) string {
+	switch lane.State {
+	case LaneStateShown:
+		return "SHOWN"
+	case LaneStateEmpty:
+		return "EMPTY"
+	default:
+		return "UNAVAILABLE"
+	}
+}
+
+// laneCountLabel renders the truthful per-window entry count. An unavailable
+// lane has no approved source to count, so it shows a dash rather than a
+// fabricated zero.
+func laneCountLabel(lane TimelineLane) string {
+	if lane.State == LaneStateUnavailable {
+		return "—"
+	}
+
+	return strconv.Itoa(lane.Count)
 }

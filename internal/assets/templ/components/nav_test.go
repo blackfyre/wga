@@ -3,8 +3,11 @@ package components
 import (
 	"bytes"
 	"context"
+	"net/http"
 	"strings"
 	"testing"
+
+	"github.com/blackfyre/wga/internal/assets/templ/utils"
 )
 
 func TestTopNavRendersPrimaryAndMoreDestinations(t *testing.T) {
@@ -114,11 +117,21 @@ func TestTopNavMobileDisclosurePreservesKeyboardContracts(t *testing.T) {
 		`<summary class="ml-auto flex h-11 w-11 cursor-pointer list-none flex-col items-center justify-center gap-1.5" aria-label="Open primary navigation">`,
 		`<nav class="mt-4 border-t border-base-content/15 bg-base-100 pt-4" aria-label="Primary navigation" data-mobile-navigation`,
 		`data-kbd-search`,
-		`hx-on:click="if (event.target.closest('a')) this.closest('details').removeAttribute('open')"`,
 	} {
 		if !strings.Contains(rendered, expected) {
 			t.Fatalf("expected navigation contract %q", expected)
 		}
+	}
+}
+
+func TestTopNavHasNoInlineDisclosureScript(t *testing.T) {
+	var output bytes.Buffer
+	if err := TopNav().Render(context.Background(), &output); err != nil {
+		t.Fatalf("render top navigation: %v", err)
+	}
+
+	if strings.Contains(output.String(), "hx-on:") {
+		t.Fatal("mobile disclosure closing is delegated from the browser bootstrap")
 	}
 }
 
@@ -190,6 +203,35 @@ func TestTopNavMobileDisclosureUsesNormalFlowFullWidthPanel(t *testing.T) {
 		if !strings.Contains(rendered, expected) {
 			t.Fatalf("expected mobile disclosure panel contract %q", expected)
 		}
+	}
+}
+
+func TestTopNavMarksSingularAndPluralRecordAliases(t *testing.T) {
+	tests := []struct {
+		path string
+		href string
+	}{
+		{path: "/artist/albrecht-durer-a1", href: "/artists"},
+		{path: "/artists/albrecht-durer-a1", href: "/artists"},
+		{path: "/artist/albrecht-durer-a1/melencolia-work1", href: "/artworks"},
+		{path: "/artists/albrecht-durer-a1/melencolia-work1", href: "/artworks"},
+		{path: "/artist/albrecht-durer-a1/selections/selection1", href: "/artists"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.path, func(t *testing.T) {
+			request, err := http.NewRequest(http.MethodGet, tt.path, nil)
+			if err != nil {
+				t.Fatalf("create request: %v", err)
+			}
+			var output bytes.Buffer
+			if err := TopNav().Render(utils.ContextFromRequest(request), &output); err != nil {
+				t.Fatalf("render top navigation: %v", err)
+			}
+			if !strings.Contains(output.String(), `href="`+tt.href+`" hx-get="`+tt.href+`" aria-current="page"`) {
+				t.Fatalf("expected active destination %q", tt.href)
+			}
+		})
 	}
 }
 

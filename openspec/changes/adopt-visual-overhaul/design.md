@@ -23,7 +23,23 @@ Existing unimplemented changes for itineraries, artwork relationships, and thumb
 
 ### Treat the visual reference as the public release contract
 
-The release implements the whole non-development reference rather than selecting a subset of screens. Delivery tracks sequence dependent work—data and shared shell first, then discovery, records and scholar tools, participation, and release hardening—but do not reduce the release scope. Chrome at 390px, 834px, and 1440px is the pixel-comparison reference; other supported browsers must retain the same hierarchy, usable controls, and responsive composition without requiring identical font rasterisation.
+The release implements the whole non-development reference rather than selecting a subset of screens. Delivery tracks sequence dependent work—data and shared shell first, then discovery, records and scholar tools, participation, and release hardening—but do not reduce the release scope. Chrome at 390px, 834px, and 1440px is the pixel-comparison reference; other supported browsers must retain the same hierarchy, usable controls, and responsive composition without requiring identical font rasterisation. Every reference audit and release screenshot run records the visual-overhaul repository HEAD and dirty/clean status. The current accepted reference baseline is the clean commit `629089b6268a94b62276ff8769d66e0d2a896022` (`refinement round`, 25 August 2026); earlier comparisons without a captured SHA remain explicitly inferred. The `wga-visual-overhaul` repository is a strictly read-only input: this change may inspect and compare it but must not modify, regenerate, commit, or otherwise treat it as an implementation worktree.
+
+### Implement reference visual primitives and exact composition once
+
+The production theme uses the reference system-font stack without loading a webfont, the complete `--t-*` relative type scale, and explicit `.text-muted`, `.text-faint`, `.text-faint-2`, and `.border-control` roles backed by the existing Rams colour properties in both themes. Shared and page templates consume those roles instead of bare-pixel type substitutions or unranked fallback colours. The shared `PageHead`, Plate, dialog, and layout contracts remain the single production implementations; Guestbook, Glossary, Licences, and reference pages do not reproduce their structure locally. Dialog dismissal remains in the reference header rule, and a word replaces an icon glyph wherever the reference supplies textual control copy.
+
+Where an immutable reference literal conflicts with a documented measurable rule, implementation pauses until the user selects the controlling WGA acceptance criterion. On 26 August 2026, the user selected exact immutable literals for the identified palette conflict. WGA therefore matches the 52 affected reference token locations and records the resulting 53 measured token/ground contrast exceptions explicitly; it does not change the external reference, represent those exceptions as passing checks, or relax unaffected accessibility requirements.
+
+The itinerary tray is a dark-inverted shared surface with visible clear and builder actions. Tray visibility reserves bottom space for both `#mc-area` and the fixed toast container so notifications cannot appear behind it. Statistics supplies server-rendered chart-equivalent visual summaries as well as data tables when JavaScript is unavailable. Exact capability composition is part of acceptance: selections use section `21` and the responsive two-column/four-column work-card grid; Guided Tours uses the four reference facts; and Timeline exposes artists, works, movements, buildings, events, and music lanes while leaving any lane without approved data honestly empty or unavailable rather than fabricating content.
+
+### Separate palette identity from light/dark scheme
+
+Appearance has two independent axes. The palette axis contains `bone`, `classic`, `verdigris`, `gothic`, `renaissance`, `baroque`, `rococo`, `classical`, `impressionist`, `catppuccin`, and `tokyo`; the scheme axis contains `light` and `dark`. Their product resolves to the corresponding daisyUI theme without altering markup or layout. Each palette supplies the immutable reference's complete semantic role set, chart-series ramp, and Timeline-lane colour/foreground pairs. Literal interface colours outside those role definitions are not accepted. Exact clean-reference literals control the 52 identified locations where the reference's values and prose contrast floors conflict; those 53 measured pair failures are a declared acceptance exception, while all unaffected contrast and role checks remain mandatory.
+
+The browser stores palette and explicit scheme separately in local storage for pre-paint resolution and in cookies so server-rendered preference controls can mark an honest state. The inline head resolver applies both axes before the stylesheet; an explicit scheme outranks the operating system, while an unset scheme continues following operating-system changes. `baroque` and `tokyo` are dark-only: both scheme resolutions use their dark build, LIGHT is disabled with an explanation, and the underlying stored scheme is not overwritten.
+
+Palette, scheme, and Bionic Reading live together in a footer-opened preferences panel rather than separate expanding footer controls or a settings route. Its trigger states the active combination, palette choices are grouped by provenance, and each palette uses text plus a split paper/ink swatch so colour is not its sole identifier. With JavaScript unavailable the page follows the operating-system scheme and hides or disables manual controls honestly.
 
 ### Reconcile existing OpenSpec work instead of preserving it unchanged
 
@@ -40,6 +56,18 @@ Pages and handlers remain framework adapters. Each capability owns its workflow,
 ### Model selections and related works as separate experiences
 
 Artist selections are source-backed editorial readings of a bounded set of an artist's works. Each receives a preview and a dedicated artist-and-selection route derived from the producer's deterministic selection identity; WGA does not infer a form from titles, paths, or artwork metadata. Related works remain a record-level discovery row. It exposes the reference's four selected bases—artist, collection, palette, and period—through shareable query state, even where the underlying curator model contains richer canonical relationships. Sparse results are explained rather than padded or inferred.
+
+Related-work cards are a sample, not the complete holding. Each basis resolves at most eight candidates and presents the four closest-date works. Artist, collection, and period can map to complete artwork-search filters, so their rows expose counted server-generated `FIND MORE` links; palette remains ranking-only because a palette-neighbour relation is not a stable catalogue facet.
+
+### Treat catalogue facets as bounded server-owned views
+
+Artwork facets are independently collapsible server-rendered groups with explicit summaries and active-count state. Collection selection uses `venue`; collection-name lookup uses `venue_q`. The handler owns collection counts, holding-size order, the forty-option cap, and the hidden-holdings note; templates do not recompute or imply a complete list. The year range uses the shared inline range presentation. Ordinary GET forms and URLs remain the source of truth underneath HTMX enhancement.
+
+### Preserve supplied artist identity forms and evidence-backed reproduction metadata
+
+Artist DTOs carry both the encyclopaedic filing form and the supplied short form. Indexes, results, citations, and artwork bylines use filing form; breadcrumbs and prose labels use short form. Public templates do not parse, reverse, or reconstruct names, and artist/date labels use a middot.
+
+Artwork reproduction metadata follows the latest evidence boundary: display dimensions, format, weight, and the file link when present. The production page does not show a source or licence field merely to state an unsupported or absent claim. Persisted source provenance may remain available for internal integrity and citation workflows, but it is not promoted into the reference reproduction block without a future accepted contract.
 
 ### Preserve progressive enhancement and URL state
 
@@ -80,6 +108,7 @@ Go tests cover workflows, routes, queries, migrations, data-import contracts, an
 - [Anonymous public workflows are abused or retain personal data too long] → Validate, rate-limit, moderate, redact, and run explicit lifecycle jobs with documented retention outcomes.
 - [Pixel-perfect claims vary across engines] → Use Chrome screenshots as the reference and require functional, accessible layout equivalence elsewhere.
 - [The viewer library cannot meet modal accessibility requirements] → Replace or adapt it behind the shared viewer contract before release.
+- [The reference Templ theme helper contains stale comments and a duplicated `else` in its current working source] → Port the accepted palette/scheme behaviour and tested token values, not the reference implementation verbatim.
 
 ## Migration Plan
 

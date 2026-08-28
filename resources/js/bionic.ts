@@ -1,4 +1,5 @@
 const STORAGE_KEY = "wga-bionic";
+const COOKIE_NAME = "wga_bionic";
 const PROSE_SELECTOR = "p, [data-bionic]";
 const SKIP_SELECTOR =
 	"[data-bionic-mark], b, strong, em, i, mark, [data-bionic='off'], nav, footer, figure, [class~='font-mono'], code, pre, form, button, input, select, textarea";
@@ -80,12 +81,27 @@ function clear(): void {
 	document.body.normalize();
 }
 
-function stored(): boolean {
+function storedBionicReading(): boolean {
 	try {
-		return window.localStorage.getItem(STORAGE_KEY) === "on";
+		const stored = window.localStorage.getItem(STORAGE_KEY);
+		if (stored === "on") {
+			return true;
+		}
+		if (stored === "off") {
+			return false;
+		}
 	} catch {
-		return false;
+		// Storage can be unavailable in private browsing modes.
 	}
+
+	const prefix = `${COOKIE_NAME}=`;
+	for (const item of document.cookie.split(";")) {
+		const cookie = item.trim();
+		if (cookie.startsWith(prefix)) {
+			return decodeURIComponent(cookie.slice(prefix.length)) === "on";
+		}
+	}
+	return false;
 }
 
 function updateControls(on: boolean): void {
@@ -109,7 +125,11 @@ function updateControls(on: boolean): void {
 	}
 }
 
-function set(on: boolean, persist: boolean): void {
+export function currentBionicReading(): boolean {
+	return enabled;
+}
+
+export function setBionicReading(on: boolean, persist = true): void {
 	enabled = on;
 	if (persist) {
 		try {
@@ -117,7 +137,7 @@ function set(on: boolean, persist: boolean): void {
 		} catch {
 			// Storage can be unavailable in private browsing modes.
 		}
-		document.cookie = `wga_bionic=${on ? "on" : "off"}; path=/; max-age=31536000; samesite=lax`;
+		document.cookie = `${COOKIE_NAME}=${on ? "on" : "off"}; path=/; max-age=31536000; samesite=lax`;
 	}
 
 	document.documentElement.dataset.bionicReading = String(on);
@@ -127,6 +147,11 @@ function set(on: boolean, persist: boolean): void {
 		clear();
 	}
 	updateControls(on);
+	document.dispatchEvent(new CustomEvent("wga:preferences-changed"));
+}
+
+export function toggleBionicReading(): void {
+	setBionicReading(!enabled);
 }
 
 export function initBionicReading(): void {
@@ -134,7 +159,7 @@ export function initBionicReading(): void {
 		return;
 	}
 	initialised = true;
-	set(stored(), false);
+	setBionicReading(storedBionicReading(), false);
 
 	document.addEventListener("click", (event) => {
 		if (!(event.target instanceof Element)) {
@@ -145,7 +170,7 @@ export function initBionicReading(): void {
 			return;
 		}
 
-		set(!enabled, true);
+		toggleBionicReading();
 	});
 
 	document.addEventListener("htmx:afterSwap", (event) => {
@@ -154,7 +179,7 @@ export function initBionicReading(): void {
 			return;
 		}
 
-		const target = (event as HtmxAfterSwapEvent).detail.target;
+		const target = (event as HtmxAfterSwapEvent).detail?.target;
 		if (target) {
 			apply(target);
 		}

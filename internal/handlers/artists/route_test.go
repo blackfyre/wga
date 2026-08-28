@@ -43,6 +43,8 @@ func createArtistIndexCollections(t *testing.T, app *pocketbase.PocketBase) {
 	artists.MarkAsNew()
 	artists.Fields.Add(
 		&core.TextField{Id: "artist_name", Name: "name", Required: true},
+		&core.TextField{Id: "artist_filing_name", Name: "filing_name"},
+		&core.TextField{Id: "artist_short_name", Name: "short_name"},
 		&core.TextField{Id: "artist_slug", Name: "slug"},
 		&core.NumberField{Id: "artist_yob", Name: "year_of_birth"},
 		&core.NumberField{Id: "artist_yod", Name: "year_of_death"},
@@ -81,6 +83,10 @@ func saveIndexRecord(t *testing.T, app *pocketbase.PocketBase, collection string
 	}
 	record := core.NewRecord(coll)
 	record.Id = id
+	if collection == "artists" {
+		fields["filing_name"] = fields["name"]
+		fields["short_name"] = fields["name"]
+	}
 	for key, value := range fields {
 		record.Set(key, value)
 	}

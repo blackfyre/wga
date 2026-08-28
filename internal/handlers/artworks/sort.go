@@ -144,7 +144,7 @@ func buildSortOptions(f *filters, dualModeContext *pages.ArtworkSearchDualMode) 
 		options = append(options, pages.ArtworkSortOption{
 			Key:    criterion.key,
 			Label:  criterion.label,
-			Href:   buildArtworkSearchPath("/artworks/results", f.forSort(criterion.key), dualModeContext),
+			Href:   buildArtworkSearchPath("/artworks", f.forSort(criterion.key), dualModeContext),
 			Active: f.Sort == criterion.key,
 		})
 	}

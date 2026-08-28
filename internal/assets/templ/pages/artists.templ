@@ -242,7 +242,7 @@ templ ArtistsBlock(c ArtistsView) {
 							@components.KeyboardCaret()
 							<a href={ templ.URL(artist.URL) } hx-get={ artist.URL } class="block transition-opacity hover:opacity-70">
 								@components.Plate(dto.Plate{DisplayURL: artist.Thumb, Alt: "Portrait of " + artist.Name, Placeholder: "PORTRAIT — " + artist.Name, Aspect: "aspect-square mb-3.5", Contain: false})
-								<span class="mb-1 block text-(length:--t-17) font-semibold">@ArtistName(artist.Name, c.NameQuery)</span>
+								<span class="mb-1 block text-(length:--t-17) font-semibold break-words">@ArtistName(artist.Name, c.NameQuery)</span>
 								<span class="block font-mono text-(length:--t-11) leading-relaxed text-muted">
 									{ artist.Dates }
 									<br/>
@@ -254,7 +254,7 @@ templ ArtistsBlock(c ArtistsView) {
 						<li class="opacity-50">
 							<div class="block">
 								@components.Plate(dto.Plate{DisplayURL: artist.Thumb, Alt: "Portrait of " + artist.Name, Placeholder: "PORTRAIT — " + artist.Name, Aspect: "aspect-square mb-3.5", Contain: false})
-								<span class="mb-1 block text-(length:--t-17) font-semibold">@ArtistName(artist.Name, c.NameQuery)</span>
+								<span class="mb-1 block text-(length:--t-17) font-semibold break-words">@ArtistName(artist.Name, c.NameQuery)</span>
 								<span class="block font-mono text-(length:--t-11) leading-relaxed text-muted">
 									{ artist.Dates }
 									<br/>

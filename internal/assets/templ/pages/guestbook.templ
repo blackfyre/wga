@@ -40,9 +40,7 @@ templ GuestbookPage(v GuestbookView) {
 
 templ GuestbookBlock(v GuestbookView) {
 	<section id="guestbook" class="container mx-auto px-4 pb-20 pt-10 md:px-0 wga-enter">
-		<p class="mb-3 font-mono text-[11px] tracking-[2px] text-base-content/60">10 — GUESTBOOK</p>
-		<h1 class="mb-3 text-[44px] font-semibold leading-tight tracking-[-0.5px]">Guestbook</h1>
-		<p class="mb-11 max-w-[540px] text-base leading-relaxed text-base-content/70">Notes from people who have spent time with the collection. { strconv.Itoa(v.Total) } entries in the archive.</p>
+		@components.PageHead("10 — GUESTBOOK", "Guestbook", "Notes from people who have spent time with the collection. "+strconv.Itoa(v.Total)+" entries in the archive.")
 
 		<div class="flex flex-col-reverse gap-10 md:flex-row md:items-start md:gap-14">
 			<aside class="w-full shrink-0 border-t border-base-content/15 pt-5 md:order-2 md:w-[320px]">

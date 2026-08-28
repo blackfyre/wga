@@ -11,16 +11,20 @@ import (
 // spyTimelineStore records which persistence reads the workflow performs so
 // tests can prove the paged artwork query is skipped for empty windows.
 type spyTimelineStore struct {
-	periods []artPeriod
-	artMin  int
-	artMax  int
-	total   int
-	spans   []dateSpan
-	works   []artworkRow
+	periods     []artPeriod
+	artMin      int
+	artMax      int
+	total       int
+	spans       []dateSpan
+	works       []artworkRow
+	artistTotal int
+	artists     []artistRow
 
 	countWorksCalls     int
+	countArtistsCalls   int
 	pagedListWorksCalls int
 	listWorksLimits     []int
+	listArtistsLimits   []int
 }
 
 func (s *spyTimelineStore) listPeriods() ([]artPeriod, error) {
@@ -48,6 +52,18 @@ func (s *spyTimelineStore) listWorks(from int, to int, limit int, offset int) ([
 	s.listWorksLimits = append(s.listWorksLimits, limit)
 
 	return s.works, nil
+}
+
+func (s *spyTimelineStore) countArtists(from int, to int) (int, error) {
+	s.countArtistsCalls++
+
+	return s.artistTotal, nil
+}
+
+func (s *spyTimelineStore) listArtists(from int, to int, limit int) ([]artistRow, error) {
+	s.listArtistsLimits = append(s.listArtistsLimits, limit)
+
+	return s.artists, nil
 }
 
 func TestBuildTimelineViewEmptyWindowNormalisesPageAndSkipsPagedQuery(t *testing.T) {
@@ -94,6 +110,16 @@ func TestBuildTimelineViewEmptyChronologyNormalisesPage(t *testing.T) {
 	}
 	if view.HasRange {
 		t.Error("empty chronology must keep HasRange false")
+	}
+	if len(view.Lanes) != 6 {
+		t.Errorf("empty chronology lanes = %d, want all six reference lanes", len(view.Lanes))
+	}
+	for _, lane := range view.Lanes {
+		if lane.Key == pages.LaneKeyBuildings || lane.Key == pages.LaneKeyEvents || lane.Key == pages.LaneKeyMusic {
+			if lane.State != pages.LaneStateUnavailable {
+				t.Errorf("%s state = %q, want unavailable", lane.Key, lane.State)
+			}
+		}
 	}
 	if store.countWorksCalls != 0 {
 		t.Errorf("countWorks called %d times, want 0 (early return)", store.countWorksCalls)
@@ -160,6 +186,55 @@ func TestBuildTimelineViewCapsMarksAndWorks(t *testing.T) {
 	}
 	if !foundPageSize {
 		t.Errorf("listWorks never requested the %d-card page size; limits = %v", worksPageSize, store.listWorksLimits)
+	}
+	if len(store.listArtistsLimits) != 1 || store.listArtistsLimits[0] != markCap {
+		t.Errorf("listArtists limits = %v, want exactly [%d]", store.listArtistsLimits, markCap)
+	}
+}
+
+func TestBuildTimelineViewProjectsArtistsAndSixLaneStates(t *testing.T) {
+	store := &spyTimelineStore{
+		periods:     []artPeriod{{name: "Baroque", start: 1500, end: 1750}},
+		artMin:      1500,
+		artMax:      1800,
+		total:       2,
+		artistTotal: 2,
+		works:       []artworkRow{{ID: "work00000000001", Title: "Work", DateStart: 1600}},
+		artists:     []artistRow{{ID: "artist000000001", Name: "An Artist", FilingName: "Artist, An", YearOfBirth: 1600}},
+	}
+
+	view, canonicalURL, err := buildTimelineView(store, url.Values{"from": {"1600"}, "to": {"1700"}})
+	if err != nil {
+		t.Fatalf("buildTimelineView: %v", err)
+	}
+	if canonicalURL != "/timeline?from=1600&to=1700" {
+		t.Fatalf("canonicalURL = %q, want selected window", canonicalURL)
+	}
+	if len(view.Artists) != 1 || view.Artists[0].Name != "Artist, An" || view.Artists[0].Meta != "b. 1600" {
+		t.Fatalf("artists = %+v, want stored filing name and birth year", view.Artists)
+	}
+	if view.Artists[0].Href != "/artists/an-artist-artist000000001" {
+		t.Errorf("artist href = %q, want canonical artist route", view.Artists[0].Href)
+	}
+	if len(view.Lanes) != 6 {
+		t.Fatalf("lanes = %d, want six", len(view.Lanes))
+	}
+	want := []struct {
+		key, state string
+		count      int
+	}{
+		{pages.LaneKeyArtists, pages.LaneStateShown, 2},
+		{pages.LaneKeyWorks, pages.LaneStateShown, 2},
+		{pages.LaneKeyMovements, pages.LaneStateShown, 1},
+		{pages.LaneKeyBuildings, pages.LaneStateUnavailable, 0},
+		{pages.LaneKeyEvents, pages.LaneStateUnavailable, 0},
+		{pages.LaneKeyMusic, pages.LaneStateUnavailable, 0},
+	}
+	for i, expected := range want {
+		got := view.Lanes[i]
+		if got.Key != expected.key || got.State != expected.state || got.Count != expected.count {
+			t.Errorf("lane[%d] = %+v, want key=%q state=%q count=%d", i, got, expected.key, expected.state, expected.count)
+		}
 	}
 }
 

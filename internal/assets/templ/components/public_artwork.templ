@@ -15,7 +15,7 @@ templ PublicArtworkCard(i dto.Image) {
 		</a>
 		<a href={ templ.SafeURL(i.Url) } class="mt-3 inline-block font-mono text-(length:--t-10) tracking-[1px] text-primary hover:opacity-60">VIEW WORK →</a>
 		if i.Id != "" {
-			<div class="mt-3">@AddToItineraryButton(i.Id, "block")</div>
+			<div class="mt-3">@AddToItineraryAction(i.Id, AddToItineraryBlock)</div>
 		}
 	</article>
 }

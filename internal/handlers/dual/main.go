@@ -49,6 +49,11 @@ const (
 	maxDualPathLength = 512
 )
 
+// dualArtistIdentityFilter is the PocketBase filter fragment requiring both
+// authoritative identity fields to be present. Prior-bootstrap records carry
+// blank filing/short fields and are denied rather than reconstructed.
+const dualArtistIdentityFilter = "filing_name != '' && short_name != ''"
+
 // panePathDto describes a parsed pane content path.
 type panePathDto struct {
 	Kind    string // "default" | "artist" | "artwork"
@@ -224,7 +229,7 @@ func buildWindow(app *pocketbase.PocketBase, side string, pane dualPaneState, st
 		window.Artist = record
 		window.Crumb = []pages.DualCrumb{
 			{Label: "ARTISTS", Href: window.IndexHref},
-			{Label: record.Name},
+			{Label: record.ShortName},
 		}
 		window.BackHref = window.IndexHref
 		window.Send = dualSendLink(side, pane, state, window.OtherLabel)
@@ -718,21 +723,21 @@ func buildDualIndexView(app *pocketbase.PocketBase, side string, pane dualPaneSt
 	}
 
 	view := pages.DualIndexView{
-		View:         idx.view,
-		Hidden:       state.hiddenFieldsFor(side),
-		Letters:      buildDualLetters(side, idx, state, availableLetters),
-		AllUrl:       state.withPaneIndex(side, idx.withLetter("")).path(),
-		SchoolGroup:  buildDualSchoolGroup(side, idx, ref),
-		PeriodGroup:  buildDualPeriodGroup(side, idx, ref),
-		NameField:    buildDualNameField(side, idx),
-		GridHref:     state.withPaneIndex(side, idx.withView(viewGrid)).path(),
-		ListHref:     state.withPaneIndex(side, idx.withView(viewList)).path(),
-		SortHref:     state.withPaneIndex(side, idx.withSort(nextDualSort(idx.sort))).path(),
-		ResetHref:    state.withPaneIndex(side, dualIndexState{view: viewList, sort: sortAZ}).path(),
-		SortLabel:    dualSortLabel(idx.sort),
-		FilterNote:   dualFilterNote(idx, ref),
-		Total:        total,
-		Artists:      buildDualArtistRows(pane, state, ref, indexed),
+		View:        idx.view,
+		Hidden:      state.hiddenFieldsFor(side),
+		Letters:     buildDualLetters(side, idx, state, availableLetters),
+		AllUrl:      state.withPaneIndex(side, idx.withLetter("")).path(),
+		SchoolGroup: buildDualSchoolGroup(side, idx, ref),
+		PeriodGroup: buildDualPeriodGroup(side, idx, ref),
+		NameField:   buildDualNameField(side, idx),
+		GridHref:    state.withPaneIndex(side, idx.withView(viewGrid)).path(),
+		ListHref:    state.withPaneIndex(side, idx.withView(viewList)).path(),
+		SortHref:    state.withPaneIndex(side, idx.withSort(nextDualSort(idx.sort))).path(),
+		ResetHref:   state.withPaneIndex(side, dualIndexState{view: viewList, sort: sortAZ}).path(),
+		SortLabel:   dualSortLabel(idx.sort),
+		FilterNote:  dualFilterNote(idx, ref),
+		Total:       total,
+		Artists:     buildDualArtistRows(pane, state, ref, indexed),
 	}
 
 	if ref.bornMin > 0 && ref.bornMax > 0 {
@@ -840,7 +845,7 @@ func buildDualArtistRows(pane dualPaneState, state dualState, ref dualReference,
 	for _, entry := range indexed {
 		record := entry.Record
 		rows = append(rows, pages.DualArtistRow{
-			Name:        record.GetString("name"),
+			Name:        record.GetString("filing_name"),
 			Dates:       dualArtistDates(record),
 			School:      dualSchoolNames(record.GetStringSlice("school"), ref),
 			Period:      dualPeriodForBirth(ref.periods, record.GetInt("year_of_birth")),
@@ -859,13 +864,12 @@ func buildDualArtistRows(pane dualPaneState, state dualState, ref dualReference,
 	return rows
 }
 
-// findPublishedArtist returns a published artist record, or sql.ErrNoRows when
-// the artist is missing or unpublished.
+// findPublishedArtist returns a published artist with complete identity, or
+// sql.ErrNoRows when the artist is missing, unpublished, or lacks either
+// authoritative identity field. It delegates to the record repository so the
+// denial predicate stays a single source of truth.
 func findPublishedArtist(app core.App, id string) (*core.Record, error) {
-	return app.FindRecordById(constants.CollectionArtists, id, func(q *dbx.SelectQuery) error {
-		q.AndWhere(dbx.NewExp("published = true"))
-		return nil
-	})
+	return repositories.NewArtistRecordRepository(app).FindPublishedArtist(id)
 }
 
 // findPublishedArtwork returns a published artwork record, or sql.ErrNoRows when
@@ -984,17 +988,18 @@ func buildDualArtistRecord(app *pocketbase.PocketBase, side string, pane dualPan
 	aliases := dualResolveAliases(app, artist.GetStringSlice("also_known_as"))
 
 	record := pages.DualArtistRecord{
-		Name:     artist.GetString("name"),
-		Dates:    dualArtistDates(artist),
-		Portrait: urlutils.GenerateArtistPortraitImageURL(artist, urlutils.DeliveryProfilePortraitRecordAndWorkFallback, ""),
-		Meta:     dualArtistMeta(schoolNames, period, artist.GetString("profession"), aliases),
-		Bio:      bio,
-		Heading:  dualWorksHeading(workCount, len(works)),
-		Works:    buildDualWorkCards(side, pane, state, artist, works),
-		Music:    buildDualMusic(periodSong),
+		FilingName: artist.GetString("filing_name"),
+		ShortName:  artist.GetString("short_name"),
+		Dates:      dualArtistDates(artist),
+		Portrait:   urlutils.GenerateArtistPortraitImageURL(artist, urlutils.DeliveryProfilePortraitRecordAndWorkFallback, ""),
+		Meta:       dualArtistMeta(schoolNames, period, artist.GetString("profession"), aliases),
+		Bio:        bio,
+		Heading:    dualWorksHeading(workCount, len(works)),
+		Works:      buildDualWorkCards(side, pane, state, artist, works),
+		Music:      buildDualMusic(periodSong),
 		Citation: components.Citation{
 			Key:   "wga-" + artist.GetString("slug"),
-			Title: artist.GetString("name"),
+			Title: artist.GetString("filing_name"),
 			URL:   utils.AssetUrl("/artists/" + expectedSlug),
 		},
 	}
@@ -1029,9 +1034,9 @@ func buildDualWorkRecord(app *pocketbase.PocketBase, side string, pane dualPaneS
 	image := urlutils.GenerateArtworkImageURL(work, dualSizeProfile(pane.size), "")
 	zoom := urlutils.GenerateArtworkImageURL(work, urlutils.DeliveryProfileViewer, "")
 
-	byline := artist.GetString("name")
+	byline := artist.GetString("filing_name")
 	if year > 0 {
-		byline = byline + ", " + strconv.Itoa(year)
+		byline = byline + " · " + strconv.Itoa(year)
 	}
 	byline = byline + " →"
 
@@ -1060,12 +1065,12 @@ func buildDualWorkRecord(app *pocketbase.PocketBase, side string, pane dualPaneS
 		ArtworkID:   work.Id,
 		Citation: components.Citation{
 			Key:   "wga-" + utils.Slugify(work.GetString("title")),
-			Title: work.GetString("title") + " by " + artist.GetString("name"),
+			Title: work.GetString("title") + " by " + artist.GetString("filing_name"),
 			URL:   utils.AssetUrl(artistPath + "/" + utils.Slugify(work.GetString("title")) + "-" + work.Id),
 		},
 	}
 
-	return record, artist.GetString("name"), artistPath, nil
+	return record, artist.GetString("short_name"), artistPath, nil
 }
 
 func dualWorkAuthor(app core.App, work *core.Record) (*core.Record, string, error) {
@@ -1227,7 +1232,7 @@ func dualResolveAliases(app core.App, ids []string) string {
 
 	names := make([]string, 0, len(records))
 	for _, record := range records {
-		if name := record.GetString("name"); name != "" {
+		if name := record.GetString("filing_name"); name != "" {
 			names = append(names, name)
 		}
 	}
@@ -1517,8 +1522,8 @@ func resolveDualLookupKind(kind string) string {
 func getArtistLookupResults(app core.App, query string) ([]pages.DualLookupResult, error) {
 	records, err := app.FindRecordsByFilter(
 		constants.CollectionArtists,
-		"published = true && name ~ {:query}",
-		"+name,+id",
+		"published = true && "+dualArtistIdentityFilter+" && filing_name ~ {:query}",
+		"+filing_name,+id",
 		dualLookupLimit,
 		0,
 		dbx.Params{"query": query},
@@ -1534,7 +1539,7 @@ func getArtistLookupResults(app core.App, query string) ([]pages.DualLookupResul
 				ArtistId:   record.Id,
 				ArtistName: record.GetString("name"),
 			}),
-			Label: record.GetString("name"),
+			Label: record.GetString("filing_name"),
 		})
 	}
 
@@ -1579,7 +1584,7 @@ func getArtworkLookupResults(app core.App, query string) ([]pages.DualLookupResu
 				ArtworkTitle: record.GetString("title"),
 			}),
 			Label:   record.GetString("title"),
-			Context: artist.GetString("name"),
+			Context: artist.GetString("filing_name"),
 		})
 	}
 
@@ -1621,8 +1626,8 @@ func getLookupArtistsByID(app core.App, artistIDs []string) (map[string]*core.Re
 
 	records, err := app.FindRecordsByFilter(
 		constants.CollectionArtists,
-		strings.Join(conditions, " || "),
-		"+name,+id",
+		"("+strings.Join(conditions, " || ")+") && "+dualArtistIdentityFilter,
+		"+filing_name,+id",
 		len(artistIDs),
 		0,
 		params,

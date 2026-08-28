@@ -41,7 +41,7 @@ func TestFiltersBuildFilterMatchesTitleOrArtistQuery(t *testing.T) {
 
 	filterString, params := filters.BuildFilter()
 
-	if !strings.Contains(filterString, "(title ~ {:query} || author.name ~ {:query})") {
+	if !strings.Contains(filterString, "(title ~ {:query} || author.filing_name ~ {:query})") {
 		t.Errorf("filter %q does not match title or artist", filterString)
 	}
 
@@ -166,14 +166,14 @@ func TestBuildFiltersParsesCatalogueFilters(t *testing.T) {
 	}
 }
 
-func TestBuildFiltersRoundTripsPeriodAndLocation(t *testing.T) {
+func TestBuildFiltersRoundTripsPeriodAndVenue(t *testing.T) {
 	f := buildFilters(url.Values{
-		"period":   {"baroque"},
-		"location": {"Florence"},
+		"period": {"baroque"},
+		"venue":  {"Florence"},
 	})
 
 	path := f.BuildPath("/artworks")
-	for _, value := range []string{"period=baroque", "location=Florence"} {
+	for _, value := range []string{"period=baroque", "venue=Florence"} {
 		if !strings.Contains(path, value) {
 			t.Errorf("path %q does not round-trip %q", path, value)
 		}

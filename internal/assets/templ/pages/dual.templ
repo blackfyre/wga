@@ -99,7 +99,8 @@ type DualIndexView struct {
 
 // DualArtistRecord is a complete artist record inside a window.
 type DualArtistRecord struct {
-	Name     string
+	FilingName string
+	ShortName  string
 	Dates    string
 	Portrait string
 	Meta     []components.MetaEntry
@@ -469,11 +470,11 @@ templ dualArtistPane(w DualWindow) {
 	<p class="font-mono text-(length:--t-11) tracking-[2px] text-muted mb-2.5">02 — ARTIST</p>
 	<div class="flex items-start justify-between gap-6 mb-6">
 		<div class="min-w-0">
-			<h2 class="text-(length:--t-30) font-semibold tracking-[-0.5px] leading-[1.12]">{ w.Artist.Name }</h2>
+			<h2 class="text-(length:--t-30) font-semibold tracking-[-0.5px] leading-[1.12]">{ w.Artist.FilingName }</h2>
 			<p class="font-mono text-(length:--t-12) tracking-[1px] text-primary mt-2">{ w.Artist.Dates }</p>
 		</div>
 		<figure class="w-[104px] shrink-0">
-			@components.Plate(dto.Plate{DisplayURL: w.Artist.Portrait, Alt: "Portrait of " + w.Artist.Name, Label: "PORTRAIT — " + w.Artist.Name, Placeholder: "PORTRAIT — " + w.Artist.Name, Aspect: "aspect-square", Contain: false})
+			@components.Plate(dto.Plate{DisplayURL: w.Artist.Portrait, Alt: "Portrait of " + w.Artist.FilingName, Label: "PORTRAIT — " + w.Artist.FilingName, Placeholder: "PORTRAIT — " + w.Artist.FilingName, Aspect: "aspect-square", Contain: false})
 		</figure>
 	</div>
 
@@ -542,7 +543,7 @@ templ dualWorkPane(w DualWindow) {
 	<p class="font-mono text-(length:--t-10) tracking-[1px] text-faint mt-2.5">{ w.Work.SizeCaption }</p>
 
 	<div class="flex flex-wrap gap-2.5 mt-5 mb-7">
-		@components.AddToItineraryButton(w.Work.ArtworkID, "compact")
+		@components.AddToItineraryAction(w.Work.ArtworkID, components.AddToItineraryRow)
 		if w.Send.Href != "" {
 			<a href={ templ.URL(w.Send.Href) } hx-get={ w.Send.Href } hx-target="#dual-area" hx-select="#dual-area" hx-swap="outerHTML" class="btn btn-outline btn-primary font-mono text-(length:--t-11) tracking-[1.5px] h-[46px]">{ w.Send.Label }</a>
 		}
@@ -572,7 +573,7 @@ templ dualCardGrid(cards []DualCard, target string) {
 					<span class="block font-mono text-(length:--t-11) text-muted mt-[3px]">{ card.Meta }</span>
 				</a>
 				if card.ArtworkID != "" {
-					<div class="mt-2.5">@components.AddToItineraryButton(card.ArtworkID, "block")</div>
+					<div class="mt-2.5">@components.AddToItineraryAction(card.ArtworkID, components.AddToItineraryBlock)</div>
 				}
 			</li>
 		}

@@ -2,28 +2,59 @@ package components
 
 import (
 	"github.com/blackfyre/wga/internal/assets/templ/utils"
+	itineraryworkflow "github.com/blackfyre/wga/internal/itineraries"
 )
 
-// AddToItineraryButton renders a progressively enhanced add form on supported
-// published artwork surfaces. The synchroniser token and added state are read
-// from the request context prepared by the central itinerary session
-// middleware; the control renders nothing without a projected session so
-// cookie-less requests never expose a broken form. The ordinary form submit
-// works without JavaScript; HTMX swaps the tray in place.
+// addToItineraryForm renders the shared POST/HTMX form contract consumed by
+// every add control: the ordinary no-JavaScript POST fallback, the inherited
+// tray swap, the unset hx-select sentinel, and the artwork/CSRF hidden fields.
+// The button is supplied as children so each presentation keeps its own label,
+// classes, and disabled semantics without duplicating the form boundary.
+templ addToItineraryForm(artworkID string, csrf string, formClass string) {
+	<form method="post" action="/itineraries/draft/add" class={ formClass } hx-post="/itineraries/draft/add" hx-target="#itinerary-tray" hx-swap="outerHTML" hx-select="unset">
+		<input type="hidden" name="artwork_id" value={ artworkID }/>
+		<input type="hidden" name="_csrf" value={ csrf }/>
+		{ children... }
+	</form>
+}
+
+// AddToItineraryButton is the legacy string-based add control retained for the
+// existing artwork/Dual/card call sites until task 9.2 switches them to the
+// typed AddToItineraryAction. Its rendering, labels, classes, and disabled
+// semantics are unchanged. The control renders nothing without a projected
+// session so cookie-less requests never expose a broken form.
 templ AddToItineraryButton(artworkID string, variant string) {
 	if csrf := utils.GetItineraryCSRF(ctx); csrf != "" {
-		<form method="post" action="/itineraries/draft/add" class="inline" hx-post="/itineraries/draft/add" hx-target="#itinerary-tray" hx-swap="outerHTML" hx-select="unset">
-			<input type="hidden" name="artwork_id" value={ artworkID }/>
-			<input type="hidden" name="_csrf" value={ csrf }/>
+		@addToItineraryForm(artworkID, csrf, "inline") {
 			if utils.GetItineraryAdded(ctx, artworkID) {
 				<button type="submit" disabled aria-disabled="true" class={ addButtonClass(variant, true) }>ADDED</button>
 			} else {
 				<button type="submit" class={ addButtonClass(variant, false) }>ADD TO ITINERARY</button>
 			}
-		</form>
+		}
 	}
 }
 
+// AddToItineraryAction is the typed, validated add control. Call sites opt in
+// deliberately by passing an AddToItineraryVariant; the reference compact,
+// 46px row, and 50px block presentations render here with their short/full
+// labels and shared added/full/anonymous semantics. The synchroniser token,
+// added state, and tray count are read from the request context prepared by
+// the central itinerary session middleware.
+templ AddToItineraryAction(artworkID string, variant AddToItineraryVariant) {
+	if csrf := utils.GetItineraryCSRF(ctx); csrf != "" {
+		{{ normalized := normalizeAddToItineraryVariant(variant) }}
+		{{ added := utils.GetItineraryAdded(ctx, artworkID) }}
+		{{ full := utils.GetItineraryTray(ctx).Count >= itineraryworkflow.MaxStops }}
+		@addToItineraryForm(artworkID, csrf, addToItineraryFormClass(normalized)) {
+			<button type="submit" disabled?={ added || full } class={ addToItineraryButtonClass(normalized, added, full) }>{ addToItineraryButtonLabel(normalized, added, full) }</button>
+		}
+	}
+}
+
+// addButtonClass is the legacy class helper for AddToItineraryButton. It keeps
+// the original string-variant behaviour: "block" adds a full-width treatment,
+// every other value renders the inline chip.
 func addButtonClass(variant string, added bool) string {
 	class := "border font-mono text-(length:--t-10) tracking-[1px] transition-colors"
 	if added {

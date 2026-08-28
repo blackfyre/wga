@@ -46,7 +46,7 @@ func TestArtistLifeSummaryIncludesBirthAndDeath(t *testing.T) {
 	artist.Set("place_of_birth", "Leiden")
 	artist.Set("place_of_death", "Amsterdam")
 
-	if got, want := artistLifeSummary(artist), "b. 1606 Leiden, d. 1669 Amsterdam"; got != want {
+	if got, want := artistLifeSummary(artist), "b. 1606 Leiden · d. 1669 Amsterdam"; got != want {
 		t.Fatalf("life summary = %q, want %q", got, want)
 	}
 }
@@ -73,15 +73,17 @@ func TestBuildArtistWorksURLEncodesName(t *testing.T) {
 
 func TestBuildArtistCitationUsesCanonicalAbsoluteURL(t *testing.T) {
 	artist := testArtistRecord()
-	artist.Set("name", "Portrait Artist")
+	artist.Set("name", "portrait-artist")
+	artist.Set("filing_name", "Artist, Portrait")
+	artist.Set("short_name", "Portrait")
 	artist.Set("slug", "portrait-artist")
 
 	citation := buildArtistCitation(artist, "portrait-artist-artist")
 	if citation.Key != "wga-portrait-artist" {
 		t.Errorf("key = %q, want wga-portrait-artist", citation.Key)
 	}
-	if citation.Title != "Portrait Artist" {
-		t.Errorf("title = %q, want Portrait Artist", citation.Title)
+	if citation.Title != "Artist, Portrait" {
+		t.Errorf("title = %q, want Artist, Portrait", citation.Title)
 	}
 	if want := utils.AssetUrl("/artists/portrait-artist-artist"); citation.URL != want {
 		t.Errorf("URL = %q, want %q", citation.URL, want)
@@ -116,7 +118,9 @@ func TestBuildRecordMusicUsesPlayerRoute(t *testing.T) {
 
 func TestBuildRecordWorkImagesUsesCanonicalRecordLinks(t *testing.T) {
 	artist := testArtistRecord()
-	artist.Set("name", "Portrait Artist")
+	artist.Set("name", "portrait-artist")
+	artist.Set("filing_name", "Artist, Portrait")
+	artist.Set("short_name", "Portrait")
 
 	work := testArtworkRecord("painting.jpg", 800)
 	work.Id = "artwork12345678"
@@ -134,8 +138,8 @@ func TestBuildRecordWorkImagesUsesCanonicalRecordLinks(t *testing.T) {
 	if image.Image != "/api/files/artworks/artwork12345678/painting.jpg?thumb=500x0" {
 		t.Errorf("image = %q, want 500-profile thumb", image.Image)
 	}
-	if image.Artist.Name != "Portrait Artist" {
-		t.Errorf("artist name = %q, want Portrait Artist", image.Artist.Name)
+	if image.Artist.FilingName != "Artist, Portrait" {
+		t.Errorf("artist filing name = %q, want Artist, Portrait", image.Artist.FilingName)
 	}
 	if image.Zoom != "" {
 		t.Errorf("zoom = %q, want empty (no viewer hooks)", image.Zoom)
@@ -159,6 +163,8 @@ func testArtistRecord() *core.Record {
 	artists.Id = "artists"
 	artists.Fields.Add(
 		&core.TextField{Name: "name"},
+		&core.TextField{Name: "filing_name"},
+		&core.TextField{Name: "short_name"},
 		&core.TextField{Name: "slug"},
 		&core.NumberField{Name: "year_of_birth"},
 		&core.NumberField{Name: "year_of_death"},

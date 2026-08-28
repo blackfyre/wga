@@ -2,9 +2,6 @@ package components
 
 templ DialogBody() {
 	<div class="modal-box relative max-h-[calc(100vh-2rem)] overflow-y-auto border border-base-content bg-base-100 p-5 md:p-7">
-		<form method="dialog">
-			<button type="submit" data-dialog-close data-dialog-initial-focus class="absolute right-4 top-4 font-mono text-sm text-base-content/60 hover:text-base-content" aria-label="Close dialog">✕</button>
-		</form>
 		{ children... }
 	</div>
 	<form method="dialog" class="modal-backdrop fixed inset-0 -z-10 bg-base-content/30">

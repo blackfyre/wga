@@ -155,8 +155,12 @@ func respondBuilder(app core.App, c *core.RequestEvent, owner string, token stri
 
 // renderTrayWithBuilder renders the tray as the primary HTMX target plus an
 // out-of-band builder refresh, used by the add route so both surfaces update.
-// The OOB builder must embed the session synchroniser token, otherwise the
-// swapped-in forms carry an empty token and the next mutation is rejected.
+// The tray's CLEAR action reads its synchroniser token from the read-only
+// itinerary projection carried in the render context, exactly as the central
+// middleware supplies it for full-page renders. A POST add does not pass through
+// that middleware, so the context is decorated here to keep the swapped-in
+// tray's clear action working under the same session CSRF contract. The OOB
+// builder embeds its own token through the builder view.
 func renderTrayWithBuilder(app core.App, c *core.RequestEvent, owner string, token string, state builderState) error {
 	tray, err := loadTrayView(app, owner)
 	if err != nil {
@@ -168,11 +172,18 @@ func renderTrayWithBuilder(app core.App, c *core.RequestEvent, owner string, tok
 		return utils.ServerFaultError(c)
 	}
 
+	ctxb := tmplUtils.WithItineraryProjection(
+		tmplUtils.ContextFromRequest(c.Request),
+		itineraryworkflow.CSRFToken(token),
+		tray,
+		nil,
+	)
+
 	var buf bytes.Buffer
-	if err := components.ItineraryTray(tray, false).Render(tmplUtils.ContextFromRequest(c.Request), &buf); err != nil {
+	if err := components.ItineraryTray(tray, false).Render(ctxb, &buf); err != nil {
 		return utils.ServerFaultError(c)
 	}
-	if err := pages.ItineraryBuilder(view, true).Render(tmplUtils.ContextFromRequest(c.Request), &buf); err != nil {
+	if err := pages.ItineraryBuilder(view, true).Render(ctxb, &buf); err != nil {
 		return utils.ServerFaultError(c)
 	}
 
@@ -321,6 +332,13 @@ func (ctx *securityContext) clearDraft(app *pocketbase.PocketBase, c *core.Reque
 			return utils.BadRequestError(c)
 		}
 		return utils.ServerFaultError(c)
+	}
+
+	// The tray's CLEAR action targets #itinerary-tray, which mounts on every
+	// page, so it needs the tray-primary response shape. The builder's CLEAR
+	// ALL still targets #itinerary-builder and keeps the builder-primary shape.
+	if utils.IsHtmxRequest(c) && c.Request.Header.Get("HX-Target") == "itinerary-tray" {
+		return renderTrayWithBuilder(app, c, owner, token, state)
 	}
 
 	return respondBuilder(app, c, owner, token, state)

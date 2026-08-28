@@ -189,6 +189,41 @@ test.describe("builder", () => {
 	});
 });
 
+test.describe("task 9.2 tray regression", () => {
+	test("HTMX tray clear, toast offset, reload state, and Dual row action", async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.goto("/inspire");
+		const card = page
+			.locator("section[aria-label='Shuffled artworks'] article")
+			.first();
+		const add = card.getByRole("button", {
+			name: "ADD TO AN ITINERARY +",
+		});
+		await scrollIntoViewCentered(add);
+		await add.click();
+		const tray = page.locator("#itinerary-tray");
+		await expect(tray).toContainText("ITINERARY DRAFT · 1 OF 15");
+		const toast = page.locator("#toast-container");
+		await expect(toast).toContainText("Added to your itinerary.");
+		await expect(toast).toHaveClass(/bottom-20/);
+
+		await page.reload();
+		await expect(page.locator("#itinerary-tray")).toContainText(
+			"ITINERARY DRAFT · 1 OF 15",
+		);
+		page.once("dialog", (dialog) => dialog.accept());
+		await page.getByRole("button", { name: "CLEAR" }).click();
+		await expect(page.locator("#itinerary-tray")).toBeEmpty();
+
+		await page.goto("/dual-mode");
+		await expect(
+			page.getByRole("button", { name: "ADD TO AN ITINERARY +" }).first(),
+		).toHaveCSS("height", "46px");
+	});
+});
+
 test.describe("publication and slideshow", () => {
 	test.describe.configure({ mode: "serial" });
 
@@ -210,16 +245,20 @@ test.describe("publication and slideshow", () => {
 			.locator("article", {
 				has: page.getByRole("heading", { name: firstTitle, exact: true }),
 			})
-			.getByRole("button", { name: "ADD TO ITINERARY" })
+			.getByRole("button", { name: "ADD TO AN ITINERARY +" })
 			.click();
-		await expect(page.locator("#itinerary-tray")).toContainText("1 STOP");
+		await expect(page.locator("#itinerary-tray")).toContainText(
+			"ITINERARY DRAFT · 1 OF 15",
+		);
 		await page
 			.locator("article", {
 				has: page.getByRole("heading", { name: secondTitle, exact: true }),
 			})
-			.getByRole("button", { name: "ADD TO ITINERARY" })
+			.getByRole("button", { name: "ADD TO AN ITINERARY +" })
 			.click();
-		await expect(page.locator("#itinerary-tray")).toContainText("2 STOPS");
+		await expect(page.locator("#itinerary-tray")).toContainText(
+			"ITINERARY DRAFT · 2 OF 15",
+		);
 
 		// The builder shows the running-order filmstrip and empty narrations.
 		await page.goto("/itineraries/new");
@@ -258,16 +297,20 @@ test.describe("publication and slideshow", () => {
 			.locator("article", {
 				has: page.getByRole("heading", { name: reFirstTitle, exact: true }),
 			})
-			.getByRole("button", { name: "ADD TO ITINERARY" })
+			.getByRole("button", { name: "ADD TO AN ITINERARY +" })
 			.click();
-		await expect(page.locator("#itinerary-tray")).toContainText("1 STOP");
+		await expect(page.locator("#itinerary-tray")).toContainText(
+			"ITINERARY DRAFT · 1 OF 15",
+		);
 		await page
 			.locator("article", {
 				has: page.getByRole("heading", { name: reSecondTitle, exact: true }),
 			})
-			.getByRole("button", { name: "ADD TO ITINERARY" })
+			.getByRole("button", { name: "ADD TO AN ITINERARY +" })
 			.click();
-		await expect(page.locator("#itinerary-tray")).toContainText("2 STOPS");
+		await expect(page.locator("#itinerary-tray")).toContainText(
+			"ITINERARY DRAFT · 2 OF 15",
+		);
 
 		await page.goto("/itineraries/new");
 		await expect(page.getByText(/STOP 01 OF 2/)).toBeVisible();
@@ -330,9 +373,11 @@ test.describe("publication and slideshow", () => {
 			const title = await cards.nth(0).locator("h2").innerText();
 			await page
 				.locator("article", { hasText: title })
-				.getByRole("button", { name: "ADD TO ITINERARY" })
+				.getByRole("button", { name: "ADD TO AN ITINERARY +" })
 				.click();
-			await expect(page.locator("#itinerary-tray")).toContainText("1 STOP");
+			await expect(page.locator("#itinerary-tray")).toContainText(
+				"ITINERARY DRAFT · 1 OF 15",
+			);
 
 			await page.goto("/itineraries/new");
 			const titleInput = page.locator('input[name="title"]');
@@ -485,7 +530,10 @@ test.describe("without JavaScript", () => {
 		await page.emulateMedia({ reducedMotion: "reduce" });
 		await page.setViewportSize({ width: 390, height: 844 });
 		await page.goto("/inspire");
-		await page.getByRole("button", { name: "ADD TO ITINERARY" }).nth(0).click();
+		await page
+			.getByRole("button", { name: "ADD TO AN ITINERARY +" })
+			.nth(0)
+			.click();
 		// The ordinary 303 redirect lands back on the builder.
 		await expect(page).toHaveURL(/\/itineraries\/new/);
 		await expect(page.getByText(/STOP 01 OF 1/)).toBeVisible();

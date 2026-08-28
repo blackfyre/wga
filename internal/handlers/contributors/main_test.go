@@ -80,7 +80,7 @@ func TestContributorRouteReadsOnlyFromItsReader(t *testing.T) {
 		Method:          http.MethodGet,
 		URL:             "/contributors",
 		ExpectedStatus:  http.StatusOK,
-		ExpectedContent: []string{"@stored-contributor"},
+		ExpectedContent: []string{"stored-contributor"},
 		TestAppFactory: func(t testing.TB) *tests.TestApp {
 			app, err := tests.NewTestApp()
 			if err != nil {
@@ -116,7 +116,7 @@ func TestContributorRouteServesFallbackSourceHeaderAndObservability(t *testing.T
 		Method:          http.MethodGet,
 		URL:             "/contributors",
 		ExpectedStatus:  http.StatusOK,
-		ExpectedContent: []string{"@fallback-contributor"},
+		ExpectedContent: []string{"fallback-contributor"},
 		TestAppFactory: func(t testing.TB) *tests.TestApp {
 			app, err := tests.NewTestApp()
 			if err != nil {
@@ -157,8 +157,8 @@ func TestContributorRouteRendersExactValuesAndCounts(t *testing.T) {
 		URL:            "/contributors",
 		ExpectedStatus: http.StatusOK,
 		ExpectedContent: []string{
-			"@alice", "7 commits",
-			"@bob", "12 commits",
+			">alice</a>", "7 commits",
+			">bob</a>", "12 commits",
 			"2 PEOPLE",
 			`src="https://avatars.githubusercontent.com/u/1?v=4"`,
 			`href="https://github.com/alice"`,
@@ -196,7 +196,7 @@ func TestContributorRouteOmitsInvalidAndEmptyAvatarAndProfileURLs(t *testing.T) 
 		URL:            "/contributors",
 		ExpectedStatus: http.StatusOK,
 		ExpectedContent: []string{
-			"@valid",
+			">valid</a>",
 			`src="https://avatars.githubusercontent.com/u/9?v=4"`,
 			`href="https://github.com/valid"`,
 		},

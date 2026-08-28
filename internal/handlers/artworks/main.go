@@ -3,6 +3,7 @@ package artworks
 import (
 	"bytes"
 	"cmp"
+	"errors"
 	"fmt"
 	"net/http"
 	neturl "net/url"
@@ -19,6 +20,8 @@ import (
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 )
+
+var errConflictingVenueFilters = errors.New("conflicting venue and legacy location filters")
 
 const artworkSearchPageSize = 16
 
@@ -41,6 +44,10 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 	view, canonical, err := buildArtworkSearchView(app, queryParams, page, artworkSearchPageSize)
 	if err != nil {
+		if errors.Is(err, errConflictingVenueFilters) {
+			app.Logger().Warn("Rejected conflicting artwork venue filters")
+			return utils.BadRequestError(c)
+		}
 		app.Logger().Error("Failed to build artwork search", "error", err.Error())
 		return utils.ServerFaultError(c)
 	}
@@ -53,9 +60,13 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 	var buff bytes.Buffer
 
-	if utils.IsHtmxRequest(c) && c.Request.URL.Path == "/artworks/results" {
+	htmxTarget := strings.TrimPrefix(strings.TrimSpace(c.Request.Header.Get("HX-Target")), "#")
+	switch {
+	case utils.IsHtmxRequest(c) && htmxTarget == "artwork-search":
+		err = pages.ArtworkSearchBlock(view).Render(ctx, &buff)
+	case utils.IsHtmxRequest(c) && c.Request.URL.Path == "/artworks/results":
 		err = pages.ArtworkSearchResults(view.Results).Render(ctx, &buff)
-	} else {
+	default:
 		err = pages.ArtworkSearchPage(view).Render(ctx, &buff)
 	}
 
@@ -72,6 +83,10 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 func buildArtworkSearchView(app *pocketbase.PocketBase, values neturl.Values, page int, limit int) (pages.ArtworkSearchView, string, error) {
 	filters := buildFilters(values)
 	dualModeContext := getDualModeSearchContext(values)
+
+	if filters.VenueConflict {
+		return pages.ArtworkSearchView{}, "", errConflictingVenueFilters
+	}
 
 	recordsCount, err := countArtworkRecords(app, filters)
 	if err != nil {
@@ -108,7 +123,7 @@ func buildArtworkSearchView(app *pocketbase.PocketBase, values neturl.Values, pa
 	if err != nil {
 		return pages.ArtworkSearchView{}, "", err
 	}
-	locationOptions, err := getLocationOptions(app)
+	venueOptions, err := getVenueOptions(app, filters.VenueQuery, filters.selectedVenue())
 	if err != nil {
 		return pages.ArtworkSearchView{}, "", err
 	}
@@ -116,6 +131,12 @@ func buildArtworkSearchView(app *pocketbase.PocketBase, values neturl.Values, pa
 	if err != nil {
 		return pages.ArtworkSearchView{}, "", err
 	}
+
+	schoolGroup := buildChipGroup("SCHOOL", "art_school", artSchoolOptions, filters.SchoolString)
+	formGroup := buildChipGroup("FORM", "art_form", artFormOptions, filters.ArtFormString)
+	typeGroup := buildChipGroup("TYPE", "art_type", artTypeOptions, filters.ArtTypeString)
+	periodGroup := buildFilterGroup("PERIOD", "period", artPeriodOptions, filters.PeriodString)
+	collectionGroup := buildVenueChipGroup(venueOptions, filters.selectedVenue())
 
 	view := pages.ArtworkSearchView{
 		NameField: dto.Field{
@@ -134,16 +155,17 @@ func buildArtworkSearchView(app *pocketbase.PocketBase, values neturl.Values, pa
 			Value:       filters.TechniqueString,
 			Placeholder: "e.g. oil on canvas",
 		},
-		SchoolGroup:     buildChipGroup("SCHOOL", "art_school", artSchoolOptions, filters.SchoolString),
-		FormGroup:       buildChipGroup("FORM", "art_form", artFormOptions, filters.ArtFormString),
-		TypeGroup:       buildChipGroup("TYPE", "art_type", artTypeOptions, filters.ArtTypeString),
-		PeriodGroup:     buildFilterGroup("PERIOD", "period", artPeriodOptions, filters.PeriodString),
-		LocationGroup:   buildFilterGroup("LOCATION", "location", locationOptions, filters.LocationString),
-		YearFrom:        cmp.Or(filters.YearFrom, "200"),
-		YearTo:          cmp.Or(filters.YearTo, "1900"),
+		SchoolGroup:     schoolGroup,
+		FormGroup:       formGroup,
+		TypeGroup:       typeGroup,
+		PeriodGroup:     periodGroup,
+		LocationGroup:   collectionGroup,
+		Facets:          buildArtworkSearchFacets(filters, schoolGroup, formGroup, typeGroup, periodGroup, venueOptions),
+		Sort:            filters.Sort,
+		Dir:             filters.SortDir,
 		ClearUrl:        buildArtworkSearchClearPath(dualModeContext),
 		DualModeContext: dualModeContext,
-		HxTarget:        "#artwork-search-results",
+		HxTarget:        "#artwork-search",
 		Results:         results,
 	}
 
@@ -158,12 +180,12 @@ func buildArtworkSearchResults(app *pocketbase.PocketBase, filters *filters, dua
 		ResultCount:     recordsCount,
 		Artworks:        dto.ImageGrid{},
 		View:            filters.View,
-		GridUrl:         buildArtworkSearchPath("/artworks/results", filters.forView("grid"), dualModeContext),
-		ListUrl:         buildArtworkSearchPath("/artworks/results", filters.forView("list"), dualModeContext),
+		GridUrl:         buildArtworkSearchPath("/artworks", filters.forView("grid"), dualModeContext),
+		ListUrl:         buildArtworkSearchPath("/artworks", filters.forView("list"), dualModeContext),
 		ResetUrl:        buildArtworkSearchClearPath(dualModeContext),
 		SortOptions:     buildSortOptions(filters, dualModeContext),
 		SortDirLabel:    filters.sortDirLabel(),
-		SortToggleUrl:   buildArtworkSearchPath("/artworks/results", filters.forSortDir(flipSortDir(filters.SortDir)), dualModeContext),
+		SortToggleUrl:   buildArtworkSearchPath("/artworks", filters.forSortDir(flipSortDir(filters.SortDir)), dualModeContext),
 	}
 
 	if dualModeContext != nil {
@@ -208,8 +230,10 @@ func buildArtworkSearchResults(app *pocketbase.PocketBase, filters *filters, dua
 			Technique: v.GetString("technique"),
 			Id:        v.GetString("id"),
 			Artist: dto.Artist{
-				Id:   artist.GetString("id"),
-				Name: artist.GetString("name"),
+				Id:         artist.GetString("id"),
+				FilingName: artist.GetString("filing_name"),
+				ShortName:  artist.GetString("short_name"),
+				Name:       artist.GetString("filing_name"),
 				Url: url.GenerateArtistUrl(url.ArtistUrlDTO{
 					ArtistId:   artist.Id,
 					ArtistName: artist.GetString("name"),
@@ -337,7 +361,7 @@ func getArtistsByIDs(app *pocketbase.PocketBase, artworks []*core.Record) (map[s
 	artists, err := app.FindRecordsByFilter(
 		constants.CollectionArtists,
 		strings.Join(conditions, " || "),
-		"+name",
+		"+filing_name",
 		0,
 		0,
 		params,

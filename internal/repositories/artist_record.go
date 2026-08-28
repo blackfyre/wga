@@ -28,10 +28,20 @@ func NewArtistRecordRepository(app core.App) *ArtistRecordRepository {
 }
 
 // FindPublishedArtist returns the published artist with the given id, or
-// sql.ErrNoRows when the artist is missing or unpublished.
+// sql.ErrNoRows when the artist is missing, unpublished, or lacks either
+// authoritative identity field (filing or short form).
 func (r *ArtistRecordRepository) FindPublishedArtist(id string) (*core.Record, error) {
+	present, err := artistsIdentityFieldsPresent(r.app)
+	if err != nil {
+		return nil, err
+	}
+	if !present {
+		return nil, sql.ErrNoRows
+	}
+
 	return r.app.FindRecordById(constants.CollectionArtists, id, func(q *dbx.SelectQuery) error {
 		q.AndWhere(dbx.NewExp("published = true"))
+		q.AndWhere(dbx.NewExp(publishedArtistIdentity))
 		return nil
 	})
 }

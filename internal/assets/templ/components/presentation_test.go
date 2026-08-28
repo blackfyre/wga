@@ -8,6 +8,7 @@ import (
 
 	"github.com/a-h/templ"
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
+	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
 )
 
 func renderComponent(t *testing.T, component templ.Component) string {
@@ -78,6 +79,21 @@ func TestWorkCardsAndRowsAreOrdinaryLinksWithoutViewerHook(t *testing.T) {
 	}
 }
 
+func TestWorkCardUsesTypedBlockAddControl(t *testing.T) {
+	ctx := tmplUtils.WithItineraryProjection(context.Background(), "csrf-token", dto.ItineraryTrayView{}, nil)
+	var output bytes.Buffer
+	work := dto.Work{ArtworkID: "aw0000000000001", URL: "/artworks/work", Title: "Work"}
+	if err := WorkCard(work).Render(ctx, &output); err != nil {
+		t.Fatalf("render work card: %v", err)
+	}
+	rendered := output.String()
+	for _, expected := range []string{`h-[50px]`, `w-full`, "ADD TO AN ITINERARY +", `hx-select="unset"`} {
+		if !strings.Contains(rendered, expected) {
+			t.Errorf("work card missing typed block contract %q", expected)
+		}
+	}
+}
+
 func TestMetaListUsesTermsValuesAndRetainsIntentionalBlankValue(t *testing.T) {
 	rendered := renderComponent(t, MetaList([]MetaEntry{{Label: "Date", Value: "1500"}, {Label: "Location", Value: ""}}))
 	if !strings.Contains(rendered, "<dl") || !strings.Contains(rendered, ">Date</dt>") || !strings.Contains(rendered, ">1500</dd>") || !strings.Contains(rendered, "text-(length:--t-11)") || !strings.Contains(rendered, "text-sm") {
@@ -119,11 +135,18 @@ func TestPlateUsesSeparateDisplayAndZoomURLsWithAccessibleFallbacks(t *testing.T
 	}
 }
 
-func TestDialogBodyProvidesVisibleDismissalAndInitialFocusHook(t *testing.T) {
+func TestDialogBodyProvidesTextualBackdropDismissalWithoutFloatingGlyph(t *testing.T) {
 	rendered := renderComponent(t, DialogBody())
-	for _, expected := range []string{`data-dialog-close`, `data-dialog-initial-focus`, `aria-label="Close dialog"`, `method="dialog"`, `class="modal-backdrop`} {
+	for _, expected := range []string{`data-dialog-close`, `aria-label="Close dialog"`, `method="dialog"`, `class="modal-backdrop`, `>close</button>`} {
 		if !strings.Contains(rendered, expected) {
 			t.Fatalf("dialog body missing %s", expected)
+		}
+	}
+	// The reference drops the floating corner glyph; each dialog header carries
+	// its own dismissal control instead, so the shared body must not render one.
+	for _, unexpected := range []string{`✕`, `data-dialog-initial-focus`, `absolute right-4 top-4`} {
+		if strings.Contains(rendered, unexpected) {
+			t.Fatalf("dialog body must not render a floating corner dismissal (%s)", unexpected)
 		}
 	}
 

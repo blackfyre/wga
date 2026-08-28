@@ -287,11 +287,12 @@ func createCollectionDataAppCollections(t *testing.T, app core.App) {
 		&core.RelationField{Name: "art_period_id", CollectionId: "art_periods", MinSelect: 0, MaxSelect: 1},
 		&core.TextField{Name: "source_url"},
 		&core.TextField{Name: "source_path"},
-		&core.TextField{Name: "source_comment"},
+		&core.TextField{Name: "source_comment", Max: 10000},
 		&core.JSONField{Name: "colour_palette"},
 		&core.JSONField{Name: "colour_signature"},
 		&core.TextField{Name: "colour_profile_version"},
 		&core.TextField{Name: "colour_image_hash"},
+		&core.NumberField{Name: "image_size_bytes"},
 	)
 }
 
@@ -634,5 +635,81 @@ func TestImportSyntheticArtworksRejectsDeclaredMissingMedia(t *testing.T) {
 
 	if err := importSyntheticArtworks(app, data, true); err == nil {
 		t.Fatal("expected declared missing media error")
+	}
+}
+
+func TestImportSyntheticArtworksRetainsLongSourceComment(t *testing.T) {
+	app := core.NewBaseApp(core.BaseAppConfig{
+		DataDir:       t.TempDir(),
+		EncryptionEnv: "test-encryption-key",
+	})
+	if err := app.Bootstrap(); err != nil {
+		t.Fatalf("bootstrap app: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := app.ResetBootstrapState(); err != nil {
+			t.Error(err)
+		}
+	})
+
+	createCollectionDataAppCollections(t, app)
+
+	artistCollection, err := app.FindCollectionByNameOrId("artists")
+	if err != nil {
+		t.Fatalf("find artists collection: %v", err)
+	}
+	artist := core.NewRecord(artistCollection)
+	artist.Set("id", "rartist00000001")
+	artist.Set("name", "Artist")
+	artist.Set("slug", "artist")
+	artist.Set("published", true)
+	if err := app.Save(artist); err != nil {
+		t.Fatalf("save artist: %v", err)
+	}
+	formCollection, err := app.FindCollectionByNameOrId("art_forms")
+	if err != nil {
+		t.Fatalf("find art_forms collection: %v", err)
+	}
+	form := core.NewRecord(formCollection)
+	form.Set("id", "rform0000000001")
+	form.Set("name", "Form")
+	form.Set("slug", "form")
+	if err := app.Save(form); err != nil {
+		t.Fatalf("save form: %v", err)
+	}
+
+	// 6,000 characters exceeds PocketBase's unset 5,000-character text ceiling
+	// but stays within the migration's raised source_comment ceiling.
+	comment := strings.Repeat("x", 6000)
+	content := []byte("image bytes")
+
+	data := sourceData{
+		artworkFiles: map[string]sourceFile{
+			"rwork0000000001": {name: "image.jpg", content: content, size: int64(len(content))},
+		},
+		artworks: []sourceArtwork{{
+			ID:            "rwork0000000001",
+			AuthorID:      "rartist00000001",
+			Title:         "Artwork",
+			DateText:      "1900",
+			FormID:        "rform0000000001",
+			ImagePath:     "image.jpg",
+			SourceComment: comment,
+		}},
+	}
+
+	if err := importSyntheticArtworks(app, data, false); err != nil {
+		t.Fatalf("import artworks: %v", err)
+	}
+
+	record, err := app.FindRecordById(constants.CollectionArtworks, "rwork0000000001")
+	if err != nil {
+		t.Fatalf("find imported artwork: %v", err)
+	}
+	if got := record.GetString("source_comment"); got != comment {
+		t.Fatalf("source_comment length = %d, want %d (exact retention)", len(got), len(comment))
+	}
+	if got := record.GetInt("image_size_bytes"); got != int(len(content)) {
+		t.Fatalf("image_size_bytes = %d, want %d", got, len(content))
 	}
 }

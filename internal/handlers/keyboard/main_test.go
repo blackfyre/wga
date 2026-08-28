@@ -1,6 +1,7 @@
 package keyboard
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -125,6 +126,131 @@ func TestSuggestionsFillsRemainingBudgetWithOrderedArtworks(t *testing.T) {
 	}
 }
 
+// TestSuggestionsArtistUsesFilingNameNotLegacyName proves the artist suggestion
+// is matched, ordered, and labelled by filing_name while its href keeps the
+// legacy name. A divergent legacy name must never surface as identity.
+func TestSuggestionsArtistUsesFilingNameNotLegacyName(t *testing.T) {
+	app := newKeyboardTestApp(t)
+	saveSuggestionArtistIdentity(t, app, "Legacy Name", "Filing, Name", "Short Name")
+
+	rows, err := suggestions(app, "filing", 10)
+	if err != nil {
+		t.Fatalf("suggest by filing: %v", err)
+	}
+	if len(rows) != 1 {
+		t.Fatalf("suggestions = %d, want 1 (filing-name match)", len(rows))
+	}
+	if rows[0].Kind != "ARTIST" {
+		t.Fatalf("suggestion kind = %q, want ARTIST", rows[0].Kind)
+	}
+	if got := rows[0].Label; got != "Filing, Name" {
+		t.Errorf("artist label = %q, want filing form %q", got, "Filing, Name")
+	}
+	if !strings.Contains(rows[0].Href, "legacy-name-") {
+		t.Errorf("artist href = %q, want legacy-name-derived URL", rows[0].Href)
+	}
+
+	// The legacy display name is not a suggestion identity source: it must not match.
+	legacy, err := suggestions(app, "legacy", 10)
+	if err != nil {
+		t.Fatalf("suggest by legacy name: %v", err)
+	}
+	if len(legacy) != 0 {
+		t.Fatalf("legacy-name suggestions = %d, want 0 (legacy name is not searchable)", len(legacy))
+	}
+}
+
+// TestSuggestionsWorkLabelUsesFilingNameAndLegacyURL proves work suggestions
+// label their author with filing_name while the work href keeps the legacy name.
+func TestSuggestionsWorkLabelUsesFilingNameAndLegacyURL(t *testing.T) {
+	app := newKeyboardTestApp(t)
+	artist := saveSuggestionArtistIdentity(t, app, "Legacy Name", "Filing, Name", "Short Name")
+	saveSuggestionArtwork(t, app, artist.Id, "Divergent Work")
+
+	rows, err := suggestions(app, "divergent", 10)
+	if err != nil {
+		t.Fatalf("suggest work title: %v", err)
+	}
+	if len(rows) != 1 {
+		t.Fatalf("suggestions = %d, want 1", len(rows))
+	}
+	if rows[0].Kind != "WORK" {
+		t.Fatalf("suggestion kind = %q, want WORK", rows[0].Kind)
+	}
+	if got := rows[0].Label; got != "Divergent Work · Filing, Name" {
+		t.Errorf("work label = %q, want %q", got, "Divergent Work · Filing, Name")
+	}
+	if !strings.Contains(rows[0].Href, "legacy-name-") {
+		t.Errorf("work href = %q, want legacy-name-derived URL", rows[0].Href)
+	}
+}
+
+// TestSuggestionsExcludesBlankIdentity proves artists missing either
+// authoritative identity field are denied from artist suggestions and omitted
+// as the first public author of a work suggestion.
+func TestSuggestionsExcludesBlankIdentity(t *testing.T) {
+	app := newKeyboardTestApp(t)
+	saveSuggestionArtistIdentity(t, app, "Complete Legacy", "Complete, Filing", "Complete")
+	blankFiling := saveSuggestionArtistIdentity(t, app, "Blank Filing Legacy", "", "Blank Filing")
+	blankShort := saveSuggestionArtistIdentity(t, app, "Blank Short Legacy", "Blank, Short", "")
+
+	// A blank-identity artist must not match even its legacy or short name.
+	rows, err := suggestions(app, "blank", 10)
+	if err != nil {
+		t.Fatalf("suggest blank: %v", err)
+	}
+	if len(rows) != 0 {
+		t.Fatalf("blank-identity artists surfaced: %+v", rows)
+	}
+
+	// Works whose first public author lacks complete identity are omitted.
+	saveSuggestionArtwork(t, app, blankFiling.Id, "Blank Filing Work")
+	saveSuggestionArtwork(t, app, blankShort.Id, "Blank Short Work")
+	workRows, err := suggestions(app, "blank filing", 10)
+	if err != nil {
+		t.Fatalf("suggest blank filing work: %v", err)
+	}
+	if len(workRows) != 0 {
+		t.Fatalf("blank-filing-author work surfaced: %+v", workRows)
+	}
+	workRows, err = suggestions(app, "blank short", 10)
+	if err != nil {
+		t.Fatalf("suggest blank short work: %v", err)
+	}
+	if len(workRows) != 0 {
+		t.Fatalf("blank-short-author work surfaced: %+v", workRows)
+	}
+
+	// The complete artist still surfaces.
+	complete, err := suggestions(app, "complete", 10)
+	if err != nil {
+		t.Fatalf("suggest complete: %v", err)
+	}
+	if len(complete) != 1 || complete[0].Label != "Complete, Filing" {
+		t.Fatalf("complete suggestions = %+v, want only [Complete, Filing]", complete)
+	}
+}
+
+// TestSuggestionsSortsArtistsByFilingName proves artist ordering follows
+// filing_name, not the legacy name.
+func TestSuggestionsSortsArtistsByFilingName(t *testing.T) {
+	app := newKeyboardTestApp(t)
+	saveSuggestionArtistIdentity(t, app, "Alpha Legacy", "Zeta, Filing", "Zeta")
+	saveSuggestionArtistIdentity(t, app, "Zeta Legacy", "Alpha, Filing", "Alpha")
+
+	rows, err := suggestions(app, "filing", 10)
+	if err != nil {
+		t.Fatalf("suggest by filing: %v", err)
+	}
+	if len(rows) != 2 {
+		t.Fatalf("suggestions = %d, want 2", len(rows))
+	}
+	if rows[0].Label != "Alpha, Filing" || rows[1].Label != "Zeta, Filing" {
+		t.Errorf("filing-name order = [%q, %q], want [Alpha, Filing] then [Zeta, Filing]",
+			rows[0].Label, rows[1].Label)
+	}
+}
+
 func newKeyboardTestApp(t *testing.T) *pocketbase.PocketBase {
 	t.Helper()
 
@@ -141,6 +267,8 @@ func newKeyboardTestApp(t *testing.T) *pocketbase.PocketBase {
 	artists := core.NewBaseCollection(constants.CollectionArtists)
 	artists.Fields.Add(
 		&core.TextField{Name: "name"},
+		&core.TextField{Name: "filing_name"},
+		&core.TextField{Name: "short_name"},
 		&core.BoolField{Name: "published"},
 	)
 	if err := app.Save(artists); err != nil {
@@ -163,6 +291,12 @@ func newKeyboardTestApp(t *testing.T) *pocketbase.PocketBase {
 func saveSuggestionArtist(t *testing.T, app core.App, name string) *core.Record {
 	t.Helper()
 
+	return saveSuggestionArtistIdentity(t, app, name, name, name)
+}
+
+func saveSuggestionArtistIdentity(t *testing.T, app core.App, name, filing, short string) *core.Record {
+	t.Helper()
+
 	collection, err := app.FindCollectionByNameOrId(constants.CollectionArtists)
 	if err != nil {
 		t.Fatalf("find artists collection: %v", err)
@@ -170,6 +304,8 @@ func saveSuggestionArtist(t *testing.T, app core.App, name string) *core.Record 
 
 	record := core.NewRecord(collection)
 	record.Set("name", name)
+	record.Set("filing_name", filing)
+	record.Set("short_name", short)
 	record.Set("published", true)
 	if err := app.Save(record); err != nil {
 		t.Fatalf("save artist: %v", err)

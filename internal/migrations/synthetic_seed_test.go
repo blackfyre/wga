@@ -3,6 +3,7 @@ package migrations
 import (
 	"database/sql"
 	"errors"
+	iofs "io/fs"
 	"os"
 	"path/filepath"
 	"slices"
@@ -216,10 +217,17 @@ func TestSyntheticSeedMigrationImportsBaselineSchema(t *testing.T) {
 	if got, want := artwork.GetInt("image_height"), 1024; got != want {
 		t.Fatalf("expected artwork image height %d, got %d", want, got)
 	}
-	for _, fieldName := range []string{"image_width", "image_height"} {
+	for _, fieldName := range []string{"image_width", "image_height", "image_size_bytes"} {
 		if _, ok := artworks.Fields.GetByName(fieldName).(*core.NumberField); !ok {
 			t.Fatalf("expected artworks.%s numeric field", fieldName)
 		}
+	}
+	embeddedImage, err := synthetic.Files.ReadFile("storage/Artworks/07561d2efd0a6db/3a29b540e6908ad8.jpg")
+	if err != nil {
+		t.Fatalf("read embedded artwork image: %v", err)
+	}
+	if got, want := artwork.GetInt("image_size_bytes"), len(embeddedImage); got != want {
+		t.Fatalf("embedded artwork image_size_bytes = %d, want %d", got, want)
 	}
 
 	about, err := app.FindFirstRecordByData("static_pages", "slug", "about")
@@ -296,6 +304,7 @@ func TestSyntheticSeedImportExternalSQLite(t *testing.T) {
 	if err := os.WriteFile(sourcePath, data, 0o600); err != nil {
 		t.Fatalf("write external source: %v", err)
 	}
+	materializeEmbeddedStorage(t, filepath.Join(filepath.Dir(sourcePath), "storage"))
 	source, err := sql.Open("sqlite", sourcePath)
 	if err != nil {
 		t.Fatalf("open external source: %v", err)
@@ -323,11 +332,17 @@ func TestSyntheticSeedImportExternalSQLite(t *testing.T) {
 	if err := addArtistSelections(app); err != nil {
 		t.Fatalf("create artist selections collection: %v", err)
 	}
+	if err := addArtistIdentityFields(app); err != nil {
+		t.Fatalf("create artist identity fields: %v", err)
+	}
 	if err := addCollectionData(app); err != nil {
 		t.Fatalf("create collection-data collections/fields: %v", err)
 	}
 	if err := addArtworkSourceFields(app); err != nil {
 		t.Fatalf("create artwork source/colour fields: %v", err)
+	}
+	if err := addArtworkFileByteSize(app); err != nil {
+		t.Fatalf("create artwork file byte size field: %v", err)
 	}
 	if err := seed.Import(app, sourcePath); err != nil {
 		t.Fatalf("import external SQLite source: %v", err)
@@ -346,6 +361,12 @@ func TestSyntheticSeedImportExternalSQLite(t *testing.T) {
 	if got, want := artist.GetInt("biography_image_height"), 750; got != want {
 		t.Fatalf("external artist biography image height = %d, want %d", got, want)
 	}
+	if got, want := artist.GetString("filing_name"), "SYNTHETIC ARTIST 02"; got != want {
+		t.Fatalf("external artist filing_name = %q, want %q", got, want)
+	}
+	if got, want := artist.GetString("short_name"), "Synthetic Artist 02"; got != want {
+		t.Fatalf("external artist short_name = %q, want %q", got, want)
+	}
 
 	artwork, err := app.FindRecordById("artworks", "07561d2efd0a6db")
 	if err != nil {
@@ -356,6 +377,42 @@ func TestSyntheticSeedImportExternalSQLite(t *testing.T) {
 	}
 	if got, want := artwork.GetInt("image_height"), 1024; got != want {
 		t.Fatalf("external artwork image height = %d, want %d", got, want)
+	}
+
+	embeddedImage, err := synthetic.Files.ReadFile("storage/Artworks/07561d2efd0a6db/3a29b540e6908ad8.jpg")
+	if err != nil {
+		t.Fatalf("read embedded artwork image: %v", err)
+	}
+	if got, want := artwork.GetInt("image_size_bytes"), len(embeddedImage); got != want {
+		t.Fatalf("external artwork image_size_bytes = %d, want %d", got, want)
+	}
+}
+
+// materializeEmbeddedStorage copies the embedded synthetic storage tree to a
+// real filesystem directory so the preseeded external import can stat the
+// paired staged originals without reading from the embed FS.
+func materializeEmbeddedStorage(t *testing.T, root string) {
+	t.Helper()
+
+	storage, err := iofs.Sub(synthetic.Files, "storage")
+	if err != nil {
+		t.Fatalf("open embedded storage: %v", err)
+	}
+	if err := iofs.WalkDir(storage, ".", func(p string, d iofs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		target := filepath.Join(root, p)
+		if d.IsDir() {
+			return os.MkdirAll(target, 0o755)
+		}
+		content, err := iofs.ReadFile(storage, p)
+		if err != nil {
+			return err
+		}
+		return os.WriteFile(target, content, 0o600)
+	}); err != nil {
+		t.Fatalf("materialize embedded storage: %v", err)
 	}
 }
 

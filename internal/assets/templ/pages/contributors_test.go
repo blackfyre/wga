@@ -31,10 +31,11 @@ func TestContributorsRendersSingleHeadingAndListSemantics(t *testing.T) {
 		"md:text-(length:--t-44)",
 		"CODE CONTRIBUTORS",
 		"1 PEOPLE",
-		"@blackfyre",
+		">blackfyre</a>",
 		"585 commits",
 		`src="https://avatars.githubusercontent.com/u/1?v=4"`,
 		`href="https://github.com/blackfyre"`,
+		`class="no-external-link-marker font-mono`,
 		`<ul role="list"`,
 		`<article`,
 		`<li`,
@@ -80,18 +81,18 @@ func TestContributorOmitsMissingAvatarAndProfileLink(t *testing.T) {
 	if strings.Contains(rendered, "<img") {
 		t.Error("contributor without an avatar must not render an image")
 	}
-	if strings.Contains(rendered, `aria-label="@anon on GitHub"`) {
+	if strings.Contains(rendered, "<a ") {
 		t.Error("contributor without a profile URL must not render a profile anchor")
 	}
 	if strings.Contains(rendered, `src=""`) || strings.Contains(rendered, `href=""`) {
 		t.Error("contributor output must not emit empty src or href attributes")
 	}
-	if !strings.Contains(rendered, "@anon") || !strings.Contains(rendered, "3 commits") {
+	if !strings.Contains(rendered, ">anon</span>") || !strings.Contains(rendered, "3 commits") {
 		t.Error("contributor identity and count must still render")
 	}
 }
 
-func TestContributorOutputIsSanitisedWithoutUncheckedSafeURL(t *testing.T) {
+func TestContributorProfileLinkIsSafeTextualOrdinaryLink(t *testing.T) {
 	rendered := renderContributors(t, ContributorsPageDTO{Contributors: []GithubContributor{
 		{Login: "blackfyre", AvatarURL: "https://avatars.githubusercontent.com/u/1?v=4", HTMLURL: "https://github.com/blackfyre", Contributions: 1},
 	}})
@@ -99,7 +100,12 @@ func TestContributorOutputIsSanitisedWithoutUncheckedSafeURL(t *testing.T) {
 	if strings.Contains(rendered, "SafeURL") {
 		t.Fatal("contributor output must not leak unchecked SafeURL markup")
 	}
-	if !strings.Contains(rendered, `aria-label="@blackfyre on GitHub"`) || !strings.Contains(rendered, `rel="noopener"`) || !strings.Contains(rendered, `target="_blank"`) {
-		t.Error("contributor profile link must carry an accessible name and safe external link attributes")
+	if !strings.Contains(rendered, `href="https://github.com/blackfyre"`) || !strings.Contains(rendered, `>blackfyre</a>`) {
+		t.Error("contributor profile link must render the handle as an ordinary textual link to the unchanged profile destination")
+	}
+	for _, forbidden := range []string{`target="_blank"`, `rel="noopener"`, "<svg", "onclick=", "hx-", "↗"} {
+		if strings.Contains(rendered, forbidden) {
+			t.Errorf("contributor profile link must be an ordinary no-JavaScript link; must not contain %q\ngot: %s", forbidden, rendered)
+		}
 	}
 }

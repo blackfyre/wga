@@ -18,8 +18,8 @@ import (
 
 func TestBuildHomePageUsesOnlyEligiblePublishedArtworks(t *testing.T) {
 	app := newLandingTestApp(t)
-	createLandingArtist(t, app, "artistalice0001", "Alice", true)
-	createLandingArtist(t, app, "artistbob000001", "Bob", false)
+	createLandingArtist(t, app, "artistalice0001", "Alice", "Alice, Filing", true)
+	createLandingArtist(t, app, "artistbob000001", "Bob", "Bob, Filing", false)
 	createLandingSchool(t, app)
 	createLandingArtwork(t, app, "artworkalpha001", "Alpha Work", "artistalice0001", true, "2026-01-01 00:00:00.000Z", "small.jpg", 500)
 	createLandingArtwork(t, app, "artworkbravo001", "Bravo Work", "artistalice0001", true, "2026-01-03 00:00:00.000Z", "large.jpg", 1200)
@@ -74,6 +74,47 @@ func TestBuildHomePageUsesOnlyEligiblePublishedArtworks(t *testing.T) {
 	}
 }
 
+func TestBuildHomePageUsesFilingNameBylines(t *testing.T) {
+	app := newLandingTestApp(t)
+	createLandingArtist(t, app, "artistalice0001", "Alice", "ALICE, Filing", true)
+	createLandingSchool(t, app)
+	createLandingArtwork(t, app, "artworkalpha001", "Alpha Work", "artistalice0001", true, "2026-01-01 00:00:00.000Z", "small.jpg", 500)
+
+	page, err := buildHomePage(repositories.NewLandingRepository(app), time.Date(2026, time.January, 1, 18, 0, 0, 0, time.FixedZone("west", -5*60*60)))
+	if err != nil {
+		t.Fatalf("build home page: %v", err)
+	}
+
+	if page.FeaturedArtwork.Artist != "ALICE, Filing" {
+		t.Errorf("featured byline = %q, want filing form %q", page.FeaturedArtwork.Artist, "ALICE, Filing")
+	}
+	if page.FeaturedArtwork.URL != "/artists/alice-artistalice0001/alpha-work-artworkalpha001" {
+		t.Errorf("featured URL = %q, want legacy-name route", page.FeaturedArtwork.URL)
+	}
+	if len(page.RecentArtworks) != 1 || page.RecentArtworks[0].Artist != "ALICE, Filing" {
+		t.Errorf("recent byline = %#v, want filing form", page.RecentArtworks)
+	}
+}
+
+func TestBuildHomePageOmitsBlankIdentityArtworks(t *testing.T) {
+	app := newLandingTestApp(t)
+	createLandingArtist(t, app, "artistblank0001", "Blank Identity", "", true)
+	createLandingSchool(t, app)
+	createLandingArtwork(t, app, "artworkblank001", "Blank Work", "artistblank0001", true, "2026-01-01 00:00:00.000Z", "blank.jpg", 500)
+
+	page, err := buildHomePage(repositories.NewLandingRepository(app), time.Date(2026, time.January, 1, 18, 0, 0, 0, time.FixedZone("west", -5*60*60)))
+	if err != nil {
+		t.Fatalf("build home page: %v", err)
+	}
+
+	if page.FeaturedArtwork.Title != "" {
+		t.Errorf("featured artwork = %#v, want none (blank identity fail closed)", page.FeaturedArtwork)
+	}
+	if len(page.RecentArtworks) != 0 {
+		t.Errorf("recent artworks = %#v, want none (blank identity fail closed)", page.RecentArtworks)
+	}
+}
+
 func TestBuildHomePageHandlesEmptyCollection(t *testing.T) {
 	page, err := buildHomePage(repositories.NewLandingRepository(newLandingTestApp(t)), time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC))
 	if err != nil {
@@ -89,7 +130,7 @@ func TestBuildHomePageHandlesEmptyCollection(t *testing.T) {
 
 func TestBuildHomePageLimitsRecentArtworksToFour(t *testing.T) {
 	app := newLandingTestApp(t)
-	createLandingArtist(t, app, "artistalice0001", "Alice", true)
+	createLandingArtist(t, app, "artistalice0001", "Alice", "Alice, Filing", true)
 	for index := 1; index <= 5; index++ {
 		value := strconv.Itoa(index)
 		id := "artworkrecent0" + value
@@ -217,6 +258,8 @@ func newLandingTestApp(t *testing.T) *pocketbase.PocketBase {
 	artists.MarkAsNew()
 	artists.Fields.Add(
 		&core.TextField{Id: "artist_name", Name: "name", Required: true},
+		&core.TextField{Id: "artist_filing_name", Name: "filing_name"},
+		&core.TextField{Id: "artist_short_name", Name: "short_name"},
 		&core.BoolField{Id: "artist_published", Name: "published"},
 	)
 	if err := app.Save(artists); err != nil {
@@ -259,7 +302,7 @@ func createLandingSchool(t *testing.T, app *pocketbase.PocketBase) {
 	}
 }
 
-func createLandingArtist(t *testing.T, app *pocketbase.PocketBase, id string, name string, published bool) {
+func createLandingArtist(t *testing.T, app *pocketbase.PocketBase, id string, name string, filingName string, published bool) {
 	t.Helper()
 	collection, err := app.FindCollectionByNameOrId("artists")
 	if err != nil {
@@ -268,6 +311,8 @@ func createLandingArtist(t *testing.T, app *pocketbase.PocketBase, id string, na
 	record := core.NewRecord(collection)
 	record.Id = id
 	record.Set("name", name)
+	record.Set("filing_name", filingName)
+	record.Set("short_name", filingName)
 	record.Set("published", published)
 	if err := app.Save(record); err != nil {
 		t.Fatalf("save artist: %v", err)

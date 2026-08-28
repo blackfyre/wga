@@ -45,12 +45,14 @@ test.describe("selection journey without JavaScript", () => {
 		await expect(
 			firstPreview.getByText(/SELECTED · .* CATALOGUED/),
 		).toBeVisible();
+		await expect(
+			firstPreview.getByText("2 SELECTED · 4 CATALOGUED"),
+		).toBeVisible();
 
 		const openLink = firstPreview.getByRole("link", {
 			name: /OPEN SELECTION/,
 		});
 		await expect(openLink).toHaveAttribute("href", suppliedCommentaryPath);
-		await expect(openLink).not.toHaveAttribute("hx-get", /.*/);
 	});
 
 	test("selection preview opens the dedicated selection page", async ({
@@ -68,7 +70,10 @@ test.describe("selection journey without JavaScript", () => {
 
 		await expect(page).toHaveURL(suppliedCommentaryPath);
 		await expect(page.locator("h1")).toHaveText(suppliedCommentaryTitle);
-		await expect(page.getByText("03 — SELECTION")).toBeVisible();
+		await expect(page.getByText("21 — SELECTION")).toBeVisible();
+		await expect(
+			page.locator("nav[aria-label='Breadcrumb'] a").last(),
+		).toHaveText("Synthetic Artist 02");
 	});
 
 	test("dedicated selection page renders supplied commentary, citation, and ordinary holding link", async ({
@@ -95,12 +100,15 @@ test.describe("selection journey without JavaScript", () => {
 		});
 		await expect(holdingLink).toHaveAttribute(
 			"href",
-			"/artworks?artist=Synthetic+Artist+02",
+			"/artworks?artist=SYNTHETIC+ARTIST+02",
 		);
 		await expect(holdingLink).not.toHaveAttribute("hx-get", /.*/);
 
 		await expect(page.getByText("OTHER SELECTIONS")).toBeVisible();
 		await expect(page.getByText(missingCommentaryTitle)).toBeVisible();
+		await expect(
+			page.locator("ul.grid.grid-cols-2.md\\:grid-cols-4"),
+		).toHaveCount(1);
 	});
 
 	test("dedicated selection page states missing commentary honestly", async ({

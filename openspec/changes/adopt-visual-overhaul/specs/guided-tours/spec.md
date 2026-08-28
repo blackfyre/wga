@@ -1,11 +1,11 @@
 ## ADDED Requirements
 
 ### Requirement: Guided tours are distinct editorial routes
-The system SHALL present guided tours as named-editor, revision-aware, permanent editorial works and SHALL distinguish them from anonymous, expiring visitor itineraries.
+The system SHALL present guided tours as named-editor, revision-aware, permanent editorial works and SHALL distinguish them from anonymous, expiring visitor itineraries through the reference four-item facts composition: `WRITTEN BY`, `SHAPE`, `SOURCES`, and `UPKEEP`.
 
 #### Scenario: Visitor compares tour and itinerary choices
 - **WHEN** a visitor opens the Guided Tours index
-- **THEN** the page states the author, shape, length, reading mode, and lifetime distinction between tours and itineraries.
+- **THEN** the four facts state its editorial author, reading shape, source basis, and permanent upkeep in the composition paired with the Itineraries facts block.
 
 ### Requirement: Tour reading renders one addressed page at a time
 The system SHALL render a tour title, text, picture, index, or sources page at a stable route with tour context, progress, contents, and previous/next navigation.

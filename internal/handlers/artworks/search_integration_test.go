@@ -103,6 +103,8 @@ func newArtworkSearchApp(t *testing.T) *pocketbase.PocketBase {
 	artists.MarkAsNew()
 	artists.Fields.Add(
 		&core.TextField{Id: "artist_name", Name: "name", Required: true},
+		&core.TextField{Id: "artist_filing_name", Name: "filing_name"},
+		&core.TextField{Id: "artist_short_name", Name: "short_name"},
 	)
 	if err := app.Save(artists); err != nil {
 		t.Fatalf("save artists: %v", err)
@@ -205,6 +207,8 @@ func saveSearchArtist(t *testing.T, app *pocketbase.PocketBase, id string, name 
 	record := core.NewRecord(model)
 	record.Id = id
 	record.Set("name", name)
+	record.Set("filing_name", name)
+	record.Set("short_name", name)
 	if err := app.Save(record); err != nil {
 		t.Fatalf("save artist %s: %v", id, err)
 	}
@@ -746,7 +750,7 @@ func TestArtworksRouteRendersFullPageAndFragment(t *testing.T) {
 			t.Errorf("HX-Push-Url = %q, want /artworks?sort=date", got)
 		}
 		body := full.Body.String()
-		for _, expected := range []string{"<h1", "Artworks", "SCHOOL", "FORM", "TECHNIQUE", "PERIOD", "LOCATION", "DATE"} {
+		for _, expected := range []string{"<h1", "Artworks", "SCHOOL", "FORM", "TECHNIQUE", "PERIOD", "COLLECTION", "DATE"} {
 			if !strings.Contains(body, expected) {
 				t.Errorf("full page missing %q", expected)
 			}

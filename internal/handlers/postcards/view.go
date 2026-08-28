@@ -52,14 +52,16 @@ func viewPostcard(app core.App, c *core.RequestEvent) error {
 	if imageName := artwork.GetString("image"); imageName != "" {
 		image = asseturl.GenerateArtworkImageURL(artwork, asseturl.DeliveryProfilePostcardSmallDualPlate, "")
 	}
-	author := ""
-	if record := artwork.ExpandedOne("author"); record != nil {
-		author = record.GetString("name")
+	author := artwork.ExpandedOne("author")
+	if !hasCompleteArtistIdentity(author) {
+		logger.Warn("Postcard view rejected", "event", "postcard.view.rejected", "outcome", "artist_identity_unavailable")
+		return utils.NotFoundError(c)
 	}
+	artistFilingName := author.GetString("filing_name")
 	music := resolveRecipientMusic(app, postcard.GetBool("include_music"), artwork)
 	content := pages.PostcardView{
 		SenderName: postcard.GetString("sender_name"), Message: postcard.GetString("message"), Image: image,
-		Title: artwork.GetString("title"), Comment: artwork.GetString("comment"), Technique: artwork.GetString("technique"), Author: author,
+		Title: artwork.GetString("title"), Comment: artwork.GetString("comment"), Technique: artwork.GetString("technique"), ArtistFilingName: artistFilingName,
 		Music: music,
 	}
 	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, "Postcard")
@@ -133,4 +135,13 @@ func buildPostcardMusic(song *repositories.PeriodSong) components.MusicPeriodCar
 		Piece:     piece,
 		PlayerURL: "/player?song=" + song.Record.Id,
 	}
+}
+
+// hasCompleteArtistIdentity reports whether an artist record carries both
+// authoritative identity fields. Prior-bootstrap artists have blank fields and
+// must fail closed rather than render reconstructed or blank identity.
+func hasCompleteArtistIdentity(artist *core.Record) bool {
+	return artist != nil &&
+		strings.TrimSpace(artist.GetString("filing_name")) != "" &&
+		strings.TrimSpace(artist.GetString("short_name")) != ""
 }

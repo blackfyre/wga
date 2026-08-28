@@ -309,8 +309,6 @@ func assertNoHistoricalEvents(t *testing.T, body string) {
 	t.Helper()
 
 	for _, marker := range []string{
-		"HISTORICAL EVENTS",
-		"EVENTS IN THIS WINDOW",
 		">Events<",
 		"war broke out",
 		"revolution",

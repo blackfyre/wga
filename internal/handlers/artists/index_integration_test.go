@@ -60,6 +60,8 @@ func newArtistsIndexApp(t *testing.T) *pocketbase.PocketBase {
 	artists.MarkAsNew()
 	artists.Fields.Add(
 		&core.TextField{Id: "artist_name", Name: "name", Required: true},
+		&core.TextField{Id: "artist_filing_name", Name: "filing_name"},
+		&core.TextField{Id: "artist_short_name", Name: "short_name"},
 		&core.TextField{Id: "artist_slug", Name: "slug"},
 		&core.NumberField{Id: "artist_yob", Name: "year_of_birth"},
 		&core.NumberField{Id: "artist_yod", Name: "year_of_death"},
@@ -91,6 +93,8 @@ func newArtistsIndexApp(t *testing.T) *pocketbase.PocketBase {
 type indexArtistSeed struct {
 	id            string
 	name          string
+	filingName    string
+	shortName     string
 	slug          string
 	birth         int
 	death         int
@@ -110,6 +114,16 @@ func saveIndexArtist(t *testing.T, app *pocketbase.PocketBase, seed indexArtistS
 	record := core.NewRecord(collection)
 	record.Id = seed.id
 	record.Set("name", seed.name)
+	filingName := seed.filingName
+	if filingName == "" {
+		filingName = seed.name
+	}
+	shortName := seed.shortName
+	if shortName == "" {
+		shortName = seed.name
+	}
+	record.Set("filing_name", filingName)
+	record.Set("short_name", shortName)
 	record.Set("slug", seed.slug)
 	record.Set("year_of_birth", seed.birth)
 	record.Set("year_of_death", seed.death)
@@ -160,13 +174,13 @@ func TestBuildArtistIndexViewUsesCanonicalArtistURLAndPortrait(t *testing.T) {
 	app := newArtistsIndexApp(t)
 	// Portrait source width 800 > 500 target, so the 500 profile is used.
 	saveIndexArtist(t, app, indexArtistSeed{
-		id: "artistrembrandt", name: "Rembrandt van Rijn", slug: "rembrandt-van-rijn",
+		id: "artistrembrandt", name: "Rembrandt van Rijn", filingName: "Rijn, Rembrandt van", shortName: "Rembrandt", slug: "rembrandt-van-rijn",
 		birth: 1606, death: 1669, profession: "painter",
 		portrait: "portrait.jpg", portraitWidth: 800, published: true,
 	})
 	// Portrait source width 300 <= 500 target, so the original is served.
 	saveIndexArtist(t, app, indexArtistSeed{
-		id: "artistvermeer00", name: "Johannes Vermeer", slug: "johannes-vermeer",
+		id: "artistvermeer00", name: "Johannes Vermeer", filingName: "Vermeer, Johannes", shortName: "Vermeer", slug: "johannes-vermeer",
 		birth: 1632, death: 1675, profession: "painter",
 		portrait: "small.jpg", portraitWidth: 300, published: true,
 	})
@@ -186,19 +200,19 @@ func TestBuildArtistIndexViewUsesCanonicalArtistURLAndPortrait(t *testing.T) {
 	for _, artist := range view.Artists {
 		byName[artist.Name] = artist.URL
 	}
-	if byName["Rembrandt van Rijn"] != "/artists/rembrandt-van-rijn-artistrembrandt" {
-		t.Errorf("canonical URL = %q, want helper output", byName["Rembrandt van Rijn"])
+	if byName["Rijn, Rembrandt van"] != "/artists/rembrandt-van-rijn-artistrembrandt" {
+		t.Errorf("canonical URL = %q, want helper output", byName["Rijn, Rembrandt van"])
 	}
 
 	thumbs := map[string]string{}
 	for _, artist := range view.Artists {
 		thumbs[artist.Name] = artist.Thumb
 	}
-	if thumbs["Rembrandt van Rijn"] != "/api/files/artists/artistrembrandt/portrait.jpg?thumb=500x0" {
-		t.Errorf("500px portrait = %q", thumbs["Rembrandt van Rijn"])
+	if thumbs["Rijn, Rembrandt van"] != "/api/files/artists/artistrembrandt/portrait.jpg?thumb=500x0" {
+		t.Errorf("500px portrait = %q", thumbs["Rijn, Rembrandt van"])
 	}
-	if thumbs["Johannes Vermeer"] != "/api/files/artists/artistvermeer00/small.jpg" {
-		t.Errorf("original portrait = %q, want original without upscale", thumbs["Johannes Vermeer"])
+	if thumbs["Vermeer, Johannes"] != "/api/files/artists/artistvermeer00/small.jpg" {
+		t.Errorf("original portrait = %q, want original without upscale", thumbs["Vermeer, Johannes"])
 	}
 }
 

@@ -49,7 +49,7 @@ templ ArtworkBlock(aw dto.Artwork) {
 				if aw.Artist.Url != "" {
 					<a href="/artists" hx-get="/artists" hx-target={ aw.HxTarget } class="hover:text-base-content">ARTISTS</a>
 					<span class="mx-2" aria-hidden="true">/</span>
-					<a href={ templ.URL(aw.Artist.Url) } hx-get={ aw.Artist.Url } hx-target={ aw.HxTarget } class="hover:text-base-content">{ aw.Artist.Name }</a>
+					<a href={ templ.URL(aw.Artist.Url) } hx-get={ aw.Artist.Url } hx-target={ aw.HxTarget } class="hover:text-base-content">{ aw.Artist.ShortName }</a>
 				} else {
 					<a href="/artworks" hx-get="/artworks" hx-target={ aw.HxTarget } class="hover:text-base-content">ARTWORKS</a>
 				}
@@ -72,20 +72,17 @@ templ ArtworkBlock(aw dto.Artwork) {
 							@reproRule("FILE", aw.ReproFile)
 						</dl>
 					}
-					if aw.ReproductionSourceURL != "" {
-						<a href={ templ.SafeURL(aw.ReproductionSourceURL) } target="_blank" rel="noopener noreferrer" class="mt-4 inline-block font-mono text-(length:--t-11) tracking-[1px] text-primary transition-opacity hover:opacity-60">VIEW ORIGINAL AT WEB GALLERY OF ART ↗</a>
-					}
 				</figcaption>
 			</figure>
 			<article class="w-full shrink-0 md:w-[380px]">
 				<p class="font-mono text-[11px] tracking-[2px] text-base-content/60">03 — ARTWORK</p>
 				<h1 class="mt-4 text-[44px] font-semibold leading-[1.08] tracking-[-0.5px]">{ aw.Title }</h1>
-				if aw.Artist.Name != "" {
+				if aw.Artist.FilingName != "" {
 					<p class="mt-4 font-mono text-[12px] tracking-[1px] text-primary">
 						<a href={ templ.SafeURL(aw.Artist.Url) } hx-get={ aw.Artist.Url } hx-target={ aw.HxTarget } class="hover:opacity-70">
-							{ aw.Artist.Name }
+							{ aw.Artist.FilingName }
 							if aw.Year != "" {
-								, { aw.Year }
+								· { aw.Year }
 							}
 							→
 						</a>
@@ -95,7 +92,7 @@ templ ArtworkBlock(aw dto.Artwork) {
 					@components.MetaList(artworkMetaEntries(aw))
 				</div>
 				<a href="#" hx-on:click="wga.dialog.open();" hx-get={ `/postcard/send?awid=` + aw.Id } hx-target="#d" hx-swap="innerHTML" hx-select=".modal-box, form[method=dialog].modal-backdrop" class="mt-7 flex w-full justify-center bg-primary px-5 py-3.5 font-mono text-[11px] tracking-[1.5px] text-primary-content hover:opacity-85">SEND AS POSTCARD →</a>
-				@components.AddToItineraryButton(aw.Id, "block")
+				@components.AddToItineraryAction(aw.Id, components.AddToItineraryBlock)
 				@artworkPaletteBlock(aw)
 				if aw.Music.Available {
 					@components.MusicPeriodPlayerCard(aw.Music.SongID, artworkMusicPiece(aw), aw.Music.PlayerURL)
@@ -175,6 +172,9 @@ templ artworkRelatedBlock(aw dto.Artwork) {
 						<a href={ templ.SafeURL(aw.Related.AlternativeURL) } hx-get={ aw.Related.AlternativeURL } hx-target={ aw.HxTarget } class="mt-3 inline-block font-mono text-[11px] tracking-[1px] text-primary transition-opacity hover:opacity-60">TRY { aw.Related.Alternative } →</a>
 					}
 				</div>
+			}
+			if aw.Related.Holding != nil {
+				<a href={ templ.SafeURL(aw.Related.Holding.URL) } hx-get={ aw.Related.Holding.URL } hx-target={ aw.HxTarget } class="mt-6 inline-block font-mono text-[11px] tracking-[1px] text-primary transition-opacity hover:opacity-60">{ aw.Related.Holding.Label }</a>
 			}
 		</section>
 	}

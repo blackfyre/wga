@@ -4,39 +4,48 @@ import (
 	"strconv"
 
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
+	"github.com/blackfyre/wga/internal/assets/templ/utils"
+	itineraryworkflow "github.com/blackfyre/wga/internal/itineraries"
 )
 
 // ItineraryTray is the persistent itinerary tray rendered by the shared
 // layout. It always mounts an #itinerary-tray element so add controls can
-// target it, and only presents the bar once the draft has stops. Set oob to
+// target it, and only presents the dark-inverted fixed bar once the draft has
+// stops, with the reference CLEAR and ARRANGE & NARRATE actions. Set oob to
 // render the element as an HTMX out-of-band swap for mutation responses.
+//
+// The after-settle handler keeps #mc-area's pb-28 md:pb-20 bottom padding and
+// the fixed toast container's bottom-28 md:bottom-20 offset in step with the
+// swapped tray: a full-page render already computes both offsets server-side,
+// but an HTMX add/clear swaps only #itinerary-tray, so the sibling #mc-area
+// and #toast-container must be re-synced here or page content or a toast would
+// render behind the fixed bar.
 templ ItineraryTray(tray dto.ItineraryTrayView, oob bool) {
-	<div id="itinerary-tray" if oob { hx-swap-oob="true" }>
+	<div id="itinerary-tray" if oob { hx-swap-oob="true" } hx-on::after-settle="const hasContent = this.children.length > 0; const toastContainer = document.getElementById('toast-container'); if (toastContainer) { toastContainer.classList.toggle('bottom-28', hasContent); toastContainer.classList.toggle('md:bottom-20', hasContent); } const mcArea = document.getElementById('mc-area'); if (mcArea) { mcArea.classList.toggle('pb-28', hasContent); mcArea.classList.toggle('md:pb-20', hasContent); }">
 		if tray.Count > 0 {
-			<div class="fixed inset-x-0 bottom-0 z-40 border-t border-base-content/15 bg-base-100">
-				<div class="container mx-auto flex items-center gap-3 px-4 py-2 md:px-0">
-					<div class="flex items-center gap-1.5" aria-hidden="true">
-						for _, thumb := range tray.Thumbs {
-							if thumb != "" {
-								<img src={ thumb } alt="" class="h-9 w-9 border border-base-content/15 bg-base-300 object-cover"/>
+			<div class="fixed inset-x-0 bottom-0 z-[45] border-t border-neutral-content/20 bg-neutral animate-[wga-rise_240ms_cubic-bezier(0.22,0.61,0.36,1)]" role="region" aria-label="Itinerary draft">
+				<div class="container mx-auto flex items-center gap-4 px-5 py-3 md:gap-7 md:px-10 md:py-3.5">
+					<div class="min-w-0 flex-1">
+						<p class="mb-1.5 font-mono text-(length:--t-9) tracking-[1.5px] text-neutral-content/40">ITINERARY DRAFT · { strconv.Itoa(tray.Count) } OF { strconv.Itoa(itineraryworkflow.MaxStops) }</p>
+						<div class="flex items-center gap-1.5" aria-hidden="true">
+							for _, thumb := range tray.Thumbs {
+								if thumb != "" {
+									<img src={ thumb } alt="" class="h-7 w-7 border border-neutral-content/25 bg-neutral-content/10 object-cover"/>
+								}
 							}
-						}
+						</div>
 					</div>
-					<p class="min-w-0 flex-1 font-mono text-(length:--t-11) tracking-[1px] text-base-content/70">
-						<span class="font-semibold text-base-content">{ trayLabel(tray.Count) }</span>
-						<span class="hidden sm:inline"> — SAVED TO YOUR ITINERARY</span>
-					</p>
-					<a href={ tray.BuilderURL } class="shrink-0 border border-base-content/25 px-3 py-1.5 font-mono text-(length:--t-10) tracking-[1px] text-base-content/70 transition-colors hover:border-base-content">OPEN</a>
+					<div class="flex shrink-0 items-center gap-2">
+						if csrf := utils.GetItineraryCSRF(ctx); csrf != "" {
+							<form method="post" action="/itineraries/draft/clear" hx-post="/itineraries/draft/clear" hx-target="#itinerary-tray" hx-swap="outerHTML" hx-select="unset" hx-confirm="Clear all stops from this itinerary?">
+								<input type="hidden" name="_csrf" value={ csrf }/>
+								<button type="submit" class="px-1 py-2.5 font-mono text-(length:--t-11) tracking-[1.5px] text-neutral-content/40 transition-colors hover:text-neutral-content/90">CLEAR</button>
+							</form>
+						}
+						<a href={ tray.BuilderURL } class="bg-base-100 px-4 py-2.5 font-mono text-(length:--t-11) tracking-[1.5px] text-base-content transition-opacity hover:opacity-80">ARRANGE &amp; NARRATE →</a>
+					</div>
 				</div>
 			</div>
 		}
 	</div>
-}
-
-func trayLabel(count int) string {
-	if count == 1 {
-		return "1 STOP"
-	}
-
-	return strconv.Itoa(count) + " STOPS"
 }

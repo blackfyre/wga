@@ -28,6 +28,8 @@ func newArtistRecordTestApp(t *testing.T) *tests.TestApp {
 	artists.Fields.Add(
 		&core.TextField{Id: "artist_name", Name: "name", Required: true},
 		&core.TextField{Id: "artist_slug", Name: "slug"},
+		&core.TextField{Id: "artist_filing_name", Name: "filing_name"},
+		&core.TextField{Id: "artist_short_name", Name: "short_name"},
 		&core.NumberField{Id: "artist_yob", Name: "year_of_birth"},
 		&core.BoolField{Id: "artist_published", Name: "published"},
 	)
@@ -99,6 +101,10 @@ func newArtistRecordTestApp(t *testing.T) *tests.TestApp {
 }
 
 func saveArtistRecordArtist(t *testing.T, app *tests.TestApp, id string, birth int, published bool) {
+	saveArtistRecordArtistIdentity(t, app, id, birth, published, "Artist "+id, "Artist "+id)
+}
+
+func saveArtistRecordArtistIdentity(t *testing.T, app *tests.TestApp, id string, birth int, published bool, filingName string, shortName string) {
 	t.Helper()
 	collection, err := app.FindCollectionByNameOrId("artists")
 	if err != nil {
@@ -108,6 +114,8 @@ func saveArtistRecordArtist(t *testing.T, app *tests.TestApp, id string, birth i
 	record.Id = id
 	record.Set("name", "Artist "+id)
 	record.Set("slug", "artist-"+id)
+	record.Set("filing_name", filingName)
+	record.Set("short_name", shortName)
 	record.Set("year_of_birth", birth)
 	record.Set("published", published)
 	if err := app.Save(record); err != nil {
@@ -128,6 +136,55 @@ func saveArtistRecordWork(t *testing.T, app *tests.TestApp, id string, title str
 	record.Set("published", published)
 	if err := app.Save(record); err != nil {
 		t.Fatalf("save artwork %s: %v", id, err)
+	}
+}
+
+// newArtistRecordLegacyTestApp builds a pre-migration app whose artists
+// collection lacks one or both authoritative identity fields, mirroring the
+// malformed instances the fail-closed guard must tolerate.
+func newArtistRecordLegacyTestApp(t *testing.T, withFilingName bool) *tests.TestApp {
+	t.Helper()
+	app, err := tests.NewTestApp()
+	if err != nil {
+		t.Fatalf("create test app: %v", err)
+	}
+	t.Cleanup(app.Cleanup)
+
+	artists := core.NewBaseCollection("Artists")
+	artists.Id = "test_artists"
+	artists.MarkAsNew()
+	artists.Fields.Add(
+		&core.TextField{Id: "artist_name", Name: "name", Required: true},
+		&core.TextField{Id: "artist_slug", Name: "slug"},
+		&core.NumberField{Id: "artist_yob", Name: "year_of_birth"},
+		&core.BoolField{Id: "artist_published", Name: "published"},
+	)
+	if withFilingName {
+		artists.Fields.Add(&core.TextField{Id: "artist_filing_name", Name: "filing_name"})
+	}
+	if err := app.Save(artists); err != nil {
+		t.Fatalf("save artists collection: %v", err)
+	}
+
+	return app
+}
+
+// saveLegacyArtistRecordArtist persists a published artist using only the
+// fields present in the legacy (identity-less) artists schema.
+func saveLegacyArtistRecordArtist(t *testing.T, app *tests.TestApp, id string, birth int, published bool) {
+	t.Helper()
+	collection, err := app.FindCollectionByNameOrId("artists")
+	if err != nil {
+		t.Fatalf("find artists: %v", err)
+	}
+	record := core.NewRecord(collection)
+	record.Id = id
+	record.Set("name", "Artist "+id)
+	record.Set("slug", "artist-"+id)
+	record.Set("year_of_birth", birth)
+	record.Set("published", published)
+	if err := app.Save(record); err != nil {
+		t.Fatalf("save legacy artist %s: %v", id, err)
 	}
 }
 
@@ -184,6 +241,51 @@ func TestArtistRecordRepositoryFindsPublishedArtistOnly(t *testing.T) {
 	}
 	if _, err := repo.FindPublishedArtist("artistmiss00000"); !errors.Is(err, sql.ErrNoRows) {
 		t.Errorf("missing artist error = %v, want sql.ErrNoRows", err)
+	}
+}
+
+func TestArtistRecordRepositoryDeniesBlankIdentity(t *testing.T) {
+	app := newArtistRecordTestApp(t)
+	saveArtistRecordArtist(t, app, "artistpub100000", 1606, true)
+	saveArtistRecordArtistIdentity(t, app, "artblankfil0000", 1606, true, "", "Short")
+	saveArtistRecordArtistIdentity(t, app, "artblanksho0000", 1606, true, "Filing", "")
+
+	repo := NewArtistRecordRepository(app)
+
+	artist, err := repo.FindPublishedArtist("artistpub100000")
+	if err != nil {
+		t.Fatalf("find complete artist: %v", err)
+	}
+	if artist.Id != "artistpub100000" {
+		t.Errorf("artist = %q, want artistpub100000", artist.Id)
+	}
+
+	if _, err := repo.FindPublishedArtist("artblankfil0000"); !errors.Is(err, sql.ErrNoRows) {
+		t.Errorf("blank-filing artist error = %v, want sql.ErrNoRows", err)
+	}
+	if _, err := repo.FindPublishedArtist("artblanksho0000"); !errors.Is(err, sql.ErrNoRows) {
+		t.Errorf("blank-short artist error = %v, want sql.ErrNoRows", err)
+	}
+}
+
+func TestArtistRecordRepositoryFailsClosedWithoutIdentityFields(t *testing.T) {
+	for _, tc := range []struct {
+		name           string
+		withFilingName bool
+	}{
+		{name: "neither identity field", withFilingName: false},
+		{name: "missing short_name only", withFilingName: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			app := newArtistRecordLegacyTestApp(t, tc.withFilingName)
+			saveLegacyArtistRecordArtist(t, app, "artlegacy000000", 1606, true)
+
+			repo := NewArtistRecordRepository(app)
+
+			if _, err := repo.FindPublishedArtist("artlegacy000000"); !errors.Is(err, sql.ErrNoRows) {
+				t.Errorf("legacy artist error = %v, want sql.ErrNoRows (missing identity fields)", err)
+			}
+		})
 	}
 }
 

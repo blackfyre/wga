@@ -25,12 +25,18 @@ func TestViewPostcardSetsRecipientResponseHeaders(t *testing.T) {
 	app := testutils.NewTestApp(t)
 
 	artists := core.NewBaseCollection(constants.CollectionArtists)
-	artists.Fields.Add(&core.TextField{Name: "name"})
+	artists.Fields.Add(
+		&core.TextField{Name: "name"},
+		&core.TextField{Name: "filing_name"},
+		&core.TextField{Name: "short_name"},
+	)
 	if err := app.Save(artists); err != nil {
 		t.Fatalf("create artists collection: %v", err)
 	}
 	author := core.NewRecord(artists)
 	author.Set("name", "Artist")
+	author.Set("filing_name", "Artist, Filing")
+	author.Set("short_name", "Artist")
 	if err := app.Save(author); err != nil {
 		t.Fatalf("create artist: %v", err)
 	}

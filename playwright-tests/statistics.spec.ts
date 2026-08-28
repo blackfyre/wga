@@ -11,6 +11,17 @@ const periodTablePairs = [
 	{ data: "artists-period-data", summary: "artists-period-summary" },
 ] as const;
 
+const schoolColumns = [
+	"Italian",
+	"French",
+	"Dutch",
+	"Flemish",
+	"German",
+	"English",
+	"Spanish",
+	"Other",
+];
+
 test("statistics charts provide text summaries", async ({ page }) => {
 	await page.goto("/statistics");
 	await expect(page.getByRole("heading", { name: "Statistics" })).toBeVisible();
@@ -97,8 +108,11 @@ test("chart data and accessible tables present equivalent figures", async ({
 			document.querySelectorAll("#art-form-summary tbody th.art-form-label"),
 		).map((element) => element.textContent?.trim() ?? "");
 		const artFormCounts = Array.from(
-			document.querySelectorAll("#art-form-summary tbody tr td:last-child"),
+			document.querySelectorAll("#art-form-summary tbody tr td:nth-child(2)"),
 		).map((element) => Number(element.textContent));
+		const artFormShares = Array.from(
+			document.querySelectorAll("#art-form-summary tbody tr td:nth-child(3)"),
+		).map((element) => element.textContent?.trim() ?? "");
 		if (artForms.length === 0) {
 			failures.push("art-form-data is empty");
 		}
@@ -107,6 +121,7 @@ test("chart data and accessible tables present equivalent figures", async ({
 				`art form label count ${artFormLabels.length} != ${artForms.length}`,
 			);
 		}
+		const artFormTotal = artForms.reduce((sum, form) => sum + form.count, 0);
 		for (let index = 0; index < artForms.length; index++) {
 			if (artFormLabels[index] !== artForms[index].name) {
 				failures.push(
@@ -116,6 +131,14 @@ test("chart data and accessible tables present equivalent figures", async ({
 			if (artFormCounts[index] !== artForms[index].count) {
 				failures.push(
 					`art form row ${index}: count ${artFormCounts[index]} != ${artForms[index].count}`,
+				);
+			}
+			const expectedShare = `${(
+				(artForms[index].count / artFormTotal) * 100
+			).toFixed(1)}%`;
+			if (artFormShares[index] !== expectedShare) {
+				failures.push(
+					`art form row ${index}: share ${artFormShares[index]} != ${expectedShare}`,
 				);
 			}
 		}
@@ -270,7 +293,7 @@ test("a live theme change redraws chart output with dark tokens", async ({
 			.getPropertyValue("--wga-series-0")
 			.trim(),
 	);
-	expect(series0).toBe("#e4edf5");
+	expect(series0).toBe("#E4EDF5");
 });
 
 test("charts use the non-animated path under reduced motion", async ({
@@ -321,6 +344,63 @@ test.describe("without JavaScript", () => {
 			expect(totals.some((text) => Number(text) > 0)).toBe(true);
 		}
 	});
+
+	test("renders server-produced chart summaries without JavaScript", async ({
+		page,
+	}) => {
+		await page.goto("/statistics");
+
+		// The art-form donut renders a server-produced horizontal bar summary.
+		const artFormBars = page.locator('ul[aria-hidden="true"]');
+		expect(await artFormBars.count()).toBe(1);
+		await expect(artFormBars).toBeVisible();
+		expect(await artFormBars.locator("li").count()).toBeGreaterThan(0);
+		expect(await artFormBars.locator("li div span").count()).toBeGreaterThan(0);
+
+		// Each stacked-bar chart renders a server-produced CSS column summary on
+		// a single, horizontally scrollable chronological axis.
+		const periodBars = page.locator('div.overflow-x-auto[aria-hidden="true"]');
+		expect(await periodBars.count()).toBe(2);
+		for (let index = 0; index < 2; index++) {
+			const bars = periodBars.nth(index);
+			await expect(bars).toBeVisible();
+			expect(await bars.locator("> div > div").count()).toBeGreaterThan(0);
+			expect(await bars.locator("span").count()).toBeGreaterThan(0);
+		}
+
+		// Each chart carries a shared legend naming all eight schools.
+		const legends = page.locator("#statistics section > ul");
+		expect(await legends.count()).toBe(2);
+		for (const school of schoolColumns) {
+			await expect(
+				legends.first().getByText(school, { exact: true }),
+			).toBeVisible();
+		}
+
+		// The art-form table exposes each form's relative share.
+		const shareCells = page.locator(
+			"#art-form-summary tbody tr td:nth-child(3)",
+		);
+		expect(await shareCells.count()).toBeGreaterThan(0);
+		await expect(shareCells.first()).toHaveText(/^\d+(\.\d+)?%$/);
+	});
+
+	for (const width of [390, 834, 1440]) {
+		test(`statistics renders without horizontal overflow at ${width}px`, async ({
+			page,
+		}) => {
+			await page.setViewportSize({ width, height: 900 });
+			await page.goto("/statistics");
+
+			const dimensions = await page.evaluate(() => ({
+				clientWidth: document.documentElement.clientWidth,
+				scrollWidth: document.documentElement.scrollWidth,
+			}));
+			expect(dimensions.scrollWidth).toBeLessThanOrEqual(
+				dimensions.clientWidth,
+			);
+		});
+	}
 });
 
 for (const width of [390, 834, 1440]) {

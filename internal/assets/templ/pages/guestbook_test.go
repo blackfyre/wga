@@ -149,3 +149,43 @@ func TestGuestbookBlockAlwaysShowsYearNavigation(t *testing.T) {
 		})
 	}
 }
+
+func TestGuestbookBlockRendersSharedPageHeadOnce(t *testing.T) {
+	content := GuestbookView{
+		Total:        5,
+		ScopeTotal:   5,
+		SelectedYear: "all",
+		YearOptions:  []string{"2026"},
+	}
+	var output bytes.Buffer
+	if err := GuestbookBlock(content).Render(context.Background(), &output); err != nil {
+		t.Fatalf("render guestbook block: %v", err)
+	}
+	rendered := output.String()
+
+	for _, expected := range []string{
+		"10 — GUESTBOOK",
+		">Guestbook</h1>",
+		"Notes from people who have spent time with the collection. 5 entries in the archive.",
+		"text-(length:--t-11)",
+		"text-muted",
+		"text-(length:--t-32)",
+		"md:text-(length:--t-44)",
+	} {
+		if !strings.Contains(rendered, expected) {
+			t.Errorf("guestbook page head does not contain %q", expected)
+		}
+	}
+	if got := strings.Count(rendered, "<h1"); got != 1 {
+		t.Errorf("h1 count = %d, want 1", got)
+	}
+	for _, expected := range []string{
+		`hx-get="/guestbook"`,
+		`hx-target="#guestbook"`,
+		`aria-label="Filter guestbook entries by year"`,
+	} {
+		if !strings.Contains(rendered, expected) {
+			t.Errorf("guestbook filters do not contain %q", expected)
+		}
+	}
+}

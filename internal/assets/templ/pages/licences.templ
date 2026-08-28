@@ -1,14 +1,14 @@
 package pages
 
 import (
+	"github.com/blackfyre/wga/internal/assets/templ/components"
 	"github.com/blackfyre/wga/internal/assets/templ/layouts"
 )
 
 templ LicencesPage(content string) {
 	@layouts.LayoutMain() {
 		<section class="container mx-auto px-4 pb-20 pt-10 md:px-0">
-			<p class="mb-3 font-mono text-[11px] tracking-[2px] text-base-content/60">OPEN SOURCE</p>
-			<h1 class="text-[44px] font-semibold tracking-[-0.5px]">Open-source licences</h1>
+			@components.PageHead("OPEN SOURCE", "Open-source licences", "")
 			<div class="content mt-10 max-w-none">@templ.Raw(content)</div>
 		</section>
 	}

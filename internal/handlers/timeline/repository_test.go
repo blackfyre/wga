@@ -33,6 +33,9 @@ func createTimelineCollections(t *testing.T, app *pocketbase.PocketBase) {
 	artists.MarkAsNew()
 	artists.Fields.Add(
 		&core.TextField{Name: "name", Required: true},
+		&core.TextField{Name: "filing_name"},
+		&core.TextField{Name: "short_name"},
+		&core.NumberField{Name: "year_of_birth"},
 		&core.BoolField{Name: "published"},
 	)
 	if err := app.Save(artists); err != nil {
@@ -151,6 +154,42 @@ func TestRepositoryCountWorksOverlapSemantics(t *testing.T) {
 	// "Span" (ends 1450) and "Point" (1500) overlap; "Later" (1700) does not.
 	if count != 2 {
 		t.Errorf("countWorks(1450, 1550) = %d, want 2", count)
+	}
+}
+
+func TestRepositoryArtistsLanePublishesKnownBirthYearsAndCanonicalFields(t *testing.T) {
+	app := newTimelineApp(t)
+
+	saveTimelineRecord(t, app, "artists", "artistbrn000001", map[string]any{
+		"name": "Display Name", "filing_name": "Name, Display", "short_name": "Display", "year_of_birth": 1600, "published": true,
+	})
+	saveTimelineRecord(t, app, "artists", "artistbrn000002", map[string]any{
+		"name": "Earlier Name", "filing_name": "Name, Earlier", "short_name": "Earlier", "year_of_birth": 1590, "published": true,
+	})
+	saveTimelineRecord(t, app, "artists", "artisthid000001", map[string]any{
+		"name": "Hidden", "filing_name": "Hidden, Artist", "short_name": "Hidden", "year_of_birth": 1595, "published": false,
+	})
+	saveTimelineRecord(t, app, "artists", "artistunk000001", map[string]any{
+		"name": "Unknown", "filing_name": "Unknown, Artist", "short_name": "Unknown", "published": true,
+	})
+	saveTimelineRecord(t, app, "artists", "artistmis000001", map[string]any{
+		"name": "Missing Identity", "year_of_birth": 1605, "published": true,
+	})
+
+	repo := newRepository(app)
+	count, err := repo.countArtists(1590, 1600)
+	if err != nil {
+		t.Fatalf("countArtists: %v", err)
+	}
+	if count != 2 {
+		t.Fatalf("countArtists = %d, want 2 published known artists", count)
+	}
+	rows, err := repo.listArtists(1590, 1600, 1)
+	if err != nil {
+		t.Fatalf("listArtists: %v", err)
+	}
+	if len(rows) != 1 || rows[0].ID != "artistbrn000002" || rows[0].FilingName != "Name, Earlier" || rows[0].YearOfBirth != 1590 {
+		t.Fatalf("listArtists = %+v, want bounded earliest canonical projection", rows)
 	}
 }
 

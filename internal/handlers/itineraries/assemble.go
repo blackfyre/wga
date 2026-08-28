@@ -23,6 +23,13 @@ type builderState struct {
 	Selected   int
 }
 
+func hasCompleteItineraryArtistIdentity(author *core.Record) bool {
+	if author == nil {
+		return false
+	}
+	return strings.TrimSpace(author.GetString("filing_name")) != "" && strings.TrimSpace(author.GetString("short_name")) != ""
+}
+
 // loadTrayView maps the workflow tray projection to its templ DTO, resolving
 // tray thumbnails at the 120px profile.
 func loadTrayView(app core.App, owner string) (dto.ItineraryTrayView, error) {
@@ -76,15 +83,22 @@ func stopDTO(app core.App, stop *core.Record) dto.ItineraryStop {
 	out.School = stopSchool(app, artwork)
 
 	if errs := app.ExpandRecord(artwork, []string{"author"}, nil); len(errs) == 0 {
-		if author := artwork.ExpandedOne("author"); author != nil {
-			out.Artist = author.GetString("name")
+		author := artwork.ExpandedOne("author")
+		if hasCompleteItineraryArtistIdentity(author) {
+			out.Artist = author.GetString("filing_name")
 			out.URL = url.GenerateFullArtworkUrl(url.ArtworkUrlDTO{
 				ArtistName:   author.GetString("name"),
 				ArtistId:     author.Id,
 				ArtworkTitle: artwork.GetString("title"),
 				ArtworkId:    artwork.Id,
 			})
+		} else {
+			out.Artist = ""
+			out.URL = ""
+			out.Unavailable = true
 		}
+	} else {
+		out.Unavailable = true
 	}
 
 	return out
@@ -184,7 +198,7 @@ func pickerWorks(app core.App, owner string, query string) ([]dto.ItineraryPicke
 	filter := "published = true"
 	params := map[string]any{}
 	if query != "" {
-		filter = "published = true && (title ~ {:query} || author.name ~ {:query})"
+		filter = "published = true && (title ~ {:query} || author.filing_name ~ {:query})"
 		params["query"] = query
 	}
 
@@ -205,9 +219,13 @@ func pickerWorks(app core.App, owner string, query string) ([]dto.ItineraryPicke
 			work.Date = strconv.Itoa(year)
 		}
 		if errs := app.ExpandRecord(artwork, []string{"author"}, nil); len(errs) == 0 {
-			if author := artwork.ExpandedOne("author"); author != nil {
-				work.Artist = author.GetString("name")
+			author := artwork.ExpandedOne("author")
+			if !hasCompleteItineraryArtistIdentity(author) {
+				continue
 			}
+			work.Artist = author.GetString("filing_name")
+		} else {
+			continue
 		}
 		out = append(out, work)
 	}

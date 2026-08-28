@@ -54,7 +54,7 @@ func processSelection(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 
 	fullURL := buildSelectionURL(expectedSlug, selectionID)
 
-	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", view.DisplayTitle, view.ArtistName))
+	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", view.DisplayTitle, view.ArtistFilingName))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, selectionDescription(view))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, utils.AssetUrl(fullURL))
 
@@ -107,19 +107,20 @@ func buildSelectionView(app *pocketbase.PocketBase, artist *core.Record, selecti
 	commentary := sanitizeSelectionCommentary(selection.GetString("commentary"))
 
 	return pages.SelectionView{
-		ArtistName:      artist.GetString("name"),
-		ArtistURL:       "/artists/" + utils.GenerateArtistSlug(artist),
-		DisplayTitle:    selection.GetString("display_title"),
-		Context:         selection.GetString("context"),
-		Commentary:      commentary,
-		HasCommentary:   commentary != "",
-		Works:           buildRecordWorkImages(artist, works),
-		WorkCount:       len(works),
-		OtherSelections: otherSelections,
-		HoldingURL:      buildArtistWorksURL(artist.GetString("name")),
-		Url:             buildSelectionURL(utils.GenerateArtistSlug(artist), selection.Id),
-		Citation:        buildSelectionCitation(artist, selection),
-		ShowBreadcrumbs: true,
+		ArtistFilingName: artist.GetString("filing_name"),
+		ArtistShortName:  artist.GetString("short_name"),
+		ArtistURL:        "/artists/" + utils.GenerateArtistSlug(artist),
+		DisplayTitle:     selection.GetString("display_title"),
+		Context:          selection.GetString("context"),
+		Commentary:       commentary,
+		HasCommentary:    commentary != "",
+		Works:            buildRecordWorkImages(artist, works),
+		WorkCount:        len(works),
+		OtherSelections:  otherSelections,
+		HoldingURL:       buildArtistWorksURL(artist.GetString("filing_name")),
+		Url:              buildSelectionURL(utils.GenerateArtistSlug(artist), selection.Id),
+		Citation:         buildSelectionCitation(artist, selection),
+		ShowBreadcrumbs:  true,
 	}, nil
 }
 
@@ -148,5 +149,5 @@ func selectionDescription(view pages.SelectionView) string {
 		return tmplUtils.StripHtmlTags(view.Commentary)
 	}
 
-	return fmt.Sprintf("Curated selection of works by %s", view.ArtistName)
+	return fmt.Sprintf("Curated selection of works by %s", view.ArtistShortName)
 }

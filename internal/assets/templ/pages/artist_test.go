@@ -21,7 +21,8 @@ func renderArtistRecord(t *testing.T, view ArtistView) string {
 
 func TestArtistRecordContentRendersHierarchyAndMetadata(t *testing.T) {
 	rendered := renderArtistRecord(t, ArtistView{
-		Name:        "Portrait Artist",
+		FilingName:  "Artist, Portrait",
+		ShortName:   "Portrait",
 		LifeSummary: "b. 1606 Leiden, d. 1669 Amsterdam",
 		Schools:     "Dutch",
 		Period:      "Baroque",
@@ -31,7 +32,7 @@ func TestArtistRecordContentRendersHierarchyAndMetadata(t *testing.T) {
 
 	for _, expected := range []string{
 		`<h1`,
-		"Portrait Artist",
+		"Artist, Portrait",
 		"b. 1606 Leiden, d. 1669 Amsterdam",
 		"Dutch",
 		"Baroque",
@@ -53,7 +54,7 @@ func TestArtistRecordContentRendersHierarchyAndMetadata(t *testing.T) {
 }
 
 func TestArtistRecordContentOmitsAbsentMetadata(t *testing.T) {
-	rendered := renderArtistRecord(t, ArtistView{Name: "Solo Artist", LifeSummary: "b. 1600"})
+	rendered := renderArtistRecord(t, ArtistView{FilingName: "Artist, Solo", ShortName: "Solo", LifeSummary: "b. 1600"})
 
 	for _, absent := range []string{"SCHOOLS", "PERIOD", "PROFESSION", "ALIASES", "PERIOD MUSIC"} {
 		if strings.Contains(rendered, absent) {
@@ -64,13 +65,14 @@ func TestArtistRecordContentOmitsAbsentMetadata(t *testing.T) {
 
 func TestArtistRecordContentRendersPortrait(t *testing.T) {
 	rendered := renderArtistRecord(t, ArtistView{
-		Name:     "Portrait Artist",
-		Portrait: "/api/files/artists/artist/portrait.jpg",
+		FilingName: "Artist, Portrait",
+		ShortName:  "Portrait",
+		Portrait:   "/api/files/artists/artist/portrait.jpg",
 	})
 
 	for _, expected := range []string{
 		`src="/api/files/artists/artist/portrait.jpg"`,
-		`alt="Portrait Artist"`,
+		`alt="Artist, Portrait"`,
 		"object-cover",
 	} {
 		if !strings.Contains(rendered, expected) {
@@ -83,9 +85,9 @@ func TestArtistRecordContentRendersPortrait(t *testing.T) {
 }
 
 func TestArtistRecordContentRendersPortraitFallback(t *testing.T) {
-	rendered := renderArtistRecord(t, ArtistView{Name: "Portrait Artist"})
+	rendered := renderArtistRecord(t, ArtistView{FilingName: "Artist, Portrait", ShortName: "Portrait"})
 
-	if !strings.Contains(rendered, "PORTRAIT — Portrait Artist") {
+	if !strings.Contains(rendered, "PORTRAIT — Artist, Portrait") {
 		t.Error("expected labelled portrait fallback")
 	}
 	if strings.Contains(rendered, `<img`) {
@@ -95,8 +97,9 @@ func TestArtistRecordContentRendersPortraitFallback(t *testing.T) {
 
 func TestArtistRecordContentNeverBuildsThumbnailQuery(t *testing.T) {
 	rendered := renderArtistRecord(t, ArtistView{
-		Name:     "Portrait Artist",
-		Portrait: "/api/files/artists/artist/portrait.jpg",
+		FilingName: "Artist, Portrait",
+		ShortName:  "Portrait",
+		Portrait:   "/api/files/artists/artist/portrait.jpg",
 	})
 
 	if strings.Contains(rendered, "thumb=") {
@@ -106,8 +109,9 @@ func TestArtistRecordContentNeverBuildsThumbnailQuery(t *testing.T) {
 
 func TestArtistRecordContentRendersGlossaryBiographyAndEscapesText(t *testing.T) {
 	rendered := renderArtistRecord(t, ArtistView{
-		Name: "<script>alert(1)</script>",
-		Bio:  `<p>He used <dfn class="wga-term" role="note" tabindex="0" aria-label="chiaroscuro: A treatment of light and shade." data-bionic="off">chiaroscuro<span class="wga-term__tooltip" aria-hidden="true"><span class="wga-tooltip__meta">GLOSSARY</span><span class="wga-tooltip__body">A treatment of light and shade.</span></span></dfn>.</p>`,
+		FilingName: "<script>alert(1)</script>",
+		ShortName:  "Unsafe",
+		Bio:        `<p>He used <dfn class="wga-term" role="note" tabindex="0" aria-label="chiaroscuro: A treatment of light and shade." data-bionic="off">chiaroscuro<span class="wga-term__tooltip" aria-hidden="true"><span class="wga-tooltip__meta">GLOSSARY</span><span class="wga-tooltip__body">A treatment of light and shade.</span></span></dfn>.</p>`,
 	})
 
 	if strings.Contains(rendered, `<script>alert(1)</script>`) {
@@ -132,10 +136,11 @@ func TestArtistRecordContentRendersGlossaryBiographyAndEscapesText(t *testing.T)
 
 func TestArtistRecordContentRendersWorksAndWiderRoute(t *testing.T) {
 	rendered := renderArtistRecord(t, ArtistView{
-		Name:        "Portrait Artist",
-		WorkCount:   5,
-		WorksURL:    "/artworks?artist=Portrait+Artist",
-		Works:       dto.ImageGrid{{Id: "artwork12345678", Title: "A Painting", Url: "/artists/portrait-artist-artist/a-painting-artwork12345678", Image: "/api/files/artworks/artwork12345678/p.jpg", Artist: dto.Artist{Name: "Portrait Artist"}}},
+		FilingName: "Artist, Portrait",
+		ShortName:  "Portrait",
+		WorkCount:  5,
+		WorksURL:   "/artworks?artist=Artist%2C+Portrait",
+		Works:      dto.ImageGrid{{Id: "artwork12345678", Title: "A Painting", Url: "/artists/portrait-artist-artist/a-painting-artwork12345678", Image: "/api/files/artworks/artwork12345678/p.jpg", Artist: dto.Artist{Name: "Portrait Artist"}}},
 	})
 
 	for _, expected := range []string{
@@ -143,9 +148,9 @@ func TestArtistRecordContentRendersWorksAndWiderRoute(t *testing.T) {
 		"1 OF 5 RECORDS",
 		"A Painting",
 		`href="/artists/portrait-artist-artist/a-painting-artwork12345678"`,
-		`href="/artworks?artist=Portrait+Artist"`,
-		`hx-get="/artworks?artist=Portrait+Artist"`,
-		"VIEW ALL WORKS",
+		`href="/artworks?artist=Artist%2C+Portrait"`,
+		`hx-get="/artworks?artist=Artist%2C+Portrait"`,
+		"FIND MORE BY Portrait IN THE ARTWORK SEARCH →",
 	} {
 		if !strings.Contains(rendered, expected) {
 			t.Errorf("expected works section to contain %q", expected)
@@ -154,19 +159,19 @@ func TestArtistRecordContentRendersWorksAndWiderRoute(t *testing.T) {
 }
 
 func TestArtistRecordContentRendersHonestEmptyState(t *testing.T) {
-	rendered := renderArtistRecord(t, ArtistView{Name: "Portrait Artist", WorkCount: 0})
+	rendered := renderArtistRecord(t, ArtistView{FilingName: "Artist, Portrait", ShortName: "Portrait", WorkCount: 0})
 
 	if !strings.Contains(rendered, "No published works are in the archive for this artist yet.") {
 		t.Error("expected honest empty works state")
 	}
-	if strings.Contains(rendered, "VIEW ALL WORKS") {
+	if strings.Contains(rendered, "FIND MORE BY Portrait IN THE ARTWORK SEARCH") {
 		t.Error("expected no wider-catalogue link for an empty catalogue")
 	}
 }
 
 func TestArtistRecordContentRendersPeriodMusicCard(t *testing.T) {
 	rendered := renderArtistRecord(t, ArtistView{
-		Name: "Portrait Artist",
+		FilingName: "Portrait Artist",
 		Music: components.MusicPeriodCard{
 			SongID:    "song1234567890a",
 			Piece:     "Fantasia chromatica",
@@ -188,7 +193,7 @@ func TestArtistRecordContentRendersPeriodMusicCard(t *testing.T) {
 }
 
 func TestArtistRecordContentOmitsPeriodMusicWithoutMatch(t *testing.T) {
-	rendered := renderArtistRecord(t, ArtistView{Name: "Portrait Artist"})
+	rendered := renderArtistRecord(t, ArtistView{FilingName: "Artist, Portrait", ShortName: "Portrait"})
 	if strings.Contains(rendered, "PERIOD MUSIC") {
 		t.Error("expected no period-music card without a match")
 	}
@@ -196,10 +201,10 @@ func TestArtistRecordContentOmitsPeriodMusicWithoutMatch(t *testing.T) {
 
 func TestArtistRecordContentRendersCitation(t *testing.T) {
 	rendered := renderArtistRecord(t, ArtistView{
-		Name: "Portrait Artist",
+		FilingName: "Portrait Artist",
 		Citation: components.Citation{
 			Key:   "wga-portrait-artist",
-			Title: "Portrait Artist",
+			Title: "Artist, Portrait",
 			URL:   "https://gallery.example/artists/portrait-artist-artist",
 		},
 	})
@@ -207,7 +212,7 @@ func TestArtistRecordContentRendersCitation(t *testing.T) {
 	for _, expected := range []string{
 		"CITE THIS RECORD — BIBTEX",
 		"wga-portrait-artist",
-		"Portrait Artist",
+		"Artist, Portrait",
 		"https://gallery.example/artists/portrait-artist-artist",
 		"<pre",
 		"COPY BIBTEX",
@@ -220,7 +225,8 @@ func TestArtistRecordContentRendersCitation(t *testing.T) {
 
 func TestArtistRecordContentUsesHtmxEnhancedLinks(t *testing.T) {
 	rendered := renderArtistRecord(t, ArtistView{
-		Name:            "Portrait Artist",
+		FilingName:      "Artist, Portrait",
+		ShortName:       "Portrait",
 		Url:             "/artists/portrait-artist-artist",
 		Schools:         "Dutch",
 		WorkCount:       1,
@@ -238,12 +244,18 @@ func TestArtistRecordContentUsesHtmxEnhancedLinks(t *testing.T) {
 	if strings.Contains(rendered, "data-viewer") {
 		t.Error("work preview must not carry viewer hooks")
 	}
+	if !strings.Contains(rendered, ">Portrait</a>") {
+		t.Error("artist breadcrumb must use the short name")
+	}
+	if strings.Contains(rendered, "FIND MORE BY") {
+		t.Error("find-more link must be omitted when the bounded sample equals the total")
+	}
 }
 
 func TestArtistRecordContentRendersSelectionPreviews(t *testing.T) {
 	rendered := renderArtistRecord(t, ArtistView{
-		Name:      "Portrait Artist",
-		WorkCount: 5,
+		FilingName: "Portrait Artist",
+		WorkCount:  5,
 		Selections: []SelectionPreview{
 			{
 				URL:             "/artists/portrait-artist-artistone000001/selections/rselect00000001",
@@ -254,8 +266,8 @@ func TestArtistRecordContentRendersSelectionPreviews(t *testing.T) {
 				HasCommentary:   true,
 				Works: dto.ImageGrid{{
 					Id: "artwork12345678", Title: "A Painting",
-					Url: "/artists/portrait-artist-artistone000001/a-painting-artwork12345678",
-					Image: "/api/files/artworks/artwork12345678/p.jpg",
+					Url:    "/artists/portrait-artist-artistone000001/a-painting-artwork12345678",
+					Image:  "/api/files/artworks/artwork12345678/p.jpg",
 					Artist: dto.Artist{Name: "Portrait Artist"},
 				}},
 			},
@@ -282,7 +294,7 @@ func TestArtistRecordContentRendersSelectionPreviews(t *testing.T) {
 
 func TestArtistRecordContentRendersHonestMissingPreviewCommentary(t *testing.T) {
 	rendered := renderArtistRecord(t, ArtistView{
-		Name: "Portrait Artist",
+		FilingName: "Portrait Artist",
 		Selections: []SelectionPreview{
 			{DisplayTitle: "Paintings", SelectedCount: 2, CataloguedCount: 5, HasCommentary: false},
 		},
@@ -294,7 +306,7 @@ func TestArtistRecordContentRendersHonestMissingPreviewCommentary(t *testing.T) 
 }
 
 func TestArtistRecordContentOmitsSelectionsWhenNone(t *testing.T) {
-	rendered := renderArtistRecord(t, ArtistView{Name: "Portrait Artist", WorkCount: 2})
+	rendered := renderArtistRecord(t, ArtistView{FilingName: "Artist, Portrait", ShortName: "Portrait", WorkCount: 2})
 
 	if strings.Contains(rendered, "CURATED SELECTIONS") {
 		t.Error("expected no selections section without previews")
@@ -303,7 +315,7 @@ func TestArtistRecordContentOmitsSelectionsWhenNone(t *testing.T) {
 
 func TestArtistRecordBlockWrapsMainContentArea(t *testing.T) {
 	var output bytes.Buffer
-	if err := ArtistRecordBlock(ArtistView{Name: "Portrait Artist"}).Render(context.Background(), &output); err != nil {
+	if err := ArtistRecordBlock(ArtistView{FilingName: "Artist, Portrait", ShortName: "Portrait"}).Render(context.Background(), &output); err != nil {
 		t.Fatalf("render artist record block: %v", err)
 	}
 
@@ -318,7 +330,7 @@ func TestArtistRecordBlockWrapsMainContentArea(t *testing.T) {
 
 func TestArtistBlockRendersPortrait(t *testing.T) {
 	var output bytes.Buffer
-	artist := dto.Artist{Name: "Portrait Artist", Portrait: "/api/files/artists/artist/portrait.jpg"}
+	artist := dto.Artist{FilingName: "Artist, Portrait", ShortName: "Portrait", Name: "Artist, Portrait", Portrait: "/api/files/artists/artist/portrait.jpg"}
 	if err := ArtistBlock(artist).Render(context.Background(), &output); err != nil {
 		t.Fatalf("render artist block: %v", err)
 	}
@@ -326,7 +338,7 @@ func TestArtistBlockRendersPortrait(t *testing.T) {
 	rendered := output.String()
 	for _, expected := range []string{
 		`src="/api/files/artists/artist/portrait.jpg"`,
-		`alt="Portrait Artist"`,
+		`alt="Artist, Portrait"`,
 		"object-cover",
 	} {
 		if !strings.Contains(rendered, expected) {
@@ -340,13 +352,13 @@ func TestArtistBlockRendersPortrait(t *testing.T) {
 
 func TestArtistBlockRendersPortraitFallback(t *testing.T) {
 	var output bytes.Buffer
-	artist := dto.Artist{Name: "Portrait Artist"}
+	artist := dto.Artist{FilingName: "Artist, Portrait", ShortName: "Portrait", Name: "Artist, Portrait"}
 	if err := ArtistBlock(artist).Render(context.Background(), &output); err != nil {
 		t.Fatalf("render artist block: %v", err)
 	}
 
 	rendered := output.String()
-	if !strings.Contains(rendered, "PORTRAIT — Portrait Artist") {
+	if !strings.Contains(rendered, "PORTRAIT — Artist, Portrait") {
 		t.Error("expected portrait fallback")
 	}
 	if strings.Contains(rendered, `<img`) {
