@@ -323,65 +323,6 @@
     "@sentry/conventions" "^0.16.0"
     "@sentry/core" "10.68.0"
 
-"@sentry/cli@3.6.1":
-  version "3.6.1"
-  resolved "https://registry.npmjs.org/@sentry/cli/-/cli-3.6.1.tgz"
-  integrity sha512-9KGZEe/o+vdHS69JhkNztPysqknnI3W5cceovi2G3yb5z29At6SAbGGOdFe3qxYDfC/c2Uw5MKYfev8K9xFI9Q==
-  dependencies:
-    which "^2.0.2"
-    undici "^6.22.0"
-    progress "^2.0.3"
-    proxy-from-env "^1.1.0"
-  optionalDependencies:
-    "@sentry/cli-darwin" "3.6.1"
-    "@sentry/cli-linux-arm" "3.6.1"
-    "@sentry/cli-linux-x64" "3.6.1"
-    "@sentry/cli-win32-x64" "3.6.1"
-    "@sentry/cli-linux-i686" "3.6.1"
-    "@sentry/cli-win32-i686" "3.6.1"
-    "@sentry/cli-linux-arm64" "3.6.1"
-    "@sentry/cli-win32-arm64" "3.6.1"
-
-"@sentry/cli-darwin@3.6.1":
-  version "3.6.1"
-  resolved "https://registry.npmjs.org/@sentry/cli-darwin/-/cli-darwin-3.6.1.tgz"
-  integrity sha512-hit8SHXYTSZnKvT87/n/5RLwJnl0Nm24dewqEXwMzw7YkDFg7Ptq0bIhvGWINgyuBsmEfXGMnrbBZw5sueBtnQ==
-
-"@sentry/cli-linux-arm@3.6.1":
-  version "3.6.1"
-  resolved "https://registry.npmjs.org/@sentry/cli-linux-arm/-/cli-linux-arm-3.6.1.tgz"
-  integrity sha512-FgfKPa4sXianCQxpujNE1JrJYbF6Ug+UPjwdEGAnCZtDeRRQdXbSIih7ikaocg4BcpHxwoRm0BHG1wYeizkCbQ==
-
-"@sentry/cli-linux-arm64@3.6.1":
-  version "3.6.1"
-  resolved "https://registry.npmjs.org/@sentry/cli-linux-arm64/-/cli-linux-arm64-3.6.1.tgz"
-  integrity sha512-+6UpbQo56wW5pf1TTBfNoYzf+WuG7c1fj9DAKchQwUzDN7886OwSYC326rDyh/PaafszYj5gAOElFhymNVA1WA==
-
-"@sentry/cli-linux-i686@3.6.1":
-  version "3.6.1"
-  resolved "https://registry.npmjs.org/@sentry/cli-linux-i686/-/cli-linux-i686-3.6.1.tgz"
-  integrity sha512-xDzb2knLayJKv6FGggjrfvQiIpA4wvYvxeNV6B3plTlu1Qunkz5889A+Ayrp4wv19bgMVI6wLdKF9U2TpHPTbQ==
-
-"@sentry/cli-linux-x64@3.6.1":
-  version "3.6.1"
-  resolved "https://registry.npmjs.org/@sentry/cli-linux-x64/-/cli-linux-x64-3.6.1.tgz"
-  integrity sha512-OJChq61ZoKFLAVC+LPqensvBcoToxnAfAZF19emTLNQNjBbGZBL6G/4P0uK4tlwlhB5wAeobu58xX2kfJEgkjA==
-
-"@sentry/cli-win32-arm64@3.6.1":
-  version "3.6.1"
-  resolved "https://registry.npmjs.org/@sentry/cli-win32-arm64/-/cli-win32-arm64-3.6.1.tgz"
-  integrity sha512-SR4JESQdr1+XmK3kAVa9BAUdOA9QYkreJkWzUlj1oXbTlD5OdRmzc1yMHlkrkbbKSu6vrlqYiEaox3Pgsc08sg==
-
-"@sentry/cli-win32-i686@3.6.1":
-  version "3.6.1"
-  resolved "https://registry.npmjs.org/@sentry/cli-win32-i686/-/cli-win32-i686-3.6.1.tgz"
-  integrity sha512-EBOR2Yx5nYUcwbGXp5AHuQPjNZ9QLcoKlTKAt9ygQX4SF7S0pwnrAfXktkA4QOZqSXtzlKhrpwwnWNq0zPksNw==
-
-"@sentry/cli-win32-x64@3.6.1":
-  version "3.6.1"
-  resolved "https://registry.npmjs.org/@sentry/cli-win32-x64/-/cli-win32-x64-3.6.1.tgz"
-  integrity sha512-qQkVQOMoE5U6NtigezFNYSJncP1DOuauvp7JS+1DRpE5pXTKjHkOT6niWceGQc7wH4UGk6iwzOkNzx6klNd4Yw==
-
 "@sentry/conventions@^0.16.0":
   version "0.16.0"
   resolved "https://registry.npmjs.org/@sentry/conventions/-/conventions-0.16.0.tgz"
@@ -1951,16 +1892,6 @@ pretty-hrtime@^1.0.3:
   resolved "https://registry.npmjs.org/pretty-hrtime/-/pretty-hrtime-1.0.3.tgz"
   integrity sha512-66hKPCr+72mlfiSjlEB1+45IjXSqvVAIy6mocupoww4tBFE9R9IhwwUGoI4G++Tc9Aq+2rxOt0RFU6gPcrte0A==
 
-progress@^2.0.3:
-  version "2.0.3"
-  resolved "https://registry.npmjs.org/progress/-/progress-2.0.3.tgz"
-  integrity sha512-7PiHtLll5LdnKIMw100I+8xJXR5gW2QwWYkT6iJva0bXitZKa/XMrSbdmg3r2Xnaidz9Qumd0VPaMrZlF9V9sA==
-
-proxy-from-env@^1.1.0:
-  version "1.1.0"
-  resolved "https://registry.npmjs.org/proxy-from-env/-/proxy-from-env-1.1.0.tgz"
-  integrity sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==
-
 queue-microtask@^1.2.2:
   version "1.2.3"
   resolved "https://registry.npmjs.org/queue-microtask/-/queue-microtask-1.2.3.tgz"
@@ -2228,11 +2159,6 @@ tslib@^2.4.0, tslib@^2.8.1:
   resolved "https://registry.npmjs.org/tslib/-/tslib-2.8.1.tgz"
   integrity sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==
 
-undici@^6.22.0:
-  version "6.28.0"
-  resolved "https://registry.npmjs.org/undici/-/undici-6.28.0.tgz"
-  integrity sha512-LIY910g9TI13YS95lrMFrs8Rm/u/irgHeTWoKCoteeJ04CUJ92eEfj0rVn+7VKMPBpUPiUoBKfhNyLI23EE/KA==
-
 undici-types@~6.21.0:
   version "6.21.0"
   resolved "https://registry.npmjs.org/undici-types/-/undici-types-6.21.0.tgz"
@@ -2282,7 +2208,7 @@ viewerjs@^1.11.7:
   resolved "https://registry.npmjs.org/viewerjs/-/viewerjs-1.11.7.tgz"
   integrity sha512-0JuVqOmL5v1jmEAlG5EBDR3XquxY8DWFQbFMprOXgaBB0F7Q/X9xWdEaQc59D8xzwkdUgXEMSSknTpriq95igg==
 
-which@^2.0.1, which@^2.0.2:
+which@^2.0.1:
   version "2.0.2"
   resolved "https://registry.npmjs.org/which/-/which-2.0.2.tgz"
   integrity sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==

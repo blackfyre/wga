@@ -5,10 +5,8 @@
   "private": "true",
   "scripts": {
 	"build": "bun run build:css && bun run build:js",
-	"build:release": "bun run build:css && bun run build:release:js",
 	"build:js": "bun run build:js:stage && bun run publish:js",
 	"build:js:stage": "rm -rf ./dist/browser-assets && mkdir -p ./dist/browser-assets/js && bun build ./resources/js/app.ts --outdir ./dist/browser-assets/js --target=browser --minify --sourcemap --splitting --metafile=./dist/browser-metafile.json",
-	"build:release:js": "test -n \"$SENTRY_AUTH_TOKEN\" && test -n \"$WGA_RELEASE\" && bun run build:js:stage && sentry-cli sourcemaps inject ./dist/browser-assets/js && sentry-cli sourcemaps upload --org web-gallery-of-art-modernisation --project wga-browser --release \"$WGA_RELEASE\" --url-prefix \"~/assets/js\" --validate --wait ./dist/browser-assets/js && bun run publish:js",
 	"build:css": "postcss ./resources/css/style.pcss -o ./internal/assets/public/css/style.css",
 	"publish:js": "rm -rf ./internal/assets/public/js && mkdir -p ./internal/assets/public/js && printf '*\\n!.gitignore\\n!vendor/\\n' > ./internal/assets/public/js/.gitignore && cp -R ./dist/browser-assets/js/. ./internal/assets/public/js/ && rm -f ./internal/assets/public/js/*.map",
     "build:watch:css": "bun run build:css --watch",
@@ -26,7 +24,6 @@
   "homepage": "https://github.com/blackfyre/wga#readme",
   "devDependencies": {
 	"@biomejs/biome": "1.9.4",
-	"@sentry/cli": "3.6.1",
     "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4.2.1",
     "@tailwindcss/typography": "^0.5.19",

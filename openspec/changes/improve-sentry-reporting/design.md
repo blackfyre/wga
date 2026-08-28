@@ -49,9 +49,9 @@ Tests will exercise returned, wrapped, recorded, and panic failures containing r
 
 ### Embed one explicit release value in the image for both runtimes
 
-The Docker build will receive an immutable `WGA_RELEASE` build argument derived from Railway's `RAILWAY_GIT_COMMIT_SHA`. The Go linker will embed it in `internal/buildinfo.Version`; the server monitor and browser layout will use that embedded value. The browser layout will expose only the release alongside its already-public DSN and environment.
+The Docker build will derive its immutable release from `git rev-parse HEAD`. The Go linker will embed it in `internal/buildinfo.Version`; the server monitor and browser layout will use that embedded value. The browser layout will expose only the release alongside its already-public DSN and environment.
 
-Embedding the release in the image rather than reading a runtime setting guarantees that the server event, rendered browser metadata, and source-map upload refer to the exact artefact Railway runs. A release is operational metadata, not a secret.
+Embedding the release in the image rather than reading a runtime setting guarantees that the server event and rendered browser metadata refer to the exact artefact Railway runs. A release is operational metadata, not a secret.
 
 ### Upload source maps during release assembly, then exclude them from static assets
 
@@ -81,7 +81,7 @@ The shared failure-record and release-configuration contracts each have one owne
 
 ## Migration Plan
 
-1. Configure Railway to pass its `RAILWAY_GIT_COMMIT_SHA` as the Docker `WGA_RELEASE` build argument and add the protected source-map upload credential; do not expose the upload credential to the application.
+1. Ensure Railway supplies Git metadata to the Docker build and rotate the leaked source-map upload credential; do not expose the replacement credential to the application or Docker build.
 2. Deploy the application and release-assembly changes together to staging.
 3. Use the non-production Sentry test route and a controlled server-failure test to confirm release attribution, request/log correlation, and source-map resolution in the separate projects.
 4. Promote the immutable release after the checks pass.
