@@ -91,8 +91,10 @@ templ ArtworkBlock(aw dto.Artwork) {
 				<div class="mt-7">
 					@components.MetaList(artworkMetaEntries(aw))
 				</div>
-				<a href="#" hx-on:click="wga.dialog.open();" hx-get={ `/postcard/send?awid=` + aw.Id } hx-target="#d" hx-swap="innerHTML" hx-select=".modal-box, form[method=dialog].modal-backdrop" class="mt-7 flex w-full justify-center bg-primary px-5 py-3.5 font-mono text-[11px] tracking-[1.5px] text-primary-content hover:opacity-85">SEND AS POSTCARD →</a>
-				@components.AddToItineraryAction(aw.Id, components.AddToItineraryBlock)
+				<div class="mt-7 flex flex-col gap-2.5">
+					<a href="#" hx-on:click="wga.dialog.open();" hx-get={ `/postcard/send?awid=` + aw.Id } hx-target="#d" hx-swap="innerHTML" hx-select=".modal-box, form[method=dialog].modal-backdrop" class="flex h-[50px] w-full items-center justify-center bg-primary px-5 font-mono text-[11px] tracking-[1.5px] text-primary-content hover:opacity-85">SEND AS POSTCARD →</a>
+					@components.AddToItineraryAction(aw.Id, components.AddToItineraryBlock)
+				</div>
 				@artworkPaletteBlock(aw)
 				if aw.Music.Available {
 					@components.MusicPeriodPlayerCard(aw.Music.SongID, artworkMusicPiece(aw), aw.Music.PlayerURL)
@@ -163,7 +165,7 @@ templ artworkRelatedBlock(aw dto.Artwork) {
 				</nav>
 			</div>
 			if len(aw.RelatedWorks) > 0 {
-				@components.PublicArtworkGrid(aw.RelatedWorks)
+				@artworkRelatedWorkGrid(aw.RelatedWorks)
 			}
 			if aw.Related.Sparse {
 				<div class="mt-6 border-t border-base-content/15 pt-4">
@@ -178,6 +180,22 @@ templ artworkRelatedBlock(aw dto.Artwork) {
 			}
 		</section>
 	}
+}
+
+templ artworkRelatedWorkGrid(works dto.ImageGrid) {
+	<ul class="grid grid-cols-2 gap-x-4 gap-y-9 md:grid-cols-3 md:gap-x-7 lg:grid-cols-4">
+		for _, work := range works {
+			<li>
+				<a href={ templ.SafeURL(work.Url) } class="block transition-opacity hover:opacity-70">
+					@components.Plate(dto.Plate{DisplayURL: work.Image, Alt: work.Title, Placeholder: work.Title, Aspect: "aspect-[4/5] mb-2.5"})
+					<span class="block text-sm font-semibold leading-tight">{ work.Title }</span>
+					if work.Metadata != "" {
+						<span class="mt-[3px] block font-mono text-[11px] leading-relaxed text-base-content/60">{ work.Metadata }</span>
+					}
+				</a>
+			</li>
+		}
+	</ul>
 }
 
 // reproRule is one labelled reproduction-metadata cell inside the artwork

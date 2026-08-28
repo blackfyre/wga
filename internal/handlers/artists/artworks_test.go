@@ -29,6 +29,50 @@ func TestArtworkLocationAndDimensionsWithoutCatalogueSummary(t *testing.T) {
 	}
 }
 
+func TestPopulateArtworkMetadataUsesDateEnd(t *testing.T) {
+	collection := core.NewBaseCollection("Artworks")
+	collection.Fields.Add(
+		&core.NumberField{Name: "year"},
+		&core.NumberField{Name: "date_end"},
+	)
+	artwork := core.NewRecord(collection)
+	artwork.Set("year", 1500)
+	artwork.Set("date_end", 1502)
+
+	content := dto.Artwork{}
+	populateArtworkMetadata(nil, artwork, &content)
+
+	if content.Year != "1502" {
+		t.Errorf("year = %q, want date_end 1502", content.Year)
+	}
+
+	artwork.Set("date_end", 0)
+	content = dto.Artwork{}
+	populateArtworkMetadata(nil, artwork, &content)
+	if content.Year != "1500" {
+		t.Errorf("year = %q, want legacy year 1500", content.Year)
+	}
+}
+
+func TestBuildRelatedWorkImagesUsesBasisAppropriateMetadata(t *testing.T) {
+	app := newArtistRecordApp(t)
+	seedPublishedArtist(t, app)
+	work, err := app.FindRecordById("artworks", "artworkone00001")
+	if err != nil {
+		t.Fatalf("find related work: %v", err)
+	}
+
+	byArtist := buildRelatedWorkImages(app, repositories.RelatedByArtist, []*core.Record{work}, "")
+	if byArtist[0].Metadata != "1610" {
+		t.Errorf("by-artist metadata = %q, want creation date 1610", byArtist[0].Metadata)
+	}
+
+	byCollection := buildRelatedWorkImages(app, repositories.RelatedByCollection, []*core.Record{work}, "")
+	if byCollection[0].Metadata != "Artist, Synthetic" {
+		t.Errorf("by-collection metadata = %q, want artist identity", byCollection[0].Metadata)
+	}
+}
+
 func TestPopulateArtworkCitation(t *testing.T) {
 	configuration := config.LoadFrom(func(key string) string {
 		return map[string]string{

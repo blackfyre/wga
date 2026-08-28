@@ -22,22 +22,6 @@ function closestHref(target: EventTarget | null): string {
 	return link?.getAttribute("href") ?? "";
 }
 
-/** Updates a "N characters left" output next to a textarea.
- *
- * The remaining count is measured in Unicode code points, matching the Go
- * `[]rune` length the server enforces. `[...value]` iterates code points rather
- * than UTF-16 code units, so an astral character (for example an emoji) counts
- * once and the visible countdown stays consistent with what is persisted.
- */
-export function countdown(field: HTMLTextAreaElement, outputId: string): void {
-	const output = document.getElementById(outputId);
-	if (!output) {
-		return;
-	}
-	const max = Number(field.getAttribute("maxlength") ?? 600);
-	output.textContent = String(Math.max(0, max - [...field.value].length));
-}
-
 function prefetchNeighbours(root: Element): void {
 	const neighbours = root.querySelectorAll<HTMLAnchorElement>(
 		"[data-itinerary-prefetch][href]",
@@ -93,6 +77,115 @@ function bindCopyLinks(): void {
 			setTimeout(() => {
 				button.textContent = "COPY LINK";
 			}, 2000);
+		});
+	}
+}
+
+function bindBuilderTabs(): void {
+	const editors = Array.from(
+		document.querySelectorAll<HTMLElement>("[data-itinerary-editor]"),
+	);
+	if (editors.length === 0) {
+		return;
+	}
+
+	const tabs = Array.from(
+		document.querySelectorAll<HTMLAnchorElement>(
+			"[data-itinerary-tab]:not([data-itinerary-tab-bound])",
+		),
+	);
+	for (const tab of tabs) {
+		tab.dataset.itineraryTabBound = "true";
+		tab.addEventListener("click", (event) => {
+			event.preventDefault();
+			const selected = tab.dataset.itineraryTab;
+			if (selected === undefined) {
+				return;
+			}
+
+			for (const editor of editors) {
+				editor.classList.toggle(
+					"hidden",
+					editor.dataset.itineraryEditor !== selected,
+				);
+			}
+			for (const candidate of document.querySelectorAll<HTMLAnchorElement>(
+				"[data-itinerary-tab]",
+			)) {
+				if (candidate.dataset.itineraryTab === selected) {
+					candidate.setAttribute("aria-current", "page");
+				} else {
+					candidate.removeAttribute("aria-current");
+				}
+			}
+			for (const item of document.querySelectorAll<HTMLElement>(
+				"[data-itinerary-tab-item]",
+			)) {
+				const active = item.dataset.itineraryTabItem === selected;
+				item.classList.toggle("bg-primary/6", active);
+				item.classList.toggle("border-base-content", active);
+				item.classList.toggle("border-base-content/15", !active);
+			}
+			for (const label of document.querySelectorAll<HTMLElement>(
+				"[data-itinerary-tab-label]",
+			)) {
+				const active = label.dataset.itineraryTabLabel === selected;
+				label.classList.toggle("text-primary", active);
+				label.classList.toggle("text-base-content/40", !active);
+			}
+		});
+	}
+}
+
+function bindBuilderNarrationStatus(): void {
+	const narrations = document.querySelectorAll<HTMLTextAreaElement>(
+		"[data-itinerary-narration]:not([data-itinerary-narration-bound])",
+	);
+	for (const narration of narrations) {
+		narration.dataset.itineraryNarrationBound = "true";
+		narration.addEventListener("input", () => {
+			const stopID = narration.dataset.itineraryNarration;
+			if (stopID === undefined) {
+				return;
+			}
+			const count = Array.from(narration.value).length;
+			for (const status of document.querySelectorAll<HTMLElement>(
+				"[data-itinerary-narration-status]",
+			)) {
+				if (status.dataset.itineraryNarrationStatus !== stopID) {
+					continue;
+				}
+				status.textContent =
+					count === 0 ? "NO NARRATION YET" : `${count} CHARS`;
+				status.classList.toggle("text-warning", count === 0);
+				status.classList.toggle("text-base-content/60", count > 0);
+			}
+		});
+	}
+}
+
+function bindBuilderVisibility(): void {
+	const radios = document.querySelectorAll<HTMLInputElement>(
+		"[data-itinerary-visibility] input[name='listed']:not([data-itinerary-visibility-bound])",
+	);
+	for (const radio of radios) {
+		radio.dataset.itineraryVisibilityBound = "true";
+		radio.addEventListener("change", () => {
+			for (const candidate of document.querySelectorAll<HTMLInputElement>(
+				"[data-itinerary-visibility] input[name='listed']",
+			)) {
+				const label = candidate.closest<HTMLElement>(
+					"[data-itinerary-visibility]",
+				);
+				if (label === null) {
+					continue;
+				}
+				label.classList.toggle("border-primary", candidate.checked);
+				label.classList.toggle("bg-primary", candidate.checked);
+				label.classList.toggle("text-primary-content", candidate.checked);
+				label.classList.toggle("border-control", !candidate.checked);
+				label.classList.toggle("text-base-content/70", !candidate.checked);
+			}
 		});
 	}
 }
@@ -164,6 +257,9 @@ export function registerItineraryKeyboard(): void {
 
 export function registerItineraryHelpers(): void {
 	bindCopyLinks();
+	bindBuilderTabs();
+	bindBuilderNarrationStatus();
+	bindBuilderVisibility();
 
 	const viewers = document.querySelectorAll<HTMLElement>(
 		"[data-itinerary-viewer]:not([data-itinerary-bound])",

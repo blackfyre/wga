@@ -43,6 +43,9 @@ func TestBuildHomePageUsesOnlyEligiblePublishedArtworks(t *testing.T) {
 	if page.FeaturedArtwork.Title != "Alpha Work" || secondPage.FeaturedArtwork != page.FeaturedArtwork {
 		t.Errorf("same-day featured artwork = %#v, %#v; want stable Alpha Work", page.FeaturedArtwork, secondPage.FeaturedArtwork)
 	}
+	if page.FeaturedArtwork.Year != "1500" || page.RecentArtworks[0].Year != "1500" {
+		t.Errorf("legacy home artwork years = %q, %q; want 1500", page.FeaturedArtwork.Year, page.RecentArtworks[0].Year)
+	}
 	if page.FeaturedArtwork.URL != "/artists/alice-artistalice0001/alpha-work-artworkalpha001" {
 		t.Errorf("featured URL = %q", page.FeaturedArtwork.URL)
 	}
@@ -93,6 +96,30 @@ func TestBuildHomePageUsesFilingNameBylines(t *testing.T) {
 	}
 	if len(page.RecentArtworks) != 1 || page.RecentArtworks[0].Artist != "ALICE, Filing" {
 		t.Errorf("recent byline = %#v, want filing form", page.RecentArtworks)
+	}
+}
+
+func TestBuildHomePageUsesArtworkDateEnd(t *testing.T) {
+	app := newLandingTestApp(t)
+	createLandingArtist(t, app, "artistalice0001", "Alice", "Alice, Filing", true)
+	createLandingSchool(t, app)
+	createLandingArtwork(t, app, "artworkalpha001", "Alpha Work", "artistalice0001", true, "2026-01-01 00:00:00.000Z", "small.jpg", 500)
+
+	artwork, err := app.FindRecordById("artworks", "artworkalpha001")
+	if err != nil {
+		t.Fatalf("find artwork: %v", err)
+	}
+	artwork.Set("date_end", 1502)
+	if err := app.Save(artwork); err != nil {
+		t.Fatalf("save artwork date end: %v", err)
+	}
+
+	page, err := buildHomePage(repositories.NewLandingRepository(app), time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC))
+	if err != nil {
+		t.Fatalf("build home page: %v", err)
+	}
+	if page.FeaturedArtwork.Year != "1502" || page.RecentArtworks[0].Year != "1502" {
+		t.Errorf("home artwork years = %q, %q; want date_end 1502", page.FeaturedArtwork.Year, page.RecentArtworks[0].Year)
 	}
 }
 
@@ -272,6 +299,7 @@ func newLandingTestApp(t *testing.T) *pocketbase.PocketBase {
 	artworks.Fields.Add(
 		&core.TextField{Id: "artwork_title", Name: "title", Required: true},
 		&core.TextField{Id: "artwork_year", Name: "year"},
+		&core.NumberField{Id: "artwork_date_end", Name: "date_end"},
 		&core.TextField{Id: "artwork_image", Name: "image"},
 		&core.NumberField{Id: "artwork_image_width", Name: "image_width"},
 		&core.DateField{Id: "artwork_created", Name: "created"},

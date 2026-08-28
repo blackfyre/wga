@@ -136,7 +136,7 @@ templ ArtistRecordContent(view ArtistView) {
 							<p class="text-base leading-relaxed text-base-content/70">No published works are in the archive for this artist yet.</p>
 						</div>
 					} else {
-						@components.PublicArtworkGrid(view.Works)
+						@artistArchiveWorkGrid(view.Works)
 						if view.WorkCount > len(view.Works) {
 							<a href={ templ.URL(view.WorksURL) } hx-get={ view.WorksURL } class="mt-8 inline-block font-mono text-[11px] tracking-[1px] text-primary transition-opacity hover:opacity-60">FIND MORE BY { view.ShortName } IN THE ARTWORK SEARCH →</a>
 						}
@@ -187,6 +187,22 @@ func artistWorksSummary(view ArtistView) string {
 
 func selectionCounts(selection SelectionPreview) string {
 	return strconv.Itoa(selection.SelectedCount) + " SELECTED · " + strconv.Itoa(selection.CataloguedCount) + " CATALOGUED"
+}
+
+templ artistArchiveWorkGrid(works dto.ImageGrid) {
+	<ul class="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-4 md:gap-x-6">
+		for _, work := range works {
+			<li>
+				<a href={ templ.SafeURL(work.Url) } class="block transition-opacity hover:opacity-70">
+					@components.Plate(dto.Plate{DisplayURL: work.Image, Alt: work.Title, Placeholder: work.Title, Aspect: "aspect-[4/5] mb-2.5"})
+					<span class="block text-sm font-semibold leading-tight">{ work.Title }</span>
+					if work.Metadata != "" {
+						<span class="mt-[3px] block font-mono text-[11px] leading-relaxed text-base-content/60">{ work.Metadata }</span>
+					}
+				</a>
+			</li>
+		}
+	</ul>
 }
 
 // ArtistBlock remains for the Dual Mode pane adapter, which still consumes the

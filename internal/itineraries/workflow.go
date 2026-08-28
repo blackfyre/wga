@@ -366,6 +366,25 @@ func SetListed(app core.App, owner string, listed bool) error {
 // stops remain attached to the now-published record and it is no longer the
 // session draft, so the next add starts a fresh draft.
 func Publish(app core.App, owner string) (*core.Record, error) {
+	return publish(app, owner, nil)
+}
+
+// PublicationContent is the complete builder form submitted with publication.
+// The form is kept in the browser until this point so unfinished itineraries do
+// not create a succession of metadata or narration writes.
+type PublicationContent struct {
+	Meta       Meta
+	Listed     *bool
+	Narrations map[string]string
+}
+
+// PublishWithContent stores the submitted builder fields and publishes the
+// draft in one transaction.
+func PublishWithContent(app core.App, owner string, content PublicationContent) (*core.Record, error) {
+	return publish(app, owner, &content)
+}
+
+func publish(app core.App, owner string, content *PublicationContent) (*core.Record, error) {
 	var published *core.Record
 	err := app.RunInTransaction(func(txApp core.App) error {
 		if err := enforcePublicationPolicy(txApp, owner); err != nil {
@@ -379,6 +398,14 @@ func Publish(app core.App, owner string) (*core.Record, error) {
 		if draft.GetString("status") != string(StatusDraft) {
 			return ErrNotDraft
 		}
+		if content != nil {
+			draft.Set("title", truncateRunes(SanitiseText(content.Meta.Title), MaxTitleLength))
+			draft.Set("intro", truncateRunes(SanitiseText(content.Meta.Intro), MaxIntroLength))
+			draft.Set("creator", truncateRunes(SanitiseText(content.Meta.Creator), MaxCreatorLength))
+			if content.Listed != nil {
+				draft.Set("listed", *content.Listed)
+			}
+		}
 
 		title := truncateRunes(SanitiseText(draft.GetString("title")), MaxTitleLength)
 		if title == "" {
@@ -391,6 +418,18 @@ func Publish(app core.App, owner string) (*core.Record, error) {
 		}
 		if len(stops) == 0 {
 			return ErrNoStops
+		}
+		if content != nil {
+			for _, stop := range stops {
+				narration, ok := content.Narrations[stop.Id]
+				if !ok {
+					continue
+				}
+				stop.Set("narration", truncateRunes(SanitiseText(narration), MaxNarrationLength))
+				if err := txApp.Save(stop); err != nil {
+					return err
+				}
+			}
 		}
 
 		token, err := NewToken()

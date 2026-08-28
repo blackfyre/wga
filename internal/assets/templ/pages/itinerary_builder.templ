@@ -54,51 +54,45 @@ templ ItineraryBuilder(view dto.ItineraryBuilderView, oob bool) {
 }
 
 templ ItineraryMetaForm(view dto.ItineraryBuilderView) {
-	<form method="post" action="/itineraries/draft/meta" hx-post="/itineraries/draft/meta" hx-target="#itinerary-builder" hx-swap="outerHTML" hx-select="unset" hx-trigger="input changed delay:600ms">
-		@itineraryBuilderState(view)
-		<input type="hidden" name="_csrf" value={ view.CSRF }/>
+	<div>
 		<div class="flex flex-col items-start gap-6 pb-7 md:flex-row md:gap-10">
 			<label class="w-full min-w-0 flex-1">
-				<span class="mb-2 block font-mono text-[10px] tracking-[1.5px] text-base-content/60">TITLE OF THE ITINERARY — { strconv.Itoa(80 - runeLen(view.Title)) } CHARACTERS LEFT</span>
-				<input type="text" name="title" value={ view.Title } maxlength="80" placeholder="e.g. Five rooms, one window" class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2.5 text-[17px] outline-none focus:ring-0"/>
+				<span class="mb-2 block font-mono text-[10px] tracking-[1.5px] text-base-content/60">TITLE OF THE ITINERARY — 80 CHARACTER LIMIT</span>
+				<input form="itinerary-publish-form" type="text" name="title" value={ view.Title } maxlength="80" placeholder="e.g. Five rooms, one window" class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2.5 text-[17px] outline-none focus:ring-0"/>
 			</label>
 			<label class="w-full shrink-0 md:w-[260px]">
 				<span class="mb-2 block font-mono text-[10px] tracking-[1.5px] text-base-content/60">SHOWN AS THE MAKER — OPTIONAL</span>
-				<input type="text" name="creator" value={ view.Creator } maxlength="40" placeholder="A name or Anon." class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2.5 text-[17px] outline-none focus:ring-0"/>
+				<input form="itinerary-publish-form" type="text" name="creator" value={ view.Creator } maxlength="40" placeholder="A name or Anon." class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2.5 text-[17px] outline-none focus:ring-0"/>
 			</label>
 		</div>
 
 		<label class="block pb-7">
-			<span class="mb-2 block font-mono text-[10px] tracking-[1.5px] text-base-content/60">
-				INTRODUCTION — <output id="itinerary-intro-chars">{ strconv.Itoa(400 - runeLen(view.Intro)) }</output> CHARACTERS LEFT
-			</span>
-			<textarea name="intro" maxlength="400" hx-on:input="wga.itinerary.countdown(this, 'itinerary-intro-chars')" placeholder="What holds these works together, and what you want a visitor to notice." class="min-h-20 w-full rounded-none border border-base-content/30 bg-transparent p-3 text-[15px] leading-relaxed outline-none focus:ring-0">{ view.Intro }</textarea>
+			<span class="mb-2 block font-mono text-[10px] tracking-[1.5px] text-base-content/60">INTRODUCTION — 400 CHARACTER LIMIT</span>
+			<textarea form="itinerary-publish-form" name="intro" maxlength="400" placeholder="What holds these works together, and what you want a visitor to notice." class="min-h-20 w-full rounded-none border border-base-content/30 bg-transparent p-3 text-[15px] leading-relaxed outline-none focus:ring-0">{ view.Intro }</textarea>
 		</label>
-
-		<noscript><button type="submit" class="mb-7 bg-primary px-4 py-3 font-mono text-[11px] tracking-[1.5px] text-primary-content">SAVE DETAILS</button></noscript>
-	</form>
+	</div>
 }
 
 templ ItineraryPicker(view dto.ItineraryBuilderView) {
 	<div class="flex flex-wrap items-baseline justify-between gap-3 border-b border-base-content pb-3">
 		<p class="font-mono text-[11px] tracking-[1.5px]">WORKS IN THIS ITINERARY</p>
 		if view.PickerOpen {
-			<a href="/itineraries/new" hx-get="/itineraries/draft?picker=0" hx-target="#itinerary-builder" hx-swap="outerHTML" hx-select="unset" class="font-mono text-[11px] tracking-[1px] text-primary transition-opacity hover:opacity-60">CLOSE PICKER ✕</a>
+			<a href="/itineraries/new" hx-get="/itineraries/draft?picker=0" hx-target="#itinerary-builder" hx-swap="outerHTML" hx-select="unset" hx-confirm="Discard unfinished title, introduction, maker, and narration?" class="font-mono text-[11px] tracking-[1px] text-primary transition-opacity hover:opacity-60">CLOSE PICKER ✕</a>
 		} else if view.AtLimit {
 			<span class="font-mono text-[11px] tracking-[1px] text-base-content/40">FIFTEEN IS THE LIMIT</span>
 		} else {
-			<a href="/itineraries/new?picker=1" hx-get="/itineraries/draft?picker=1" hx-target="#itinerary-builder" hx-swap="outerHTML" hx-select="unset" class="font-mono text-[11px] tracking-[1px] text-primary transition-opacity hover:opacity-60">ADD WORKS +</a>
+			<a href="/itineraries/new?picker=1" hx-get="/itineraries/draft?picker=1" hx-target="#itinerary-builder" hx-swap="outerHTML" hx-select="unset" hx-confirm="Discard unfinished title, introduction, maker, and narration?" class="font-mono text-[11px] tracking-[1px] text-primary transition-opacity hover:opacity-60">ADD WORKS +</a>
 		}
 	</div>
 
 	if view.PickerOpen {
 		<div class="mt-5 border border-base-content/15 bg-base-200 p-5 md:p-6">
-			<form method="get" action="/itineraries/new" hx-get="/itineraries/draft" hx-target="#itinerary-builder" hx-swap="outerHTML" hx-select="unset" hx-trigger="input changed delay:300ms" class="mb-4 flex flex-wrap items-baseline justify-between gap-3">
+			<form method="get" action="/itineraries/new" hx-get="/itineraries/draft" hx-target="#itinerary-builder" hx-swap="outerHTML" hx-select="unset" hx-confirm="Discard unfinished title, introduction, maker, and narration?" class="mb-4 flex flex-wrap items-baseline justify-between gap-3">
 				<input type="hidden" name="picker" value="1"/>
 				<input type="hidden" name="stop" value={ strconv.Itoa(view.Selected) }/>
 				<label class="w-full md:w-[340px]"><span class="sr-only">Search works to add</span><input type="search" name="pq" value={ view.Query } placeholder="Search the collection by title or artist" class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2 text-sm outline-none focus:ring-0"/></label>
 				<p class="font-mono text-[10px] tracking-[1px] text-base-content/40" aria-live="polite">{ strconv.Itoa(len(view.Picker)) + " SHOWN" }</p>
-				<noscript><button type="submit" class="font-mono text-[10px] tracking-[1px] text-primary">SEARCH</button></noscript>
+				<button type="submit" class="font-mono text-[10px] tracking-[1px] text-primary">SEARCH</button>
 			</form>
 
 			if len(view.Picker) == 0 {
@@ -116,7 +110,7 @@ templ ItineraryPicker(view dto.ItineraryBuilderView) {
 								<span class="block truncate text-sm font-semibold leading-tight">{ work.Title }</span>
 								<span class="mt-[3px] block truncate font-mono text-[10px] text-base-content/60">{ work.Artist }{ dateSuffix(work.Date) }</span>
 							</span>
-							<form method="post" action="/itineraries/draft/add" hx-post="/itineraries/draft/add" hx-target="#itinerary-tray" hx-swap="outerHTML" hx-select="unset" class="shrink-0">
+							<form method="post" action="/itineraries/draft/add" hx-post="/itineraries/draft/add" hx-target="#itinerary-tray" hx-swap="outerHTML" hx-select="unset" hx-confirm="Discard unfinished title, introduction, maker, and narration?" class="shrink-0">
 								@itineraryBuilderState(view)
 								<input type="hidden" name="artwork_id" value={ work.ArtworkID }/>
 								<input type="hidden" name="_csrf" value={ view.CSRF }/>
@@ -139,7 +133,7 @@ templ ItineraryFilmstrip(view dto.ItineraryBuilderView) {
 		<div class="flex items-baseline justify-between gap-4 pb-2.5">
 			<p class="font-mono text-[10px] tracking-[1.5px] text-base-content/60">ORDER OF PRESENTATION</p>
 			if view.Count > 0 {
-				<form method="post" action="/itineraries/draft/clear" hx-post="/itineraries/draft/clear" hx-target="#itinerary-builder" hx-swap="outerHTML" hx-select="unset" hx-confirm="Clear all stops from this itinerary?">
+				<form method="post" action="/itineraries/draft/clear" hx-post="/itineraries/draft/clear" hx-target="#itinerary-builder" hx-swap="outerHTML" hx-select="unset" hx-confirm="Discard unfinished title, introduction, maker, and narration and clear all works?">
 					@itineraryBuilderState(view)
 					<input type="hidden" name="_csrf" value={ view.CSRF }/>
 					<button type="submit" class="font-mono text-[10px] tracking-[1px] text-base-content/50 hover:text-base-content">CLEAR ALL</button>
@@ -154,9 +148,9 @@ templ ItineraryFilmstrip(view dto.ItineraryBuilderView) {
 		} else {
 			<ol>
 				for index, stop := range view.Stops {
-					<li class={ "flex items-center gap-2.5 border-t py-2.5 pr-2 transition-colors", templ.KV("border-base-content bg-primary/6", index == view.Selected), templ.KV("border-base-content/15", index != view.Selected) }>
-						<a href={ templ.SafeURL("/itineraries/new?stop=" + strconv.Itoa(index)) } hx-get={ "/itineraries/draft?stop=" + strconv.Itoa(index) } hx-target="#itinerary-builder" hx-swap="outerHTML" hx-select="unset" class="flex min-w-0 flex-1 items-center gap-2.5" aria-current={ ariaCurrentValue(index == view.Selected) }>
-							<span class={ "w-[18px] shrink-0 font-mono text-[10px]", templ.KV("text-primary", index == view.Selected), templ.KV("text-base-content/40", index != view.Selected) }>{ stopNumber(index + 1) }</span>
+					<li data-itinerary-tab-item={ strconv.Itoa(index) } class={ "flex items-center gap-2.5 border-t py-2.5 pr-2 transition-colors", templ.KV("border-base-content bg-primary/6", index == view.Selected), templ.KV("border-base-content/15", index != view.Selected) }>
+						<a href={ templ.SafeURL("/itineraries/new?stop=" + strconv.Itoa(index)) } data-itinerary-tab={ strconv.Itoa(index) } class="flex min-w-0 flex-1 items-center gap-2.5" aria-current={ ariaCurrentValue(index == view.Selected) }>
+							<span data-itinerary-tab-label={ strconv.Itoa(index) } class={ "w-[18px] shrink-0 font-mono text-[10px]", templ.KV("text-primary", index == view.Selected), templ.KV("text-base-content/40", index != view.Selected) }>{ stopNumber(index + 1) }</span>
 							<span class="h-10 w-8 shrink-0 border bg-base-300">
 								if stop.ImageURL != "" {
 									<img src={ stop.ImageURL } alt="" loading="lazy" class="h-full w-full object-cover"/>
@@ -164,15 +158,11 @@ templ ItineraryFilmstrip(view dto.ItineraryBuilderView) {
 							</span>
 							<span class="min-w-0 flex-1">
 								<span class="block truncate text-[13px] font-semibold leading-tight">{ stop.Title }</span>
-								if stop.Narration == "" {
-									<span class="mt-1 block font-mono text-[10px] tracking-[0.5px] text-warning">NO NARRATION YET</span>
-								} else {
-									<span class="mt-1 block font-mono text-[10px] tracking-[0.5px] text-base-content/60">{ strconv.Itoa(runeLen(stop.Narration)) + " CHARS" }</span>
-								}
+							<span data-itinerary-narration-status={ stop.ID } class={ "mt-1 block font-mono text-[10px] tracking-[0.5px]", templ.KV("text-warning", stop.Narration == ""), templ.KV("text-base-content/60", stop.Narration != "") }>{ narrationStatus(stop.Narration) }</span>
 							</span>
 						</a>
 
-						<form method="post" action="/itineraries/draft/move" hx-post="/itineraries/draft/move" hx-target="#itinerary-builder" hx-swap="outerHTML" hx-select="unset" class="flex shrink-0 flex-col gap-0.5">
+						<form method="post" action="/itineraries/draft/move" hx-post="/itineraries/draft/move" hx-target="#itinerary-builder" hx-swap="outerHTML" hx-select="unset" hx-confirm="Discard unfinished title, introduction, maker, and narration?" class="flex shrink-0 flex-col gap-0.5">
 							@itineraryBuilderState(view)
 							<input type="hidden" name="stop_id" value={ stop.ID }/>
 							<input type="hidden" name="_csrf" value={ view.CSRF }/>
@@ -180,7 +170,7 @@ templ ItineraryFilmstrip(view dto.ItineraryBuilderView) {
 							<button type="submit" name="dir" value="down" disabled?={ index == view.Count-1 } aria-label={ "Move " + stop.Title + " later" } class="border border-control px-1.5 py-1 font-mono text-[10px] leading-none disabled:text-base-content/30">↓</button>
 						</form>
 
-						<form method="post" action="/itineraries/draft/remove" hx-post="/itineraries/draft/remove" hx-target="#itinerary-builder" hx-swap="outerHTML" hx-select="unset" class="shrink-0">
+						<form method="post" action="/itineraries/draft/remove" hx-post="/itineraries/draft/remove" hx-target="#itinerary-builder" hx-swap="outerHTML" hx-select="unset" hx-confirm="Discard unfinished title, introduction, maker, and narration?" class="shrink-0">
 							@itineraryBuilderState(view)
 							<input type="hidden" name="stop_id" value={ stop.ID }/>
 							<input type="hidden" name="_csrf" value={ view.CSRF }/>
@@ -194,14 +184,26 @@ templ ItineraryFilmstrip(view dto.ItineraryBuilderView) {
 }
 
 templ ItineraryStopEditor(view dto.ItineraryBuilderView) {
-	if stop, ok := activeStop(view); ok {
+	if view.Count == 0 {
+		<div class="border-t border-base-content py-14">
+			<p class="mb-2 text-lg font-semibold">Nothing to narrate yet.</p>
+			<p class="max-w-[400px] text-[15px] leading-relaxed text-base-content/70">Pick a first work above. Fifteen is the ceiling; most itineraries read best at five or six.</p>
+		</div>
+	} else {
+		for index, stop := range view.Stops {
+			@ItineraryStopEditorPanel(view, index, stop)
+		}
+	}
+}
+
+templ ItineraryStopEditorPanel(view dto.ItineraryBuilderView, index int, stop dto.ItineraryStop) {
+	<section data-itinerary-editor={ strconv.Itoa(index) } class={ templ.KV("hidden", index != view.Selected) }>
 		<div class="flex items-baseline justify-between gap-4 border-b border-base-content pb-3">
-			<p class="font-mono text-[10px] tracking-[1.5px] text-base-content/60">{ "STOP " + stopNumber(view.Selected+1) + " OF " + strconv.Itoa(view.Count) }</p>
+			<p class="font-mono text-[10px] tracking-[1.5px] text-base-content/60">{ "STOP " + stopNumber(index+1) + " OF " + strconv.Itoa(view.Count) }</p>
 			if stop.School != "" {
 				<p class="font-mono text-[10px] tracking-[1px] text-base-content/40">{ stop.School + " SCHOOL" }</p>
 			}
 		</div>
-
 		<div class="flex flex-col items-start gap-7 pt-7 md:flex-row md:gap-9">
 			<figure class="flex aspect-[4/5] w-full shrink-0 items-end border border-base-content/15 bg-base-300 p-3 md:w-[220px]">
 				if stop.ImageURL != "" {
@@ -210,27 +212,16 @@ templ ItineraryStopEditor(view dto.ItineraryBuilderView) {
 					<figcaption class="font-mono text-[9px] uppercase tracking-[0.5px] text-base-content/40">{ stop.Title }</figcaption>
 				}
 			</figure>
-
 			<div class="min-w-0 flex-1">
 				<h2 class="mb-1.5 text-[22px] font-semibold leading-tight tracking-[-0.2px]">{ stop.Title }</h2>
 				<p class="mb-5 font-mono text-[11px] text-base-content/60">{ stop.Artist }{ dateSuffix(stop.Date) }</p>
 				if stop.Unavailable {
 					<p class="mb-5 font-mono text-[11px] tracking-[1px] text-error">WORK NO LONGER AVAILABLE</p>
 				}
-
-				<form method="post" action="/itineraries/draft/narration" hx-post="/itineraries/draft/narration" hx-target="#itinerary-builder" hx-swap="outerHTML" hx-select="unset" hx-trigger="input changed delay:600ms">
-					@itineraryBuilderState(view)
-					<input type="hidden" name="stop_id" value={ stop.ID }/>
-					<input type="hidden" name="_csrf" value={ view.CSRF }/>
-					<label class="block">
-						<span class="mb-2 block font-mono text-[10px] tracking-[1.5px] text-base-content/60">
-							YOUR NARRATION — <output id="itinerary-narration-chars">{ strconv.Itoa(600 - runeLen(stop.Narration)) }</output> CHARACTERS LEFT
-						</span>
-						<textarea name="narration" maxlength="600" hx-on:input="wga.itinerary.countdown(this, 'itinerary-narration-chars')" placeholder="What should a visitor look at here, and why does it follow the work before it?" class="min-h-40 w-full rounded-none border border-base-content/30 bg-transparent p-3 text-[15px] leading-relaxed outline-none focus:ring-0">{ stop.Narration }</textarea>
-					</label>
-					<noscript><button type="submit" class="mt-2.5 bg-primary px-4 py-3 font-mono text-[11px] tracking-[1.5px] text-primary-content">SAVE NARRATION</button></noscript>
-				</form>
-
+				<label class="block">
+					<span class="mb-2 block font-mono text-[10px] tracking-[1.5px] text-base-content/60">YOUR NARRATION — 600 CHARACTER LIMIT</span>
+					<textarea form="itinerary-publish-form" data-itinerary-narration={ stop.ID } name={ "narration." + stop.ID } maxlength="600" placeholder="What should a visitor look at here, and why does it follow the work before it?" class="min-h-40 w-full rounded-none border border-base-content/30 bg-transparent p-3 text-[15px] leading-relaxed outline-none focus:ring-0">{ stop.Narration }</textarea>
+				</label>
 				<div class="mt-2.5 flex justify-between gap-4">
 					<p class="font-mono text-[10px] tracking-[0.5px] text-base-content/40">
 						if stop.Narration == "" {
@@ -239,24 +230,19 @@ templ ItineraryStopEditor(view dto.ItineraryBuilderView) {
 							{ strconv.Itoa(runeLen(stop.Narration)) + " CHARACTERS USED" }
 						}
 					</p>
-					if view.Selected < view.Count-1 {
-						<a href={ templ.SafeURL("/itineraries/new?stop=" + strconv.Itoa(view.Selected+1)) } hx-get={ "/itineraries/draft?stop=" + strconv.Itoa(view.Selected+1) } hx-target="#itinerary-builder" hx-swap="outerHTML" hx-select="unset" class="font-mono text-[10px] tracking-[1px] text-primary transition-opacity hover:opacity-60">NEXT STOP →</a>
+					if index < view.Count-1 {
+						<a href={ templ.SafeURL("/itineraries/new?stop=" + strconv.Itoa(index+1)) } data-itinerary-tab={ strconv.Itoa(index + 1) } class="font-mono text-[10px] tracking-[1px] text-primary transition-opacity hover:opacity-60">NEXT STOP →</a>
 					} else {
 						<span class="font-mono text-[10px] tracking-[1px] text-base-content/40">LAST STOP</span>
 					}
 				</div>
 			</div>
 		</div>
-	} else {
-		<div class="border-t border-base-content py-14">
-			<p class="mb-2 text-lg font-semibold">Nothing to narrate yet.</p>
-			<p class="max-w-[400px] text-[15px] leading-relaxed text-base-content/70">Pick a first work above. Fifteen is the ceiling; most itineraries read best at five or six.</p>
-		</div>
-	}
+	</section>
 }
 
 templ ItineraryPublishBar(view dto.ItineraryBuilderView) {
-	<form method="post" action="/itineraries" hx-post="/itineraries" hx-target="body" hx-swap="outerHTML" class="mt-14 flex flex-col items-start gap-7 border-t border-base-content pt-6 md:flex-row md:gap-12">
+	<form id="itinerary-publish-form" method="post" action="/itineraries" class="mt-14 flex flex-col items-start gap-7 border-t border-base-content pt-6 md:flex-row md:gap-12">
 		@itineraryBuilderState(view)
 		<input type="hidden" name="_csrf" value={ view.CSRF }/>
 		<label aria-hidden="true" class="hpt" for="name"></label>
@@ -285,8 +271,6 @@ templ ItineraryPublishBar(view dto.ItineraryBuilderView) {
 		<div class="flex w-full shrink-0 flex-col gap-2 md:w-[240px]">
 			if view.Count == 0 {
 				<button type="submit" disabled class="w-full cursor-not-allowed border border-base-content/20 px-4 py-3 font-mono text-[11px] tracking-[1.5px] text-base-content/40">ADD A WORK FIRST</button>
-			} else if view.Title == "" {
-				<button type="submit" disabled class="w-full cursor-not-allowed border border-base-content/20 px-4 py-3 font-mono text-[11px] tracking-[1.5px] text-base-content/40">GIVE IT A TITLE FIRST</button>
 			} else {
 				<button type="submit" class="w-full bg-primary px-4 py-3 font-mono text-[11px] tracking-[1.5px] text-primary-content">PUBLISH — THIS IS FINAL →</button>
 			}
@@ -295,8 +279,8 @@ templ ItineraryPublishBar(view dto.ItineraryBuilderView) {
 }
 
 templ ItineraryVisibility(value string, label string, selected bool) {
-	<label class={ "cursor-pointer border px-3.5 py-1.5 font-mono text-[11px] tracking-[1px] transition-colors", templ.KV("border-primary bg-primary text-primary-content", selected), templ.KV("border-control text-base-content/70 hover:border-base-content", !selected) }>
-		<input type="radio" name="listed" value={ value } checked?={ selected } class="sr-only"/>
+	<label data-itinerary-visibility class={ "cursor-pointer border px-3.5 py-1.5 font-mono text-[11px] tracking-[1px] transition-colors", templ.KV("border-primary bg-primary text-primary-content", selected), templ.KV("border-control text-base-content/70 hover:border-base-content", !selected) }>
+		<input form="itinerary-publish-form" type="radio" name="listed" value={ value } checked?={ selected } class="sr-only"/>
 		{ label }
 	</label>
 }

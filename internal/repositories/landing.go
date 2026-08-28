@@ -48,6 +48,7 @@ type landingArtworkRow struct {
 	ArtworkID         string `db:"artwork_id"`
 	ArtworkTitle      string `db:"artwork_title"`
 	ArtworkYear       string `db:"artwork_year"`
+	ArtworkDateEnd    int    `db:"artwork_date_end"`
 	ArtworkImage      string `db:"artwork_image"`
 	ArtworkImageWidth int    `db:"artwork_image_width"`
 	ArtistID          string `db:"artist_id"`
@@ -139,6 +140,7 @@ func (r *LandingRepository) FindEligibleArtworkByOffset(offset int) (*LandingArt
 			artwork.id AS artwork_id,
 			artwork.title AS artwork_title,
 			artwork.year AS artwork_year,
+			artwork.date_end AS artwork_date_end,
 			artwork.image AS artwork_image,
 			artwork.image_width AS artwork_image_width,
 			artist.id AS artist_id,
@@ -181,6 +183,7 @@ func (r *LandingRepository) ListRecentEligibleArtworks() ([]LandingArtwork, erro
 			artwork.id AS artwork_id,
 			artwork.title AS artwork_title,
 			artwork.year AS artwork_year,
+			artwork.date_end AS artwork_date_end,
 			artwork.image AS artwork_image,
 			artwork.image_width AS artwork_image_width,
 			artist.id AS artist_id,
@@ -215,6 +218,7 @@ func (r *LandingRepository) landingArtworks(rows []landingArtworkRow) ([]Landing
 		artwork.Id = row.ArtworkID
 		artwork.Set("title", row.ArtworkTitle)
 		artwork.Set("year", row.ArtworkYear)
+		artwork.Set("date_end", row.ArtworkDateEnd)
 		artwork.Set("image", row.ArtworkImage)
 		artwork.Set("image_width", row.ArtworkImageWidth)
 

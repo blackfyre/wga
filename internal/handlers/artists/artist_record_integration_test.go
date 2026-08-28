@@ -77,6 +77,7 @@ func newArtistRecordApp(t *testing.T) *pocketbase.PocketBase {
 		&core.BoolField{Name: "published"},
 		&core.TextField{Name: "image"},
 		&core.NumberField{Name: "image_width"},
+		&core.NumberField{Name: "date_end"},
 	)
 
 	saveRecordCollection(t, app, core.NewBaseCollection("Art_selections"), "art_selections",
@@ -210,7 +211,7 @@ func seedPublishedArtist(t *testing.T, app *pocketbase.PocketBase) {
 		"published":             true,
 	})
 	saveRecordRecord(t, app, "artworks", "artworkone00001", map[string]any{
-		"title": "Alpha Work", "author": []string{"artistone000001"}, "published": true, "image": "alpha.jpg", "image_width": 900,
+		"title": "Alpha Work", "author": []string{"artistone000001"}, "published": true, "image": "alpha.jpg", "image_width": 900, "date_end": 1610,
 	})
 	saveRecordRecord(t, app, "artworks", "artworktwo00001", map[string]any{
 		"title": "Beta Work", "author": []string{"artistone000001"}, "published": true,
@@ -472,6 +473,9 @@ func TestArtistRecordViewUsesCanonicalPublishedWorkLinks(t *testing.T) {
 	}
 	if want := "/api/files/artworks/artworkone00001/alpha.jpg?thumb=500x0"; view.Works[0].Image != want {
 		t.Errorf("first work image = %q, want %q", view.Works[0].Image, want)
+	}
+	if view.Works[0].Metadata != "1610" {
+		t.Errorf("first work metadata = %q, want date end 1610", view.Works[0].Metadata)
 	}
 }
 

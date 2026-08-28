@@ -1,6 +1,5 @@
 import { expect, test } from "bun:test";
 import {
-	countdown,
 	registerItineraryHelpers,
 	registerItineraryKeyboard,
 } from "./itinerary";
@@ -107,6 +106,147 @@ function makeFakeDom() {
 
 	return { appendedLinks, body, listeners, navigations, viewer };
 }
+
+test("switches builder stops without replacing unpublished fields", () => {
+	const hidden = new Map<string, boolean>();
+	const makeElement = (index: string) => ({
+		dataset: {
+			itineraryEditor: index,
+			itineraryTab: index,
+			itineraryTabItem: index,
+			itineraryTabLabel: index,
+		},
+		classList: {
+			toggle: (name: string, active: boolean) =>
+				hidden.set(`${index}:${name}`, active),
+		},
+		setAttribute: (name: string, value: string) =>
+			hidden.set(`${index}:${name}:${value}`, true),
+		removeAttribute: (name: string) => hidden.delete(`${index}:${name}:page`),
+	});
+	const first = makeElement("0");
+	const second = makeElement("1");
+	let tabClick: ((event: Event) => void) | undefined;
+	const tabs = [first, second].map((tab) => ({
+		...tab,
+		addEventListener: (_name: string, listener: (event: Event) => void) => {
+			if (tab.dataset.itineraryTab === "1") {
+				tabClick = listener;
+			}
+		},
+	}));
+
+	globalThis.document = {
+		querySelectorAll: (selector: string) => {
+			if (selector === "[data-itinerary-editor]") return [first, second];
+			if (selector === "[data-itinerary-tab]:not([data-itinerary-tab-bound])")
+				return tabs;
+			if (selector === "[data-itinerary-tab]") return tabs;
+			if (selector === "[data-itinerary-tab-item]") return [first, second];
+			if (selector === "[data-itinerary-tab-label]") return [first, second];
+			return [];
+		},
+	} as unknown as Document;
+
+	registerItineraryHelpers();
+	let prevented = false;
+	tabClick?.({
+		preventDefault: () => {
+			prevented = true;
+		},
+	} as unknown as Event);
+
+	expect(prevented).toBe(true);
+	expect(hidden.get("0:hidden")).toBe(true);
+	expect(hidden.get("1:hidden")).toBe(false);
+	expect(hidden.get("1:aria-current:page")).toBe(true);
+});
+
+test("updates a filmstrip narration status while typing", () => {
+	const classes = new Map<string, boolean>();
+	let input: (() => void) | undefined;
+	const narration = {
+		dataset: {},
+		value: "A note",
+		addEventListener: (_name: string, listener: () => void) => {
+			input = listener;
+		},
+	};
+	const status = {
+		dataset: { itineraryNarrationStatus: "stop-1" },
+		textContent: "NO NARRATION YET",
+		classList: {
+			toggle: (name: string, active: boolean) => classes.set(name, active),
+		},
+	};
+	(narration.dataset as Record<string, string>).itineraryNarration = "stop-1";
+
+	globalThis.document = {
+		querySelectorAll: (selector: string) => {
+			if (
+				selector ===
+				"[data-itinerary-narration]:not([data-itinerary-narration-bound])"
+			)
+				return [narration];
+			if (selector === "[data-itinerary-narration-status]") return [status];
+			return [];
+		},
+	} as unknown as Document;
+
+	registerItineraryHelpers();
+	input?.();
+
+	expect(status.textContent).toBe("6 CHARS");
+	expect(classes.get("text-warning")).toBe(false);
+	expect(classes.get("text-base-content/60")).toBe(true);
+});
+
+test("highlights the currently selected visibility option", () => {
+	const classes = new Map<string, boolean>();
+	const makeLabel = (name: string) => ({
+		classList: {
+			toggle: (className: string, active: boolean) =>
+				classes.set(`${name}:${className}`, active),
+		},
+	});
+	const listedLabel = makeLabel("listed");
+	const linkOnlyLabel = makeLabel("link-only");
+	let change: (() => void) | undefined;
+	const listed = {
+		dataset: {},
+		checked: false,
+		closest: () => listedLabel,
+		addEventListener: () => {},
+	};
+	const linkOnly = {
+		dataset: {},
+		checked: true,
+		closest: () => linkOnlyLabel,
+		addEventListener: (_name: string, listener: () => void) => {
+			change = listener;
+		},
+	};
+
+	globalThis.document = {
+		querySelectorAll: (selector: string) => {
+			if (
+				selector ===
+				"[data-itinerary-visibility] input[name='listed']:not([data-itinerary-visibility-bound])"
+			)
+				return [listed, linkOnly];
+			if (selector === "[data-itinerary-visibility] input[name='listed']")
+				return [listed, linkOnly];
+			return [];
+		},
+	} as unknown as Document;
+
+	registerItineraryHelpers();
+	change?.();
+
+	expect(classes.get("listed:bg-primary")).toBe(false);
+	expect(classes.get("link-only:bg-primary")).toBe(true);
+	expect(classes.get("link-only:text-primary-content")).toBe(true);
+});
 
 test("prefetches at most two neighbouring stops", () => {
 	const { appendedLinks } = makeFakeDom();
@@ -286,59 +426,6 @@ test("registerItineraryHelpers after the synchronous binder does not double-bind
 		preventDefault: () => {},
 	});
 	expect(navigations).toHaveLength(1);
-});
-
-test("countdown updates a characters-left output from the field maxlength", () => {
-	const output = { textContent: "" };
-	globalThis.document = {
-		getElementById: (id: string) =>
-			id === "itinerary-narration-chars" ? output : null,
-	} as unknown as Document;
-
-	const field = {
-		value: "hello",
-		getAttribute: (name: string) => (name === "maxlength" ? "600" : null),
-	} as unknown as HTMLTextAreaElement;
-
-	countdown(field, "itinerary-narration-chars");
-
-	expect(output.textContent).toBe("595");
-});
-
-test("countdown floors the remaining count at zero", () => {
-	const output = { textContent: "" };
-	globalThis.document = {
-		getElementById: (id: string) =>
-			id === "itinerary-narration-chars" ? output : null,
-	} as unknown as Document;
-
-	const field = {
-		value: "x".repeat(700),
-		getAttribute: (name: string) => (name === "maxlength" ? "600" : null),
-	} as unknown as HTMLTextAreaElement;
-
-	countdown(field, "itinerary-narration-chars");
-
-	expect(output.textContent).toBe("0");
-});
-
-test("countdown measures astral characters as single code points", () => {
-	const output = { textContent: "" };
-	globalThis.document = {
-		getElementById: (id: string) =>
-			id === "itinerary-narration-chars" ? output : null,
-	} as unknown as Document;
-
-	// Three astral emoji are six UTF-16 code units but three code points, so
-	// the countdown must match the server's rune count (600 - 3).
-	const field = {
-		value: "😀😀😀",
-		getAttribute: (name: string) => (name === "maxlength" ? "600" : null),
-	} as unknown as HTMLTextAreaElement;
-
-	countdown(field, "itinerary-narration-chars");
-
-	expect(output.textContent).toBe("597");
 });
 
 test("copies the published itinerary link and restores the label", async () => {

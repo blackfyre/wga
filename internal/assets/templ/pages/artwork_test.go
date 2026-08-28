@@ -241,6 +241,17 @@ func TestArtworkBlockRendersPostcardBeforeItinerary(t *testing.T) {
 	}
 }
 
+func TestArtworkBlockStacksRecordActionsAtReferenceSpacing(t *testing.T) {
+	ctx := tmplUtils.WithItineraryProjection(context.Background(), "csrf-token", dto.ItineraryTrayView{}, map[string]bool{})
+	rendered := renderArtworkBlock(t, sampleArtwork(), ctx)
+
+	for _, expected := range []string{`class="mt-7 flex flex-col gap-2.5"`, `h-[50px] w-full items-center justify-center`, `h-[50px]`} {
+		if !strings.Contains(rendered, expected) {
+			t.Errorf("record actions must contain %q", expected)
+		}
+	}
+}
+
 // TestReproRuleEscapesValue proves the reproduction metadata cell escapes HTML
 // so a hostile or malformed value cannot inject markup.
 func TestReproRuleEscapesValue(t *testing.T) {
@@ -487,15 +498,24 @@ func TestArtworkBlockRendersRelatedCards(t *testing.T) {
 	aw.Related.AlternativeURL = ""
 	aw.RelatedWorks = dto.ImageGrid{{
 		Id: "related00000001", Title: "A Related Work",
-		Url:    "/artists/johannes-vermeer-artist00000001/a-related-work-related00000001",
-		Image:  "/api/files/artworks/related00000001/r.jpg?thumb=400x0",
-		Artist: dto.Artist{Name: "Johannes Vermeer"},
+		Url:      "/artists/johannes-vermeer-artist00000001/a-related-work-related00000001",
+		Image:    "/api/files/artworks/related00000001/r.jpg?thumb=400x0",
+		Metadata: "1665",
+		Artist:   dto.Artist{Name: "Johannes Vermeer"},
 	}}
 
 	rendered := renderArtworkBlock(t, aw, context.Background())
 
 	if !strings.Contains(rendered, "A Related Work") {
 		t.Error("artwork related block must render related-work cards")
+	}
+	for _, expected := range []string{"1665", `grid-cols-2`, `md:grid-cols-3`, `lg:grid-cols-4`, `aspect-[4/5]`} {
+		if !strings.Contains(rendered, expected) {
+			t.Errorf("related-work grid must contain %q", expected)
+		}
+	}
+	if strings.Contains(rendered, "VIEW WORK →") {
+		t.Error("related-work grid must not use the shared catalogue card action")
 	}
 	if strings.Contains(rendered, "The archive catalogues no further works") {
 		t.Error("artwork must not render a sparse note when the basis is not sparse")

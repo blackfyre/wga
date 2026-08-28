@@ -6,6 +6,7 @@ type Image struct {
 	Zoom      string
 	Title     string
 	Technique string
+	Metadata  string
 	Comment   string
 	Url       string
 	Id        string

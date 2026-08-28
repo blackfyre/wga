@@ -244,9 +244,18 @@ func TestPublishFlow(t *testing.T) {
 
 	cookie, csrf := sessionForMux(t, mux)
 	postForm(t, mux, "/itineraries/draft/add", cookie, csrf, url.Values{"artwork_id": {testArtworkID}})
-	postForm(t, mux, "/itineraries/draft/meta", cookie, csrf, url.Values{"title": {"My Journey"}})
+	stops := stopsForCookie(t, app, cookie)
+	if len(stops) != 1 {
+		t.Fatalf("draft stops = %d, want 1", len(stops))
+	}
 
-	response := postForm(t, mux, "/itineraries", cookie, csrf, url.Values{})
+	response := postForm(t, mux, "/itineraries", cookie, csrf, url.Values{
+		"title":                    {"My Journey"},
+		"intro":                    {"A plain form submission."},
+		"creator":                  {"A maker"},
+		"listed":                   {"1"},
+		"narration." + stops[0].Id: {"A submitted narration."},
+	})
 	if response.Code != http.StatusSeeOther {
 		t.Fatalf("publish status = %d, want 303", response.Code)
 	}
@@ -263,6 +272,13 @@ func TestPublishFlow(t *testing.T) {
 	}
 	if records[0].GetString("token") == "" {
 		t.Error("publish must issue an immutable token")
+	}
+	if records[0].GetString("intro") != "A plain form submission." || records[0].GetString("creator") != "A maker" || !records[0].GetBool("listed") {
+		t.Error("publish must persist the submitted metadata and visibility")
+	}
+	publishedStops, err := itineraryworkflow.LoadStops(app, records[0].Id)
+	if err != nil || len(publishedStops) != 1 || publishedStops[0].GetString("narration") != "A submitted narration." {
+		t.Fatalf("publish must persist submitted narration: %v %#v", err, publishedStops)
 	}
 
 	// The token is immediately readable cookie-less.

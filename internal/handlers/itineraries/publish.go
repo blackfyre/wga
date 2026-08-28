@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
@@ -44,33 +45,66 @@ func (ctx *securityContext) publish(app *pocketbase.PocketBase, c *core.RequestE
 		return tooManyPublishes(c)
 	}
 
+	content := itineraryworkflow.PublicationContent{
+		Meta: itineraryworkflow.Meta{
+			Title:   c.Request.FormValue("title"),
+			Intro:   c.Request.FormValue("intro"),
+			Creator: c.Request.FormValue("creator"),
+		},
+		Narrations: map[string]string{},
+	}
+	contentSubmitted := false
+	for _, field := range []string{"title", "intro", "creator"} {
+		if _, ok := c.Request.PostForm[field]; ok {
+			contentSubmitted = true
+			break
+		}
+	}
+	for name, values := range c.Request.PostForm {
+		stopID, ok := strings.CutPrefix(name, "narration.")
+		if !ok || len(values) == 0 {
+			continue
+		}
+		contentSubmitted = true
+		content.Narrations[stopID] = values[0]
+	}
+
 	// The publish form carries the listing choice as a radio ("1" listed, "0"
-	// link only). It is recorded before publication; an absent value (tests and
-	// non-radio clients) leaves the draft's existing choice untouched.
+	// link only). An absent value leaves the draft's existing choice untouched.
 	if raw := c.Request.FormValue("listed"); raw == "1" || raw == "0" {
-		if err := itineraryworkflow.SetListed(app, owner, raw == "1"); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		listed := raw == "1"
+		content.Listed = &listed
+	}
+	if !contentSubmitted && content.Listed != nil {
+		if err := itineraryworkflow.SetListed(app, owner, *content.Listed); err != nil && !errors.Is(err, sql.ErrNoRows) {
 			ctx.limiter.Release(clientID, itineraryworkflow.AdmissionPublish)
 			return utils.ServerFaultError(c)
 		}
 	}
 
-	if _, err := itineraryworkflow.Publish(app, owner); err != nil {
+	var publishErr error
+	if contentSubmitted {
+		_, publishErr = itineraryworkflow.PublishWithContent(app, owner, content)
+	} else {
+		_, publishErr = itineraryworkflow.Publish(app, owner)
+	}
+	if publishErr != nil {
 		ctx.limiter.Release(clientID, itineraryworkflow.AdmissionPublish)
 		switch {
-		case errors.Is(err, itineraryworkflow.ErrPublishRateLimit):
+		case errors.Is(publishErr, itineraryworkflow.ErrPublishRateLimit):
 			return tooManyPublishes(c)
-		case errors.Is(err, itineraryworkflow.ErrTitleRequired),
-			errors.Is(err, itineraryworkflow.ErrNoStops),
-			errors.Is(err, itineraryworkflow.ErrNotDraft),
-			errors.Is(err, sql.ErrNoRows):
+		case errors.Is(publishErr, itineraryworkflow.ErrTitleRequired),
+			errors.Is(publishErr, itineraryworkflow.ErrNoStops),
+			errors.Is(publishErr, itineraryworkflow.ErrNotDraft),
+			errors.Is(publishErr, sql.ErrNoRows):
 			utils.SendToastMessage("Your itinerary needs a title and at least one stop.", "error", true, c, "")
 			return utils.BadRequestError(c)
 		default:
 			logging.RequestLogger(app, c).Error("Itinerary publish failed",
 				"event", "itineraries.publish.failed",
 				"outcome", "persistence_error",
-				"error_type", logging.ErrorType(err),
-				"error", logging.Redact(err),
+				"error_type", logging.ErrorType(publishErr),
+				"error", logging.Redact(publishErr),
 			)
 			return utils.ServerFaultError(c)
 		}

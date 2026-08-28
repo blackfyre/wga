@@ -140,20 +140,29 @@ func TestArtistRecordContentRendersWorksAndWiderRoute(t *testing.T) {
 		ShortName:  "Portrait",
 		WorkCount:  5,
 		WorksURL:   "/artworks?artist=Artist%2C+Portrait",
-		Works:      dto.ImageGrid{{Id: "artwork12345678", Title: "A Painting", Url: "/artists/portrait-artist-artist/a-painting-artwork12345678", Image: "/api/files/artworks/artwork12345678/p.jpg", Artist: dto.Artist{Name: "Portrait Artist"}}},
+		Works:      dto.ImageGrid{{Id: "artwork12345678", Title: "A Painting", Url: "/artists/portrait-artist-artist/a-painting-artwork12345678", Image: "/api/files/artworks/artwork12345678/p.jpg", Metadata: "1610", Artist: dto.Artist{Name: "Portrait Artist"}}},
 	})
 
 	for _, expected := range []string{
 		"WORKS IN ARCHIVE",
 		"1 OF 5 RECORDS",
 		"A Painting",
+		"1610",
 		`href="/artists/portrait-artist-artist/a-painting-artwork12345678"`,
 		`href="/artworks?artist=Artist%2C+Portrait"`,
 		`hx-get="/artworks?artist=Artist%2C+Portrait"`,
 		"FIND MORE BY Portrait IN THE ARTWORK SEARCH →",
+		`grid-cols-2`,
+		`md:grid-cols-4`,
+		`aspect-[4/5]`,
 	} {
 		if !strings.Contains(rendered, expected) {
 			t.Errorf("expected works section to contain %q", expected)
+		}
+	}
+	for _, legacy := range []string{"VIEW WORK →", "ADD TO AN ITINERARY +", "lg:grid-cols-3"} {
+		if strings.Contains(rendered, legacy) {
+			t.Errorf("artist archive works must not use the shared catalogue card %q", legacy)
 		}
 	}
 }

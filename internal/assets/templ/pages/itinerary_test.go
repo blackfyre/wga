@@ -32,6 +32,9 @@ func TestItineraryBuilderRendersStopsNarrationAndCsrf(t *testing.T) {
 	for _, expected := range []string{
 		`id="itinerary-builder"`,
 		`name="_csrf" value="csrf-token"`,
+		`id="itinerary-publish-form"`,
+		`form="itinerary-publish-form"`,
+		`name="narration.stop-1"`,
 		"Work One",
 		"A note",
 		"YOUR NARRATION",
@@ -85,9 +88,24 @@ func TestItineraryBuilderFilmstripNarrationStatusAndSelectedEditor(t *testing.T)
 	if !strings.Contains(rendered, "NEXT STOP") {
 		t.Error("selected editor must offer next-stop navigation when more stops follow")
 	}
+	if strings.Count(rendered, "YOUR NARRATION") != 3 {
+		t.Error("every stop editor must remain in the publish form for client-side tabs")
+	}
+	if !strings.Contains(rendered, `data-itinerary-tab="2"`) || !strings.Contains(rendered, `data-itinerary-editor="2"`) {
+		t.Error("stop links and editor panels must share client-side tab identifiers")
+	}
 	// The selected stop carries aria-current in the filmstrip.
 	if !strings.Contains(rendered, `aria-current="page"`) {
 		t.Error("the selected stop must be marked with aria-current")
+	}
+}
+
+func TestNarrationStatus(t *testing.T) {
+	if got := narrationStatus(""); got != "NO NARRATION YET" {
+		t.Errorf("empty narration status = %q", got)
+	}
+	if got := narrationStatus("A note"); got != "6 CHARS" {
+		t.Errorf("narrated status = %q", got)
 	}
 }
 
@@ -112,16 +130,25 @@ func TestItineraryBuilderMutationFormsDisableInheritedSelect(t *testing.T) {
 
 	rendered := output.String()
 	for _, form := range []string{
-		`hx-post="/itineraries/draft/meta" hx-target="#itinerary-builder" hx-swap="outerHTML" hx-select="unset"`,
 		`hx-post="/itineraries/draft/add" hx-target="#itinerary-tray" hx-swap="outerHTML" hx-select="unset"`,
 		`hx-post="/itineraries/draft/clear" hx-target="#itinerary-builder" hx-swap="outerHTML" hx-select="unset"`,
-		`hx-post="/itineraries/draft/narration" hx-target="#itinerary-builder" hx-swap="outerHTML" hx-select="unset"`,
 		`hx-post="/itineraries/draft/remove" hx-target="#itinerary-builder" hx-swap="outerHTML" hx-select="unset"`,
 		`hx-post="/itineraries/draft/move" hx-target="#itinerary-builder" hx-swap="outerHTML" hx-select="unset"`,
 	} {
 		if !strings.Contains(rendered, form) {
 			t.Errorf("mutation form missing hx-select override: %q", form)
 		}
+	}
+	for _, forbidden := range []string{"/itineraries/draft/meta", "/itineraries/draft/narration", `hx-trigger="input changed delay:600ms"`} {
+		if strings.Contains(rendered, forbidden) {
+			t.Errorf("builder must not autosave through %q", forbidden)
+		}
+	}
+	if !strings.Contains(rendered, `data-itinerary-visibility`) || !strings.Contains(rendered, `border-primary bg-primary text-primary-content`) {
+		t.Error("visibility controls must expose their selected state for client-side updates")
+	}
+	if strings.Count(rendered, `hx-confirm="Discard unfinished title, introduction, maker, and narration?"`) < 4 {
+		t.Error("builder replacements must warn before discarding unpublished fields")
 	}
 }
 

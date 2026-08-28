@@ -7,6 +7,7 @@ import (
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	"github.com/blackfyre/wga/internal/repositories"
 	"github.com/blackfyre/wga/internal/utils/url"
+	"github.com/pocketbase/pocketbase/core"
 )
 
 const recentArtworkLimit = 4
@@ -79,7 +80,7 @@ func featuredArtwork(work repositories.LandingArtwork) pages.HomeFeaturedArtwork
 	return pages.HomeFeaturedArtwork{
 		Title:  work.Artwork.GetString("title"),
 		Artist: work.Artist.GetString("filing_name"),
-		Year:   work.Artwork.GetString("year"),
+		Year:   artworkDisplayYear(work.Artwork),
 		URL:    artworkURL(work),
 		Image:  url.GenerateArtworkImageURL(work.Artwork, url.DeliveryProfileFeature, ""),
 	}
@@ -89,7 +90,7 @@ func recentArtwork(work repositories.LandingArtwork) pages.HomeRecentArtwork {
 	return pages.HomeRecentArtwork{
 		Title:  work.Artwork.GetString("title"),
 		Artist: work.Artist.GetString("filing_name"),
-		Year:   work.Artwork.GetString("year"),
+		Year:   artworkDisplayYear(work.Artwork),
 		URL:    artworkURL(work),
 		Image:  url.GenerateArtworkImageURL(work.Artwork, url.DeliveryProfileCardAndArtistIndex, ""),
 	}
@@ -102,4 +103,12 @@ func artworkURL(work repositories.LandingArtwork) string {
 		ArtworkId:    work.Artwork.Id,
 		ArtworkTitle: work.Artwork.GetString("title"),
 	})
+}
+
+func artworkDisplayYear(artwork *core.Record) string {
+	if dateEnd := artwork.GetInt("date_end"); dateEnd > 0 {
+		return fmt.Sprintf("%d", dateEnd)
+	}
+
+	return artwork.GetString("year")
 }

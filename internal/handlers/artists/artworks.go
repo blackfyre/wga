@@ -305,7 +305,9 @@ func populateArtworkMetadata(app *pocketbase.PocketBase, artwork *core.Record, c
 		content.Technique = strings.TrimSpace(strings.TrimSuffix(content.Technique, ", "+content.Dimensions))
 	}
 
-	if year := artwork.GetInt("year"); year > 0 {
+	if dateEnd := artwork.GetInt("date_end"); dateEnd > 0 {
+		content.Year = strconv.Itoa(dateEnd)
+	} else if year := artwork.GetInt("year"); year > 0 {
 		content.Year = strconv.Itoa(year)
 	}
 
@@ -437,14 +439,14 @@ func populateArtworkRelated(app *pocketbase.PocketBase, artwork *core.Record, co
 		app.Logger().Warn("Failed to resolve related artworks", "artwork_id", artwork.Id, "error", err)
 	}
 
-	content.RelatedWorks = buildRelatedWorkImages(app, result.Works, content.HxTarget)
+	content.RelatedWorks = buildRelatedWorkImages(app, result.Basis, result.Works, content.HxTarget)
 	content.Related = buildRelatedWorkState(result.Basis, result.Holding, content, artwork, baseURL)
 }
 
 // buildRelatedWorkImages maps resolver records onto the related-work card
 // projection using the source-eligible related-card profile and the canonical
 // per-work artwork URL.
-func buildRelatedWorkImages(app *pocketbase.PocketBase, works []*core.Record, hxTarget string) dto.ImageGrid {
+func buildRelatedWorkImages(app *pocketbase.PocketBase, basis repositories.RelatedWorkBasis, works []*core.Record, hxTarget string) dto.ImageGrid {
 	related := dto.ImageGrid{}
 	for _, work := range works {
 		image := utils.AssetUrl("/assets/images/no-image.png")
@@ -466,11 +468,17 @@ func buildRelatedWorkImages(app *pocketbase.PocketBase, works []*core.Record, hx
 			})
 		}
 
+		metadata := filingName
+		if basis == repositories.RelatedByArtist {
+			metadata = artworkDateMetadata(work)
+		}
+
 		related = append(related, dto.Image{
 			Id:        work.Id,
 			Title:     work.GetString("title"),
 			Image:     image,
 			Technique: work.GetString("technique"),
+			Metadata:  metadata,
 			Url:       workURL,
 			Artist: dto.Artist{
 				FilingName: filingName,

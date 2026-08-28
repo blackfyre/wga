@@ -133,6 +133,7 @@ func newLandingRepositoryTestApp(t *testing.T) *pocketbase.PocketBase {
 	artworks.Fields.Add(
 		&core.TextField{Id: "artwork_title", Name: "title", Required: true},
 		&core.TextField{Id: "artwork_year", Name: "year"},
+		&core.NumberField{Id: "artwork_date_end", Name: "date_end"},
 		&core.TextField{Id: "artwork_image", Name: "image"},
 		&core.NumberField{Id: "artwork_image_width", Name: "image_width"},
 		&core.DateField{Id: "artwork_created", Name: "created"},

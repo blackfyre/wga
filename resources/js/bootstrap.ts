@@ -24,10 +24,7 @@ import {
 } from "./bionic";
 import { initCookieConsent } from "./cookieconsent";
 import { initDualHorizontalScroll } from "./dual";
-import {
-	countdown as itineraryCountdown,
-	registerItineraryHelpers,
-} from "./itinerary";
+import { registerItineraryHelpers } from "./itinerary";
 import { initKeyboardNavigation } from "./keyboard";
 import logger from "./logger";
 import { initPeriodMusic } from "./music";
@@ -87,9 +84,6 @@ type wgaWindow = {
 	feedback: {
 		countdown: (field: HTMLTextAreaElement) => void;
 		setPlaceholder: (field: HTMLInputElement) => void;
-	};
-	itinerary: {
-		countdown: (field: HTMLTextAreaElement, outputId: string) => void;
 	};
 	theme: {
 		set: (scheme: Scheme) => void;
@@ -1349,11 +1343,6 @@ window.wga = {
 		},
 		setPlaceholder(field: HTMLInputElement) {
 			feedbackSetPlaceholder(field);
-		},
-	},
-	itinerary: {
-		countdown(field: HTMLTextAreaElement, outputId: string) {
-			itineraryCountdown(field, outputId);
 		},
 	},
 	theme: {

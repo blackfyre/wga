@@ -499,6 +499,7 @@ func buildRecordWorkImages(artist *core.Record, works []*core.Record) dto.ImageG
 			Id:        work.GetString("id"),
 			Title:     work.GetString("title"),
 			Technique: work.GetString("technique"),
+			Metadata:  artworkDateMetadata(work),
 			Image:     image,
 			Url: url.GenerateFullArtworkUrl(url.ArtworkUrlDTO{
 				ArtistName:   artist.GetString("name"),
@@ -515,6 +516,14 @@ func buildRecordWorkImages(artist *core.Record, works []*core.Record) dto.ImageG
 	}
 
 	return images
+}
+
+func artworkDateMetadata(artwork *core.Record) string {
+	if dateEnd := artwork.GetInt("date_end"); dateEnd > 0 {
+		return strconv.Itoa(dateEnd)
+	}
+
+	return artwork.GetString("year")
 }
 
 // buildArtistWorksURL returns the wider catalogue route filtered to the

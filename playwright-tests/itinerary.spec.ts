@@ -172,6 +172,8 @@ test.describe("builder", () => {
 		await expect(query).toBeVisible();
 
 		await query.fill(artistQuery ?? artist);
+		page.once("dialog", (dialog) => dialog.accept());
+		await page.getByRole("button", { name: "SEARCH" }).click();
 		await expect(query).toHaveValue(artistQuery ?? artist);
 		// The picker returns works whose artist actually matches, not just a
 		// non-zero result count.
@@ -315,22 +317,17 @@ test.describe("publication and slideshow", () => {
 		await page.goto("/itineraries/new");
 		await expect(page.getByText(/STOP 01 OF 2/)).toBeVisible();
 
-		// Narration auto-saves on change (blur).
-		const narration = page.locator('textarea[name="narration"]').nth(0);
+		const narration = page.locator('textarea[name^="narration."]').nth(0);
 		await narration.fill("A narrated first stop.");
-		await narration.press("Tab");
-		await expect(page.getByText(/CHARACTERS USED$/)).toBeVisible();
+		await page.locator('[data-itinerary-tab="1"]').first().click();
+		await expect(page.getByText(/STOP 02 OF 2/)).toBeVisible();
+		await expect(narration).toHaveValue("A narrated first stop.");
 
-		// Title auto-saves on change.
 		const title = page.locator('input[name="title"]');
 		const publicationTitle = uniquePublicationTitle(
 			"Playwright listed journey",
 		);
 		await title.fill(publicationTitle);
-		await title.press("Tab");
-		await expect(
-			page.getByRole("button", { name: "PUBLISH — THIS IS FINAL →" }),
-		).toBeVisible();
 
 		// Choose listed-publicly by keyboard, then publish.
 		await checkVisibilityOptionByKeyboard(page, "LISTED PUBLICLY");
@@ -540,17 +537,7 @@ test.describe("without JavaScript", () => {
 
 		const noJSTitle = uniquePublicationTitle("No-JS draft");
 		await page.locator('input[name="title"]').fill(noJSTitle);
-		const saveDetails = page.getByRole("button", { name: "SAVE DETAILS" });
-		await scrollIntoViewCentered(saveDetails);
-		await saveDetails.click();
-		await page.locator('textarea[name="narration"]').fill("Plain narration");
-		const saveNarration = page.getByRole("button", { name: "SAVE NARRATION" });
-		await scrollIntoViewCentered(saveNarration);
-		await saveNarration.click();
-
-		await page.reload();
-		await expect(page.locator('input[name="title"]')).toHaveValue(noJSTitle);
-		await expect(page.getByText(/STOP 01 OF 1/)).toBeVisible();
+		await page.locator('textarea[name^="narration."]').fill("Plain narration");
 
 		// Publish as listed publicly through the ordinary form.
 		await checkVisibilityOption(page, "LISTED PUBLICLY");
