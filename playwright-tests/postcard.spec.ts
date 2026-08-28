@@ -57,6 +57,27 @@ test.describe("without JavaScript", () => {
 	});
 });
 
+test("postcard dialog keeps its close control reachable on mobile", async ({
+	page,
+}) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.goto(
+		"/artists/synthetic-artist-01-ad32608c6e36b2e/synthetic-artwork-01-01-2225c982be1af02",
+	);
+	await page.getByRole("link", { name: "SEND AS POSTCARD →" }).click();
+
+	const dialog = page.locator("#d");
+	const modalBox = dialog.locator(".modal-box");
+	await modalBox.evaluate((element) => {
+		element.scrollTop = element.scrollHeight;
+	});
+
+	const close = dialog.getByRole("button", { name: "Close", exact: true });
+	await expect(close).toBeInViewport({ ratio: 1 });
+	await close.click();
+	await expect(dialog).not.toHaveAttribute("open", "");
+});
+
 test("send postcard", async ({ page, request }) => {
 	test.setTimeout(150000);
 

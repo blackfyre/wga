@@ -16,7 +16,7 @@ func TestPostcardDialogsCarryHeaderRuleDismissal(t *testing.T) {
 	confirmation := renderPostcard(t, PostcardConfirmationDialog(PostcardConfirmationView{MaskedRecipient: "r••••@example.test", ViewURL: "/postcard?token=opaque", Expires: "22 September 2026"}))
 
 	for name, html := range map[string]string{"compose": compose, "confirmation": confirmation} {
-		for _, expected := range []string{`data-dialog-close`, `data-dialog-initial-focus`, `aria-label="Close"`, `method="dialog"`, `class="modal-backdrop`, `border-b border-base-content`} {
+		for _, expected := range []string{`data-dialog-close`, `data-dialog-initial-focus`, `aria-label="Close"`, `method="dialog"`, `class="modal-backdrop`, `sticky top-0 z-10`, `min-h-11 min-w-11`, `border-b border-base-content`} {
 			if !strings.Contains(html, expected) {
 				t.Fatalf("%s dialog missing header-rule dismissal marker %s", name, expected)
 			}

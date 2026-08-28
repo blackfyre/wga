@@ -48,9 +48,9 @@ templ PostcardComposePage(v PostcardComposeView) {
 
 templ PostcardComposeDialog(v PostcardComposeView) {
 	@components.DialogBody() {
-		<div class="flex items-start justify-end border-b border-base-content pb-4">
+		<div class="sticky top-0 z-10 -mt-5 flex items-start justify-end border-b border-base-content bg-base-100 pb-4 pt-5 md:-mt-7 md:pt-7">
 			<form method="dialog">
-				<button type="submit" data-dialog-close data-dialog-initial-focus class="font-mono text-sm text-base-content/60 hover:text-base-content" aria-label="Close">✕</button>
+				<button type="submit" data-dialog-close data-dialog-initial-focus class="inline-flex min-h-11 min-w-11 items-center justify-center font-mono text-sm text-base-content/60 hover:text-base-content" aria-label="Close">✕</button>
 			</form>
 		</div>
 		@PostcardComposeBlock(v)
@@ -100,9 +100,9 @@ templ PostcardConfirmationPage(v PostcardConfirmationView) {
 
 templ PostcardConfirmationDialog(v PostcardConfirmationView) {
 	@components.DialogBody() {
-		<div class="flex items-start justify-end border-b border-base-content pb-4">
+		<div class="sticky top-0 z-10 -mt-5 flex items-start justify-end border-b border-base-content bg-base-100 pb-4 pt-5 md:-mt-7 md:pt-7">
 			<form method="dialog">
-				<button type="submit" data-dialog-close data-dialog-initial-focus class="font-mono text-sm text-base-content/60 hover:text-base-content" aria-label="Close">✕</button>
+				<button type="submit" data-dialog-close data-dialog-initial-focus class="inline-flex min-h-11 min-w-11 items-center justify-center font-mono text-sm text-base-content/60 hover:text-base-content" aria-label="Close">✕</button>
 			</form>
 		</div>
 		@PostcardConfirmationBlock(v)
