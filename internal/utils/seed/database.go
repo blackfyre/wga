@@ -60,22 +60,11 @@ func Import(app core.App, sqlitePath string) error {
 	defer func() {
 		_ = paths.Close()
 	}()
-	var storage *filesystem.System
-	if paths.preseededAssets && app.Settings().S3.Enabled {
-		storage, err = app.NewFilesystem()
-		if err != nil {
-			return fmt.Errorf("open configured seed storage: %w", err)
-		}
-		defer func() {
-			_ = storage.Close()
-		}()
-	}
-
 	data, err := loadSourceData(paths)
 	if err != nil {
 		return err
 	}
-	if err := loadSourceFiles(paths, storage, &data); err != nil {
+	if err := loadSourceFiles(paths, app.Settings().S3.Enabled, &data); err != nil {
 		return err
 	}
 	if err := validateTargetCollections(app, data); err != nil {

@@ -8,8 +8,6 @@ import (
 	"strings"
 	"testing"
 	"testing/fstest"
-
-	"github.com/pocketbase/pocketbase/tools/filesystem"
 )
 
 func TestLoadBiographiesUsesArtistFieldsWhenLegacyTableIsAbsent(t *testing.T) {
@@ -352,7 +350,7 @@ func TestLoadPreseededSourceFilesSkipsImageLessArtwork(t *testing.T) {
 		},
 	}
 
-	if err := loadPreseededSourceFiles(root, nil, &data); err != nil {
+	if err := loadPreseededSourceFiles(root, false, &data); err != nil {
 		t.Fatalf("load preseeded source files: %v", err)
 	}
 
@@ -380,7 +378,7 @@ func TestLoadPreseededSourceFilesRejectsUnsafeArtworkPath(t *testing.T) {
 		},
 	}
 
-	if err := loadPreseededSourceFiles(t.TempDir(), nil, &data); err == nil {
+	if err := loadPreseededSourceFiles(t.TempDir(), false, &data); err == nil {
 		t.Fatal("expected unsafe artwork path error")
 	}
 }
@@ -396,7 +394,7 @@ func TestPreseededArtworkFileRecordsStagedByteSize(t *testing.T) {
 		t.Fatalf("write staged original: %v", err)
 	}
 
-	file, err := preseededArtworkFile(root, nil, "artworks/rwork0000000001/image.jpg")
+	file, err := preseededArtworkFile(root, false, "artworks/rwork0000000001/image.jpg")
 	if err != nil {
 		t.Fatalf("preseeded artwork file: %v", err)
 	}
@@ -411,35 +409,22 @@ func TestPreseededArtworkFileRecordsStagedByteSize(t *testing.T) {
 	}
 }
 
-func TestPreseededArtworkFileUsesConfiguredStorage(t *testing.T) {
-	storage, err := filesystem.NewLocal(t.TempDir())
-	if err != nil {
-		t.Fatalf("create storage: %v", err)
-	}
-	defer func() {
-		_ = storage.Close()
-	}()
-
-	content := []byte("configured storage image bytes")
+func TestPreseededArtworkFileWithConfiguredStorageSkipsLocalStaging(t *testing.T) {
 	storagePath := "artworks/rwork0000000001/image.jpg"
-	if err := storage.Upload(content, storagePath); err != nil {
-		t.Fatalf("upload storage object: %v", err)
-	}
-
-	file, err := preseededArtworkFile(t.TempDir(), storage, storagePath)
+	file, err := preseededArtworkFile(t.TempDir(), true, storagePath)
 	if err != nil {
 		t.Fatalf("preseeded artwork file: %v", err)
 	}
 	if got, want := file.name, "image.jpg"; got != want {
 		t.Fatalf("file name = %q, want %q", got, want)
 	}
-	if got, want := file.size, int64(len(content)); got != want {
-		t.Fatalf("file size = %d, want %d", got, want)
+	if file.size != 0 {
+		t.Fatalf("file size = %d, want zero without a local staged original", file.size)
 	}
 }
 
 func TestPreseededArtworkFileRejectsMissingOriginal(t *testing.T) {
-	if _, err := preseededArtworkFile(t.TempDir(), nil, "artworks/rwork0000000001/image.jpg"); err == nil {
+	if _, err := preseededArtworkFile(t.TempDir(), false, "artworks/rwork0000000001/image.jpg"); err == nil {
 		t.Fatal("expected missing staged original error")
 	}
 }
@@ -451,7 +436,7 @@ func TestPreseededArtworkFileRejectsNonRegularOriginal(t *testing.T) {
 		t.Fatalf("mkdir: %v", err)
 	}
 
-	if _, err := preseededArtworkFile(root, nil, "artworks/rwork0000000001/image.jpg"); err == nil {
+	if _, err := preseededArtworkFile(root, false, "artworks/rwork0000000001/image.jpg"); err == nil {
 		t.Fatal("expected non-regular staged original error")
 	}
 }
@@ -466,7 +451,7 @@ func TestPreseededArtworkFileRejectsEmptyOriginal(t *testing.T) {
 		t.Fatalf("write empty staged original: %v", err)
 	}
 
-	if _, err := preseededArtworkFile(root, nil, "artworks/rwork0000000001/image.jpg"); err == nil {
+	if _, err := preseededArtworkFile(root, false, "artworks/rwork0000000001/image.jpg"); err == nil {
 		t.Fatal("expected empty staged original error")
 	}
 }
@@ -486,7 +471,7 @@ func TestPreseededArtworkFileRejectsFileSymlinkEscape(t *testing.T) {
 		t.Fatalf("symlink file: %v", err)
 	}
 
-	if _, err := preseededArtworkFile(root, nil, "artworks/rwork0000000001/image.jpg"); err == nil {
+	if _, err := preseededArtworkFile(root, false, "artworks/rwork0000000001/image.jpg"); err == nil {
 		t.Fatal("expected file symlink escape error")
 	}
 }
@@ -506,7 +491,7 @@ func TestPreseededArtworkFileRejectsParentSymlinkEscape(t *testing.T) {
 		t.Fatalf("symlink parent: %v", err)
 	}
 
-	if _, err := preseededArtworkFile(root, nil, "artworks/rwork0000000001/image.jpg"); err == nil {
+	if _, err := preseededArtworkFile(root, false, "artworks/rwork0000000001/image.jpg"); err == nil {
 		t.Fatal("expected parent-directory symlink escape error")
 	}
 }

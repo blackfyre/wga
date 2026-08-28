@@ -17,7 +17,6 @@ import (
 	"strings"
 
 	"github.com/blackfyre/wga/resources/synthetic"
-	"github.com/pocketbase/pocketbase/tools/filesystem"
 	_ "modernc.org/sqlite"
 )
 
@@ -1196,9 +1195,9 @@ func isSHA256Hex(value string) bool {
 	return true
 }
 
-func loadSourceFiles(paths sourcePaths, storage *filesystem.System, data *sourceData) error {
+func loadSourceFiles(paths sourcePaths, objectStorageConfigured bool, data *sourceData) error {
 	if paths.preseededAssets {
-		return loadPreseededSourceFiles(paths.storageRoot, storage, data)
+		return loadPreseededSourceFiles(paths.storageRoot, objectStorageConfigured, data)
 	}
 
 	return loadEmbeddedSourceFiles(paths.storage, data)
@@ -1210,12 +1209,12 @@ func loadSourceFiles(paths sourcePaths, storage *filesystem.System, data *source
 // a valid image-less artwork and simply has no file entry; a declared non-empty
 // path must resolve to a safe relative storage path whose staged original is a
 // present, non-empty, regular file, or the import fails closed.
-func loadPreseededSourceFiles(storageRoot string, storage *filesystem.System, data *sourceData) error {
+func loadPreseededSourceFiles(storageRoot string, objectStorageConfigured bool, data *sourceData) error {
 	for _, artwork := range data.artworks {
 		if artwork.ImagePath == "" {
 			continue
 		}
-		file, err := preseededArtworkFile(storageRoot, storage, artwork.ImagePath)
+		file, err := preseededArtworkFile(storageRoot, objectStorageConfigured, artwork.ImagePath)
 		if err != nil {
 			return fmt.Errorf("artwork %q storage path: %w", artwork.ID, err)
 		}
@@ -1243,24 +1242,17 @@ func preseededSourceFile(value string) (sourceFile, error) {
 }
 
 // preseededArtworkFile resolves the preseeded artwork storage filename and
-// records its exact byte size. Configured PocketBase storage is authoritative;
-// an external seed without configured object storage uses its paired local
-// staged original instead.
-func preseededArtworkFile(storageRoot string, storage *filesystem.System, value string) (sourceFile, error) {
+// records its exact byte size when the staged file is local. With configured
+// object storage, the object has already been provisioned and the bootstrap
+// records only its validated filename. It deliberately avoids serial remote
+// object lookups before the application starts listening.
+func preseededArtworkFile(storageRoot string, objectStorageConfigured bool, value string) (sourceFile, error) {
 	sourcePath, err := safeRelativePath(value)
 	if err != nil {
 		return sourceFile{}, err
 	}
-	if storage != nil {
-		attributes, err := storage.Attributes(sourcePath)
-		if err != nil {
-			return sourceFile{}, fmt.Errorf("read configured storage object %q: %w", sourcePath, err)
-		}
-		if attributes.Size == 0 {
-			return sourceFile{}, fmt.Errorf("configured storage object %q is empty", sourcePath)
-		}
-
-		return sourceFile{name: path.Base(sourcePath), preseededAssets: true, size: attributes.Size}, nil
+	if objectStorageConfigured {
+		return sourceFile{name: path.Base(sourcePath), preseededAssets: true}, nil
 	}
 
 	absRoot, err := filepath.Abs(storageRoot)
