@@ -1,6 +1,8 @@
 package observability
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"html"
 	"log/slog"
@@ -308,6 +310,9 @@ func sanitiseServerEvent(event *sentry.Event, _ *sentry.EventHint) *sentry.Event
 
 func shouldCapture(err error) bool {
 	if err == nil {
+		return false
+	}
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 		return false
 	}
 

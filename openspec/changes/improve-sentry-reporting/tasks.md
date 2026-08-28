@@ -3,6 +3,7 @@
 - [x] 1.1 Extend the shared server-fault response boundary to retain an optional stable failure category and causal error on the request event, and update its call sites without changing existing 5xx responses; verify focused helper and handler tests preserve status and rendered content.
 - [x] 1.2 Enrich server Sentry capture through an isolated scope with the allowlisted request diagnosis, causal-error preference, fail-closed sanitisation for errors and panics, low-cardinality fingerprint, and status-only fallback; verify `go test ./internal/observability ./internal/logging ./internal/utils` proves event fields, correlation, grouping, and absence of sensitive values.
 - [x] 1.3 Emit one request-scoped `observability.request.failed` structured log for every captured unexpected server failure; verify integration tests prove its request ID and diagnosis fields match the captured Sentry event.
+- [x] 1.4 Exclude cancelled and deadline-expired requests from unexpected server failure reporting; verify focused monitor tests cover both cases.
 
 ## 2. Shared release attribution
 

@@ -2,6 +2,7 @@ package observability
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -241,6 +242,18 @@ func TestSanitiseServerEvent(t *testing.T) {
 		if exception.Value != sanitisedExceptionMessage {
 			t.Errorf("exception value = %q, want %q", exception.Value, sanitisedExceptionMessage)
 		}
+	}
+}
+
+func TestShouldCapture(t *testing.T) {
+	if shouldCapture(context.Canceled) {
+		t.Fatal("cancelled request must not be captured")
+	}
+	if shouldCapture(context.DeadlineExceeded) {
+		t.Fatal("timed out request must not be captured")
+	}
+	if !shouldCapture(router.NewInternalServerError("unexpected", nil)) {
+		t.Fatal("server error must be captured")
 	}
 }
 

@@ -15,6 +15,10 @@ For every unexpected server failure reported to Sentry, the application SHALL at
 - **WHEN** a request completes with an HTTP 5xx response and no causal error is available
 - **THEN** Sentry receives a status-only event marked as lacking a causal error, with the request diagnosis context and a matching structured request-failure log
 
+#### Scenario: Client cancels a request
+- **WHEN** request processing ends because the client cancels the request or its context deadline expires
+- **THEN** the application does not report it as an unexpected server failure
+
 #### Scenario: Sensitive request data is present
 - **WHEN** a reported server failure includes a request with query parameters, fragments, cookies, credentials, request bodies, client IP addresses, or user-supplied content
 - **THEN** none of those values are sent in the Sentry event or structured request-failure log
