@@ -24,6 +24,7 @@
   "homepage": "https://github.com/blackfyre/wga#readme",
   "devDependencies": {
 	"@biomejs/biome": "1.9.4",
+	"@sentry/cli": "3.6.1",
     "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4.2.1",
     "@tailwindcss/typography": "^0.5.19",

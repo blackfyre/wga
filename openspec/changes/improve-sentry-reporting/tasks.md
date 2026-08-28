@@ -11,7 +11,7 @@
 
 ## 3. Source-map release assembly
 
-- [ ] 3.1 Extend the frontend release build to generate, inject, and upload browser source maps for the Docker `WGA_RELEASE` build argument from a clean non-public staging directory using deployment-only credentials, then copy only non-map assets into the embedded static tree; verify a deterministic build fixture checks the upload inputs and confirms no `.map` files exist in `internal/assets/public`.
+- [ ] 3.1 Extend the frontend release build to generate browser source maps in a clean non-public staging directory, retain them only in the final image, and upload them idempotently from the container entrypoint using a sealed Railway runtime token and embedded release; verify a deterministic build fixture checks the upload inputs and confirms no `.map` files exist in `internal/assets/public`.
 - [ ] 3.2 Document and provision the protected release identifier and Sentry upload credential in the deployment environment without adding either credential to browser-visible configuration; verify deployment configuration exposes only the intended public release metadata at runtime.
 
 ## 4. End-to-end verification

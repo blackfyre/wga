@@ -55,9 +55,9 @@ Embedding the release in the image rather than reading a runtime setting guarant
 
 ### Upload source maps during release assembly, then exclude them from static assets
 
-The frontend release step will generate source maps in a clean staging directory outside the public asset tree, inject the Sentry debug identity, upload the maps to the browser project for `WGA_RELEASE`, and copy only non-map assets into the embedded public tree. The authenticated upload token belongs to the deployment environment only and is not added to application configuration, command arguments, or browser markup.
+The frontend release step will generate source maps in a clean staging directory outside the public asset tree and copy only non-map assets into the embedded public tree. The final image will retain the staged maps in a non-public path. At container start, an entrypoint will use the same embedded release identifier and a sealed Railway runtime token to upload maps to the browser project before executing WGA. The authenticated upload token is not added to application configuration, Docker build arguments, command arguments, or browser markup.
 
-The release assembly must fail before rollout if an enabled browser-monitoring release cannot publish its source maps. This prevents a deployed release from claiming diagnosability it does not provide. The prior release remains available on rollback, and source maps already uploaded for an immutable release remain valid.
+The entrypoint must fail before WGA starts if an enabled browser-monitoring release cannot publish its source maps. Repeated uploads for the same immutable release are idempotent. This prevents a deployed release from claiming diagnosability it does not provide. The prior release remains available on rollback, and source maps already uploaded for an immutable release remain valid.
 
 ## Operational Decomposition
 
