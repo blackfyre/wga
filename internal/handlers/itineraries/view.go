@@ -25,7 +25,7 @@ func (ctx *securityContext) indexPage(app *pocketbase.PocketBase, c *core.Reques
 	view, err := loadIndexView(app)
 	if err != nil {
 		logging.RequestLogger(app, c).Error("Itinerary index load failed", "event", "itineraries.index.failed", "outcome", "load_error", "error_type", logging.ErrorType(err), "error", logging.Redact(err))
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	ctxb := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, "Itineraries")
@@ -34,7 +34,7 @@ func (ctx *securityContext) indexPage(app *pocketbase.PocketBase, c *core.Reques
 
 	var buf bytes.Buffer
 	if err := pages.ItinerariesPage(view).Render(ctxb, &buf); err != nil {
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	return c.HTML(http.StatusOK, buf.String())
@@ -54,7 +54,7 @@ func (ctx *securityContext) viewPage(app *pocketbase.PocketBase, c *core.Request
 		if errors.Is(err, sql.ErrNoRows) {
 			return utils.NotFoundError(c)
 		}
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	if !itineraryworkflow.IsPublicStatus(record.GetString("status")) {
@@ -65,14 +65,14 @@ func (ctx *securityContext) viewPage(app *pocketbase.PocketBase, c *core.Request
 		expiredCtx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, "Itinerary expired")
 		var buf bytes.Buffer
 		if err := pages.ItineraryExpiredPage().Render(expiredCtx, &buf); err != nil {
-			return utils.ServerFaultError(c)
+			return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 		}
 		return c.HTML(http.StatusGone, buf.String())
 	}
 
 	stops, err := itineraryworkflow.AvailableStops(app, record.Id)
 	if err != nil {
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 	if len(stops) == 0 {
 		return utils.NotFoundError(c)
@@ -85,7 +85,7 @@ func (ctx *securityContext) viewPage(app *pocketbase.PocketBase, c *core.Request
 
 	view, err := loadViewer(app, record, stops, index)
 	if err != nil {
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	ctxb := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, record.GetString("title"))
@@ -94,7 +94,7 @@ func (ctx *securityContext) viewPage(app *pocketbase.PocketBase, c *core.Request
 
 	var buf bytes.Buffer
 	if err := pages.ItineraryViewPage(view).Render(ctxb, &buf); err != nil {
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	return c.HTML(http.StatusOK, buf.String())

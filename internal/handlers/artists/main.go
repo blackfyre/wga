@@ -19,7 +19,7 @@ func processArtists(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	view, canonicalURL, err := buildArtistIndexView(app, c.Request.URL.Query())
 	if err != nil {
 		app.Logger().Error("Build artist index", "error", err)
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	c.Response.Header().Set("HX-Push-Url", canonicalURL)
@@ -36,7 +36,7 @@ func processArtists(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	}
 	if err != nil {
 		app.Logger().Error("Error rendering artists", "error", err.Error())
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	return c.HTML(http.StatusOK, buffer.String())

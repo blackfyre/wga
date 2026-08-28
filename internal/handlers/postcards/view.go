@@ -46,7 +46,7 @@ func viewPostcard(app core.App, c *core.RequestEvent) error {
 	}
 	if errs := app.ExpandRecord(artwork, []string{"author"}, nil); len(errs) > 0 {
 		logger.Error("Postcard view expansion failed", "event", "postcard.view.failed", "outcome", "expansion_error", "error", logging.Redact(errs))
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 	image := utils.AssetUrl("/assets/images/no-image.png")
 	if imageName := artwork.GetString("image"); imageName != "" {
@@ -67,7 +67,7 @@ func viewPostcard(app core.App, c *core.RequestEvent) error {
 	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, "Postcard")
 	var buf bytes.Buffer
 	if err := pages.PostcardPage(content).Render(ctx, &buf); err != nil {
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 	if err := postcardworkflow.MarkReceived(app, postcard.Id); err != nil {
 		logger.Error("Postcard receipt update failed", "event", "postcard.view.failed", "outcome", "receipt_update_error", "error_type", logging.ErrorType(err), "error", logging.Redact(err))
@@ -88,13 +88,13 @@ func viewPostcardLanding(c *core.RequestEvent) error {
 	if utils.IsHtmxRequest(c) && !utils.RequestsMainContentArea(c) {
 		err := pages.PostcardLandingContent().Render(ctx, &buf)
 		if err != nil {
-			return utils.ServerFaultError(c)
+			return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 		}
 		return c.HTML(http.StatusOK, buf.String())
 	}
 
 	if err := pages.PostcardLandingPage().Render(ctx, &buf); err != nil {
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 	return c.HTML(http.StatusOK, buf.String())
 }

@@ -49,7 +49,7 @@ func processSelection(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 	view, err := buildSelectionView(app, artist, selection)
 	if err != nil {
 		logging.RequestLogger(app, c).Error("Build selection view", "selection", selectionID, "error", err)
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	fullURL := buildSelectionURL(expectedSlug, selectionID)
@@ -63,7 +63,7 @@ func processSelection(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 	var buff bytes.Buffer
 	if err := pages.SelectionPage(view).Render(ctx, &buff); err != nil {
 		logging.RequestLogger(app, c).Error("Error rendering selection page", "error", err)
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	return c.HTML(http.StatusOK, buff.String())

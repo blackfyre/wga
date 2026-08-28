@@ -48,6 +48,9 @@ func TestLayoutBaseSentryConfiguration(t *testing.T) {
 			if !strings.Contains(content, `name="sentry-environment" content="development"`) {
 				t.Fatal("expected deployment environment in layout")
 			}
+			if !strings.Contains(content, `name="sentry-release" content="dev"`) {
+				t.Fatal("expected deployment release in layout")
+			}
 			if !strings.Contains(content, `<script type="module" src="/assets/js/app.js"></script>`) {
 				t.Fatal("expected browser bootstrap script in layout")
 			}

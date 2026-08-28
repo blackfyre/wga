@@ -7,8 +7,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/blackfyre/wga/internal/buildinfo"
 	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/logging"
+	"github.com/blackfyre/wga/internal/requestfailure"
 	"github.com/getsentry/sentry-go"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/router"
@@ -16,21 +18,40 @@ import (
 
 const flushTimeout = 2 * time.Second
 
+const (
+	sanitisedExceptionMessage = "server failure"
+	unknownRoute              = "<unmatched>"
+)
+
 // BrowserConfiguration contains the public settings required by the browser SDK.
 type BrowserConfiguration struct {
 	DSN         string
 	Environment string
+	Release     string
 }
 
 var browserConfiguration BrowserConfiguration
 
 // Monitor reports unexpected server failures to Sentry when enabled.
 type Monitor struct {
-	enabled          bool
-	captureException func(error)
-	captureMessage   func(string)
-	flush            func() bool
-	recoverPanic     func(any)
+	enabled        bool
+	captureFailure func(error, requestFailure)
+	captureMessage func(string)
+	flush          func() bool
+	recoverPanic   func(any, requestFailure)
+	logFailure     func(requestFailure)
+}
+
+type requestFailure struct {
+	cause       error
+	requestID   string
+	method      string
+	route       string
+	status      int
+	category    string
+	errorType   string
+	hasCause    bool
+	fingerprint []string
 }
 
 // Configure initialises server Sentry and stores the public browser configuration.
@@ -38,14 +59,15 @@ func Configure(settings config.Sentry, environment config.Environment, logger *s
 	return configure(
 		settings.DSN(),
 		settings.BrowserDSN(),
+		buildinfo.Version,
 		string(environment),
 		logger,
 		sentry.Init,
 	)
 }
 
-func configure(serverDSN string, browserDSN string, environment string, logger *slog.Logger, initialise func(sentry.ClientOptions) error) Monitor {
-	browserConfiguration = BrowserConfiguration{DSN: browserDSN, Environment: environment}
+func configure(serverDSN string, browserDSN string, release string, environment string, logger *slog.Logger, initialise func(sentry.ClientOptions) error) Monitor {
+	browserConfiguration = BrowserConfiguration{DSN: browserDSN, Environment: environment, Release: release}
 	if serverDSN == "" {
 		logger.Warn("Server Sentry monitoring disabled",
 			"event", "observability.sentry.server_disabled",
@@ -54,7 +76,12 @@ func configure(serverDSN string, browserDSN string, environment string, logger *
 		return Monitor{}
 	}
 
-	if err := initialise(sentry.ClientOptions{Dsn: serverDSN, Environment: environment}); err != nil {
+	if err := initialise(sentry.ClientOptions{
+		Dsn:         serverDSN,
+		Environment: environment,
+		Release:     release,
+		BeforeSend:  sanitiseServerEvent,
+	}); err != nil {
 		logger.Error("Sentry monitoring initialisation failed",
 			"event", "observability.sentry.initialisation_failed",
 			"environment", environment,
@@ -65,11 +92,21 @@ func configure(serverDSN string, browserDSN string, environment string, logger *
 	}
 
 	return Monitor{
-		enabled:          true,
-		captureException: func(err error) { sentry.CaptureException(err) },
-		captureMessage:   func(message string) { sentry.CaptureMessage(message) },
-		flush:            func() bool { return sentry.Flush(flushTimeout) },
-		recoverPanic:     func(value any) { sentry.CurrentHub().Recover(value) },
+		enabled: true,
+		captureFailure: func(err error, failure requestFailure) {
+			sentry.WithScope(func(scope *sentry.Scope) {
+				applyFailureScope(scope, failure)
+				sentry.CaptureException(err)
+			})
+		},
+		captureMessage: func(message string) { sentry.CaptureMessage(message) },
+		flush:          func() bool { return sentry.Flush(flushTimeout) },
+		recoverPanic: func(value any, failure requestFailure) {
+			sentry.WithScope(func(scope *sentry.Scope) {
+				applyFailureScope(scope, failure)
+				sentry.CurrentHub().Recover(value)
+			})
+		},
 	}
 }
 
@@ -84,9 +121,23 @@ func (m Monitor) Register(app core.App) {
 		return
 	}
 
+	monitor := m
+	monitor.logFailure = func(failure requestFailure) {
+		app.Logger().Error("Unexpected request failure",
+			"event", "observability.request.failed",
+			"request_id", failure.requestID,
+			"method", failure.method,
+			"route", failure.route,
+			"status", failure.status,
+			"failure_category", failure.category,
+			"error_type", failure.errorType,
+			"has_cause", failure.hasCause,
+		)
+	}
+
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		se.Router.BindFunc(func(e *core.RequestEvent) error {
-			return m.intercept(e.Next, e.Status)
+			return monitor.intercept(e, e.Next, e.Status)
 		})
 
 		return se.Next()
@@ -144,34 +195,115 @@ func sentryTestPage(message string) string {
 <head>
 <meta name="sentry-dsn" content="%s">
 <meta name="sentry-environment" content="%s">
+<meta name="sentry-release" content="%s">
 </head>
 <body>
 <p>%s</p>
 <script type="module" src="/assets/js/app.js"></script>
 </body>
-</html>`, html.EscapeString(settings.DSN), html.EscapeString(settings.Environment), html.EscapeString(message))
+</html>`, html.EscapeString(settings.DSN), html.EscapeString(settings.Environment), html.EscapeString(settings.Release), html.EscapeString(message))
 }
 
-func (m Monitor) intercept(next func() error, responseStatus func() int) (err error) {
+func (m Monitor) intercept(e *core.RequestEvent, next func() error, responseStatus func() int) (err error) {
 	if !m.enabled {
 		return next()
 	}
 
 	defer func() {
 		if recovered := recover(); recovered != nil {
-			m.recoverPanic(recovered)
+			failure := m.failure(e, nil, responseStatus(), true)
+			m.log(failure)
+			m.recoverPanic(recovered, failure)
 			panic(recovered)
 		}
 	}()
 
 	err = next()
 	if shouldCapture(err) {
-		m.captureException(err)
+		failure := m.failure(e, err, responseStatus(), false)
+		m.report(failure)
 	} else if err == nil && responseStatus() >= 500 {
-		m.captureException(fmt.Errorf("request completed with HTTP status %d", responseStatus()))
+		failure := m.failure(e, nil, responseStatus(), false)
+		m.report(failure)
 	}
 
 	return err
+}
+
+func (m Monitor) report(failure requestFailure) {
+	m.log(failure)
+	m.captureFailure(failure.cause, failure)
+}
+
+func (m Monitor) log(failure requestFailure) {
+	if m.logFailure != nil {
+		m.logFailure(failure)
+	}
+}
+
+func (m Monitor) failure(e *core.RequestEvent, returned error, status int, panicked bool) requestFailure {
+	if panicked || status < http.StatusInternalServerError {
+		status = http.StatusInternalServerError
+	}
+
+	cause := returned
+	category := "returned_error"
+	if recorded, ok := requestfailure.From(e); ok {
+		if recorded.Cause != nil {
+			cause = recorded.Cause
+		}
+		if recorded.Category != "" {
+			category = recorded.Category
+		}
+	}
+	if panicked {
+		category = "panic"
+	}
+	if cause == nil {
+		category = "status_without_cause"
+		cause = fmt.Errorf("request completed with HTTP status %d", status)
+	}
+
+	route := e.Request.Pattern
+	if route == "" {
+		route = unknownRoute
+	}
+
+	failure := requestFailure{
+		cause:     cause,
+		requestID: logging.RequestID(e),
+		method:    e.Request.Method,
+		route:     route,
+		status:    status,
+		category:  category,
+		errorType: logging.ErrorType(cause),
+		hasCause:  category != "status_without_cause",
+	}
+	failure.fingerprint = []string{"wga-server", failure.method, failure.route, failure.category, fmt.Sprint(failure.status)}
+
+	return failure
+}
+
+func applyFailureScope(scope *sentry.Scope, failure requestFailure) {
+	scope.SetTag("request_id", failure.requestID)
+	scope.SetTag("http.method", failure.method)
+	scope.SetTag("http.route", failure.route)
+	scope.SetTag("http.status_code", fmt.Sprint(failure.status))
+	scope.SetTag("failure.category", failure.category)
+	scope.SetTag("failure.error_type", failure.errorType)
+	scope.SetTag("failure.has_cause", fmt.Sprint(failure.hasCause))
+	scope.SetFingerprint(failure.fingerprint)
+}
+
+func sanitiseServerEvent(event *sentry.Event, _ *sentry.EventHint) *sentry.Event {
+	event.Request = nil
+	event.Message = sanitisedExceptionMessage
+	event.User = sentry.User{}
+	for index := range event.Exception {
+		event.Exception[index].Value = sanitisedExceptionMessage
+	}
+
+	return event
 }
 
 func shouldCapture(err error) bool {

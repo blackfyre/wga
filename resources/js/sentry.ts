@@ -3,6 +3,7 @@ import * as Sentry from "@sentry/browser";
 export type SentryConfiguration = {
 	dsn: string;
 	environment: string;
+	release: string;
 };
 
 const scrubURL = (value: string): string => {
@@ -17,20 +18,17 @@ const scrubURL = (value: string): string => {
 		}
 		return url.toString();
 	} catch {
-		return value;
+		return "[invalid-url]";
 	}
 };
 
 const scrubBreadcrumb = (breadcrumb: Sentry.Breadcrumb): Sentry.Breadcrumb => {
-	if (!breadcrumb.data) {
-		return breadcrumb;
-	}
-
 	let data = { ...breadcrumb.data };
 	if (breadcrumb.category === "console") {
 		data = Object.fromEntries(
 			Object.entries(data).filter(([key]) => key !== "arguments"),
 		);
+		return { ...breadcrumb, message: undefined, data };
 	}
 	for (const key of ["url", "from", "to"]) {
 		if (typeof data[key] === "string") {
@@ -97,10 +95,13 @@ export const loadSentryConfiguration = (
 		document
 			.querySelector('meta[name="sentry-dsn"]')
 			?.getAttribute("content") ?? "",
-	environment:
-		document
-			.querySelector('meta[name="sentry-environment"]')
-			?.getAttribute("content") ?? "",
+		environment:
+			document
+				.querySelector('meta[name="sentry-environment"]')
+				?.getAttribute("content") ?? "",
+		release:
+			document.querySelector('meta[name="sentry-release"]')?.getAttribute("content") ??
+			"",
 });
 
 export const initialiseSentry = (
@@ -115,6 +116,7 @@ export const initialiseSentry = (
 		const client = initialise({
 			dsn: configuration.dsn,
 			environment: configuration.environment,
+			release: configuration.release,
 			beforeBreadcrumb: scrubBreadcrumb,
 			beforeSend: scrubSentryEvent,
 		});

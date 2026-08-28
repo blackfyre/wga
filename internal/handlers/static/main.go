@@ -47,7 +47,10 @@ func RegisterHandlers(app core.App, environment config.Environment) {
 				content, err := assets.ReferenceFiles.ReadFile("reference/visual-overhaul.html")
 				if err != nil {
 					app.Logger().Error("Failed to read visual overhaul reference", "error", err)
-					return utils.ServerFaultError(c)
+					return utils.ServerFaultError(c, utils.ServerFailure{
+						Category: "visual_overhaul_reference_read",
+						Cause:    err,
+					})
 				}
 
 				c.Response.Header().Set("Cache-Control", "no-store")
@@ -186,7 +189,7 @@ func staticPageServerError(app core.App, c *core.RequestEvent, outcome string, e
 		"error", logging.Redact(err),
 	)
 
-	return utils.ServerFaultError(c)
+	return utils.ServerFaultError(c, utils.ServerFailure{Category: outcome, Cause: err})
 }
 
 // reservedBoundaryPrefixes are path roots owned by PocketBase or the

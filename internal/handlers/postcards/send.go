@@ -33,7 +33,7 @@ func renderForm(artworkID string, values pages.PostcardComposeView, formError st
 	}
 	if errs := app.ExpandRecord(record, []string{"author"}, nil); len(errs) > 0 {
 		logger.Error("Postcard form artwork expansion failed", "event", "postcard.form.failed", "outcome", "expansion_error", "error", logging.Redact(errs))
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 	values.ImageID = artworkID
 	values.Title = record.GetString("title")
@@ -61,7 +61,7 @@ func renderForm(artworkID string, values pages.PostcardComposeView, formError st
 	}
 	if err != nil {
 		logger.Error("Postcard form rendering failed", "event", "postcard.form.failed", "outcome", "render_error", "error_type", logging.ErrorType(err), "error", logging.Redact(err))
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 	return c.HTML(status, buf.String())
 }

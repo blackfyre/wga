@@ -17,7 +17,7 @@ func inspirationHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error 
 	content, err := inspirationWorks(app)
 	if err != nil {
 		logging.RequestLogger(app, c).Error("Build inspiration page", "error", err)
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, "Inspiration")
@@ -35,7 +35,7 @@ func inspirationHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error 
 
 	if err != nil {
 		logging.RequestLogger(app, c).Error("Render inspiration page", "error", err)
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	return c.HTML(http.StatusOK, buff.String())

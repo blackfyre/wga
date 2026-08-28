@@ -22,7 +22,7 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 
 			var buffer bytes.Buffer
 			if err := pages.LicencesPage(assets.OpenSourceLicencesHTML).Render(ctx, &buffer); err != nil {
-				return utils.ServerFaultError(c)
+				return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 			}
 
 			return c.HTML(http.StatusOK, buffer.String())

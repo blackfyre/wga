@@ -77,7 +77,7 @@ func render(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	view, err := searchView(app, term)
 	if err != nil {
 		app.Logger().Error("Global search failed", "error", err)
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, "Search")
@@ -90,7 +90,7 @@ func render(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	}
 	if err != nil {
 		app.Logger().Error("Render global search", "error", err)
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	return c.HTML(http.StatusOK, output.String())

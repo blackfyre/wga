@@ -49,7 +49,7 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 			return utils.BadRequestError(c)
 		}
 		app.Logger().Error("Failed to build artwork search", "error", err.Error())
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, "Artworks Search")
@@ -72,7 +72,7 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 	if err != nil {
 		app.Logger().Error("Error rendering artwork search page", "error", err.Error())
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	return c.HTML(http.StatusOK, buff.String())

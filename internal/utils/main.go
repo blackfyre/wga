@@ -15,6 +15,7 @@ import (
 	"github.com/blackfyre/wga/internal/assets/templ/error_pages"
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
 	"github.com/blackfyre/wga/internal/constants"
+	"github.com/blackfyre/wga/internal/requestfailure"
 	strip "github.com/grokify/html-strip-tags-go"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
@@ -323,7 +324,18 @@ func NotFoundError(c *core.RequestEvent) error {
 	return c.HTML(404, buf.String())
 }
 
-func ServerFaultError(c *core.RequestEvent) error {
+type ServerFailure = requestfailure.Failure
+
+// ServerFailureFrom returns the failure metadata recorded for this request.
+func ServerFailureFrom(c *core.RequestEvent) (ServerFailure, bool) {
+	return requestfailure.From(c)
+}
+
+func ServerFaultError(c *core.RequestEvent, failures ...ServerFailure) error {
+	if len(failures) > 0 {
+		requestfailure.Record(c, failures[0])
+	}
+
 	var buf bytes.Buffer
 	if err := error_pages.ServerFaultPage().Render(tmplUtils.ContextFromRequest(c.Request), &buf); err != nil {
 		return err

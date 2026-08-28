@@ -152,7 +152,7 @@ func EntriesHandler(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 			"error_type", logging.ErrorType(err),
 			"error", logging.Redact(err),
 		)
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	return nil
@@ -273,7 +273,7 @@ func storeEntryHandler(app core.App, c *core.RequestEvent, limiter *submissionRa
 			)
 			return c.NoContent(http.StatusNoContent)
 		}
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 	if validationErrors.any() {
 		logger.Info("Guestbook submission rejected",

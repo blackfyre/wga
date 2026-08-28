@@ -117,7 +117,7 @@ func renderGlossary(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	allTerms, err := findGlossaryTerms(app, glossaryQuery{})
 	if err != nil {
 		app.Logger().Error("Find glossary terms", "error", err)
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	view := pages.GlossaryView{
@@ -140,7 +140,7 @@ func renderGlossary(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	}
 	if err != nil {
 		app.Logger().Error("Render glossary page", "error", err)
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	return c.HTML(http.StatusOK, buffer.String())

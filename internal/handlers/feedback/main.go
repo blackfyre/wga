@@ -71,7 +71,7 @@ func presentFeedbackForm(c *core.RequestEvent, app *pocketbase.PocketBase, envir
 
 	if err != nil {
 		app.Logger().Error("Failed to render the feedback form", "error", err.Error())
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	return c.HTML(http.StatusOK, buff.String())
@@ -93,7 +93,7 @@ func processFeedbackForm(c *core.RequestEvent, app *pocketbase.PocketBase, envir
 	if err := c.BindBody(&postData); err != nil {
 		app.Logger().Error("Failed to parse form data", "error", err.Error())
 		utils.SendToastMessage("Failed to parse form", "error", true, c, "")
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	if err := validateFeedbackForm(postData); err != nil {
@@ -104,7 +104,7 @@ func processFeedbackForm(c *core.RequestEvent, app *pocketbase.PocketBase, envir
 			app.Logger().Error("Bot caught in honeypot", "error", err.Error())
 		}
 
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	if err := saveFeedback(app, c, postData); err != nil {
@@ -117,7 +117,7 @@ func processFeedbackForm(c *core.RequestEvent, app *pocketbase.PocketBase, envir
 
 		if err != nil {
 			app.Logger().Error("Failed to render the feedback form after form submission error", "error", err.Error())
-			return utils.ServerFaultError(c)
+			return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 		}
 
 		utils.SendToastMessage("Failed to store the feedback", "error", false, c, "")
@@ -127,7 +127,7 @@ func processFeedbackForm(c *core.RequestEvent, app *pocketbase.PocketBase, envir
 
 	var buff bytes.Buffer
 	if err := components.FeedbackReceived().Render(context.Background(), &buff); err != nil {
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	return c.HTML(http.StatusOK, buff.String())
@@ -154,7 +154,7 @@ func saveFeedback(app *pocketbase.PocketBase, c *core.RequestEvent, postData fee
 	if err != nil {
 		app.Logger().Error("Database table not found", "error", err.Error())
 		utils.SendToastMessage("Database table not found", "error", true, c, "")
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	r := core.NewRecord(collection)

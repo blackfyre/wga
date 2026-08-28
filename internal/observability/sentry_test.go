@@ -5,10 +5,13 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"github.com/blackfyre/wga/internal/config"
+	"github.com/blackfyre/wga/internal/logging"
+	"github.com/blackfyre/wga/internal/testutils"
 	"github.com/getsentry/sentry-go"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tests"
@@ -82,12 +85,12 @@ func TestConfigure(t *testing.T) {
 				}
 			}
 
-			monitor := configure(test.serverDSN, test.browserDSN, "production", logger, initialise)
+			monitor := configure(test.serverDSN, test.browserDSN, "test-release", "production", logger, initialise)
 			if monitor.enabled != test.wantEnable {
 				t.Fatalf("expected enabled %t, got %t", test.wantEnable, monitor.enabled)
 			}
-			if got := BrowserConfig(); got.DSN != test.browserDSN || got.Environment != "production" {
-				t.Fatalf("expected browser configuration %+v, got %+v", BrowserConfiguration{DSN: test.browserDSN, Environment: "production"}, got)
+			if got := BrowserConfig(); got.DSN != test.browserDSN || got.Environment != "production" || got.Release != "test-release" {
+				t.Fatalf("expected browser configuration %+v, got %+v", BrowserConfiguration{DSN: test.browserDSN, Environment: "production", Release: "test-release"}, got)
 			}
 			if test.wantEvent != "" && !strings.Contains(logs.String(), test.wantEvent) {
 				t.Fatalf("expected log event %q, got %q", test.wantEvent, logs.String())
@@ -106,13 +109,14 @@ func TestMonitorIntercept(t *testing.T) {
 		var captured error
 		monitor := Monitor{
 			enabled: true,
-			captureException: func(err error) {
+			captureFailure: func(err error, _ requestFailure) {
 				captured = err
 			},
 		}
 		serverError := router.NewInternalServerError("unexpected", nil)
+		event := monitorRequestEvent(t, "/sentry-server-error")
 
-		if got := monitor.intercept(func() error { return serverError }, func() int { return 0 }); got != serverError {
+		if got := monitor.intercept(event, func() error { return serverError }, func() int { return 0 }); got != serverError {
 			t.Fatalf("expected original error, got %v", got)
 		}
 		if captured != serverError {
@@ -124,12 +128,13 @@ func TestMonitorIntercept(t *testing.T) {
 		captured := false
 		monitor := Monitor{
 			enabled: true,
-			captureException: func(error) {
+			captureFailure: func(error, requestFailure) {
 				captured = true
 			},
 		}
+		event := monitorRequestEvent(t, "/sentry-client-error")
 
-		if err := monitor.intercept(func() error { return router.NewBadRequestError("invalid", nil) }, func() int { return 0 }); err == nil {
+		if err := monitor.intercept(event, func() error { return router.NewBadRequestError("invalid", nil) }, func() int { return 0 }); err == nil {
 			t.Fatal("expected original client error")
 		}
 		if captured {
@@ -141,10 +146,11 @@ func TestMonitorIntercept(t *testing.T) {
 		var recovered any
 		monitor := Monitor{
 			enabled: true,
-			recoverPanic: func(value any) {
+			recoverPanic: func(value any, _ requestFailure) {
 				recovered = value
 			},
 		}
+		event := monitorRequestEvent(t, "/sentry-panic")
 
 		defer func() {
 			if got := recover(); got != "panic value" {
@@ -154,7 +160,7 @@ func TestMonitorIntercept(t *testing.T) {
 				t.Fatalf("expected captured panic, got %v", recovered)
 			}
 		}()
-		_ = monitor.intercept(func() error {
+		_ = monitor.intercept(event, func() error {
 			panic("panic value")
 		}, func() int { return 0 })
 	})
@@ -163,18 +169,94 @@ func TestMonitorIntercept(t *testing.T) {
 		var captured error
 		monitor := Monitor{
 			enabled: true,
-			captureException: func(err error) {
+			captureFailure: func(err error, _ requestFailure) {
 				captured = err
 			},
 		}
+		event := monitorRequestEvent(t, "/sentry-written-error")
 
-		if err := monitor.intercept(func() error { return nil }, func() int { return http.StatusInternalServerError }); err != nil {
+		if err := monitor.intercept(event, func() error { return nil }, func() int { return http.StatusInternalServerError }); err != nil {
 			t.Fatalf("expected nil error, got %v", err)
 		}
 		if captured == nil {
 			t.Fatal("expected written server response to be captured")
 		}
 	})
+}
+
+func TestMonitorFailureDiagnosis(t *testing.T) {
+	var captured requestFailure
+	monitor := Monitor{
+		enabled: true,
+		captureFailure: func(_ error, failure requestFailure) {
+			captured = failure
+		},
+	}
+	event := monitorRequestEvent(t, "/artists/example?token=secret")
+	event.Request.Pattern = "GET /artists/{artist}"
+	serverError := router.NewInternalServerError("token=secret", nil)
+
+	if err := monitor.intercept(event, func() error { return serverError }, func() int { return 0 }); err != serverError {
+		t.Fatalf("returned error = %v, want %v", err, serverError)
+	}
+
+	if got, want := captured.requestID, "request-123"; got != want {
+		t.Errorf("request ID = %q, want %q", got, want)
+	}
+	if got, want := captured.method, http.MethodGet; got != want {
+		t.Errorf("method = %q, want %q", got, want)
+	}
+	if got, want := captured.route, "GET /artists/{artist}"; got != want {
+		t.Errorf("route = %q, want %q", got, want)
+	}
+	if got, want := captured.status, http.StatusInternalServerError; got != want {
+		t.Errorf("status = %d, want %d", got, want)
+	}
+	if got, want := captured.category, "returned_error"; got != want {
+		t.Errorf("category = %q, want %q", got, want)
+	}
+	if strings.Contains(strings.Join(captured.fingerprint, " "), "secret") {
+		t.Fatalf("fingerprint contains sensitive value: %v", captured.fingerprint)
+	}
+}
+
+func TestSanitiseServerEvent(t *testing.T) {
+	event := &sentry.Event{
+		Message: "token=secret",
+		Request: &sentry.Request{URL: "/artists/example?token=secret"},
+		Exception: []sentry.Exception{
+			{Type: "*errors.errorString", Value: "token=secret"},
+			{Type: "panic", Value: "password=secret"},
+		},
+	}
+
+	sanitised := sanitiseServerEvent(event, nil)
+	if sanitised.Request != nil {
+		t.Fatal("server request must not be sent to Sentry")
+	}
+	if sanitised.Message != sanitisedExceptionMessage {
+		t.Errorf("message = %q, want %q", sanitised.Message, sanitisedExceptionMessage)
+	}
+	for _, exception := range sanitised.Exception {
+		if exception.Value != sanitisedExceptionMessage {
+			t.Errorf("exception value = %q, want %q", exception.Value, sanitisedExceptionMessage)
+		}
+	}
+}
+
+func monitorRequestEvent(t testing.TB, target string) *core.RequestEvent {
+	t.Helper()
+
+	request := httptest.NewRequest(http.MethodGet, target, nil)
+	request.Pattern = "GET /sentry-test"
+	event := &core.RequestEvent{
+		Event: router.Event{
+			Request:  request,
+			Response: httptest.NewRecorder(),
+		},
+	}
+	logging.SetRequestID(event, "request-123")
+	return event
 }
 
 func TestMonitorCaptureMessage(t *testing.T) {
@@ -242,6 +324,7 @@ func TestMonitorRegisterTestRouteWhenFlushTimesOut(t *testing.T) {
 		ExpectedContent: []string{
 			"Server Sentry test event did not flush before timeout.",
 			`<meta name="sentry-dsn" content="https://browser@example.ingest.sentry.io/2">`,
+			`<meta name="sentry-release" content="test-release">`,
 			`<script type="module" src="/assets/js/app.js"></script>`,
 		},
 		TestAppFactory: func(t testing.TB) *tests.TestApp {
@@ -257,6 +340,7 @@ func TestMonitorRegisterTestRouteWhenFlushTimesOut(t *testing.T) {
 			browserConfiguration = BrowserConfiguration{
 				DSN:         "https://browser@example.ingest.sentry.io/2",
 				Environment: "staging",
+				Release:     "test-release",
 			}
 			t.Cleanup(func() {
 				browserConfiguration = BrowserConfiguration{}
@@ -341,6 +425,8 @@ func TestMonitorRegisterTestRouteInProduction(t *testing.T) {
 
 func TestMonitorRegisterCapturesServerErrors(t *testing.T) {
 	var captured error
+	var diagnosis requestFailure
+	var capturedLogs func() []*core.Log
 	scenario := tests.ApiScenario{
 		Name:           "server error is captured without changing the response",
 		Method:         http.MethodGet,
@@ -350,14 +436,14 @@ func TestMonitorRegisterCapturesServerErrors(t *testing.T) {
 			"unexpected",
 		},
 		TestAppFactory: func(t testing.TB) *tests.TestApp {
-			app, err := tests.NewTestApp()
-			if err != nil {
-				t.Fatalf("create test app: %v", err)
-			}
+			app := testutils.NewTestApp(t)
+			capturedLogs = testutils.CaptureLogs(app)
+			logging.RegisterRequestIDMiddleware(app)
 			monitor := Monitor{
 				enabled: true,
-				captureException: func(err error) {
+				captureFailure: func(err error, failure requestFailure) {
 					captured = err
+					diagnosis = failure
 				},
 			}
 			monitor.Register(app)
@@ -370,9 +456,23 @@ func TestMonitorRegisterCapturesServerErrors(t *testing.T) {
 			})
 			return app
 		},
-		AfterTestFunc: func(t testing.TB, _ *tests.TestApp, _ *http.Response) {
+		AfterTestFunc: func(t testing.TB, app *tests.TestApp, _ *http.Response) {
 			if captured == nil {
 				t.Fatal("expected server error to be captured")
+			}
+			testutils.FlushLogs(t, app)
+			logs := testutils.LogsWithEvent(capturedLogs(), "observability.request.failed")
+			if len(logs) != 1 {
+				t.Fatalf("failure logs = %d, want 1", len(logs))
+			}
+			if got, want := logs[0].Data["request_id"], diagnosis.requestID; got != want {
+				t.Errorf("logged request ID = %v, want %q", got, want)
+			}
+			if got, want := logs[0].Data["route"], diagnosis.route; got != want {
+				t.Errorf("logged route = %v, want %q", got, want)
+			}
+			if got, want := logs[0].Data["failure_category"], diagnosis.category; got != want {
+				t.Errorf("logged category = %v, want %q", got, want)
 			}
 		},
 	}

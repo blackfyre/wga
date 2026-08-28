@@ -120,7 +120,7 @@ func renderDualModePage(app *pocketbase.PocketBase, c *core.RequestEvent) error 
 	ref, err := loadDualReference(app)
 	if err != nil {
 		app.Logger().Error("Error loading dual mode reference data", "error", err.Error())
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	state := parseDualState(c.Request.URL.Query()).normalize(ref)
@@ -132,12 +132,12 @@ func renderDualModePage(app *pocketbase.PocketBase, c *core.RequestEvent) error 
 	leftPath, err := resolvePaneCanonicalPath(app, state.left)
 	if err != nil {
 		app.Logger().Error("Error resolving left pane path", "error", err.Error())
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 	rightPath, err := resolvePaneCanonicalPath(app, state.right)
 	if err != nil {
 		app.Logger().Error("Error resolving right pane path", "error", err.Error())
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 	state.left.path = leftPath
 	state.right.path = rightPath
@@ -145,13 +145,13 @@ func renderDualModePage(app *pocketbase.PocketBase, c *core.RequestEvent) error 
 	leftWindow, err := buildWindow(app, "left", state.left, state, ref)
 	if err != nil {
 		app.Logger().Error("Error rendering left window", "error", err.Error())
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	rightWindow, err := buildWindow(app, "right", state.right, state, ref)
 	if err != nil {
 		app.Logger().Error("Error rendering right window", "error", err.Error())
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	view := pages.DualModeView{
@@ -175,7 +175,7 @@ func renderDualModePage(app *pocketbase.PocketBase, c *core.RequestEvent) error 
 	}
 	if err != nil {
 		app.Logger().Error("Error rendering dual mode page", "error", err.Error())
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	return c.HTML(http.StatusOK, buff.String())
@@ -1471,13 +1471,13 @@ func renderDualLookupResults(app *pocketbase.PocketBase, c *core.RequestEvent) e
 	content, err := getDualLookupResults(app, queryValues.Get("kind"), queryValues.Get("q"))
 	if err != nil {
 		app.Logger().Error("Error getting dual lookup results", "error", err.Error())
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	var buff bytes.Buffer
 	if err := pages.DualLookupResultContent(content).Render(context.Background(), &buff); err != nil {
 		app.Logger().Error("Error rendering dual lookup results", "error", err.Error())
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	return c.HTML(http.StatusOK, buff.String())

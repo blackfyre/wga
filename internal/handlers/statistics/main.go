@@ -137,30 +137,30 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 
 			artistCount, err := getArtistCount(app, landingRepo)
 			if err != nil {
-				return utils.ServerFaultError(c)
+				return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 			}
 
 			artworkCount, err := getArtworkCount(app, landingRepo)
 			if err != nil {
-				return utils.ServerFaultError(c)
+				return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 			}
 
 			artFormRows, artFormData, err := marshalStats(app, "statistics:art_form_distribution", statsRepo.GetArtFormDistribution)
 			if err != nil {
 				app.Logger().Error("Error getting art form distribution", "error", err.Error())
-				return utils.ServerFaultError(c)
+				return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 			}
 
 			artworksByPeriodRows, artworksByPeriodData, err := marshalStats(app, "statistics:artworks_by_school_period", statsRepo.GetArtworksBySchoolAndPeriod)
 			if err != nil {
 				app.Logger().Error("Error getting artworks by period", "error", err.Error())
-				return utils.ServerFaultError(c)
+				return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 			}
 
 			artistsByPeriodRows, artistsByPeriodData, err := marshalStats(app, "statistics:artists_by_school_period", statsRepo.GetArtistsBySchoolAndPeriod)
 			if err != nil {
 				app.Logger().Error("Error getting artists by period", "error", err.Error())
-				return utils.ServerFaultError(c)
+				return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 			}
 
 			content := pages.StatisticsPageDTO{
@@ -186,7 +186,7 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 			err = pages.StatisticsPage(content).Render(ctx, &buf)
 			if err != nil {
 				app.Logger().Error("Error rendering statistics page", "error", err.Error())
-				return utils.ServerFaultError(c)
+				return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 			}
 
 			return c.HTML(http.StatusOK, buf.String())

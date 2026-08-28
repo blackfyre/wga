@@ -23,7 +23,7 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 			content, err := buildHomePage(repositories.NewLandingRepository(app), time.Now().UTC())
 			if err != nil {
 				logging.RequestLogger(app, c).Error("Build home page", "error", err)
-				return utils.ServerFaultError(c)
+				return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 			}
 
 			ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, "Web Gallery of Art | Explore artists and artworks")
@@ -38,7 +38,7 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 
 			if err != nil {
 				logging.RequestLogger(app, c).Error("Render home page", "error", err)
-				return utils.ServerFaultError(c)
+				return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 			}
 
 			return c.HTML(http.StatusOK, buff.String())

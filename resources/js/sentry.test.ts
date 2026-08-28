@@ -17,6 +17,9 @@ test("loads browser Sentry configuration from page metadata", () => {
 			if (selector === 'meta[name="sentry-environment"]') {
 				return { getAttribute: () => "production" };
 			}
+			if (selector === 'meta[name="sentry-release"]') {
+				return { getAttribute: () => "test-release" };
+			}
 			return null;
 		},
 	});
@@ -24,6 +27,7 @@ test("loads browser Sentry configuration from page metadata", () => {
 	expect(configuration).toEqual({
 		dsn: "https://public@example.ingest.sentry.io/1",
 		environment: "production",
+		release: "test-release",
 	});
 });
 
@@ -35,7 +39,7 @@ test("initialises Sentry only when a DSN is configured", () => {
 	}) as typeof import("@sentry/browser").init;
 
 	expect(
-		initialiseSentry({ dsn: "", environment: "development" }, initialise),
+		initialiseSentry({ dsn: "", environment: "development", release: "" }, initialise),
 	).toBe(false);
 	expect(calls).toEqual([]);
 	expect(
@@ -43,6 +47,7 @@ test("initialises Sentry only when a DSN is configured", () => {
 			{
 				dsn: "https://public@example.ingest.sentry.io/1",
 				environment: "production",
+				release: "test-release",
 			},
 			initialise,
 		),
@@ -51,6 +56,7 @@ test("initialises Sentry only when a DSN is configured", () => {
 		{
 			dsn: "https://public@example.ingest.sentry.io/1",
 			environment: "production",
+			release: "test-release",
 			beforeBreadcrumb: expect.any(Function),
 			beforeSend: scrubSentryEvent,
 		},
@@ -77,8 +83,9 @@ test("does not report successful initialisation when the SDK returns no client",
 		expect(
 			initialiseSentry(
 				{
-					dsn: "https://public@example.ingest.sentry.io/1",
-					environment: "production",
+				dsn: "https://public@example.ingest.sentry.io/1",
+				environment: "production",
+				release: "test-release",
 				},
 				(() => undefined) as typeof import("@sentry/browser").init,
 			),
@@ -96,8 +103,9 @@ test("continues when Sentry initialisation throws", () => {
 		expect(
 			initialiseSentry(
 				{
-					dsn: "https://public@example.ingest.sentry.io/1",
-					environment: "production",
+				dsn: "https://public@example.ingest.sentry.io/1",
+				environment: "production",
+				release: "test-release",
 				},
 				(() => {
 					throw new Error("initialisation failed");
@@ -182,12 +190,19 @@ test("removes console breadcrumb arguments", () => {
 		breadcrumbs: [
 			{
 				category: "console",
+				message: "private",
 				data: { arguments: [{ sender: "private", message: "private" }] },
 			},
 		],
 	});
 
 	expect(event.breadcrumbs?.[0]?.data?.arguments).toBeUndefined();
+	expect(event.breadcrumbs?.[0]?.message).toBeUndefined();
+});
+
+test("fails closed for malformed URLs", () => {
+	const event = scrubSentryEvent({ request: { url: "http://[invalid?token=secret" } });
+	expect(event.request?.url).toBe("[invalid-url]");
 });
 
 test("captures the intentional test message", () => {

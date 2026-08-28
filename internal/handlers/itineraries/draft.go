@@ -77,13 +77,13 @@ func builderURL(state builderState) string {
 func (ctx *securityContext) builderPage(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	owner, token, err := ctx.owner(c)
 	if err != nil {
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	view, err := loadBuilderView(app, owner, itineraryworkflow.CSRFToken(token), builderStateFromQuery(c))
 	if err != nil {
 		logging.RequestLogger(app, c).Error("Itinerary builder load failed", "event", "itineraries.builder.failed", "outcome", "load_error", "error_type", logging.ErrorType(err), "error", logging.Redact(err))
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	ctxb := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, "Itinerary")
@@ -93,7 +93,7 @@ func (ctx *securityContext) builderPage(app *pocketbase.PocketBase, c *core.Requ
 	var buf bytes.Buffer
 	if err := pages.ItineraryBuilderPage(view).Render(ctxb, &buf); err != nil {
 		logging.RequestLogger(app, c).Error("Itinerary builder render failed", "event", "itineraries.builder.failed", "outcome", "render_error", "error_type", logging.ErrorType(err), "error", logging.Redact(err))
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	return c.HTML(http.StatusOK, buf.String())
@@ -103,17 +103,17 @@ func (ctx *securityContext) builderPage(app *pocketbase.PocketBase, c *core.Requ
 func (ctx *securityContext) builderBlock(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	owner, token, err := ctx.owner(c)
 	if err != nil {
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	view, err := loadBuilderView(app, owner, itineraryworkflow.CSRFToken(token), builderStateFromQuery(c))
 	if err != nil {
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	var buf bytes.Buffer
 	if err := pages.ItineraryBuilder(view, false).Render(tmplUtils.ContextFromRequest(c.Request), &buf); err != nil {
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	return c.HTML(http.StatusOK, buf.String())
@@ -124,20 +124,20 @@ func (ctx *securityContext) builderBlock(app *pocketbase.PocketBase, c *core.Req
 func renderBuilder(app core.App, c *core.RequestEvent, owner string, token string, state builderState) error {
 	view, err := loadBuilderView(app, owner, itineraryworkflow.CSRFToken(token), state)
 	if err != nil {
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	tray, err := loadTrayView(app, owner)
 	if err != nil {
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	var buf bytes.Buffer
 	if err := pages.ItineraryBuilder(view, false).Render(tmplUtils.ContextFromRequest(c.Request), &buf); err != nil {
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 	if err := components.ItineraryTray(tray, true).Render(tmplUtils.ContextFromRequest(c.Request), &buf); err != nil {
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	return c.HTML(http.StatusOK, buf.String())
@@ -164,12 +164,12 @@ func respondBuilder(app core.App, c *core.RequestEvent, owner string, token stri
 func renderTrayWithBuilder(app core.App, c *core.RequestEvent, owner string, token string, state builderState) error {
 	tray, err := loadTrayView(app, owner)
 	if err != nil {
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	view, err := loadBuilderView(app, owner, itineraryworkflow.CSRFToken(token), state)
 	if err != nil {
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	ctxb := tmplUtils.WithItineraryProjection(
@@ -181,10 +181,10 @@ func renderTrayWithBuilder(app core.App, c *core.RequestEvent, owner string, tok
 
 	var buf bytes.Buffer
 	if err := components.ItineraryTray(tray, false).Render(ctxb, &buf); err != nil {
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 	if err := pages.ItineraryBuilder(view, true).Render(ctxb, &buf); err != nil {
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	return c.HTML(http.StatusOK, buf.String())
@@ -214,7 +214,7 @@ func (ctx *securityContext) setMeta(app *pocketbase.PocketBase, c *core.RequestE
 		if charged {
 			ctx.limiter.Release(clientID, itineraryworkflow.AdmissionDraft)
 		}
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	return respondBuilder(app, c, owner, token, state)
@@ -251,7 +251,7 @@ func (ctx *securityContext) addStop(app *pocketbase.PocketBase, c *core.RequestE
 			utils.SendToastMessage("That artwork is not available.", "error", true, c, "")
 			return utils.NotFoundError(c)
 		}
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	utils.SendToastMessage("Added to your itinerary.", "success", true, c, "")
@@ -276,7 +276,7 @@ func (ctx *securityContext) removeStop(app *pocketbase.PocketBase, c *core.Reque
 		if errors.Is(err, itineraryworkflow.ErrStopNotFound) || errors.Is(err, sql.ErrNoRows) {
 			return utils.BadRequestError(c)
 		}
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	return respondBuilder(app, c, owner, token, state)
@@ -295,7 +295,7 @@ func (ctx *securityContext) moveStop(app *pocketbase.PocketBase, c *core.Request
 		if errors.Is(err, itineraryworkflow.ErrInvalidMove) || errors.Is(err, itineraryworkflow.ErrStopNotFound) || errors.Is(err, sql.ErrNoRows) {
 			return utils.BadRequestError(c)
 		}
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	return respondBuilder(app, c, owner, token, state)
@@ -314,7 +314,7 @@ func (ctx *securityContext) setNarration(app *pocketbase.PocketBase, c *core.Req
 		if errors.Is(err, itineraryworkflow.ErrStopNotFound) || errors.Is(err, sql.ErrNoRows) {
 			return utils.BadRequestError(c)
 		}
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	return respondBuilder(app, c, owner, token, state)
@@ -331,7 +331,7 @@ func (ctx *securityContext) clearDraft(app *pocketbase.PocketBase, c *core.Reque
 		if errors.Is(err, sql.ErrNoRows) {
 			return utils.BadRequestError(c)
 		}
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	// The tray's CLEAR action targets #itinerary-tray, which mounts on every

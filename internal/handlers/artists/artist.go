@@ -327,7 +327,7 @@ func processArtist(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 	view, err := buildArtistRecordView(app, artist)
 	if err != nil {
 		app.Logger().Error("Build artist record", "slug", slug, "error", err.Error())
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", view.FilingName, view.LifeSummary))
@@ -347,7 +347,7 @@ func processArtist(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 	}
 	if err != nil {
 		app.Logger().Error("Error rendering artist page", "error", err.Error())
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	return c.HTML(http.StatusOK, buff.String())

@@ -36,6 +36,7 @@ templ LayoutBase(bodyClasses string, HtmxTargetArea string) {
 			<meta name="description" content={ utils.GetDescription(ctx) }/>
 			<meta name="sentry-dsn" content={ observability.BrowserConfig().DSN }/>
 			<meta name="sentry-environment" content={ observability.BrowserConfig().Environment }/>
+			<meta name="sentry-release" content={ observability.BrowserConfig().Release }/>
 			<meta name="htmx-config" content={ htmxDefaults() }/>
 			for key, content := range utils.GetOpenGraphTags(ctx) {
 				<meta name={ key } content={ content }/>

@@ -19,7 +19,7 @@ func processTimeline(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	view, canonicalURL, err := buildTimelineView(newRepository(app), c.Request.URL.Query())
 	if err != nil {
 		logging.RequestLogger(app, c).Error("Build timeline", "error", err)
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	c.Response.Header().Set("HX-Push-Url", canonicalURL)
@@ -36,7 +36,7 @@ func processTimeline(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	}
 	if err != nil {
 		logging.RequestLogger(app, c).Error("Render timeline", "error", err)
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	return c.HTML(http.StatusOK, buffer.String())

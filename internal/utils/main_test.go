@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -116,7 +117,9 @@ func TestErrorHelpersRenderSharedShellWithExactStatuses(t *testing.T) {
 		},
 		{
 			name:   "server fault",
-			render: ServerFaultError,
+			render: func(event *core.RequestEvent) error {
+				return ServerFaultError(event)
+			},
 			status: http.StatusInternalServerError,
 			fragments: []string{
 				"The archive could not complete that request.",
@@ -158,6 +161,31 @@ func TestErrorHelpersRenderSharedShellWithExactStatuses(t *testing.T) {
 				t.Errorf("response must not return a bare internal server error")
 			}
 		})
+	}
+}
+
+func TestServerFaultErrorRecordsOptionalFailure(t *testing.T) {
+	event := newRequestEvent(t, "/pages/example")
+	cause := errors.New("render failed")
+
+	if err := ServerFaultError(event, ServerFailure{Category: "page_render", Cause: cause}); err != nil {
+		t.Fatalf("render server fault: %v", err)
+	}
+
+	failure, ok := ServerFailureFrom(event)
+	if !ok {
+		t.Fatal("expected server failure metadata")
+	}
+	if failure.Category != "page_render" {
+		t.Errorf("category = %q, want page_render", failure.Category)
+	}
+	if failure.Cause != cause {
+		t.Errorf("cause = %v, want %v", failure.Cause, cause)
+	}
+
+	recorder := event.Response.(*httptest.ResponseRecorder)
+	if got := recorder.Code; got != http.StatusInternalServerError {
+		t.Errorf("status = %d, want %d", got, http.StatusInternalServerError)
 	}
 }
 

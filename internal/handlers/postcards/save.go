@@ -82,7 +82,7 @@ func savePostcard(app core.App, c *core.RequestEvent, policy *bluemonday.Policy,
 		verified, err := verifier.Verify(tmplUtils.ContextFromRequest(c.Request), input.RecaptchaToken, clientID)
 		if err != nil {
 			logger.Error("Postcard captcha verification failed", "event", "postcard.captcha.failed", "outcome", "provider_error", "error_type", logging.ErrorType(err), "error", logging.Redact(err))
-			return utils.ServerFaultError(c)
+			return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 		}
 		if !verified {
 			logger.Warn("Postcard submission rejected", "event", "postcard.submission.rejected", "outcome", "captcha_rejected")
@@ -125,7 +125,7 @@ func savePostcard(app core.App, c *core.RequestEvent, policy *bluemonday.Policy,
 		err = pages.PostcardConfirmationPage(confirmation).Render(ctx, &buf)
 	}
 	if err != nil {
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 	logger.Info("Postcard submission queued", "event", "postcard.submission.queued", "outcome", "queued", "correlation_id", result.Postcard.GetString("correlation_id"))
 	return c.HTML(http.StatusAccepted, buf.String())

@@ -78,7 +78,7 @@ func (ctx *securityContext) publish(app *pocketbase.PocketBase, c *core.RequestE
 	if !contentSubmitted && content.Listed != nil {
 		if err := itineraryworkflow.SetListed(app, owner, *content.Listed); err != nil && !errors.Is(err, sql.ErrNoRows) {
 			ctx.limiter.Release(clientID, itineraryworkflow.AdmissionPublish)
-			return utils.ServerFaultError(c)
+			return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 		}
 	}
 
@@ -106,7 +106,7 @@ func (ctx *securityContext) publish(app *pocketbase.PocketBase, c *core.RequestE
 				"error_type", logging.ErrorType(publishErr),
 				"error", logging.Redact(publishErr),
 			)
-			return utils.ServerFaultError(c)
+			return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 		}
 	}
 
@@ -132,7 +132,7 @@ func (ctx *securityContext) publish(app *pocketbase.PocketBase, c *core.RequestE
 func (ctx *securityContext) publishedConfirmation(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	owner, _, err := ctx.owner(c)
 	if err != nil {
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	record, err := itineraryworkflow.LatestPublished(app, owner)
@@ -140,7 +140,7 @@ func (ctx *securityContext) publishedConfirmation(app *pocketbase.PocketBase, c 
 		if errors.Is(err, sql.ErrNoRows) {
 			return c.Redirect(http.StatusSeeOther, "/itineraries/new")
 		}
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	view := loadConfirmationView(app, record)
@@ -150,7 +150,7 @@ func (ctx *securityContext) publishedConfirmation(app *pocketbase.PocketBase, c 
 
 	var buf bytes.Buffer
 	if err := pages.ItineraryPublishedPage(view).Render(ctxb, &buf); err != nil {
-		return utils.ServerFaultError(c)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	return c.HTML(http.StatusOK, buf.String())

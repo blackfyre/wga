@@ -24,7 +24,7 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 			view, err := service.Index(event.Request.URL.Query().Get("kind"))
 			if err != nil {
 				logging.RequestLogger(app, event).Error("List guided tours", "error", err)
-				return utils.ServerFaultError(event)
+				return utils.ServerFaultError(event, utils.ServerFailure{Category: "server_fault", Cause: err})
 			}
 			canonical := "/tours"
 			if view.Filter != "" {
@@ -41,7 +41,7 @@ func RegisterHandlers(app *pocketbase.PocketBase) {
 				err = pages.ToursPage(view).Render(ctx, &output)
 			}
 			if err != nil {
-				return utils.ServerFaultError(event)
+				return utils.ServerFaultError(event, utils.ServerFailure{Category: "server_fault", Cause: err})
 			}
 			return event.HTML(http.StatusOK, output.String())
 		})
@@ -69,7 +69,7 @@ func tourAddress(app *pocketbase.PocketBase, service *tourworkflow.Service, even
 	}
 	if !errors.Is(err, tourworkflow.ErrNotFound) {
 		logging.RequestLogger(app, event).Error("Read guided tour", "error", err)
-		return utils.ServerFaultError(event)
+		return utils.ServerFaultError(event, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 	return tourLegacy(app, service, event)
 }
@@ -81,7 +81,7 @@ func tourLegacy(app *pocketbase.PocketBase, service *tourworkflow.Service, event
 	}
 	if !errors.Is(err, tourworkflow.ErrNotFound) {
 		logging.RequestLogger(app, event).Error("Resolve guided tour legacy route", "error", err)
-		return utils.ServerFaultError(event)
+		return utils.ServerFaultError(event, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 	return utils.NotFoundError(event)
 }
@@ -103,7 +103,7 @@ func renderTourPage(app *pocketbase.PocketBase, event *core.RequestEvent, view d
 		err = pages.TourPage(view).Render(ctx, &output)
 	}
 	if err != nil {
-		return utils.ServerFaultError(event)
+		return utils.ServerFaultError(event, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 	return event.HTML(http.StatusOK, output.String())
 }

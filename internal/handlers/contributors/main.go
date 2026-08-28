@@ -98,5 +98,5 @@ func contributorServerError(app core.App, c *core.RequestEvent, outcome string, 
 		"error", logging.Redact(err),
 	)
 
-	return utils.ServerFaultError(c)
+	return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 }
