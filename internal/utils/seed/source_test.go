@@ -308,6 +308,13 @@ func TestExternalSourcePaths(t *testing.T) {
 	if !paths.preseededAssets {
 		t.Fatal("expected external source to use preseeded assets")
 	}
+	info, err := os.Stat(paths.storageRoot)
+	if err != nil {
+		t.Fatalf("stat created storage root: %v", err)
+	}
+	if !info.IsDir() {
+		t.Fatalf("storage root %q is not a directory", paths.storageRoot)
+	}
 }
 
 func TestPreseededSourceFile(t *testing.T) {

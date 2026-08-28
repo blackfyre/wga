@@ -221,10 +221,14 @@ func externalSourcePaths(sqlitePath string) (sourcePaths, error) {
 	if !info.Mode().IsRegular() {
 		return sourcePaths{}, fmt.Errorf("seed SQLite database is not a regular file: %s", sqlitePath)
 	}
+	storageRoot := filepath.Join(filepath.Dir(sqlitePath), "storage")
+	if err := os.MkdirAll(storageRoot, 0o755); err != nil {
+		return sourcePaths{}, fmt.Errorf("create seed storage root %q: %w", storageRoot, err)
+	}
 
 	return sourcePaths{
 		sqlitePath:      sqlitePath,
-		storageRoot:     filepath.Join(filepath.Dir(sqlitePath), "storage"),
+		storageRoot:     storageRoot,
 		preseededAssets: true,
 	}, nil
 }
