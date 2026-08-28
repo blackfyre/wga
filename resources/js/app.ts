@@ -4,6 +4,11 @@ import {
 	initialiseSentry,
 	loadSentryConfiguration,
 } from "./sentry";
+import {
+	clearDynamicModuleRecovery,
+	recoverDynamicModule,
+	renderDynamicModuleRetry,
+} from "./dynamic-module-recovery";
 
 const sentryReady = initialiseSentry(loadSentryConfiguration(document));
 // Bind itinerary keyboard navigation synchronously so Arrow keys respond the
@@ -16,5 +21,11 @@ if (window.location.pathname === "/sentry-test") {
 		captureTestMessage();
 	}
 } else {
-	void import("./bootstrap");
+	void import("./bootstrap")
+		.then(() => clearDynamicModuleRecovery(window.sessionStorage))
+		.catch(() => {
+			if (!recoverDynamicModule(window.sessionStorage, window.location.href, () => window.location.reload())) {
+				renderDynamicModuleRetry(document);
+			}
+		});
 }

@@ -43,6 +43,19 @@ func newStaticTestApp(t testing.TB) *tests.TestApp {
 	return app
 }
 
+func TestAssetCacheControl(t *testing.T) {
+	cases := map[string]string{
+		"js/app.js":              "no-cache",
+		"js/bootstrap-abc123.js": "public, max-age=31536000, immutable",
+		"css/style.css":           "",
+	}
+	for path, want := range cases {
+		if got := assetCacheControl(path); got != want {
+			t.Errorf("assetCacheControl(%q) = %q, want %q", path, got, want)
+		}
+	}
+}
+
 func createStaticPage(t testing.TB, app core.App, slug, title, content string) {
 	t.Helper()
 

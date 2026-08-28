@@ -35,6 +35,16 @@ func shouldRegisterVisualOverhaul(environment config.Environment) bool {
 	return environment != config.EnvironmentProduction
 }
 
+func assetCacheControl(path string) string {
+	if path == "js/app.js" {
+		return "no-cache"
+	}
+	if strings.HasPrefix(path, "js/") && strings.HasSuffix(path, ".js") {
+		return "public, max-age=31536000, immutable"
+	}
+	return ""
+}
+
 // RegisterHandlers registers the static routes for the application.
 // It adds a middleware to serve static assets and a handler to serve static pages.
 // The static pages are retrieved from the database based on the slug parameter in the URL.
@@ -62,11 +72,16 @@ func RegisterHandlers(app core.App, environment config.Environment) {
 		}
 
 		// Assets
+		assetHandler := apis.Static(getFilePublicSystem(), false)
 		if app.IsDev() {
-			se.Router.GET("/assets/{path...}", apis.Static(os.DirFS("../internal/assets/public"), false))
-		} else {
-			se.Router.GET("/assets/{path...}", apis.Static(getFilePublicSystem(), false))
+			assetHandler = apis.Static(os.DirFS("../internal/assets/public"), false)
 		}
+		se.Router.GET("/assets/{path...}", func(c *core.RequestEvent) error {
+			if cacheControl := assetCacheControl(c.Request.PathValue("path")); cacheControl != "" {
+				c.Response.Header().Set("Cache-Control", cacheControl)
+			}
+			return assetHandler(c)
+		})
 
 		// Sitemap
 		se.Router.GET("/sitemap/*", apis.Static(os.DirFS("./wga_sitemap"), false))
