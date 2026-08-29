@@ -120,6 +120,8 @@ jobs:
           WGA_SENDER_ADDRESS: do-not-reply@wga.hu
           WGA_SENDER_NAME: WGA
           MAILPIT_URL: http://127.0.0.1:8025
+          WGA_POSTCARD_TOKEN_KEYS: '{"test":"MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE"}'
+          WGA_POSTCARD_TOKEN_ACTIVE_KEY_ID: test
       - uses: actions/upload-artifact@v4
         with:
           name: wga
@@ -197,6 +199,8 @@ jobs:
           WGA_SENDER_ADDRESS: do-not-reply@wga.hu
           WGA_SENDER_NAME: WGA
           MAILPIT_URL: http://127.0.0.1:8025
+          WGA_POSTCARD_TOKEN_KEYS: '{"test":"MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE"}'
+          WGA_POSTCARD_TOKEN_ACTIVE_KEY_ID: test
       - name: Wait for the application to start
         run: |
           for i in {1..60}; do
