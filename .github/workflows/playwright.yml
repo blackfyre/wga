@@ -196,7 +196,14 @@ jobs:
           WGA_SENDER_NAME: WGA
           MAILPIT_URL: http://127.0.0.1:8025
       - name: Wait for the application to start
-        run: sleep 5
+        run: |
+          for i in {1..60}; do
+            curl --fail --silent --show-error --output /dev/null http://127.0.0.1:8090/ && exit 0
+            sleep 1
+          done
+          cat wga.log
+          exit 1
+        working-directory: ./wga_tmp
       - name: Run Playwright tests
         run: bunx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
         env:
@@ -219,7 +226,7 @@ jobs:
         if: failure()
         with:
           name: wga-log-${{ matrix.shardIndex }}
-          path: wga.log
+          path: wga_tmp/wga.log
           retention-days: 1
   merge-reports:
     # Merge reports after playwright-tests, even if some shards have failed
