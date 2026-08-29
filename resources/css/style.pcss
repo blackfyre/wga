@@ -3266,7 +3266,8 @@ a[href]:not(:where(
 /* Itinerary slideshow (pages.ItineraryViewPage): a fixed dark overlay, so the
    ordinary layout keeps working underneath and there is no second document
    shell to maintain. Dark tones are literal — the viewer is deliberately not
-   themed with the site's bone palette. */
+   themed with the site's bone palette. The overlay stays opaque while its stop
+   fragment is replaced, rather than replaying an entry fade for every slide. */
 .wga-viewer {
   position: fixed;
   inset: 0;
@@ -3274,7 +3275,6 @@ a[href]:not(:where(
   display: flex;
   flex-direction: column;
   background: #131311;
-  animation: wga-viewer-in 0.2s ease-out;
 }
 
 /* The fixed overlay must not be a fixed descendant of the animated `main`:
@@ -3337,13 +3337,5 @@ main:has(.wga-viewer) {
     padding: 32px 34px;
     border-top: none;
     border-left: 1px solid rgb(255 255 255 / 0.12);
-  }
-}
-@keyframes wga-viewer-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
   }
 }

@@ -15,6 +15,10 @@ type Listener = (event: KeyEvent) => void;
 function makeFakeDom() {
 	const appendedLinks: Array<{ rel: string; href: string }> = [];
 	const listeners: Record<string, Listener> = {};
+	const viewerListeners: Record<
+		string,
+		(event: { preventDefault(): void }) => void
+	> = {};
 	const navigations: string[] = [];
 
 	// prev/next carry hx-get in the real markup, so keyboard navigation
@@ -37,6 +41,12 @@ function makeFakeDom() {
 	const viewer = {
 		isConnected: true,
 		dataset: {} as Record<string, string>,
+		addEventListener: (
+			name: string,
+			listener: (event: { preventDefault(): void }) => void,
+		) => {
+			viewerListeners[name] = listener;
+		},
 		querySelector: (selector: string) => {
 			if (selector === '[data-itinerary-nav="prev"][href]') return navPrev;
 			if (selector === '[data-itinerary-nav="next"][href]') return navNext;
@@ -104,7 +114,14 @@ function makeFakeDom() {
 	// The document body, as the target when page focus is outside the viewer.
 	const body = { closest: () => null };
 
-	return { appendedLinks, body, listeners, navigations, viewer };
+	return {
+		appendedLinks,
+		body,
+		listeners,
+		navigations,
+		viewer,
+		viewerListeners,
+	};
 }
 
 test("switches builder stops without replacing unpublished fields", () => {
@@ -258,6 +275,20 @@ test("prefetches at most two neighbouring stops", () => {
 		"prefetch",
 		"prefetch",
 	]);
+});
+
+test("prevents a global HTMX view transition between itinerary slides", () => {
+	const { viewerListeners } = makeFakeDom();
+	let prevented = false;
+
+	registerItineraryHelpers();
+	viewerListeners["htmx:beforeTransition"]({
+		preventDefault: () => {
+			prevented = true;
+		},
+	});
+
+	expect(prevented).toBe(true);
 });
 
 test("listens for keydown at document scope", () => {

@@ -52,19 +52,19 @@ templ ItineraryViewPage(view dto.ItineraryView) {
 					<ol class="flex gap-1" aria-label="Progress">
 						for i, stopURL := range view.StopURLs {
 							<li class="flex-1">
-								<a href={ templ.SafeURL(stopURL) } hx-get={ templ.SafeURL(stopURL) } class={ "block h-[3px] transition-colors", templ.KV("bg-white/90", i <= view.Index), templ.KV("bg-white/20", i > view.Index) } aria-label={ fmt.Sprintf("Go to stop %d", i+1) }></a>
+								<a href={ templ.SafeURL(stopURL) } hx-get={ templ.SafeURL(stopURL) } hx-target="#itinerary-viewer" hx-select="#itinerary-viewer" hx-swap="outerHTML" hx-push-url="true" class={ "block h-[3px] transition-colors", templ.KV("bg-white/90", i <= view.Index), templ.KV("bg-white/20", i > view.Index) } aria-label={ fmt.Sprintf("Go to stop %d", i+1) }></a>
 							</li>
 						}
 					</ol>
 					<div class="mt-4 flex items-center justify-between gap-4">
 						if view.HasPrev {
-							<a href={ templ.SafeURL(view.PrevURL) } hx-get={ templ.SafeURL(view.PrevURL) } rel="prev" data-itinerary-nav="prev" data-itinerary-prefetch class="font-mono text-[11px] tracking-[1.5px] text-white/90 transition-colors hover:text-white">← PREVIOUS</a>
+							<a href={ templ.SafeURL(view.PrevURL) } hx-get={ templ.SafeURL(view.PrevURL) } hx-target="#itinerary-viewer" hx-select="#itinerary-viewer" hx-swap="outerHTML" hx-push-url="true" rel="prev" data-itinerary-nav="prev" data-itinerary-prefetch class="font-mono text-[11px] tracking-[1.5px] text-white/90 transition-colors hover:text-white">← PREVIOUS</a>
 						} else {
 							<span class="font-mono text-[11px] tracking-[1.5px] text-white/25">← PREVIOUS</span>
 						}
 						<p class="font-mono text-[11px] tracking-[1.5px] text-white/40">{ fmt.Sprintf("%02d / %02d", view.Index+1, view.Total) }</p>
 						if view.HasNext {
-							<a href={ templ.SafeURL(view.NextURL) } hx-get={ templ.SafeURL(view.NextURL) } rel="next" data-itinerary-nav="next" data-itinerary-prefetch class="font-mono text-[11px] tracking-[1.5px] text-white/90 transition-colors hover:text-white">NEXT →</a>
+							<a href={ templ.SafeURL(view.NextURL) } hx-get={ templ.SafeURL(view.NextURL) } hx-target="#itinerary-viewer" hx-select="#itinerary-viewer" hx-swap="outerHTML" hx-push-url="true" rel="next" data-itinerary-nav="next" data-itinerary-prefetch class="font-mono text-[11px] tracking-[1.5px] text-white/90 transition-colors hover:text-white">NEXT →</a>
 						} else {
 							<span class="font-mono text-[11px] tracking-[1.5px] text-white/25">END OF ITINERARY</span>
 						}

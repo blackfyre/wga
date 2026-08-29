@@ -426,12 +426,30 @@ test.describe("publication and slideshow", () => {
 			page.locator('a[data-viewer][href*="/api/files/artworks/"]').nth(0),
 		).toBeVisible();
 		expect(await countItineraryPrefetch(page)).toBeLessThanOrEqual(2);
+		await expect(page.locator(".wga-viewer")).toHaveCSS(
+			"animation-name",
+			"none",
+		);
+		await page.locator("#mc-area").evaluate((element) => {
+			element.dataset.itinerarySlideRoot = "stable";
+		});
+		const slideTargets: string[] = [];
+		page.on("request", (request) => {
+			if (request.headers()["hx-request"] === "true") {
+				slideTargets.push(request.headers()["hx-target"]);
+			}
+		});
 
 		// Direct load, keyboard, link, and reload transitions keep geometry.
 		await assertViewerGeometry(page);
 		await page.keyboard.press("ArrowRight");
 		await page.waitForURL(/stop=1/);
 		await assertViewerGeometry(page);
+		await expect(page.locator("#mc-area")).toHaveAttribute(
+			"data-itinerary-slide-root",
+			"stable",
+		);
+		expect(slideTargets).toContain("itinerary-viewer");
 		await page.keyboard.press("ArrowLeft");
 		await page.waitForURL(/stop=0/);
 		await assertViewerGeometry(page);

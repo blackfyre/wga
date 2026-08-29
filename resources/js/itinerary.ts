@@ -236,6 +236,15 @@ function bindViewerKeyboard(viewer: HTMLElement): void {
 	document.addEventListener("keydown", handleKeydown);
 }
 
+// Slide navigation replaces only the opaque viewer fragment. The global shell
+// enables View Transitions for page navigation, but applying one here would
+// cross-fade each stop and briefly expose the underlying page.
+function bindViewerTransitionGuard(viewer: HTMLElement): void {
+	viewer.addEventListener("htmx:beforeTransition", (event) => {
+		event.preventDefault();
+	});
+}
+
 /** Binds Arrow/Escape keyboard navigation for every unbound viewer.
  *
  * Idempotent: each bound viewer gains `data-itinerary-keyboard` and is then
@@ -267,6 +276,7 @@ export function registerItineraryHelpers(): void {
 
 	for (const viewer of Array.from(viewers)) {
 		viewer.dataset.itineraryBound = "true";
+		bindViewerTransitionGuard(viewer);
 		prefetchNeighbours(viewer);
 	}
 

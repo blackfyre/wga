@@ -12,6 +12,7 @@
 
 - [ ] 3.1 Implement rate-limited publishing, moderation state, share tokens, and expiry.
 - [ ] 3.2 Render builder, publish confirmation, public itinerary, and one-stop-at-a-time slideshow pages with server fallback navigation.
+  - Partial verification (2026-08-29): stop navigation now swaps only the opaque `#itinerary-viewer` fragment, preserves the ordinary server-rendered links, prevents the global HTMX View Transition, and does not replay an entry fade. Focused template/handler/Bun tests, frontend build, scoped vet, and the viewer transition browser scenario passed. The parallel itinerary browser file still has independent builder/tray test-isolation failures and remains unclosed.
 - [ ] 3.3 Add scheduled purge and recovery-safe tests.
 
 ## 4. Verification
