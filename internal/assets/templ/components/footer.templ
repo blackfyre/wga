@@ -221,12 +221,12 @@ templ PreferencesPanel(prefs dto.Preferences) {
 		aria-label="Preferences"
 		class="wga-preferences m-auto w-full max-w-[600px] max-h-[calc(100vh-2rem)] overflow-y-auto overscroll-contain border border-base-content bg-base-100 p-0 text-base-content backdrop:bg-base-content/30"
 	>
-		<div class="flex shrink-0 items-center justify-between gap-4 border-b border-base-content px-6 py-5">
+		<div class="sticky top-0 z-10 flex shrink-0 items-center justify-between gap-4 border-b border-base-content bg-base-100 px-6 py-5">
 			<span class="font-mono text-[11px] tracking-[1.5px] text-base-content">PREFERENCES</span>
 			<button
 				type="button"
 				data-wga-preferences-close
-				class="flex min-h-[36px] cursor-pointer items-center border border-base-content/25 px-3 py-2 font-mono text-[10px] tracking-[1.5px] text-base-content/60 transition-colors hover:bg-base-300"
+				class="flex min-h-11 min-w-11 cursor-pointer items-center justify-center border border-base-content/25 px-3 py-2 font-mono text-[10px] tracking-[1.5px] text-base-content/60 transition-colors hover:bg-base-300"
 			>CLOSE</button>
 		</div>
 		<div class="flex flex-col gap-8 p-6">

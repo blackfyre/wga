@@ -293,6 +293,24 @@ test("preferences panel reflows at 200% text without overflow", async ({
 	expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth);
 });
 
+test("preferences close control remains reachable after mobile scrolling", async ({
+	page,
+}) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.goto("/");
+	await openPreferences(page);
+
+	const panel = page.locator("#wga-preferences");
+	await panel.evaluate((element) => {
+		element.scrollTop = element.scrollHeight;
+	});
+
+	const close = panel.locator("[data-wga-preferences-close]");
+	await expect(close).toBeInViewport({ ratio: 1 });
+	await close.click();
+	await expect(panel).toHaveJSProperty("open", false);
+});
+
 test("preferences panel opens and closes under reduced motion", async ({
 	page,
 }) => {

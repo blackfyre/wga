@@ -84,6 +84,8 @@ func TestFooterRetainsPreferenceAndConsentMounts(t *testing.T) {
 		`id="wga-preferences"`,
 		`aria-label="Preferences"`,
 		`data-wga-preferences-close`,
+		`sticky top-0 z-10`,
+		`min-h-11 min-w-11`,
 		`data-wga-scheme="light"`,
 		`data-wga-scheme="dark"`,
 		`data-wga-scheme-explanation`,
