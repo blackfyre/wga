@@ -75,7 +75,7 @@ templ PaletteBar(bands []dto.ColourSwatch, weighted bool, caption string) {
 					class="group/sw relative min-w-0 cursor-pointer outline outline-base-content/15 -outline-offset-1 focus:outline-2 focus:outline-base-content focus:-outline-offset-2 hover:outline-2 hover:outline-base-content hover:-outline-offset-2 hover:z-3 focus:z-3"
 					style={ templ.SafeCSS(paletteBarStyle(band, weighted, index == 0)) }
 				>
-					<span data-wga-palette-tooltip class={ "absolute bottom-[calc(100%+7px)] z-5 hidden w-max max-w-full items-baseline gap-2 break-words bg-base-content px-[9px] py-1.5 font-mono text-(length:--t-10) tracking-[0.5px] text-base-100 pointer-events-none group-hover/sw:flex group-focus/sw:flex", paletteBarTooltipPosition(index, len(bands)) }>
+					<span data-wga-palette-tooltip class={ "absolute bottom-[calc(100%+7px)] z-5 hidden w-[220px] max-w-[calc(100vw-2rem)] flex-wrap items-baseline gap-2 break-words bg-base-content px-[9px] py-1.5 font-mono text-(length:--t-10) tracking-[0.5px] text-base-100 pointer-events-none group-hover/sw:flex group-focus/sw:flex", paletteBarTooltipPosition(index, len(bands)) }>
 						if name := strings.TrimSpace(band.Name); name != "" {
 							<span>{ name }</span>
 						}

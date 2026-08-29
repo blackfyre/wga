@@ -24,11 +24,16 @@ func TestPaletteBarRendersSourceNamesAndWeightedBands(t *testing.T) {
 		"Prussian Blue, #1a2b3c, 63% of the surface",
 		"Slate Blue, #4d5e6f, 38% of the surface",
 		"background:#1a2b3c;flex-grow:5000;flex-basis:0",
+		"w-[220px]",
+		"flex-wrap",
 		"SOURCE NOTE",
 	} {
 		if !strings.Contains(rendered, expected) {
 			t.Errorf("palette bar missing %q", expected)
 		}
+	}
+	if strings.Contains(rendered, "max-w-full") {
+		t.Error("palette tooltip must not be constrained by its swatch width")
 	}
 }
 

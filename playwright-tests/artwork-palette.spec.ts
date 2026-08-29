@@ -18,7 +18,7 @@ test("discloses a contained artwork palette through hover, focus, and tap", asyn
 	await expect(swatches).toHaveCount(6);
 	await expect(first).toHaveAttribute(
 		"aria-label",
-		/Mop And Clockwork, #0C0909, 63% of the surface/,
+		/#0C0909, 63% of the surface/,
 	);
 
 	await first.hover();
@@ -32,13 +32,25 @@ test("discloses a contained artwork palette through hover, focus, and tap", asyn
 
 	const last = swatches.last();
 	const lastTooltip = last.locator("[data-wga-palette-tooltip]");
+	await lastTooltip
+		.locator("span")
+		.first()
+		.evaluate((label) => {
+			label.textContent = "A deliberately long source-supplied colour name";
+		});
 	await last.click();
+	await expect(first).toHaveAttribute("aria-expanded", "false");
+	await expect(firstTooltip).not.toBeVisible();
+	await expect(last).toHaveAttribute("aria-expanded", "true");
 	await expect(lastTooltip).toBeVisible();
+	const lastSwatchBounds = await last.boundingBox();
 	const bounds = await lastTooltip.boundingBox();
 	expect(bounds).not.toBeNull();
-	if (bounds) {
+	if (bounds && lastSwatchBounds) {
 		expect(bounds.x).toBeGreaterThanOrEqual(0);
 		expect(bounds.x + bounds.width).toBeLessThanOrEqual(390);
+		expect(bounds.width).toBe(220);
+		expect(bounds.width).toBeGreaterThan(lastSwatchBounds.width);
 	}
 
 	await expect(bar.locator("xpath=following-sibling::p")).toHaveText(

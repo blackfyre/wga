@@ -388,6 +388,28 @@ function migrateLegacyScheme(): void {
 	writeCookie(SCHEME_COOKIE_NAME, scheme);
 }
 
+function constrainPaletteTooltip(swatch: HTMLButtonElement): void {
+	const tooltip = swatch.querySelector<HTMLElement>(
+		"[data-wga-palette-tooltip]",
+	);
+	if (!tooltip) {
+		return;
+	}
+
+	tooltip.style.translate = "";
+	const bounds = tooltip.getBoundingClientRect();
+	const inset = 16;
+	let offset = 0;
+	if (bounds.left < inset) {
+		offset = inset - bounds.left;
+	} else if (bounds.right > window.innerWidth - inset) {
+		offset = window.innerWidth - inset - bounds.right;
+	}
+	if (offset !== 0) {
+		tooltip.style.translate = `${offset}px 0`;
+	}
+}
+
 function handleClick(event: MouseEvent): void {
 	if (!(event.target instanceof Element)) {
 		return;
@@ -408,10 +430,18 @@ function handleClick(event: MouseEvent): void {
 	);
 	if (paletteSwatch) {
 		const expanded = paletteSwatch.getAttribute("aria-expanded") !== "true";
-		paletteSwatch.setAttribute("aria-expanded", String(expanded));
-		paletteSwatch
-			.querySelector<HTMLElement>("[data-wga-palette-tooltip]")
-			?.classList.toggle("!flex", expanded);
+		for (const swatch of document.querySelectorAll<HTMLButtonElement>(
+			"[data-wga-palette-swatch]",
+		)) {
+			const open = swatch === paletteSwatch && expanded;
+			swatch.setAttribute("aria-expanded", String(open));
+			swatch
+				.querySelector<HTMLElement>("[data-wga-palette-tooltip]")
+				?.classList.toggle("!flex", open);
+		}
+		if (expanded) {
+			constrainPaletteTooltip(paletteSwatch);
+		}
 		return;
 	}
 
@@ -448,6 +478,28 @@ export function initialiseAppearancePreferences(): void {
 	migrateLegacyScheme();
 	reconcileAppearancePreferences();
 	document.addEventListener("click", handleClick);
+	document.addEventListener("pointerover", (event) => {
+		if (!(event.target instanceof Element)) {
+			return;
+		}
+		const swatch = event.target.closest<HTMLButtonElement>(
+			"[data-wga-palette-swatch]",
+		);
+		if (swatch) {
+			constrainPaletteTooltip(swatch);
+		}
+	});
+	document.addEventListener("focusin", (event) => {
+		if (!(event.target instanceof Element)) {
+			return;
+		}
+		const swatch = event.target.closest<HTMLButtonElement>(
+			"[data-wga-palette-swatch]",
+		);
+		if (swatch) {
+			constrainPaletteTooltip(swatch);
+		}
+	});
 	document.addEventListener("wga:preferences-changed", () => {
 		reconcileAppearancePreferences();
 	});
