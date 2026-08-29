@@ -222,6 +222,28 @@
 	background: color-mix(in oklab, var(--color-base-content) 32%, transparent);
 }
 
+/* Preferences follows the reference as a full-height sheet: edge-to-edge on a
+ * phone, and a 400px panel from the right on wider screens. Its header remains
+ * sticky within the panel's own scrollport. */
+.wga-preferences {
+	inset: 0 0 0 auto;
+	width: 100vw;
+	max-width: 100vw;
+	height: 100dvh;
+	max-height: 100dvh;
+	margin: 0;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	border: 0;
+}
+
+@media (min-width: 45rem) {
+	.wga-preferences {
+		width: 400px;
+		border-left: 1px solid var(--color-base-content);
+	}
+}
+
 .wga-kbd-palette,
 .wga-kbd-help {
 	border: 1px solid var(--color-base-content);

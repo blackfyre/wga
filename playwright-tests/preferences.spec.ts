@@ -341,6 +341,42 @@ test("preferences close control remains reachable after mobile scrolling", async
 	await expect(panel).toHaveJSProperty("open", false);
 });
 
+for (const viewport of [
+	{ width: 390, height: 844, panelWidth: 390 },
+	{ width: 720, height: 900, panelWidth: 400 },
+]) {
+	test(`preferences panel follows the reference sheet tier at ${viewport.width}px while its header stays sticky`, async ({
+		page,
+	}) => {
+		await page.setViewportSize({
+			width: viewport.width,
+			height: viewport.height,
+		});
+		await page.goto("/");
+		await openPreferences(page);
+
+		const panel = page.locator("#wga-preferences");
+		const header = panel.locator(":scope > div").first();
+		const panelBox = await panel.boundingBox();
+		expect(panelBox).not.toBeNull();
+		if (!panelBox) {
+			return;
+		}
+		expect(panelBox.x + panelBox.width).toBeCloseTo(viewport.width, 0);
+		expect(panelBox.width).toBeCloseTo(viewport.panelWidth, 0);
+		expect(panelBox.height).toBeCloseTo(viewport.height, 0);
+
+		await panel.evaluate((element) => {
+			element.scrollTop = element.scrollHeight;
+		});
+		const headerBox = await header.boundingBox();
+		expect(headerBox).not.toBeNull();
+		if (headerBox) {
+			expect(headerBox.y).toBeCloseTo(panelBox.y, 0);
+		}
+	});
+}
+
 test("preferences panel opens and closes under reduced motion", async ({
 	page,
 }) => {
