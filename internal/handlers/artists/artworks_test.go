@@ -127,8 +127,14 @@ func TestRelatedWorkURL(t *testing.T) {
 	if got := relatedWorkURL(base, repositories.RelatedByPeriod); got != base+"?basis=period" {
 		t.Errorf("period basis URL = %q, want %q", got, base+"?basis=period")
 	}
-	if got := relatedWorkURL(base, repositories.RelatedByPalette); got != base+"?basis=palette" {
-		t.Errorf("palette basis URL = %q, want %q", got, base+"?basis=palette")
+}
+
+func TestParseArtworkRelatedBasisOmitsPalette(t *testing.T) {
+	if got := parseArtworkRelatedBasis("palette"); got != repositories.DefaultRelatedWorkBasis {
+		t.Errorf("palette basis = %q, want %q", got, repositories.DefaultRelatedWorkBasis)
+	}
+	if got := parseArtworkRelatedBasis("period"); got != repositories.RelatedByPeriod {
+		t.Errorf("period basis = %q, want %q", got, repositories.RelatedByPeriod)
 	}
 }
 
@@ -136,10 +142,10 @@ func TestRelatedWorkBases(t *testing.T) {
 	base := "/artists/durer-artistone000001/work-workone00000001"
 	bases := relatedWorkBases(base, repositories.RelatedByCollection)
 
-	wantLabels := []string{"BY ARTIST", "SAME COLLECTION", "SAME PERIOD", "SIMILAR PALETTE"}
-	wantValues := []string{"artist", "collection", "period", "palette"}
-	if len(bases) != 4 {
-		t.Fatalf("bases = %d, want 4", len(bases))
+	wantLabels := []string{"BY ARTIST", "SAME COLLECTION", "SAME PERIOD"}
+	wantValues := []string{"artist", "collection", "period"}
+	if len(bases) != 3 {
+		t.Fatalf("bases = %d, want 3", len(bases))
 	}
 	for i, basis := range bases {
 		if basis.Label != wantLabels[i] {
@@ -169,7 +175,6 @@ func TestRelatedConnection(t *testing.T) {
 	}{
 		{repositories.RelatedByArtist, "Dürer", 0, "OTHER WORKS BY DÜRER"},
 		{repositories.RelatedByCollection, "Dürer", 0, "SAME COLLECTION"},
-		{repositories.RelatedByPalette, "Dürer", 0, "WORKS WITH A SIMILAR PALETTE"},
 		{repositories.RelatedByPeriod, "Dürer", 1600, "ARTISTS WORKING 1560–1640"},
 		{repositories.RelatedByPeriod, "Dürer", 0, "ARTISTS FROM THE SAME PERIOD"},
 	}
@@ -183,14 +188,14 @@ func TestRelatedConnection(t *testing.T) {
 func TestRelatedAlternative(t *testing.T) {
 	base := "/artists/durer-artistone000001/work-workone00000001"
 
-	label, u := relatedAlternative(repositories.RelatedByPalette, base)
-	if label != "BY ARTIST" || u != base {
-		t.Errorf("palette alternative = %q, %q; want BY ARTIST, %q", label, u, base)
+	label, u := relatedAlternative(repositories.RelatedByArtist, base)
+	if label != "SAME COLLECTION" || u != base+"?basis=collection" {
+		t.Errorf("artist alternative = %q, %q; want SAME COLLECTION", label, u)
 	}
 
 	label, u = relatedAlternative(repositories.RelatedByCollection, base)
-	if label != "SIMILAR PALETTE" || u != base+"?basis=palette" {
-		t.Errorf("collection alternative = %q, %q; want SIMILAR PALETTE", label, u)
+	if label != "BY ARTIST" || u != base {
+		t.Errorf("collection alternative = %q, %q; want BY ARTIST", label, u)
 	}
 }
 

@@ -84,17 +84,16 @@ func TestTask73NoPublicSourceOrLicenceClaimsInAnyEnvironment(t *testing.T) {
 	}
 }
 
-func TestTask73RelatedBasesAreCanonicalAndPaletteHasNoHolding(t *testing.T) {
+func TestTask73RelatedBasesAreCanonical(t *testing.T) {
 	base := "/artists/synthetic-artist-artistone000001/a-painting-workone00000001"
 	bases := relatedWorkBases(base, repositories.RelatedByPeriod)
-	if len(bases) != 4 {
-		t.Fatalf("basis count = %d, want 4", len(bases))
+	if len(bases) != 3 {
+		t.Fatalf("basis count = %d, want 3", len(bases))
 	}
 	want := map[string]string{
 		"artist":     base,
 		"collection": base + "?basis=collection",
 		"period":     base + "?basis=period",
-		"palette":    base + "?basis=palette",
 	}
 	for _, basis := range bases {
 		if basis.URL != want[basis.Value] {
@@ -103,19 +102,6 @@ func TestTask73RelatedBasesAreCanonicalAndPaletteHasNoHolding(t *testing.T) {
 		if basis.Value == "period" != basis.Active {
 			t.Errorf("%s active = %t, want period to be active", basis.Value, basis.Active)
 		}
-	}
-
-	app, _ := newArtworkRouteApp(t)
-	artwork, err := app.FindRecordById(constants.CollectionArtworks, "workone00000001")
-	if err != nil {
-		t.Fatalf("find artwork: %v", err)
-	}
-	result, err := repositories.NewRelatedWorkResolver(app).Resolve(artwork, repositories.RelatedByPalette)
-	if err != nil {
-		t.Fatalf("resolve palette: %v", err)
-	}
-	if result.Holding != nil {
-		t.Fatal("palette similarity must not expose a filterable holding")
 	}
 }
 

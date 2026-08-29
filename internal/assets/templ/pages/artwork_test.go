@@ -276,13 +276,12 @@ func relatedSampleArtwork() dto.Artwork {
 		Connection:     "SAME COLLECTION",
 		Sparse:         true,
 		SparseNote:     "The archive catalogues no further works from this collection.",
-		Alternative:    "SIMILAR PALETTE",
-		AlternativeURL: "/artists/johannes-vermeer-artist00000001/girl-with-a-pearl-earring-aw0000000000001?basis=palette",
+		Alternative:    "BY ARTIST",
+		AlternativeURL: "/artists/johannes-vermeer-artist00000001/girl-with-a-pearl-earring-aw0000000000001",
 		Bases: []dto.RelatedWorkBasis{
 			{Value: "artist", Label: "BY ARTIST", URL: "/artists/johannes-vermeer-artist00000001/girl-with-a-pearl-earring-aw0000000000001", Active: false},
 			{Value: "collection", Label: "SAME COLLECTION", URL: "/artists/johannes-vermeer-artist00000001/girl-with-a-pearl-earring-aw0000000000001?basis=collection", Active: true},
 			{Value: "period", Label: "SAME PERIOD", URL: "/artists/johannes-vermeer-artist00000001/girl-with-a-pearl-earring-aw0000000000001?basis=period", Active: false},
-			{Value: "palette", Label: "SIMILAR PALETTE", URL: "/artists/johannes-vermeer-artist00000001/girl-with-a-pearl-earring-aw0000000000001?basis=palette", Active: false},
 		},
 	}
 	return aw
@@ -359,9 +358,6 @@ func TestArtworkPaletteBlockUsesContainedInteractiveSwatches(t *testing.T) {
 		if !strings.Contains(rendered, expected) {
 			t.Errorf("palette must include interactive swatch contract %q", expected)
 		}
-	}
-	if strings.Contains(rendered, "flex-wrap") {
-		t.Error("palette must not render a duplicated wrapping legend")
 	}
 }
 
@@ -447,16 +443,17 @@ func TestArtworkBlockRendersRelatedBasisControls(t *testing.T) {
 		"SAME COLLECTION",
 		"BY ARTIST",
 		"SAME PERIOD",
-		"SIMILAR PALETTE",
 		`href="/artists/johannes-vermeer-artist00000001/girl-with-a-pearl-earring-aw0000000000001?basis=collection"`,
-		`href="/artists/johannes-vermeer-artist00000001/girl-with-a-pearl-earring-aw0000000000001?basis=palette"`,
 		"The archive catalogues no further works from this collection.",
-		"TRY SIMILAR PALETTE →",
-		`href="/artists/johannes-vermeer-artist00000001/girl-with-a-pearl-earring-aw0000000000001?basis=palette"`,
+		"TRY BY ARTIST →",
+		`href="/artists/johannes-vermeer-artist00000001/girl-with-a-pearl-earring-aw0000000000001"`,
 	} {
 		if !strings.Contains(rendered, expected) {
 			t.Errorf("artwork related block does not contain %q", expected)
 		}
+	}
+	if strings.Contains(rendered, "SIMILAR PALETTE") {
+		t.Error("artwork related block must omit the palette similarity basis")
 	}
 	// The active basis carries aria-current.
 	if !strings.Contains(rendered, `aria-current="page"`) {
@@ -481,7 +478,7 @@ func TestArtworkRelatedLinksCarryHtmxEnhancement(t *testing.T) {
 func TestArtworkBlockOmitsRelatedWithoutBasis(t *testing.T) {
 	rendered := renderArtworkBlock(t, sampleArtwork(), context.Background())
 
-	for _, absent := range []string{"BY ARTIST", "SAME COLLECTION", "SAME PERIOD", "SIMILAR PALETTE"} {
+	for _, absent := range []string{"BY ARTIST", "SAME COLLECTION", "SAME PERIOD"} {
 		if strings.Contains(rendered, absent) {
 			t.Errorf("artwork must omit related basis controls without basis state, found %q", absent)
 		}

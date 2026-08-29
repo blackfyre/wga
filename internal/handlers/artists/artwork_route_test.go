@@ -317,6 +317,19 @@ func TestArtworkRouteCanonicalisesInvalidBasis(t *testing.T) {
 	}
 }
 
+func TestArtworkRouteRedirectsPaletteBasis(t *testing.T) {
+	_, request := newArtworkRouteApp(t)
+
+	recorder := request("/artists/synthetic-artist-artistone000001/a-painting-workone00000001?basis=palette")
+
+	if recorder.Code != http.StatusMovedPermanently {
+		t.Fatalf("status = %d, want %d", recorder.Code, http.StatusMovedPermanently)
+	}
+	if got := recorder.Header().Get("Location"); got != "/artists/synthetic-artist-artistone000001/a-painting-workone00000001" {
+		t.Errorf("Location = %q, want canonical URL without palette basis", got)
+	}
+}
+
 func TestArtworkRouteRejectsUnpublishedArtist(t *testing.T) {
 	app, request := newArtworkRouteApp(t)
 	saveRecordRecord(t, app, constants.CollectionArtists, "hiddenartist001", map[string]any{

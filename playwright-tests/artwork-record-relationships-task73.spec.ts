@@ -1,12 +1,7 @@
 import { type Page, expect, test } from "@playwright/test";
 
 const viewports = [390, 834, 1440];
-const basisLabels = [
-	"BY ARTIST",
-	"SAME COLLECTION",
-	"SAME PERIOD",
-	"SIMILAR PALETTE",
-];
+const basisLabels = ["BY ARTIST", "SAME COLLECTION", "SAME PERIOD"];
 let artworkPath = "";
 
 async function discoverArtworkPath(page: Page) {
@@ -43,7 +38,7 @@ for (const width of viewports) {
 		test.use({ viewport: { width, height: 900 } });
 		test.setTimeout(60000);
 
-		test("renders the record and four keyboard-reachable basis links", async ({
+		test("renders the record and three keyboard-reachable basis links", async ({
 			page,
 		}) => {
 			await page.goto(artworkPath);
@@ -52,7 +47,7 @@ for (const width of viewports) {
 				name: "Related works basis",
 			});
 			await expect(basis).toBeVisible();
-			await expect(basis.getByRole("link")).toHaveCount(4);
+			await expect(basis.getByRole("link")).toHaveCount(3);
 			for (const label of basisLabels) {
 				const link = basis.getByRole("link", { name: label });
 				await expect(link).toBeVisible();
@@ -107,4 +102,15 @@ test("basis navigation works as ordinary links without JavaScript", async ({
 		page.getByRole("link", { name: "SAME COLLECTION" }),
 	).toHaveAttribute("aria-current", "page");
 	await context.close();
+});
+
+test("palette similarity URLs fall back to the default related-work basis", async ({
+	page,
+}) => {
+	await page.goto(`${artworkPath}?basis=palette`);
+	await expect(page).toHaveURL(artworkPath);
+	await expect(page.getByRole("link", { name: "BY ARTIST" })).toHaveAttribute(
+		"aria-current",
+		"page",
+	);
 });

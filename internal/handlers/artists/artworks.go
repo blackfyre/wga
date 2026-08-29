@@ -100,12 +100,16 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase, environmen
 	expectedPageUrl := "/artists/" + expectedArtistSlug + "/" + expectedArtworkSlug
 
 	// Parse and normalise the related-work basis from the query, falling back to
-	// BY ARTIST for an absent or unknown value.
-	basis := repositories.ParseRelatedWorkBasis(c.Request.URL.Query().Get("basis"))
+	// BY ARTIST for an absent, unsupported, or unknown value.
+	requestedBasis := c.Request.URL.Query().Get("basis")
+	basis := parseArtworkRelatedBasis(requestedBasis)
 	canonicalURL := relatedWorkURL(expectedPageUrl, basis)
 
-	// Redirect to the correct URL if either slug is not correct
-	if artistSlug != expectedArtistSlug || artworkSlug != expectedArtworkSlug {
+	// Redirect to the correct URL if either slug is not correct or a previously
+	// shareable palette-similarity URL is requested.
+	if artistSlug != expectedArtistSlug ||
+		artworkSlug != expectedArtworkSlug ||
+		requestedBasis == string(repositories.RelatedByPalette) {
 		return c.Redirect(http.StatusMovedPermanently, canonicalURL)
 	}
 
@@ -602,7 +606,18 @@ func relatedWorkURL(baseURL string, basis repositories.RelatedWorkBasis) string 
 	return baseURL + "?basis=" + string(basis)
 }
 
-// relatedWorkBases returns the four basis controls with labels and canonical
+// parseArtworkRelatedBasis omits the expensive palette-similarity relation from
+// public artwork pages until it is re-enabled. Old shared URLs fall back to the
+// ordinary related-work view and are canonically redirected without the query.
+func parseArtworkRelatedBasis(raw string) repositories.RelatedWorkBasis {
+	if raw == string(repositories.RelatedByPalette) {
+		return repositories.DefaultRelatedWorkBasis
+	}
+
+	return repositories.ParseRelatedWorkBasis(raw)
+}
+
+// relatedWorkBases returns the available basis controls with labels and canonical
 // URLs, marking the active one.
 func relatedWorkBases(baseURL string, active repositories.RelatedWorkBasis) []dto.RelatedWorkBasis {
 	order := []struct {
@@ -612,7 +627,6 @@ func relatedWorkBases(baseURL string, active repositories.RelatedWorkBasis) []dt
 		{repositories.RelatedByArtist, "BY ARTIST"},
 		{repositories.RelatedByCollection, "SAME COLLECTION"},
 		{repositories.RelatedByPeriod, "SAME PERIOD"},
-		{repositories.RelatedByPalette, "SIMILAR PALETTE"},
 	}
 
 	bases := make([]dto.RelatedWorkBasis, 0, len(order))
@@ -633,8 +647,6 @@ func relatedConnection(basis repositories.RelatedWorkBasis, artistName string, d
 	switch basis {
 	case repositories.RelatedByCollection:
 		return "SAME COLLECTION"
-	case repositories.RelatedByPalette:
-		return "WORKS WITH A SIMILAR PALETTE"
 	case repositories.RelatedByPeriod:
 		if dateStart > 0 {
 			return fmt.Sprintf("ARTISTS WORKING %d–%d", dateStart-relatedPeriodWindow, dateStart+relatedPeriodWindow)
@@ -654,8 +666,6 @@ func relatedSparseNote(basis repositories.RelatedWorkBasis) string {
 	switch basis {
 	case repositories.RelatedByCollection:
 		return "The archive catalogues no further works from this collection."
-	case repositories.RelatedByPalette:
-		return "The archive holds no comparable published colour profile."
 	case repositories.RelatedByPeriod:
 		return "No other artist is catalogued within forty years of this work."
 	default:
@@ -663,12 +673,12 @@ func relatedSparseNote(basis repositories.RelatedWorkBasis) string {
 	}
 }
 
-// relatedAlternative returns the label and URL of the basis most likely to
-// supply records when the active basis is sparse.
+// relatedAlternative returns an available basis that may supply records when the
+// active basis is sparse.
 func relatedAlternative(basis repositories.RelatedWorkBasis, baseURL string) (string, string) {
-	if basis == repositories.RelatedByPalette {
-		return "BY ARTIST", relatedWorkURL(baseURL, repositories.RelatedByArtist)
+	if basis == repositories.RelatedByArtist {
+		return "SAME COLLECTION", relatedWorkURL(baseURL, repositories.RelatedByCollection)
 	}
 
-	return "SIMILAR PALETTE", relatedWorkURL(baseURL, repositories.RelatedByPalette)
+	return "BY ARTIST", relatedWorkURL(baseURL, repositories.RelatedByArtist)
 }
