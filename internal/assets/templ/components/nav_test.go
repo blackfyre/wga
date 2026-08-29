@@ -170,8 +170,14 @@ func TestTopNavKeepsMoreInlineWithDesktopDestinations(t *testing.T) {
 	if strings.Contains(rendered, `items-start justify-between gap-6`) {
 		t.Fatal("desktop navigation must not push MORE to the far edge")
 	}
-	if !strings.Contains(rendered, `hidden items-start gap-6 px-4 pt-3 md:flex`) {
+	if !strings.Contains(rendered, `hidden items-start gap-6 px-4 pt-3 min-[720px]:flex`) {
 		t.Fatal("expected inline desktop navigation layout")
+	}
+	if !strings.Contains(rendered, `w-[190px] items-end gap-4 min-[1080px]:w-[340px]`) {
+		t.Fatal("expected reference search widths at 720px and 1080px tiers")
+	}
+	if !strings.Contains(rendered, `hidden items-end gap-6 min-[720px]:flex`) {
+		t.Fatal("expected desktop search to appear at the 720px reference tier")
 	}
 }
 
@@ -195,7 +201,7 @@ func TestTopNavMobileDisclosureUsesNormalFlowFullWidthPanel(t *testing.T) {
 
 	rendered := output.String()
 	for _, expected := range []string{
-		`<div class="grid grid-cols-[minmax(0,1fr)_2.75rem] items-start gap-6 md:hidden">`,
+		`<div class="grid grid-cols-[minmax(0,1fr)_2.75rem] items-start gap-6 min-[720px]:hidden">`,
 		`<details class="col-span-full row-start-1" data-kbd-mobile-navigation>`,
 		`<summary class="ml-auto flex h-11 w-11 cursor-pointer list-none flex-col items-center justify-center gap-1.5" aria-label="Open primary navigation">`,
 		`<nav class="mt-4 border-t border-base-content/15 bg-base-100 pt-4" aria-label="Primary navigation" data-mobile-navigation`,
@@ -260,7 +266,7 @@ func mobileNavRegion(rendered string) string {
 }
 
 func desktopNavRegion(rendered string) string {
-	marker := `class="container mx-auto hidden items-start gap-6 px-4 pt-3 md:flex md:px-0 md:pt-0" aria-label="Primary navigation"`
+	marker := `class="container mx-auto hidden items-start gap-6 px-4 pt-3 min-[720px]:flex min-[720px]:px-0 min-[720px]:pt-0" aria-label="Primary navigation"`
 	start := strings.Index(rendered, marker)
 	if start < 0 {
 		return ""
