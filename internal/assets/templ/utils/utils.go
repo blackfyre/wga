@@ -64,8 +64,11 @@ func IsPathActive(c context.Context, candidate string, destinations []string) bo
 		return false
 	}
 
+	allDestinations := append([]string{}, destinations...)
+	allDestinations = append(allDestinations, candidate)
+
 	active := ""
-	for _, destination := range destinations {
+	for _, destination := range allDestinations {
 		destination = normalizePath(destination)
 		if !pathOwns(destination, current) {
 			continue
