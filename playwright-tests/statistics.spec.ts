@@ -261,6 +261,7 @@ test("a live theme change redraws chart output with dark tokens", async ({
 		(element as HTMLCanvasElement).toDataURL(),
 	);
 
+	await page.locator("[data-wga-preferences-open]").click();
 	await page.getByRole("button", { name: "DARK" }).first().click();
 	await expect(page.locator("html")).toHaveAttribute(
 		"data-theme",

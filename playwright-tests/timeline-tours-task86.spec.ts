@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
 
 const toursURL = process.env.WGA_TASK86_TOURS_URL;
-const task86Tours = toursURL ? test.describe : test.describe.skip;
+// Task 8.6 requires its separately supplied production-shaped evidence fixture.
+const task86Evidence = toursURL ? test.describe : test.describe.skip;
 
 const rebuilt = "synthetic-rebuilt-tour-task86";
 const legacy = "synthetic-legacy-tour-task86";
@@ -27,7 +28,7 @@ async function expectLandmarkSnapshot(
 	}
 }
 
-task86Tours("Task 8.6 Guided Tours", () => {
+task86Evidence("Task 8.6 Guided Tours", () => {
 	test("index filters, grouping, four facts, and synthetic disclosure", async ({
 		page,
 	}) => {
@@ -251,7 +252,7 @@ task86Tours("Task 8.6 Guided Tours", () => {
 	}
 });
 
-test.describe("Task 8.6 Timeline", () => {
+task86Evidence("Task 8.6 Timeline", () => {
 	test("six lanes, positive source-backed artists/works/movements, and honest unavailable lanes", async ({
 		page,
 	}) => {
