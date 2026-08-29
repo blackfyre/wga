@@ -49,6 +49,7 @@ let sessionScheme: Scheme | null = null;
 let sessionPalette: Palette | null = null;
 let preferencesInvoker: HTMLElement | null = null;
 const boundPanels = new WeakSet<HTMLDialogElement>();
+const panelWasOpen = new WeakMap<HTMLDialogElement, boolean>();
 
 export function parseScheme(value: string | null): Scheme | null {
 	if (value === "light" || value === "wga_light") {
@@ -291,9 +292,14 @@ function bindPreferencesPanel(): void {
 			continue;
 		}
 		boundPanels.add(panel);
+		panelWasOpen.set(panel, panel.open);
 		panel.addEventListener("close", () => {
+			if (!panelWasOpen.get(panel)) {
+				return;
+			}
+			panelWasOpen.set(panel, false);
 			if (preferencesInvoker?.isConnected) {
-				preferencesInvoker.focus();
+				preferencesInvoker.focus({ preventScroll: true });
 			}
 			preferencesInvoker = null;
 		});
@@ -353,6 +359,7 @@ export function openPreferences(invoker?: HTMLElement): void {
 	}
 	preferencesInvoker = invoker ?? null;
 	panel.showModal();
+	panelWasOpen.set(panel, true);
 	window.requestAnimationFrame(() => {
 		if (!panel.open) {
 			return;
@@ -360,7 +367,7 @@ export function openPreferences(invoker?: HTMLElement): void {
 		const initialFocus = panel.querySelector<HTMLElement>(
 			"[data-wga-preferences-initial-focus], [data-wga-preferences-close]",
 		);
-		initialFocus?.focus();
+		initialFocus?.focus({ preventScroll: true });
 	});
 }
 
@@ -393,6 +400,18 @@ function handleClick(event: MouseEvent): void {
 	}
 	if (event.target.closest("[data-wga-preferences-close]")) {
 		closePreferences();
+		return;
+	}
+
+	const paletteSwatch = event.target.closest<HTMLButtonElement>(
+		"[data-wga-palette-swatch]",
+	);
+	if (paletteSwatch) {
+		const expanded = paletteSwatch.getAttribute("aria-expanded") !== "true";
+		paletteSwatch.setAttribute("aria-expanded", String(expanded));
+		paletteSwatch
+			.querySelector<HTMLElement>("[data-wga-palette-tooltip]")
+			?.classList.toggle("!flex", expanded);
 		return;
 	}
 

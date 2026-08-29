@@ -83,7 +83,10 @@ func TestLoadArtworksCarriesColourProfileAndSourceFields(t *testing.T) {
 		t.Fatalf("insert artwork: %v", err)
 	}
 
-	artworks, err := loadArtworks(db)
+	artworks, err := loadArtworks(db, map[string]string{
+		"#1A2B3C": "Prussian Blue",
+		"#4D5E6F": "Slate Blue",
+	})
 	if err != nil {
 		t.Fatalf("load artworks: %v", err)
 	}
@@ -102,7 +105,7 @@ func TestLoadArtworksCarriesColourProfileAndSourceFields(t *testing.T) {
 		t.Errorf("dimensions = %q, want 101 x 201 cm", item.Dimensions)
 	}
 
-	wantPalette := []sourceColourPaletteEntry{{Hex: "#1a2b3c", Weight: 5000}, {Hex: "#4d5e6f", Weight: 3000}}
+	wantPalette := []sourceColourPaletteEntry{{Name: "Prussian Blue", Hex: "#1a2b3c", Weight: 5000}, {Name: "Slate Blue", Hex: "#4d5e6f", Weight: 3000}}
 	if !reflect.DeepEqual(item.ColourPalette, wantPalette) {
 		t.Errorf("colour palette = %+v, want %+v", item.ColourPalette, wantPalette)
 	}

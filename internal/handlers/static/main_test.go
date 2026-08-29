@@ -47,13 +47,32 @@ func TestAssetCacheControl(t *testing.T) {
 	cases := map[string]string{
 		"js/app.js":              "no-cache",
 		"js/bootstrap-abc123.js": "public, max-age=31536000, immutable",
-		"css/style.css":           "",
+		"css/style.css":          "",
 	}
 	for path, want := range cases {
 		if got := assetCacheControl(path); got != want {
 			t.Errorf("assetCacheControl(%q) = %q, want %q", path, got, want)
 		}
 	}
+}
+
+func TestAssetRouteServesEmbeddedCSS(t *testing.T) {
+	scenario := tests.ApiScenario{
+		Name:           "embedded CSS uses the asset path rather than the route prefix",
+		Method:         http.MethodGet,
+		URL:            "/assets/css/style.css",
+		ExpectedStatus: http.StatusOK,
+		ExpectedContent: []string{
+			"--color-base-100",
+		},
+		TestAppFactory: func(t testing.TB) *tests.TestApp {
+			app := newStaticTestApp(t)
+			RegisterHandlers(app, config.EnvironmentProduction)
+			return app
+		},
+	}
+
+	scenario.Test(t)
 }
 
 func createStaticPage(t testing.TB, app core.App, slug, title, content string) {

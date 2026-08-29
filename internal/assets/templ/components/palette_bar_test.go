@@ -1,0 +1,48 @@
+package components
+
+import (
+	"bytes"
+	"context"
+	"strings"
+	"testing"
+
+	"github.com/blackfyre/wga/internal/assets/templ/dto"
+)
+
+func TestPaletteBarRendersSourceNamesAndWeightedBands(t *testing.T) {
+	var output bytes.Buffer
+	bands := []dto.ColourSwatch{
+		{Name: "Prussian Blue", Hex: "#1a2b3c", Weight: 5000},
+		{Name: "Slate Blue", Hex: "#4d5e6f", Weight: 3000},
+	}
+	if err := PaletteBar(bands, true, "SOURCE NOTE").Render(context.Background(), &output); err != nil {
+		t.Fatalf("render palette bar: %v", err)
+	}
+
+	rendered := output.String()
+	for _, expected := range []string{
+		"Prussian Blue, #1a2b3c, 63% of the surface",
+		"Slate Blue, #4d5e6f, 38% of the surface",
+		"background:#1a2b3c;flex-grow:5000;flex-basis:0",
+		"SOURCE NOTE",
+	} {
+		if !strings.Contains(rendered, expected) {
+			t.Errorf("palette bar missing %q", expected)
+		}
+	}
+}
+
+func TestPaletteBarUsesEqualBandsForComparison(t *testing.T) {
+	var output bytes.Buffer
+	bands := []dto.ColourSwatch{
+		{Name: "Prussian Blue", Hex: "#1a2b3c", Weight: 5000},
+		{Name: "Slate Blue", Hex: "#4d5e6f", Weight: 3000},
+	}
+	if err := PaletteBar(bands, false, "").Render(context.Background(), &output); err != nil {
+		t.Fatalf("render palette bar: %v", err)
+	}
+
+	if strings.Contains(output.String(), "flex-grow:") || !strings.Contains(output.String(), "background:#1a2b3c;flex:1") {
+		t.Error("comparison palette must use equal bands")
+	}
+}

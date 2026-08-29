@@ -13,6 +13,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/blackfyre/wga/internal/artworks"
 	"github.com/blackfyre/wga/internal/assets/templ/components"
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
@@ -1061,6 +1062,7 @@ func buildDualWorkRecord(app *pocketbase.PocketBase, side string, pane dualPaneS
 		Sizes:       sizes,
 		SizeCaption: fmt.Sprintf("REPRODUCTION AT %dPX WIDE", dualSizeWidth(pane.size)),
 		Meta:        dualWorkMeta(technique, dimensions, artType, location),
+		Palette:     artworks.Palette(work),
 		Comment:     comment,
 		ArtworkID:   work.Id,
 		Citation: components.Citation{

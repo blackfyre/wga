@@ -172,6 +172,36 @@ test("opens a labelled modal with initial focus and restores the trigger on Esca
 	await expect(trigger).toBeFocused();
 });
 
+test("preserves settings focus and page scroll across preference updates", async ({
+	page,
+}) => {
+	await page.goto("/");
+	await openPreferences(page);
+
+	const panel = page.locator("#wga-preferences");
+	await panel.evaluate((element) => {
+		element.scrollTop = 60;
+	});
+	const palette = page.locator('[data-wga-palette="classic"]');
+	await palette.focus();
+	const scrollTop = await panel.evaluate((element) => element.scrollTop);
+	await palette.click();
+	await expect(palette).toBeFocused();
+	expect(await panel.evaluate((element) => element.scrollTop)).toBe(scrollTop);
+
+	await page.evaluate(() => {
+		document.dispatchEvent(new Event("wga:preferences-changed"));
+	});
+	await expect(palette).toBeFocused();
+	expect(await panel.evaluate((element) => element.scrollTop)).toBe(scrollTop);
+
+	await page.evaluate(() => {
+		document.dispatchEvent(new Event("htmx:afterSwap"));
+	});
+	await expect(palette).toBeFocused();
+	expect(await panel.evaluate((element) => element.scrollTop)).toBe(scrollTop);
+});
+
 test("remains functional after repeated footer replacement", async ({
 	page,
 }) => {

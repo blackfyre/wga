@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/blackfyre/wga/internal/artworks"
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
@@ -387,7 +388,7 @@ func populateArtworkSourceData(app *pocketbase.PocketBase, artwork *core.Record,
 	}
 	content.SourceComment = artworkCommentaryHTML(artwork.GetString("source_comment"))
 	content.HasCommentary = artwork.GetString("source_comment") != ""
-	content.Palette = parseArtworkPalette(artwork)
+	content.Palette = artworks.Palette(artwork)
 	content.Music = buildArtworkMusic(app, artwork)
 }
 
@@ -508,33 +509,6 @@ func resolveWorkArtist(app *pocketbase.PocketBase, work *core.Record) (string, s
 	}
 
 	return "", "", "", ""
-}
-
-// parseArtworkPalette reads the compact image-derived palette from the persisted
-// JSON field. Malformed or absent values yield an empty palette.
-func parseArtworkPalette(artwork *core.Record) []dto.ColourSwatch {
-	data, err := json.Marshal(artwork.Get("colour_palette"))
-	if err != nil {
-		return nil
-	}
-
-	var entries []struct {
-		Hex    string `json:"hex"`
-		Weight int    `json:"weight"`
-	}
-	if err := json.Unmarshal(data, &entries); err != nil {
-		return nil
-	}
-
-	swatches := make([]dto.ColourSwatch, 0, len(entries))
-	for _, entry := range entries {
-		if entry.Hex == "" {
-			continue
-		}
-		swatches = append(swatches, dto.ColourSwatch{Hex: entry.Hex, Weight: entry.Weight})
-	}
-
-	return swatches
 }
 
 // buildArtworkMusic derives the deterministic period-music card from the

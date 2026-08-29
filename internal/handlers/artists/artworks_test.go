@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/blackfyre/wga/internal/artworks"
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/repositories"
@@ -193,16 +194,16 @@ func TestRelatedAlternative(t *testing.T) {
 	}
 }
 
-func TestParseArtworkPalette(t *testing.T) {
+func TestArtworkPalette(t *testing.T) {
 	collection := core.NewBaseCollection("Artworks")
 	collection.Fields.Add(&core.JSONField{Name: "colour_palette"})
 
 	valid := core.NewRecord(collection)
 	valid.Set("colour_palette", []map[string]any{
-		{"hex": "#1a2b3c", "weight": 5000},
-		{"hex": "#4d5e6f", "weight": 3000},
+		{"name": "Prussian Blue", "hex": "#1a2b3c", "weight": 5000},
+		{"name": "Slate Blue", "hex": "#4d5e6f", "weight": 3000},
 	})
-	swatches := parseArtworkPalette(valid)
+	swatches := artworks.Palette(valid)
 	if len(swatches) != 2 {
 		t.Fatalf("palette = %d swatches, want 2", len(swatches))
 	}
@@ -213,29 +214,29 @@ func TestParseArtworkPalette(t *testing.T) {
 		t.Errorf("swatch[1] = %+v", swatches[1])
 	}
 
-	if got := parseArtworkPalette(core.NewRecord(collection)); len(got) != 0 {
+	if got := artworks.Palette(core.NewRecord(collection)); len(got) != 0 {
 		t.Errorf("empty palette = %v, want 0 swatches", got)
 	}
 
 	malformed := core.NewRecord(collection)
 	malformed.Set("colour_palette", "not-json")
-	if got := parseArtworkPalette(malformed); len(got) != 0 {
+	if got := artworks.Palette(malformed); len(got) != 0 {
 		t.Errorf("malformed palette = %v, want 0 swatches", got)
 	}
 }
 
-func TestParseArtworkPaletteSkipsEmptyHex(t *testing.T) {
+func TestArtworkPaletteOmitsIncompleteProfile(t *testing.T) {
 	collection := core.NewBaseCollection("Artworks")
 	collection.Fields.Add(&core.JSONField{Name: "colour_palette"})
 
 	record := core.NewRecord(collection)
 	record.Set("colour_palette", []map[string]any{
-		{"hex": "#1a2b3c", "weight": 5000},
-		{"hex": "", "weight": 100},
+		{"name": "Prussian Blue", "hex": "#1a2b3c", "weight": 5000},
+		{"name": "Missing", "hex": "", "weight": 100},
 	})
-	swatches := parseArtworkPalette(record)
-	if len(swatches) != 1 || swatches[0].Hex != "#1a2b3c" {
-		t.Errorf("palette = %+v, want single #1a2b3c swatch", swatches)
+	swatches := artworks.Palette(record)
+	if len(swatches) != 0 {
+		t.Errorf("palette = %+v, want omitted incomplete profile", swatches)
 	}
 }
 

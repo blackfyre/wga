@@ -139,6 +139,7 @@ type sourceArtwork struct {
 // sourceColourPaletteEntry is one hex/weight entry in the producer's
 // image-derived colour palette. Weight is the entry's quantised share.
 type sourceColourPaletteEntry struct {
+	Name   string `json:"name"`
 	Hex    string `json:"hex"`
 	Weight int    `json:"weight"`
 }
@@ -352,7 +353,11 @@ func loadSourceData(paths sourcePaths) (sourceData, error) {
 	if data.biographies, err = loadBiographies(db); err != nil {
 		return sourceData{}, err
 	}
-	if data.artworks, err = loadArtworks(db); err != nil {
+	colourNames, err := loadColourNames(db)
+	if err != nil {
+		return sourceData{}, err
+	}
+	if data.artworks, err = loadArtworks(db, colourNames); err != nil {
 		return sourceData{}, err
 	}
 	if data.glossaryEntries, err = loadGlossaryEntries(db); err != nil {
@@ -608,7 +613,42 @@ func presentColumns(db *sql.DB, table string, columns ...string) (map[string]boo
 	return present, nil
 }
 
-func loadArtworks(db *sql.DB) ([]sourceArtwork, error) {
+// loadColourNames returns the producer's source-backed display name for each
+// sampled hex colour. Older synthetic exports may not contain this optional
+// table; their palettes remain unavailable rather than inventing a name.
+func loadColourNames(db *sql.DB) (map[string]string, error) {
+	hasColourNames, err := hasTable(db, "colour_names")
+	if err != nil {
+		return nil, err
+	}
+	if !hasColourNames {
+		return nil, nil
+	}
+
+	rows, err := db.Query("SELECT hex_code, name FROM colour_names ORDER BY hex_code")
+	if err != nil {
+		return nil, fmt.Errorf("read colour names: %w", err)
+	}
+	defer closeRows(rows)
+
+	names := map[string]string{}
+	for rows.Next() {
+		var hexCode string
+		var name string
+		if err := rows.Scan(&hexCode, &name); err != nil {
+			return nil, fmt.Errorf("scan colour names: %w", err)
+		}
+		names[strings.ToUpper(hexCode)] = name
+	}
+
+	return names, rows.Err()
+}
+
+func loadArtworks(db *sql.DB, paletteNames ...map[string]string) ([]sourceArtwork, error) {
+	var colourNames map[string]string
+	if len(paletteNames) > 0 {
+		colourNames = paletteNames[0]
+	}
 	present, err := presentColumns(db, "artworks",
 		"source_row", "date_start", "date_end", "is_circa", "date_qualifier",
 		"timeframe_text", "url", "image_path", "current_location_id", "art_period_id",
@@ -757,6 +797,18 @@ func loadArtworks(db *sql.DB) ([]sourceArtwork, error) {
 		if present["colour_palette"] && colourPalette.Valid && colourPalette.String != "" {
 			if err := json.Unmarshal([]byte(colourPalette.String), &item.ColourPalette); err != nil {
 				return nil, fmt.Errorf("decode artwork %q colour palette: %w", item.ID, err)
+			}
+			if len(paletteNames) > 0 && len(colourNames) == 0 {
+				item.ColourPalette = nil
+			} else if len(colourNames) > 0 {
+				for index := range item.ColourPalette {
+					name := strings.TrimSpace(colourNames[strings.ToUpper(item.ColourPalette[index].Hex)])
+					if name == "" {
+						item.ColourPalette = nil
+						break
+					}
+					item.ColourPalette[index].Name = name
+				}
 			}
 		}
 		if present["colour_signature"] && colourSignature.Valid && colourSignature.String != "" {

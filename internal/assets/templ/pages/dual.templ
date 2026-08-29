@@ -124,6 +124,7 @@ type DualWorkRecord struct {
 	Sizes       []DualLink
 	SizeCaption string
 	Meta        []components.MetaEntry
+	Palette     []dto.ColourSwatch
 	Comment     string
 	Citation    components.Citation
 	ArtworkID   string
@@ -550,6 +551,15 @@ templ dualWorkPane(w DualWindow) {
 	</div>
 
 	@components.MetaList(w.Work.Meta)
+	if len(w.Work.Palette) > 0 {
+		<div class="mt-5 flex flex-col gap-2 border-b border-base-content/15 py-3">
+			<div class="flex items-center gap-2">
+				<p class="font-mono text-(length:--t-11) tracking-[1px] text-muted">PALETTE</p>
+				@components.HelpTip("PALETTE", "Dominant colours sampled from the study image. Values are indicative, not a pigment analysis.")
+			</div>
+			@components.PaletteBar(w.Work.Palette, false, "")
+		</div>
+	}
 
 	if w.Work.Comment != "" {
 		<div class="mt-8 pt-4 border-t border-base-content/15">

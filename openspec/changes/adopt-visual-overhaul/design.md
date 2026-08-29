@@ -69,6 +69,10 @@ Artist DTOs carry both the encyclopaedic filing form and the supplied short form
 
 Artwork reproduction metadata follows the latest evidence boundary: display dimensions, format, weight, and the file link when present. The production page does not show a source or licence field merely to state an unsupported or absent claim. Persisted source provenance may remain available for internal integrity and citation workflows, but it is not promoted into the reference reproduction block without a future accepted contract.
 
+### Render sampled palettes through one accessible bar
+
+Artwork records and Dual Mode share one Templ palette-bar component and DTO. An artwork record weights its bands by each recorded surface share; Dual Mode uses equal-width bands because its comparison panes already identify the palette as sampled data. Every band is a native button with an accessible name containing its colour name, share, and hex value. Hover, focus, and tap reveal that same value in a tooltip; edge bands align their tooltip to the bar edge so it does not overflow its pane. The artwork record supplies the single caption that explains the affordance and that sampling is indicative rather than a pigment analysis; the Dual Mode help tip supplies that context for its panes. No repeated palette-value legend is rendered beside the shared bar.
+
 ### Preserve progressive enhancement and URL state
 
 Every public destination and meaningful state has a server-rendered URL. HTMX may replace feature-owned blocks, and browser helpers may provide palette lookup, viewer control, playback coordination, preference transforms, prefetch, and responsive disclosures, but their absence cannot block core browsing, filtering, reading, citation, or sharing.
@@ -81,7 +85,7 @@ Historical-event entries are deferred until a later change supplies an approved 
 
 ### Make accessibility a release boundary, not decorative polish
 
-The shared keyboard registry owns shortcut labels and routes. Dialogs use the native modal contract unless an approved exception supplies equivalent focus movement, background inertness, Escape/visible dismissal, and focus restoration. The deliberate artwork viewer must meet that same contract; retaining a pointer-only or non-modal viewer is not acceptable. Layouts use the reference's relative type scale and are checked at enlarged default text, reduced motion, narrow reflow, and with JavaScript disabled.
+The shared keyboard registry owns shortcut labels and routes. Dialogs use the native modal contract unless an approved exception supplies equivalent focus movement, background inertness, Escape/visible dismissal, and focus restoration. Focus changes only at an open-state transition: preference selections and other unrelated client updates preserve the open panel's focus and scroll position. The deliberate artwork viewer must meet that same contract; retaining a pointer-only or non-modal viewer is not acceptable. Layouts use the reference's relative type scale and are checked at enlarged default text, reduced motion, narrow reflow, and with JavaScript disabled.
 
 ### Define public-data lifecycle before exposing participation
 

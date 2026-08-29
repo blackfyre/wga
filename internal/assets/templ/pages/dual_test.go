@@ -41,3 +41,31 @@ func TestDualCardGridUsesTypedBlockAddControl(t *testing.T) {
 		}
 	}
 }
+
+func TestDualWorkPaneRendersEqualPaletteBands(t *testing.T) {
+	ctx := tmplUtils.WithItineraryProjection(context.Background(), "csrf-token", dto.ItineraryTrayView{}, nil)
+	window := DualWindow{
+		Work: DualWorkRecord{
+			ArtworkID: "aw0000000000001",
+			Title:     "Work",
+			Palette: []dto.ColourSwatch{
+				{Name: "Prussian Blue", Hex: "#1a2b3c", Weight: 5000},
+				{Name: "Slate Blue", Hex: "#4d5e6f", Weight: 3000},
+			},
+		},
+		SelfSel: "#dual-left", TargetSel: "#dual-left",
+	}
+	var output bytes.Buffer
+	if err := dualWorkPane(window).Render(ctx, &output); err != nil {
+		t.Fatalf("render dual work pane: %v", err)
+	}
+	rendered := output.String()
+	for _, expected := range []string{"PALETTE", "Prussian Blue", "background:#1a2b3c;flex:1"} {
+		if !strings.Contains(rendered, expected) {
+			t.Errorf("dual palette missing %q", expected)
+		}
+	}
+	if strings.Contains(rendered, "flex-grow:") {
+		t.Error("dual palette bands must remain equal regardless of sampled weight")
+	}
+}

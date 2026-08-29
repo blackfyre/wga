@@ -72,15 +72,15 @@ func RegisterHandlers(app core.App, environment config.Environment) {
 		}
 
 		// Assets
-		assetHandler := apis.Static(getFilePublicSystem(), false)
+		assetFiles := getFilePublicSystem()
 		if app.IsDev() {
-			assetHandler = apis.Static(os.DirFS("../internal/assets/public"), false)
+			assetFiles = os.DirFS("../internal/assets/public")
 		}
 		se.Router.GET("/assets/{path...}", func(c *core.RequestEvent) error {
 			if cacheControl := assetCacheControl(c.Request.PathValue("path")); cacheControl != "" {
 				c.Response.Header().Set("Cache-Control", cacheControl)
 			}
-			return assetHandler(c)
+			return c.FileFS(assetFiles, c.Request.PathValue("path"))
 		})
 
 		// Sitemap

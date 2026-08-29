@@ -10,6 +10,26 @@ import (
 	"testing/fstest"
 )
 
+func TestLoadColourNamesUsesCanonicalHexKeys(t *testing.T) {
+	db, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatalf("open database: %v", err)
+	}
+	defer closeDatabase(db)
+
+	if _, err := db.Exec(`CREATE TABLE colour_names (hex_code TEXT, name TEXT); INSERT INTO colour_names VALUES ('#1a2b3c', 'Prussian Blue');`); err != nil {
+		t.Fatalf("create colour names: %v", err)
+	}
+
+	names, err := loadColourNames(db)
+	if err != nil {
+		t.Fatalf("load colour names: %v", err)
+	}
+	if got := names["#1A2B3C"]; got != "Prussian Blue" {
+		t.Errorf("colour name = %q, want Prussian Blue", got)
+	}
+}
+
 func TestLoadBiographiesUsesArtistFieldsWhenLegacyTableIsAbsent(t *testing.T) {
 	db, err := sql.Open("sqlite", ":memory:")
 	if err != nil {

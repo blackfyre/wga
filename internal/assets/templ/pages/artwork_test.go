@@ -291,8 +291,8 @@ func relatedSampleArtwork() dto.Artwork {
 func TestArtworkBlockRendersPalette(t *testing.T) {
 	aw := sampleArtwork()
 	aw.Palette = []dto.ColourSwatch{
-		{Hex: "#1a2b3c", Weight: 5000},
-		{Hex: "#4d5e6f", Weight: 3000},
+		{Name: "Prussian Blue", Hex: "#1a2b3c", Weight: 5000},
+		{Name: "Slate Blue", Hex: "#4d5e6f", Weight: 3000},
 	}
 
 	rendered := renderArtworkBlock(t, aw, context.Background())
@@ -303,6 +303,8 @@ func TestArtworkBlockRendersPalette(t *testing.T) {
 		"background:#4d5e6f",
 		"#1a2b3c",
 		"#4d5e6f",
+		"Prussian Blue",
+		"63%",
 		"SAMPLED FROM THE IMAGE",
 	} {
 		if !strings.Contains(rendered, expected) {
@@ -325,11 +327,11 @@ func TestArtworkBlockStatesUnavailablePaletteWhenEmpty(t *testing.T) {
 	}
 }
 
-func TestArtworkPaletteBlockConstrainsSwatchesAndLabels(t *testing.T) {
+func TestArtworkPaletteBlockUsesContainedInteractiveSwatches(t *testing.T) {
 	aw := dto.Artwork{
 		Palette: []dto.ColourSwatch{
-			{Hex: "#1a2b3c", Weight: 5000},
-			{Hex: "#4d5e6f", Weight: 3000},
+			{Name: "Prussian Blue", Hex: "#1a2b3c", Weight: 5000},
+			{Name: "Slate Blue", Hex: "#4d5e6f", Weight: 3000},
 		},
 	}
 
@@ -339,32 +341,13 @@ func TestArtworkPaletteBlockConstrainsSwatchesAndLabels(t *testing.T) {
 	}
 	rendered := output.String()
 
-	// The colour bar must compute its own flex containment.
-	if !strings.Contains(rendered, `style="display:flex; width:100%; max-width:100%; overflow:hidden"`) {
-		t.Error("colour bar must carry explicit flex/width/overflow containment inline")
-	}
-	// Swatch spans must be able to shrink below min-content.
-	if !strings.Contains(rendered, "min-width:0") || !strings.Contains(rendered, "flex:1") {
-		t.Error("swatch spans must carry min-width:0 and flex:1 inline")
-	}
-
-	// The hex-label row must wrap and stay within the container.
-	if !strings.Contains(rendered, `style="display:flex; flex-wrap:wrap; max-width:100%;`) {
-		t.Error("hex-label row must carry explicit flex/wrap/max-width inline")
-	}
-	// Hex labels must not grow beyond the container.
-	if !strings.Contains(rendered, `style="min-width:0; max-width:100%; overflow-wrap:anywhere"`) {
-		t.Error("hex labels must carry min-width/max-width/overflow-wrap inline")
-	}
-
-	// Truthful palette content and semantics are unchanged.
-	for _, hex := range []string{"#1a2b3c", "#4d5e6f"} {
-		if !strings.Contains(rendered, hex) {
-			t.Errorf("palette must retain hex label %q", hex)
+	for _, expected := range []string{"data-wga-palette-bar", "Prussian Blue, #1a2b3c, 63% of the surface", "background:#1a2b3c;flex-grow:5000;flex-basis:0", "Prussian Blue", "#1a2b3c"} {
+		if !strings.Contains(rendered, expected) {
+			t.Errorf("palette must include interactive swatch contract %q", expected)
 		}
 	}
-	if !strings.Contains(rendered, "aria-hidden=\"true\"") {
-		t.Error("swatch spans must remain decorative (aria-hidden)")
+	if strings.Contains(rendered, "flex-wrap") {
+		t.Error("palette must not render a duplicated wrapping legend")
 	}
 }
 

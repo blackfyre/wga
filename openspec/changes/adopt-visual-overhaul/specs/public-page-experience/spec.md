@@ -19,11 +19,19 @@ The system SHALL render artist headings, indexes, search results, citations, and
 - **THEN** the surface uses the appropriate filing or short form consistently without reconstructing a name from display text.
 
 ### Requirement: Public preferences are available in the footer
-The system SHALL expose one shared-footer trigger whose label states the currently applied palette, light/dark scheme, and reading mode, and SHALL open an accessible preferences panel containing those site-wide choices. The system SHALL not present one ever-widening inline footer control per preference or claim a client-only control works when its required script is unavailable.
+The system SHALL expose one shared-footer trigger whose label states the currently applied palette, light/dark scheme, and reading mode, and SHALL open an accessible preferences panel containing those site-wide choices. The panel SHALL apply initial focus and invoker restoration only when its open state changes, preserving the visitor's focus and scroll position through unrelated preference updates. The system SHALL not present one ever-widening inline footer control per preference or claim a client-only control works when its required script is unavailable.
 
 #### Scenario: Visitor chooses dark appearance
 - **WHEN** a visitor explicitly selects DARK
 - **THEN** subsequent rendered public pages use the dark half of the selected palette without a light-theme or wrong-palette flash.
+
+#### Scenario: Visitor changes a preference in an open panel
+- **WHEN** a visitor changes a preference after scrolling the open preferences panel
+- **THEN** the update does not move focus or reset the panel's scroll position.
+
+#### Scenario: Open preferences panel receives an unrelated update
+- **WHEN** a client or HTMX lifecycle update leaves the preferences panel open
+- **THEN** the update does not move focus or reset the panel's scroll position.
 
 ### Requirement: Palette and light/dark scheme are independent remembered choices
 The system SHALL provide the eleven reference palettes `bone`, `classic`, `verdigris`, `gothic`, `renaissance`, `baroque`, `rococo`, `classical`, `impressionist`, `catppuccin`, and `tokyo`. Each palette SHALL reproduce the complete immutable-reference interface-role, chart-series, and Timeline-lane token set without changing layout. Palette and light/dark scheme SHALL be stored and resolved independently, with an explicit choice taking precedence over operating-system scheme and an unset scheme continuing to follow operating-system changes. For this change, exact clean-reference token literals control where the reference's prose contrast guidance contradicts those literals; the 53 measured token/ground exceptions SHALL remain explicitly documented rather than hidden as passing contrast checks.

@@ -1,0 +1,87 @@
+package components
+
+import (
+	"math"
+	"strconv"
+
+	"github.com/blackfyre/wga/internal/assets/templ/dto"
+)
+
+func paletteBarTotal(bands []dto.ColourSwatch) int {
+	total := 0
+	for _, band := range bands {
+		total += band.Weight
+	}
+	return total
+}
+
+func paletteBarShare(band dto.ColourSwatch, total int) string {
+	if total <= 0 || band.Weight <= 0 {
+		return ""
+	}
+
+	percent := int(math.Round(float64(band.Weight) * 100 / float64(total)))
+	return strconv.Itoa(percent) + "%"
+}
+
+func paletteBarLabel(band dto.ColourSwatch, total int) string {
+	label := band.Name + ", " + band.Hex
+	if share := paletteBarShare(band, total); share != "" {
+		label += ", " + share + " of the surface"
+	}
+	return label
+}
+
+func paletteBarStyle(band dto.ColourSwatch, weighted bool, first bool) string {
+	style := "background:" + band.Hex
+	if weighted && band.Weight > 0 {
+		style += ";flex-grow:" + strconv.Itoa(band.Weight) + ";flex-basis:0"
+	} else {
+		style += ";flex:1"
+	}
+	if !first {
+		style += ";border-left:1px solid rgba(244,242,237,0.35)"
+	}
+	return style
+}
+
+func paletteBarTooltipPosition(index int, length int) string {
+	switch index {
+	case 0:
+		return "left-0"
+	case length - 1:
+		return "right-0"
+	default:
+		return "left-1/2 -translate-x-1/2"
+	}
+}
+
+// PaletteBar renders source-named sampled colours. The artwork record weights
+// bands by sampled share; comparison panes use equal bands for direct reading.
+templ PaletteBar(bands []dto.ColourSwatch, weighted bool, caption string) {
+	if len(bands) > 0 {
+		<div data-wga-palette-bar class="flex h-[34px] w-full">
+			for index, band := range bands {
+				<button
+					type="button"
+					data-wga-palette-swatch
+					aria-expanded="false"
+					aria-label={ paletteBarLabel(band, paletteBarTotal(bands)) }
+					class="group/sw relative min-w-0 cursor-pointer outline outline-base-content/15 -outline-offset-1 focus:outline-2 focus:outline-base-content focus:-outline-offset-2 hover:outline-2 hover:outline-base-content hover:-outline-offset-2 hover:z-3 focus:z-3"
+					style={ templ.SafeCSS(paletteBarStyle(band, weighted, index == 0)) }
+				>
+					<span data-wga-palette-tooltip class={ "absolute bottom-[calc(100%+7px)] z-5 hidden w-max max-w-full items-baseline gap-2 break-words bg-base-content px-[9px] py-1.5 font-mono text-(length:--t-10) tracking-[0.5px] text-base-100 pointer-events-none group-hover/sw:flex group-focus/sw:flex", paletteBarTooltipPosition(index, len(bands)) }>
+						<span>{ band.Name }</span>
+						if share := paletteBarShare(band, paletteBarTotal(bands)); share != "" {
+							<span class="opacity-60">{ share }</span>
+						}
+						<span class="opacity-60">{ band.Hex }</span>
+					</span>
+				</button>
+			}
+		</div>
+		if caption != "" {
+			<p class="font-mono text-(length:--t-10) leading-relaxed tracking-[0.5px] text-faint">{ caption }</p>
+		}
+	}
+}

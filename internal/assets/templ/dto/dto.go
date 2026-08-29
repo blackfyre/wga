@@ -67,9 +67,10 @@ type Artwork struct {
 	Artist
 }
 
-// ColourSwatch is one compact image-derived palette entry: a hex colour and its
-// quantised share weight.
+// ColourSwatch is one source-named image-derived palette entry. Weight is its
+// quantised share of the sampled surface.
 type ColourSwatch struct {
+	Name   string
 	Hex    string
 	Weight int
 }
