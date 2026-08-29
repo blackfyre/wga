@@ -15,6 +15,7 @@ WGA's public application has working catalogue foundations, but its public journ
 ## Capabilities
 
 ### New Capabilities
+
 - `collection-discovery`: Home, inspiration, shared public navigation, and reference-page discovery routes.
 - `artist-selections`: Curated, citable artist selections with preview and dedicated reading routes.
 - `artwork-relationship-exploration`: Four-basis related-work discovery with explainable results and honest sparse-result states.
@@ -27,6 +28,7 @@ WGA's public application has working catalogue foundations, but its public journ
 - `collection-data-release`: Real-dataset seeding, staged media delivery, and release completeness verification.
 
 ### Modified Capabilities
+
 - `public-page-experience`: Adopt the complete responsive public shell, visual system, navigation information architecture, preferences, and public-route presentation.
 - `catalogue-exploration`: Expand catalogue filtering, sorting, record presentation, and complete two-pane comparison behaviour. Tone-keyword exploration is deferred to a later source-backed change.
 - `visual-thumbnail-delivery`: Use every reference-defined delivery profile without upscaling and require source-eligible staged variants from the real data release.

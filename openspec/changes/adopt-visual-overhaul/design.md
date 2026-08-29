@@ -7,6 +7,7 @@ Existing unimplemented changes for itineraries, artwork relationships, and thumb
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Deliver every non-development public feature described by the visual-overhaul reference, in phased implementation work but as one release scope.
 - Preserve server-rendered, bookmarkable public routes and progressively enhance them with HTMX and focused browser helpers.
 - Serve the real data set through thirteen approved image profiles, with source-eligible downscales pre-generated and originals used whenever a profile would upscale.
@@ -14,6 +15,7 @@ Existing unimplemented changes for itineraries, artwork relationships, and thumb
 - Make visual, functional, responsive, keyboard, no-JavaScript, and assistive-technology acceptance explicit.
 
 **Non-Goals:**
+
 - Build a custom public administration interface; PocketBase remains the operational interface for managed content and moderation.
 - Ship the prototype's development-only viewport frame switch to public visitors.
 - Add accounts, collaborative itinerary editing, or an unbounded generic relationship graph.
