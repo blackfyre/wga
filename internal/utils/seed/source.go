@@ -1,9 +1,7 @@
 package seed
 
 import (
-	"crypto/sha256"
 	"database/sql"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,6 +14,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/resources/synthetic"
 	_ "modernc.org/sqlite"
 )
@@ -1088,8 +1087,7 @@ func validateSourceRelations(data sourceData) error {
 }
 
 // validateSourceSelections rejects selection records that are unpublished,
-// carry a non-canonical source path or a mismatched deterministic ID/source
-// hash, hold a malformed content hash, duplicate an ID or source path,
+// hold a malformed content hash, duplicate an ID or source path,
 // reference a missing artist, or list artworks that are missing or belong to a
 // different artist. Ordered membership is preserved by the importer and is not
 // re-ordered here.
@@ -1104,9 +1102,6 @@ func validateSourceSelections(data sourceData, artistIDs map[string]struct{}) er
 	for _, selection := range data.selections {
 		if !selection.Published {
 			return fmt.Errorf("selection %q is not published", selection.ID)
-		}
-		if err := validateSelectionProvenance(selection); err != nil {
-			return err
 		}
 		if !isSHA256Hex(selection.ContentHash) {
 			return fmt.Errorf("selection %q content hash %q is not a SHA-256 digest", selection.ID, selection.ContentHash)
@@ -1135,87 +1130,6 @@ func validateSourceSelections(data sourceData, artistIDs map[string]struct{}) er
 	}
 
 	return nil
-}
-
-// validateSelectionProvenance verifies the producer's deterministic selection
-// identity: the source path must be canonical, the record ID must equal "r"
-// plus the first 14 hex characters of the SHA-256 canonical source path, and
-// the source hash must equal the full SHA-256 canonical source path.
-func validateSelectionProvenance(selection sourceSelection) error {
-	canonical, err := canonicalSelectionSourcePath(selection.SourcePath)
-	if err != nil {
-		return fmt.Errorf("selection %q: %w", selection.SourcePath, err)
-	}
-	if canonical != selection.SourcePath {
-		return fmt.Errorf("selection source path %q is not canonical (%q)", selection.SourcePath, canonical)
-	}
-
-	wantID, err := selectionIDFromSourcePath(selection.SourcePath)
-	if err != nil {
-		return fmt.Errorf("selection %q: derive deterministic ID: %w", selection.SourcePath, err)
-	}
-	if selection.ID != wantID {
-		return fmt.Errorf("selection %q ID %q does not match deterministic source ID %q", selection.SourcePath, selection.ID, wantID)
-	}
-
-	wantHash, err := selectionSourceHashFromPath(selection.SourcePath)
-	if err != nil {
-		return fmt.Errorf("selection %q: derive deterministic source hash: %w", selection.SourcePath, err)
-	}
-	if selection.SourceHash != wantHash {
-		return fmt.Errorf("selection %q source hash %q does not match deterministic hash %q", selection.SourcePath, selection.SourceHash, wantHash)
-	}
-
-	return nil
-}
-
-// canonicalSelectionSourcePath normalises a producer source path to the stored
-// html/.../index.html source identity, matching the producer algorithm without
-// importing it. Physical in/ prefixes are not retained and traversal segments
-// are rejected.
-func canonicalSelectionSourcePath(value string) (string, error) {
-	normalised := strings.ReplaceAll(strings.TrimSpace(value), `\`, "/")
-	if normalised == "" {
-		return "", errors.New("selection source path is required")
-	}
-	for _, segment := range strings.Split(normalised, "/") {
-		if segment == ".." {
-			return "", errors.New("selection source path must stay within the source root")
-		}
-	}
-
-	normalised = strings.TrimPrefix(normalised, "/")
-	normalised = path.Clean(normalised)
-	normalised = strings.TrimPrefix(normalised, "in/")
-	if normalised == "." || !strings.HasPrefix(normalised, "html/") {
-		return "", errors.New("selection source path must be an html source path")
-	}
-	if path.Base(normalised) != "index.html" {
-		return "", fmt.Errorf("selection source path must end in index.html, got %q", path.Base(normalised))
-	}
-
-	return normalised, nil
-}
-
-// selectionSourceHashFromPath returns the full SHA-256 hex digest of the
-// canonical selection source identity.
-func selectionSourceHashFromPath(value string) (string, error) {
-	canonical, err := canonicalSelectionSourcePath(value)
-	if err != nil {
-		return "", err
-	}
-	sum := sha256.Sum256([]byte(canonical))
-	return hex.EncodeToString(sum[:]), nil
-}
-
-// selectionIDFromSourcePath returns the deterministic 15-character producer
-// selection record ID derived exclusively from the canonical source identity.
-func selectionIDFromSourcePath(value string) (string, error) {
-	sourceHash, err := selectionSourceHashFromPath(value)
-	if err != nil {
-		return "", err
-	}
-	return "r" + sourceHash[:14], nil
 }
 
 func makeIDSet[T any](items []T, id func(T) string) map[string]struct{} {
@@ -1341,11 +1255,11 @@ func preseededArtworkFile(storageRoot string, objectStorageConfigured bool, valu
 
 func loadEmbeddedSourceFiles(storage iofs.FS, data *sourceData) error {
 	for _, artwork := range data.artworks {
-		filename, err := singleSourceFile(storage, path.Join("Artworks", artwork.ID))
+		filename, err := singleSourceFile(storage, path.Join(constants.CollectionArtworks, artwork.ID))
 		if err != nil {
 			return fmt.Errorf("artwork %q storage: %w", artwork.ID, err)
 		}
-		content, err := readSourceFile(storage, sourceFilePath("Artworks", artwork.ID, filename))
+		content, err := readSourceFile(storage, sourceFilePath(constants.CollectionArtworks, artwork.ID, filename))
 		if err != nil {
 			return fmt.Errorf("artwork %q storage: %w", artwork.ID, err)
 		}

@@ -14,7 +14,7 @@ templ RangeField(field dto.RangeField) {
 		<div class="mb-4 mt-2 flex items-baseline justify-end">
 			<output id={ field.FromID + "-to-" + field.ToID + "-output" } for={ field.FromID + " " + field.ToID } class="font-mono text-xs">{ rangeValue(rangeFrom(field)) }–{ rangeValue(rangeTo(field)) }</output>
 		</div>
-		<div class={ "relative", templ.KV("h-11", field.Brush), templ.KV("h-5", !field.Brush) }>
+		<div data-artwork-year-range class={ "relative", templ.KV("h-11", field.Brush), templ.KV("h-5", !field.Brush) }>
 			if field.Brush {
 				<span class="absolute top-0 bottom-0 border-x-2 border-primary bg-primary/10" role="presentation" style={ rangeFillStyle(field) }></span>
 			} else {

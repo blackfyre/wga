@@ -30,9 +30,6 @@ func TestReleaseDataPreflightExternalSourcePreservesReleaseData(t *testing.T) {
 	defer source.Close()
 
 	comment := strings.Repeat("release-source-comment-", 300)
-	if _, err := source.Exec("ALTER TABLE artworks ADD COLUMN source_comment TEXT"); err != nil {
-		t.Fatalf("add producer source comment column: %v", err)
-	}
 	if _, err := source.Exec("UPDATE artworks SET source_comment = ? WHERE id = ?", comment, "07561d2efd0a6db"); err != nil {
 		t.Fatalf("stage long source comment: %v", err)
 	}
@@ -74,7 +71,7 @@ func TestReleaseDataPreflightExternalSourcePreservesReleaseData(t *testing.T) {
 		t.Fatalf("source_comment = %q, want exact %q", got, comment)
 	}
 
-	stagedPath := filepath.Join(filepath.Dir(sourcePath), "storage", "Artworks", "07561d2efd0a6db", "3a29b540e6908ad8.jpg")
+	stagedPath := filepath.Join(filepath.Dir(sourcePath), "storage", "artworks", "07561d2efd0a6db", "3a29b540e6908ad8.jpg")
 	stagedInfo, err := os.Stat(stagedPath)
 	if err != nil {
 		t.Fatalf("stat externally staged artwork: %v", err)

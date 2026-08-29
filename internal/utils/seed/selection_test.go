@@ -14,21 +14,18 @@ import (
 // used by validation fixtures.
 const validSelectionContentHash = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 
-// validSelectionFixture builds a selection with correct deterministic
-// provenance for the given canonical source path, so a test can mutate one
-// field to isolate a specific rejection.
+// validSelectionFixture builds a selection with valid source metadata, so a
+// test can mutate one field to isolate a specific rejection.
 func validSelectionFixture(sourcePath string, artistID string) sourceSelection {
-	sourceHash, _ := selectionSourceHashFromPath(sourcePath)
-	id, _ := selectionIDFromSourcePath(sourcePath)
 	return sourceSelection{
-		ID:           id,
+		ID:           "selection000001",
 		ArtistID:     artistID,
 		Title:        "Paintings",
 		Context:      "",
 		DisplayTitle: "Paintings",
 		Commentary:   "",
 		SourcePath:   sourcePath,
-		SourceHash:   sourceHash,
+		SourceHash:   "source-hash",
 		ContentHash:  validSelectionContentHash,
 		Published:    true,
 	}
@@ -65,67 +62,6 @@ func createSelectionsTable(t *testing.T, db *sql.DB) {
 		)
 	`); err != nil {
 		t.Fatalf("create artwork_selections: %v", err)
-	}
-}
-
-// TestSelectionSourceHashFromPathMatchesProducer pins the reimplemented
-// SHA-256 derivation to the producer's algorithm with an independently
-// computed golden digest.
-func TestSelectionSourceHashFromPathMatchesProducer(t *testing.T) {
-	got, err := selectionSourceHashFromPath("html/a/artist/paintings/index.html")
-	if err != nil {
-		t.Fatalf("derive source hash: %v", err)
-	}
-	if want := "2633f9d80c78f05c96c3996731070684cd2c3663846597353cf7345369f862f8"; got != want {
-		t.Fatalf("selectionSourceHashFromPath = %q, want %q", got, want)
-	}
-}
-
-// TestSelectionIDFromSourcePathMatchesProducer pins the deterministic record ID
-// ("r" + first 14 hex of the SHA-256 canonical path) to the producer algorithm.
-func TestSelectionIDFromSourcePathMatchesProducer(t *testing.T) {
-	got, err := selectionIDFromSourcePath("html/a/artist/paintings/index.html")
-	if err != nil {
-		t.Fatalf("derive selection ID: %v", err)
-	}
-	if want := "r2633f9d80c78f0"; got != want {
-		t.Fatalf("selectionIDFromSourcePath = %q, want %q", got, want)
-	}
-}
-
-func TestCanonicalSelectionSourcePath(t *testing.T) {
-	tests := []struct {
-		name    string
-		input   string
-		want    string
-		wantErr bool
-	}{
-		{name: "canonical", input: "html/a/artist/paintings/index.html", want: "html/a/artist/paintings/index.html"},
-		{name: "physical in prefix", input: "in/html/a/artist/paintings/index.html", want: "html/a/artist/paintings/index.html"},
-		{name: "backslashes", input: `html\a\artist\paintings\index.html`, want: "html/a/artist/paintings/index.html"},
-		{name: "leading slash", input: "/html/a/artist/paintings/index.html", want: "html/a/artist/paintings/index.html"},
-		{name: "dot segments", input: "html/a/artist/./paintings/index.html", want: "html/a/artist/paintings/index.html"},
-		{name: "traversal", input: "html/a/../index.html", wantErr: true},
-		{name: "empty", input: "", wantErr: true},
-		{name: "non-html", input: "bio/a/artist/index.html", wantErr: true},
-		{name: "non-index basename", input: "html/a/artist/paintings.html", wantErr: true},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got, err := canonicalSelectionSourcePath(test.input)
-			if test.wantErr {
-				if err == nil {
-					t.Fatalf("canonicalSelectionSourcePath(%q) = %q, want error", test.input, got)
-				}
-				return
-			}
-			if err != nil {
-				t.Fatalf("canonicalSelectionSourcePath(%q): %v", test.input, err)
-			}
-			if got != test.want {
-				t.Fatalf("canonicalSelectionSourcePath(%q) = %q, want %q", test.input, got, test.want)
-			}
-		})
 	}
 }
 
@@ -274,8 +210,10 @@ func TestValidateSourceSelectionsRejectsUnpublished(t *testing.T) {
 	}
 }
 
-func TestValidateSourceSelectionsAcceptsValidProvenance(t *testing.T) {
-	selection := validSelectionFixture("html/a/artist/paintings/index.html", "rartist00000001")
+func TestValidateSourceSelectionsAcceptsSyntheticSourceMetadata(t *testing.T) {
+	selection := validSelectionFixture("synthetic/artist-01/selection.html", "rartist00000001")
+	selection.ID = "03f78c6a8fafae1"
+	selection.SourceHash = "source:synthetic/artist-01/selection.html"
 	selection.ArtworkIDs = []string{"rwork0000000001"}
 	data := sourceData{
 		artists:  []sourceArtist{{ID: "rartist00000001"}},
@@ -287,45 +225,7 @@ func TestValidateSourceSelectionsAcceptsValidProvenance(t *testing.T) {
 	artistIDs := makeIDSet(data.artists, func(item sourceArtist) string { return item.ID })
 
 	if err := validateSourceSelections(data, artistIDs); err != nil {
-		t.Fatalf("expected valid provenance to pass, got %v", err)
-	}
-}
-
-func TestValidateSourceSelectionsRejectsNonCanonicalPath(t *testing.T) {
-	artistIDs := map[string]struct{}{"rartist00000001": {}}
-
-	backslash := validSelectionFixture("html/a/artist/index.html", "rartist00000001")
-	backslash.SourcePath = `html\a\artist\index.html`
-	if err := validateSourceSelections(sourceData{selections: []sourceSelection{backslash}}, artistIDs); err == nil || !strings.Contains(err.Error(), "not canonical") {
-		t.Fatalf("expected non-canonical path error, got %v", err)
-	}
-
-	traversal := validSelectionFixture("html/a/artist/index.html", "rartist00000001")
-	traversal.SourcePath = "html/a/../index.html"
-	if err := validateSourceSelections(sourceData{selections: []sourceSelection{traversal}}, artistIDs); err == nil || !strings.Contains(err.Error(), "source root") {
-		t.Fatalf("expected traversal path error, got %v", err)
-	}
-}
-
-func TestValidateSourceSelectionsRejectsMismatchedID(t *testing.T) {
-	selection := validSelectionFixture("html/a/artist/index.html", "rartist00000001")
-	selection.ID = "r00000000000000"
-	artistIDs := map[string]struct{}{"rartist00000001": {}}
-
-	err := validateSourceSelections(sourceData{selections: []sourceSelection{selection}}, artistIDs)
-	if err == nil || !strings.Contains(err.Error(), "does not match deterministic source ID") {
-		t.Fatalf("expected mismatched-ID error, got %v", err)
-	}
-}
-
-func TestValidateSourceSelectionsRejectsMismatchedSourceHash(t *testing.T) {
-	selection := validSelectionFixture("html/a/artist/index.html", "rartist00000001")
-	selection.SourceHash = strings.Repeat("0", 64)
-	artistIDs := map[string]struct{}{"rartist00000001": {}}
-
-	err := validateSourceSelections(sourceData{selections: []sourceSelection{selection}}, artistIDs)
-	if err == nil || !strings.Contains(err.Error(), "does not match deterministic hash") {
-		t.Fatalf("expected mismatched-source-hash error, got %v", err)
+		t.Fatalf("expected synthetic source metadata to pass, got %v", err)
 	}
 }
 

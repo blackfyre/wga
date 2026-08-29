@@ -36,7 +36,7 @@ func TestSyntheticSeedMigrationImportsBaselineSchema(t *testing.T) {
 		"art_periods":    32,
 		"artists":        10,
 		"artworks":       27,
-		"art_selections": 2,
+		"art_selections": 10,
 		"glossary":       5,
 		"guestbook":      2,
 		"music_composer": 2,
@@ -175,25 +175,18 @@ func TestSyntheticSeedMigrationImportsBaselineSchema(t *testing.T) {
 		t.Fatal("expected artist school relation")
 	}
 
-	selection, err := app.FindRecordById("art_selections", "ra01b4fda068382")
+	selection, err := app.FindRecordById("art_selections", "03f78c6a8fafae1")
 	if err != nil {
-		t.Fatalf("find supplied-commentary synthetic selection: %v", err)
+		t.Fatalf("find synthetic selection: %v", err)
 	}
 	if !selection.GetBool("published") {
 		t.Fatal("expected published synthetic selection")
 	}
-	if got, want := selection.GetString("commentary"), "<p>Synthetic fixture commentary for browser coverage.</p>"; got != want {
+	if got, want := selection.GetString("commentary"), ""; got != want {
 		t.Fatalf("synthetic selection commentary = %q, want %q", got, want)
 	}
-	if got, want := selection.GetStringSlice("artworks"), []string{"5b71fb4c2c5fa71", "778ed0ab7a62b62"}; !slices.Equal(got, want) {
+	if got, want := selection.GetStringSlice("artworks"), []string{"2225c982be1af02", "38311d50a756d76", "4447a2dfa34f956", "9d6478c242f98b2"}; !slices.Equal(got, want) {
 		t.Fatalf("synthetic selection artwork order = %v, want %v", got, want)
-	}
-	missingCommentary, err := app.FindRecordById("art_selections", "r71ee5b06e7865f")
-	if err != nil {
-		t.Fatalf("find missing-commentary synthetic selection: %v", err)
-	}
-	if got := missingCommentary.GetString("commentary"); got != "" {
-		t.Fatalf("missing-commentary synthetic selection commentary = %q, want empty", got)
 	}
 	for _, fieldName := range []string{"biography_image_width", "biography_image_height"} {
 		if _, ok := artists.Fields.GetByName(fieldName).(*core.NumberField); !ok {
@@ -222,7 +215,7 @@ func TestSyntheticSeedMigrationImportsBaselineSchema(t *testing.T) {
 			t.Fatalf("expected artworks.%s numeric field", fieldName)
 		}
 	}
-	embeddedImage, err := synthetic.Files.ReadFile("storage/Artworks/07561d2efd0a6db/3a29b540e6908ad8.jpg")
+	embeddedImage, err := synthetic.Files.ReadFile("storage/artworks/07561d2efd0a6db/3a29b540e6908ad8.jpg")
 	if err != nil {
 		t.Fatalf("read embedded artwork image: %v", err)
 	}
@@ -379,7 +372,7 @@ func TestSyntheticSeedImportExternalSQLite(t *testing.T) {
 		t.Fatalf("external artwork image height = %d, want %d", got, want)
 	}
 
-	embeddedImage, err := synthetic.Files.ReadFile("storage/Artworks/07561d2efd0a6db/3a29b540e6908ad8.jpg")
+	embeddedImage, err := synthetic.Files.ReadFile("storage/artworks/07561d2efd0a6db/3a29b540e6908ad8.jpg")
 	if err != nil {
 		t.Fatalf("read embedded artwork image: %v", err)
 	}

@@ -10,6 +10,12 @@
 @plugin "@tailwindcss/typography";
 @plugin "daisyui";
 
+.wga-chip-choice:has(input:checked) {
+	border-color: var(--color-primary);
+	background-color: var(--color-primary);
+	color: var(--color-primary-content);
+}
+
 .artwork-year-range {
 	position: relative;
 	height: 20px;

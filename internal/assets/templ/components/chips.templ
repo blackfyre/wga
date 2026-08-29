@@ -10,7 +10,7 @@ templ ChipGroup(group dto.ChipGroup) {
 		}
 		<div class="flex flex-wrap gap-1.5">
 			for _, option := range group.Options {
-				<label class={ "cursor-pointer border border-control px-3.5 py-1.5 font-mono text-(length:--t-11) tracking-[1px] transition-colors hover:border-base-content", templ.KV("border-primary bg-primary text-primary-content", option.Checked), templ.KV("text-base-content/70", !option.Checked) }>
+				<label class={ "wga-chip-choice cursor-pointer border border-control px-3.5 py-1.5 font-mono text-(length:--t-11) tracking-[1px] transition-colors hover:border-base-content", templ.KV("border-primary bg-primary text-primary-content", option.Checked), templ.KV("text-base-content/70", !option.Checked) }>
 					<input type="radio" name={ group.Name } value={ option.Value } class="sr-only" checked?={ option.Checked }/>
 					{ option.Label }
 				</label>

@@ -1,24 +1,23 @@
 # FOSSA Licensing Evidence
 
-This document records the technical evidence for the FOSSA licensing findings reported on 18 August 2026. It is not legal advice and does not approve, ignore, or otherwise resolve any FOSSA issue.
+This document records the technical evidence for the FOSSA licensing findings reported on 29 August 2026. It is not legal advice and does not approve, ignore, or otherwise resolve any FOSSA issue.
 
 ## Reviewed FOSSA revision
 
 - Project locator: `custom+40901/git@github.com:blackfyre/wga.git`
-- Revision: `14f78c341ae647a814c1f0f423eeedc783649375`
-- Revision scan ID: `117272676`
+- Revision: `dependency-update-2026-08-29`
 - Dependency origins: both reviewed modules are discovered from `go.mod`.
 
 | Issue IDs | Module | FOSSA licence finding |
 | --- | --- | --- |
-| 20069665, 20069666, 20069667, 20069669–20069674 | `modernc.org/libc@v1.74.1` | GPL-2.0-or-later, GPL-2.0-only, LGPL-2.1-or-later, GPL-3.0-only, LGPL-3.0-only, GPL-3.0-with-GCC-exception, GPL-3.0-or-later, LGPL-2.1-only, LGPL-2.0-only |
-| 20069668 | `modernc.org/sqlite@v1.54.0` | GPL-3.0-or-later |
+| 20417934–20417941, 20417943 | `modernc.org/libc@v1.75.6` | GPL-2.0-or-later, LGPL-2.0-only, GPL-3.0-with-GCC-exception, GPL-3.0-or-later, LGPL-2.1-or-later, GPL-2.0-only, LGPL-3.0-only, LGPL-2.1-only, GPL-3.0-only |
+| 20417942 | `modernc.org/sqlite@v1.57.0` | GPL-3.0-or-later |
 
 FOSSA's authoritative match record is available to authorised reviewers through each issue URL or the revision dependency API with `includeMatches=true`. Do not copy the API token into a command history or document.
 
 ```text
 GET /api/v2/revisions/
-  custom%2B40901%2Fgit%40github.com%3Ablackfyre%2Fwga.git%2414f78c341ae647a814c1f0f423eeedc783649375/
+  custom%2B40901%2Fgit%40github.com%3Ablackfyre%2Fwga.git%24dependency-update-2026-08-29/
   dependencies?includeMatches=true&count=100
 ```
 
@@ -36,9 +35,9 @@ It selects these FOSSA-matched files:
 
 | File | FOSSA licence groups containing the file | Build status |
 | --- | --- | --- |
-| `modernc.org/libc@v1.74.1/uuid/uuid/uuid_linux_amd64.go` | LGPL-2.1-or-later; GPL-3.0-with-GCC-exception | Compiled |
-| `modernc.org/libc@v1.74.1/sys/types/types_linux_amd64.go` | LGPL-2.0-only | Compiled |
-| `modernc.org/sqlite@v1.54.0/lib/sqlite_g_0000000000060000.go` | GPL-3.0-or-later | Not selected for Linux/amd64 |
+| `modernc.org/libc@v1.75.6/uuid/uuid/uuid_linux_amd64.go` | GPL-3.0-with-GCC-exception | Compiled |
+| `modernc.org/libc@v1.75.6/sys/types/types_linux_amd64.go` | LGPL-2.0-only | Compiled |
+| `modernc.org/sqlite@v1.57.0/lib/sqlite_g_0000000000060000.go` | GPL-3.0-or-later | Not selected for Linux/amd64 |
 
 FOSSA also matches many files in `modernc.org/libc` packages and platform variants that are not selected by WGA's Linux/amd64 dependency graph. Their presence does not negate the compiled matches above.
 
