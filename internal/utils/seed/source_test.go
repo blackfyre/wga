@@ -519,7 +519,7 @@ func TestPreseededArtworkFileRejectsParentSymlinkEscape(t *testing.T) {
 func TestLoadEmbeddedSourceFilesRecordsByteSize(t *testing.T) {
 	content := []byte("embedded source image bytes")
 	storage := fstest.MapFS{
-		"Artworks/rwork0000000001/image.jpg": &fstest.MapFile{Data: content},
+		"artworks/rwork0000000001/image.jpg": &fstest.MapFile{Data: content},
 	}
 	data := sourceData{
 		artworkFiles: map[string]sourceFile{},

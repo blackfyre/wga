@@ -516,7 +516,9 @@ func importSyntheticGuestbook(app core.App, items []sourceGuestbookEntry, presee
 		}
 
 		record.Set("name", item.Name)
-		record.Set("email", item.Email)
+		// The public archive has no use for the addresses recovered from the
+		// historical source signatures. Do not retain them in WGA.
+		record.Set("email", "")
 		record.Set("location", item.Location)
 		record.Set("message", item.Message)
 		if err := saveSeedRecord(app, record, preseededAssets); err != nil {
