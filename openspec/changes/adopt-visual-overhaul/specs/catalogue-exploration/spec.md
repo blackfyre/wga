@@ -16,7 +16,7 @@ The system SHALL support artwork filtering by school, period, form, technique, c
 
 ### Requirement: Artwork records support scholarly examination
 
-The system SHALL render a deliberate full reproduction plate, evidence-backed file dimensions, format, and weight, metadata, an image-derived palette, commentary, related-work bases, citation, and a full-size file link when available. An image-derived palette SHALL use a weighted sampled-colour bar rather than a repeated text legend: each swatch SHALL expose its name, share, and hex value on hover, keyboard focus, and tap, while the record states that the sampling is indicative rather than a pigment analysis. It SHALL not display unsupported reproduction-source or licence claims.
+The system SHALL render a deliberate full reproduction plate, evidence-backed file dimensions, format, and weight, metadata, an image-derived palette, commentary, related-work bases, citation, and a full-size file link when available. An image-derived palette SHALL use a weighted sampled-colour bar rather than a repeated text legend: each swatch SHALL expose its available source-supplied name, share, and hex value on hover, keyboard focus, and tap. When no source-supplied name is recorded, the swatch SHALL omit the name while retaining its share and hex value. The record states that the sampling is indicative rather than a pigment analysis. It SHALL not display unsupported reproduction-source or licence claims.
 
 #### Scenario: Scholar examines an artwork record
 

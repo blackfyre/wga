@@ -615,7 +615,7 @@ func presentColumns(db *sql.DB, table string, columns ...string) (map[string]boo
 
 // loadColourNames returns the producer's source-backed display name for each
 // sampled hex colour. Older synthetic exports may not contain this optional
-// table; their palettes remain unavailable rather than inventing a name.
+// table; their palettes remain usable but carry no colour-name labels.
 func loadColourNames(db *sql.DB) (map[string]string, error) {
 	hasColourNames, err := hasTable(db, "colour_names")
 	if err != nil {
@@ -798,16 +798,12 @@ func loadArtworks(db *sql.DB, paletteNames ...map[string]string) ([]sourceArtwor
 			if err := json.Unmarshal([]byte(colourPalette.String), &item.ColourPalette); err != nil {
 				return nil, fmt.Errorf("decode artwork %q colour palette: %w", item.ID, err)
 			}
-			if len(paletteNames) > 0 && len(colourNames) == 0 {
-				item.ColourPalette = nil
-			} else if len(colourNames) > 0 {
+			if len(colourNames) > 0 {
 				for index := range item.ColourPalette {
 					name := strings.TrimSpace(colourNames[strings.ToUpper(item.ColourPalette[index].Hex)])
-					if name == "" {
-						item.ColourPalette = nil
-						break
+					if name != "" {
+						item.ColourPalette[index].Name = name
 					}
-					item.ColourPalette[index].Name = name
 				}
 			}
 		}

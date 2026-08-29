@@ -231,12 +231,31 @@ func TestArtworkPaletteOmitsIncompleteProfile(t *testing.T) {
 
 	record := core.NewRecord(collection)
 	record.Set("colour_palette", []map[string]any{
-		{"name": "Prussian Blue", "hex": "#1a2b3c", "weight": 5000},
-		{"name": "Missing", "hex": "", "weight": 100},
+		{"hex": "#1a2b3c", "weight": 5000},
+		{"hex": "", "weight": 100},
 	})
 	swatches := artworks.Palette(record)
 	if len(swatches) != 0 {
 		t.Errorf("palette = %+v, want omitted incomplete profile", swatches)
+	}
+}
+
+func TestArtworkPaletteRetainsUnnamedSwatches(t *testing.T) {
+	collection := core.NewBaseCollection("Artworks")
+	collection.Fields.Add(&core.JSONField{Name: "colour_palette"})
+
+	record := core.NewRecord(collection)
+	record.Set("colour_palette", []map[string]any{
+		{"hex": "#1a2b3c", "weight": 5000},
+		{"name": "Slate Blue", "hex": "#4d5e6f", "weight": 3000},
+	})
+
+	swatches := artworks.Palette(record)
+	if len(swatches) != 2 {
+		t.Fatalf("palette = %d swatches, want 2", len(swatches))
+	}
+	if swatches[0].Name != "" || swatches[0].Hex != "#1a2b3c" {
+		t.Errorf("unnamed swatch = %+v", swatches[0])
 	}
 }
 

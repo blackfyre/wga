@@ -46,3 +46,19 @@ func TestPaletteBarUsesEqualBandsForComparison(t *testing.T) {
 		t.Error("comparison palette must use equal bands")
 	}
 }
+
+func TestPaletteBarOmitsUnavailableColourName(t *testing.T) {
+	var output bytes.Buffer
+	bands := []dto.ColourSwatch{{Hex: "#1a2b3c", Weight: 5000}}
+	if err := PaletteBar(bands, true, "").Render(context.Background(), &output); err != nil {
+		t.Fatalf("render palette bar: %v", err)
+	}
+
+	rendered := output.String()
+	if !strings.Contains(rendered, `aria-label="#1a2b3c, 100% of the surface"`) {
+		t.Errorf("unnamed palette bar has incorrect label: %s", rendered)
+	}
+	if strings.Contains(rendered, `<span></span>`) || strings.Contains(rendered, ", #1a2b3c") {
+		t.Errorf("unnamed palette bar must omit the unavailable name: %s", rendered)
+	}
+}

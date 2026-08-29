@@ -3,6 +3,7 @@ package components
 import (
 	"math"
 	"strconv"
+	"strings"
 
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 )
@@ -25,7 +26,10 @@ func paletteBarShare(band dto.ColourSwatch, total int) string {
 }
 
 func paletteBarLabel(band dto.ColourSwatch, total int) string {
-	label := band.Name + ", " + band.Hex
+	label := band.Hex
+	if name := strings.TrimSpace(band.Name); name != "" {
+		label = name + ", " + label
+	}
 	if share := paletteBarShare(band, total); share != "" {
 		label += ", " + share + " of the surface"
 	}
@@ -56,8 +60,9 @@ func paletteBarTooltipPosition(index int, length int) string {
 	}
 }
 
-// PaletteBar renders source-named sampled colours. The artwork record weights
-// bands by sampled share; comparison panes use equal bands for direct reading.
+// PaletteBar renders sampled colours with source-supplied names where available.
+// The artwork record weights bands by sampled share; comparison panes use equal
+// bands for direct reading.
 templ PaletteBar(bands []dto.ColourSwatch, weighted bool, caption string) {
 	if len(bands) > 0 {
 		<div data-wga-palette-bar class="flex h-[34px] w-full">
@@ -71,7 +76,9 @@ templ PaletteBar(bands []dto.ColourSwatch, weighted bool, caption string) {
 					style={ templ.SafeCSS(paletteBarStyle(band, weighted, index == 0)) }
 				>
 					<span data-wga-palette-tooltip class={ "absolute bottom-[calc(100%+7px)] z-5 hidden w-max max-w-full items-baseline gap-2 break-words bg-base-content px-[9px] py-1.5 font-mono text-(length:--t-10) tracking-[0.5px] text-base-100 pointer-events-none group-hover/sw:flex group-focus/sw:flex", paletteBarTooltipPosition(index, len(bands)) }>
-						<span>{ band.Name }</span>
+						if name := strings.TrimSpace(band.Name); name != "" {
+							<span>{ name }</span>
+						}
 						if share := paletteBarShare(band, paletteBarTotal(bands)); share != "" {
 							<span class="opacity-60">{ share }</span>
 						}

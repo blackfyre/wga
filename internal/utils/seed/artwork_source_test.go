@@ -109,6 +109,14 @@ func TestLoadArtworksCarriesColourProfileAndSourceFields(t *testing.T) {
 	if !reflect.DeepEqual(item.ColourPalette, wantPalette) {
 		t.Errorf("colour palette = %+v, want %+v", item.ColourPalette, wantPalette)
 	}
+
+	artworks, err = loadArtworks(db, map[string]string{"#1A2B3C": "Prussian Blue"})
+	if err != nil {
+		t.Fatalf("load artworks with partial colour names: %v", err)
+	}
+	if got := artworks[0].ColourPalette; len(got) != 2 || got[0].Name != "Prussian Blue" || got[1].Name != "" {
+		t.Errorf("partially named colour palette = %+v, want retained swatches with an omitted unmatched name", got)
+	}
 	if item.ColourSignature == nil {
 		t.Fatal("colour signature = nil, want parsed signature")
 	}

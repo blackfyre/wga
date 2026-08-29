@@ -11,9 +11,9 @@ import (
 
 var paletteHex = regexp.MustCompile(`^#[0-9A-Fa-f]{6}$`)
 
-// Palette returns the source-named sampled palette persisted with an artwork.
-// An incomplete or malformed source profile is omitted rather than presented as
-// a colour name the archive did not supply.
+// Palette returns the sampled palette persisted with an artwork. Source colour
+// names are optional; the displayed hex value remains the truthful identifier
+// when the producer did not supply one.
 func Palette(artwork *core.Record) []dto.ColourSwatch {
 	data, err := json.Marshal(artwork.Get("colour_palette"))
 	if err != nil {
@@ -25,8 +25,9 @@ func Palette(artwork *core.Record) []dto.ColourSwatch {
 		return nil
 	}
 
-	for _, band := range bands {
-		if strings.TrimSpace(band.Name) == "" || !paletteHex.MatchString(band.Hex) || band.Weight <= 0 {
+	for index := range bands {
+		bands[index].Name = strings.TrimSpace(bands[index].Name)
+		if !paletteHex.MatchString(bands[index].Hex) || bands[index].Weight <= 0 {
 			return nil
 		}
 	}

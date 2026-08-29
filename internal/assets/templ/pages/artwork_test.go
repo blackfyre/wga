@@ -313,6 +313,20 @@ func TestArtworkBlockRendersPalette(t *testing.T) {
 	}
 }
 
+func TestArtworkBlockRendersUnnamedPaletteSwatches(t *testing.T) {
+	aw := sampleArtwork()
+	aw.Palette = []dto.ColourSwatch{{Hex: "#1a2b3c", Weight: 5000}}
+
+	rendered := renderArtworkBlock(t, aw, context.Background())
+
+	if !strings.Contains(rendered, `aria-label="#1a2b3c, 100% of the surface"`) {
+		t.Errorf("unnamed artwork palette has incorrect label: %s", rendered)
+	}
+	if strings.Contains(rendered, "Not recorded.") {
+		t.Error("unnamed artwork palette must not be treated as unavailable")
+	}
+}
+
 func TestArtworkBlockStatesUnavailablePaletteWhenEmpty(t *testing.T) {
 	rendered := renderArtworkBlock(t, sampleArtwork(), context.Background())
 

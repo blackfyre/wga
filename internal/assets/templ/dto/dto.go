@@ -49,8 +49,8 @@ type Artwork struct {
 	// OriginalFileBytes is the source-backed byte count of the original artwork
 	// file. It is zero when no original file is recorded.
 	OriginalFileBytes int
-	// Palette is the compact image-derived colour palette (hex and quantised
-	// weight). Empty when no palette profile is recorded.
+	// Palette is the compact image-derived colour palette (hex, quantised weight,
+	// and an optional source-supplied name). Empty when no palette profile is recorded.
 	Palette []ColourSwatch
 	// HasCommentary reports whether source-backed commentary exists. AI-generated
 	// or metadata-only text is never surfaced as commentary.
@@ -67,7 +67,8 @@ type Artwork struct {
 	Artist
 }
 
-// ColourSwatch is one source-named image-derived palette entry. Weight is its
+// ColourSwatch is one image-derived palette entry. Name is empty when the
+// producer has no source-supplied name for the sampled colour. Weight is its
 // quantised share of the sampled surface.
 type ColourSwatch struct {
 	Name   string
