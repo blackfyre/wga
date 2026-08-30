@@ -139,7 +139,7 @@ func TestArtistRecordContentRendersWorksAndWiderRoute(t *testing.T) {
 		FilingName: "Artist, Portrait",
 		ShortName:  "Portrait",
 		WorkCount:  5,
-		WorksURL:   "/artworks?artist=Artist%2C+Portrait",
+		WorksURL:   "/artworks?artist_id=artistone000001",
 		Works:      dto.ImageGrid{{Id: "artwork12345678", Title: "A Painting", Url: "/artists/portrait-artist-artist/a-painting-artwork12345678", Image: "/api/files/artworks/artwork12345678/p.jpg", Metadata: "1610", Artist: dto.Artist{Name: "Portrait Artist"}}},
 	})
 
@@ -149,8 +149,8 @@ func TestArtistRecordContentRendersWorksAndWiderRoute(t *testing.T) {
 		"A Painting",
 		"1610",
 		`href="/artists/portrait-artist-artist/a-painting-artwork12345678"`,
-		`href="/artworks?artist=Artist%2C+Portrait"`,
-		`hx-get="/artworks?artist=Artist%2C+Portrait"`,
+		`href="/artworks?artist_id=artistone000001"`,
+		`hx-get="/artworks?artist_id=artistone000001"`,
 		"FIND MORE BY Portrait IN THE ARTWORK SEARCH →",
 		`grid-cols-2`,
 		`md:grid-cols-4`,

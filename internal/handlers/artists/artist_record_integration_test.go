@@ -2,6 +2,7 @@ package artists
 
 import (
 	"bytes"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -253,6 +254,11 @@ func TestArtistRecordRouteRejectsUnpublishedArtist(t *testing.T) {
 func TestArtistRecordRouteRendersFullAndHTMX(t *testing.T) {
 	app := newArtistRecordApp(t)
 	seedPublishedArtist(t, app)
+	for index := range 11 {
+		saveRecordRecord(t, app, "artworks", fmt.Sprintf("artwork%08d", index), map[string]any{
+			"title": fmt.Sprintf("Preview Overflow %d", index), "author": []string{"artistone000001"}, "published": true,
+		})
+	}
 
 	recorders := serveArtistRecordRequests(t, app, []recordRequest{
 		{path: "/artists/synthetic-artist-artistone000001", htmx: false},
@@ -266,6 +272,9 @@ func TestArtistRecordRouteRendersFullAndHTMX(t *testing.T) {
 	}
 	if !strings.Contains(full.Body.String(), "<html") || !strings.Contains(full.Body.String(), "Artist, Synthetic") {
 		t.Error("full response should render the complete document")
+	}
+	if !strings.Contains(full.Body.String(), `href="/artworks?artist_id=artistone000001"`) {
+		t.Error("full response should link to the exact artist holding")
 	}
 	if got := full.Header().Get("HX-Push-Url"); got != "/artists/synthetic-artist-artistone000001" {
 		t.Errorf("HX-Push-Url = %q, want canonical", got)
@@ -282,6 +291,9 @@ func TestArtistRecordRouteRendersFullAndHTMX(t *testing.T) {
 	}
 	if !strings.Contains(partial.Body.String(), "Artist, Synthetic") {
 		t.Error("HTMX response should render the artist record")
+	}
+	if !strings.Contains(partial.Body.String(), `hx-get="/artworks?artist_id=artistone000001"`) {
+		t.Error("HTMX response should link to the exact artist holding")
 	}
 }
 
@@ -368,7 +380,7 @@ func TestArtistRecordViewResolvesMetadataPortraitAndParity(t *testing.T) {
 	if view.WorkCount != 2 {
 		t.Errorf("work count = %d, want 2 (unpublished excluded)", view.WorkCount)
 	}
-	if view.WorksURL != "/artworks?artist=Artist%2C+Synthetic" {
+	if view.WorksURL != "/artworks?artist_id=artistone000001" {
 		t.Errorf("works URL = %q", view.WorksURL)
 	}
 	if view.Citation.Key != "wga-synthetic-artist" {

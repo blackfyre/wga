@@ -16,6 +16,7 @@ type filters struct {
 	ArtFormString   string
 	ArtTypeString   string
 	ArtistString    string
+	ArtistID        string
 	TechniqueString string
 	PeriodString    string
 	VenueString     string
@@ -52,6 +53,7 @@ func (f *filters) ActiveFilterCount() int {
 		f.ArtFormString != "",
 		f.ArtTypeString != "",
 		f.ArtistString != "",
+		f.ArtistID != "",
 		f.TechniqueString != "",
 		f.PeriodString != "",
 		f.selectedVenue() != "",
@@ -70,7 +72,7 @@ func (f *filters) ActiveFilterCount() int {
 
 // FingerPrint returns a unique fingerprint string based on the filter values.
 func (f *filters) FingerPrint() string {
-	return f.Query + ":" + f.Title + ":" + f.SchoolString + ":" + f.ArtFormString + ":" + f.ArtTypeString + ":" + f.ArtistString + ":" + f.TechniqueString + ":" + f.PeriodString + ":" + f.selectedVenue() + ":" + f.VenueQuery + ":" + f.YearFrom + ":" + f.YearTo + ":" + f.View + ":" + f.Sort + ":" + f.SortDir + ":" + f.Page
+	return f.Query + ":" + f.Title + ":" + f.SchoolString + ":" + f.ArtFormString + ":" + f.ArtTypeString + ":" + f.ArtistString + ":" + f.ArtistID + ":" + f.TechniqueString + ":" + f.PeriodString + ":" + f.selectedVenue() + ":" + f.VenueQuery + ":" + f.YearFrom + ":" + f.YearTo + ":" + f.View + ":" + f.Sort + ":" + f.SortDir + ":" + f.Page
 }
 
 // BuildFilter builds the PocketBase filter string and parameters for the
@@ -104,7 +106,10 @@ func (f *filters) BuildFilter() (string, dbx.Params) {
 		params["art_type"] = f.ArtTypeString
 	}
 
-	if f.ArtistString != "" {
+	if f.ArtistID != "" {
+		filterString = filterString + " && author.id ?= {:artist_id}"
+		params["artist_id"] = f.ArtistID
+	} else if f.ArtistString != "" {
 		filterString = filterString + " && author.filing_name ~ {:artist}"
 		params["artist"] = f.ArtistString
 	}
@@ -175,7 +180,9 @@ func (f *filters) queryValues() url.Values {
 		values.Set("art_type", f.ArtTypeString)
 	}
 
-	if f.ArtistString != "" {
+	if f.ArtistID != "" {
+		values.Set("artist_id", f.ArtistID)
+	} else if f.ArtistString != "" {
 		values.Set("artist", f.ArtistString)
 	}
 
@@ -249,6 +256,7 @@ func buildFilters(values url.Values) *filters {
 		ArtFormString:   cmp.Or(values.Get("art_form"), ""),
 		ArtTypeString:   cmp.Or(values.Get("art_type"), ""),
 		ArtistString:    cmp.Or(values.Get("artist"), ""),
+		ArtistID:        strings.TrimSpace(values.Get("artist_id")),
 		TechniqueString: cmp.Or(values.Get("technique"), ""),
 		PeriodString:    cmp.Or(values.Get("period"), ""),
 		VenueString:     venue,
@@ -261,6 +269,9 @@ func buildFilters(values url.Values) *filters {
 		Sort:            sort,
 		SortDir:         dir,
 		Page:            cmp.Or(values.Get("page"), ""),
+	}
+	if f.ArtistID != "" {
+		f.ArtistString = ""
 	}
 
 	return f

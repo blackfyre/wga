@@ -155,6 +155,7 @@ func buildArtworkSearchView(app *pocketbase.PocketBase, values neturl.Values, pa
 			Value:       filters.TechniqueString,
 			Placeholder: "e.g. oil on canvas",
 		},
+		ArtistID:        filters.ArtistID,
 		SchoolGroup:     schoolGroup,
 		FormGroup:       formGroup,
 		TypeGroup:       typeGroup,

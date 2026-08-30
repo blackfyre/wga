@@ -437,7 +437,7 @@ func buildArtistRecordView(app *pocketbase.PocketBase, artist *core.Record, logg
 		Bio:             bio,
 		Works:           buildRecordWorkImages(artist, works),
 		WorkCount:       workCount,
-		WorksURL:        buildArtistWorksURL(artist.GetString("filing_name")),
+		WorksURL:        buildArtistWorksURL(artist.Id),
 		Selections:      selections,
 		Music:           buildRecordMusic(periodSong),
 		Citation:        buildArtistCitation(artist, expectedSlug),
@@ -560,8 +560,17 @@ func artworkDateMetadata(artwork *core.Record) string {
 }
 
 // buildArtistWorksURL returns the wider catalogue route filtered to the
-// artist's authoritative filing name.
-func buildArtistWorksURL(filingName string) string {
+// artist's exact public record ID.
+func buildArtistWorksURL(artistID string) string {
+	values := neturl.Values{}
+	values.Set("artist_id", artistID)
+
+	return "/artworks?" + values.Encode()
+}
+
+// buildArtistNameWorksURL retains the existing filing-name holding used by
+// artist selections, which is outside the exact artist-record link contract.
+func buildArtistNameWorksURL(filingName string) string {
 	values := neturl.Values{}
 	values.Set("artist", filingName)
 

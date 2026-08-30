@@ -434,6 +434,20 @@ func TestArtworkFilterBlockPreservesSortDirViewState(t *testing.T) {
 	}
 }
 
+func TestArtworkFilterBlockRetainsExactArtistID(t *testing.T) {
+	view := sampleArtworkSearchView()
+	view.ArtistID = "artistone000001"
+
+	rendered := renderArtworkFilterBlock(t, view)
+
+	if !strings.Contains(rendered, `type="hidden" name="artist_id" value="artistone000001"`) {
+		t.Error("filter form must retain the exact artist ID as hidden state")
+	}
+	if strings.Contains(rendered, `type="search" name="artist_id"`) {
+		t.Error("filter form must not expose an artist ID search control")
+	}
+}
+
 func TestArtworkFilterBlockOmitsDefaultSortDirViewState(t *testing.T) {
 	rendered := renderArtworkFilterBlock(t, sampleArtworkSearchView())
 

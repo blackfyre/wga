@@ -4,6 +4,8 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+
+	"github.com/blackfyre/wga/internal/assets/templ/pages"
 )
 
 func TestFiltersBuildFilterIncludesDateRange(t *testing.T) {
@@ -47,6 +49,60 @@ func TestFiltersBuildFilterMatchesTitleOrArtistQuery(t *testing.T) {
 
 	if got := params["query"]; got != "milkmaid" {
 		t.Errorf("parameter query = %q, want %q", got, "milkmaid")
+	}
+}
+
+func TestFiltersBuildFilterUsesExactArtistID(t *testing.T) {
+	filters := &filters{ArtistString: "Aachen, Hans von", ArtistID: "artistone000001"}
+
+	filterString, params := filters.BuildFilter()
+
+	if !strings.Contains(filterString, "author.id ?= {:artist_id}") {
+		t.Errorf("filter %q does not contain exact artist condition", filterString)
+	}
+	if strings.Contains(filterString, "author.filing_name ~ {:artist}") {
+		t.Errorf("filter %q must not contain the legacy artist condition", filterString)
+	}
+	if got := params["artist_id"]; got != "artistone000001" {
+		t.Errorf("artist_id = %q, want artistone000001", got)
+	}
+	if _, ok := params["artist"]; ok {
+		t.Errorf("legacy artist parameter = %q, want omitted", params["artist"])
+	}
+}
+
+func TestBuildFiltersExactArtistIDTakesPrecedence(t *testing.T) {
+	filters := buildFilters(url.Values{
+		"artist":    {"Aachen, Hans von"},
+		"artist_id": {"artistone000001"},
+	})
+
+	if filters.ArtistString != "" {
+		t.Errorf("legacy artist = %q, want empty", filters.ArtistString)
+	}
+	if filters.ArtistID != "artistone000001" {
+		t.Errorf("artist ID = %q, want artistone000001", filters.ArtistID)
+	}
+	if got, want := filters.BuildPath("/artworks"), "/artworks?artist_id=artistone000001"; got != want {
+		t.Errorf("path = %q, want %q", got, want)
+	}
+}
+
+func TestBuildArtworkSearchPathPreservesExactArtistIDInDualMode(t *testing.T) {
+	path := buildArtworkSearchPath("/artworks", &filters{ArtistID: "artistone000001"}, &pages.ArtworkSearchDualMode{
+		LeftPath:      "/artists/left",
+		RightPath:     "/artists/right",
+		LeftRenderTo:  "#left",
+		RightRenderTo: "#right",
+		Target:        "right",
+	})
+
+	values, err := url.Parse(path)
+	if err != nil {
+		t.Fatalf("parse path: %v", err)
+	}
+	if got := values.Query().Get("artist_id"); got != "artistone000001" {
+		t.Errorf("artist ID = %q, want artistone000001", got)
 	}
 }
 

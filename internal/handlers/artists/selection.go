@@ -117,7 +117,7 @@ func buildSelectionView(app *pocketbase.PocketBase, artist *core.Record, selecti
 		Works:            buildRecordWorkImages(artist, works),
 		WorkCount:        len(works),
 		OtherSelections:  otherSelections,
-		HoldingURL:       buildArtistWorksURL(artist.GetString("filing_name")),
+		HoldingURL:       buildArtistNameWorksURL(artist.GetString("filing_name")),
 		Url:              buildSelectionURL(utils.GenerateArtistSlug(artist), selection.Id),
 		Citation:         buildSelectionCitation(artist, selection),
 		ShowBreadcrumbs:  true,

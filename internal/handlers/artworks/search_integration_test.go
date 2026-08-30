@@ -276,6 +276,60 @@ func TestBuildArtworkSearchViewFiltersBySchoolFormAndTechnique(t *testing.T) {
 	}
 }
 
+func TestBuildArtworkSearchViewFiltersByExactArtistID(t *testing.T) {
+	app := newArtworkSearchApp(t)
+	saveSearchArtist(t, app, "artistone000001", "Aachen, Hans von")
+	saveSearchArtist(t, app, "artisttwo000001", "Aachen, Hans von")
+
+	saveSearchArtwork(t, app, searchArtworkSeed{id: "workfirst000001", title: "First Artist Work", authors: []string{"artistone000001"}, sourceRow: 1, published: true})
+	saveSearchArtwork(t, app, searchArtworkSeed{id: "workshared00001", title: "Shared Work", authors: []string{"artisttwo000001", "artistone000001"}, sourceRow: 2, published: true})
+	saveSearchArtwork(t, app, searchArtworkSeed{id: "worksecond00001", title: "Second Artist Work", authors: []string{"artisttwo000001"}, sourceRow: 3, published: true})
+	saveSearchArtwork(t, app, searchArtworkSeed{id: "workhidden00001", title: "Hidden Work", authors: []string{"artistone000001"}, sourceRow: 4, published: false})
+
+	view, canonical, err := buildArtworkSearchView(app, neturl.Values{
+		"artist":    {"Aachen, Hans von"},
+		"artist_id": {"artistone000001"},
+	}, 1, 16)
+	if err != nil {
+		t.Fatalf("build exact artist view: %v", err)
+	}
+	if canonical != "/artworks?artist_id=artistone000001" {
+		t.Errorf("canonical = %q", canonical)
+	}
+	if view.ArtistID != "artistone000001" {
+		t.Errorf("view artist ID = %q, want artistone000001", view.ArtistID)
+	}
+	if view.Results.ListUrl != "/artworks?artist_id=artistone000001&view=list" {
+		t.Errorf("list URL = %q", view.Results.ListUrl)
+	}
+	if view.Results.ResetUrl != "/artworks" {
+		t.Errorf("reset URL = %q, want /artworks", view.Results.ResetUrl)
+	}
+	if !strings.Contains(view.Results.SortToggleUrl, "artist_id=artistone000001") {
+		t.Errorf("sort toggle URL = %q, want retained artist ID", view.Results.SortToggleUrl)
+	}
+	if view.Results.ResultCount != 2 {
+		t.Fatalf("result count = %d, want 2", view.Results.ResultCount)
+	}
+	assertTitles(t, view, []string{"First Artist Work", "Shared Work"})
+
+	paged, _, err := buildArtworkSearchView(app, neturl.Values{"artist_id": {"artistone000001"}}, 1, 1)
+	if err != nil {
+		t.Fatalf("build paged artist view: %v", err)
+	}
+	if !strings.Contains(paged.Results.Pagination, "artist_id=artistone000001") {
+		t.Errorf("pagination = %q, want retained artist ID", paged.Results.Pagination)
+	}
+
+	unknown, _, err := buildArtworkSearchView(app, neturl.Values{"artist_id": {"unknownartist001"}}, 1, 16)
+	if err != nil {
+		t.Fatalf("build unknown artist view: %v", err)
+	}
+	if unknown.Results.ResultCount != 0 || len(unknown.Results.Artworks) != 0 {
+		t.Fatalf("unknown artist results = %d, want 0", unknown.Results.ResultCount)
+	}
+}
+
 func TestBuildArtworkSearchViewSortsByTitleDesc(t *testing.T) {
 	app := newArtworkSearchApp(t)
 	saveSearchArtist(t, app, "artistone000001", "Artist One")
@@ -742,12 +796,12 @@ func TestArtworksRouteRendersFullPageAndFragment(t *testing.T) {
 		}
 
 		full := httptest.NewRecorder()
-		mux.ServeHTTP(full, httptest.NewRequest(http.MethodGet, "/artworks?sort=date", nil))
+		mux.ServeHTTP(full, httptest.NewRequest(http.MethodGet, "/artworks?artist_id=artistone000001&sort=date", nil))
 		if full.Code != http.StatusOK {
 			t.Errorf("full page status = %d, want %d", full.Code, http.StatusOK)
 		}
-		if got := full.Header().Get("HX-Push-Url"); got != "/artworks?sort=date" {
-			t.Errorf("HX-Push-Url = %q, want /artworks?sort=date", got)
+		if got := full.Header().Get("HX-Push-Url"); got != "/artworks?artist_id=artistone000001&sort=date" {
+			t.Errorf("HX-Push-Url = %q, want retained artist ID", got)
 		}
 		body := full.Body.String()
 		for _, expected := range []string{"<h1", "Artworks", "SCHOOL", "FORM", "TECHNIQUE", "PERIOD", "COLLECTION", "DATE"} {
@@ -758,16 +812,19 @@ func TestArtworksRouteRendersFullPageAndFragment(t *testing.T) {
 		if strings.Contains(body, `name="tone"`) || strings.Contains(body, ">TONE<") {
 			t.Error("full page must not expose deferred tone UI or state")
 		}
+		if !strings.Contains(body, `type="hidden" name="artist_id" value="artistone000001"`) {
+			t.Error("full page must retain exact artist ID as non-visible GET state")
+		}
 
 		fragment := httptest.NewRecorder()
-		fragmentRequest := httptest.NewRequest(http.MethodGet, "/artworks/results?sort=date", nil)
+		fragmentRequest := httptest.NewRequest(http.MethodGet, "/artworks/results?artist_id=artistone000001&q=Only&sort=date", nil)
 		fragmentRequest.Header.Set("HX-Request", "true")
 		mux.ServeHTTP(fragment, fragmentRequest)
 		if fragment.Code != http.StatusOK {
 			t.Errorf("fragment status = %d, want %d", fragment.Code, http.StatusOK)
 		}
-		if got := fragment.Header().Get("HX-Push-Url"); got != "/artworks/results?sort=date" {
-			t.Errorf("HX-Push-Url = %q, want /artworks/results?sort=date", got)
+		if got := fragment.Header().Get("HX-Push-Url"); got != "/artworks/results?artist_id=artistone000001&q=Only&sort=date" {
+			t.Errorf("HX-Push-Url = %q, want retained artist ID", got)
 		}
 		fragmentBody := fragment.Body.String()
 		if !strings.Contains(fragmentBody, "id=\"artwork-search-results\"") {
@@ -775,6 +832,9 @@ func TestArtworksRouteRendersFullPageAndFragment(t *testing.T) {
 		}
 		if strings.Contains(fragmentBody, "id=\"artwork-filters\"") {
 			t.Error("fragment must not include the filter form")
+		}
+		if !strings.Contains(fragmentBody, "Only Work") {
+			t.Error("fragment must retain the artist holding while refining the catalogue query")
 		}
 
 		return nil

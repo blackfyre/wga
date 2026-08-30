@@ -49,6 +49,7 @@ type ArtworkSearchResultsView struct {
 type ArtworkSearchView struct {
 	NameField       dto.Field
 	TechniqueField  dto.Field
+	ArtistID        string
 	SchoolGroup     dto.ChipGroup
 	FormGroup       dto.ChipGroup
 	TypeGroup       dto.ChipGroup
@@ -103,6 +104,9 @@ templ ArtworkSeachFilterBlock(b ArtworkSearchView) {
 		hx-trigger="change, input changed delay:300ms"
 		class="w-full"
 	>
+		if b.ArtistID != "" {
+			<input type="hidden" name="artist_id" value={ b.ArtistID }/>
+		}
 		if b.Sort != "catalogue" {
 			<input type="hidden" name="sort" value={ b.Sort }/>
 		}

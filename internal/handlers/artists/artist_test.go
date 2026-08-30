@@ -92,8 +92,14 @@ func TestArtistLifeSummaryOmitsMissingValues(t *testing.T) {
 	}
 }
 
-func TestBuildArtistWorksURLEncodesName(t *testing.T) {
-	if got, want := buildArtistWorksURL("Johannes Vermeer"), "/artworks?artist=Johannes+Vermeer"; got != want {
+func TestBuildArtistWorksURLUsesExactID(t *testing.T) {
+	if got, want := buildArtistWorksURL("artistone000001"), "/artworks?artist_id=artistone000001"; got != want {
+		t.Fatalf("works URL = %q, want %q", got, want)
+	}
+}
+
+func TestBuildArtistNameWorksURLEncodesName(t *testing.T) {
+	if got, want := buildArtistNameWorksURL("Johannes Vermeer"), "/artworks?artist=Johannes+Vermeer"; got != want {
 		t.Fatalf("works URL = %q, want %q", got, want)
 	}
 }
