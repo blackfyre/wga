@@ -1,0 +1,6 @@
+## 1. Development tracing
+
+- [x] 1.1 Add development-only OpenTelemetry tracing end to end: OTLP provider, PocketBase request middleware with W3C propagation and safe semantic attributes, serving startup and bounded shutdown wiring, and compliant runtime dependency metadata. **Verification:** focused observability and command tests prove development request spans preserve an inbound parent and record route/status/error information while non-development configuration remains disabled; `go run ./cmd/generate-licences`, `go vet ./...`, and `openspec validate add-development-otel-tracing --strict` pass.
+- [x] 1.2 Add Jaeger to local service startup. **Verification:** `mise run services:jaeger` returns only after Jaeger responds on its health endpoint, and `mise run services:up` declares the task as a dependency.
+- [x] 1.3 Add safe global-search workflow spans. **Verification:** focused search and observability tests prove Unicode search results and child-span names; a local `/search?q=D%C3%BCrer` request appears in Jaeger with the search stages and no query value in span attributes.
+- [x] 1.4 Match Unicode case variants in artist searches. **Verification:** focused global-search and artist-index tests prove `Dürer` matches an imported `DÜRER` filing name; a local `/search?q=D%C3%BCrer` request returns the Dürer artist.

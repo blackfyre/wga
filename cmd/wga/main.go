@@ -63,6 +63,7 @@ func main() {
 		DefaultDataDir: "./wga_data",
 	})
 	monitor := observability.Monitor{}
+	tracer := observability.Tracer{}
 
 	if err := migrations.Configure(runtimeConfig.Migrations()); err != nil {
 		log.Fatal(err)
@@ -71,6 +72,11 @@ func main() {
 	if capability == commandNeedsServer {
 		utils.ConfigurePublicURL(serverConfig.PublicURL)
 		logging.RegisterRequestIDMiddleware(app)
+		tracer, err = observability.ConfigureTracing(serverConfig.Environment, app.Logger())
+		if err != nil {
+			log.Fatal(err)
+		}
+		tracer.Register(app)
 		monitor = observability.Configure(serverConfig.Sentry, serverConfig.Environment, app.Logger())
 		monitor.Register(app)
 		monitor.RegisterTestRoute(app, serverConfig.Environment)
@@ -136,10 +142,21 @@ func main() {
 	}
 
 	if err := app.Start(); err != nil {
+		flushTracing(tracer, app)
 		monitor.Flush()
 		log.Fatal(err)
 	}
+	flushTracing(tracer, app)
 	monitor.Flush()
+}
+
+func flushTracing(tracer observability.Tracer, app *pocketbase.PocketBase) {
+	if err := tracer.Shutdown(); err != nil {
+		app.Logger().Error("OpenTelemetry trace flush failed",
+			"event", "observability.otel.shutdown_failed",
+			"error_type", logging.ErrorType(err),
+		)
+	}
 }
 
 func serverConfigFor(runtimeConfig config.Config) (config.Server, error) {

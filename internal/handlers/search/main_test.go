@@ -1,11 +1,17 @@
 package search
 
 import (
+	"context"
+	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
+	"go.opentelemetry.io/otel"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func newSearchTestApp(t *testing.T) *pocketbase.PocketBase {
@@ -108,7 +114,7 @@ func TestSearchViewUsesFilingNameNotLegacyName(t *testing.T) {
 		"title": "Divergent Work", "author": []string{"artdiverg100000"}, "published": true,
 	})
 
-	view, err := searchView(app, "filing")
+	view, err := searchView(t.Context(), app, "filing")
 	if err != nil {
 		t.Fatalf("search by filing: %v", err)
 	}
@@ -123,7 +129,7 @@ func TestSearchViewUsesFilingNameNotLegacyName(t *testing.T) {
 	}
 
 	// The legacy display name is not a search identity source: it must not match.
-	legacy, err := searchView(app, "legacy")
+	legacy, err := searchView(t.Context(), app, "legacy")
 	if err != nil {
 		t.Fatalf("search by legacy name: %v", err)
 	}
@@ -143,7 +149,7 @@ func TestSearchViewWorkLabelUsesFilingNameAndLegacyURL(t *testing.T) {
 		"title": "Divergent Work", "author": []string{"artdiverg100000"}, "published": true,
 	})
 
-	view, err := searchView(app, "divergent")
+	view, err := searchView(t.Context(), app, "divergent")
 	if err != nil {
 		t.Fatalf("search work title: %v", err)
 	}
@@ -172,7 +178,7 @@ func TestSearchViewExcludesBlankIdentity(t *testing.T) {
 		"name": "Blank Short Legacy", "filing_name": "Blank, Short", "short_name": "", "published": true,
 	})
 
-	view, err := searchView(app, "")
+	view, err := searchView(t.Context(), app, "")
 	if err != nil {
 		t.Fatalf("search all: %v", err)
 	}
@@ -184,7 +190,7 @@ func TestSearchViewExcludesBlankIdentity(t *testing.T) {
 	}
 
 	// A blank-identity artist must not match even its legacy name.
-	blank, err := searchView(app, "blank")
+	blank, err := searchView(t.Context(), app, "blank")
 	if err != nil {
 		t.Fatalf("search blank: %v", err)
 	}
@@ -204,7 +210,7 @@ func TestSearchViewSortsArtistsByFilingName(t *testing.T) {
 		"name": "Zeta Legacy", "filing_name": "Alpha, Filing", "short_name": "Alpha", "published": true,
 	})
 
-	view, err := searchView(app, "")
+	view, err := searchView(t.Context(), app, "")
 	if err != nil {
 		t.Fatalf("search all: %v", err)
 	}
@@ -214,5 +220,66 @@ func TestSearchViewSortsArtistsByFilingName(t *testing.T) {
 	if view.Artists[0].Name != "Alpha, Filing" || view.Artists[1].Name != "Zeta, Filing" {
 		t.Errorf("filing-name order = [%q, %q], want [Alpha, Filing] then [Zeta, Filing]",
 			view.Artists[0].Name, view.Artists[1].Name)
+	}
+}
+
+func TestSearchViewSupportsUnicodeAndCreatesTraceSpans(t *testing.T) {
+	app := newSearchTestApp(t)
+	saveSearchArtist(t, app, "artdurer0000001", map[string]any{
+		"name": "DÜRER, Albrecht", "filing_name": "DÜRER, Albrecht", "short_name": "Albrecht Dürer", "published": true,
+	})
+	saveSearchWork(t, app, "workdurer000001", map[string]any{
+		"title": "Dürer Work", "author": []string{"artdurer0000001"}, "published": true,
+	})
+
+	recorder := tracetest.NewSpanRecorder()
+	provider := sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(recorder))
+	otel.SetTracerProvider(provider)
+	t.Cleanup(func() {
+		otel.SetTracerProvider(trace.NewNoopTracerProvider())
+		if err := provider.Shutdown(context.Background()); err != nil {
+			t.Errorf("shutdown trace provider: %v", err)
+		}
+	})
+
+	ctx, requestSpan := provider.Tracer("test").Start(t.Context(), "request")
+	view, err := searchView(ctx, app, "Dürer")
+	requestSpan.End()
+	if err != nil {
+		t.Fatalf("search Unicode term: %v", err)
+	}
+	if view.ArtistTotal != 1 || view.WorkTotal != 1 {
+		t.Fatalf("Unicode search totals = %d artists, %d works; want 1 each", view.ArtistTotal, view.WorkTotal)
+	}
+
+	spans := map[string]sdktrace.ReadOnlySpan{}
+	for _, span := range recorder.Ended() {
+		spans[span.Name()] = span
+	}
+	lookup, ok := spans["search.lookup"]
+	if !ok {
+		t.Fatal("expected trace span \"search.lookup\"")
+	}
+	if got, want := lookup.Parent().SpanID(), requestSpan.SpanContext().SpanID(); got != want {
+		t.Errorf("search lookup parent = %s, want request span %s", got, want)
+	}
+
+	for _, name := range []string{"search.artists", "search.artworks", "search.artwork_authors"} {
+		span, ok := spans[name]
+		if !ok {
+			t.Errorf("expected trace span %q", name)
+			continue
+		}
+		if got, want := span.Parent().SpanID(), lookup.SpanContext().SpanID(); got != want {
+			t.Errorf("%s parent = %s, want lookup span %s", name, got, want)
+		}
+		for _, attribute := range span.Attributes() {
+			rendered := fmt.Sprint(attribute)
+			for _, sensitive := range []string{"Dürer", "Dürer Work", "artdurer0000001", "workdurer000001"} {
+				if strings.Contains(rendered, sensitive) {
+					t.Errorf("%s exposes %q in span attribute %s", name, sensitive, rendered)
+				}
+			}
+		}
 	}
 }

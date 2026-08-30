@@ -10,6 +10,7 @@ railway = "latest"
 sentry = "latest"
 "github:fossas/fossa-cli" = "latest"
 "aqua:axllent/mailpit" = "latest"
+"github:jaegertracing/jaeger" = "latest"
 
 # Git is a system prerequisite because Mise has no cross-platform Git backend.
 [env]
@@ -132,8 +133,28 @@ description = "Watch and build CSS assets."
 run = "bun run build:watch:css"
 
 [tasks."services:up"]
-description = "Start local Mailpit and Garage services with Podman Compose."
+description = "Start local Mailpit, Garage, and Jaeger services."
+depends = ["services:jaeger"]
 run = "podman compose up -d"
+
+[tasks."services:jaeger"]
+description = "Start Jaeger with its local all-in-one configuration."
+run = '''
+if curl --fail --silent http://127.0.0.1:13133/status >/dev/null; then
+  exit 0
+fi
+
+mkdir -p dist
+jaeger > dist/jaeger.log 2>&1 &
+for _ in $(seq 1 30); do
+  if curl --fail --silent http://127.0.0.1:13133/status >/dev/null; then
+    exit 0
+  fi
+  sleep 1
+done
+
+exit 1
+'''
 
 [tasks.dev]
 description = "Start local services, asset watchers, and template generation."

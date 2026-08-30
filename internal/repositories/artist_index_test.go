@@ -255,6 +255,22 @@ func TestArtistIndexRepositoryFiltersUnpublishedArtists(t *testing.T) {
 	}
 }
 
+func TestArtistIndexRepositoryMatchesUnicodeCaseVariants(t *testing.T) {
+	app := newArtistIndexTestApp(t)
+	saveArtistIndexArtist(t, app, artistIndexArtistSeed{
+		id: "artistdurer0000", name: "DÜRER, Albrecht", filingName: "DÜRER, Albrecht", shortName: "Albrecht Dürer", published: true,
+	})
+	repo := NewArtistIndexRepository(app)
+
+	artists, err := repo.ListArtists(ArtistIndexFilter{Query: "Dürer", Limit: 100})
+	if err != nil {
+		t.Fatalf("list Unicode case-insensitive artist match: %v", err)
+	}
+	if len(artists) != 1 || artists[0].Record.Id != "artistdurer0000" {
+		t.Fatalf("artists = %#v, want DÜRER", artists)
+	}
+}
+
 func TestArtistIndexRepositoryDerivesAvailability(t *testing.T) {
 	app := newArtistIndexTestApp(t)
 	saveArtistIndexArtist(t, app, artistIndexArtistSeed{id: "artavail1000000", name: "Available Artist", published: true})

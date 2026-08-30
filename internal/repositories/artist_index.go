@@ -245,7 +245,13 @@ func (r *ArtistIndexRepository) artistWhere(filter ArtistIndexFilter) []dbx.Expr
 	}
 
 	if filter.Query != "" {
-		exprs = append(exprs, dbx.NewExp("filing_name LIKE {:query}", dbx.Params{"query": "%" + filter.Query + "%"}))
+		exprs = append(exprs, dbx.NewExp(
+			"(filing_name LIKE {:query} OR filing_name LIKE {:query_upper})",
+			dbx.Params{
+				"query":       "%" + filter.Query + "%",
+				"query_upper": "%" + strings.ToUpper(filter.Query) + "%",
+			},
+		))
 	}
 	if filter.Letter != "" {
 		exprs = append(exprs, filingLetterExpression(filter.Letter))
