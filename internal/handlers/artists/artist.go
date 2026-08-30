@@ -6,11 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	neturl "net/url"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/blackfyre/wga/internal/assets/templ/components"
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
@@ -18,6 +20,7 @@ import (
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
 	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/errs"
+	"github.com/blackfyre/wga/internal/logging"
 	"github.com/blackfyre/wga/internal/repositories"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/blackfyre/wga/internal/utils/glossary"
@@ -31,6 +34,7 @@ import (
 )
 
 var bioSanitizer = biographySanitizer()
+var artistRecordRequestLogger = logging.RequestLogger
 
 // biographySanitizer returns the record-owned biography sanitizer. It retains
 // legitimate editorial structure while removing scripts, event handlers, and
@@ -324,9 +328,16 @@ func processArtist(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 		return c.Redirect(http.StatusMovedPermanently, fullUrl)
 	}
 
-	view, err := buildArtistRecordView(app, artist)
+	logger := artistRecordRequestLogger(app, c)
+	viewStarted := time.Now()
+	view, err := buildArtistRecordView(app, artist, logger)
 	if err != nil {
-		app.Logger().Error("Build artist record", "slug", slug, "error", err.Error())
+		logger.Error("Build artist record failed",
+			"event", "artists.record_view.failed",
+			"duration_ms", time.Since(viewStarted).Milliseconds(),
+			"error_type", logging.ErrorType(err),
+			"error", logging.Redact(err),
+		)
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
@@ -355,32 +366,42 @@ func processArtist(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 
 // buildArtistRecordView assembles the page-owned artist record view from the
 // bounded read-model.
-func buildArtistRecordView(app *pocketbase.PocketBase, artist *core.Record) (pages.ArtistView, error) {
+func buildArtistRecordView(app *pocketbase.PocketBase, artist *core.Record, logger *slog.Logger) (pages.ArtistView, error) {
 	expectedSlug := utils.GenerateArtistSlug(artist)
 
 	repo := repositories.NewArtistRecordRepository(app)
 
+	stepStarted := time.Now()
 	workCount, err := repo.CountPublishedWorks(artist.Id)
 	if err != nil {
+		logArtistRecordStepFailure(logger, "count_published_works", stepStarted, err)
 		return pages.ArtistView{}, err
 	}
+	stepStarted = time.Now()
 	works, err := repo.ListPublishedWorks(artist.Id, 0)
 	if err != nil {
+		logArtistRecordStepFailure(logger, "list_published_works", stepStarted, err)
 		return pages.ArtistView{}, err
 	}
 
+	stepStarted = time.Now()
 	selections, err := buildSelectionPreviews(app, artist, workCount)
 	if err != nil {
+		logArtistRecordStepFailure(logger, "build_selection_previews", stepStarted, err)
 		return pages.ArtistView{}, err
 	}
 
+	stepStarted = time.Now()
 	schoolNames, err := repo.ListSchoolNames(artist.GetStringSlice("school"))
 	if err != nil {
+		logArtistRecordStepFailure(logger, "list_school_names", stepStarted, err)
 		return pages.ArtistView{}, err
 	}
 
+	stepStarted = time.Now()
 	periodRecords, err := repo.ListMatchingArtPeriods(artist.GetInt("year_of_birth"))
 	if err != nil {
+		logArtistRecordStepFailure(logger, "list_matching_art_periods", stepStarted, err)
 		return pages.ArtistView{}, err
 	}
 
@@ -390,8 +411,10 @@ func buildArtistRecordView(app *pocketbase.PocketBase, artist *core.Record) (pag
 	}
 	bio := annotateBiography(artist.GetString("bio"), glossaryEntries)
 
+	stepStarted = time.Now()
 	periodSong, err := repo.MatchPeriodSong(artist.GetInt("year_of_birth"))
 	if err != nil {
+		logArtistRecordStepFailure(logger, "match_period_song", stepStarted, err)
 		return pages.ArtistView{}, err
 	}
 
@@ -423,6 +446,16 @@ func buildArtistRecordView(app *pocketbase.PocketBase, artist *core.Record) (pag
 	}
 
 	return view, nil
+}
+
+func logArtistRecordStepFailure(logger *slog.Logger, step string, started time.Time, err error) {
+	logger.Error("Build artist record step failed",
+		"event", "artists.record_view.step_failed",
+		"step", step,
+		"duration_ms", time.Since(started).Milliseconds(),
+		"error_type", logging.ErrorType(err),
+		"error", logging.Redact(err),
+	)
 }
 
 // unambiguousPeriodName returns the period name only when exactly one period

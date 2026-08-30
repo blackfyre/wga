@@ -12,6 +12,7 @@ import (
 
 	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/logging"
+	"github.com/blackfyre/wga/internal/requestfailure"
 	"github.com/blackfyre/wga/internal/testutils"
 	"github.com/getsentry/sentry-go"
 	"github.com/pocketbase/pocketbase/core"
@@ -181,6 +182,45 @@ func TestMonitorIntercept(t *testing.T) {
 		}
 		if captured == nil {
 			t.Fatal("expected written server response to be captured")
+		}
+	})
+
+	t.Run("does not capture rendered cancelled or deadline failures", func(t *testing.T) {
+		for _, test := range []struct {
+			name  string
+			cause error
+		}{
+			{name: "cancelled", cause: context.Canceled},
+			{name: "deadline", cause: context.DeadlineExceeded},
+		} {
+			t.Run(test.name, func(t *testing.T) {
+				captured := false
+				logged := false
+				monitor := Monitor{
+					enabled: true,
+					captureFailure: func(error, requestFailure) {
+						captured = true
+					},
+					logFailure: func(requestFailure) {
+						logged = true
+					},
+				}
+				event := monitorRequestEvent(t, "/sentry-written-"+test.name)
+				requestfailure.Record(event, requestfailure.Failure{
+					Category: "server_fault",
+					Cause:    test.cause,
+				})
+
+				if err := monitor.intercept(event, func() error { return nil }, func() int { return http.StatusInternalServerError }); err != nil {
+					t.Fatalf("expected nil error, got %v", err)
+				}
+				if captured {
+					t.Fatal("rendered request-end failure must not be captured")
+				}
+				if logged {
+					t.Fatal("rendered request-end failure must not emit an unexpected failure log")
+				}
+			})
 		}
 	})
 }

@@ -1,12 +1,15 @@
 package artists
 
 import (
+	"bytes"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"github.com/blackfyre/wga/internal/config"
+	"github.com/blackfyre/wga/internal/logging"
 	"github.com/blackfyre/wga/internal/repositories"
 	apputils "github.com/blackfyre/wga/internal/utils"
 	"github.com/pocketbase/pocketbase"
@@ -282,6 +285,52 @@ func TestArtistRecordRouteRendersFullAndHTMX(t *testing.T) {
 	}
 }
 
+func TestArtistRecordRouteLogsCorrelatedDiagnosticsForViewFailure(t *testing.T) {
+	var output bytes.Buffer
+	logger := slog.New(slog.NewJSONHandler(&output, nil))
+	previousRequestLogger := artistRecordRequestLogger
+	artistRecordRequestLogger = func(_ core.App, event *core.RequestEvent) *slog.Logger {
+		return logger.With("request_id", logging.RequestID(event))
+	}
+	t.Cleanup(func() { artistRecordRequestLogger = previousRequestLogger })
+
+	app := newArtistRecordApp(t)
+	seedPublishedArtist(t, app)
+	logging.RegisterRequestIDMiddleware(app)
+	periods, err := app.FindCollectionByNameOrId("art_periods")
+	if err != nil {
+		t.Fatalf("find art periods: %v", err)
+	}
+	if err := app.Delete(periods); err != nil {
+		t.Fatalf("delete art periods: %v", err)
+	}
+
+	recorder := serveArtistRecordRequest(t, app, "/artists/synthetic-artist-artistone000001?token=secret-value", false)
+	if recorder.Code != http.StatusInternalServerError {
+		t.Fatalf("status = %d, want 500", recorder.Code)
+	}
+
+	requestID := recorder.Header().Get("X-Request-ID")
+	if requestID == "" {
+		t.Fatal("response must contain a server-generated request ID")
+	}
+	log := output.String()
+	for _, expected := range []string{
+		`"event":"artists.record_view.step_failed"`,
+		`"event":"artists.record_view.failed"`,
+		`"step":"list_matching_art_periods"`,
+		`"request_id":"` + requestID + `"`,
+		`"error":"[REDACTED]"`,
+	} {
+		if !strings.Contains(log, expected) {
+			t.Errorf("log missing %q: %s", expected, log)
+		}
+	}
+	if strings.Contains(log, "secret-value") {
+		t.Errorf("log must not include request input: %s", log)
+	}
+}
+
 func TestArtistRecordViewResolvesMetadataPortraitAndParity(t *testing.T) {
 	app := newArtistRecordApp(t)
 	seedPublishedArtist(t, app)
@@ -290,7 +339,7 @@ func TestArtistRecordViewResolvesMetadataPortraitAndParity(t *testing.T) {
 	if err != nil {
 		t.Fatalf("find artist: %v", err)
 	}
-	view, err := buildArtistRecordView(app, artist)
+	view, err := buildArtistRecordView(app, artist, app.Logger())
 	if err != nil {
 		t.Fatalf("build view: %v", err)
 	}
@@ -344,7 +393,7 @@ func TestArtistRecordViewSanitisesBiographyAndAnnotatesGlossary(t *testing.T) {
 	if err != nil {
 		t.Fatalf("find artist: %v", err)
 	}
-	view, err := buildArtistRecordView(app, artist)
+	view, err := buildArtistRecordView(app, artist, app.Logger())
 	if err != nil {
 		t.Fatalf("build view: %v", err)
 	}
@@ -388,7 +437,7 @@ func TestArtistRecordViewDegradesWithoutGlossary(t *testing.T) {
 	if err != nil {
 		t.Fatalf("find artist: %v", err)
 	}
-	view, err := buildArtistRecordView(app, artist)
+	view, err := buildArtistRecordView(app, artist, app.Logger())
 	if err != nil {
 		t.Fatalf("build view: %v", err)
 	}
@@ -412,7 +461,7 @@ func TestArtistRecordViewUsesOriginalPortraitWhenNarrower(t *testing.T) {
 	if err != nil {
 		t.Fatalf("find artist: %v", err)
 	}
-	view, err := buildArtistRecordView(app, artist)
+	view, err := buildArtistRecordView(app, artist, app.Logger())
 	if err != nil {
 		t.Fatalf("build view: %v", err)
 	}
@@ -436,7 +485,7 @@ func TestArtistRecordViewFallsBackToWorkImageWithoutPortrait(t *testing.T) {
 	if err != nil {
 		t.Fatalf("find artist: %v", err)
 	}
-	view, err := buildArtistRecordView(app, artist)
+	view, err := buildArtistRecordView(app, artist, app.Logger())
 	if err != nil {
 		t.Fatalf("build view: %v", err)
 	}
@@ -460,7 +509,7 @@ func TestArtistRecordViewUsesCanonicalPublishedWorkLinks(t *testing.T) {
 	if err != nil {
 		t.Fatalf("find artist: %v", err)
 	}
-	view, err := buildArtistRecordView(app, artist)
+	view, err := buildArtistRecordView(app, artist, app.Logger())
 	if err != nil {
 		t.Fatalf("build view: %v", err)
 	}
@@ -487,7 +536,7 @@ func TestArtistRecordViewMatchesPeriodMusic(t *testing.T) {
 	if err != nil {
 		t.Fatalf("find artist: %v", err)
 	}
-	view, err := buildArtistRecordView(app, artist)
+	view, err := buildArtistRecordView(app, artist, app.Logger())
 	if err != nil {
 		t.Fatalf("build view: %v", err)
 	}
@@ -534,7 +583,7 @@ func TestArtistRecordViewBuildsSelectionPreviewsAboveThreshold(t *testing.T) {
 	if err != nil {
 		t.Fatalf("find artist: %v", err)
 	}
-	view, err := buildArtistRecordView(app, artist)
+	view, err := buildArtistRecordView(app, artist, app.Logger())
 	if err != nil {
 		t.Fatalf("build view: %v", err)
 	}
@@ -591,7 +640,7 @@ func TestArtistRecordViewOmitsPreviewsBelowThreshold(t *testing.T) {
 			if err != nil {
 				t.Fatalf("find artist: %v", err)
 			}
-			view, err := buildArtistRecordView(app, artist)
+			view, err := buildArtistRecordView(app, artist, app.Logger())
 			if err != nil {
 				t.Fatalf("build view: %v", err)
 			}
@@ -627,7 +676,7 @@ func TestArtistRecordViewExcludesForeignSelections(t *testing.T) {
 	if err != nil {
 		t.Fatalf("find artist: %v", err)
 	}
-	view, err := buildArtistRecordView(app, artist)
+	view, err := buildArtistRecordView(app, artist, app.Logger())
 	if err != nil {
 		t.Fatalf("build view: %v", err)
 	}

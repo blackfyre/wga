@@ -226,7 +226,9 @@ func (m Monitor) intercept(e *core.RequestEvent, next func() error, responseStat
 		m.report(failure)
 	} else if err == nil && responseStatus() >= 500 {
 		failure := m.failure(e, nil, responseStatus(), false)
-		m.report(failure)
+		if !errors.Is(failure.cause, context.Canceled) && !errors.Is(failure.cause, context.DeadlineExceeded) {
+			m.report(failure)
+		}
 	}
 
 	return err

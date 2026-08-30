@@ -1,8 +1,12 @@
 package artists
 
 import (
+	"bytes"
+	"errors"
+	"log/slog"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/blackfyre/wga/internal/assets/templ/components"
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
@@ -12,6 +16,29 @@ import (
 	"github.com/blackfyre/wga/internal/utils/glossary"
 	"github.com/pocketbase/pocketbase/core"
 )
+
+func TestArtistRecordStepFailureLogIsDiagnosableAndRedacted(t *testing.T) {
+	var output bytes.Buffer
+	logger := slog.New(slog.NewJSONHandler(&output, nil))
+
+	logArtistRecordStepFailure(logger, "list_published_works", time.Now(), errors.New("token=secret-value"))
+
+	log := output.String()
+	for _, expected := range []string{
+		`"event":"artists.record_view.step_failed"`,
+		`"step":"list_published_works"`,
+		`"duration_ms":`,
+		`"error_type":"*errors.errorString"`,
+		`"error":"[REDACTED]"`,
+	} {
+		if !strings.Contains(log, expected) {
+			t.Errorf("log missing %q: %s", expected, log)
+		}
+	}
+	if strings.Contains(log, "secret-value") {
+		t.Errorf("log must redact error content: %s", log)
+	}
+}
 
 func TestArtistOpenGraphImagePrefersPortrait(t *testing.T) {
 	view := pages.ArtistView{
