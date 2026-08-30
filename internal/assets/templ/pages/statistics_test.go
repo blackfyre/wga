@@ -54,6 +54,11 @@ func TestStatisticsBlockRendersAccessibleSummaries(t *testing.T) {
 		"IT",
 		"TOTAL",
 		"SHARE",
+		"wga-enter",
+		"text-[32px]",
+		"md:text-[44px]",
+		"RECOMPUTED NIGHTLY FROM PUBLISHED RECORDS.",
+		"ARTISTS WITHOUT A RECORDED BIRTH YEAR ARE EXCLUDED FROM THE PERIOD CHARTS.",
 	} {
 		if !strings.Contains(rendered, expected) {
 			t.Errorf("expected rendered statistics to contain %q\ngot: %s", expected, rendered)
@@ -192,6 +197,7 @@ func TestStatisticsBlockRendersEmptyStates(t *testing.T) {
 	for _, unexpected := range []string{
 		"<noscript>",
 		"<table",
+		"TOTAL</p>",
 		"title=\"Italian\"",
 	} {
 		if strings.Contains(rendered, unexpected) {

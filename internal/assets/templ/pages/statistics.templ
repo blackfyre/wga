@@ -62,9 +62,9 @@ templ StatisticsBlock(c StatisticsPageDTO) {
 	<head>
 		<title>{ utils.GetTitle(ctx) }</title>
 	</head>
-	<section id="statistics" class="container mx-auto px-4 pb-20 pt-12 md:px-0">
+	<section id="statistics" class="container mx-auto px-4 pb-20 pt-12 md:px-0 wga-enter">
 		<p class="mb-3 font-mono text-[11px] tracking-[2px] text-base-content/60">15 — STATISTICS</p>
-		<h1 class="mb-3 text-[44px] font-semibold leading-[1.1] tracking-[-0.5px]">Statistics</h1>
+		<h1 class="mb-3 text-[32px] font-semibold leading-[1.1] tracking-[-0.5px] md:text-[44px]">Statistics</h1>
 		<p class="mb-11 max-w-[560px] leading-relaxed text-base-content/70">Published records only, grouped into fifty-year birth periods. Every chart is followed by the same figures as a table.</p>
 		<div class="mb-14 flex gap-8 border-y border-base-content/15 py-[26px] md:gap-16">
 			<div>
@@ -87,9 +87,15 @@ templ StatisticsBlock(c StatisticsPageDTO) {
 				</noscript>
 			}
 			<div class="mt-8 flex flex-col items-start gap-9 md:flex-row md:gap-14">
-				<div class="w-[210px] shrink-0 self-center md:w-[240px] md:self-start">
-					<canvas id="art-form-chart" role="img" aria-label="Art form distribution chart" aria-describedby="art-form-summary"></canvas>
-				</div>
+				if len(c.ArtFormSummary) > 0 {
+					<div class="relative w-[210px] shrink-0 self-center md:w-[240px] md:self-start">
+						<canvas id="art-form-chart" role="img" aria-label="Art form distribution chart" aria-describedby="art-form-summary"></canvas>
+						<div class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center" aria-hidden="true">
+							<p class="font-mono text-[10px] tracking-[1px] text-base-content/60">TOTAL</p>
+							<p class="mt-[3px] text-xl font-semibold tracking-[-0.3px]">{ c.ArtworkCount }</p>
+						</div>
+					</div>
+				}
 				<div class="w-full min-w-0 flex-1 md:w-auto">
 					@artFormSummary(c.ArtFormSummary)
 				</div>
@@ -123,6 +129,9 @@ templ StatisticsBlock(c StatisticsPageDTO) {
 			}
 			@schoolPeriodSummary("artists-period-summary", "Artists by school and birth period data", "No published artists are grouped by school and birth period.", c.ArtistsPeriodSummary)
 		</section>
+		<p class="mt-11 border-t border-base-content/15 pt-5 font-mono text-[10px] leading-relaxed text-base-content/60">
+			RECOMPUTED NIGHTLY FROM PUBLISHED RECORDS. ARTISTS WITHOUT A RECORDED BIRTH YEAR ARE EXCLUDED FROM THE PERIOD CHARTS. SCHOOLS OUTSIDE THE SEVEN LARGEST ARE GROUPED AS OTHER.
+		</p>
 		<div id="art-form-data" hidden data-json={ c.ArtFormData }></div>
 		<div id="artworks-period-data" hidden data-json={ c.ArtworksPeriodData }></div>
 		<div id="artists-period-data" hidden data-json={ c.ArtistsPeriodData }></div>
@@ -200,7 +209,7 @@ templ schoolLegend() {
 // column per school, plus a period total. When there are no rows it renders a
 // visible, announced absence state instead of an empty table.
 templ schoolPeriodSummary(id string, caption string, emptyMessage string, rows []StatisticsSchoolPeriodRow) {
-	<div id={ id } class="overflow-x-auto">
+	<div id={ id } class="mt-9 overflow-x-auto">
 		if len(rows) == 0 {
 			<p class="py-6 text-[15px] leading-relaxed text-base-content/70" role="status">{ emptyMessage }</p>
 		} else {
