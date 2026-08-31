@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"errors"
+	"fmt"
 	"io/fs"
 	"net/http"
 	"os"
@@ -17,6 +18,7 @@ import (
 	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/logging"
 	"github.com/blackfyre/wga/internal/utils"
+	"github.com/blackfyre/wga/internal/utils/sitemap"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 )
@@ -84,7 +86,17 @@ func RegisterHandlers(app core.App, environment config.Environment) {
 		})
 
 		// Sitemap
-		se.Router.GET("/sitemap/*", apis.Static(os.DirFS("./wga_sitemap"), false))
+		sitemapFiles := os.DirFS(sitemap.Directory(app))
+		se.Router.GET("/sitemap.xml", func(c *core.RequestEvent) error {
+			return c.FileFS(sitemapFiles, "sitemap.xml")
+		})
+		se.Router.GET("/sitemap/{path...}", apis.Static(sitemapFiles, false))
+		se.Router.GET("/sitemap.xsl", func(c *core.RequestEvent) error {
+			return c.Blob(http.StatusOK, "text/xsl; charset=utf-8", []byte(sitemapStylesheet(tmplUtils.AssetUrl("/assets/css/style.css"))))
+		})
+		se.Router.GET("/robots.txt", func(c *core.RequestEvent) error {
+			return c.String(http.StatusOK, "Sitemap: "+tmplUtils.AssetUrl("/sitemap.xml")+"\n")
+		})
 
 		// "Static" pages
 		se.Router.GET("/pages/{slug}", func(c *core.RequestEvent) error {
@@ -105,6 +117,18 @@ func RegisterHandlers(app core.App, environment config.Environment) {
 
 		return se.Next()
 	})
+}
+
+func sitemapStylesheet(cssURL string) string {
+	return fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <xsl:output method="html" encoding="UTF-8"/>
+  <xsl:template match="/">
+    <html><head><meta charset="utf-8"/><title>Web Gallery of Art sitemap</title><link rel="stylesheet" href="%s"/></head>
+    <body class="bg-base-100 text-base-content"><main class="mx-auto max-w-5xl px-6 py-12"><p class="text-sm tracking-widest">WEB GALLERY OF ART</p><h1 class="mt-4 text-4xl font-semibold">Sitemap</h1><ol class="mt-8 space-y-3"><xsl:for-each select="//*[local-name()='sitemap'] | //*[local-name()='url']"><li><a class="link link-primary" href="{*[local-name()='loc']}"><xsl:value-of select="*[local-name()='loc']"/></a></li></xsl:for-each></ol></main></body>
+    </html>
+  </xsl:template>
+</xsl:stylesheet>`, cssURL)
 }
 
 // visualOverhaulFooterFixture supplies a server-rendered footer fixture for

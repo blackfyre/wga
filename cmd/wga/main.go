@@ -109,8 +109,24 @@ func main() {
 	app.RootCmd.AddCommand(&cobra.Command{
 		Use:   "generate-sitemap",
 		Short: "Generate sitemap",
-		Run: func(cmd *cobra.Command, args []string) {
-			sitemap.GenerateSiteMap(app, sitemapConfig)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			result, err := sitemap.GenerateSiteMap(app, sitemapConfig)
+			if err != nil {
+				return err
+			}
+			app.Logger().Info("Sitemap generation completed",
+				"event", "sitemap.generation.completed",
+				"trigger", "manual",
+				"url_count", result.URLCount,
+				"excluded_count", result.ExcludedCount,
+			)
+			if result.CleanupErr != nil {
+				app.Logger().Warn("Sitemap cleanup failed",
+					"event", "sitemap.generation.cleanup_failed",
+					"error_type", logging.ErrorType(result.CleanupErr),
+				)
+			}
+			return nil
 		},
 	})
 

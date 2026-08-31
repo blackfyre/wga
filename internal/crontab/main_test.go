@@ -6,6 +6,8 @@ import (
 
 	"github.com/blackfyre/wga/internal/config"
 	"github.com/pocketbase/pocketbase"
+	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/tests"
 	"github.com/pocketbase/pocketbase/tools/cron"
 )
 
@@ -63,4 +65,28 @@ func jobIDs(jobs []*cron.Job) []string {
 		ids = append(ids, job.Id())
 	}
 	return ids
+}
+
+func TestRunSitemapFailureReturnsWithoutStoppingApp(t *testing.T) {
+	app, err := tests.NewTestAppWithConfig(core.BaseAppConfig{DataDir: t.TempDir(), EncryptionEnv: "test-encryption-key"})
+	if err != nil {
+		t.Fatalf("create test app: %v", err)
+	}
+	t.Cleanup(app.Cleanup)
+
+	cfg := config.LoadFrom(func(key string) string {
+		return map[string]string{
+			"WGA_ENV":      "test",
+			"WGA_PROTOCOL": "https",
+			"WGA_HOSTNAME": "gallery.example",
+		}[key]
+	})
+	sitemapConfig, err := cfg.Sitemap()
+	if err != nil {
+		t.Fatalf("load sitemap config: %v", err)
+	}
+
+	if err := runSitemap(app, sitemapConfig, "scheduled"); err == nil {
+		t.Fatal("expected sitemap generation error with no source collections")
+	}
 }

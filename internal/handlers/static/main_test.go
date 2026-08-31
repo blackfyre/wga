@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -12,6 +14,7 @@ import (
 	"github.com/blackfyre/wga/internal/handlers/landing"
 	"github.com/blackfyre/wga/internal/testutils"
 	apputils "github.com/blackfyre/wga/internal/utils"
+	"github.com/blackfyre/wga/internal/utils/sitemap"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
@@ -187,6 +190,53 @@ func configureStaticPublicURL(t testing.TB) {
 	}
 	apputils.ConfigurePublicURL(server.PublicURL)
 	t.Cleanup(func() { apputils.ConfigurePublicURL(config.PublicURL{}) })
+}
+
+func writeSitemapFiles(t testing.TB, app core.App) {
+	t.Helper()
+	directory := sitemap.Directory(app)
+	if err := os.MkdirAll(directory, 0o755); err != nil {
+		t.Fatalf("create sitemap directory: %v", err)
+	}
+	index := `<?xml version="1.0"?><sitemapindex><sitemap><loc>https://gallery.example/sitemap/artists.xml</loc></sitemap></sitemapindex>`
+	child := `<?xml version="1.0"?><urlset><url><loc>https://gallery.example/artists/jane-artist</loc></url></urlset>`
+	for filename, content := range map[string]string{"sitemap.xml": index, "artists.xml": child} {
+		if err := os.WriteFile(filepath.Join(directory, filename), []byte(content), 0o644); err != nil {
+			t.Fatalf("write %s: %v", filename, err)
+		}
+	}
+}
+
+func TestSitemapRoutesServeCanonicalFilesAndDiscovery(t *testing.T) {
+	cases := []struct {
+		path     string
+		contains string
+	}{
+		{path: "/sitemap.xml", contains: "sitemapindex"},
+		{path: "/sitemap/artists.xml", contains: "urlset"},
+		{path: "/robots.txt", contains: "Sitemap: https://gallery.example/sitemap.xml"},
+		{path: "/sitemap.xsl", contains: `href="https://gallery.example/assets/css/style.css"`},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.path, func(t *testing.T) {
+			scenario := tests.ApiScenario{
+				Name:            tc.path,
+				Method:          http.MethodGet,
+				URL:             tc.path,
+				ExpectedStatus:  http.StatusOK,
+				ExpectedContent: []string{tc.contains},
+				TestAppFactory: func(t testing.TB) *tests.TestApp {
+					configureStaticPublicURL(t)
+					app := newStaticTestApp(t)
+					writeSitemapFiles(t, app)
+					RegisterHandlers(app, config.EnvironmentProduction)
+					return app
+				},
+			}
+			scenario.Test(t)
+		})
+	}
 }
 
 func TestStaticPageRouteRendersManagedPageWithMetadataAndContents(t *testing.T) {
