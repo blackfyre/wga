@@ -38,6 +38,7 @@ func TestEligibleForTrustedHeadMarkup(t *testing.T) {
 		{name: "api boundary rejected", method: http.MethodGet, path: "/api/collections/strings", accept: "text/html", want: false},
 		{name: "pocketbase internal boundary rejected", method: http.MethodGet, path: "/_/health", accept: "text/html", want: false},
 		{name: "assets boundary rejected", method: http.MethodGet, path: "/assets/css/style.css", accept: "text/html", want: false},
+		{name: "health boundary rejected", method: http.MethodGet, path: "/health", accept: "text/html", want: false},
 		{name: "sitemap boundary rejected", method: http.MethodGet, path: "/sitemap/sitemap.xml", accept: "text/html", want: false},
 		{name: "visual overhaul boundary rejected", method: http.MethodGet, path: "/tmp/visual-overhaul", accept: "text/html", want: false},
 		{name: "similar prefix is not a boundary", method: http.MethodGet, path: "/apian", accept: "text/html", want: true},

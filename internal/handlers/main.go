@@ -11,6 +11,7 @@ import (
 	"github.com/blackfyre/wga/internal/handlers/feedback"
 	"github.com/blackfyre/wga/internal/handlers/glossary"
 	"github.com/blackfyre/wga/internal/handlers/guestbook"
+	"github.com/blackfyre/wga/internal/handlers/health"
 	"github.com/blackfyre/wga/internal/handlers/inspire"
 	itineraryhandlers "github.com/blackfyre/wga/internal/handlers/itineraries"
 	"github.com/blackfyre/wga/internal/handlers/keyboard"
@@ -54,6 +55,7 @@ func RegisterHandlers(app *pocketbase.PocketBase, environment config.Environment
 	glossary.RegisterHandlers(app)
 	music.RegisterHandlers(app)
 	guestbook.RegisterHandlers(app, clientIdentity)
+	health.RegisterHandlers(app)
 	keyboard.RegisterHandlers(app)
 	artists.RegisterHandlers(app, environment)
 	postcards.RegisterPostcardHandlers(app, p, captcha, postcardKeyring, captchaVerifier, clientIdentity)
