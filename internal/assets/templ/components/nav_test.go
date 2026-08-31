@@ -146,6 +146,17 @@ func TestTopNavDoesNotDuplicateAppearanceControl(t *testing.T) {
 	}
 }
 
+func TestTopNavDoesNotExposeKeyboardHelp(t *testing.T) {
+	var output bytes.Buffer
+	if err := TopNav().Render(context.Background(), &output); err != nil {
+		t.Fatalf("render top navigation: %v", err)
+	}
+
+	if strings.Contains(output.String(), `data-keyboard-help`) {
+		t.Fatal("keyboard help belongs in the keyboard bar, not the top navigation")
+	}
+}
+
 func TestTopNavKeepsMobileIdentityOutsideDisclosureContent(t *testing.T) {
 	var output bytes.Buffer
 	if err := TopNav().Render(context.Background(), &output); err != nil {

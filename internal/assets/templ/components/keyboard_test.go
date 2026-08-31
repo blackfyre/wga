@@ -141,6 +141,21 @@ func TestKeyboardHelpDocumentsTourPageTurns(t *testing.T) {
 	}
 }
 
+func TestKeyboardLayerExposesHelpFromKeyboardBar(t *testing.T) {
+	var output bytes.Buffer
+	if err := KeyboardLayer().Render(context.Background(), &output); err != nil {
+		t.Fatalf("render keyboard layer: %v", err)
+	}
+
+	rendered := output.String()
+	if count := strings.Count(rendered, `data-keyboard-help`); count != 1 {
+		t.Fatalf("expected one keyboard-bar help control, got %d", count)
+	}
+	if !strings.Contains(rendered, `? ALL KEYS`) {
+		t.Fatal("expected the keyboard bar help control")
+	}
+}
+
 func keyboardPayload(t *testing.T, rendered string) []KeyboardScreen {
 	t.Helper()
 	matches := regexp.MustCompile(`data-json="([^"]*)"`).FindStringSubmatch(rendered)
