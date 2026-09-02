@@ -10,6 +10,7 @@ import (
 	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/logging"
+	postcardworkflow "github.com/blackfyre/wga/internal/postcards"
 	"github.com/blackfyre/wga/internal/utils"
 	asseturl "github.com/blackfyre/wga/internal/utils/url"
 	"github.com/pocketbase/pocketbase/core"
@@ -21,7 +22,11 @@ func sendPostcard(app core.App, c *core.RequestEvent, captcha config.Captcha) er
 		logging.RequestLogger(app, c).Warn("Postcard form request rejected", "event", "postcard.form.rejected", "outcome", "missing_artwork_id")
 		return utils.BadRequestError(c)
 	}
-	return renderForm(artworkID, pages.PostcardComposeView{}, "", http.StatusOK, app, c, captcha)
+	submissionKey, err := postcardworkflow.NewSubmissionKey()
+	if err != nil {
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
+	}
+	return renderForm(artworkID, pages.PostcardComposeView{SubmissionKey: submissionKey}, "", http.StatusOK, app, c, captcha)
 }
 
 func renderForm(artworkID string, values pages.PostcardComposeView, formError string, status int, app core.App, c *core.RequestEvent, captcha config.Captcha) error {
@@ -46,6 +51,7 @@ func renderForm(artworkID string, values pages.PostcardComposeView, formError st
 		return utils.NotFoundError(c)
 	}
 	values.ArtistFilingName = author.GetString("filing_name")
+	values.MusicAvailable = resolveRecipientMusic(app, true, record).SongID != ""
 	if image := record.GetString("image"); image != "" {
 		values.Image = asseturl.GenerateArtworkImageURL(record, asseturl.DeliveryProfilePostcardSmallDualPlate, "")
 	} else {
@@ -54,8 +60,9 @@ func renderForm(artworkID string, values pages.PostcardComposeView, formError st
 
 	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, "Send a postcard")
 	var buf bytes.Buffer
-	if c.Request.Header.Get("HX-Request") == "true" {
-		err = pages.PostcardComposeDialog(values).Render(ctx, &buf)
+	c.Response.Header().Add("Vary", "HX-Request")
+	if utils.IsHtmxRequest(c) {
+		err = pages.PostcardComposeBlock(values).Render(ctx, &buf)
 	} else {
 		err = pages.PostcardComposePage(values).Render(ctx, &buf)
 	}

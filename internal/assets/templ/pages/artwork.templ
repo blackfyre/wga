@@ -92,7 +92,7 @@ templ ArtworkBlock(aw dto.Artwork) {
 					@components.MetaList(artworkMetaEntries(aw))
 				</div>
 				<div class="mt-7 flex flex-col gap-2.5">
-					<a href="#" hx-on:click="wga.dialog.open();" hx-get={ `/postcard/send?awid=` + aw.Id } hx-target="#d" hx-swap="innerHTML" hx-select=".modal-box, form[method=dialog].modal-backdrop" class="flex h-[50px] w-full items-center justify-center bg-primary px-5 font-mono text-[11px] tracking-[1.5px] text-primary-content hover:opacity-85">SEND AS POSTCARD →</a>
+					<a href={ `/postcard/send?awid=` + aw.Id } class="flex h-[50px] w-full items-center justify-center bg-primary px-5 font-mono text-[11px] tracking-[1.5px] text-primary-content hover:opacity-85">SEND AS POSTCARD →</a>
 					@components.AddToItineraryAction(aw.Id, components.AddToItineraryBlock)
 				</div>
 				@artworkPaletteBlock(aw)

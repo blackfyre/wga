@@ -1,41 +1,32 @@
-<mjml>
+<mjml lang="en">
   <mj-head>
-    <mj-attributes>
-      <mj-all font-family="Helvetica" />
-    </mj-attributes>
     <mj-title>{{.Title}}</mj-title>
+    <mj-preview>{{.ArtworkTitle}}: a postcard from {{.SenderName}}. The link stays open for 30 days.</mj-preview>
+    <mj-breakpoint width="620px" />
+    <mj-attributes>
+      <mj-all font-family="Georgia, 'Times New Roman', serif" />
+      <mj-text color="#2A2822" font-size="16px" line-height="26px" padding="0" />
+      <mj-section padding="0" />
+      <mj-wrapper padding="0" />
+      <mj-class name="label" font-family="'Courier New', Courier, monospace" font-size="10px" line-height="14px" letter-spacing="1.5px" color="#5F5A54" />
+      <mj-class name="meta" font-family="Arial, Helvetica, sans-serif" font-size="12px" line-height="19px" color="#5F5A54" />
+      <mj-class name="caption" font-size="16px" line-height="22px" color="#1C1C1A" />
+      <mj-class name="fine" font-family="Arial, Helvetica, sans-serif" font-size="11px" line-height="19px" color="#6E685F" />
+    </mj-attributes>
+    <mj-style> a { color: #003366; } @media only screen and (max-width:620px) { .headline div { font-size: 26px !important; line-height: 32px !important; } } </mj-style>
   </mj-head>
-  <mj-body>
-    <mj-section>
-      <mj-column>
-        <mj-image
-          align="left"
-          container-background-color="#013365"
-          src="{{.LogoUrl}}"
-          alt="Web Gallery of Art Logo"
-          width="318px"
-          padding="0"
-        ></mj-image>
-
-        <mj-text font-size="20px" color="#013365">Postcard for you!</mj-text>
-        <mj-text color="#013365">Hello There!</mj-text>
-        <mj-text color="#013365"
-          >{{.SenderName}} has left postcard for you to pick up at the Web
-          Gallery of Art!</mj-text
-        >
-
-        <mj-button
-          background-color="#013365"
-          color="white"
-          href="{{.PickUpUrl}}"
-        >
-          Pickup my Postcard!
-        </mj-button>
-
-        <mj-text
-          >This link expires after 30 days, so pick up your postcard soon.</mj-text
-        >
-      </mj-column>
-    </mj-section>
+  <mj-body background-color="#EDE8DE" width="600px">
+    <mj-section><mj-column><mj-spacer height="28px" /></mj-column></mj-section>
+    <mj-wrapper background-color="#FBFAF7" border="1px solid #DBD5C8">
+      <mj-section background-color="#003366" padding="15px 26px"><mj-group><mj-column width="70%"><mj-text color="#F4F2ED" font-size="17px" line-height="20px" letter-spacing="2px" text-transform="uppercase">Web Gallery of Art</mj-text></mj-column><mj-column width="30%"><mj-text mj-class="label" align="right" color="#A8BDD4" line-height="20px">POSTCARD</mj-text></mj-column></mj-group></mj-section>
+      <mj-raw>{{if .ArtworkImageURL}}</mj-raw><mj-section padding="0"><mj-column><mj-image src="{{.ArtworkImageURL}}" alt="{{.ArtworkTitle}}" padding="0" /></mj-column></mj-section><mj-raw>{{else}}</mj-raw><mj-section background-color="#E4E0D7" border-bottom="1px solid #DBD5C8"><mj-column><mj-text mj-class="label" align="center" line-height="16px" color="#68625B" padding="130px 26px">IMAGE — {{.ArtworkTitleUpper}}</mj-text></mj-column></mj-section><mj-raw>{{end}}</mj-raw>
+      <mj-section padding="34px 40px 0"><mj-column><mj-text mj-class="label" letter-spacing="2px">FROM {{.SenderNameUpper}}</mj-text><mj-text css-class="headline" font-size="31px" line-height="38px" color="#1C1C1A" padding="12px 0 0">A postcard is waiting for you</mj-text></mj-column></mj-section>
+      <mj-raw>{{if .Message}}</mj-raw><mj-section padding="22px 40px 0"><mj-column border-left="2px solid #003366" padding-left="18px"><mj-text font-size="17px" line-height="28px">{{.Message}}</mj-text></mj-column></mj-section><mj-raw>{{end}}</mj-raw>
+      <mj-section padding="30px 40px 0"><mj-column><mj-button href="{{.PickUpUrl}}" align="left" background-color="#003366" color="#F4F2ED" font-family="'Courier New', Courier, monospace" font-size="12px" line-height="16px" letter-spacing="1.5px" border-radius="0" inner-padding="15px 30px" padding="0">OPEN YOUR POSTCARD&nbsp;&rarr;</mj-button><mj-text mj-class="meta" color="#68625B" font-size="12px" line-height="18px" padding="12px 0 0">The link stays open for 30 days. No account needed.</mj-text></mj-column></mj-section>
+      <mj-section padding="30px 40px 0"><mj-column><mj-divider border-width="1px" border-style="solid" border-color="#DBD5C8" padding="0" /></mj-column></mj-section>
+      <mj-raw>{{if .HasArtwork}}</mj-raw><mj-section padding="22px 40px 0"><mj-column width="280px" vertical-align="top" padding-right="20px"><mj-text mj-class="label">THE WORK</mj-text><mj-text mj-class="caption" padding="9px 0 0">{{.ArtworkTitle}}</mj-text><mj-text mj-class="meta" padding="5px 0 0">{{.ArtworkDetails}}</mj-text></mj-column><mj-raw>{{if .MusicAvailable}}</mj-raw><mj-column width="230px" vertical-align="top"><mj-text mj-class="label">SENT WITH MUSIC</mj-text><mj-text mj-class="caption" padding="9px 0 0">{{.MusicPiece}}</mj-text><mj-text mj-class="meta" padding="5px 0 0">{{.MusicComposer}}<br />Plays on the postcard page, never here.</mj-text></mj-column><mj-raw>{{end}}</mj-raw></mj-section><mj-raw>{{end}}</mj-raw>
+      <mj-section padding="32px 40px 34px"><mj-column><mj-divider border-width="1px" border-style="solid" border-color="#DBD5C8" padding="0" /><mj-text mj-class="meta" font-size="13px" line-height="21px" color="#4A463F" padding="20px 0 0">Or browse the archive from the beginning: <a href="https://www.wga.hu/">45,000 works, 1100&ndash;1900</a>.</mj-text></mj-column></mj-section>
+    </mj-wrapper>
+    <mj-section padding="22px 8px 40px"><mj-column><mj-text mj-class="fine">You received this because someone sent you a postcard from the Web Gallery of Art. We keep no mailing list, so there is nothing to unsubscribe from &mdash; this address is deleted with the postcard.</mj-text><mj-text mj-class="fine" padding="14px 0 0">Web Gallery of Art &middot; Budapest, Hungary &middot; <a href="https://www.wga.hu/privacy">Privacy</a> &middot; <a href="https://github.com/sponsors/blackfyre">Support the archive</a></mj-text></mj-column></mj-section>
   </mj-body>
 </mjml>

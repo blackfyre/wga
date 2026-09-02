@@ -3,6 +3,7 @@ package postcards
 import (
 	"crypto/rand"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
@@ -21,6 +22,7 @@ const (
 	collectionPostcards        = "postcards"
 	collectionDeliveries       = "tracking_postcard_deliveries"
 	collectionDeliveryAttempts = "tracking_postcard_delivery_attempts"
+	collectionSenderControls   = "tracking_postcard_sender_controls"
 	defaultMaxAttempts         = 5
 	maxRecipients              = 5
 	maxSenderNameRunes         = 120
@@ -58,6 +60,7 @@ type QueueInput struct {
 	NotifySender  bool
 	IncludeMusic  bool
 	CorrelationID string
+	SubmissionKey string
 }
 
 // RecipientAccess contains the one-time delivery material and bounded public expiry.
@@ -70,8 +73,38 @@ type RecipientAccess struct {
 
 // QueueResult is the atomically persisted postcard and recipient access material.
 type QueueResult struct {
-	Postcard *core.Record
-	Access   []RecipientAccess
+	Postcard      *core.Record
+	Access        []RecipientAccess
+	SenderControl *SenderControlAccess
+	Duplicate     bool
+}
+
+// RecoverSubmission returns the original outcome for an active submission key.
+func RecoverSubmission(app core.App, keyring config.PostcardTokenKeyring, submissionKey string, now types.DateTime) (*QueueResult, bool, error) {
+	if !ValidRecipientToken(submissionKey) {
+		return nil, false, fmtInvalid("invalid submission key")
+	}
+	postcard, err := app.FindFirstRecordByFilter(collectionPostcards, "submission_key_hash = {:key}", map[string]any{"key": HashRecipientToken(submissionKey)})
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, false, nil
+	}
+	if err != nil {
+		return nil, false, err
+	}
+	control, err := RecoverSenderControl(app, keyring, postcard.Id, now)
+	if err != nil {
+		return nil, true, err
+	}
+	deliveries, err := app.FindRecordsByFilter(collectionDeliveries, "postcard = {:postcard}", "+id", 1, 0, map[string]any{"postcard": postcard.Id})
+	if err != nil || len(deliveries) != 1 {
+		return nil, true, ErrSenderControlUnavailable
+	}
+	delivery := deliveries[0]
+	token, err := recoverRecipientToken(keyring, delivery.Id, delivery.GetString("view_token_envelope"), delivery.GetString("view_token_hash"))
+	if err != nil {
+		return nil, true, ErrSenderControlUnavailable
+	}
+	return &QueueResult{Postcard: postcard, Access: []RecipientAccess{{DeliveryID: delivery.Id, Recipient: delivery.GetString("recipient"), Token: token, ExpiresAt: delivery.GetDateTime("view_expires_at")}}, SenderControl: control, Duplicate: true}, true, nil
 }
 
 // Queue atomically persists a postcard and its encrypted recipient access material.
@@ -104,9 +137,24 @@ func QueueWithAccess(app core.App, keyring config.PostcardTokenKeyring, input Qu
 	if input.CorrelationID == "" {
 		input.CorrelationID = uuid.NewString()
 	}
+	if input.SubmissionKey != "" && !ValidRecipientToken(input.SubmissionKey) {
+		return nil, fmtInvalid("invalid submission key")
+	}
+	submissionKeyHash := ""
+	if input.SubmissionKey != "" {
+		submissionKeyHash = HashRecipientToken(input.SubmissionKey)
+	}
 
 	result := &QueueResult{Access: make([]RecipientAccess, 0, len(recipients))}
 	err = app.RunInTransaction(func(txApp core.App) error {
+		if submissionKeyHash != "" {
+			existing, err := txApp.FindFirstRecordByFilter(collectionPostcards, "submission_key_hash = {:key}", map[string]any{"key": submissionKeyHash})
+			if err == nil {
+				result.Postcard = existing
+				result.Duplicate = true
+				return nil
+			}
+		}
 		if _, err := txApp.FindFirstRecordByFilter("artworks", "id = {:id} && published = true", map[string]any{"id": input.ImageID}); err != nil {
 			return ErrArtworkUnavailable
 		}
@@ -126,10 +174,37 @@ func QueueWithAccess(app core.App, keyring config.PostcardTokenKeyring, input Qu
 		postcard.Set("notify_sender", input.NotifySender)
 		postcard.Set("include_music", input.IncludeMusic)
 		postcard.Set("retention_until", now.Add(RecipientTokenValidity))
+		postcard.Set("submission_key_hash", submissionKeyHash)
 		if err := txApp.Save(postcard); err != nil {
 			return err
 		}
 		result.Postcard = postcard
+		if submissionKeyHash != "" {
+			controls, err := txApp.FindCollectionByNameOrId(collectionSenderControls)
+			if err != nil {
+				return err
+			}
+			token, err := newRecipientToken()
+			if err != nil {
+				return err
+			}
+			control := core.NewRecord(controls)
+			control.Set("postcard", postcard.Id)
+			control.Set("token_hash", HashRecipientToken(token))
+			control.Set("expires_at", now.Add(RecipientTokenValidity))
+			if err := txApp.Save(control); err != nil {
+				return err
+			}
+			envelope, err := sealSenderControlToken(keyring, control.Id, token)
+			if err != nil {
+				return err
+			}
+			control.Set("token_envelope", envelope)
+			if err := txApp.Save(control); err != nil {
+				return err
+			}
+			result.SenderControl = &SenderControlAccess{ControlID: control.Id, PostcardID: postcard.Id, Token: token, ExpiresAt: now.Add(RecipientTokenValidity)}
+		}
 
 		deliveries, err := txApp.FindCollectionByNameOrId(collectionDeliveries)
 		if err != nil {
@@ -184,6 +259,13 @@ func QueueWithAccess(app core.App, keyring config.PostcardTokenKeyring, input Qu
 	if err != nil {
 		return nil, err
 	}
+	if result.Duplicate {
+		recovered, found, err := RecoverSubmission(app, keyring, input.SubmissionKey, now)
+		if err != nil || !found {
+			return nil, ErrSenderControlUnavailable
+		}
+		return recovered, nil
+	}
 	return result, nil
 }
 
@@ -191,6 +273,7 @@ func validateQueueInput(input *QueueInput) error {
 	input.SenderName = strings.TrimSpace(input.SenderName)
 	input.SenderEmail = strings.TrimSpace(input.SenderEmail)
 	input.ImageID = strings.TrimSpace(input.ImageID)
+	input.SubmissionKey = strings.TrimSpace(input.SubmissionKey)
 	if input.SenderName == "" || strings.ContainsAny(input.SenderName, "\r\n") || utf8.RuneCountInString(input.SenderName) > maxSenderNameRunes {
 		return fmtInvalid("invalid sender name")
 	}
@@ -225,6 +308,11 @@ func newRecipientToken() (string, error) {
 		return "", err
 	}
 	return base64.RawURLEncoding.EncodeToString(material), nil
+}
+
+// NewSubmissionKey returns opaque retry material for one postcard send intent.
+func NewSubmissionKey() (string, error) {
+	return newRecipientToken()
 }
 
 // ValidRecipientToken rejects arbitrary IDs and non-canonical token encodings.

@@ -7,6 +7,7 @@ import (
 	"github.com/blackfyre/wga/internal/config"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/tools/types"
 )
 
 const (
@@ -94,6 +95,52 @@ func RewrapTokenKey(app core.App, keyring config.PostcardTokenKeyring, sourceKey
 				"id":       delivery.Id,
 				"previous": delivery.GetString("view_token_envelope"),
 			}).Execute()
+			if err != nil {
+				return errTokenRewrapFailed
+			}
+			updated, err := result.RowsAffected()
+			if err != nil || updated != 1 {
+				return errTokenRewrapFailed
+			}
+			rewrapped++
+		}
+
+		if rewrapped == limit {
+			return nil
+		}
+		var controls []struct {
+			ID string `db:"id"`
+		}
+		err = txApp.DB().NewQuery(`
+			SELECT id FROM postcard_sender_controls
+			WHERE revoked_at = '' AND expires_at > {:now}
+			AND substr(token_envelope, 1, length({:prefix})) = {:prefix}
+			ORDER BY id LIMIT {:limit}
+		`).Bind(dbx.Params{
+			"prefix": senderControlTokenEnvelopeVersion + "." + sourceKeyID + ".",
+			"limit":  limit - rewrapped,
+			"now":    types.NowDateTime(),
+		}).All(&controls)
+		if err != nil {
+			return errTokenRewrapFailed
+		}
+		for _, row := range controls {
+			control, err := txApp.FindRecordById(collectionSenderControls, row.ID)
+			if err != nil {
+				return errTokenRewrapFailed
+			}
+			token, err := recoverSenderControlToken(keyring, control.Id, control.GetString("token_envelope"), control.GetString("token_hash"))
+			if err != nil {
+				return errTokenRewrapFailed
+			}
+			envelope, err := sealSenderControlToken(keyring, control.Id, token)
+			if err != nil {
+				return errTokenRewrapFailed
+			}
+			result, err := txApp.DB().NewQuery(`
+				UPDATE postcard_sender_controls SET token_envelope = {:envelope}
+				WHERE id = {:id} AND token_envelope = {:previous}
+			`).Bind(dbx.Params{"envelope": envelope, "id": control.Id, "previous": control.GetString("token_envelope")}).Execute()
 			if err != nil {
 				return errTokenRewrapFailed
 			}

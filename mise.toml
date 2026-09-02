@@ -41,6 +41,10 @@ run = ["bun --version", "git --version", "go version"]
 description = "Generate Go templates from templ sources."
 run = "templ generate"
 
+[tasks."app:generate-emails"]
+description = "Compile MJML email sources into embedded HTML views."
+run = "bunx mjml resources/mjml/postcard_notification.mjml -o /tmp/wga-postcard-email.html && { printf '%s%s%s%s\\n' '{' '{define \"postcard:notification\"' '}' '}'; cat /tmp/wga-postcard-email.html; printf '\\n%s%s%s\\n' '{' '{end' '}}'; } > internal/assets/views/emails/postcard.html"
+
 [tasks."app:tidy-modules"]
 description = "Run go mod tidy to sync module dependencies."
 run = "go mod tidy"
@@ -56,6 +60,7 @@ run = [
   "rm -rf dist/wga",
 	"bun install",
 	"bun run build",
+	"mise run app:generate-emails",
 	"mise run app:generate-templates",
 	"go run ./cmd/generate-licences",
 	"mise run app:tidy-modules",
@@ -132,6 +137,10 @@ run = "templ generate --watch"
 description = "Watch and build CSS assets."
 run = "bun run build:watch:css"
 
+[tasks."watch:emails"]
+description = "Watch MJML email sources and update embedded HTML views."
+run = "bunx mjml --watch resources/mjml/postcard_notification.mjml -o internal/assets/views/emails/postcard.html"
+
 [tasks."services:up"]
 description = "Start local Mailpit, Garage, and Jaeger services."
 depends = ["services:jaeger"]
@@ -159,7 +168,7 @@ exit 1
 [tasks.dev]
 description = "Start local services, asset watchers, and template generation."
 alias = "up"
-run = "mise run services:up && mise run --jobs 3 watch:js ::: watch:templ ::: watch:css"
+run = "mise run services:up && mise run --jobs 4 watch:js ::: watch:templ ::: watch:css ::: watch:emails"
 
 [tasks."debug:chromium"]
 description = "Start a Chromium browser for debugging"

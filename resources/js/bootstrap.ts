@@ -790,9 +790,25 @@ const wgaInternal: wgaInternals = {
 				registerTourHelpers();
 				void maybeInitStatisticsCharts();
 			});
-			document.body.addEventListener("htmx:beforeSwap", () => {
+			document.body.addEventListener("htmx:beforeSwap", (evt) => {
 				glossaryClosePopup();
 				statisticsModule?.destroyStatisticsCharts();
+				const event = evt as CustomEvent<{ target: Element; xhr: XMLHttpRequest; shouldSwap: boolean; isError: boolean }>;
+				if (
+					event.detail.target.id === "postcard-compose" &&
+					[422, 429].includes(event.detail.xhr.status)
+				) {
+					event.detail.shouldSwap = true;
+					event.detail.isError = false;
+				}
+			});
+			document.body.addEventListener("htmx:afterSwap", () => {
+				const confirmation = document.getElementById(
+					"postcard-confirmation-title",
+				);
+				if (confirmation instanceof HTMLElement) {
+					confirmation.focus();
+				}
 			});
 
 			document.body.addEventListener("htmx:swapError", (evt) => {

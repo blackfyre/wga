@@ -10,6 +10,7 @@ analytics.txt
 # Go build related files
 dist/
 tmp/
+*.log
 
 # VSCode can output html from mjml
 */mjml/*.html

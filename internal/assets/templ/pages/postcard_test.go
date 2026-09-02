@@ -70,11 +70,11 @@ func renderPostcard(t *testing.T, component templ.Component) string {
 
 func TestPostcardComposeAndConfirmationProgressivelyEnhance(t *testing.T) {
 	var compose bytes.Buffer
-	if err := PostcardComposePage(PostcardComposeView{ImageID: "artwork-id", Image: "/image.jpg", Title: "Work", ArtistFilingName: "Artist, Filing"}).Render(context.Background(), &compose); err != nil {
+	if err := PostcardComposePage(PostcardComposeView{ImageID: "artwork-id", Image: "/image.jpg", Title: "Work", ArtistFilingName: "Artist, Filing", MusicAvailable: true}).Render(context.Background(), &compose); err != nil {
 		t.Fatal(err)
 	}
 	html := compose.String()
-	for _, fragment := range []string{`action="/postcard"`, `method="post"`, `hx-post="/postcard"`, `name="recipient"`, `maxlength="300"`, `name="include_music"`, `name="name"`, `name="email"`, "Artist, Filing"} {
+	for _, fragment := range []string{`action="/postcard"`, `method="post"`, `hx-post="/postcard"`, `name="recipients[]"`, `maxlength="300"`, `name="include_music"`, `name="name"`, `name="email"`, "Artist, Filing"} {
 		if !strings.Contains(html, fragment) {
 			t.Fatalf("compose missing %s", fragment)
 		}
@@ -86,6 +86,17 @@ func TestPostcardComposeAndConfirmationProgressivelyEnhance(t *testing.T) {
 	output := confirmation.String()
 	if !strings.Contains(output, "Postcard queued") || !strings.Contains(output, "r••••@example.test") || !strings.Contains(output, "token=opaque") {
 		t.Fatal("confirmation omits queued state, masked recipient, or recipient URL")
+	}
+}
+
+func TestPostcardComposerDisclosesMusicAvailability(t *testing.T) {
+	available := renderPostcard(t, PostcardComposeBlock(PostcardComposeView{ImageID: "artwork-id", Image: "/image.jpg", Title: "Work", ArtistFilingName: "Artist, Filing", MusicAvailable: true}))
+	if !strings.Contains(available, `name="include_music"`) {
+		t.Fatal("available music must be selectable")
+	}
+	unavailable := renderPostcard(t, PostcardComposeBlock(PostcardComposeView{ImageID: "artwork-id", Image: "/image.jpg", Title: "Work", ArtistFilingName: "Artist, Filing"}))
+	if strings.Contains(unavailable, `name="include_music"`) || !strings.Contains(unavailable, "Period music is not available for this work.") {
+		t.Fatal("unavailable music must be disclosed without a selectable control")
 	}
 }
 

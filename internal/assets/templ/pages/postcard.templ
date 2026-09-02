@@ -17,10 +17,23 @@ type PostcardComposeView struct {
 	SenderName    string
 	SenderEmail   string
 	Recipient     string
+	Recipients    []string
 	Message       string
 	IncludeMusic  bool
+	MusicAvailable bool
 	SiteKey       string
 	Error         string
+	SubmissionKey string
+}
+
+func (v PostcardComposeView) RecipientAt(index int) string {
+	if index < len(v.Recipients) {
+		return v.Recipients[index]
+	}
+	if index == 0 {
+		return v.Recipient
+	}
+	return ""
 }
 
 type PostcardConfirmationView struct {
@@ -69,10 +82,11 @@ templ PostcardComposeBlock(v PostcardComposeView) {
 				if v.ArtistFilingName != "" {
 					<p class="mt-1 font-mono text-[11px] text-base-content/60">{ v.ArtistFilingName }</p>
 				}
-				<a href="/artworks" hx-get="/artworks" class="mt-3 inline-block font-mono text-[11px] tracking-[1px] text-primary">CHANGE ARTWORK →</a>
+				<a href="/artworks" class="mt-3 inline-block font-mono text-[11px] tracking-[1px] text-primary">CHANGE ARTWORK →</a>
 			</figure>
-			<form id="postcard_create" action="/postcard" method="post" hx-post="/postcard" hx-target="#postcard-compose" hx-select="#postcard-compose" hx-swap="outerHTML" class="w-full max-w-[440px] flex-1">
+			<form id="postcard_create" action="/postcard" method="post" hx-post="/postcard" hx-target="#postcard-compose" hx-select="#postcard-compose" hx-swap="outerHTML" hx-disabled-elt="find button[type=submit]" class="w-full max-w-[440px] flex-1">
 				<input type="hidden" name="image_id" value={ v.ImageID }/>
+				<input type="hidden" name="submission_key" value={ v.SubmissionKey }/>
 				if v.Error != "" {
 					<p role="alert" class="mb-5 border border-error px-4 py-3 text-sm text-error">{ v.Error }</p>
 				}
@@ -80,9 +94,13 @@ templ PostcardComposeBlock(v PostcardComposeView) {
 					<label class="block font-mono text-[11px] tracking-[1px]">YOUR NAME<input class="mt-2 w-full border-b border-base-content bg-transparent px-0 py-2 text-sm" name="sender_name" value={ v.SenderName } maxlength="120" required autocomplete="name"/></label>
 					<label class="block font-mono text-[11px] tracking-[1px]">YOUR EMAIL<input class="mt-2 w-full border-b border-base-content bg-transparent px-0 py-2 text-sm" type="email" name="sender_email" value={ v.SenderEmail } maxlength="254" required autocomplete="email"/></label>
 				</div>
-				<label class="mb-5 block font-mono text-[11px] tracking-[1px]">RECIPIENT EMAIL<input class="mt-2 w-full border-b border-base-content bg-transparent px-0 py-2 text-sm" type="email" name="recipient" value={ v.Recipient } maxlength="254" required autocomplete="email"/></label>
+				<fieldset class="mb-5"><legend class="font-mono text-[11px] tracking-[1px]">RECIPIENT EMAILS</legend><p class="mt-2 text-sm text-base-content/60">Add up to five addresses.</p><input aria-label="RECIPIENT EMAIL 1" class="mt-2 w-full border-b border-base-content bg-transparent px-0 py-2 text-sm" type="email" name="recipients[]" value={ v.RecipientAt(0) } maxlength="254" required autocomplete="email"/><input aria-label="RECIPIENT EMAIL 2" class="mt-2 w-full border-b border-base-content bg-transparent px-0 py-2 text-sm" type="email" name="recipients[]" value={ v.RecipientAt(1) } maxlength="254" autocomplete="email"/><input aria-label="RECIPIENT EMAIL 3" class="mt-2 w-full border-b border-base-content bg-transparent px-0 py-2 text-sm" type="email" name="recipients[]" value={ v.RecipientAt(2) } maxlength="254" autocomplete="email"/><input aria-label="RECIPIENT EMAIL 4" class="mt-2 w-full border-b border-base-content bg-transparent px-0 py-2 text-sm" type="email" name="recipients[]" value={ v.RecipientAt(3) } maxlength="254" autocomplete="email"/><input aria-label="RECIPIENT EMAIL 5" class="mt-2 w-full border-b border-base-content bg-transparent px-0 py-2 text-sm" type="email" name="recipients[]" value={ v.RecipientAt(4) } maxlength="254" autocomplete="email"/></fieldset>
 				<label class="mb-6 block font-mono text-[11px] tracking-[1px]">MESSAGE — 300 CHARACTERS AT MOST<textarea class="mt-2 min-h-[110px] w-full resize-y border border-base-content/30 bg-transparent p-3 font-sans text-sm leading-relaxed" name="message" maxlength="300" required>{ v.Message }</textarea></label>
-				<label class="mb-6 flex items-center gap-3 border-y border-base-content/15 py-3.5 text-sm"><input type="checkbox" name="include_music" value="true" checked?={ v.IncludeMusic }/><span>Include period music</span></label>
+				if v.MusicAvailable {
+					<label class="mb-6 flex items-center gap-3 border-y border-base-content/15 py-3.5 text-sm"><input type="checkbox" name="include_music" value="true" checked?={ v.IncludeMusic }/><span>Include period music</span></label>
+				} else {
+					<p class="mb-6 border-y border-base-content/15 py-3.5 text-sm text-base-content/60">Period music is not available for this work.</p>
+				}
 				<label aria-hidden="true" class="hpt" for="name">Leave empty</label><input aria-hidden="true" class="hpt" tabindex="-1" autocomplete="off" id="name" name="name"/>
 				<label aria-hidden="true" class="hpt" for="email">Leave empty</label><input aria-hidden="true" class="hpt" tabindex="-1" autocomplete="off" id="email" name="email"/>
 				if v.SiteKey != "" {
@@ -110,9 +128,9 @@ templ PostcardConfirmationDialog(v PostcardConfirmationView) {
 }
 
 templ PostcardConfirmationBlock(v PostcardConfirmationView) {
-	<section id="postcard-compose" class="container mx-auto max-w-[520px] px-4 pb-20 pt-10 md:px-0">
+	<section id="postcard-compose" role="status" aria-live="polite" class="container mx-auto max-w-[520px] px-4 pb-20 pt-10 md:px-0">
 		<p aria-hidden="true" class="mb-6 flex h-11 w-11 items-center justify-center border border-primary font-mono text-lg text-primary">✓</p>
-		<h1 id="postcard-confirmation-title" data-dialog-title class="mb-3 text-[28px] font-semibold">Postcard queued</h1>
+		<h1 id="postcard-confirmation-title" data-dialog-title tabindex="-1" class="mb-3 text-[28px] font-semibold">Postcard queued</h1>
 		<p class="mb-2 leading-relaxed">Delivery is being prepared for <span class="font-mono text-sm">{ v.MaskedRecipient }</span>.</p>
 		<p class="mb-7 text-sm text-base-content/60">The private link remains valid until { v.Expires }.</p>
 		<a href={ templ.URL(v.ViewURL) } class="font-mono text-xs tracking-[1px] text-primary">VIEW THE POSTCARD →</a>
@@ -131,7 +149,7 @@ templ PostcardLandingContent() {
 		<p class="mb-3 font-mono text-[11px] tracking-[2px] text-base-content/60">POSTCARDS</p>
 		<h1 class="mb-3 text-[44px] font-semibold leading-tight tracking-[-0.5px]">Postcards</h1>
 		<p class="mb-10 max-w-[560px] text-base leading-relaxed text-base-content/70">Postcards are composed from published artwork pages. Choose a work from the collection to send it to a recipient as a private link with your message.</p>
-		<a href="/artworks" hx-get="/artworks" class="inline-block bg-primary px-6 py-4 font-mono text-xs tracking-[1.5px] text-primary-content hover:opacity-85">BROWSE ARTWORKS →</a>
+		<a href="/artworks" class="inline-block bg-primary px-6 py-4 font-mono text-xs tracking-[1.5px] text-primary-content hover:opacity-85">BROWSE ARTWORKS →</a>
 	</section>
 }
 

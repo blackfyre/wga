@@ -16,6 +16,8 @@ import (
 
 const recipientTokenEnvelopeVersion = "v1"
 
+const senderControlTokenEnvelopeVersion = "v1"
+
 var (
 	errInvalidRecipientTokenEnvelope = errors.New("postcard recipient access material is invalid")
 	errInvalidRecipientTokenKeyring  = errors.New("postcard token keyring is invalid")
@@ -48,6 +50,51 @@ func sealRecipientToken(keyring config.PostcardTokenKeyring, deliveryID string, 
 	payload = append(payload, sealed...)
 
 	return recipientTokenEnvelopeVersion + "." + keyID + "." + base64.RawURLEncoding.EncodeToString(payload), nil
+}
+
+func sealSenderControlToken(keyring config.PostcardTokenKeyring, controlID string, token string) (string, error) {
+	if controlID == "" || !ValidRecipientToken(token) {
+		return "", errInvalidRecipientTokenEnvelope
+	}
+	keyID, key, err := activeRecipientTokenKey(keyring)
+	if err != nil {
+		return "", err
+	}
+	gcm, err := recipientTokenGCM(key)
+	if err != nil {
+		return "", errInvalidRecipientTokenKeyring
+	}
+	nonce := make([]byte, gcm.NonceSize())
+	if _, err := rand.Read(nonce); err != nil {
+		return "", errors.New("postcard sender control material could not be protected")
+	}
+	sealed := gcm.Seal(nil, nonce, []byte(token), []byte("sender-control:"+controlID))
+	payload := append(nonce, sealed...)
+	return senderControlTokenEnvelopeVersion + "." + keyID + "." + base64.RawURLEncoding.EncodeToString(payload), nil
+}
+
+func recoverSenderControlToken(keyring config.PostcardTokenKeyring, controlID string, envelope string, storedHash string) (string, error) {
+	keyID, encodedPayload, ok := recipientTokenEnvelopeParts(envelope)
+	if controlID == "" || !ok {
+		return "", errInvalidRecipientTokenEnvelope
+	}
+	key, ok := keyring.Key(keyID)
+	if !ok {
+		return "", errInvalidRecipientTokenEnvelope
+	}
+	payload, err := base64.RawURLEncoding.DecodeString(encodedPayload)
+	if err != nil || base64.RawURLEncoding.EncodeToString(payload) != encodedPayload {
+		return "", errInvalidRecipientTokenEnvelope
+	}
+	gcm, err := recipientTokenGCM(key)
+	if err != nil || len(payload) < gcm.NonceSize()+gcm.Overhead() {
+		return "", errInvalidRecipientTokenEnvelope
+	}
+	token, err := gcm.Open(nil, payload[:gcm.NonceSize()], payload[gcm.NonceSize():], []byte("sender-control:"+controlID))
+	if err != nil || !recipientTokenHashMatches(string(token), storedHash) {
+		return "", errInvalidRecipientTokenEnvelope
+	}
+	return string(token), nil
 }
 
 // recoverRecipientToken authenticates and opens a delivery-bound envelope,

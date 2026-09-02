@@ -89,7 +89,7 @@ func TestSavePostcardCaptchaFailuresDoNotPersist(t *testing.T) {
 			verifier: func(context.Context, string, string) (bool, error) {
 				return false, nil
 			},
-			wantCode: http.StatusBadRequest,
+			wantCode: http.StatusUnprocessableEntity,
 		},
 		{
 			name: "provider failure returns server fault",
@@ -101,6 +101,7 @@ func TestSavePostcardCaptchaFailuresDoNotPersist(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			app := testutils.NewTestApp(t)
+			artworkID := installComposeArtwork(t, app, "Work")
 			collection := core.NewBaseCollection("postcards")
 			if err := app.Save(collection); err != nil {
 				t.Fatalf("create postcards collection: %v", err)
@@ -110,7 +111,7 @@ func TestSavePostcardCaptchaFailuresDoNotPersist(t *testing.T) {
 				"sender_email":         {"sender@example.test"},
 				"recipients[]":         {"recipient@example.test"},
 				"message":              {"message"},
-				"image_id":             {"image-id"},
+				"image_id":             {artworkID},
 				"g-recaptcha-response": {"captcha-token"},
 			}
 			recorder := httptest.NewRecorder()
@@ -123,9 +124,13 @@ func TestSavePostcardCaptchaFailuresDoNotPersist(t *testing.T) {
 			}
 			event.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-			_ = savePostcard(app, event, bluemonday.NewPolicy(), protectedCaptcha(t), config.PostcardTokenKeyring{}, test.verifier, newSubmissionLimiter(3, 10*time.Minute), requesttrust.New(requesttrust.SourceDirect))
+			limiter := newSubmissionLimiter(3, 10*time.Minute)
+			_ = savePostcard(app, event, bluemonday.NewPolicy(), protectedCaptcha(t), config.PostcardTokenKeyring{}, test.verifier, limiter, requesttrust.New(requesttrust.SourceDirect))
 			if recorder.Code != test.wantCode {
 				t.Fatalf("status = %d, want %d", recorder.Code, test.wantCode)
+			}
+			if len(limiter.windows) != 0 {
+				t.Fatal("CAPTCHA failure consumed the postcard send allowance")
 			}
 			records, err := app.FindRecordsByFilter("postcards", "", "", 0, 0)
 			if err != nil {

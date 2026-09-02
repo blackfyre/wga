@@ -22,7 +22,7 @@ func TestRewrapTokenKeyBoundsSelectionAndPreservesDeliveryState(t *testing.T) {
 	if _, err := QueueWithAccess(app, oldOnly, QueueInput{
 		SenderName: "Sender", SenderEmail: "sender@example.test",
 		Recipients: []string{"first@example.test", "second@example.test", "third@example.test"},
-		Message: "Hello", ImageID: artworkID,
+		Message:    "Hello", ImageID: artworkID,
 	}, types.NowDateTime()); err != nil {
 		t.Fatal(err)
 	}
@@ -90,7 +90,7 @@ func TestRewrapTokenKeyRollsBackWholeBatchOnCorruption(t *testing.T) {
 	if _, err := QueueWithAccess(app, oldOnly, QueueInput{
 		SenderName: "Sender", SenderEmail: "sender@example.test",
 		Recipients: []string{"first@example.test", "second@example.test"},
-		Message: "Hello", ImageID: artworkID,
+		Message:    "Hello", ImageID: artworkID,
 	}, types.NowDateTime()); err != nil {
 		t.Fatal(err)
 	}
@@ -112,6 +112,35 @@ func TestRewrapTokenKeyRollsBackWholeBatchOnCorruption(t *testing.T) {
 	}
 	if deliveries[1].GetString("view_token_envelope") != corruptEnvelope {
 		t.Fatal("corrupt row changed despite transaction rollback")
+	}
+}
+
+func TestRewrapTokenKeyRewrapsLiveSenderControls(t *testing.T) {
+	app := testutils.NewTestApp(t)
+	artworkID := installPostcardSchema(t, app)
+	oldKey := bytes.Repeat([]byte{0x51}, 32)
+	newKey := bytes.Repeat([]byte{0x52}, 32)
+	oldOnly := testPostcardKeyring(t, "old", map[string][]byte{"old": oldKey})
+	rotation := testPostcardKeyring(t, "new", map[string][]byte{"old": oldKey, "new": newKey})
+	newOnly := testPostcardKeyring(t, "new", map[string][]byte{"new": newKey})
+	queued, err := QueueWithAccess(app, oldOnly, QueueInput{SenderName: "Sender", SenderEmail: "sender@example.test", Recipients: []string{"recipient@example.test"}, Message: "Hello", ImageID: artworkID}, types.NowDateTime())
+	if err != nil {
+		t.Fatal(err)
+	}
+	access, err := IssueSenderControl(app, oldOnly, queued.Postcard.Id, types.NowDateTime())
+	if err != nil {
+		t.Fatal(err)
+	}
+	count, err := RewrapTokenKey(app, rotation, "old", 2)
+	if err != nil || count != 2 {
+		t.Fatalf("rewrap sender control count=%d error=%v", count, err)
+	}
+	control, err := app.FindRecordById(collectionSenderControls, access.ControlID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if token, err := recoverSenderControlToken(newOnly, control.Id, control.GetString("token_envelope"), control.GetString("token_hash")); err != nil || token != access.Token {
+		t.Fatalf("new key did not recover sender control: %v", err)
 	}
 }
 

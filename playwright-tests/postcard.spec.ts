@@ -36,7 +36,9 @@ test.describe("without JavaScript", () => {
 		await expect(form).toHaveAttribute("method", "post");
 		await expect(page.getByLabel("YOUR NAME")).toBeVisible();
 		await expect(page.getByLabel("YOUR EMAIL")).toBeVisible();
-		await expect(page.getByLabel("RECIPIENT EMAIL")).toBeVisible();
+		await expect(
+			page.getByRole("textbox", { name: "RECIPIENT EMAIL 1" }),
+		).toBeVisible();
 		await expect(page.getByLabel(/MESSAGE/)).toBeVisible();
 
 		let reachedSenderName = false;
@@ -55,28 +57,53 @@ test.describe("without JavaScript", () => {
 		await page.keyboard.type("Keyboard Sender");
 		await expect(page.getByLabel("YOUR NAME")).toHaveValue("Keyboard Sender");
 	});
+
+	test("postcard correction retains entered fields", async ({ page }) => {
+		await page.goto(`/postcard/send?awid=${syntheticArtworkID}`);
+		await page.getByLabel("YOUR NAME").fill("Keyboard Sender");
+		await page.getByLabel("YOUR EMAIL").fill("sender@example.test");
+		await page
+			.getByRole("textbox", { name: "RECIPIENT EMAIL 1" })
+			.fill("recipient@example.test");
+		await page.getByLabel(/MESSAGE/).fill("A postcard message");
+		await page.getByRole("button", { name: "SEND POSTCARD →" }).click();
+		await expect(page.getByRole("alert")).toContainText("Complete the CAPTCHA");
+		await expect(page.getByLabel("YOUR NAME")).toHaveValue("Keyboard Sender");
+	});
 });
 
-test("postcard dialog keeps its close control reachable on mobile", async ({
+test("CAPTCHA rejection swaps an actionable composer error", async ({
 	page,
 }) => {
-	await page.setViewportSize({ width: 390, height: 844 });
-	await page.goto(
-		"/artists/synthetic-artist-01-ad32608c6e36b2e/synthetic-artwork-01-01-2225c982be1af02",
+	await page.goto(`/postcard/send?awid=${syntheticArtworkID}`);
+	await page.getByLabel("YOUR NAME").fill("Playwright Sender");
+	await page.getByLabel("YOUR EMAIL").fill("sender@example.test");
+	await page
+		.getByRole("textbox", { name: "RECIPIENT EMAIL 1" })
+		.fill("recipient@example.test");
+	await page.getByLabel(/MESSAGE/).fill("A postcard message");
+	await page.getByRole("button", { name: "SEND POSTCARD →" }).click();
+	await expect(page.locator("#postcard-compose")).toContainText(
+		"Complete the CAPTCHA",
 	);
-	await page.getByRole("link", { name: "SEND AS POSTCARD →" }).click();
-
-	const dialog = page.locator("#d");
-	const modalBox = dialog.locator(".modal-box");
-	await modalBox.evaluate((element) => {
-		element.scrollTop = element.scrollHeight;
-	});
-
-	const close = dialog.getByRole("button", { name: "Close", exact: true });
-	await expect(close).toBeInViewport({ ratio: 1 });
-	await close.click();
-	await expect(dialog).not.toHaveAttribute("open", "");
+	await expect(page.getByLabel("YOUR NAME")).toHaveValue("Playwright Sender");
 });
+
+for (const viewport of [
+	{ width: 390, height: 844 },
+	{ width: 834, height: 900 },
+	{ width: 1440, height: 1000 },
+]) {
+	test(`postcard composer remains usable at ${viewport.width}px`, async ({
+		page,
+	}) => {
+		await page.setViewportSize(viewport);
+		await page.goto(`/postcard/send?awid=${syntheticArtworkID}`);
+		await expect(page.locator("#postcard-compose")).toBeVisible();
+		await expect(page.locator("#postcard_create")).toBeVisible();
+		await expect(page.locator(".modal-box")).toHaveCount(0);
+	});
+}
 
 test("send postcard", async ({ page, request }) => {
 	test.setTimeout(150000);
@@ -112,11 +139,10 @@ test("send postcard", async ({ page, request }) => {
 	);
 	await page.getByRole("link", { name: "SEND AS POSTCARD →" }).click();
 
-	await expect(page.locator("#d")).toBeVisible();
-
-	await expect(page.locator("#d")).toHaveText(/Send a postcard/);
-	const recipientField = page.locator("[name='recipient']");
-	await expect(recipientField).toHaveCount(1);
+	await expect(page).toHaveURL(/\/postcard\/send\?awid=/);
+	await expect(page.locator("#postcard-compose")).toHaveText(/Send a postcard/);
+	const recipientField = page.locator("[name='recipients[]']").first();
+	await expect(page.locator("[name='recipients[]']")).toHaveCount(5);
 
 	await page.locator("[name='sender_name']").fill("Playwright Tester");
 	await page
@@ -143,6 +169,7 @@ test("send postcard", async ({ page, request }) => {
 	await expect(page.locator("#postcard-compose")).toContainText(
 		"p••••@local.host",
 	);
+	await expect(page.locator("#postcard-confirmation-title")).toBeFocused();
 
 	let messageID = "";
 	try {
@@ -185,7 +212,8 @@ test("send postcard", async ({ page, request }) => {
 		expect(postcardLink).toContain("/postcard?token=");
 		expect(postcardLink).not.toContain("?p=");
 
-		await page.goto(postcardLink);
+		const postcardURL = new URL(postcardLink);
+		await page.goto(`${postcardURL.pathname}${postcardURL.search}`);
 		await expect(page.locator("#postcard-view")).toContainText(
 			"I am testing your site",
 		);

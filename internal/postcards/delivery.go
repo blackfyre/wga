@@ -7,11 +7,15 @@ import (
 	"net"
 	"net/mail"
 	"net/textproto"
+	"strings"
 	"time"
 
 	"github.com/blackfyre/wga/internal/assets"
 	"github.com/blackfyre/wga/internal/config"
+	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/logging"
+	"github.com/blackfyre/wga/internal/repositories"
+	urlutils "github.com/blackfyre/wga/internal/utils/url"
 	"github.com/google/uuid"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
@@ -111,27 +115,48 @@ func claimDue(app core.App, now types.DateTime) (*ClaimedAttempt, error) {
 
 // recoverExpiredClaims requeues safe expired claims and dead-letters ambiguous ones.
 func recoverExpiredClaims(app core.App, now types.DateTime) error {
-	_, err := app.DB().NewQuery(`
+	return app.RunInTransaction(func(txApp core.App) error {
+		_, err := txApp.DB().NewQuery(`
 		UPDATE postcard_delivery_attempts
 		SET status = 'queued', claim_token = '', claim_expires_at = '', available_at = {:now}
 		WHERE status = 'processing' AND claim_expires_at <= {:now} AND transport_started_at = ''
-	`).Bind(dbx.Params{"now": now}).Execute()
-	if err != nil {
-		return err
-	}
-	_, err = app.DB().NewQuery(`
+		`).Bind(dbx.Params{"now": now}).Execute()
+		if err != nil {
+			return err
+		}
+		var rows []struct {
+			Delivery string `db:"delivery"`
+		}
+		err = txApp.DB().NewQuery(`
 		UPDATE postcard_delivery_attempts
 		SET status = 'dead_lettered', dead_lettered_at = {:now}, claim_token = '', claim_expires_at = '',
 			last_error_class = 'ambiguous_transport_outcome', last_error_retryable = false
 		WHERE status = 'processing' AND claim_expires_at <= {:now} AND transport_started_at != ''
-	`).Bind(dbx.Params{"now": now}).Execute()
-
-	return err
+		RETURNING delivery`).Bind(dbx.Params{"now": now}).All(&rows)
+		if err != nil {
+			return err
+		}
+		for _, row := range rows {
+			delivery, err := txApp.FindRecordById(collectionDeliveries, row.Delivery)
+			if err != nil {
+				return err
+			}
+			delivery.Set("status", "failed")
+			delivery.Set("failed_at", now)
+			if err := txApp.Save(delivery); err != nil {
+				return err
+			}
+			if err := finalizePostcard(txApp, delivery.GetString("postcard"), now); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 // deliver renders and sends one claimed recipient delivery.
 func deliver(app core.App, mailClient mailer.Mailer, postcards config.Postcards, keyring config.PostcardTokenKeyring, claim *ClaimedAttempt, runID string) error {
-	message, err := renderMessage(claim.Postcard, claim.Delivery, claim.Attempt.GetString("message_id"), postcards, keyring)
+	message, err := renderMessage(app, claim.Postcard, claim.Delivery, claim.Attempt.GetString("message_id"), postcards, keyring)
 	if err != nil {
 		err = deadLetter(app, claim, deliveryFailure{class: "invalid_message"}, types.NowDateTime())
 		if err == nil {
@@ -178,17 +203,55 @@ func logDelivery(app core.App, runID string, claim *ClaimedAttempt, outcome stri
 }
 
 // renderMessage produces the notification email for one postcard recipient.
-func renderMessage(postcard *core.Record, delivery *core.Record, messageID string, postcards config.Postcards, keyring config.PostcardTokenKeyring) (*mailer.Message, error) {
+func renderMessage(app core.App, postcard *core.Record, delivery *core.Record, messageID string, postcards config.Postcards, keyring config.PostcardTokenKeyring) (*mailer.Message, error) {
 	token, err := recoverRecipientToken(keyring, delivery.Id, delivery.GetString("view_token_envelope"), delivery.GetString("view_token_hash"))
 	if err != nil || delivery.GetString("recipient") == "" || !delivery.GetDateTime("view_expires_at").After(types.NowDateTime()) {
 		return nil, errors.New("postcard delivery is missing recipient access material")
 	}
-	html, err := assets.RenderEmail("postcard:notification", map[string]any{
-		"SenderName": postcard.GetString("sender_name"),
-		"PickUpUrl":  postcards.PublicURL.Resolve("/postcard?token=" + token),
-		"Title":      "",
-		"LogoUrl":    postcards.PublicURL.Resolve("/assets/images/logo.png"),
-	})
+	data := map[string]any{
+		"SenderName":        postcard.GetString("sender_name"),
+		"SenderNameUpper":   strings.ToUpper(postcard.GetString("sender_name")),
+		"Message":           postcard.GetString("message"),
+		"PickUpUrl":         postcards.PublicURL.Resolve("/postcard?token=" + token),
+		"Title":             "A postcard is waiting for you",
+		"LogoUrl":           postcards.PublicURL.Resolve("/assets/images/logo.png"),
+		"HasArtwork":        false,
+		"ArtworkTitle":      "",
+		"ArtworkTitleUpper": "",
+		"ArtworkDetails":    "",
+		"ArtworkImageURL":   "",
+		"MusicAvailable":    false,
+		"MusicPiece":        "",
+		"MusicComposer":     "",
+	}
+	artworkID := strings.Trim(strings.TrimSpace(fmt.Sprint(postcard.Get("image_id"))), "[]\"")
+	if imageIDs := postcard.GetStringSlice("image_id"); len(imageIDs) > 0 {
+		artworkID = imageIDs[0]
+	}
+	if artwork, artworkErr := app.FindFirstRecordByFilter(constants.CollectionArtworks, "id = {:id} && published = true", dbx.Params{"id": artworkID}); artworkErr == nil {
+		title := artwork.GetString("title")
+		if title != "" {
+			data["HasArtwork"] = true
+			data["ArtworkTitle"] = title
+			data["ArtworkTitleUpper"] = strings.ToUpper(title)
+			data["ArtworkDetails"] = artwork.GetString("date_text")
+			data["ArtworkImageURL"] = postcards.PublicURL.Resolve(urlutils.GenerateArtworkImageURL(artwork, urlutils.DeliveryProfilePostcardSmallDualPlate, ""))
+			if authors := artwork.GetStringSlice("author"); len(authors) > 0 {
+				repository := repositories.NewArtistRecordRepository(app)
+				if artist, artistErr := repository.FindPublishedArtist(authors[0]); artistErr == nil {
+					data["ArtworkDetails"] = strings.TrimSpace(artist.GetString("filing_name") + " · " + artwork.GetString("date_text"))
+					if postcard.GetBool("include_music") {
+						if song, songErr := repository.MatchPeriodSong(artwork.GetInt("date_start")); songErr == nil && song != nil {
+							data["MusicAvailable"] = true
+							data["MusicPiece"] = song.Record.GetString("title")
+							data["MusicComposer"] = song.Composer
+						}
+					}
+				}
+			}
+		}
+	}
+	html, err := assets.RenderEmail("postcard:notification", data)
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +274,7 @@ func startTransport(app core.App, claim *ClaimedAttempt, now types.DateTime) err
 		UPDATE postcard_delivery_attempts
 		SET transport_started_at = {:now}, claim_expires_at = {:expires},
 			attempt_count = attempt_count + 1, last_attempt_at = {:now}
-		WHERE id = {:id} AND status = 'processing' AND claim_token = {:token}
+		WHERE id = {:id} AND status = 'processing' AND claim_token = {:token} AND transport_started_at = ''
 	`).Bind(dbx.Params{"id": claim.Attempt.Id, "token": claim.Token, "now": now, "expires": now.Add(deliveryLease)}).Execute()
 	if err != nil {
 		return err
@@ -226,6 +289,64 @@ func startTransport(app core.App, claim *ClaimedAttempt, now types.DateTime) err
 	claim.Attempt.Set("attempt_count", claim.Attempt.GetInt("attempt_count")+1)
 
 	return nil
+}
+
+// CancelPostcard cancels only recipient work that has not crossed the transport boundary.
+type CancellationResult struct {
+	CancelledDeliveries int
+	StartedDeliveries   int
+}
+
+func CancelPostcard(app core.App, postcardID string, now types.DateTime) error {
+	_, err := CancelPostcardWithResult(app, postcardID, now)
+	return err
+}
+
+func CancelPostcardWithResult(app core.App, postcardID string, now types.DateTime) (CancellationResult, error) {
+	result := CancellationResult{}
+	err := app.RunInTransaction(func(txApp core.App) error {
+		var started struct {
+			Count int `db:"count"`
+		}
+		if err := txApp.DB().NewQuery(`
+			SELECT COUNT(DISTINCT delivery) AS count FROM postcard_delivery_attempts
+			WHERE delivery IN (SELECT id FROM postcard_deliveries WHERE postcard = {:postcard})
+			AND transport_started_at != ''
+		`).Bind(dbx.Params{"postcard": postcardID}).One(&started); err != nil {
+			return err
+		}
+		result.StartedDeliveries = started.Count
+		if _, err := txApp.DB().NewQuery(`
+			UPDATE postcard_delivery_attempts
+			SET status = 'cancelled', processed_at = {:now}, claim_token = '', claim_expires_at = ''
+			WHERE delivery IN (SELECT id FROM postcard_deliveries WHERE postcard = {:postcard})
+			AND (status = 'queued' OR (status = 'processing' AND transport_started_at = ''))
+			AND NOT EXISTS (
+				SELECT 1 FROM postcard_delivery_attempts started
+				WHERE started.delivery = postcard_delivery_attempts.delivery AND started.transport_started_at != ''
+			)
+		`).Bind(dbx.Params{"postcard": postcardID, "now": now}).Execute(); err != nil {
+			return err
+		}
+		update, err := txApp.DB().NewQuery(`
+			UPDATE postcard_deliveries SET status = 'cancelled', cancelled_at = {:now}
+			WHERE postcard = {:postcard} AND status = 'pending'
+			AND NOT EXISTS (
+				SELECT 1 FROM postcard_delivery_attempts a
+				WHERE a.delivery = postcard_deliveries.id AND a.transport_started_at != ''
+			)
+		`).Bind(dbx.Params{"postcard": postcardID, "now": now}).Execute()
+		if err != nil {
+			return err
+		}
+		cancelled, err := update.RowsAffected()
+		if err != nil {
+			return err
+		}
+		result.CancelledDeliveries = int(cancelled)
+		return finalizePostcard(txApp, postcardID, now)
+	})
+	return result, err
 }
 
 // complete records a successful transport and updates the recipient and postcard lifecycles.
@@ -259,19 +380,54 @@ func retry(app core.App, claim *ClaimedAttempt, failure deliveryFailure, now typ
 	if delay > deliveryRetryMax {
 		delay = deliveryRetryMax
 	}
-	return updateOwnedAttempt(app, claim, `
-		status = 'queued', available_at = {:available_at}, claim_token = '', claim_expires_at = '',
-		last_error_class = {:error_class}, last_error_code = {:error_class}, last_error_retryable = true`, dbx.Params{
-		"available_at": now.Add(delay), "error_class": failure.class,
+	return app.RunInTransaction(func(txApp core.App) error {
+		if err := updateOwnedAttempt(txApp, claim, `
+			status = 'processed', processed_at = {:now}, result_code = 'retry_scheduled',
+			result_summary = 'retry scheduled after retryable transport failure', claim_token = '', claim_expires_at = '',
+			last_error_class = {:error_class}, last_error_code = {:error_class}, last_error_retryable = true`, dbx.Params{
+			"now": now, "error_class": failure.class,
+		}); err != nil {
+			return err
+		}
+		attempts, err := txApp.FindCollectionByNameOrId(collectionDeliveryAttempts)
+		if err != nil {
+			return err
+		}
+		messageID := claim.Attempt.GetString("message_id")
+		next := core.NewRecord(attempts)
+		next.Set("delivery", claim.Delivery.Id)
+		next.Set("sequence", claim.Attempt.GetInt("sequence")+1)
+		next.Set("status", "queued")
+		next.Set("correlation_id", claim.Attempt.GetString("correlation_id"))
+		next.Set("message_id", messageID)
+		next.Set("attempt_count", claim.Attempt.GetInt("attempt_count"))
+		next.Set("max_attempts", claim.Attempt.GetInt("max_attempts"))
+		next.Set("available_at", now.Add(delay))
+		setIntegrationMessageProfile(next, claim.Delivery.Id, messageID, claim.Delivery.GetDateTime("view_expires_at"))
+		return txApp.Save(next)
 	})
 }
 
 // deadLetter records a terminal failed outcome for an owned attempt.
 func deadLetter(app core.App, claim *ClaimedAttempt, failure deliveryFailure, now types.DateTime) error {
-	return updateOwnedAttempt(app, claim, `
+	return app.RunInTransaction(func(txApp core.App) error {
+		if err := updateOwnedAttempt(txApp, claim, `
 		status = 'dead_lettered', dead_lettered_at = {:now}, claim_token = '', claim_expires_at = '',
 		last_error_class = {:error_class}, last_error_code = {:error_class}, last_error_retryable = {:retryable}`, dbx.Params{
-		"now": now, "error_class": failure.class, "retryable": failure.retryable,
+			"now": now, "error_class": failure.class, "retryable": failure.retryable,
+		}); err != nil {
+			return err
+		}
+		delivery, err := txApp.FindRecordById(collectionDeliveries, claim.Delivery.Id)
+		if err != nil {
+			return err
+		}
+		delivery.Set("status", "failed")
+		delivery.Set("failed_at", now)
+		if err := txApp.Save(delivery); err != nil {
+			return err
+		}
+		return finalizePostcard(txApp, claim.Postcard.Id, now)
 	})
 }
 
@@ -300,11 +456,13 @@ func finalizePostcard(app core.App, postcardID string, now types.DateTime) error
 	var totals struct {
 		Pending   int `db:"pending"`
 		Cancelled int `db:"cancelled"`
+		Failed    int `db:"failed"`
 	}
 	if err := app.DB().NewQuery(`
 		SELECT
 			SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending,
-			SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled
+			SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled,
+			SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed
 		FROM postcard_deliveries
 		WHERE postcard = {:postcard}
 	`).Bind(dbx.Params{"postcard": postcardID}).One(&totals); err != nil {
@@ -323,6 +481,11 @@ func finalizePostcard(app core.App, postcardID string, now types.DateTime) error
 	postcard.Set("sender_email", "purged-"+postcard.Id+"@invalid.test")
 	postcard.Set("sender_email_purged_at", now)
 	postcard.Set("recipients", "purged")
+	if totals.Failed != 0 {
+		postcard.Set("status", "failed")
+		postcard.Set("failed_at", now)
+		return app.Save(postcard)
+	}
 	if totals.Cancelled != 0 {
 		postcard.Set("status", "cancelled")
 		return app.Save(postcard)
@@ -367,6 +530,7 @@ const maxPurgeBatchSize = 1000
 type PurgeCounts struct {
 	DeliveryAccess  int
 	PostcardContent int
+	SenderControls  int
 }
 
 // PurgeExpiredRecipientAccess removes expired bearer material only after work is
@@ -383,6 +547,32 @@ func PurgeExpiredRecipientAccess(app core.App, now types.DateTime, limit int) (P
 	var counts PurgeCounts
 	err := app.RunInTransaction(func(txApp core.App) error {
 		result, err := txApp.DB().NewQuery(`
+			UPDATE Postcards SET submission_key_hash = ''
+			WHERE id IN (
+				SELECT postcard FROM postcard_sender_controls
+				WHERE expires_at <= {:now}
+				ORDER BY id LIMIT {:limit}
+			)`).Bind(dbx.Params{"now": now, "limit": limit}).Execute()
+		if err != nil {
+			return err
+		}
+		result, err = txApp.DB().NewQuery(`
+			DELETE FROM postcard_sender_controls
+			WHERE id IN (
+				SELECT id FROM postcard_sender_controls
+				WHERE expires_at <= {:now}
+				ORDER BY id LIMIT {:limit}
+			)`).Bind(dbx.Params{"now": now, "limit": limit}).Execute()
+		if err != nil {
+			return err
+		}
+		updated, err := result.RowsAffected()
+		if err != nil {
+			return err
+		}
+		counts.SenderControls = int(updated)
+
+		result, err = txApp.DB().NewQuery(`
 			UPDATE postcard_deliveries
 			SET view_token_envelope = '', view_token_hash = ''
 			WHERE id IN (
@@ -401,7 +591,7 @@ func PurgeExpiredRecipientAccess(app core.App, now types.DateTime, limit int) (P
 		if err != nil {
 			return err
 		}
-		updated, err := result.RowsAffected()
+		updated, err = result.RowsAffected()
 		if err != nil {
 			return err
 		}

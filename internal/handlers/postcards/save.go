@@ -34,6 +34,7 @@ type postcardSubmission struct {
 	RecaptchaToken string   `json:"recaptcha_token" form:"g-recaptcha-response"`
 	HoneyPotName   string   `json:"honey_pot_name" form:"name"`
 	HoneyPotEmail  string   `json:"honey_pot_email" form:"email"`
+	SubmissionKey  string   `json:"submission_key" form:"submission_key"`
 }
 
 func savePostcard(app core.App, c *core.RequestEvent, policy *bluemonday.Policy, captcha config.Captcha, keyring config.PostcardTokenKeyring, verifier antiabuse.Verifier, limiter *submissionLimiter, resolver requesttrust.Resolver) error {
@@ -53,11 +54,18 @@ func savePostcard(app core.App, c *core.RequestEvent, policy *bluemonday.Policy,
 		logger.Warn("Postcard submission rejected", "event", "postcard.submission.rejected", "outcome", "invalid_payload")
 		return utils.BadRequestError(c)
 	}
-	values := pages.PostcardComposeView{SenderName: input.SenderName, SenderEmail: input.SenderEmail, Recipient: input.Recipient, Message: input.Message, IncludeMusic: input.IncludeMusic}
-	if input.Recipient == "" && len(input.Recipients) > 0 {
-		input.Recipient = input.Recipients[0]
-		values.Recipient = input.Recipient
+	recipients := input.Recipients
+	if input.Recipient != "" {
+		recipients = append([]string{input.Recipient}, recipients...)
 	}
+	values := pages.PostcardComposeView{SenderName: input.SenderName, SenderEmail: input.SenderEmail, Recipient: input.Recipient, Recipients: recipients, Message: input.Message, IncludeMusic: input.IncludeMusic, SubmissionKey: input.SubmissionKey}
+	nonEmptyRecipients := make([]string, 0, len(recipients))
+	for _, recipient := range recipients {
+		if strings.TrimSpace(recipient) != "" {
+			nonEmptyRecipients = append(nonEmptyRecipients, recipient)
+		}
+	}
+	recipients = nonEmptyRecipients
 
 	if err := validation.ValidateHoneypot(input.HoneyPotName, input.HoneyPotEmail); err != nil {
 		if errors.Is(err, errs.ErrHoneypotTriggered) {
@@ -65,18 +73,26 @@ func savePostcard(app core.App, c *core.RequestEvent, policy *bluemonday.Policy,
 		}
 		return utils.BadRequestError(c)
 	}
+	if input.SubmissionKey != "" {
+		recovered, found, err := postcardworkflow.RecoverSubmission(app, keyring, input.SubmissionKey, types.NowDateTime())
+		if err != nil {
+			if !errors.Is(err, postcardworkflow.ErrInvalidPostcard) && !errors.Is(err, postcardworkflow.ErrSenderControlUnavailable) {
+				logger.Warn("Postcard submission recovery failed", "event", "postcard.submission.failed", "outcome", "recovery_error", "error_type", logging.ErrorType(err), "error", logging.Redact(err))
+				return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
+			}
+		}
+		if err == nil && found {
+			return renderQueuedPostcard(recovered, app, c)
+		}
+	}
 	plainMessage := strings.TrimSpace(bluemonday.StrictPolicy().Sanitize(input.Message))
-	if strings.TrimSpace(input.SenderName) == "" || strings.TrimSpace(input.SenderEmail) == "" || strings.TrimSpace(input.Recipient) == "" || plainMessage == "" || utf8.RuneCountInString(plainMessage) > pages.PostcardMessageLimit {
+	if strings.TrimSpace(input.SenderName) == "" || strings.TrimSpace(input.SenderEmail) == "" || len(recipients) == 0 || plainMessage == "" || utf8.RuneCountInString(plainMessage) > pages.PostcardMessageLimit {
 		logger.Warn("Postcard submission rejected", "event", "postcard.submission.rejected", "outcome", "validation")
 		return renderForm(input.ImageID, values, "Check the required fields and keep the message within 300 characters.", http.StatusUnprocessableEntity, app, c, captcha)
 	}
-	if limiter == nil || !limiter.allow(clientID, time.Now()) {
-		logger.Warn("Postcard submission rejected", "event", "postcard.submission.rejected", "outcome", "rate_limited")
-		return c.String(http.StatusTooManyRequests, "Too many postcard submissions. Please try again later.")
-	}
 	if err := validation.ValidateRecaptchaToken(input.RecaptchaToken); err != nil {
 		logger.Warn("Postcard submission rejected", "event", "postcard.submission.rejected", "outcome", "invalid_captcha_token")
-		return utils.BadRequestError(c)
+		return renderForm(input.ImageID, values, "Complete the CAPTCHA before sending your postcard.", http.StatusUnprocessableEntity, app, c, captcha)
 	}
 	if captcha.Verify() {
 		verified, err := verifier.Verify(tmplUtils.ContextFromRequest(c.Request), input.RecaptchaToken, clientID)
@@ -86,18 +102,19 @@ func savePostcard(app core.App, c *core.RequestEvent, policy *bluemonday.Policy,
 		}
 		if !verified {
 			logger.Warn("Postcard submission rejected", "event", "postcard.submission.rejected", "outcome", "captcha_rejected")
-			return utils.BadRequestError(c)
+			return renderForm(input.ImageID, values, "The CAPTCHA could not be verified. Please try again.", http.StatusUnprocessableEntity, app, c, captcha)
 		}
 	}
-
-	recipients := input.Recipients
-	if input.Recipient != "" {
-		recipients = []string{input.Recipient}
+	if limiter == nil || !limiter.allow(clientID, time.Now()) {
+		logger.Warn("Postcard submission rejected", "event", "postcard.submission.rejected", "outcome", "rate_limited")
+		return renderForm(input.ImageID, values, "Too many postcard submissions. Please try again later.", http.StatusTooManyRequests, app, c, captcha)
 	}
+
 	result, err := postcardworkflow.QueueWithAccess(app, keyring, postcardworkflow.QueueInput{
 		SenderName: strings.TrimSpace(input.SenderName), SenderEmail: strings.TrimSpace(input.SenderEmail), Recipients: recipients,
 		Message: policy.Sanitize(input.Message), ImageID: input.ImageID, IncludeMusic: input.IncludeMusic,
 		CorrelationID: logging.RequestID(c),
+		SubmissionKey: input.SubmissionKey,
 	}, types.NowDateTime())
 	if err != nil {
 		outcome := "persistence_error"
@@ -111,6 +128,10 @@ func savePostcard(app core.App, c *core.RequestEvent, policy *bluemonday.Policy,
 		logger.Warn("Postcard submission failed", "event", "postcard.submission.failed", "outcome", outcome, "error_type", logging.ErrorType(err), "error", logging.Redact(err))
 		return renderForm(input.ImageID, values, message, status, app, c, captcha)
 	}
+	return renderQueuedPostcard(result, app, c)
+}
+
+func renderQueuedPostcard(result *postcardworkflow.QueueResult, app core.App, c *core.RequestEvent) error {
 	access := result.Access[0]
 	confirmation := pages.PostcardConfirmationView{
 		MaskedRecipient: maskEmail(access.Recipient),
@@ -119,15 +140,16 @@ func savePostcard(app core.App, c *core.RequestEvent, policy *bluemonday.Policy,
 	}
 	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, "Postcard queued")
 	var buf bytes.Buffer
+	var err error
 	if c.Request.Header.Get("HX-Request") == "true" {
-		err = pages.PostcardConfirmationDialog(confirmation).Render(ctx, &buf)
+		err = pages.PostcardConfirmationBlock(confirmation).Render(ctx, &buf)
 	} else {
 		err = pages.PostcardConfirmationPage(confirmation).Render(ctx, &buf)
 	}
 	if err != nil {
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
-	logger.Info("Postcard submission queued", "event", "postcard.submission.queued", "outcome", "queued", "correlation_id", result.Postcard.GetString("correlation_id"))
+	logging.RequestLogger(app, c).Info("Postcard submission queued", "event", "postcard.submission.queued", "outcome", "queued", "correlation_id", result.Postcard.GetString("correlation_id"))
 	return c.HTML(http.StatusAccepted, buf.String())
 }
 
