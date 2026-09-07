@@ -12,7 +12,7 @@ require (
 	github.com/labstack/echo/v5 v5.3.1
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/pocketbase/dbx v1.12.0
-	github.com/pocketbase/pocketbase v0.40.1
+	github.com/pocketbase/pocketbase v0.40.2
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sabloger/sitemap-generator v1.3.0
 	github.com/spf13/cobra v1.10.2
