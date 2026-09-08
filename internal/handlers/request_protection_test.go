@@ -120,6 +120,104 @@ func TestProtectedReadMiddlewareRejectsBeforeHandlerWork(t *testing.T) {
 	}
 }
 
+func TestProtectedReadMiddlewareAllowsExemptRoutesThroughDeploymentHost(t *testing.T) {
+	cases := []struct {
+		name    string
+		path    string
+		pattern string
+		body    string
+	}{
+		{name: "health", path: "/health", pattern: "/health", body: "healthy"},
+		{name: "static asset", path: "/assets/css/style.css", pattern: "/assets/{path...}", body: "asset"},
+		{name: "sitemap index", path: "/sitemap.xml", pattern: "/sitemap.xml", body: "sitemap"},
+		{name: "sitemap child", path: "/sitemap/artists.xml", pattern: "/sitemap/{path...}", body: "sitemap child"},
+		{name: "robots", path: "/robots.txt", pattern: "/robots.txt", body: "robots"},
+	}
+
+	for _, test := range cases {
+		t.Run(test.name, func(t *testing.T) {
+			scenario := tests.ApiScenario{
+				Name:            test.name,
+				Method:          http.MethodGet,
+				URL:             "https://wga-production.up.railway.app" + test.path,
+				Headers:         map[string]string{"X-Railway-Edge": "edge-a", "X-Real-IP": "198.51.100.7"},
+				ExpectedStatus:  http.StatusOK,
+				ExpectedContent: []string{test.body},
+				TestAppFactory: func(t testing.TB) *tests.TestApp {
+					app := newProtectionContractApp(t)
+					app.OnServe().BindFunc(func(se *core.ServeEvent) error {
+						se.Router.GET(test.pattern, func(e *core.RequestEvent) error {
+							return e.String(http.StatusOK, test.body)
+						})
+						return se.Next()
+					})
+					return app
+				},
+			}
+
+			scenario.Test(t)
+		})
+	}
+}
+
+func TestProtectedReadMiddlewarePreservesFullPageAndHTMXContracts(t *testing.T) {
+	cases := []struct {
+		name      string
+		path      string
+		htmx      bool
+		want      []string
+		doNotWant []string
+	}{
+		{
+			name:      "canonical full page",
+			path:      "/artists",
+			want:      []string{"<html", "catalogue page"},
+			doNotWant: []string{`id="dual-area"`},
+		},
+		{
+			name:      "canonical HTMX fragment",
+			path:      "/dual-mode",
+			htmx:      true,
+			want:      []string{`id="dual-area"`, "catalogue fragment"},
+			doNotWant: []string{"<html"},
+		},
+	}
+
+	for _, test := range cases {
+		t.Run(test.name, func(t *testing.T) {
+			headers := trustedProtectionHeaders("198.51.100.7", protectionTestSecret)
+			if test.htmx {
+				headers["HX-Request"] = "true"
+			}
+
+			scenario := tests.ApiScenario{
+				Name:               test.name,
+				Method:             http.MethodGet,
+				URL:                "https://beta.wga.hu" + test.path,
+				Headers:            headers,
+				ExpectedStatus:     http.StatusOK,
+				ExpectedContent:    test.want,
+				NotExpectedContent: test.doNotWant,
+				TestAppFactory: func(t testing.TB) *tests.TestApp {
+					app := newProtectionContractApp(t)
+					app.OnServe().BindFunc(func(se *core.ServeEvent) error {
+						se.Router.GET(test.path, func(e *core.RequestEvent) error {
+							if e.Request.Header.Get("HX-Request") == "true" {
+								return e.HTML(http.StatusOK, `<section id="dual-area">catalogue fragment</section>`)
+							}
+							return e.HTML(http.StatusOK, `<html><body>catalogue page</body></html>`)
+						})
+						return se.Next()
+					})
+					return app
+				},
+			}
+
+			scenario.Test(t)
+		})
+	}
+}
+
 func trustedProtectionHeaders(identity string, secret string) map[string]string {
 	headers := map[string]string{
 		"X-Railway-Edge":   "edge-a",
@@ -146,4 +244,18 @@ func newHTTPProtectionPolicy(t testing.TB) *requestprotection.Policy {
 		t.Fatalf("create policy: %v", err)
 	}
 	return policy
+}
+
+func newProtectionContractApp(t testing.TB) *tests.TestApp {
+	t.Helper()
+	app := testutils.NewTestApp(t)
+	logging.RegisterRequestIDMiddleware(app)
+	resolver := requesttrust.New(
+		requesttrust.SourceCloudflareRailway,
+		requesttrust.NewCloudflareOriginSecrets(protectionTestSecret, ""),
+	)
+	if err := registerProtectedReadMiddleware(app, "https://beta.wga.hu", resolver, newHTTPProtectionPolicy(t)); err != nil {
+		t.Fatalf("register middleware: %v", err)
+	}
+	return app
 }
