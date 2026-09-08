@@ -36,8 +36,24 @@ const (
 // CloudflareOriginSecrets contains the active and optional staged origin
 // authentication values. Configuration validates their entropy and encoding.
 type CloudflareOriginSecrets struct {
-	Current string
-	Next    string
+	current string
+	next    string
+}
+
+// NewCloudflareOriginSecrets constructs the redacted secret transport used by
+// the Cloudflare-via-Railway resolver.
+func NewCloudflareOriginSecrets(current string, next string) CloudflareOriginSecrets {
+	return CloudflareOriginSecrets{current: current, next: next}
+}
+
+// String returns a redacted representation of the secrets.
+func (CloudflareOriginSecrets) String() string {
+	return "[redacted]"
+}
+
+// GoString returns a redacted Go-syntax representation of the secrets.
+func (CloudflareOriginSecrets) GoString() string {
+	return "requesttrust.CloudflareOriginSecrets([redacted])"
 }
 
 // Resolver returns the trusted client identity for a request. ok is false when
@@ -53,7 +69,7 @@ func New(source Source, cloudflareSecrets ...CloudflareOriginSecrets) Resolver {
 		return resolveRailway
 	}
 	if source == SourceCloudflareRailway {
-		if len(cloudflareSecrets) != 1 || cloudflareSecrets[0].Current == "" {
+		if len(cloudflareSecrets) != 1 || cloudflareSecrets[0].current == "" {
 			return failClosed
 		}
 		return newCloudflareRailwayResolver(cloudflareSecrets[0])
@@ -107,9 +123,9 @@ func resolveRailway(r *http.Request) (string, bool) {
 }
 
 func newCloudflareRailwayResolver(secrets CloudflareOriginSecrets) Resolver {
-	currentDigest := sha256.Sum256([]byte(secrets.Current))
-	nextDigest := sha256.Sum256([]byte(secrets.Next))
-	hasNext := secrets.Next != ""
+	currentDigest := sha256.Sum256([]byte(secrets.current))
+	nextDigest := sha256.Sum256([]byte(secrets.next))
+	hasNext := secrets.next != ""
 
 	return func(r *http.Request) (string, bool) {
 		if r == nil || !validRailwayEdge(r.Header) || !validCloudflareOrigin(r.Header, currentDigest, nextDigest, hasNext) {

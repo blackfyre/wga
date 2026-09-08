@@ -89,10 +89,10 @@ func main() {
 		nextCloudflareSecret, _ := serverConfig.CloudflareOriginSecrets.Next()
 		clientIdentity := requesttrust.New(
 			requesttrust.Source(serverConfig.ClientIPSource),
-			requesttrust.CloudflareOriginSecrets{
-				Current: serverConfig.CloudflareOriginSecrets.Current().Value(),
-				Next:    nextCloudflareSecret.Value(),
-			},
+			requesttrust.NewCloudflareOriginSecrets(
+				serverConfig.CloudflareOriginSecrets.Current().Value(),
+				nextCloudflareSecret.Value(),
+			),
 		)
 		itineraryPolicy, err := itinerarySecurityPolicy(serverConfig, clientIdentity)
 		if err != nil {
