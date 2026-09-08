@@ -21,6 +21,7 @@ import (
 	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/errs"
 	"github.com/blackfyre/wga/internal/repositories"
+	"github.com/blackfyre/wga/internal/requestprotection"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/blackfyre/wga/internal/utils/glossary"
 	urlutils "github.com/blackfyre/wga/internal/utils/url"
@@ -118,6 +119,15 @@ type dualPeriod struct {
 }
 
 func renderDualModePage(app *pocketbase.PocketBase, c *core.RequestEvent) error {
+	return renderDualModePageWithCheckpoint(app, c, requestprotection.Checkpoint)
+}
+
+type dualCheckpoint func(context.Context, string) error
+
+func renderDualModePageWithCheckpoint(app *pocketbase.PocketBase, c *core.RequestEvent, checkpoint dualCheckpoint) error {
+	if err := checkpoint(c.Request.Context(), "dual.reference"); err != nil {
+		return dualCancellationError(c, err)
+	}
 	ref, err := loadDualReference(app)
 	if err != nil {
 		app.Logger().Error("Error loading dual mode reference data", "error", err.Error())
@@ -130,10 +140,16 @@ func renderDualModePage(app *pocketbase.PocketBase, c *core.RequestEvent) error 
 	// link or the push URL is built, so a shared URL never carries a mismatched
 	// slug or artist segment. Missing, unpublished, or invalid records fall back
 	// to that pane's index.
+	if err := checkpoint(c.Request.Context(), "dual.left.resolve"); err != nil {
+		return dualCancellationError(c, err)
+	}
 	leftPath, err := resolvePaneCanonicalPath(app, state.left)
 	if err != nil {
 		app.Logger().Error("Error resolving left pane path", "error", err.Error())
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
+	}
+	if err := checkpoint(c.Request.Context(), "dual.right.resolve"); err != nil {
+		return dualCancellationError(c, err)
 	}
 	rightPath, err := resolvePaneCanonicalPath(app, state.right)
 	if err != nil {
@@ -143,18 +159,27 @@ func renderDualModePage(app *pocketbase.PocketBase, c *core.RequestEvent) error 
 	state.left.path = leftPath
 	state.right.path = rightPath
 
+	if err := checkpoint(c.Request.Context(), "dual.left.window"); err != nil {
+		return dualCancellationError(c, err)
+	}
 	leftWindow, err := buildWindow(app, "left", state.left, state, ref)
 	if err != nil {
 		app.Logger().Error("Error rendering left window", "error", err.Error())
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
+	if err := checkpoint(c.Request.Context(), "dual.right.window"); err != nil {
+		return dualCancellationError(c, err)
+	}
 	rightWindow, err := buildWindow(app, "right", state.right, state, ref)
 	if err != nil {
 		app.Logger().Error("Error rendering right window", "error", err.Error())
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
+	if err := checkpoint(c.Request.Context(), "dual.projection"); err != nil {
+		return dualCancellationError(c, err)
+	}
 	view := pages.DualModeView{
 		Windows:   [2]pages.DualWindow{leftWindow, rightWindow},
 		SwapHref:  state.swapped().path(),
@@ -169,6 +194,9 @@ func renderDualModePage(app *pocketbase.PocketBase, c *core.RequestEvent) error 
 	c.Response.Header().Set("HX-Push-Url", state.path())
 
 	var buff bytes.Buffer
+	if err := checkpoint(c.Request.Context(), "dual.render"); err != nil {
+		return dualCancellationError(c, err)
+	}
 	if utils.IsHtmxRequest(c) && !utils.RequestsMainContentArea(c) {
 		err = pages.DualModeBlock(view).Render(ctx, &buff)
 	} else {
@@ -180,6 +208,10 @@ func renderDualModePage(app *pocketbase.PocketBase, c *core.RequestEvent) error 
 	}
 
 	return c.HTML(http.StatusOK, buff.String())
+}
+
+func dualCancellationError(c *core.RequestEvent, err error) error {
+	return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 }
 
 func baseDualWindow(side string, pane dualPaneState, state dualState) pages.DualWindow {
@@ -1469,7 +1501,14 @@ func resolvePaneTarget(side string, requestedTarget string) string {
 // ---------------------------------------------------------------------------
 
 func renderDualLookupResults(app *pocketbase.PocketBase, c *core.RequestEvent) error {
+	return renderDualLookupResultsWithCheckpoint(app, c, requestprotection.Checkpoint)
+}
+
+func renderDualLookupResultsWithCheckpoint(app *pocketbase.PocketBase, c *core.RequestEvent, checkpoint dualCheckpoint) error {
 	queryValues := c.Request.URL.Query()
+	if err := checkpoint(c.Request.Context(), "dual.lookup.records"); err != nil {
+		return dualCancellationError(c, err)
+	}
 	content, err := getDualLookupResults(app, queryValues.Get("kind"), queryValues.Get("q"))
 	if err != nil {
 		app.Logger().Error("Error getting dual lookup results", "error", err.Error())
@@ -1477,6 +1516,9 @@ func renderDualLookupResults(app *pocketbase.PocketBase, c *core.RequestEvent) e
 	}
 
 	var buff bytes.Buffer
+	if err := checkpoint(c.Request.Context(), "dual.lookup.render"); err != nil {
+		return dualCancellationError(c, err)
+	}
 	if err := pages.DualLookupResultContent(content).Render(context.Background(), &buff); err != nil {
 		app.Logger().Error("Error rendering dual lookup results", "error", err.Error())
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
