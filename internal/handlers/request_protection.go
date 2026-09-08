@@ -59,6 +59,19 @@ func protectPublicRead(app core.App, canonicalHost requestprotection.CanonicalHo
 		return plainProtectionResponse(e, admission.Status(), admission.RetryAfter())
 	}
 
+	logger := logging.RequestLogger(app, e)
+	e.Request = e.Request.WithContext(requestprotection.WithCancellationObserver(
+		e.Request.Context(),
+		profile,
+		func(event requestprotection.CancellationEvent) {
+			logger.Info("Protected request cancelled",
+				"event", "request_protection.cancelled",
+				"profile", string(event.Profile),
+				"stage", event.Stage,
+			)
+		},
+	))
+
 	return e.Next()
 }
 

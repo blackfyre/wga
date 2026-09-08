@@ -462,6 +462,68 @@ func TestProtectedReadMiddlewarePreservesFullPageAndHTMXContracts(t *testing.T) 
 	}
 }
 
+func TestCancellationTelemetryRecordsOnlyProfileAndStage(t *testing.T) {
+	const (
+		clientIdentity = "198.51.100.91"
+		privateSlug    = "private-record-slug"
+		querySecret    = "request-query-secret"
+	)
+	var captured func() []*core.Log
+
+	scenario := tests.ApiScenario{
+		Name:           "cancelled protected detail",
+		Method:         http.MethodGet,
+		URL:            "https://beta.wga.hu/artists/" + privateSlug + "?token=" + querySecret,
+		Headers:        trustedProtectionHeaders(clientIdentity, protectionTestSecret),
+		ExpectedStatus: http.StatusNoContent,
+		TestAppFactory: func(t testing.TB) *tests.TestApp {
+			app := newProtectionContractApp(t)
+			captured = testutils.CaptureLogs(app)
+			app.OnServe().BindFunc(func(se *core.ServeEvent) error {
+				se.Router.GET("/artists/{slug}", func(e *core.RequestEvent) error {
+					ctx, cancel := context.WithCancel(e.Request.Context())
+					e.Request = e.Request.WithContext(ctx)
+					cancel()
+					_ = requestprotection.Checkpoint(e.Request.Context(), "artist.detail.projection")
+					return e.NoContent(http.StatusNoContent)
+				})
+				return se.Next()
+			})
+			return app
+		},
+		AfterTestFunc: func(t testing.TB, app *tests.TestApp, _ *http.Response) {
+			testutils.FlushLogs(t, app)
+			entries := testutils.LogsWithEvent(captured(), "request_protection.cancelled")
+			if len(entries) != 1 {
+				t.Fatalf("cancellation logs = %d, want 1", len(entries))
+			}
+			data := entries[0].Data
+			if got := fmt.Sprint(data["profile"]); got != "detail" {
+				t.Errorf("profile = %q, want detail", got)
+			}
+			if got := fmt.Sprint(data["stage"]); got != "artist.detail.projection" {
+				t.Errorf("stage = %q, want artist.detail.projection", got)
+			}
+			if fmt.Sprint(data["request_id"]) == "" {
+				t.Error("request_id is empty")
+			}
+			formatted := fmt.Sprint(data)
+			for _, forbiddenKey := range []string{"client_identity", "client_ip", "path", "query", "requested_slug"} {
+				if _, found := data[forbiddenKey]; found {
+					t.Errorf("structured fields contain forbidden key %q", forbiddenKey)
+				}
+			}
+			for _, sensitive := range []string{clientIdentity, privateSlug, querySecret, protectionTestSecret} {
+				if strings.Contains(formatted, sensitive) {
+					t.Errorf("structured fields exposed %q: %s", sensitive, formatted)
+				}
+			}
+		},
+	}
+
+	scenario.Test(t)
+}
+
 func trustedProtectionHeaders(identity string, secret string) map[string]string {
 	headers := map[string]string{
 		"X-Railway-Edge":   "edge-a",
