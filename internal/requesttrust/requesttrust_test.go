@@ -101,6 +101,51 @@ func TestRailwayRejectsDuplicateHeaders(t *testing.T) {
 	})
 }
 
+func TestCloudflareRailwayAuthenticatesCurrentAndNextSecrets(t *testing.T) {
+	tests := []struct {
+		name     string
+		secret   string
+		clientIP string
+		want     string
+	}{
+		{name: "current secret with ipv4", secret: "current-origin-secret", clientIP: "198.51.100.7", want: "198.51.100.7"},
+		{name: "current secret with ipv6", secret: "current-origin-secret", clientIP: "2001:db8::1", want: "2001:db8::1"},
+		{name: "next secret during rotation", secret: "next-origin-secret", clientIP: "::ffff:198.51.100.8", want: "198.51.100.8"},
+	}
+
+	resolver := New(SourceCloudflareRailway, CloudflareOriginSecrets{
+		Current: "current-origin-secret",
+		Next:    "next-origin-secret",
+	})
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodGet, "/", nil)
+			request.Header.Set("X-Railway-Edge", "edge-pop")
+			request.Header.Set("X-WGA-Edge-Secret", test.secret)
+			request.Header.Set("CF-Connecting-IP", test.clientIP)
+
+			got, ok := resolver(request)
+			if !ok || got != test.want {
+				t.Fatalf("resolve = %q, %t; want %q, true", got, ok, test.want)
+			}
+		})
+	}
+}
+
+func TestCloudflareRailwayRequiresConfiguredOriginAuthentication(t *testing.T) {
+	request := httptest.NewRequest(http.MethodGet, "/", nil)
+	request.Header.Set("X-Railway-Edge", "edge-pop")
+	request.Header.Set("X-WGA-Edge-Secret", "visitor-supplied")
+	request.Header.Set("CF-Connecting-IP", "198.51.100.7")
+
+	if _, ok := New(SourceCloudflareRailway)(request); ok {
+		t.Fatal("Cloudflare source without configured secrets must fail closed")
+	}
+	if _, ok := New(SourceCloudflareRailway, CloudflareOriginSecrets{Current: "configured-secret"})(request); ok {
+		t.Fatal("unrecognised Cloudflare origin secret must fail closed")
+	}
+}
+
 func TestUnknownSourceFallsBackToDirect(t *testing.T) {
 	request := httptest.NewRequest(http.MethodPost, "/", nil)
 	request.RemoteAddr = "198.51.100.7:1234"
@@ -117,5 +162,8 @@ func TestNilRequestFailsClosed(t *testing.T) {
 	}
 	if _, ok := New(SourceRailway)(nil); ok {
 		t.Fatal("nil request must fail closed for railway")
+	}
+	if _, ok := New(SourceCloudflareRailway, CloudflareOriginSecrets{Current: "configured-secret"})(nil); ok {
+		t.Fatal("nil request must fail closed for Cloudflare via Railway")
 	}
 }

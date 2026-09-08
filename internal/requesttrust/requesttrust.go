@@ -5,6 +5,8 @@
 package requesttrust
 
 import (
+	"crypto/sha256"
+	"crypto/subtle"
 	"net"
 	"net/http"
 	"strings"
@@ -25,7 +27,18 @@ const (
 	// parseable X-Real-IP address and ignores X-Forwarded-For. Anything else
 	// fails closed.
 	SourceRailway Source = "railway"
+
+	// SourceCloudflareRailway authenticates Cloudflare at the Railway origin
+	// before accepting exactly one CF-Connecting-IP address.
+	SourceCloudflareRailway Source = "cloudflare-railway"
 )
+
+// CloudflareOriginSecrets contains the active and optional staged origin
+// authentication values. Configuration validates their entropy and encoding.
+type CloudflareOriginSecrets struct {
+	Current string
+	Next    string
+}
 
 // Resolver returns the trusted client identity for a request. ok is false when
 // the identity is absent or invalid, in which case guarded state creation and
@@ -35,12 +48,22 @@ type Resolver func(*http.Request) (string, bool)
 // New returns the resolver for the configured source. An unrecognised source
 // resolves to the fail-closed direct resolver, matching the validation already
 // performed by config.LoadFrom.
-func New(source Source) Resolver {
+func New(source Source, cloudflareSecrets ...CloudflareOriginSecrets) Resolver {
 	if source == SourceRailway {
 		return resolveRailway
 	}
+	if source == SourceCloudflareRailway {
+		if len(cloudflareSecrets) != 1 || cloudflareSecrets[0].Current == "" {
+			return failClosed
+		}
+		return newCloudflareRailwayResolver(cloudflareSecrets[0])
+	}
 
 	return resolveDirect
+}
+
+func failClosed(*http.Request) (string, bool) {
+	return "", false
 }
 
 // resolveDirect canonicalises the socket peer address and ignores forwarded
@@ -83,6 +106,35 @@ func resolveRailway(r *http.Request) (string, bool) {
 	return singleRealIP(r.Header)
 }
 
+func newCloudflareRailwayResolver(secrets CloudflareOriginSecrets) Resolver {
+	currentDigest := sha256.Sum256([]byte(secrets.Current))
+	nextDigest := sha256.Sum256([]byte(secrets.Next))
+	hasNext := secrets.Next != ""
+
+	return func(r *http.Request) (string, bool) {
+		if r == nil || !validRailwayEdge(r.Header) || !validCloudflareOrigin(r.Header, currentDigest, nextDigest, hasNext) {
+			return "", false
+		}
+
+		return singleIPHeader(r.Header, "CF-Connecting-IP")
+	}
+}
+
+func validCloudflareOrigin(header http.Header, currentDigest [sha256.Size]byte, nextDigest [sha256.Size]byte, hasNext bool) bool {
+	values := header.Values("X-WGA-Edge-Secret")
+	if len(values) != 1 {
+		return false
+	}
+
+	candidateDigest := sha256.Sum256([]byte(values[0]))
+	currentMatch := subtle.ConstantTimeCompare(candidateDigest[:], currentDigest[:])
+	nextMatch := 0
+	if hasNext {
+		nextMatch = subtle.ConstantTimeCompare(candidateDigest[:], nextDigest[:])
+	}
+	return currentMatch|nextMatch == 1
+}
+
 // validRailwayEdge reports whether the request carries exactly one
 // syntactically valid X-Railway-Edge marker. A valid marker is a single
 // non-empty token without whitespace or commas.
@@ -121,7 +173,11 @@ func validEdgeMarker(marker string) bool {
 // singleRealIP returns the single parseable X-Real-IP address, or ok=false when
 // the header is absent, duplicated, or not a valid IP.
 func singleRealIP(header http.Header) (string, bool) {
-	values := header.Values("X-Real-IP")
+	return singleIPHeader(header, "X-Real-IP")
+}
+
+func singleIPHeader(header http.Header, name string) (string, bool) {
+	values := header.Values(name)
 	if len(values) != 1 {
 		return "", false
 	}

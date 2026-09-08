@@ -86,7 +86,14 @@ func main() {
 		}
 		contributorProvider := contributors.NewGitHubProvider(&http.Client{Timeout: 10 * time.Second})
 		captchaVerifier := antiabuse.NewRecaptchaVerifier(&http.Client{Timeout: 5 * time.Second}, serverConfig.Captcha.Secret())
-		clientIdentity := requesttrust.New(requesttrust.Source(serverConfig.ClientIPSource))
+		nextCloudflareSecret, _ := serverConfig.CloudflareOriginSecrets.Next()
+		clientIdentity := requesttrust.New(
+			requesttrust.Source(serverConfig.ClientIPSource),
+			requesttrust.CloudflareOriginSecrets{
+				Current: serverConfig.CloudflareOriginSecrets.Current().Value(),
+				Next:    nextCloudflareSecret.Value(),
+			},
+		)
 		itineraryPolicy, err := itinerarySecurityPolicy(serverConfig, clientIdentity)
 		if err != nil {
 			log.Fatal(err)

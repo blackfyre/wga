@@ -5,7 +5,7 @@
 
 ## 2. Authenticated proxy identity
 
-- [ ] 2.1 Extend `internal/requesttrust` with a Cloudflare-via-Railway resolver that requires valid Railway edge markers and constant-time origin-secret authentication before accepting exactly one valid `CF-Connecting-IP`; verify focused valid IPv4/IPv6 and current/next secret tests pass.
+- [x] 2.1 Extend `internal/requesttrust` with a Cloudflare-via-Railway resolver that requires valid Railway edge markers and constant-time origin-secret authentication before accepting exactly one valid `CF-Connecting-IP`; verify focused valid IPv4/IPv6 and current/next secret tests pass.
 - [ ] 2.2 Add adversarial proxy tests proving missing/invalid secrets, duplicate or malformed `CF-Connecting-IP`, direct Railway requests, and spoofed `Host`, `X-Real-IP`, or `X-Forwarded-For` cannot produce a trusted Cloudflare identity or expose secret values.
 
 ## 3. Admission policy
