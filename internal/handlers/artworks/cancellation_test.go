@@ -12,18 +12,17 @@ import (
 
 func TestArtworkSearchCancellationStopsSubsequentRepositoryStage(t *testing.T) {
 	app := newArtworkSearchApp(t)
-	cause := errors.New("artwork search cancelled")
-	ctx, cancel := context.WithCancelCause(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
 	stages := []string{}
 	checkpoint := func(ctx context.Context, stage string) error {
 		stages = append(stages, stage)
 		if stage == "artworks.search.records" {
-			cancel(cause)
+			cancel()
 		}
 		return requestprotection.Checkpoint(ctx, stage)
 	}
 
-	if _, _, err := buildArtworkSearchViewContext(ctx, app, url.Values{}, 1, artworkSearchPageSize, checkpoint); !errors.Is(err, cause) {
+	if _, _, err := buildArtworkSearchViewContext(ctx, app, url.Values{}, 1, artworkSearchPageSize, checkpoint); !errors.Is(err, context.Canceled) {
 		t.Fatalf("buildArtworkSearchViewContext() error = %v, want original cancellation cause", err)
 	}
 	want := []string{"artworks.search.count", "artworks.search.records"}
@@ -33,15 +32,14 @@ func TestArtworkSearchCancellationStopsSubsequentRepositoryStage(t *testing.T) {
 }
 
 func TestArtworkSearchCancellationSkipsRender(t *testing.T) {
-	cause := errors.New("artwork render cancelled")
-	ctx, cancel := context.WithCancelCause(context.Background())
-	cancel(cause)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
 	called := false
 	err := renderArtworkSearch(ctx, func() error {
 		called = true
 		return nil
 	})
-	if !errors.Is(err, cause) {
+	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("renderArtworkSearch() error = %v, want original cancellation cause", err)
 	}
 	if called {

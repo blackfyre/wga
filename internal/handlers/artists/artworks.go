@@ -2,6 +2,7 @@ package artists
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -20,6 +21,7 @@ import (
 	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/repositories"
+	"github.com/blackfyre/wga/internal/requestprotection"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/blackfyre/wga/internal/utils/glossary"
 	"github.com/blackfyre/wga/internal/utils/jsonld"
@@ -49,6 +51,12 @@ func findPublishedArtwork(app *pocketbase.PocketBase, id string) (*core.Record, 
 // Returns:
 // - An error if any error occurs during the processing, or nil if the processing is successful.
 func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase, environment config.Environment) error {
+	return processArtworkWithCheckpoint(c, app, environment, requestprotection.Checkpoint)
+}
+
+type artworkDetailCheckpoint func(context.Context, string) error
+
+func processArtworkWithCheckpoint(c *core.RequestEvent, app *pocketbase.PocketBase, environment config.Environment, checkpoint artworkDetailCheckpoint) error {
 	artistSlug := c.Request.PathValue("name")
 	artworkSlug := c.Request.PathValue("awid")
 	markdownPath := generatedMarkdownPath("artworks", artworkSlug)
@@ -60,6 +68,9 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase, environmen
 	artistSlugParts := strings.Split(artistSlug, "-")
 	artistId := artistSlugParts[len(artistSlugParts)-1]
 
+	if err := checkpoint(c.Request.Context(), "artwork.detail.artist_lookup"); err != nil {
+		return artworkCancellationError(c, err)
+	}
 	artist, err := repositories.NewArtistRecordRepository(app).FindPublishedArtist(artistId)
 
 	// If the artist is not found or unpublished, return an indistinguishable 404.
@@ -78,6 +89,9 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase, environmen
 	artworkId := artworkSlugParts[len(artworkSlugParts)-1]
 
 	// find the artwork by id, published only
+	if err := checkpoint(c.Request.Context(), "artwork.detail.artwork_lookup"); err != nil {
+		return artworkCancellationError(c, err)
+	}
 	aw, err := findPublishedArtwork(app, artworkId)
 
 	if err != nil {
@@ -117,6 +131,9 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase, environmen
 		return c.Redirect(http.StatusMovedPermanently, canonicalURL)
 	}
 
+	if err := checkpoint(c.Request.Context(), "artwork.detail.projection"); err != nil {
+		return artworkCancellationError(c, err)
+	}
 	var img dto.Image
 
 	img.Id = aw.GetString("id")
@@ -162,11 +179,23 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase, environmen
 		ReproFile:       artworkReproductionFile(aw),
 		SourceURL:       url.GenerateArtworkSourceURL(aw),
 	}
+	if err := checkpoint(c.Request.Context(), "artwork.detail.metadata"); err != nil {
+		return artworkCancellationError(c, err)
+	}
 	populateArtworkMetadata(app, aw, &content)
 	populateArtworkCitation(&content)
+	if err := checkpoint(c.Request.Context(), "artwork.detail.source_data"); err != nil {
+		return artworkCancellationError(c, err)
+	}
 	populateArtworkSourceData(app, aw, &content, environment)
+	if err := checkpoint(c.Request.Context(), "artwork.detail.related_content"); err != nil {
+		return artworkCancellationError(c, err)
+	}
 	populateArtworkRelated(app, aw, &content, basis, expectedPageUrl)
 
+	if err := checkpoint(c.Request.Context(), "artwork.detail.schools"); err != nil {
+		return artworkCancellationError(c, err)
+	}
 	school := artist.GetStringSlice("school")
 
 	var schoolCollector []string
@@ -186,6 +215,9 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase, environmen
 	}
 
 	// Annotate the source-backed commentary with glossary terms.
+	if err := checkpoint(c.Request.Context(), "artwork.detail.glossary"); err != nil {
+		return artworkCancellationError(c, err)
+	}
 	glossaryEntries, glossaryErr := glossary.GetGlossaryEntries(app)
 	if glossaryErr != nil {
 		app.Logger().Warn("Failed to load glossary entries", "error", glossaryErr)
@@ -214,6 +246,9 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase, environmen
 
 	var buff bytes.Buffer
 
+	if err := checkpoint(c.Request.Context(), "artwork.detail.render"); err != nil {
+		return artworkCancellationError(c, err)
+	}
 	err = pages.ArtworkPage(content).Render(ctx, &buff)
 
 	if err != nil {
@@ -222,6 +257,10 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase, environmen
 	}
 
 	return c.HTML(http.StatusOK, buff.String())
+}
+
+func artworkCancellationError(c *core.RequestEvent, err error) error {
+	return utils.ServerFaultError(c, utils.ServerFailure{Category: "page_render", Cause: err})
 }
 
 func RenderArtworkContent(app *pocketbase.PocketBase, c *core.RequestEvent, artwork *core.Record, hxTarget string, showBreadcrumbs bool) (dto.Artwork, error) {

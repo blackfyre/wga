@@ -12,18 +12,17 @@ import (
 
 func TestArtistSearchCancellationStopsSubsequentRepositoryStage(t *testing.T) {
 	app := newArtistRecordApp(t)
-	cause := errors.New("artist search cancelled")
-	ctx, cancel := context.WithCancelCause(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
 	stages := []string{}
 	checkpoint := func(ctx context.Context, stage string) error {
 		stages = append(stages, stage)
 		if stage == "artists.search.periods" {
-			cancel(cause)
+			cancel()
 		}
 		return requestprotection.Checkpoint(ctx, stage)
 	}
 
-	if _, _, err := buildArtistIndexViewContext(ctx, app, url.Values{}, checkpoint); !errors.Is(err, cause) {
+	if _, _, err := buildArtistIndexViewContext(ctx, app, url.Values{}, checkpoint); !errors.Is(err, context.Canceled) {
 		t.Fatalf("buildArtistIndexViewContext() error = %v, want original cancellation cause", err)
 	}
 	want := []string{"artists.search.schools", "artists.search.periods"}
@@ -33,15 +32,14 @@ func TestArtistSearchCancellationStopsSubsequentRepositoryStage(t *testing.T) {
 }
 
 func TestArtistSearchCancellationSkipsRender(t *testing.T) {
-	cause := errors.New("artist render cancelled")
-	ctx, cancel := context.WithCancelCause(context.Background())
-	cancel(cause)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
 	called := false
 	err := renderArtistIndex(ctx, func() error {
 		called = true
 		return nil
 	})
-	if !errors.Is(err, cause) {
+	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("renderArtistIndex() error = %v, want original cancellation cause", err)
 	}
 	if called {

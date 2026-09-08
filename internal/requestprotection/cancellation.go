@@ -10,8 +10,5 @@ func Checkpoint(ctx context.Context, stage string) error {
 	if ctx == nil || ctx.Err() == nil {
 		return nil
 	}
-	if cause := context.Cause(ctx); cause != nil {
-		return cause
-	}
 	return ctx.Err()
 }

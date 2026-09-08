@@ -6,12 +6,11 @@ import (
 	"testing"
 )
 
-func TestCheckpointPreservesCancellationCause(t *testing.T) {
-	cause := errors.New("caller stopped request")
-	ctx, cancel := context.WithCancelCause(context.Background())
-	cancel(cause)
-	if err := Checkpoint(ctx, "artists.search.records"); !errors.Is(err, cause) {
-		t.Fatalf("Checkpoint() error = %v, want original cause", err)
+func TestCheckpointPreservesContextError(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if err := Checkpoint(ctx, "artists.search.records"); !errors.Is(err, context.Canceled) {
+		t.Fatalf("Checkpoint() error = %v, want context.Canceled", err)
 	}
 	if err := Checkpoint(context.Background(), "artists.search.records"); err != nil {
 		t.Fatalf("active checkpoint error = %v", err)
