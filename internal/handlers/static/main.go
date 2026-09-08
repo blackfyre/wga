@@ -95,7 +95,7 @@ func RegisterHandlers(app core.App, environment config.Environment) {
 			return c.Blob(http.StatusOK, "text/xsl; charset=utf-8", []byte(sitemapStylesheet(tmplUtils.AssetUrl("/assets/css/style.css"))))
 		})
 		se.Router.GET("/robots.txt", func(c *core.RequestEvent) error {
-			return c.String(http.StatusOK, "Sitemap: "+tmplUtils.AssetUrl("/sitemap.xml")+"\n")
+			return c.String(http.StatusOK, robotsText(tmplUtils.AssetUrl("/sitemap.xml")))
 		})
 
 		// "Static" pages
@@ -117,6 +117,14 @@ func RegisterHandlers(app core.App, environment config.Environment) {
 
 		return se.Next()
 	})
+}
+
+func robotsText(sitemapURL string) string {
+	return "User-agent: *\n" +
+		"Disallow: /dual-mode\n" +
+		"Disallow: /artworks/results\n" +
+		"Disallow: /*?\n" +
+		"Sitemap: " + sitemapURL + "\n"
 }
 
 func sitemapStylesheet(cssURL string) string {

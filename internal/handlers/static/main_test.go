@@ -210,12 +210,18 @@ func writeSitemapFiles(t testing.TB, app core.App) {
 func TestSitemapRoutesServeCanonicalFilesAndDiscovery(t *testing.T) {
 	cases := []struct {
 		path     string
-		contains string
+		contains []string
 	}{
-		{path: "/sitemap.xml", contains: "sitemapindex"},
-		{path: "/sitemap/artists.xml", contains: "urlset"},
-		{path: "/robots.txt", contains: "Sitemap: https://gallery.example/sitemap.xml"},
-		{path: "/sitemap.xsl", contains: `href="https://gallery.example/assets/css/style.css"`},
+		{path: "/sitemap.xml", contains: []string{"sitemapindex"}},
+		{path: "/sitemap/artists.xml", contains: []string{"urlset"}},
+		{path: "/robots.txt", contains: []string{
+			"User-agent: *",
+			"Disallow: /dual-mode",
+			"Disallow: /artworks/results",
+			"Disallow: /*?",
+			"Sitemap: https://gallery.example/sitemap.xml",
+		}},
+		{path: "/sitemap.xsl", contains: []string{`href="https://gallery.example/assets/css/style.css"`}},
 	}
 
 	for _, tc := range cases {
@@ -225,7 +231,7 @@ func TestSitemapRoutesServeCanonicalFilesAndDiscovery(t *testing.T) {
 				Method:          http.MethodGet,
 				URL:             tc.path,
 				ExpectedStatus:  http.StatusOK,
-				ExpectedContent: []string{tc.contains},
+				ExpectedContent: tc.contains,
 				TestAppFactory: func(t testing.TB) *tests.TestApp {
 					configureStaticPublicURL(t)
 					app := newStaticTestApp(t)
@@ -236,6 +242,25 @@ func TestSitemapRoutesServeCanonicalFilesAndDiscovery(t *testing.T) {
 			}
 			scenario.Test(t)
 		})
+	}
+}
+
+func TestRobotsTextPublishesCompleteCrawlerContract(t *testing.T) {
+	const sitemapURL = "https://gallery.example/sitemap.xml"
+	want := "User-agent: *\n" +
+		"Disallow: /dual-mode\n" +
+		"Disallow: /artworks/results\n" +
+		"Disallow: /*?\n" +
+		"Sitemap: " + sitemapURL + "\n"
+
+	got := robotsText(sitemapURL)
+	if got != want {
+		t.Fatalf("robots.txt = %q; want %q", got, want)
+	}
+	for _, canonicalPrefix := range []string{"Disallow: /artists", "Disallow: /agents"} {
+		if strings.Contains(got, canonicalPrefix) {
+			t.Fatalf("robots.txt excludes canonical records with %q", canonicalPrefix)
+		}
 	}
 }
 
