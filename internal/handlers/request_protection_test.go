@@ -3,17 +3,20 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"net/http/httptest"
 	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/logging"
+	"github.com/blackfyre/wga/internal/requestfailure"
 	"github.com/blackfyre/wga/internal/requestprotection"
 	"github.com/blackfyre/wga/internal/requesttrust"
 	"github.com/blackfyre/wga/internal/testutils"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tests"
+	"github.com/pocketbase/pocketbase/tools/router"
 )
 
 const protectionTestSecret = "configured-origin-secret"
@@ -81,6 +84,10 @@ func TestProtectedReadMiddlewareRejectsBeforeHandlerWork(t *testing.T) {
 				Headers:         test.headers,
 				ExpectedStatus:  test.status,
 				ExpectedContent: []string{http.StatusText(test.status)},
+				NotExpectedContent: []string{
+					"<!DOCTYPE", "<html", "protected handler invoked", protectionTestSecret,
+					"CF-Connecting-IP", "X-WGA-Edge-Secret", "198.51.100",
+				},
 				TestAppFactory: func(t testing.TB) *tests.TestApp {
 					app := testutils.NewTestApp(t)
 					logging.RegisterRequestIDMiddleware(app)
@@ -116,6 +123,46 @@ func TestProtectedReadMiddlewareRejectsBeforeHandlerWork(t *testing.T) {
 			}
 
 			scenario.Test(t)
+		})
+	}
+}
+
+func TestPlainProtectionResponsesAreMinimalExpectedOutcomes(t *testing.T) {
+	for _, test := range []struct {
+		status         int
+		retryAfter     time.Duration
+		wantRetryAfter string
+	}{
+		{status: http.StatusForbidden},
+		{status: http.StatusMisdirectedRequest},
+		{status: http.StatusTooManyRequests, retryAfter: 1500 * time.Millisecond, wantRetryAfter: "2"},
+		{status: http.StatusServiceUnavailable, retryAfter: 1500 * time.Millisecond, wantRetryAfter: "2"},
+	} {
+		t.Run(http.StatusText(test.status), func(t *testing.T) {
+			response := httptest.NewRecorder()
+			event := &core.RequestEvent{Event: router.Event{
+				Request:  httptest.NewRequest(http.MethodGet, "/artists/private-slug", nil),
+				Response: response,
+			}}
+
+			if err := plainProtectionResponse(event, test.status, test.retryAfter); err != nil {
+				t.Fatalf("render response: %v", err)
+			}
+			if response.Code != test.status {
+				t.Fatalf("status = %d; want %d", response.Code, test.status)
+			}
+			if got, want := response.Body.String(), http.StatusText(test.status)+"\n"; got != want {
+				t.Fatalf("body = %q; want %q", got, want)
+			}
+			if got := response.Header().Get("Content-Type"); got != "text/plain; charset=utf-8" {
+				t.Fatalf("Content-Type = %q; want plain text", got)
+			}
+			if got := response.Header().Get("Retry-After"); got != test.wantRetryAfter {
+				t.Fatalf("Retry-After = %q; want %q", got, test.wantRetryAfter)
+			}
+			if !requestfailure.IsExpectedResponse(event) {
+				t.Fatal("protection response was not marked as an expected outcome")
+			}
 		})
 	}
 }

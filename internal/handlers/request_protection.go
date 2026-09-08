@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/blackfyre/wga/internal/logging"
+	"github.com/blackfyre/wga/internal/requestfailure"
 	"github.com/blackfyre/wga/internal/requestprotection"
 	"github.com/blackfyre/wga/internal/requesttrust"
 	"github.com/pocketbase/pocketbase/core"
@@ -66,7 +67,11 @@ func plainProtectionResponse(e *core.RequestEvent, status int, retryAfter time.D
 		seconds := (retryAfter + time.Second - 1) / time.Second
 		e.Response.Header().Set("Retry-After", strconv.FormatInt(int64(seconds), 10))
 	}
-	return e.String(status, http.StatusText(status)+"\n")
+	err := e.String(status, http.StatusText(status)+"\n")
+	if err == nil {
+		requestfailure.MarkExpectedResponse(e)
+	}
+	return err
 }
 
 func logIngressRejection(app core.App, e *core.RequestEvent, profile requestprotection.Profile, decision string, status int) {

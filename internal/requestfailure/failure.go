@@ -6,7 +6,10 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
-const key = "wga.server_failure"
+const (
+	key                 = "wga.server_failure"
+	expectedResponseKey = "wga.expected_response"
+)
 
 // Failure identifies the safe category and optional cause of a rendered
 // server-fault response for request-scoped observability.
@@ -24,4 +27,17 @@ func Record(event *core.RequestEvent, failure Failure) {
 func From(event *core.RequestEvent) (Failure, bool) {
 	failure, ok := event.Get(key).(Failure)
 	return failure, ok
+}
+
+// MarkExpectedResponse marks a terminal, intentionally rendered HTTP outcome
+// that must not be reported as an unexpected server fault.
+func MarkExpectedResponse(event *core.RequestEvent) {
+	event.Set(expectedResponseKey, true)
+}
+
+// IsExpectedResponse reports whether a terminal response was intentionally
+// rendered by application policy.
+func IsExpectedResponse(event *core.RequestEvent) bool {
+	expected, _ := event.Get(expectedResponseKey).(bool)
+	return expected
 }

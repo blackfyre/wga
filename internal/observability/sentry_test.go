@@ -185,6 +185,31 @@ func TestMonitorIntercept(t *testing.T) {
 		}
 	})
 
+	t.Run("does not capture expected policy responses", func(t *testing.T) {
+		captured := false
+		logged := false
+		monitor := Monitor{
+			enabled: true,
+			captureFailure: func(error, requestFailure) {
+				captured = true
+			},
+			logFailure: func(requestFailure) {
+				logged = true
+			},
+		}
+		event := monitorRequestEvent(t, "/artists/example")
+
+		if err := monitor.intercept(event, func() error {
+			requestfailure.MarkExpectedResponse(event)
+			return nil
+		}, func() int { return http.StatusServiceUnavailable }); err != nil {
+			t.Fatalf("expected nil error, got %v", err)
+		}
+		if captured || logged {
+			t.Fatal("expected policy response must not be reported as a server fault")
+		}
+	})
+
 	t.Run("does not capture rendered cancelled or deadline failures", func(t *testing.T) {
 		for _, test := range []struct {
 			name  string

@@ -221,6 +221,9 @@ func (m Monitor) intercept(e *core.RequestEvent, next func() error, responseStat
 	}()
 
 	err = next()
+	if requestfailure.IsExpectedResponse(e) {
+		return err
+	}
 	if shouldCapture(err) {
 		failure := m.failure(e, err, responseStatus(), false)
 		m.report(failure)
