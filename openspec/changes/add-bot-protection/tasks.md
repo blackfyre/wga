@@ -39,7 +39,7 @@
 ## 7. Deterministic integration verification
 
 - [x] 7.1 Run formatting, `go test` for config/requesttrust/requestprotection/handlers/observability, `go vet` on affected packages, and `git diff --check`; correct only failures caused by this change.
-- [ ] 7.2 Start the local application with enforcement enabled and run focused Playwright catalogue-search/navigation tests plus authenticated-origin and agent-content HTTP checks; verify normal browser/HTMX interactions succeed, Markdown negotiation resolves to generated content, and rejected requests never reach protected handlers.
+- [x] 7.2 Start the local application with enforcement enabled and run focused Playwright catalogue-search/navigation tests plus authenticated-origin and agent-content HTTP checks; verify normal browser/HTMX interactions succeed, Markdown negotiation resolves to generated content, and rejected requests never reach protected handlers.
 
 ## 8. Cloudflare Free configuration
 
