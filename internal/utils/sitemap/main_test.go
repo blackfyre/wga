@@ -97,6 +97,9 @@ func TestGenerateSiteMapPublishesCanonicalPublicURLs(t *testing.T) {
 	if result.URLCount != 2 || result.ExcludedCount != 1 {
 		t.Fatalf("result = %+v, want 2 URLs and 1 exclusion", result)
 	}
+	if result.AgentArtistCount != 1 || result.AgentArtworkCount != 1 || result.AgentExcludedCount != 1 {
+		t.Fatalf("agent result = %+v, want one artist, one artwork, and one exclusion", result)
+	}
 	if result.CleanupErr != nil {
 		t.Fatalf("cleanup sitemap files: %v", result.CleanupErr)
 	}

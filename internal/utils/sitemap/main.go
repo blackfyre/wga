@@ -3,6 +3,7 @@ package sitemap
 import (
 	"bytes"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -12,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/blackfyre/wga/internal/agentcontent"
 	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/constants"
 	urlutils "github.com/blackfyre/wga/internal/utils/url"
@@ -30,10 +32,13 @@ var generationMu sync.Mutex
 
 // Result describes one sitemap publication attempt.
 type Result struct {
-	URLCount      int
-	ExcludedCount int
-	IndexPath     string
-	CleanupErr    error
+	URLCount           int
+	ExcludedCount      int
+	AgentArtistCount   int
+	AgentArtworkCount  int
+	AgentExcludedCount int
+	IndexPath          string
+	CleanupErr         error
 }
 
 // Directory returns the durable location for generated sitemap files.
@@ -87,16 +92,23 @@ func GenerateSiteMap(app core.App, sitemapConfig config.Sitemap) (Result, error)
 	if err != nil {
 		return Result{}, err
 	}
+	agentResult, err := agentcontent.Publish(app, sitemapConfig.PublicURL)
+	if err != nil {
+		return Result{}, fmt.Errorf("publish agent content: %w", err)
+	}
 	if err := publish(stagingDir, outputDir, children); err != nil {
 		return Result{}, err
 	}
 
 	result := Result{
-		URLCount:      artistURLs + artworkURLs,
-		ExcludedCount: artistExcluded + artworkExcluded,
-		IndexPath:     filepath.Join(outputDir, indexFilename),
+		URLCount:           artistURLs + artworkURLs,
+		ExcludedCount:      artistExcluded + artworkExcluded,
+		AgentArtistCount:   agentResult.ArtistCount,
+		AgentArtworkCount:  agentResult.ArtworkCount,
+		AgentExcludedCount: agentResult.ExcludedCount,
+		IndexPath:          filepath.Join(outputDir, indexFilename),
 	}
-	result.CleanupErr = prune(outputDir, children)
+	result.CleanupErr = errors.Join(prune(outputDir, children), agentResult.CleanupErr)
 
 	return result, nil
 }

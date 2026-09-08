@@ -131,6 +131,9 @@ func main() {
 				"trigger", "manual",
 				"url_count", result.URLCount,
 				"excluded_count", result.ExcludedCount,
+				"agent_artist_count", result.AgentArtistCount,
+				"agent_artwork_count", result.AgentArtworkCount,
+				"agent_excluded_count", result.AgentExcludedCount,
 			)
 			if result.CleanupErr != nil {
 				app.Logger().Warn("Sitemap cleanup failed",
