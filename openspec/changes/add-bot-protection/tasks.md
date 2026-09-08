@@ -11,7 +11,7 @@
 ## 3. Admission policy
 
 - [x] 3.1 Create `internal/requestprotection` classification for search, `/dual-mode` fragment, detail, and exempt route families plus canonical-host routing checks; verify table-driven tests cover canonical/deployment hosts, GET/HEAD, ports, host case/trailing dots, health, static, sitemap, robots, admin, and unclassified routes.
-- [ ] 3.2 Implement bounded per-client rate accounting using only resolved private identities; verify tests cover separate search/fragment/detail limits, window expiry, failed identity resolution, fixed-capacity eviction, address rotation, and absence of raw identity data.
+- [x] 3.2 Implement bounded per-client rate accounting using only resolved private identities; verify tests cover separate search/fragment/detail limits, window expiry, failed identity resolution, fixed-capacity eviction, address rotation, and absence of raw identity data.
 - [ ] 3.3 Implement the non-blocking global protected-read capacity gate and idempotent release contract; verify deterministic concurrent tests cover available, exhausted, cancelled, and exactly-once release paths without an unbounded queue.
 - [ ] 3.4 Implement `off`, `observe`, and `enforce` decisions plus privacy-safe structured fields; verify observe mode updates bounded rate state and records would-be decisions without rejecting or retaining scarce concurrency capacity.
 
