@@ -31,7 +31,7 @@
 
 ## 6. Cancellation checkpoints
 
-- [ ] 6.1 Add cancellation checkpoints around material stages in artist and artwork search workflows; verify focused tests cancel between stages, observe the original context error, and prove the subsequent repository/render stage is not invoked.
+- [x] 6.1 Add cancellation checkpoints around material stages in artist and artwork search workflows; verify focused tests cancel between stages, observe the original context error, and prove the subsequent repository/render stage is not invoked.
 - [ ] 6.2 Add cancellation checkpoints around material stages in artist-detail and artwork-detail workflows; verify focused tests cancel between lookup, projection, related-content, and render stages without recording a Sentry server fault.
 - [ ] 6.3 Add cancellation checkpoints around material dual-mode workflow stages; verify focused tests stop subsequent work after cancellation while active full-page and HTMX requests remain unchanged.
 - [ ] 6.4 Add request-scoped cancellation telemetry at the shared checkpoint boundary; verify logging tests record route profile and stage without raw client identity or requested slug data.

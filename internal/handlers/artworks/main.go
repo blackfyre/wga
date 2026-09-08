@@ -3,6 +3,7 @@ package artworks
 import (
 	"bytes"
 	"cmp"
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -14,6 +15,7 @@ import (
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
 	"github.com/blackfyre/wga/internal/constants"
+	"github.com/blackfyre/wga/internal/requestprotection"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/blackfyre/wga/internal/utils/url"
 	"github.com/pocketbase/dbx"
@@ -42,7 +44,7 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 		page = parsed
 	}
 
-	view, canonical, err := buildArtworkSearchView(app, queryParams, page, artworkSearchPageSize)
+	view, canonical, err := buildArtworkSearchViewContext(c.Request.Context(), app, queryParams, page, artworkSearchPageSize, requestprotection.Checkpoint)
 	if err != nil {
 		if errors.Is(err, errConflictingVenueFilters) {
 			app.Logger().Warn("Rejected conflicting artwork venue filters")
@@ -60,15 +62,17 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 	var buff bytes.Buffer
 
-	htmxTarget := strings.TrimPrefix(strings.TrimSpace(c.Request.Header.Get("HX-Target")), "#")
-	switch {
-	case utils.IsHtmxRequest(c) && htmxTarget == "artwork-search":
-		err = pages.ArtworkSearchBlock(view).Render(ctx, &buff)
-	case utils.IsHtmxRequest(c) && c.Request.URL.Path == "/artworks/results":
-		err = pages.ArtworkSearchResults(view.Results).Render(ctx, &buff)
-	default:
-		err = pages.ArtworkSearchPage(view).Render(ctx, &buff)
-	}
+	err = renderArtworkSearch(c.Request.Context(), func() error {
+		htmxTarget := strings.TrimPrefix(strings.TrimSpace(c.Request.Header.Get("HX-Target")), "#")
+		switch {
+		case utils.IsHtmxRequest(c) && htmxTarget == "artwork-search":
+			return pages.ArtworkSearchBlock(view).Render(ctx, &buff)
+		case utils.IsHtmxRequest(c) && c.Request.URL.Path == "/artworks/results":
+			return pages.ArtworkSearchResults(view.Results).Render(ctx, &buff)
+		default:
+			return pages.ArtworkSearchPage(view).Render(ctx, &buff)
+		}
+	})
 
 	if err != nil {
 		app.Logger().Error("Error rendering artwork search page", "error", err.Error())
@@ -78,9 +82,22 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	return c.HTML(http.StatusOK, buff.String())
 }
 
+func renderArtworkSearch(ctx context.Context, render func() error) error {
+	if err := requestprotection.Checkpoint(ctx, "artworks.search.render"); err != nil {
+		return err
+	}
+	return render()
+}
+
 // buildArtworkSearchView parses the request state, loads the bounded result
 // page, and assembles the page-owned view plus the canonical /artworks URL.
 func buildArtworkSearchView(app *pocketbase.PocketBase, values neturl.Values, page int, limit int) (pages.ArtworkSearchView, string, error) {
+	return buildArtworkSearchViewContext(context.Background(), app, values, page, limit, requestprotection.Checkpoint)
+}
+
+type artworkSearchCheckpoint func(context.Context, string) error
+
+func buildArtworkSearchViewContext(ctx context.Context, app *pocketbase.PocketBase, values neturl.Values, page int, limit int, checkpoint artworkSearchCheckpoint) (pages.ArtworkSearchView, string, error) {
 	filters := buildFilters(values)
 	dualModeContext := getDualModeSearchContext(values)
 
@@ -88,6 +105,9 @@ func buildArtworkSearchView(app *pocketbase.PocketBase, values neturl.Values, pa
 		return pages.ArtworkSearchView{}, "", errConflictingVenueFilters
 	}
 
+	if err := checkpoint(ctx, "artworks.search.count"); err != nil {
+		return pages.ArtworkSearchView{}, "", err
+	}
 	recordsCount, err := countArtworkRecords(app, filters)
 	if err != nil {
 		return pages.ArtworkSearchView{}, "", err
@@ -102,29 +122,50 @@ func buildArtworkSearchView(app *pocketbase.PocketBase, values neturl.Values, pa
 	filters.Page = strconv.Itoa(page)
 	offset := (page - 1) * limit
 
+	if err := checkpoint(ctx, "artworks.search.records"); err != nil {
+		return pages.ArtworkSearchView{}, "", err
+	}
 	records, err := listArtworkRecords(app, filters, limit, offset)
 	if err != nil {
 		return pages.ArtworkSearchView{}, "", err
 	}
 
+	if err := checkpoint(ctx, "artworks.search.forms"); err != nil {
+		return pages.ArtworkSearchView{}, "", err
+	}
 	artFormOptions, err := getArtFormOptions(app)
 	if err != nil {
+		return pages.ArtworkSearchView{}, "", err
+	}
+	if err := checkpoint(ctx, "artworks.search.types"); err != nil {
 		return pages.ArtworkSearchView{}, "", err
 	}
 	artTypeOptions, err := getArtTypesOptions(app)
 	if err != nil {
 		return pages.ArtworkSearchView{}, "", err
 	}
+	if err := checkpoint(ctx, "artworks.search.schools"); err != nil {
+		return pages.ArtworkSearchView{}, "", err
+	}
 	artSchoolOptions, err := getArtSchoolOptions(app)
 	if err != nil {
+		return pages.ArtworkSearchView{}, "", err
+	}
+	if err := checkpoint(ctx, "artworks.search.periods"); err != nil {
 		return pages.ArtworkSearchView{}, "", err
 	}
 	artPeriodOptions, err := getArtPeriodOptions(app)
 	if err != nil {
 		return pages.ArtworkSearchView{}, "", err
 	}
+	if err := checkpoint(ctx, "artworks.search.venues"); err != nil {
+		return pages.ArtworkSearchView{}, "", err
+	}
 	venueOptions, err := getVenueOptions(app, filters.VenueQuery, filters.selectedVenue())
 	if err != nil {
+		return pages.ArtworkSearchView{}, "", err
+	}
+	if err := checkpoint(ctx, "artworks.search.projection"); err != nil {
 		return pages.ArtworkSearchView{}, "", err
 	}
 	results, err := buildArtworkSearchResults(app, filters, dualModeContext, records, recordsCount, page, limit)
