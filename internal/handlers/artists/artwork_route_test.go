@@ -320,6 +320,17 @@ func TestArtworkRouteRendersCountedHoldingAndFullHTMXParity(t *testing.T) {
 	if got := fragment.Header().Get("HX-Push-Url"); got != "/artists/synthetic-artist-artistone000001/a-painting-workone00000001" {
 		t.Errorf("HTMX HX-Push-Url = %q, want canonical artwork URL", got)
 	}
+	for name, recorder := range map[string]*httptest.ResponseRecorder{"full": full, "HTMX": fragment} {
+		if got := recorder.Header().Get("Link"); !strings.Contains(got, "/agents/artworks/workone00000001.md") {
+			t.Errorf("%s Link = %q, want Markdown alternate", name, got)
+		}
+		if !strings.Contains(recorder.Header().Get("Vary"), "Accept") {
+			t.Errorf("%s Vary = %q, want Accept", name, recorder.Header().Get("Vary"))
+		}
+	}
+	if !strings.Contains(full.Body.String(), `rel="alternate" type="text/markdown"`) || !strings.Contains(full.Body.String(), "/agents/artworks/workone00000001.md") {
+		t.Error("full response should advertise the Markdown alternate in document metadata")
+	}
 }
 
 func TestArtworkRoutePreservesNonDefaultBasis(t *testing.T) {

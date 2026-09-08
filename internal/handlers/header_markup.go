@@ -26,6 +26,8 @@ var trustedHeadMarkupBoundaries = []string{
 	"/_",
 	"/assets",
 	"/health",
+	"/agents",
+	"/llms.txt",
 	"/sitemap",
 	"/tmp/visual-overhaul",
 }

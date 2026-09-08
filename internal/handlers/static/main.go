@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/blackfyre/wga/internal/agentcontent"
 	"github.com/blackfyre/wga/internal/assets"
 	"github.com/blackfyre/wga/internal/assets/templ/components"
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
@@ -45,6 +46,41 @@ func assetCacheControl(path string) string {
 		return "public, max-age=31536000, immutable"
 	}
 	return ""
+}
+
+const agentContentCacheControl = "public, max-age=300, s-maxage=86400"
+
+func serveAgentContent(app core.App, c *core.RequestEvent, relative string) error {
+	resource, err := agentcontent.ReadCurrent(app, relative)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return utils.NotFoundError(c)
+		}
+		logging.RequestLogger(app, c).Error("Generated agent content read failed",
+			"event", "agent_content.read.failed",
+			"error_type", logging.ErrorType(err),
+			"error", logging.Redact(err),
+		)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "agent_content_read", Cause: err})
+	}
+
+	c.Response.Header().Set("Cache-Control", agentContentCacheControl)
+	c.Response.Header().Set("Link", fmt.Sprintf("<%s>; rel=\"canonical\"", resource.CanonicalURL))
+	c.Response.Header().Del("Set-Cookie")
+	return c.Blob(http.StatusOK, "text/markdown; charset=utf-8", resource.Content)
+}
+
+func generatedRecordRelative(kind, filename string) (string, bool) {
+	id, ok := strings.CutSuffix(filename, ".md")
+	if !ok || id == "" {
+		return "", false
+	}
+	for _, character := range id {
+		if (character < 'a' || character > 'z') && (character < 'A' || character > 'Z') && (character < '0' || character > '9') {
+			return "", false
+		}
+	}
+	return "agents/" + kind + "/" + id + ".md", true
 }
 
 // RegisterHandlers registers the static routes for the application.
@@ -97,6 +133,19 @@ func RegisterHandlers(app core.App, environment config.Environment) {
 		se.Router.GET("/robots.txt", func(c *core.RequestEvent) error {
 			return c.String(http.StatusOK, robotsText(tmplUtils.AssetUrl("/sitemap.xml")))
 		})
+		se.Router.GET("/llms.txt", func(c *core.RequestEvent) error {
+			return serveAgentContent(app, c, "llms.txt")
+		})
+		for _, kind := range []string{"artists", "artworks"} {
+			kind := kind
+			se.Router.GET("/agents/"+kind+"/{filename}", func(c *core.RequestEvent) error {
+				relative, ok := generatedRecordRelative(kind, c.Request.PathValue("filename"))
+				if !ok {
+					return utils.NotFoundError(c)
+				}
+				return serveAgentContent(app, c, relative)
+			})
+		}
 
 		// "Static" pages
 		se.Router.GET("/pages/{slug}", func(c *core.RequestEvent) error {

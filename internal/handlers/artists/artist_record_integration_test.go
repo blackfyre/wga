@@ -279,6 +279,15 @@ func TestArtistRecordRouteRendersFullAndHTMX(t *testing.T) {
 	if got := full.Header().Get("HX-Push-Url"); got != "/artists/synthetic-artist-artistone000001" {
 		t.Errorf("HX-Push-Url = %q, want canonical", got)
 	}
+	if got := full.Header().Get("Link"); !strings.Contains(got, "/agents/artists/artistone000001.md") {
+		t.Errorf("Link = %q, want Markdown alternate", got)
+	}
+	if !strings.Contains(full.Header().Get("Vary"), "Accept") {
+		t.Errorf("Vary = %q, want Accept", full.Header().Get("Vary"))
+	}
+	if !strings.Contains(full.Body.String(), `rel="alternate" type="text/markdown"`) || !strings.Contains(full.Body.String(), "/agents/artists/artistone000001.md") {
+		t.Error("full response should advertise the Markdown alternate in document metadata")
+	}
 
 	if partial.Code != http.StatusOK {
 		t.Fatalf("partial status = %d, want 200", partial.Code)
@@ -291,6 +300,12 @@ func TestArtistRecordRouteRendersFullAndHTMX(t *testing.T) {
 	}
 	if !strings.Contains(partial.Body.String(), "Artist, Synthetic") {
 		t.Error("HTMX response should render the artist record")
+	}
+	if got := partial.Header().Get("Link"); !strings.Contains(got, "/agents/artists/artistone000001.md") {
+		t.Errorf("HTMX Link = %q, want Markdown alternate", got)
+	}
+	if !strings.Contains(partial.Header().Get("Vary"), "Accept") {
+		t.Errorf("HTMX Vary = %q, want Accept", partial.Header().Get("Vary"))
 	}
 	if !strings.Contains(partial.Body.String(), `hx-get="/artworks?artist_id=artistone000001"`) {
 		t.Error("HTMX response should link to the exact artist holding")

@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/blackfyre/wga/internal/agentcontent"
 	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/handlers/landing"
 	"github.com/blackfyre/wga/internal/testutils"
@@ -76,6 +77,87 @@ func TestAssetRouteServesEmbeddedCSS(t *testing.T) {
 	}
 
 	scenario.Test(t)
+}
+
+func writeGeneratedAgentFixture(t *testing.T, app core.App) {
+	t.Helper()
+	root := agentcontent.Directory(app)
+	version := "publication-test"
+	current := filepath.Join(root, "versions", version)
+	if err := os.MkdirAll(filepath.Join(current, "agents", "artists"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(current, "llms.txt"), []byte("# WGA discovery\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(current, "agents", "artists", "artistone000001.md"), []byte("# Artist\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	manifest := `{"resources":{"llms.txt":"https://gallery.example/llms.txt","agents/artists/artistone000001.md":"https://gallery.example/artists/synthetic-artist-artistone000001"}}`
+	if err := os.WriteFile(filepath.Join(current, "manifest.json"), []byte(manifest), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "current"), []byte(version+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestGeneratedAgentRoutesServeOnlyCurrentMarkdown(t *testing.T) {
+	app := newStaticTestApp(t)
+	writeGeneratedAgentFixture(t, app)
+	RegisterHandlers(app, config.EnvironmentProduction)
+
+	router, err := apis.NewRouter(app)
+	if err != nil {
+		t.Fatal(err)
+	}
+	serveEvent := &core.ServeEvent{App: app, Router: router}
+	if err := app.OnServe().Trigger(serveEvent, func(se *core.ServeEvent) error {
+		mux, err := se.Router.BuildMux()
+		if err != nil {
+			return err
+		}
+		cases := []struct {
+			path      string
+			status    int
+			body      string
+			canonical string
+		}{
+			{path: "/llms.txt", status: http.StatusOK, body: "# WGA discovery", canonical: "https://gallery.example/llms.txt"},
+			{path: "/agents/artists/artistone000001.md", status: http.StatusOK, body: "# Artist", canonical: "https://gallery.example/artists/synthetic-artist-artistone000001"},
+			{path: "/agents/artists/missing00000001.md", status: http.StatusNotFound},
+			{path: "/agents/artists/not-markdown.txt", status: http.StatusNotFound},
+			{path: "/agents/artworks/missing00000001.md", status: http.StatusNotFound},
+		}
+		for _, test := range cases {
+			recorder := httptest.NewRecorder()
+			mux.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, test.path, nil))
+			if recorder.Code != test.status {
+				t.Errorf("%s status = %d, want %d", test.path, recorder.Code, test.status)
+			}
+			if test.status != http.StatusOK {
+				continue
+			}
+			if got := recorder.Header().Get("Content-Type"); got != "text/markdown; charset=utf-8" {
+				t.Errorf("%s Content-Type = %q", test.path, got)
+			}
+			if got := recorder.Header().Get("Cache-Control"); got != agentContentCacheControl {
+				t.Errorf("%s Cache-Control = %q", test.path, got)
+			}
+			if got := recorder.Header().Get("Link"); got != "<"+test.canonical+">; rel=\"canonical\"" {
+				t.Errorf("%s Link = %q", test.path, got)
+			}
+			if got := recorder.Header().Values("Set-Cookie"); len(got) != 0 {
+				t.Errorf("%s Set-Cookie = %q", test.path, got)
+			}
+			if !strings.Contains(recorder.Body.String(), test.body) {
+				t.Errorf("%s body = %q", test.path, recorder.Body.String())
+			}
+		}
+		return nil
+	}); err != nil {
+		t.Fatalf("trigger serve event: %v", err)
+	}
 }
 
 func createStaticPage(t testing.TB, app core.App, slug, title, content string) {

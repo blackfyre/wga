@@ -1,6 +1,7 @@
 package agentcontent
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"html"
@@ -24,6 +25,7 @@ const (
 	versionsDirectoryName    = "versions"
 	currentFilename          = "current"
 	llmsFilename             = "llms.txt"
+	manifestFilename         = "manifest.json"
 )
 
 var (
@@ -38,6 +40,16 @@ type PublicationResult struct {
 	ExcludedCount int
 	Directory     string
 	CleanupErr    error
+}
+
+type publicationManifest struct {
+	Resources map[string]string `json:"resources"`
+}
+
+// Resource is one generated public representation and its canonical HTML URL.
+type Resource struct {
+	Content      []byte
+	CanonicalURL string
 }
 
 // Directory returns the durable root for versioned agent-content publications.
@@ -66,6 +78,47 @@ func CurrentDirectory(app core.App) (string, error) {
 		return "", fmt.Errorf("current agent-content publication is not a directory")
 	}
 	return current, nil
+}
+
+// ReadCurrent reads a resource from one complete selected publication without
+// consulting PocketBase. It retries once if pruning races a marker read.
+func ReadCurrent(app core.App, relative string) (Resource, error) {
+	if !fs.ValidPath(relative) {
+		return Resource{}, fs.ErrNotExist
+	}
+	for attempt := 0; attempt < 2; attempt++ {
+		current, err := CurrentDirectory(app)
+		if err != nil {
+			if errors.Is(err, fs.ErrNotExist) && attempt == 0 {
+				continue
+			}
+			return Resource{}, err
+		}
+		manifestData, err := os.ReadFile(filepath.Join(current, manifestFilename))
+		if err != nil {
+			if errors.Is(err, fs.ErrNotExist) && attempt == 0 {
+				continue
+			}
+			return Resource{}, fmt.Errorf("read agent-content manifest: %w", err)
+		}
+		var manifest publicationManifest
+		if err := json.Unmarshal(manifestData, &manifest); err != nil {
+			return Resource{}, fmt.Errorf("parse agent-content manifest: %w", err)
+		}
+		canonical, ok := manifest.Resources[relative]
+		if !ok {
+			return Resource{}, fs.ErrNotExist
+		}
+		content, err := os.ReadFile(filepath.Join(current, filepath.FromSlash(relative)))
+		if err != nil {
+			if errors.Is(err, fs.ErrNotExist) && attempt == 0 {
+				continue
+			}
+			return Resource{}, fmt.Errorf("read generated agent content: %w", err)
+		}
+		return Resource{Content: content, CanonicalURL: canonical}, nil
+	}
+	return Resource{}, fs.ErrNotExist
 }
 
 // Publish generates, validates, and atomically selects a complete set of
@@ -118,7 +171,8 @@ type artworkProjection struct {
 
 func generatePublication(app core.App, publicURL config.PublicURL, staging string) (PublicationResult, map[string]struct{}, error) {
 	baseURL := strings.TrimRight(publicURL.String(), "/")
-	expected := map[string]struct{}{llmsFilename: {}}
+	expected := map[string]struct{}{llmsFilename: {}, manifestFilename: {}}
+	manifest := publicationManifest{Resources: map[string]string{llmsFilename: baseURL + "/llms.txt"}}
 	if err := os.WriteFile(filepath.Join(staging, llmsFilename), renderLLMs(baseURL), 0o644); err != nil {
 		return PublicationResult{}, nil, fmt.Errorf("write staged llms.txt: %w", err)
 	}
@@ -205,6 +259,7 @@ func generatePublication(app core.App, publicURL config.PublicURL, staging strin
 			return PublicationResult{}, nil, fmt.Errorf("write staged artist %s: %w", record.Id, err)
 		}
 		expected[filepath.ToSlash(relative)] = struct{}{}
+		manifest.Resources[filepath.ToSlash(relative)] = baseURL + urlutils.GenerateArtistUrlFromRecord(record)
 		result.ArtistCount++
 	}
 
@@ -231,7 +286,16 @@ func generatePublication(app core.App, publicURL config.PublicURL, staging strin
 			return PublicationResult{}, nil, fmt.Errorf("write staged artwork %s: %w", projection.record.Id, err)
 		}
 		expected[filepath.ToSlash(relative)] = struct{}{}
+		manifest.Resources[filepath.ToSlash(relative)] = projection.canonical
 		result.ArtworkCount++
+	}
+	manifestData, err := json.Marshal(manifest)
+	if err != nil {
+		return PublicationResult{}, nil, fmt.Errorf("marshal agent-content manifest: %w", err)
+	}
+	manifestData = append(manifestData, '\n')
+	if err := os.WriteFile(filepath.Join(staging, manifestFilename), manifestData, 0o644); err != nil {
+		return PublicationResult{}, nil, fmt.Errorf("write staged agent-content manifest: %w", err)
 	}
 
 	return result, expected, nil

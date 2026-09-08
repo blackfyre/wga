@@ -143,6 +143,13 @@ func TestPublishSelectsCompletePublicAgentContent(t *testing.T) {
 	assertPublicationContains(t, filepath.Join(current, llmsFilename), "https://gallery.example/sitemap.xml", "/agents/artists/{id}.md")
 	assertPublicationContains(t, filepath.Join(current, "agents", "artists", artist.Id+".md"), "# Jane Doe", "Dutch School", "Public biography.")
 	assertPublicationContains(t, filepath.Join(current, "agents", "artworks", artwork.Id+".md"), "# Blue Study", "Gallery, London", "20 × 30 cm")
+	resource, err := ReadCurrent(app, "agents/artists/"+artist.Id+".md")
+	if err != nil {
+		t.Fatalf("read current artist content: %v", err)
+	}
+	if resource.CanonicalURL != "https://gallery.example/artists/jane-doe-"+artist.Id || !strings.Contains(string(resource.Content), "# Jane Doe") {
+		t.Fatalf("current artist resource = %+v", resource)
+	}
 	for _, unavailable := range []string{
 		filepath.Join(current, "agents", "artists", hiddenArtist.Id+".md"),
 		filepath.Join(current, "agents", "artworks", hiddenArtwork.Id+".md"),
@@ -151,6 +158,9 @@ func TestPublishSelectsCompletePublicAgentContent(t *testing.T) {
 		if _, err := os.Stat(unavailable); !os.IsNotExist(err) {
 			t.Fatalf("unavailable generated path %q exists: %v", unavailable, err)
 		}
+	}
+	if _, err := ReadCurrent(app, "agents/artists/missing.md"); !os.IsNotExist(err) {
+		t.Fatalf("missing current resource error = %v, want not exist", err)
 	}
 	llms, err := os.ReadFile(filepath.Join(current, llmsFilename))
 	if err != nil {

@@ -27,7 +27,7 @@
 - [x] 5.1 Extend application-owned `robots.txt` to retain the canonical sitemap while disallowing `/dual-mode`, `/artworks/results`, and query-string variants without disallowing canonical artist or artwork records; verify the static-handler discovery tests assert the complete crawler contract.
 - [x] 5.2 Add bounded public artist/artwork Markdown projections and deterministic renderers; verify focused tests cover canonical URLs, attribution, related links, Markdown escaping, published fields, and exclusion of itinerary, cookie, script, administrative, and private persistence data.
 - [x] 5.3 Extend the sitemap generation lifecycle to atomically publish `/llms.txt` and current `/agents/artists/{id}.md` and `/agents/artworks/{id}.md` files under `app.DataDir()`, prune stale records, and log bounded results; verify failed generation leaves the previous publication intact and unavailable/unpublished IDs have no file.
-- [ ] 5.4 Serve generated agent resources with Markdown content type, canonical link, explicit public cache policy, and no `Set-Cookie`; add canonical `Accept: text/markdown` redirects plus alternate links and verify negotiation occurs before database/view work while ordinary HTML and HTMX remain unchanged.
+- [x] 5.4 Serve generated agent resources with Markdown content type, canonical link, explicit public cache policy, and no `Set-Cookie`; add canonical `Accept: text/markdown` redirects plus alternate links and verify negotiation occurs before database/view work while ordinary HTML and HTMX remain unchanged.
 
 ## 6. Cancellation checkpoints
 

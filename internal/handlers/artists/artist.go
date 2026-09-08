@@ -311,6 +311,10 @@ func RenderArtistContent(app *pocketbase.PocketBase, c *core.RequestEvent, artis
 // pushes the canonical record URL.
 func processArtist(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 	slug := c.Request.PathValue("name")
+	markdownPath := generatedMarkdownPath("artists", slug)
+	if redirected, err := negotiateMarkdown(c, "artists", slug); redirected {
+		return err
+	}
 
 	id := utils.ExtractIdFromString(slug)
 	artist, err := repositories.NewArtistRecordRepository(app).FindPublishedArtist(id)
@@ -341,11 +345,13 @@ func processArtist(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", view.FilingName, view.LifeSummary))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, artist.GetString("bio"))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, utils.AssetUrl(fullUrl))
+	ctx = decorateMarkdownAlternate(ctx, markdownPath)
 	if image := artistOpenGraphImage(view); image != "" {
 		ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgImageKey, image)
 	}
 
 	c.Response.Header().Set("HX-Push-Url", fullUrl)
+	advertiseMarkdown(c, markdownPath)
 
 	var buff bytes.Buffer
 	if utils.IsHtmxRequest(c) {

@@ -33,6 +33,9 @@ func TestEligibleForItineraryProjection(t *testing.T) {
 		{name: "admin boundary skipped", method: http.MethodGet, path: "/_/", accept: "text/html", want: false},
 		{name: "assets boundary skipped", method: http.MethodGet, path: "/assets/js/app.js", accept: "text/html", want: false},
 		{name: "assets htmx skipped", method: http.MethodGet, path: "/assets/js/app.js", htmx: true, want: false},
+		{name: "agent html accept skipped", method: http.MethodGet, path: "/agents/artists/id.md", accept: "text/html", want: false},
+		{name: "agent htmx skipped", method: http.MethodGet, path: "/agents/artists/id.md", htmx: true, want: false},
+		{name: "llms html accept skipped", method: http.MethodGet, path: "/llms.txt", accept: "text/html", want: false},
 		{name: "sitemap boundary skipped", method: http.MethodGet, path: "/sitemap", accept: "text/html", want: false},
 		{name: "non-html accept skipped", method: http.MethodGet, path: "/artworks", accept: "application/json", want: false},
 	}

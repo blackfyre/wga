@@ -51,6 +51,10 @@ func findPublishedArtwork(app *pocketbase.PocketBase, id string) (*core.Record, 
 func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase, environment config.Environment) error {
 	artistSlug := c.Request.PathValue("name")
 	artworkSlug := c.Request.PathValue("awid")
+	markdownPath := generatedMarkdownPath("artworks", artworkSlug)
+	if redirected, err := negotiateMarkdown(c, "artworks", artworkSlug); redirected {
+		return err
+	}
 
 	// Split the slug on the last dash and use the last part as the artist id
 	artistSlugParts := strings.Split(artistSlug, "-")
@@ -202,9 +206,11 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase, environmen
 	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", content.Title, content.FilingName))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, aw.GetString("comment"))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, utils.AssetUrl(canonicalURL))
+	ctx = decorateMarkdownAlternate(ctx, markdownPath)
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgImageKey, utils.AssetUrl(content.Image.Image))
 
 	c.Response.Header().Set("HX-Push-Url", canonicalURL)
+	advertiseMarkdown(c, markdownPath)
 
 	var buff bytes.Buffer
 
