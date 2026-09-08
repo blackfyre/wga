@@ -315,10 +315,7 @@ func processArtist(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 	id := utils.ExtractIdFromString(slug)
 	artist, err := repositories.NewArtistRecordRepository(app).FindPublishedArtist(id)
 	if err != nil {
-		if !errors.Is(err, sql.ErrNoRows) {
-			app.Logger().Error("Find published artist", "slug", slug, "error", err.Error())
-		}
-		return utils.NotFoundError(c)
+		return artistLookupError(c, app, slug, err)
 	}
 
 	expectedSlug := utils.GenerateArtistSlug(artist)
@@ -362,6 +359,15 @@ func processArtist(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 	}
 
 	return c.HTML(http.StatusOK, buff.String())
+}
+
+func artistLookupError(c *core.RequestEvent, app *pocketbase.PocketBase, slug string, err error) error {
+	if errors.Is(err, sql.ErrNoRows) {
+		return utils.NotFoundError(c)
+	}
+
+	app.Logger().Error("Find published artist", "slug", slug, "error", err.Error())
+	return utils.ServerFaultError(c, utils.ServerFailure{Category: "artist_lookup", Cause: err})
 }
 
 // buildArtistRecordView assembles the page-owned artist record view from the
