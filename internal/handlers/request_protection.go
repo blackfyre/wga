@@ -40,20 +40,20 @@ func protectPublicRead(app core.App, canonicalHost requestprotection.CanonicalHo
 	}
 
 	if !canonicalHost.Allows(profile, e.Request.Host) {
-		logIngressRejection(app, e, profile, "host", http.StatusMisdirectedRequest)
+		logProtectionDecision(app, e, policy.IngressDecision(profile, requestprotection.DecisionHost, http.StatusMisdirectedRequest))
 		return plainProtectionResponse(e, http.StatusMisdirectedRequest, 0)
 	}
 
 	identity, resolved := resolveIdentity(e.Request)
 	if !resolved {
-		logIngressRejection(app, e, profile, "origin_authentication", http.StatusForbidden)
+		logProtectionDecision(app, e, policy.IngressDecision(profile, requestprotection.DecisionOriginAuth, http.StatusForbidden))
 		return plainProtectionResponse(e, http.StatusForbidden, 0)
 	}
 
 	admission := policy.Admit(e.Request.Context(), profile, identity, true)
 	defer admission.Release()
 	if admission.WouldReject() || !admission.Allowed() {
-		logAdmissionDecision(app, e, admission)
+		logProtectionDecision(app, e, admission)
 	}
 	if !admission.Allowed() {
 		return plainProtectionResponse(e, admission.Status(), admission.RetryAfter())
@@ -74,16 +74,27 @@ func plainProtectionResponse(e *core.RequestEvent, status int, retryAfter time.D
 	return err
 }
 
-func logIngressRejection(app core.App, e *core.RequestEvent, profile requestprotection.Profile, decision string, status int) {
-	logging.RequestLogger(app, e).Warn("Public request ingress rejected",
-		"event", "request_protection.ingress_rejected",
-		"profile", string(profile),
-		"decision", decision,
-		"status", status,
-	)
-}
+func logProtectionDecision(app core.App, e *core.RequestEvent, admission requestprotection.Admission) {
+	event := "request_protection.decision"
+	switch admission.Decision() {
+	case requestprotection.DecisionHost:
+		event = "request_protection.host_rejected"
+	case requestprotection.DecisionOriginAuth:
+		event = "request_protection.origin_authentication_rejected"
+	case requestprotection.DecisionClientRate:
+		event = "request_protection.client_rate_rejected"
+	case requestprotection.DecisionGlobalCapacity:
+		event = "request_protection.capacity_rejected"
+	}
+	if admission.WouldReject() {
+		event = "request_protection.admission_observed"
+	}
 
-func logAdmissionDecision(app core.App, e *core.RequestEvent, admission requestprotection.Admission) {
-	fields := append([]any{"event", "request_protection.admission_decided"}, admission.Fields()...)
-	logging.RequestLogger(app, e).Warn("Public request admission decided", fields...)
+	fields := append([]any{"event", event}, admission.Fields()...)
+	logger := logging.RequestLogger(app, e)
+	if admission.WouldReject() {
+		logger.Info("Public request admission observed", fields...)
+		return
+	}
+	logger.Warn("Public request rejected", fields...)
 }

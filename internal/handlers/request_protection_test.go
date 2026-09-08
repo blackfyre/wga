@@ -2,8 +2,10 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -167,6 +169,201 @@ func TestPlainProtectionResponsesAreMinimalExpectedOutcomes(t *testing.T) {
 	}
 }
 
+func TestProtectedReadMiddlewareLogsStablePrivateDecisions(t *testing.T) {
+	const (
+		clientIdentity = "198.51.100.77"
+		forwardedIP    = "203.0.113.88"
+		privateSlug    = "private-record-slug"
+		invalidSecret  = "visitor-origin-secret-value"
+	)
+
+	cases := []struct {
+		name           string
+		mode           config.ProtectionMode
+		url            string
+		headers        map[string]string
+		status         int
+		logStatus      int
+		event          string
+		decision       requestprotection.Decision
+		capacityUsed   string
+		prepare        func(*requestprotection.Policy) requestprotection.Admission
+		wantHandlerRun bool
+	}{
+		{
+			name:     "host rejection",
+			mode:     config.ProtectionModeEnforce,
+			url:      "https://wga-production.up.railway.app/artists/" + privateSlug,
+			headers:  trustedProtectionHeaders(clientIdentity, protectionTestSecret),
+			status:   http.StatusMisdirectedRequest,
+			event:    "request_protection.host_rejected",
+			decision: requestprotection.DecisionHost,
+		},
+		{
+			name:     "origin authentication rejection",
+			mode:     config.ProtectionModeEnforce,
+			url:      "https://beta.wga.hu/artists/" + privateSlug,
+			headers:  trustedProtectionHeaders(clientIdentity, invalidSecret),
+			status:   http.StatusForbidden,
+			event:    "request_protection.origin_authentication_rejected",
+			decision: requestprotection.DecisionOriginAuth,
+		},
+		{
+			name:     "client rate rejection",
+			mode:     config.ProtectionModeEnforce,
+			url:      "https://beta.wga.hu/artists/" + privateSlug,
+			headers:  trustedProtectionHeaders(clientIdentity, protectionTestSecret),
+			status:   http.StatusTooManyRequests,
+			event:    "request_protection.client_rate_rejected",
+			decision: requestprotection.DecisionClientRate,
+			prepare: func(policy *requestprotection.Policy) requestprotection.Admission {
+				admission := policy.Admit(context.Background(), requestprotection.ProfileDetail, clientIdentity, true)
+				admission.Release()
+				return requestprotection.Admission{}
+			},
+		},
+		{
+			name:         "capacity rejection",
+			mode:         config.ProtectionModeEnforce,
+			url:          "https://beta.wga.hu/artists/" + privateSlug,
+			headers:      trustedProtectionHeaders(clientIdentity, protectionTestSecret),
+			status:       http.StatusServiceUnavailable,
+			event:        "request_protection.capacity_rejected",
+			decision:     requestprotection.DecisionGlobalCapacity,
+			capacityUsed: "1",
+			prepare: func(policy *requestprotection.Policy) requestprotection.Admission {
+				return policy.Admit(context.Background(), requestprotection.ProfileDetail, "198.51.100.99", true)
+			},
+		},
+		{
+			name:           "observe rate decision",
+			mode:           config.ProtectionModeObserve,
+			url:            "https://beta.wga.hu/artists/" + privateSlug,
+			headers:        trustedProtectionHeaders(clientIdentity, protectionTestSecret),
+			status:         http.StatusOK,
+			logStatus:      http.StatusTooManyRequests,
+			event:          "request_protection.admission_observed",
+			decision:       requestprotection.DecisionClientRate,
+			wantHandlerRun: true,
+			prepare: func(policy *requestprotection.Policy) requestprotection.Admission {
+				admission := policy.Admit(context.Background(), requestprotection.ProfileDetail, clientIdentity, true)
+				admission.Release()
+				return requestprotection.Admission{}
+			},
+		},
+	}
+
+	for _, test := range cases {
+		t.Run(test.name, func(t *testing.T) {
+			test.headers["X-Forwarded-For"] = forwardedIP
+			test.headers["X-Real-IP"] = forwardedIP
+			var captured func() []*core.Log
+			var held requestprotection.Admission
+			var handlerCalls atomic.Int32
+
+			scenario := tests.ApiScenario{
+				Name:           test.name,
+				Method:         http.MethodGet,
+				URL:            test.url,
+				Headers:        test.headers,
+				ExpectedStatus: test.status,
+				ExpectedContent: func() []string {
+					if test.wantHandlerRun {
+						return []string{"handler completed"}
+					}
+					return []string{http.StatusText(test.status)}
+				}(),
+				TestAppFactory: func(t testing.TB) *tests.TestApp {
+					app := testutils.NewTestApp(t)
+					captured = testutils.CaptureLogs(app)
+					logging.RegisterRequestIDMiddleware(app)
+					policy := newHTTPProtectionPolicyMode(t, test.mode)
+					if test.prepare != nil {
+						held = test.prepare(policy)
+					}
+					resolver := requesttrust.New(
+						requesttrust.SourceCloudflareRailway,
+						requesttrust.NewCloudflareOriginSecrets(protectionTestSecret, ""),
+					)
+					if err := registerProtectedReadMiddleware(app, "https://beta.wga.hu", resolver, policy); err != nil {
+						t.Fatalf("register middleware: %v", err)
+					}
+					app.OnServe().BindFunc(func(se *core.ServeEvent) error {
+						se.Router.GET("/artists/{name}", func(e *core.RequestEvent) error {
+							handlerCalls.Add(1)
+							return e.String(http.StatusOK, "handler completed")
+						})
+						return se.Next()
+					})
+					return app
+				},
+				AfterTestFunc: func(t testing.TB, app *tests.TestApp, _ *http.Response) {
+					held.Release()
+					testutils.FlushLogs(t, app)
+					entries := testutils.LogsWithEvent(captured(), test.event)
+					if len(entries) != 1 {
+						t.Fatalf("%s logs = %d; want 1", test.event, len(entries))
+					}
+					data := entries[0].Data
+					logStatus := test.logStatus
+					if logStatus == 0 {
+						logStatus = test.status
+					}
+					wantFields := map[string]string{
+						"profile":          "detail",
+						"decision":         string(test.decision),
+						"status":           fmt.Sprint(logStatus),
+						"configured_limit": "1",
+						"capacity_limit":   "1",
+						"protection_mode":  string(test.mode),
+					}
+					for key, want := range wantFields {
+						if got := fmt.Sprint(data[key]); got != want {
+							t.Errorf("%s = %q; want %q", key, got, want)
+						}
+					}
+					wantCapacity := test.capacityUsed
+					if wantCapacity == "" {
+						wantCapacity = "0"
+					}
+					if got := fmt.Sprint(data["capacity_in_use"]); got != wantCapacity {
+						t.Errorf("capacity_in_use = %q; want %q", got, wantCapacity)
+					}
+					if fmt.Sprint(data["request_id"]) == "" {
+						t.Error("request_id is empty")
+					}
+					wantCalls := int32(0)
+					if test.wantHandlerRun {
+						wantCalls = 1
+					}
+					if got := handlerCalls.Load(); got != wantCalls {
+						t.Errorf("handler calls = %d; want %d", got, wantCalls)
+					}
+
+					formatted := fmt.Sprint(data)
+					for _, forbiddenKey := range []string{
+						"client_identity", "client_ip", "forwarded_headers", "limiter_key", "origin_secret", "requested_slug",
+					} {
+						if _, found := data[forbiddenKey]; found {
+							t.Errorf("structured fields contain forbidden key %q", forbiddenKey)
+						}
+					}
+					for _, sensitive := range []string{
+						clientIdentity, forwardedIP, protectionTestSecret, invalidSecret, privateSlug,
+						"CF-Connecting-IP", "X-Forwarded-For", "X-Real-IP", "X-WGA-Edge-Secret", "limiter_key",
+					} {
+						if strings.Contains(formatted, sensitive) {
+							t.Errorf("structured fields exposed %q: %s", sensitive, formatted)
+						}
+					}
+				},
+			}
+
+			scenario.Test(t)
+		})
+	}
+}
+
 func TestProtectedReadMiddlewareAllowsExemptRoutesThroughDeploymentHost(t *testing.T) {
 	cases := []struct {
 		name    string
@@ -277,9 +474,13 @@ func trustedProtectionHeaders(identity string, secret string) map[string]string 
 }
 
 func newHTTPProtectionPolicy(t testing.TB) *requestprotection.Policy {
+	return newHTTPProtectionPolicyMode(t, config.ProtectionModeEnforce)
+}
+
+func newHTTPProtectionPolicyMode(t testing.TB, mode config.ProtectionMode) *requestprotection.Policy {
 	t.Helper()
 	policy, err := requestprotection.NewPolicy(config.PublicRequestProtection{
-		Mode:                      config.ProtectionModeEnforce,
+		Mode:                      mode,
 		MaxConcurrentReads:        1,
 		SearchRequestsPerMinute:   1,
 		FragmentRequestsPerMinute: 1,

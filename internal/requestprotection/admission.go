@@ -19,6 +19,8 @@ const (
 	DecisionOff            Decision = "off"
 	DecisionBypass         Decision = "bypass"
 	DecisionAllow          Decision = "allow"
+	DecisionHost           Decision = "host"
+	DecisionOriginAuth     Decision = "origin_authentication"
 	DecisionIdentityReject Decision = "identity_reject"
 	DecisionClientRate     Decision = "client_rate"
 	DecisionGlobalCapacity Decision = "global_capacity"
@@ -110,6 +112,15 @@ func (p *Policy) Admit(ctx context.Context, profile Profile, identity string, re
 		return p.result(profile, DecisionGlobalCapacity, http.StatusServiceUnavailable, limit, nil)
 	}
 	return newAdmission(p.mode, profile, DecisionAllow, 0, limit, p.capacity, false, p.retryAfter).withLease(lease)
+}
+
+// IngressDecision creates privacy-safe structured fields for a terminal host or
+// origin-authentication rejection without touching admission state.
+func (p *Policy) IngressDecision(profile Profile, decision Decision, status int) Admission {
+	if p == nil {
+		return newAdmission(config.ProtectionModeOff, profile, decision, status, 0, nil, true, 0)
+	}
+	return newAdmission(p.mode, profile, decision, status, p.rates.limit(profile), p.capacity, true, p.retryAfter)
 }
 
 func (p *Policy) observeCapacity(profile Profile, limit int) Admission {
