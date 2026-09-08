@@ -20,6 +20,7 @@ import (
 	"github.com/blackfyre/wga/internal/migrations"
 	"github.com/blackfyre/wga/internal/observability"
 	"github.com/blackfyre/wga/internal/postcards"
+	"github.com/blackfyre/wga/internal/requestprotection"
 	"github.com/blackfyre/wga/internal/requesttrust"
 
 	"github.com/blackfyre/wga/internal/utils"
@@ -98,7 +99,11 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		if err := handlers.RegisterHandlers(app, serverConfig.Environment, serverConfig.Captcha, serverConfig.Postcards.TokenKeyring(), contributorStore, captchaVerifier, itineraryPolicy, clientIdentity); err != nil {
+		publicReadPolicy, err := requestprotection.NewPolicy(serverConfig.PublicRequestProtection)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if err := handlers.RegisterHandlers(app, serverConfig.Environment, serverConfig.Captcha, serverConfig.Postcards.TokenKeyring(), contributorStore, captchaVerifier, itineraryPolicy, clientIdentity, serverConfig.PublicURL, publicReadPolicy); err != nil {
 			log.Fatal(err)
 		}
 		crontab.RegisterCronJobs(app, serverConfig.Postcards, serverConfig.Sitemap(), contributors.NewRefreshJob(app, contributorProvider, contributorStore))

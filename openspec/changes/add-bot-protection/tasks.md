@@ -17,7 +17,7 @@
 
 ## 4. Request integration
 
-- [ ] 4.1 Register thin protected-read middleware using configured public URL, Cloudflare origin authentication, `requesttrust.Resolver`, request-scoped logging, and admission policy; verify HTTP tests return 421 for host mismatch, 403 for missing/invalid origin authentication, 429 for client exhaustion, 503 for capacity exhaustion, and `Retry-After` for admission failures before handler work.
+- [x] 4.1 Register thin protected-read middleware using configured public URL, Cloudflare origin authentication, `requesttrust.Resolver`, request-scoped logging, and admission policy; verify HTTP tests return 421 for host mismatch, 403 for missing/invalid origin authentication, 429 for client exhaustion, 503 for capacity exhaustion, and `Retry-After` for admission failures before handler work.
 - [ ] 4.2 Verify exempt and progressive-enhancement contracts through HTTP tests covering direct Railway `/health`, static assets, sitemap and robots routes, authenticated canonical full-page catalogue requests, and authenticated canonical HTMX fragment requests.
 - [ ] 4.3 Add minimal plain 403/421/429/503 responses and verify rejection paths do not invoke Templ, expose diagnostics, or produce Sentry server-fault events.
 - [ ] 4.4 Add structured logging assertions for host, origin-authentication, client-rate, capacity, and observe-mode decisions; verify stable event/profile/status/capacity fields and omission of raw addresses, forwarding headers, limiter keys, secrets, and requested slugs.
