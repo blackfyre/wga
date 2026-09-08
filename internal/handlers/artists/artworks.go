@@ -212,7 +212,7 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase, environmen
 
 	if err != nil {
 		app.Logger().Error("Error rendering artwork page", "error", err.Error())
-		return c.String(http.StatusInternalServerError, "failed to render response template")
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "page_render", Cause: err})
 	}
 
 	return c.HTML(http.StatusOK, buff.String())

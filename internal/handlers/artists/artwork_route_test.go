@@ -1,6 +1,8 @@
 package artists
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -8,9 +10,11 @@ import (
 
 	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/constants"
+	"github.com/blackfyre/wga/internal/utils"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/tools/router"
 )
 
 // newArtworkRouteApp builds the route test app in local development.
@@ -163,6 +167,33 @@ func TestArtworkRouteRendersFullPageWithDefaultBasis(t *testing.T) {
 	}
 	if got := recorder.Header().Get("HX-Push-Url"); got != "/artists/synthetic-artist-artistone000001/a-painting-workone00000001" {
 		t.Errorf("HX-Push-Url = %q, want canonical URL without basis", got)
+	}
+}
+
+func TestProcessArtworkPreservesCancelledRenderCause(t *testing.T) {
+	app, _ := newArtworkRouteApp(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	req := httptest.NewRequest(http.MethodGet, "/artists/synthetic-artist-artistone000001/a-painting-workone00000001", nil).WithContext(ctx)
+	req.SetPathValue("name", "synthetic-artist-artistone000001")
+	req.SetPathValue("awid", "a-painting-workone00000001")
+	event := &core.RequestEvent{Event: router.Event{Request: req, Response: httptest.NewRecorder()}}
+
+	err := processArtwork(event, app, config.EnvironmentDevelopment)
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("process artwork error = %v, want context.Canceled", err)
+	}
+
+	failure, ok := utils.ServerFailureFrom(event)
+	if !ok {
+		t.Fatal("expected cancelled render failure metadata")
+	}
+	if failure.Category != "page_render" {
+		t.Errorf("failure category = %q, want page_render", failure.Category)
+	}
+	if !errors.Is(failure.Cause, context.Canceled) {
+		t.Errorf("failure cause = %v, want context.Canceled", failure.Cause)
 	}
 }
 
