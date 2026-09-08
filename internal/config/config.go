@@ -11,6 +11,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/joho/godotenv"
@@ -73,9 +74,59 @@ type ClientIPSource string
 
 // Supported client-identity sources.
 const (
-	ClientIPSourceDirect  ClientIPSource = "direct"
-	ClientIPSourceRailway ClientIPSource = "railway"
+	ClientIPSourceDirect            ClientIPSource = "direct"
+	ClientIPSourceRailway           ClientIPSource = "railway"
+	ClientIPSourceCloudflareRailway ClientIPSource = "cloudflare-railway"
 )
+
+// CloudflareOriginSecrets contains the current and optional next origin
+// authentication secrets used during rotation.
+type CloudflareOriginSecrets struct {
+	current Secret
+	next    Secret
+}
+
+// Current returns the active origin authentication secret.
+func (s CloudflareOriginSecrets) Current() Secret {
+	return s.current
+}
+
+// Next returns the next origin authentication secret when rotation is staged.
+func (s CloudflareOriginSecrets) Next() (Secret, bool) {
+	return s.next, s.next.Value() != ""
+}
+
+// String returns a redacted representation of the keyring.
+func (CloudflareOriginSecrets) String() string {
+	return "[redacted]"
+}
+
+// GoString returns a redacted Go-syntax representation of the keyring.
+func (CloudflareOriginSecrets) GoString() string {
+	return "config.CloudflareOriginSecrets([redacted])"
+}
+
+// ProtectionMode controls whether public-request protection is disabled,
+// observed without rejection, or enforced.
+type ProtectionMode string
+
+// Supported public-request protection modes.
+const (
+	ProtectionModeOff     ProtectionMode = "off"
+	ProtectionModeObserve ProtectionMode = "observe"
+	ProtectionModeEnforce ProtectionMode = "enforce"
+)
+
+// PublicRequestProtection contains bounded admission settings for public reads.
+type PublicRequestProtection struct {
+	Mode                      ProtectionMode
+	MaxConcurrentReads        int
+	SearchRequestsPerMinute   int
+	FragmentRequestsPerMinute int
+	DetailRequestsPerMinute   int
+	LimiterEntryCapacity      int
+	RetryAfter                time.Duration
+}
 
 // PublicURL is the canonical external URL for the application.
 type PublicURL struct {
@@ -279,12 +330,14 @@ type Sitemap struct {
 
 // Server contains the settings required to run the HTTP application.
 type Server struct {
-	Environment    Environment
-	PublicURL      PublicURL
-	ClientIPSource ClientIPSource
-	Postcards      Postcards
-	Captcha        Captcha
-	Sentry         Sentry
+	Environment             Environment
+	PublicURL               PublicURL
+	ClientIPSource          ClientIPSource
+	CloudflareOriginSecrets CloudflareOriginSecrets
+	PublicRequestProtection PublicRequestProtection
+	Postcards               Postcards
+	Captcha                 Captcha
+	Sentry                  Sentry
 }
 
 // Sitemap returns the sitemap settings derived from the server settings.
@@ -344,6 +397,8 @@ type Config struct {
 	environment          parsed[Environment]
 	publicURL            parsed[PublicURL]
 	clientIPSource       parsed[ClientIPSource]
+	cloudflareSecrets    parsed[CloudflareOriginSecrets]
+	requestProtection    parsed[PublicRequestProtection]
 	sender               parsed[MailSender]
 	postcards            parsed[Postcards]
 	postcardTokenKeyring parsed[PostcardTokenKeyring]
@@ -370,6 +425,11 @@ func LoadFrom(lookup Lookup) Config {
 	environment := parseEnvironment(lookup("WGA_ENV"))
 	publicURL := parsePublicURL(lookup)
 	clientIPSource := parseClientIPSource(lookup, environment.value)
+	cloudflareSecrets := parseCloudflareOriginSecrets(
+		Secret{value: lookup("WGA_CLOUDFLARE_EDGE_SECRET")},
+		Secret{value: lookup("WGA_CLOUDFLARE_EDGE_SECRET_NEXT")},
+	)
+	requestProtection := parsePublicRequestProtection(lookup)
 	sender := parseSender(lookup)
 	mailConfig := parseMail(lookup, sender)
 	storage := parseStorage(lookup)
@@ -393,6 +453,8 @@ func LoadFrom(lookup Lookup) Config {
 		environment:          environment,
 		publicURL:            publicURL,
 		clientIPSource:       clientIPSource,
+		cloudflareSecrets:    cloudflareSecrets,
+		requestProtection:    requestProtection,
 		sender:               sender,
 		postcards:            postcards,
 		postcardTokenKeyring: postcardTokenKeyring,
@@ -416,12 +478,14 @@ func (c Config) Environment() Environment {
 // Server returns validated settings required to run the HTTP application.
 func (c Config) Server() (Server, error) {
 	server := Server{
-		Environment:    c.environment.value,
-		PublicURL:      c.publicURL.value,
-		ClientIPSource: c.clientIPSource.value,
-		Postcards:      c.postcards.value,
-		Captcha:        c.captcha,
-		Sentry:         c.sentry.value,
+		Environment:             c.environment.value,
+		PublicURL:               c.publicURL.value,
+		ClientIPSource:          c.clientIPSource.value,
+		CloudflareOriginSecrets: c.cloudflareSecrets.value,
+		PublicRequestProtection: c.requestProtection.value,
+		Postcards:               c.postcards.value,
+		Captcha:                 c.captcha,
+		Sentry:                  c.sentry.value,
 	}
 
 	senderErr := c.sender.err
@@ -444,15 +508,129 @@ func (c Config) Server() (Server, error) {
 		}
 	}
 
+	var protectionTrustErr error
+	if c.clientIPSource.value == ClientIPSourceCloudflareRailway && c.cloudflareSecrets.value.Current().Value() == "" {
+		protectionTrustErr = required("WGA_CLOUDFLARE_EDGE_SECRET")
+	}
+	if c.environment.err == nil && (c.environment.value == EnvironmentStaging || c.environment.value == EnvironmentProduction) && c.requestProtection.value.Mode != ProtectionModeOff && c.clientIPSource.value != ClientIPSourceCloudflareRailway {
+		protectionTrustErr = errors.Join(protectionTrustErr, fmt.Errorf("WGA_CLIENT_IP_SOURCE must be cloudflare-railway when public request protection is enabled"))
+	}
+
 	return server, errors.Join(
 		c.environment.err,
 		c.publicURL.err,
 		c.clientIPSource.err,
+		c.cloudflareSecrets.err,
+		c.requestProtection.err,
 		c.postcards.err,
 		c.sentry.err,
 		senderErr,
 		captchaErr,
+		protectionTrustErr,
 	)
+}
+
+// parseCloudflareOriginSecrets validates current and staged rotation secrets.
+func parseCloudflareOriginSecrets(current Secret, next Secret) parsed[CloudflareOriginSecrets] {
+	keyring := CloudflareOriginSecrets{current: current, next: next}
+	var errs []error
+
+	if current.Value() == "" && next.Value() != "" {
+		errs = append(errs, fmt.Errorf("WGA_CLOUDFLARE_EDGE_SECRET must be set when WGA_CLOUDFLARE_EDGE_SECRET_NEXT is set"))
+	}
+	if current.Value() != "" {
+		if err := validateCloudflareOriginSecret("WGA_CLOUDFLARE_EDGE_SECRET", current.Value()); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if next.Value() != "" {
+		if err := validateCloudflareOriginSecret("WGA_CLOUDFLARE_EDGE_SECRET_NEXT", next.Value()); err != nil {
+			errs = append(errs, err)
+		}
+		if next.Value() == current.Value() {
+			errs = append(errs, fmt.Errorf("WGA_CLOUDFLARE_EDGE_SECRET_NEXT must differ from WGA_CLOUDFLARE_EDGE_SECRET"))
+		}
+	}
+
+	return parsed[CloudflareOriginSecrets]{value: keyring, err: errors.Join(errs...)}
+}
+
+func validateCloudflareOriginSecret(name string, value string) error {
+	decoded, err := base64.RawURLEncoding.DecodeString(value)
+	if err != nil || len(decoded) != 32 || base64.RawURLEncoding.EncodeToString(decoded) != value {
+		return fmt.Errorf("%s must be a canonical Base64URL-encoded 32-byte secret", name)
+	}
+	return nil
+}
+
+// parsePublicRequestProtection validates bounded public-read admission settings.
+func parsePublicRequestProtection(lookup Lookup) parsed[PublicRequestProtection] {
+	modeValue := lookup("WGA_PUBLIC_REQUEST_PROTECTION_MODE")
+	if modeValue == "" {
+		modeValue = string(ProtectionModeOff)
+	}
+
+	mode := ProtectionMode(modeValue)
+	var modeErr error
+	switch mode {
+	case ProtectionModeOff, ProtectionModeObserve, ProtectionModeEnforce:
+	default:
+		modeErr = fmt.Errorf("WGA_PUBLIC_REQUEST_PROTECTION_MODE must be off, observe, or enforce")
+	}
+
+	maxConcurrentReads := parsePositiveInt(lookup, "WGA_PUBLIC_READ_MAX_CONCURRENT", 8)
+	searchRequests := parsePositiveInt(lookup, "WGA_PUBLIC_READ_SEARCH_PER_MINUTE", 20)
+	fragmentRequests := parsePositiveInt(lookup, "WGA_PUBLIC_READ_FRAGMENT_PER_MINUTE", 30)
+	detailRequests := parsePositiveInt(lookup, "WGA_PUBLIC_READ_DETAIL_PER_MINUTE", 60)
+	limiterCapacity := parsePositiveInt(lookup, "WGA_PUBLIC_READ_LIMITER_CAPACITY", 4096)
+	retryAfter := parsePositiveDuration(lookup, "WGA_PUBLIC_READ_RETRY_AFTER", 5*time.Second)
+
+	return parsed[PublicRequestProtection]{
+		value: PublicRequestProtection{
+			Mode:                      mode,
+			MaxConcurrentReads:        maxConcurrentReads.value,
+			SearchRequestsPerMinute:   searchRequests.value,
+			FragmentRequestsPerMinute: fragmentRequests.value,
+			DetailRequestsPerMinute:   detailRequests.value,
+			LimiterEntryCapacity:      limiterCapacity.value,
+			RetryAfter:                retryAfter.value,
+		},
+		err: errors.Join(
+			modeErr,
+			maxConcurrentReads.err,
+			searchRequests.err,
+			fragmentRequests.err,
+			detailRequests.err,
+			limiterCapacity.err,
+			retryAfter.err,
+		),
+	}
+}
+
+func parsePositiveInt(lookup Lookup, name string, defaultValue int) parsed[int] {
+	value := lookup(name)
+	if value == "" {
+		return parsed[int]{value: defaultValue}
+	}
+
+	parsedValue, err := strconv.Atoi(value)
+	if err != nil || parsedValue <= 0 {
+		return parsed[int]{err: fmt.Errorf("%s must be a positive integer", name)}
+	}
+	return parsed[int]{value: parsedValue}
+}
+
+func parsePositiveDuration(lookup Lookup, name string, defaultValue time.Duration) parsed[time.Duration] {
+	value := lookup(name)
+	if value == "" {
+		return parsed[time.Duration]{value: defaultValue}
+	}
+
+	parsedValue, err := time.ParseDuration(value)
+	if err != nil || parsedValue <= 0 {
+		return parsed[time.Duration]{err: fmt.Errorf("%s must be a positive duration", name)}
+	}
+	return parsed[time.Duration]{value: parsedValue}
 }
 
 // PostcardTokenKeyring returns the validated keyring used for postcard access tokens.
@@ -521,10 +699,10 @@ func parseClientIPSource(lookup Lookup, environment Environment) parsed[ClientIP
 	}
 
 	switch ClientIPSource(value) {
-	case ClientIPSourceDirect, ClientIPSourceRailway:
+	case ClientIPSourceDirect, ClientIPSourceRailway, ClientIPSourceCloudflareRailway:
 		return parsed[ClientIPSource]{value: ClientIPSource(value)}
 	default:
-		return parsed[ClientIPSource]{err: fmt.Errorf("WGA_CLIENT_IP_SOURCE must be direct or railway")}
+		return parsed[ClientIPSource]{err: fmt.Errorf("WGA_CLIENT_IP_SOURCE must be direct, railway, or cloudflare-railway")}
 	}
 }
 
