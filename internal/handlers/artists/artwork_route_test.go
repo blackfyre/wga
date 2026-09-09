@@ -297,6 +297,9 @@ func TestArtworkRouteRendersCountedHoldingAndFullHTMXParity(t *testing.T) {
 	}
 	path := "/artists/synthetic-artist-artistone000001/a-painting-workone00000001"
 	withoutMarkdown := request(path)
+	if withoutMarkdown.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", withoutMarkdown.Code)
+	}
 	if strings.Contains(withoutMarkdown.Header().Get("Link"), "text/markdown") || strings.Contains(withoutMarkdown.Body.String(), `type="text/markdown"`) {
 		t.Fatal("artwork response advertised an unavailable Markdown resource")
 	}

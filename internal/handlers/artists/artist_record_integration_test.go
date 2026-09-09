@@ -319,6 +319,9 @@ func TestArtistRecordDoesNotAdvertiseUnavailableMarkdown(t *testing.T) {
 	seedPublishedArtist(t, app)
 	path := "/artists/synthetic-artist-artistone000001"
 	recorder := serveArtistRecordRequests(t, app, []recordRequest{{path: path}})[0]
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", recorder.Code)
+	}
 	if strings.Contains(recorder.Header().Get("Link"), "text/markdown") || strings.Contains(recorder.Body.String(), `type="text/markdown"`) {
 		t.Fatal("artist response advertised an unavailable Markdown resource")
 	}
