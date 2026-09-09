@@ -48,7 +48,8 @@
     "tailwindcss": "^4.3.3",
     "trix": "^2.1.19",
     "vanilla-cookieconsent": "3.1.0",
-    "viewerjs": "^1.12.0"
+    "viewerjs": "^1.12.0",
+    "wrangler": "^4.129.1"
   },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown"

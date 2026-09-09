@@ -3,7 +3,9 @@ package sitemap
 import (
 	"bytes"
 	"encoding/xml"
+	"errors"
 	"fmt"
+	"io/fs"
 	"net/url"
 	"os"
 	"path"
@@ -12,52 +14,108 @@ import (
 	"sync"
 	"time"
 
+	"github.com/blackfyre/wga/internal/agentcontent"
 	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/constants"
+	"github.com/blackfyre/wga/internal/generatedpublication"
 	urlutils "github.com/blackfyre/wga/internal/utils/url"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/sabloger/sitemap-generator/smg"
 )
 
 const (
-	directoryName = "sitemaps"
-	indexFilename = "sitemap.xml"
-	childPath     = "/sitemap/"
-	xslPath       = "/sitemap.xsl"
+	directoryName       = "sitemap"
+	legacyDirectoryName = "sitemaps"
+	indexFilename       = "sitemap.xml"
+	childPath           = "/sitemap/"
+	xslPath             = "/sitemap.xsl"
 )
 
 var generationMu sync.Mutex
 
 // Result describes one sitemap publication attempt.
 type Result struct {
-	URLCount      int
-	ExcludedCount int
-	IndexPath     string
-	CleanupErr    error
+	URLCount           int
+	ExcludedCount      int
+	AgentArtistCount   int
+	AgentArtworkCount  int
+	AgentExcludedCount int
+	IndexPath          string
+	CleanupErr         error
 }
 
-// Directory returns the durable location for generated sitemap files.
-func Directory(app core.App) string {
-	return filepath.Join(app.DataDir(), directoryName)
+func CurrentDirectory(app core.App) (string, error) {
+	publication, err := generatedpublication.CurrentDirectory(app)
+	if err != nil {
+		if errors.Is(err, generatedpublication.ErrNoCurrentPublication) {
+			return legacyCurrentDirectory(app)
+		}
+		return "", err
+	}
+	return filepath.Join(publication, directoryName), nil
+}
+
+func legacyCurrentDirectory(app core.App) (string, error) {
+	legacy := filepath.Join(app.DataDir(), legacyDirectoryName)
+	info, err := os.Stat(filepath.Join(legacy, indexFilename))
+	if err != nil {
+		return "", fmt.Errorf("stat legacy sitemap publication: %w", err)
+	}
+	if info.IsDir() {
+		return "", fmt.Errorf("legacy sitemap index is not a file")
+	}
+	return legacy, nil
+}
+
+func ReadCurrent(app core.App, relative string) ([]byte, error) {
+	return readCurrent(app, relative, CurrentDirectory)
+}
+
+func readCurrent(app core.App, relative string, resolveCurrent func(core.App) (string, error)) ([]byte, error) {
+	if !fs.ValidPath(relative) {
+		return nil, fs.ErrNotExist
+	}
+	for attempt := 0; attempt < 2; attempt++ {
+		current, err := resolveCurrent(app)
+		if err != nil {
+			if errors.Is(err, fs.ErrNotExist) && attempt == 0 {
+				continue
+			}
+			return nil, err
+		}
+		data, err := os.ReadFile(filepath.Join(current, filepath.FromSlash(relative)))
+		if errors.Is(err, fs.ErrNotExist) && attempt == 0 {
+			continue
+		}
+		return data, err
+	}
+	return nil, fs.ErrNotExist
 }
 
 // GenerateSiteMap creates and publishes a complete sitemap set. A failed run
 // leaves the currently published index untouched.
-func GenerateSiteMap(app core.App, sitemapConfig config.Sitemap) (Result, error) {
+func GenerateSiteMap(app core.App, sitemapConfig config.Sitemap) (result Result, err error) {
 	generationMu.Lock()
 	defer generationMu.Unlock()
-
-	outputDir := Directory(app)
-	if err := os.MkdirAll(outputDir, 0o755); err != nil {
-		return Result{}, fmt.Errorf("create sitemap directory: %w", err)
+	publicationLock, err := generatedpublication.AcquireLock(app)
+	if err != nil {
+		return Result{}, err
 	}
+	defer func() {
+		err = errors.Join(err, publicationLock.Close())
+	}()
 
 	generation := time.Now().UTC().Format("20060102T150405.000000000")
-	stagingDir, err := os.MkdirTemp(filepath.Dir(outputDir), ".sitemap-staging-")
+	version := "publication-" + generation
+	staging, err := generatedpublication.NewStaging(app)
 	if err != nil {
+		return Result{}, err
+	}
+	defer os.RemoveAll(staging)
+	stagingDir := filepath.Join(staging, directoryName)
+	if err := os.MkdirAll(stagingDir, 0o755); err != nil {
 		return Result{}, fmt.Errorf("create sitemap staging directory: %w", err)
 	}
-	defer os.RemoveAll(stagingDir)
 
 	index := setupSitemapIndex(sitemapConfig, stagingDir)
 	artistMap := setupSitemap("artists-"+generation, index)
@@ -83,20 +141,28 @@ func GenerateSiteMap(app core.App, sitemapConfig config.Sitemap) (Result, error)
 		return Result{}, err
 	}
 
-	children, err := validate(stagingDir, sitemapConfig)
+	_, err = validate(stagingDir, sitemapConfig)
 	if err != nil {
 		return Result{}, err
 	}
-	if err := publish(stagingDir, outputDir, children); err != nil {
+	agentResult, err := agentcontent.Generate(app, sitemapConfig.PublicURL, filepath.Join(staging, agentcontent.PublicationDirectoryName))
+	if err != nil {
+		return Result{}, fmt.Errorf("generate agent content: %w", err)
+	}
+	published, err := generatedpublication.Publish(app, staging, version)
+	if err != nil {
 		return Result{}, err
 	}
 
-	result := Result{
-		URLCount:      artistURLs + artworkURLs,
-		ExcludedCount: artistExcluded + artworkExcluded,
-		IndexPath:     filepath.Join(outputDir, indexFilename),
+	result = Result{
+		URLCount:           artistURLs + artworkURLs,
+		ExcludedCount:      artistExcluded + artworkExcluded,
+		AgentArtistCount:   agentResult.ArtistCount,
+		AgentArtworkCount:  agentResult.ArtworkCount,
+		AgentExcludedCount: agentResult.ExcludedCount,
+		IndexPath:          filepath.Join(published, directoryName, indexFilename),
 	}
-	result.CleanupErr = prune(outputDir, children)
+	result.CleanupErr = errors.Join(generatedpublication.Prune(app, version), agentResult.CleanupErr)
 
 	return result, nil
 }
@@ -323,38 +389,4 @@ func validate(stagingDir string, sitemapConfig config.Sitemap) (map[string]struc
 	}
 
 	return children, nil
-}
-
-func publish(stagingDir, outputDir string, children map[string]struct{}) error {
-	for filename := range children {
-		if err := os.Rename(filepath.Join(stagingDir, filename), filepath.Join(outputDir, filename)); err != nil {
-			return fmt.Errorf("publish child sitemap %q: %w", filename, err)
-		}
-	}
-	if err := os.Rename(filepath.Join(stagingDir, indexFilename), filepath.Join(outputDir, indexFilename)); err != nil {
-		return fmt.Errorf("publish sitemap index: %w", err)
-	}
-	return nil
-}
-
-func prune(outputDir string, children map[string]struct{}) error {
-	entries, err := os.ReadDir(outputDir)
-	if err != nil {
-		return fmt.Errorf("list published sitemap files: %w", err)
-	}
-	for _, entry := range entries {
-		if entry.IsDir() || entry.Name() == indexFilename {
-			continue
-		}
-		if !strings.HasSuffix(entry.Name(), ".xml") {
-			continue
-		}
-		if _, current := children[entry.Name()]; current {
-			continue
-		}
-		if err := os.Remove(filepath.Join(outputDir, entry.Name())); err != nil && !os.IsNotExist(err) {
-			return fmt.Errorf("remove stale sitemap %q: %w", entry.Name(), err)
-		}
-	}
-	return nil
 }

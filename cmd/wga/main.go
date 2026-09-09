@@ -20,6 +20,7 @@ import (
 	"github.com/blackfyre/wga/internal/migrations"
 	"github.com/blackfyre/wga/internal/observability"
 	"github.com/blackfyre/wga/internal/postcards"
+	"github.com/blackfyre/wga/internal/requestprotection"
 	"github.com/blackfyre/wga/internal/requesttrust"
 
 	"github.com/blackfyre/wga/internal/utils"
@@ -86,12 +87,23 @@ func main() {
 		}
 		contributorProvider := contributors.NewGitHubProvider(&http.Client{Timeout: 10 * time.Second})
 		captchaVerifier := antiabuse.NewRecaptchaVerifier(&http.Client{Timeout: 5 * time.Second}, serverConfig.Captcha.Secret())
-		clientIdentity := requesttrust.New(requesttrust.Source(serverConfig.ClientIPSource))
+		nextCloudflareSecret, _ := serverConfig.CloudflareOriginSecrets.Next()
+		identitySource := requesttrust.Source(serverConfig.ClientIPSource)
+		originSecrets := requesttrust.NewCloudflareOriginSecrets(
+			serverConfig.CloudflareOriginSecrets.Current().Value(),
+			nextCloudflareSecret.Value(),
+		)
+		clientIdentity := requesttrust.New(identitySource, originSecrets)
+		authenticateOrigin := requesttrust.NewOriginAuthenticator(identitySource, originSecrets)
 		itineraryPolicy, err := itinerarySecurityPolicy(serverConfig, clientIdentity)
 		if err != nil {
 			log.Fatal(err)
 		}
-		if err := handlers.RegisterHandlers(app, serverConfig.Environment, serverConfig.Captcha, serverConfig.Postcards.TokenKeyring(), contributorStore, captchaVerifier, itineraryPolicy, clientIdentity); err != nil {
+		publicReadPolicy, err := requestprotection.NewPolicy(serverConfig.PublicRequestProtection)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if err := handlers.RegisterHandlers(app, serverConfig.Environment, serverConfig.Captcha, serverConfig.Postcards.TokenKeyring(), contributorStore, captchaVerifier, itineraryPolicy, authenticateOrigin, clientIdentity, serverConfig.PublicURL, publicReadPolicy); err != nil {
 			log.Fatal(err)
 		}
 		crontab.RegisterCronJobs(app, serverConfig.Postcards, serverConfig.Sitemap(), contributors.NewRefreshJob(app, contributorProvider, contributorStore))
@@ -119,6 +131,9 @@ func main() {
 				"trigger", "manual",
 				"url_count", result.URLCount,
 				"excluded_count", result.ExcludedCount,
+				"agent_artist_count", result.AgentArtistCount,
+				"agent_artwork_count", result.AgentArtworkCount,
+				"agent_excluded_count", result.AgentExcludedCount,
 			)
 			if result.CleanupErr != nil {
 				app.Logger().Warn("Sitemap cleanup failed",

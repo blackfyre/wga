@@ -25,6 +25,7 @@ import (
 	"github.com/blackfyre/wga/internal/handlers/tours"
 
 	"github.com/blackfyre/wga/internal/handlers/postcards"
+	"github.com/blackfyre/wga/internal/requestprotection"
 	"github.com/blackfyre/wga/internal/requesttrust"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/pocketbase/pocketbase"
@@ -38,11 +39,15 @@ import (
 // It returns an error when an integration that must fail closed at startup
 // (currently the visitor-itinerary anonymous-write surface) rejects its
 // security policy.
-func RegisterHandlers(app *pocketbase.PocketBase, environment config.Environment, captcha config.Captcha, postcardKeyring config.PostcardTokenKeyring, contributorReader contributorworkflow.Reader, captchaVerifier antiabuse.Verifier, itineraryPolicy itineraryhandlers.SecurityPolicy, clientIdentity requesttrust.Resolver) error {
+func RegisterHandlers(app *pocketbase.PocketBase, environment config.Environment, captcha config.Captcha, postcardKeyring config.PostcardTokenKeyring, contributorReader contributorworkflow.Reader, captchaVerifier antiabuse.Verifier, itineraryPolicy itineraryhandlers.SecurityPolicy, authenticateOrigin requesttrust.OriginAuthenticator, clientIdentity requesttrust.Resolver, publicURL config.PublicURL, publicReadPolicy *requestprotection.Policy) error {
 
 	app.Logger().Debug("Registering route handlers...")
 	p := bluemonday.NewPolicy()
 
+	if err := registerProtectedReadMiddleware(app, publicURL.String(), authenticateOrigin, clientIdentity, publicReadPolicy); err != nil {
+		return err
+	}
+	registerMarkdownNegotiationMiddleware(app)
 	registerTrustedHeadMarkupMiddleware(app)
 
 	cookie, err := itineraryhandlers.ActiveCookie(itineraryPolicy)

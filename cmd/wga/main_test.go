@@ -80,14 +80,15 @@ func TestServerConfigForJoinsServerAndTokenKeyringErrors(t *testing.T) {
 func TestItinerarySecurityPolicy(t *testing.T) {
 	t.Run("production HTTPS uses secure production cookie", func(t *testing.T) {
 		server := loadServer(t, map[string]string{
-			"WGA_ENV":                "production",
-			"WGA_PROTOCOL":           "https",
-			"WGA_HOSTNAME":           "gallery.example",
-			"WGA_CLIENT_IP_SOURCE":   "railway",
-			"WGA_RECAPTCHA_SECRET":   "captcha-secret",
-			"WGA_RECAPTCHA_SITE_KEY": "captcha-site-key",
-			"WGA_SENDER_NAME":        "WGA",
-			"WGA_SENDER_ADDRESS":     "sender@example.test",
+			"WGA_ENV":                    "production",
+			"WGA_PROTOCOL":               "https",
+			"WGA_HOSTNAME":               "gallery.example",
+			"WGA_CLIENT_IP_SOURCE":       "cloudflare-railway",
+			"WGA_CLOUDFLARE_EDGE_SECRET": base64.RawURLEncoding.EncodeToString(bytes.Repeat([]byte{0x61}, 32)),
+			"WGA_RECAPTCHA_SECRET":       "captcha-secret",
+			"WGA_RECAPTCHA_SITE_KEY":     "captcha-site-key",
+			"WGA_SENDER_NAME":            "WGA",
+			"WGA_SENDER_ADDRESS":         "sender@example.test",
 		})
 
 		policy, err := itinerarySecurityPolicy(server, requesttrust.New(requesttrust.Source(server.ClientIPSource)))
@@ -131,14 +132,15 @@ func TestItinerarySecurityPolicy(t *testing.T) {
 
 	t.Run("staging HTTP without development opt-in fails closed", func(t *testing.T) {
 		server := loadServer(t, map[string]string{
-			"WGA_ENV":                "staging",
-			"WGA_PROTOCOL":           "http",
-			"WGA_HOSTNAME":           "staging.example",
-			"WGA_CLIENT_IP_SOURCE":   "railway",
-			"WGA_RECAPTCHA_SECRET":   "captcha-secret",
-			"WGA_RECAPTCHA_SITE_KEY": "captcha-site-key",
-			"WGA_SENDER_NAME":        "WGA",
-			"WGA_SENDER_ADDRESS":     "sender@example.test",
+			"WGA_ENV":                    "staging",
+			"WGA_PROTOCOL":               "http",
+			"WGA_HOSTNAME":               "staging.example",
+			"WGA_CLIENT_IP_SOURCE":       "cloudflare-railway",
+			"WGA_CLOUDFLARE_EDGE_SECRET": base64.RawURLEncoding.EncodeToString(bytes.Repeat([]byte{0x61}, 32)),
+			"WGA_RECAPTCHA_SECRET":       "captcha-secret",
+			"WGA_RECAPTCHA_SITE_KEY":     "captcha-site-key",
+			"WGA_SENDER_NAME":            "WGA",
+			"WGA_SENDER_ADDRESS":         "sender@example.test",
 		})
 
 		if _, err := itinerarySecurityPolicy(server, requesttrust.New(requesttrust.Source(server.ClientIPSource))); err == nil {

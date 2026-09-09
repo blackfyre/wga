@@ -2,6 +2,7 @@ package artists
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -22,6 +23,7 @@ import (
 	"github.com/blackfyre/wga/internal/errs"
 	"github.com/blackfyre/wga/internal/logging"
 	"github.com/blackfyre/wga/internal/repositories"
+	"github.com/blackfyre/wga/internal/requestprotection"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/blackfyre/wga/internal/utils/glossary"
 	"github.com/blackfyre/wga/internal/utils/jsonld"
@@ -311,8 +313,13 @@ func RenderArtistContent(app *pocketbase.PocketBase, c *core.RequestEvent, artis
 // pushes the canonical record URL.
 func processArtist(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 	slug := c.Request.PathValue("name")
+	markdownPath := generatedMarkdownPath("artists", slug)
+	c.Response.Header().Add("Vary", "Accept")
 
 	id := utils.ExtractIdFromString(slug)
+	if err := requestprotection.Checkpoint(c.Request.Context(), "artist.detail.lookup"); err != nil {
+		return err
+	}
 	artist, err := repositories.NewArtistRecordRepository(app).FindPublishedArtist(id)
 	if err != nil {
 		return artistLookupError(c, app, slug, err)
@@ -327,8 +334,11 @@ func processArtist(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 
 	logger := artistRecordRequestLogger(app, c)
 	viewStarted := time.Now()
-	view, err := buildArtistRecordView(app, artist, logger)
+	view, err := buildArtistRecordViewContext(c.Request.Context(), app, artist, logger, requestprotection.Checkpoint)
 	if err != nil {
+		if isExpectedCancellation(err) {
+			return err
+		}
 		logger.Error("Build artist record failed",
 			"event", "artists.record_view.failed",
 			"duration_ms", time.Since(viewStarted).Milliseconds(),
@@ -341,24 +351,41 @@ func processArtist(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", view.FilingName, view.LifeSummary))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, artist.GetString("bio"))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, utils.AssetUrl(fullUrl))
+	markdownAvailable := generatedMarkdownAvailable(app, markdownPath, fullUrl)
+	if markdownAvailable {
+		ctx = decorateMarkdownAlternate(ctx, markdownPath)
+	}
 	if image := artistOpenGraphImage(view); image != "" {
 		ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgImageKey, image)
 	}
 
 	c.Response.Header().Set("HX-Push-Url", fullUrl)
+	if markdownAvailable {
+		advertiseMarkdown(c, markdownPath)
+	}
 
 	var buff bytes.Buffer
+	if err := requestprotection.Checkpoint(c.Request.Context(), "artist.detail.render"); err != nil {
+		return err
+	}
 	if utils.IsHtmxRequest(c) {
 		err = pages.ArtistRecordBlock(view).Render(ctx, &buff)
 	} else {
 		err = pages.ArtistRecordPage(view).Render(ctx, &buff)
 	}
 	if err != nil {
+		if isExpectedCancellation(err) {
+			return err
+		}
 		app.Logger().Error("Error rendering artist page", "error", err.Error())
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	return c.HTML(http.StatusOK, buff.String())
+}
+
+func isExpectedCancellation(err error) bool {
+	return requestprotection.IsCancellation(err)
 }
 
 func artistLookupError(c *core.RequestEvent, app *pocketbase.PocketBase, slug string, err error) error {
@@ -373,14 +400,26 @@ func artistLookupError(c *core.RequestEvent, app *pocketbase.PocketBase, slug st
 // buildArtistRecordView assembles the page-owned artist record view from the
 // bounded read-model.
 func buildArtistRecordView(app *pocketbase.PocketBase, artist *core.Record, logger *slog.Logger) (pages.ArtistView, error) {
+	return buildArtistRecordViewContext(context.Background(), app, artist, logger, requestprotection.Checkpoint)
+}
+
+type artistDetailCheckpoint func(context.Context, string) error
+
+func buildArtistRecordViewContext(ctx context.Context, app *pocketbase.PocketBase, artist *core.Record, logger *slog.Logger, checkpoint artistDetailCheckpoint) (pages.ArtistView, error) {
 	expectedSlug := utils.GenerateArtistSlug(artist)
 
 	repo := repositories.NewArtistRecordRepository(app)
 
+	if err := checkpoint(ctx, "artist.detail.work_count"); err != nil {
+		return pages.ArtistView{}, err
+	}
 	stepStarted := time.Now()
 	workCount, err := repo.CountPublishedWorks(artist.Id)
 	if err != nil {
 		logArtistRecordStepFailure(logger, "count_published_works", stepStarted, err)
+		return pages.ArtistView{}, err
+	}
+	if err := checkpoint(ctx, "artist.detail.works"); err != nil {
 		return pages.ArtistView{}, err
 	}
 	stepStarted = time.Now()
@@ -390,13 +429,19 @@ func buildArtistRecordView(app *pocketbase.PocketBase, artist *core.Record, logg
 		return pages.ArtistView{}, err
 	}
 
+	if err := checkpoint(ctx, "artist.detail.related_content"); err != nil {
+		return pages.ArtistView{}, err
+	}
 	stepStarted = time.Now()
-	selections, err := buildSelectionPreviews(app, artist, workCount)
+	selections, err := buildSelectionPreviewsContext(ctx, app, artist, workCount, checkpoint)
 	if err != nil {
 		logArtistRecordStepFailure(logger, "build_selection_previews", stepStarted, err)
 		return pages.ArtistView{}, err
 	}
 
+	if err := checkpoint(ctx, "artist.detail.schools"); err != nil {
+		return pages.ArtistView{}, err
+	}
 	stepStarted = time.Now()
 	schoolNames, err := repo.ListSchoolNames(artist.GetStringSlice("school"))
 	if err != nil {
@@ -404,6 +449,9 @@ func buildArtistRecordView(app *pocketbase.PocketBase, artist *core.Record, logg
 		return pages.ArtistView{}, err
 	}
 
+	if err := checkpoint(ctx, "artist.detail.periods"); err != nil {
+		return pages.ArtistView{}, err
+	}
 	stepStarted = time.Now()
 	periodRecords, err := repo.ListMatchingArtPeriods(artist.GetInt("year_of_birth"))
 	if err != nil {
@@ -411,12 +459,18 @@ func buildArtistRecordView(app *pocketbase.PocketBase, artist *core.Record, logg
 		return pages.ArtistView{}, err
 	}
 
+	if err := checkpoint(ctx, "artist.detail.glossary"); err != nil {
+		return pages.ArtistView{}, err
+	}
 	glossaryEntries, glossaryErr := glossary.GetGlossaryEntries(app)
 	if glossaryErr != nil {
 		app.Logger().Warn("Failed to load glossary entries", "error", glossaryErr)
 	}
 	bio := annotateBiography(artist.GetString("bio"), glossaryEntries)
 
+	if err := checkpoint(ctx, "artist.detail.music"); err != nil {
+		return pages.ArtistView{}, err
+	}
 	stepStarted = time.Now()
 	periodSong, err := repo.MatchPeriodSong(artist.GetInt("year_of_birth"))
 	if err != nil {
@@ -424,6 +478,9 @@ func buildArtistRecordView(app *pocketbase.PocketBase, artist *core.Record, logg
 		return pages.ArtistView{}, err
 	}
 
+	if err := checkpoint(ctx, "artist.detail.projection"); err != nil {
+		return pages.ArtistView{}, err
+	}
 	personJsonLd := jsonld.ArtistJsonLd(artist)
 	marshalled, err := json.Marshal(personJsonLd)
 	if err != nil {
@@ -595,8 +652,15 @@ const selectionPreviewWorkLimit = 4
 // counts, sanitised commentary, bounded representative works, and the stable
 // selection route.
 func buildSelectionPreviews(app *pocketbase.PocketBase, artist *core.Record, workCount int) ([]pages.SelectionPreview, error) {
+	return buildSelectionPreviewsContext(context.Background(), app, artist, workCount, requestprotection.Checkpoint)
+}
+
+func buildSelectionPreviewsContext(ctx context.Context, app *pocketbase.PocketBase, artist *core.Record, workCount int, checkpoint artistDetailCheckpoint) ([]pages.SelectionPreview, error) {
 	repo := repositories.NewArtistSelectionsRepository(app)
 
+	if err := checkpoint(ctx, "artist.detail.selection_count"); err != nil {
+		return nil, err
+	}
 	count, err := repo.CountPublishedSelections(artist.Id)
 	if err != nil {
 		return nil, err
@@ -605,6 +669,9 @@ func buildSelectionPreviews(app *pocketbase.PocketBase, artist *core.Record, wor
 		return nil, nil
 	}
 
+	if err := checkpoint(ctx, "artist.detail.selections"); err != nil {
+		return nil, err
+	}
 	selections, err := repo.ListPublishedSelections(artist.Id, 0)
 	if err != nil {
 		return nil, err
@@ -613,6 +680,9 @@ func buildSelectionPreviews(app *pocketbase.PocketBase, artist *core.Record, wor
 	slug := utils.GenerateArtistSlug(artist)
 	previews := make([]pages.SelectionPreview, 0, len(selections))
 	for _, selection := range selections {
+		if err := checkpoint(ctx, "artist.detail.selection_works"); err != nil {
+			return nil, err
+		}
 		works, err := repo.ListSelectionArtworks(artist.Id, selection)
 		if err != nil {
 			return nil, err

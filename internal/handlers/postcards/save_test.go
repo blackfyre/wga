@@ -1,7 +1,9 @@
 package postcards
 
 import (
+	"bytes"
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
@@ -146,14 +148,15 @@ func TestSavePostcardCaptchaFailuresDoNotPersist(t *testing.T) {
 func protectedCaptcha(t *testing.T) config.Captcha {
 	t.Helper()
 	values := map[string]string{
-		"WGA_ENV":                "production",
-		"WGA_PROTOCOL":           "https",
-		"WGA_HOSTNAME":           "gallery.example",
-		"WGA_CLIENT_IP_SOURCE":   "direct",
-		"WGA_SENDER_NAME":        "WGA",
-		"WGA_SENDER_ADDRESS":     "sender@example.test",
-		"WGA_RECAPTCHA_SECRET":   "secret",
-		"WGA_RECAPTCHA_SITE_KEY": "site-key",
+		"WGA_ENV":                    "production",
+		"WGA_PROTOCOL":               "https",
+		"WGA_HOSTNAME":               "gallery.example",
+		"WGA_CLIENT_IP_SOURCE":       "cloudflare-railway",
+		"WGA_CLOUDFLARE_EDGE_SECRET": base64.RawURLEncoding.EncodeToString(bytes.Repeat([]byte{0x61}, 32)),
+		"WGA_SENDER_NAME":            "WGA",
+		"WGA_SENDER_ADDRESS":         "sender@example.test",
+		"WGA_RECAPTCHA_SECRET":       "secret",
+		"WGA_RECAPTCHA_SITE_KEY":     "site-key",
 	}
 	server, err := config.LoadFrom(func(key string) string { return values[key] }).Server()
 	if err != nil {

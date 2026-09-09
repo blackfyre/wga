@@ -2,6 +2,7 @@ package artists
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -20,6 +21,7 @@ import (
 	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/repositories"
+	"github.com/blackfyre/wga/internal/requestprotection"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/blackfyre/wga/internal/utils/glossary"
 	"github.com/blackfyre/wga/internal/utils/jsonld"
@@ -49,13 +51,24 @@ func findPublishedArtwork(app *pocketbase.PocketBase, id string) (*core.Record, 
 // Returns:
 // - An error if any error occurs during the processing, or nil if the processing is successful.
 func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase, environment config.Environment) error {
+	return processArtworkWithCheckpoint(c, app, environment, requestprotection.Checkpoint)
+}
+
+type artworkDetailCheckpoint func(context.Context, string) error
+
+func processArtworkWithCheckpoint(c *core.RequestEvent, app *pocketbase.PocketBase, environment config.Environment, checkpoint artworkDetailCheckpoint) error {
 	artistSlug := c.Request.PathValue("name")
 	artworkSlug := c.Request.PathValue("awid")
+	markdownPath := generatedMarkdownPath("artworks", artworkSlug)
+	c.Response.Header().Add("Vary", "Accept")
 
 	// Split the slug on the last dash and use the last part as the artist id
 	artistSlugParts := strings.Split(artistSlug, "-")
 	artistId := artistSlugParts[len(artistSlugParts)-1]
 
+	if err := checkpoint(c.Request.Context(), "artwork.detail.artist_lookup"); err != nil {
+		return artworkCancellationError(c, err)
+	}
 	artist, err := repositories.NewArtistRecordRepository(app).FindPublishedArtist(artistId)
 
 	// If the artist is not found or unpublished, return an indistinguishable 404.
@@ -74,6 +87,9 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase, environmen
 	artworkId := artworkSlugParts[len(artworkSlugParts)-1]
 
 	// find the artwork by id, published only
+	if err := checkpoint(c.Request.Context(), "artwork.detail.artwork_lookup"); err != nil {
+		return artworkCancellationError(c, err)
+	}
 	aw, err := findPublishedArtwork(app, artworkId)
 
 	if err != nil {
@@ -113,6 +129,9 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase, environmen
 		return c.Redirect(http.StatusMovedPermanently, canonicalURL)
 	}
 
+	if err := checkpoint(c.Request.Context(), "artwork.detail.projection"); err != nil {
+		return artworkCancellationError(c, err)
+	}
 	var img dto.Image
 
 	img.Id = aw.GetString("id")
@@ -158,30 +177,30 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase, environmen
 		ReproFile:       artworkReproductionFile(aw),
 		SourceURL:       url.GenerateArtworkSourceURL(aw),
 	}
+	if err := checkpoint(c.Request.Context(), "artwork.detail.metadata"); err != nil {
+		return artworkCancellationError(c, err)
+	}
 	populateArtworkMetadata(app, aw, &content)
 	populateArtworkCitation(&content)
+	if err := checkpoint(c.Request.Context(), "artwork.detail.source_data"); err != nil {
+		return artworkCancellationError(c, err)
+	}
 	populateArtworkSourceData(app, aw, &content, environment)
-	populateArtworkRelated(app, aw, &content, basis, expectedPageUrl)
+	if err := checkpoint(c.Request.Context(), "artwork.detail.related_content"); err != nil {
+		return artworkCancellationError(c, err)
+	}
+	if err := populateArtworkRelatedContext(c.Request.Context(), app, aw, &content, basis, expectedPageUrl, checkpoint); err != nil {
+		return artworkCancellationError(c, err)
+	}
 
-	school := artist.GetStringSlice("school")
-
-	var schoolCollector []string
-
-	for _, s := range school {
-		r, err := app.FindRecordById(constants.CollectionSchools, s)
-
-		if err != nil {
-			app.Logger().Error("school not found", "error", err.Error())
-			continue
-		}
-
-		schoolCollector = append(schoolCollector, r.GetString("name"))
-
-		content.Schools = strings.Join(schoolCollector, ", ")
-
+	if err := populateArtworkSchoolsContext(c.Request.Context(), app, artist, &content, checkpoint); err != nil {
+		return artworkCancellationError(c, err)
 	}
 
 	// Annotate the source-backed commentary with glossary terms.
+	if err := checkpoint(c.Request.Context(), "artwork.detail.glossary"); err != nil {
+		return artworkCancellationError(c, err)
+	}
 	glossaryEntries, glossaryErr := glossary.GetGlossaryEntries(app)
 	if glossaryErr != nil {
 		app.Logger().Warn("Failed to load glossary entries", "error", glossaryErr)
@@ -202,12 +221,22 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase, environmen
 	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", content.Title, content.FilingName))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, aw.GetString("comment"))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, utils.AssetUrl(canonicalURL))
+	markdownAvailable := generatedMarkdownAvailable(app, markdownPath, expectedPageUrl)
+	if markdownAvailable {
+		ctx = decorateMarkdownAlternate(ctx, markdownPath)
+	}
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgImageKey, utils.AssetUrl(content.Image.Image))
 
 	c.Response.Header().Set("HX-Push-Url", canonicalURL)
+	if markdownAvailable {
+		advertiseMarkdown(c, markdownPath)
+	}
 
 	var buff bytes.Buffer
 
+	if err := checkpoint(c.Request.Context(), "artwork.detail.render"); err != nil {
+		return artworkCancellationError(c, err)
+	}
 	err = pages.ArtworkPage(content).Render(ctx, &buff)
 
 	if err != nil {
@@ -216,6 +245,28 @@ func processArtwork(c *core.RequestEvent, app *pocketbase.PocketBase, environmen
 	}
 
 	return c.HTML(http.StatusOK, buff.String())
+}
+
+func artworkCancellationError(c *core.RequestEvent, err error) error {
+	_ = c
+	return err
+}
+
+func populateArtworkSchoolsContext(ctx context.Context, app *pocketbase.PocketBase, artist *core.Record, content *dto.Artwork, checkpoint artworkDetailCheckpoint) error {
+	schoolCollector := []string{}
+	for _, schoolID := range artist.GetStringSlice("school") {
+		if err := checkpoint(ctx, "artwork.detail.school"); err != nil {
+			return err
+		}
+		record, err := app.FindRecordById(constants.CollectionSchools, schoolID)
+		if err != nil {
+			app.Logger().Error("school not found", "error", err.Error())
+			continue
+		}
+		schoolCollector = append(schoolCollector, record.GetString("name"))
+	}
+	content.Schools = strings.Join(schoolCollector, ", ")
+	return nil
 }
 
 func RenderArtworkContent(app *pocketbase.PocketBase, c *core.RequestEvent, artwork *core.Record, hxTarget string, showBreadcrumbs bool) (dto.Artwork, error) {
@@ -439,27 +490,51 @@ func artworkCommentaryHTML(sourceComment string) string {
 // populateArtworkRelated resolves the active related-work basis and fills the
 // related-work images and basis controls into the artwork DTO.
 func populateArtworkRelated(app *pocketbase.PocketBase, artwork *core.Record, content *dto.Artwork, basis repositories.RelatedWorkBasis, baseURL string) {
-	result, err := repositories.NewRelatedWorkResolver(app).Resolve(artwork, basis)
+	_ = populateArtworkRelatedContext(context.Background(), app, artwork, content, basis, baseURL, requestprotection.Checkpoint)
+}
+
+func populateArtworkRelatedContext(ctx context.Context, app *pocketbase.PocketBase, artwork *core.Record, content *dto.Artwork, basis repositories.RelatedWorkBasis, baseURL string, checkpoint artworkDetailCheckpoint) error {
+	result, err := repositories.NewRelatedWorkResolver(app).ResolveContext(ctx, artwork, basis, func(ctx context.Context, stage string) error {
+		return checkpoint(ctx, "artwork.detail.related."+stage)
+	})
 	if err != nil {
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			return err
+		}
 		app.Logger().Warn("Failed to resolve related artworks", "artwork_id", artwork.Id, "error", err)
 	}
 
-	content.RelatedWorks = buildRelatedWorkImages(app, result.Basis, result.Works, content.HxTarget)
+	content.RelatedWorks, err = buildRelatedWorkImagesContext(ctx, app, result.Basis, result.Works, content.HxTarget, checkpoint)
+	if err != nil {
+		return err
+	}
 	content.Related = buildRelatedWorkState(result.Basis, result.Holding, content, artwork, baseURL)
+	return nil
 }
 
 // buildRelatedWorkImages maps resolver records onto the related-work card
 // projection using the source-eligible related-card profile and the canonical
 // per-work artwork URL.
 func buildRelatedWorkImages(app *pocketbase.PocketBase, basis repositories.RelatedWorkBasis, works []*core.Record, hxTarget string) dto.ImageGrid {
+	related, _ := buildRelatedWorkImagesContext(context.Background(), app, basis, works, hxTarget, requestprotection.Checkpoint)
+	return related
+}
+
+func buildRelatedWorkImagesContext(ctx context.Context, app *pocketbase.PocketBase, basis repositories.RelatedWorkBasis, works []*core.Record, hxTarget string, checkpoint artworkDetailCheckpoint) (dto.ImageGrid, error) {
 	related := dto.ImageGrid{}
 	for _, work := range works {
+		if err := checkpoint(ctx, "artwork.detail.related.work"); err != nil {
+			return nil, err
+		}
 		image := utils.AssetUrl("/assets/images/no-image.png")
 		if imageName := work.GetString("image"); imageName != "" {
 			image = url.GenerateArtworkImageURL(work, url.DeliveryProfileRelatedTimelineCard, "")
 		}
 
-		routeName, filingName, shortName, artistID := resolveWorkArtist(app, work)
+		routeName, filingName, shortName, artistID, err := resolveWorkArtistContext(ctx, app, work, checkpoint)
+		if err != nil {
+			return nil, err
+		}
 		workURL := url.GenerateArtworkUrl(url.ArtworkUrlDTO{
 			ArtworkTitle: work.GetString("title"),
 			ArtworkId:    work.Id,
@@ -494,7 +569,7 @@ func buildRelatedWorkImages(app *pocketbase.PocketBase, basis repositories.Relat
 		})
 	}
 
-	return related
+	return related, nil
 }
 
 // resolveWorkArtist returns the first published author's route, filing, short name and id for
@@ -502,17 +577,25 @@ func buildRelatedWorkImages(app *pocketbase.PocketBase, basis repositories.Relat
 // authors are skipped so a related card never leaks unpublished artist data or
 // links to an unpublished artist record.
 func resolveWorkArtist(app *pocketbase.PocketBase, work *core.Record) (string, string, string, string) {
+	routeName, filingName, shortName, artistID, _ := resolveWorkArtistContext(context.Background(), app, work, requestprotection.Checkpoint)
+	return routeName, filingName, shortName, artistID
+}
+
+func resolveWorkArtistContext(ctx context.Context, app *pocketbase.PocketBase, work *core.Record, checkpoint artworkDetailCheckpoint) (string, string, string, string, error) {
 	authorIDs := work.GetStringSlice("author")
 	repo := repositories.NewArtistRecordRepository(app)
 	for _, authorID := range authorIDs {
+		if err := checkpoint(ctx, "artwork.detail.related.work_author"); err != nil {
+			return "", "", "", "", err
+		}
 		artist, err := repo.FindPublishedArtist(authorID)
 		if err != nil {
 			continue
 		}
-		return artist.GetString("name"), artist.GetString("filing_name"), artist.GetString("short_name"), artist.Id
+		return artist.GetString("name"), artist.GetString("filing_name"), artist.GetString("short_name"), artist.Id, nil
 	}
 
-	return "", "", "", ""
+	return "", "", "", "", nil
 }
 
 // buildArtworkMusic derives the deterministic period-music card from the

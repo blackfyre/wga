@@ -2,7 +2,9 @@ package static
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"database/sql"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -10,6 +12,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/blackfyre/wga/internal/agentcontent"
 	"github.com/blackfyre/wga/internal/assets"
 	"github.com/blackfyre/wga/internal/assets/templ/components"
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
@@ -19,7 +22,6 @@ import (
 	"github.com/blackfyre/wga/internal/logging"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/blackfyre/wga/internal/utils/sitemap"
-	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 )
 
@@ -45,6 +47,85 @@ func assetCacheControl(path string) string {
 		return "public, max-age=31536000, immutable"
 	}
 	return ""
+}
+
+const (
+	agentContentCacheControl = "public, no-cache, must-revalidate"
+	agentContentNoStore      = "private, no-store"
+)
+
+func agentContentNotFound(c *core.RequestEvent) error {
+	c.Response.Header().Set("Cache-Control", agentContentNoStore)
+	return utils.NotFoundError(c)
+}
+
+func serveAgentContent(app core.App, c *core.RequestEvent, relative string) error {
+	resource, err := agentcontent.ReadCurrent(app, relative)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return agentContentNotFound(c)
+		}
+		logging.RequestLogger(app, c).Error("Generated agent content read failed",
+			"event", "agent_content.read.failed",
+			"error_type", logging.ErrorType(err),
+			"error", logging.Redact(err),
+		)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "agent_content_read", Cause: err})
+	}
+
+	c.Response.Header().Set("Cache-Control", agentContentCacheControl)
+	c.Response.Header().Set("Link", fmt.Sprintf("<%s>; rel=\"canonical\"", resource.CanonicalURL))
+	etag := agentContentETag(resource.Content)
+	c.Response.Header().Set("ETag", etag)
+	c.Response.Header().Del("Set-Cookie")
+	if matchesETag(c.Request.Header.Get("If-None-Match"), etag) {
+		return c.NoContent(http.StatusNotModified)
+	}
+	return c.Blob(http.StatusOK, "text/markdown; charset=utf-8", resource.Content)
+}
+
+func agentContentETag(content []byte) string {
+	digest := sha256.Sum256(content)
+	return `"` + hex.EncodeToString(digest[:]) + `"`
+}
+
+func matchesETag(ifNoneMatch string, etag string) bool {
+	for _, candidate := range strings.Split(ifNoneMatch, ",") {
+		candidate = strings.TrimSpace(candidate)
+		if candidate == "*" || candidate == etag || strings.TrimPrefix(candidate, "W/") == etag {
+			return true
+		}
+	}
+	return false
+}
+
+func serveSitemap(app core.App, c *core.RequestEvent, relative string) error {
+	content, err := sitemap.ReadCurrent(app, relative)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return utils.NotFoundError(c)
+		}
+		logging.RequestLogger(app, c).Error("Sitemap read failed",
+			"event", "sitemap.read.failed",
+			"error_type", logging.ErrorType(err),
+			"error", logging.Redact(err),
+		)
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "sitemap_read", Cause: err})
+	}
+	return c.Blob(http.StatusOK, "application/xml; charset=utf-8", content)
+}
+
+func generatedRecordRelative(kind, filename string) (string, bool) {
+	id, ok := strings.CutSuffix(filename, ".md")
+	if !ok || id == "" {
+		return "", false
+	}
+	for _, character := range id {
+		if (character < 'a' || character > 'z') && (character < 'A' || character > 'Z') && (character < '0' || character > '9') {
+			return "", false
+		}
+	}
+	return "agents/" + kind + "/" + id + ".md", true
 }
 
 // RegisterHandlers registers the static routes for the application.
@@ -86,17 +167,31 @@ func RegisterHandlers(app core.App, environment config.Environment) {
 		})
 
 		// Sitemap
-		sitemapFiles := os.DirFS(sitemap.Directory(app))
 		se.Router.GET("/sitemap.xml", func(c *core.RequestEvent) error {
-			return c.FileFS(sitemapFiles, "sitemap.xml")
+			return serveSitemap(app, c, "sitemap.xml")
 		})
-		se.Router.GET("/sitemap/{path...}", apis.Static(sitemapFiles, false))
+		se.Router.GET("/sitemap/{path...}", func(c *core.RequestEvent) error {
+			return serveSitemap(app, c, c.Request.PathValue("path"))
+		})
 		se.Router.GET("/sitemap.xsl", func(c *core.RequestEvent) error {
 			return c.Blob(http.StatusOK, "text/xsl; charset=utf-8", []byte(sitemapStylesheet(tmplUtils.AssetUrl("/assets/css/style.css"))))
 		})
 		se.Router.GET("/robots.txt", func(c *core.RequestEvent) error {
-			return c.String(http.StatusOK, "Sitemap: "+tmplUtils.AssetUrl("/sitemap.xml")+"\n")
+			return c.String(http.StatusOK, robotsText(tmplUtils.AssetUrl("/sitemap.xml")))
 		})
+		se.Router.GET("/llms.txt", func(c *core.RequestEvent) error {
+			return serveAgentContent(app, c, "llms.txt")
+		})
+		for _, kind := range []string{"artists", "artworks"} {
+			kind := kind
+			se.Router.GET("/agents/"+kind+"/{filename}", func(c *core.RequestEvent) error {
+				relative, ok := generatedRecordRelative(kind, c.Request.PathValue("filename"))
+				if !ok {
+					return agentContentNotFound(c)
+				}
+				return serveAgentContent(app, c, relative)
+			})
+		}
 
 		// "Static" pages
 		se.Router.GET("/pages/{slug}", func(c *core.RequestEvent) error {
@@ -117,6 +212,14 @@ func RegisterHandlers(app core.App, environment config.Environment) {
 
 		return se.Next()
 	})
+}
+
+func robotsText(sitemapURL string) string {
+	return "User-agent: *\n" +
+		"Disallow: /dual-mode\n" +
+		"Disallow: /artworks/results\n" +
+		"Disallow: /*?\n" +
+		"Sitemap: " + sitemapURL + "\n"
 }
 
 func sitemapStylesheet(cssURL string) string {

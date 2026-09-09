@@ -1,6 +1,7 @@
 package artists
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	neturl "net/url"
@@ -10,6 +11,7 @@ import (
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	"github.com/blackfyre/wga/internal/repositories"
+	"github.com/blackfyre/wga/internal/requestprotection"
 	"github.com/blackfyre/wga/internal/utils/jsonld"
 	urlutils "github.com/blackfyre/wga/internal/utils/url"
 	"github.com/pocketbase/pocketbase"
@@ -392,8 +394,20 @@ func buildArtistsJsonLd(records []*core.Record) string {
 // buildArtistIndexView parses the request, loads the filtered page, and
 // assembles the page-owned view plus the canonical URL for the response.
 func buildArtistIndexView(app *pocketbase.PocketBase, values neturl.Values) (pages.ArtistsView, string, error) {
+	return buildArtistIndexViewContext(context.Background(), app, values, requestprotection.Checkpoint)
+}
+
+type artistSearchCheckpoint func(context.Context, string) error
+
+func buildArtistIndexViewContext(ctx context.Context, app *pocketbase.PocketBase, values neturl.Values, checkpoint artistSearchCheckpoint) (pages.ArtistsView, string, error) {
+	if err := checkpoint(ctx, "artists.search.schools"); err != nil {
+		return pages.ArtistsView{}, "", err
+	}
 	schools, err := loadSchools(app)
 	if err != nil {
+		return pages.ArtistsView{}, "", err
+	}
+	if err := checkpoint(ctx, "artists.search.periods"); err != nil {
 		return pages.ArtistsView{}, "", err
 	}
 	periods, err := loadArtPeriods(app)
@@ -414,6 +428,9 @@ func buildArtistIndexView(app *pocketbase.PocketBase, values neturl.Values) (pag
 	}
 
 	repo := repositories.NewArtistIndexRepository(app)
+	if err := checkpoint(ctx, "artists.search.birth_bounds"); err != nil {
+		return pages.ArtistsView{}, "", err
+	}
 	bornMin, bornMax, err := repo.BirthYearBounds()
 	if err != nil {
 		return pages.ArtistsView{}, "", err
@@ -439,6 +456,9 @@ func buildArtistIndexView(app *pocketbase.PocketBase, values neturl.Values) (pag
 	}
 
 	filter := query.repositoryFilter(periodStart, periodEnd)
+	if err := checkpoint(ctx, "artists.search.count"); err != nil {
+		return pages.ArtistsView{}, "", err
+	}
 	total, err := repo.CountArtists(filter)
 	if err != nil {
 		return pages.ArtistsView{}, "", err
@@ -454,16 +474,25 @@ func buildArtistIndexView(app *pocketbase.PocketBase, values neturl.Values) (pag
 	// Rebuild the offset after the page has been clamped to the result set.
 	filter.Offset = (query.page - 1) * artistsPageSize
 
+	if err := checkpoint(ctx, "artists.search.records"); err != nil {
+		return pages.ArtistsView{}, "", err
+	}
 	indexed, err := repo.ListArtists(filter)
 	if err != nil {
 		return pages.ArtistsView{}, "", err
 	}
 
+	if err := checkpoint(ctx, "artists.search.letters"); err != nil {
+		return pages.ArtistsView{}, "", err
+	}
 	availableLetters, err := repo.ListAvailableLetters(repositories.ArtistIndexFilter{})
 	if err != nil {
 		return pages.ArtistsView{}, "", err
 	}
 
+	if err := checkpoint(ctx, "artists.search.projection"); err != nil {
+		return pages.ArtistsView{}, "", err
+	}
 	letters := buildIndexLetters(query.letter, availableLetters, query)
 
 	artists := make([]pages.ArtistRow, 0, len(indexed))

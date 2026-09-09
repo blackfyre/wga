@@ -47,6 +47,9 @@ templ LayoutBase(bodyClasses string, HtmxTargetArea string) {
 			if utils.GetCanonicalUrl(ctx) != "" {
 				<link rel="canonical" href={ utils.GetCanonicalUrl(ctx) }/>
 			}
+			if utils.GetAlternateMarkdownURL(ctx) != "" {
+				<link rel="alternate" type="text/markdown" href={ utils.GetAlternateMarkdownURL(ctx) }/>
+			}
 			@templ.Raw(dto.ThemeResolverScript())
 			<link rel="stylesheet" href="/assets/css/style.css"/>
 			<link rel="apple-touch-icon" sizes="180x180" href="/assets/images/apple-touch-icon.png"/>

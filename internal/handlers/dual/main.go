@@ -21,6 +21,7 @@ import (
 	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/errs"
 	"github.com/blackfyre/wga/internal/repositories"
+	"github.com/blackfyre/wga/internal/requestprotection"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/blackfyre/wga/internal/utils/glossary"
 	urlutils "github.com/blackfyre/wga/internal/utils/url"
@@ -118,8 +119,20 @@ type dualPeriod struct {
 }
 
 func renderDualModePage(app *pocketbase.PocketBase, c *core.RequestEvent) error {
-	ref, err := loadDualReference(app)
+	return renderDualModePageWithCheckpoint(app, c, requestprotection.Checkpoint)
+}
+
+type dualCheckpoint func(context.Context, string) error
+
+func renderDualModePageWithCheckpoint(app *pocketbase.PocketBase, c *core.RequestEvent, checkpoint dualCheckpoint) error {
+	if err := checkpoint(c.Request.Context(), "dual.reference"); err != nil {
+		return dualCancellationError(c, err)
+	}
+	ref, err := loadDualReferenceContext(c.Request.Context(), app, checkpoint)
 	if err != nil {
+		if requestprotection.IsCancellation(err) {
+			return err
+		}
 		app.Logger().Error("Error loading dual mode reference data", "error", err.Error())
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
@@ -130,31 +143,58 @@ func renderDualModePage(app *pocketbase.PocketBase, c *core.RequestEvent) error 
 	// link or the push URL is built, so a shared URL never carries a mismatched
 	// slug or artist segment. Missing, unpublished, or invalid records fall back
 	// to that pane's index.
-	leftPath, err := resolvePaneCanonicalPath(app, state.left)
+	if err := checkpoint(c.Request.Context(), "dual.left.resolve"); err != nil {
+		return dualCancellationError(c, err)
+	}
+	leftPath, err := resolvePaneCanonicalPathContext(c.Request.Context(), app, state.left, checkpoint)
 	if err != nil {
+		if requestprotection.IsCancellation(err) {
+			return err
+		}
 		app.Logger().Error("Error resolving left pane path", "error", err.Error())
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
-	rightPath, err := resolvePaneCanonicalPath(app, state.right)
+	if err := checkpoint(c.Request.Context(), "dual.right.resolve"); err != nil {
+		return dualCancellationError(c, err)
+	}
+	rightPath, err := resolvePaneCanonicalPathContext(c.Request.Context(), app, state.right, checkpoint)
 	if err != nil {
+		if requestprotection.IsCancellation(err) {
+			return err
+		}
 		app.Logger().Error("Error resolving right pane path", "error", err.Error())
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 	state.left.path = leftPath
 	state.right.path = rightPath
 
-	leftWindow, err := buildWindow(app, "left", state.left, state, ref)
+	if err := checkpoint(c.Request.Context(), "dual.left.window"); err != nil {
+		return dualCancellationError(c, err)
+	}
+	leftWindow, err := buildWindowContext(c.Request.Context(), app, "left", state.left, state, ref, checkpoint)
 	if err != nil {
+		if requestprotection.IsCancellation(err) {
+			return err
+		}
 		app.Logger().Error("Error rendering left window", "error", err.Error())
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
-	rightWindow, err := buildWindow(app, "right", state.right, state, ref)
+	if err := checkpoint(c.Request.Context(), "dual.right.window"); err != nil {
+		return dualCancellationError(c, err)
+	}
+	rightWindow, err := buildWindowContext(c.Request.Context(), app, "right", state.right, state, ref, checkpoint)
 	if err != nil {
+		if requestprotection.IsCancellation(err) {
+			return err
+		}
 		app.Logger().Error("Error rendering right window", "error", err.Error())
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
+	if err := checkpoint(c.Request.Context(), "dual.projection"); err != nil {
+		return dualCancellationError(c, err)
+	}
 	view := pages.DualModeView{
 		Windows:   [2]pages.DualWindow{leftWindow, rightWindow},
 		SwapHref:  state.swapped().path(),
@@ -169,17 +209,28 @@ func renderDualModePage(app *pocketbase.PocketBase, c *core.RequestEvent) error 
 	c.Response.Header().Set("HX-Push-Url", state.path())
 
 	var buff bytes.Buffer
+	if err := checkpoint(c.Request.Context(), "dual.render"); err != nil {
+		return dualCancellationError(c, err)
+	}
 	if utils.IsHtmxRequest(c) && !utils.RequestsMainContentArea(c) {
 		err = pages.DualModeBlock(view).Render(ctx, &buff)
 	} else {
 		err = pages.DualModePage(view).Render(ctx, &buff)
 	}
 	if err != nil {
+		if requestprotection.IsCancellation(err) {
+			return err
+		}
 		app.Logger().Error("Error rendering dual mode page", "error", err.Error())
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	return c.HTML(http.StatusOK, buff.String())
+}
+
+func dualCancellationError(c *core.RequestEvent, err error) error {
+	_ = c
+	return err
 }
 
 func baseDualWindow(side string, pane dualPaneState, state dualState) pages.DualWindow {
@@ -206,23 +257,27 @@ func baseDualWindow(side string, pane dualPaneState, state dualState) pages.Dual
 }
 
 func buildWindow(app *pocketbase.PocketBase, side string, pane dualPaneState, state dualState, ref dualReference) (pages.DualWindow, error) {
+	return buildWindowContext(context.Background(), app, side, pane, state, ref, requestprotection.Checkpoint)
+}
+
+func buildWindowContext(ctx context.Context, app *pocketbase.PocketBase, side string, pane dualPaneState, state dualState, ref dualReference, checkpoint dualCheckpoint) (pages.DualWindow, error) {
 	window := baseDualWindow(side, pane, state)
 
 	if pane.path == "" {
-		return buildIndexWindow(app, side, pane, state, ref, window)
+		return buildIndexWindowContext(ctx, app, side, pane, state, ref, window, checkpoint)
 	}
 
 	parsed, err := parsePanePath(pane.path)
 	if err != nil {
-		return buildIndexWindow(app, side, pane, state, ref, window)
+		return buildIndexWindowContext(ctx, app, side, pane, state, ref, window, checkpoint)
 	}
 
 	switch parsed.Kind {
 	case "artist":
-		record, buildErr := buildDualArtistRecord(app, side, pane, state, ref)
+		record, buildErr := buildDualArtistRecordContext(ctx, app, side, pane, state, ref, checkpoint)
 		if buildErr != nil {
 			if errors.Is(buildErr, sql.ErrNoRows) {
-				return buildIndexWindow(app, side, pane, state, ref, window)
+				return buildIndexWindowContext(ctx, app, side, pane, state, ref, window, checkpoint)
 			}
 			return window, buildErr
 		}
@@ -237,10 +292,10 @@ func buildWindow(app *pocketbase.PocketBase, side string, pane dualPaneState, st
 		return window, nil
 
 	case "artwork":
-		record, artistName, artistPath, buildErr := buildDualWorkRecord(app, side, pane, state, ref)
+		record, artistName, artistPath, buildErr := buildDualWorkRecordContext(ctx, app, side, pane, state, ref, checkpoint)
 		if buildErr != nil {
 			if errors.Is(buildErr, sql.ErrNoRows) {
-				return buildIndexWindow(app, side, pane, state, ref, window)
+				return buildIndexWindowContext(ctx, app, side, pane, state, ref, window, checkpoint)
 			}
 			return window, buildErr
 		}
@@ -257,16 +312,16 @@ func buildWindow(app *pocketbase.PocketBase, side string, pane dualPaneState, st
 		return window, nil
 
 	default:
-		return buildIndexWindow(app, side, pane, state, ref, window)
+		return buildIndexWindowContext(ctx, app, side, pane, state, ref, window, checkpoint)
 	}
 }
 
-func buildIndexWindow(app *pocketbase.PocketBase, side string, pane dualPaneState, state dualState, ref dualReference, window pages.DualWindow) (pages.DualWindow, error) {
+func buildIndexWindowContext(ctx context.Context, app *pocketbase.PocketBase, side string, pane dualPaneState, state dualState, ref dualReference, window pages.DualWindow, checkpoint dualCheckpoint) (pages.DualWindow, error) {
 	window.View = "index"
 	window.Crumb = []pages.DualCrumb{{Label: "ARTISTS"}}
 	window.BackHref = ""
 
-	indexView, err := buildDualIndexView(app, side, pane, state, ref)
+	indexView, err := buildDualIndexViewContext(ctx, app, side, pane, state, ref, checkpoint)
 	if err != nil {
 		return window, err
 	}
@@ -640,8 +695,15 @@ func (i dualIndexState) repositoryFilter(periodStart int, periodEnd int) reposit
 // ---------------------------------------------------------------------------
 
 func loadDualReference(app core.App) (dualReference, error) {
+	return loadDualReferenceContext(context.Background(), app, requestprotection.Checkpoint)
+}
+
+func loadDualReferenceContext(ctx context.Context, app core.App, checkpoint dualCheckpoint) (dualReference, error) {
 	var ref dualReference
 
+	if err := checkpoint(ctx, "dual.reference.schools"); err != nil {
+		return ref, err
+	}
 	schoolRecords, err := app.FindRecordsByFilter(constants.CollectionSchools, "", "+name", 0, 0)
 	if err != nil {
 		return ref, err
@@ -660,6 +722,9 @@ func loadDualReference(app core.App) (dualReference, error) {
 		}
 	}
 
+	if err := checkpoint(ctx, "dual.reference.periods"); err != nil {
+		return ref, err
+	}
 	periodRecords, err := app.FindRecordsByFilter("art_periods", "", "+start,+name", 0, 0)
 	if err != nil {
 		return ref, err
@@ -677,6 +742,9 @@ func loadDualReference(app core.App) (dualReference, error) {
 	}
 
 	repo := repositories.NewArtistIndexRepository(app)
+	if err := checkpoint(ctx, "dual.reference.birth_bounds"); err != nil {
+		return ref, err
+	}
 	ref.bornMin, ref.bornMax, err = repo.BirthYearBounds()
 	if err != nil {
 		return ref, err
@@ -690,6 +758,10 @@ func loadDualReference(app core.App) (dualReference, error) {
 // ---------------------------------------------------------------------------
 
 func buildDualIndexView(app *pocketbase.PocketBase, side string, pane dualPaneState, state dualState, ref dualReference) (pages.DualIndexView, error) {
+	return buildDualIndexViewContext(context.Background(), app, side, pane, state, ref, requestprotection.Checkpoint)
+}
+
+func buildDualIndexViewContext(ctx context.Context, app *pocketbase.PocketBase, side string, pane dualPaneState, state dualState, ref dualReference, checkpoint dualCheckpoint) (pages.DualIndexView, error) {
 	idx := pane.index
 	prefix := "l"
 	if side == "right" {
@@ -708,21 +780,33 @@ func buildDualIndexView(app *pocketbase.PocketBase, side string, pane dualPaneSt
 	repo := repositories.NewArtistIndexRepository(app)
 	filter := idx.repositoryFilter(periodStart, periodEnd)
 
+	if err := checkpoint(ctx, "dual.window.index.count"); err != nil {
+		return pages.DualIndexView{}, err
+	}
 	total, err := repo.CountArtists(filter)
 	if err != nil {
 		return pages.DualIndexView{}, err
 	}
 
+	if err := checkpoint(ctx, "dual.window.index.artists"); err != nil {
+		return pages.DualIndexView{}, err
+	}
 	indexed, err := repo.ListArtists(filter)
 	if err != nil {
 		return pages.DualIndexView{}, err
 	}
 
+	if err := checkpoint(ctx, "dual.window.index.letters"); err != nil {
+		return pages.DualIndexView{}, err
+	}
 	availableLetters, err := repo.ListAvailableLetters(repositories.ArtistIndexFilter{})
 	if err != nil {
 		return pages.DualIndexView{}, err
 	}
 
+	if err := checkpoint(ctx, "dual.window.index.projection"); err != nil {
+		return pages.DualIndexView{}, err
+	}
 	view := pages.DualIndexView{
 		View:        idx.view,
 		Hidden:      state.hiddenFieldsFor(side),
@@ -889,6 +973,10 @@ func findPublishedArtwork(app core.App, id string) (*core.Record, error) {
 // uses the work's published author, so a mismatched segment cannot leak into
 // the shareable URL.
 func resolvePaneCanonicalPath(app core.App, pane dualPaneState) (string, error) {
+	return resolvePaneCanonicalPathContext(context.Background(), app, pane, requestprotection.Checkpoint)
+}
+
+func resolvePaneCanonicalPathContext(ctx context.Context, app core.App, pane dualPaneState, checkpoint dualCheckpoint) (string, error) {
 	if pane.path == "" {
 		return "", nil
 	}
@@ -900,6 +988,9 @@ func resolvePaneCanonicalPath(app core.App, pane dualPaneState) (string, error) 
 
 	switch parsed.Kind {
 	case "artist":
+		if err := checkpoint(ctx, "dual.resolve.artist"); err != nil {
+			return "", err
+		}
 		artist, err := findPublishedArtist(app, parsed.Id)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
@@ -911,6 +1002,9 @@ func resolvePaneCanonicalPath(app core.App, pane dualPaneState) (string, error) 
 		return urlutils.GenerateArtistUrlFromRecord(artist), nil
 
 	case "artwork":
+		if err := checkpoint(ctx, "dual.resolve.work"); err != nil {
+			return "", err
+		}
 		work, err := findPublishedArtwork(app, parsed.Id)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
@@ -924,6 +1018,9 @@ func resolvePaneCanonicalPath(app core.App, pane dualPaneState) (string, error) 
 			return "", nil
 		}
 
+		if err := checkpoint(ctx, "dual.resolve.work_author"); err != nil {
+			return "", err
+		}
 		artist, err := findPublishedArtist(app, authorIDs[0])
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
@@ -945,9 +1042,16 @@ func resolvePaneCanonicalPath(app core.App, pane dualPaneState) (string, error) 
 }
 
 func buildDualArtistRecord(app *pocketbase.PocketBase, side string, pane dualPaneState, state dualState, ref dualReference) (pages.DualArtistRecord, error) {
+	return buildDualArtistRecordContext(context.Background(), app, side, pane, state, ref, requestprotection.Checkpoint)
+}
+
+func buildDualArtistRecordContext(ctx context.Context, app *pocketbase.PocketBase, side string, pane dualPaneState, state dualState, ref dualReference, checkpoint dualCheckpoint) (pages.DualArtistRecord, error) {
 	parsed, _ := parsePanePath(pane.path)
 
 	repo := repositories.NewArtistRecordRepository(app)
+	if err := checkpoint(ctx, "dual.window.artist.lookup"); err != nil {
+		return pages.DualArtistRecord{}, err
+	}
 	artist, err := repo.FindPublishedArtist(parsed.Id)
 	if err != nil {
 		return pages.DualArtistRecord{}, err
@@ -955,8 +1059,14 @@ func buildDualArtistRecord(app *pocketbase.PocketBase, side string, pane dualPan
 
 	expectedSlug := utils.GenerateArtistSlug(artist)
 
+	if err := checkpoint(ctx, "dual.window.artist.work_count"); err != nil {
+		return pages.DualArtistRecord{}, err
+	}
 	workCount, err := repo.CountPublishedWorks(artist.Id)
 	if err != nil {
+		return pages.DualArtistRecord{}, err
+	}
+	if err := checkpoint(ctx, "dual.window.artist.works"); err != nil {
 		return pages.DualArtistRecord{}, err
 	}
 	works, err := repo.ListPublishedWorks(artist.Id, 0)
@@ -964,29 +1074,47 @@ func buildDualArtistRecord(app *pocketbase.PocketBase, side string, pane dualPan
 		return pages.DualArtistRecord{}, err
 	}
 
+	if err := checkpoint(ctx, "dual.window.artist.schools"); err != nil {
+		return pages.DualArtistRecord{}, err
+	}
 	schoolNames, err := repo.ListSchoolNames(artist.GetStringSlice("school"))
 	if err != nil {
 		return pages.DualArtistRecord{}, err
 	}
 
+	if err := checkpoint(ctx, "dual.window.artist.periods"); err != nil {
+		return pages.DualArtistRecord{}, err
+	}
 	periodRecords, err := repo.ListMatchingArtPeriods(artist.GetInt("year_of_birth"))
 	if err != nil {
 		return pages.DualArtistRecord{}, err
 	}
 	period := dualUnambiguousPeriodName(periodRecords)
 
+	if err := checkpoint(ctx, "dual.window.artist.glossary"); err != nil {
+		return pages.DualArtistRecord{}, err
+	}
 	glossaryEntries, glossaryErr := glossary.GetGlossaryEntries(app)
 	if glossaryErr != nil {
 		app.Logger().Warn("Failed to load glossary entries", "error", glossaryErr)
 	}
 	bio := dualAnnotatedHTML(artist.GetString("bio"), glossaryEntries)
 
+	if err := checkpoint(ctx, "dual.window.artist.music"); err != nil {
+		return pages.DualArtistRecord{}, err
+	}
 	periodSong, err := repo.MatchPeriodSong(artist.GetInt("year_of_birth"))
 	if err != nil {
 		return pages.DualArtistRecord{}, err
 	}
 
+	if err := checkpoint(ctx, "dual.window.artist.aliases"); err != nil {
+		return pages.DualArtistRecord{}, err
+	}
 	aliases := dualResolveAliases(app, artist.GetStringSlice("also_known_as"))
+	if err := checkpoint(ctx, "dual.window.artist.projection"); err != nil {
+		return pages.DualArtistRecord{}, err
+	}
 
 	record := pages.DualArtistRecord{
 		FilingName: artist.GetString("filing_name"),
@@ -1009,13 +1137,23 @@ func buildDualArtistRecord(app *pocketbase.PocketBase, side string, pane dualPan
 }
 
 func buildDualWorkRecord(app *pocketbase.PocketBase, side string, pane dualPaneState, state dualState, ref dualReference) (pages.DualWorkRecord, string, string, error) {
+	return buildDualWorkRecordContext(context.Background(), app, side, pane, state, ref, requestprotection.Checkpoint)
+}
+
+func buildDualWorkRecordContext(ctx context.Context, app *pocketbase.PocketBase, side string, pane dualPaneState, state dualState, ref dualReference, checkpoint dualCheckpoint) (pages.DualWorkRecord, string, string, error) {
 	parsed, _ := parsePanePath(pane.path)
 
+	if err := checkpoint(ctx, "dual.window.work.lookup"); err != nil {
+		return pages.DualWorkRecord{}, "", "", err
+	}
 	work, err := findPublishedArtwork(app, parsed.Id)
 	if err != nil {
 		return pages.DualWorkRecord{}, "", "", err
 	}
 
+	if err := checkpoint(ctx, "dual.window.work.author"); err != nil {
+		return pages.DualWorkRecord{}, "", "", err
+	}
 	artist, artistPath, err := dualWorkAuthor(app, work)
 	if err != nil {
 		return pages.DualWorkRecord{}, "", "", err
@@ -1026,6 +1164,9 @@ func buildDualWorkRecord(app *pocketbase.PocketBase, side string, pane dualPaneS
 
 	year := work.GetInt("year")
 
+	if err := checkpoint(ctx, "dual.window.work.glossary"); err != nil {
+		return pages.DualWorkRecord{}, "", "", err
+	}
 	glossaryEntries, glossaryErr := glossary.GetGlossaryEntries(app)
 	if glossaryErr != nil {
 		app.Logger().Warn("Failed to load glossary entries", "error", glossaryErr)
@@ -1050,7 +1191,16 @@ func buildDualWorkRecord(app *pocketbase.PocketBase, side string, pane dualPaneS
 		})
 	}
 
-	artType := dualWorkArtType(app, work)
+	if err := checkpoint(ctx, "dual.window.work.art_type"); err != nil {
+		return pages.DualWorkRecord{}, "", "", err
+	}
+	artType, err := dualWorkArtTypeContext(ctx, app, work, checkpoint)
+	if err != nil {
+		return pages.DualWorkRecord{}, "", "", err
+	}
+	if err := checkpoint(ctx, "dual.window.work.projection"); err != nil {
+		return pages.DualWorkRecord{}, "", "", err
+	}
 
 	record := pages.DualWorkRecord{
 		Title:       work.GetString("title"),
@@ -1278,14 +1428,22 @@ func dualTrimDimensions(technique string, dimensions string) string {
 }
 
 func dualWorkArtType(app core.App, work *core.Record) string {
+	artType, _ := dualWorkArtTypeContext(context.Background(), app, work, requestprotection.Checkpoint)
+	return artType
+}
+
+func dualWorkArtTypeContext(ctx context.Context, app core.App, work *core.Record, checkpoint dualCheckpoint) (string, error) {
 	for _, typeID := range work.GetStringSlice("type") {
+		if err := checkpoint(ctx, "dual.window.work.art_type_record"); err != nil {
+			return "", err
+		}
 		artType, err := app.FindRecordById(constants.CollectionArtTypes, typeID)
 		if err == nil {
-			return artType.GetString("name")
+			return artType.GetString("name"), nil
 		}
 	}
 
-	return ""
+	return "", nil
 }
 
 func dualWorkMeta(technique string, dimensions string, artType string, location string) []components.MetaEntry {
@@ -1469,7 +1627,14 @@ func resolvePaneTarget(side string, requestedTarget string) string {
 // ---------------------------------------------------------------------------
 
 func renderDualLookupResults(app *pocketbase.PocketBase, c *core.RequestEvent) error {
+	return renderDualLookupResultsWithCheckpoint(app, c, requestprotection.Checkpoint)
+}
+
+func renderDualLookupResultsWithCheckpoint(app *pocketbase.PocketBase, c *core.RequestEvent, checkpoint dualCheckpoint) error {
 	queryValues := c.Request.URL.Query()
+	if err := checkpoint(c.Request.Context(), "dual.lookup.records"); err != nil {
+		return dualCancellationError(c, err)
+	}
 	content, err := getDualLookupResults(app, queryValues.Get("kind"), queryValues.Get("q"))
 	if err != nil {
 		app.Logger().Error("Error getting dual lookup results", "error", err.Error())
@@ -1477,6 +1642,9 @@ func renderDualLookupResults(app *pocketbase.PocketBase, c *core.RequestEvent) e
 	}
 
 	var buff bytes.Buffer
+	if err := checkpoint(c.Request.Context(), "dual.lookup.render"); err != nil {
+		return dualCancellationError(c, err)
+	}
 	if err := pages.DualLookupResultContent(content).Render(context.Background(), &buff); err != nil {
 		app.Logger().Error("Error rendering dual lookup results", "error", err.Error())
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestServerSentryConfiguration(t *testing.T) {
@@ -87,7 +88,7 @@ func TestServerCaptchaPolicy(t *testing.T) {
 			environment:    "production",
 			secret:         "captcha-secret",
 			siteKey:        "captcha-site-key",
-			clientIPSource: "railway",
+			clientIPSource: "cloudflare-railway",
 			wantVerify:     true,
 		},
 	}
@@ -99,6 +100,9 @@ func TestServerCaptchaPolicy(t *testing.T) {
 			values["WGA_RECAPTCHA_SECRET"] = test.secret
 			values["WGA_RECAPTCHA_SITE_KEY"] = test.siteKey
 			values["WGA_CLIENT_IP_SOURCE"] = test.clientIPSource
+			if test.clientIPSource == "cloudflare-railway" {
+				values["WGA_CLOUDFLARE_EDGE_SECRET"] = cloudflareSecret(0x40)
+			}
 
 			server, err := LoadFrom(lookup(values)).Server()
 			if test.wantErr != "" {
@@ -132,9 +136,12 @@ func TestServerClientIPSource(t *testing.T) {
 		{name: "test defaults to direct", environment: "test", want: ClientIPSourceDirect},
 		{name: "development explicit direct", environment: "development", source: "direct", want: ClientIPSourceDirect},
 		{name: "development explicit railway", environment: "development", source: "railway", want: ClientIPSourceRailway},
+		{name: "development explicit cloudflare via railway", environment: "development", source: "cloudflare-railway", want: ClientIPSourceCloudflareRailway},
 		{name: "production requires explicit source", environment: "production", wantErr: "WGA_CLIENT_IP_SOURCE"},
 		{name: "staging requires explicit source", environment: "staging", wantErr: "WGA_CLIENT_IP_SOURCE"},
-		{name: "production explicit railway", environment: "production", source: "railway", want: ClientIPSourceRailway},
+		{name: "production rejects railway", environment: "production", source: "railway", wantErr: "must be cloudflare-railway"},
+		{name: "staging rejects direct", environment: "staging", source: "direct", wantErr: "must be cloudflare-railway"},
+		{name: "production accepts authenticated cloudflare", environment: "production", source: "cloudflare-railway", want: ClientIPSourceCloudflareRailway},
 		{name: "unknown source", environment: "development", source: "forwarded", wantErr: "WGA_CLIENT_IP_SOURCE"},
 	}
 
@@ -144,6 +151,9 @@ func TestServerClientIPSource(t *testing.T) {
 			values["WGA_ENV"] = test.environment
 			values["WGA_CLIENT_IP_SOURCE"] = test.source
 			values["WGA_RECAPTCHA_SECRET"] = "captcha-secret"
+			if test.source == "cloudflare-railway" {
+				values["WGA_CLOUDFLARE_EDGE_SECRET"] = cloudflareSecret(0x41)
+			}
 
 			server, err := LoadFrom(lookup(values)).Server()
 			if test.wantErr != "" {
@@ -157,6 +167,220 @@ func TestServerClientIPSource(t *testing.T) {
 			}
 			if server.ClientIPSource != test.want {
 				t.Fatalf("client IP source = %q, want %q", server.ClientIPSource, test.want)
+			}
+		})
+	}
+}
+
+func TestServerCloudflareOriginSecretsSupportRotationAndRedaction(t *testing.T) {
+	current := cloudflareSecret(0x51)
+	next := cloudflareSecret(0x52)
+	values := validValues()
+	values["WGA_CLIENT_IP_SOURCE"] = "cloudflare-railway"
+	values["WGA_CLOUDFLARE_EDGE_SECRET"] = current
+	values["WGA_CLOUDFLARE_EDGE_SECRET_NEXT"] = next
+
+	server, err := LoadFrom(lookup(values)).Server()
+	if err != nil {
+		t.Fatalf("unexpected server configuration error: %v", err)
+	}
+	if got := server.CloudflareOriginSecrets.Current().Value(); got != current {
+		t.Fatal("current Cloudflare origin secret did not match configured value")
+	}
+	staged, ok := server.CloudflareOriginSecrets.Next()
+	if !ok || staged.Value() != next {
+		t.Fatal("next Cloudflare origin secret did not match configured value")
+	}
+	for _, formatted := range []string{
+		fmt.Sprint(server.CloudflareOriginSecrets),
+		fmt.Sprintf("%#v", server.CloudflareOriginSecrets),
+		fmt.Sprint(server.CloudflareOriginSecrets.Current()),
+		fmt.Sprint(staged),
+	} {
+		if formatted != "[redacted]" && formatted != "config.CloudflareOriginSecrets([redacted])" {
+			t.Fatalf("expected redacted Cloudflare origin secrets, got %q", formatted)
+		}
+		if strings.Contains(formatted, current) || strings.Contains(formatted, next) {
+			t.Fatalf("formatted keyring exposed a configured secret: %q", formatted)
+		}
+	}
+}
+
+func TestServerRejectsInvalidCloudflareOriginSecrets(t *testing.T) {
+	validSecret := cloudflareSecret(0x61)
+	tests := []struct {
+		name      string
+		current   string
+		next      string
+		wantErr   string
+		forbidden []string
+	}{
+		{
+			name:      "malformed current secret",
+			current:   "not+a+base64url+secret",
+			wantErr:   "WGA_CLOUDFLARE_EDGE_SECRET",
+			forbidden: []string{"not+a+base64url+secret"},
+		},
+		{
+			name:      "short current secret",
+			current:   base64.RawURLEncoding.EncodeToString(bytes.Repeat([]byte{0x62}, 31)),
+			wantErr:   "WGA_CLOUDFLARE_EDGE_SECRET",
+			forbidden: []string{"YmJi"},
+		},
+		{
+			name:      "next secret without current",
+			next:      validSecret,
+			wantErr:   "WGA_CLOUDFLARE_EDGE_SECRET must be set",
+			forbidden: []string{validSecret},
+		},
+		{
+			name:      "malformed next secret",
+			current:   validSecret,
+			next:      "malformed-next-secret",
+			wantErr:   "WGA_CLOUDFLARE_EDGE_SECRET_NEXT",
+			forbidden: []string{validSecret, "malformed-next-secret"},
+		},
+		{
+			name:      "duplicate rotation secret",
+			current:   validSecret,
+			next:      validSecret,
+			wantErr:   "must differ",
+			forbidden: []string{validSecret},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			values := validValues()
+			values["WGA_CLOUDFLARE_EDGE_SECRET"] = test.current
+			values["WGA_CLOUDFLARE_EDGE_SECRET_NEXT"] = test.next
+
+			_, err := LoadFrom(lookup(values)).Server()
+			if err == nil || !strings.Contains(err.Error(), test.wantErr) {
+				t.Fatalf("expected error containing %q, got %v", test.wantErr, err)
+			}
+			for _, forbidden := range test.forbidden {
+				if strings.Contains(err.Error(), forbidden) {
+					t.Fatalf("configuration error exposed a supplied value: %v", err)
+				}
+			}
+		})
+	}
+}
+
+func TestServerRequiresCloudflareTrustForEnabledProductionProtection(t *testing.T) {
+	t.Run("missing Cloudflare origin secret", func(t *testing.T) {
+		values := validValues()
+		values["WGA_ENV"] = "production"
+		values["WGA_CLIENT_IP_SOURCE"] = "cloudflare-railway"
+		values["WGA_PUBLIC_REQUEST_PROTECTION_MODE"] = "observe"
+
+		_, err := LoadFrom(lookup(values)).Server()
+		if err == nil || !strings.Contains(err.Error(), "WGA_CLOUDFLARE_EDGE_SECRET") {
+			t.Fatalf("expected missing Cloudflare origin secret error, got %v", err)
+		}
+	})
+
+	t.Run("unsupported production trust source", func(t *testing.T) {
+		values := validValues()
+		values["WGA_ENV"] = "production"
+		values["WGA_CLIENT_IP_SOURCE"] = "railway"
+		values["WGA_PUBLIC_REQUEST_PROTECTION_MODE"] = "enforce"
+
+		_, err := LoadFrom(lookup(values)).Server()
+		if err == nil || !strings.Contains(err.Error(), "WGA_CLIENT_IP_SOURCE must be cloudflare-railway") {
+			t.Fatalf("expected Cloudflare trust-source error, got %v", err)
+		}
+	})
+}
+
+func cloudflareSecret(fill byte) string {
+	return base64.RawURLEncoding.EncodeToString(bytes.Repeat([]byte{fill}, 32))
+}
+
+func TestServerPublicRequestProtectionConfiguration(t *testing.T) {
+	tests := []struct {
+		name   string
+		values map[string]string
+		want   PublicRequestProtection
+	}{
+		{
+			name: "defaults to disabled conservative limits",
+			want: PublicRequestProtection{
+				Mode:                      ProtectionModeOff,
+				MaxConcurrentReads:        8,
+				SearchRequestsPerMinute:   20,
+				FragmentRequestsPerMinute: 30,
+				DetailRequestsPerMinute:   60,
+				LimiterEntryCapacity:      4096,
+				RetryAfter:                5 * time.Second,
+			},
+		},
+		{
+			name: "parses configured limits",
+			values: map[string]string{
+				"WGA_PUBLIC_REQUEST_PROTECTION_MODE":  "observe",
+				"WGA_PUBLIC_READ_MAX_CONCURRENT":      "12",
+				"WGA_PUBLIC_READ_SEARCH_PER_MINUTE":   "24",
+				"WGA_PUBLIC_READ_FRAGMENT_PER_MINUTE": "36",
+				"WGA_PUBLIC_READ_DETAIL_PER_MINUTE":   "72",
+				"WGA_PUBLIC_READ_LIMITER_CAPACITY":    "2048",
+				"WGA_PUBLIC_READ_RETRY_AFTER":         "1500ms",
+			},
+			want: PublicRequestProtection{
+				Mode:                      ProtectionModeObserve,
+				MaxConcurrentReads:        12,
+				SearchRequestsPerMinute:   24,
+				FragmentRequestsPerMinute: 36,
+				DetailRequestsPerMinute:   72,
+				LimiterEntryCapacity:      2048,
+				RetryAfter:                1500 * time.Millisecond,
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			values := validValues()
+			for key, value := range test.values {
+				values[key] = value
+			}
+
+			server, err := LoadFrom(lookup(values)).Server()
+			if err != nil {
+				t.Fatalf("unexpected server configuration error: %v", err)
+			}
+			if server.PublicRequestProtection != test.want {
+				t.Fatalf("public request protection = %#v, want %#v", server.PublicRequestProtection, test.want)
+			}
+		})
+	}
+}
+
+func TestServerRejectsInvalidPublicRequestProtectionConfiguration(t *testing.T) {
+	tests := []struct {
+		name  string
+		key   string
+		value string
+	}{
+		{name: "mode", key: "WGA_PUBLIC_REQUEST_PROTECTION_MODE", value: "enabled"},
+		{name: "concurrent limit", key: "WGA_PUBLIC_READ_MAX_CONCURRENT", value: "0"},
+		{name: "search limit", key: "WGA_PUBLIC_READ_SEARCH_PER_MINUTE", value: "not-an-integer"},
+		{name: "fragment limit", key: "WGA_PUBLIC_READ_FRAGMENT_PER_MINUTE", value: "-1"},
+		{name: "detail limit", key: "WGA_PUBLIC_READ_DETAIL_PER_MINUTE", value: "0"},
+		{name: "limiter capacity", key: "WGA_PUBLIC_READ_LIMITER_CAPACITY", value: "0"},
+		{name: "retry duration", key: "WGA_PUBLIC_READ_RETRY_AFTER", value: "immediately"},
+		{name: "zero retry duration", key: "WGA_PUBLIC_READ_RETRY_AFTER", value: "0s"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			values := validValues()
+			values[test.key] = test.value
+
+			_, err := LoadFrom(lookup(values)).Server()
+			if err == nil || !strings.Contains(err.Error(), test.key) {
+				t.Fatalf("expected error containing %q, got %v", test.key, err)
 			}
 		})
 	}

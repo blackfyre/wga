@@ -41,6 +41,9 @@ func runSitemap(app core.App, sitemapConfig config.Sitemap, trigger string) erro
 		"duration", time.Since(started).String(),
 		"url_count", result.URLCount,
 		"excluded_count", result.ExcludedCount,
+		"agent_artist_count", result.AgentArtistCount,
+		"agent_artwork_count", result.AgentArtworkCount,
+		"agent_excluded_count", result.AgentExcludedCount,
 	)
 	if result.CleanupErr != nil {
 		logger.Warn("Sitemap cleanup failed",

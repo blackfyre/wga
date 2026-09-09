@@ -259,10 +259,12 @@ func TestArtistRecordRouteRendersFullAndHTMX(t *testing.T) {
 			"title": fmt.Sprintf("Preview Overflow %d", index), "author": []string{"artistone000001"}, "published": true,
 		})
 	}
+	path := "/artists/synthetic-artist-artistone000001"
+	publishGeneratedMarkdownFixture(t, app, "agents/artists/artistone000001.md", "https://gallery.example"+path, []string{path})
 
 	recorders := serveArtistRecordRequests(t, app, []recordRequest{
-		{path: "/artists/synthetic-artist-artistone000001", htmx: false},
-		{path: "/artists/synthetic-artist-artistone000001", htmx: true},
+		{path: path, htmx: false},
+		{path: path, htmx: true},
 	})
 	full := recorders[0]
 	partial := recorders[1]
@@ -279,6 +281,15 @@ func TestArtistRecordRouteRendersFullAndHTMX(t *testing.T) {
 	if got := full.Header().Get("HX-Push-Url"); got != "/artists/synthetic-artist-artistone000001" {
 		t.Errorf("HX-Push-Url = %q, want canonical", got)
 	}
+	if got := full.Header().Get("Link"); !strings.Contains(got, "/agents/artists/artistone000001.md") {
+		t.Errorf("Link = %q, want Markdown alternate", got)
+	}
+	if !strings.Contains(full.Header().Get("Vary"), "Accept") {
+		t.Errorf("Vary = %q, want Accept", full.Header().Get("Vary"))
+	}
+	if !strings.Contains(full.Body.String(), `rel="alternate" type="text/markdown"`) || !strings.Contains(full.Body.String(), "/agents/artists/artistone000001.md") {
+		t.Error("full response should advertise the Markdown alternate in document metadata")
+	}
 
 	if partial.Code != http.StatusOK {
 		t.Fatalf("partial status = %d, want 200", partial.Code)
@@ -292,8 +303,27 @@ func TestArtistRecordRouteRendersFullAndHTMX(t *testing.T) {
 	if !strings.Contains(partial.Body.String(), "Artist, Synthetic") {
 		t.Error("HTMX response should render the artist record")
 	}
+	if got := partial.Header().Get("Link"); !strings.Contains(got, "/agents/artists/artistone000001.md") {
+		t.Errorf("HTMX Link = %q, want Markdown alternate", got)
+	}
+	if !strings.Contains(partial.Header().Get("Vary"), "Accept") {
+		t.Errorf("HTMX Vary = %q, want Accept", partial.Header().Get("Vary"))
+	}
 	if !strings.Contains(partial.Body.String(), `hx-get="/artworks?artist_id=artistone000001"`) {
 		t.Error("HTMX response should link to the exact artist holding")
+	}
+}
+
+func TestArtistRecordDoesNotAdvertiseUnavailableMarkdown(t *testing.T) {
+	app := newArtistRecordApp(t)
+	seedPublishedArtist(t, app)
+	path := "/artists/synthetic-artist-artistone000001"
+	recorder := serveArtistRecordRequests(t, app, []recordRequest{{path: path}})[0]
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", recorder.Code)
+	}
+	if strings.Contains(recorder.Header().Get("Link"), "text/markdown") || strings.Contains(recorder.Body.String(), `type="text/markdown"`) {
+		t.Fatal("artist response advertised an unavailable Markdown resource")
 	}
 }
 

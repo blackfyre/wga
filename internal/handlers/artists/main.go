@@ -2,11 +2,13 @@ package artists
 
 import (
 	"bytes"
+	"context"
 	"net/http"
 
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
 	"github.com/blackfyre/wga/internal/config"
+	"github.com/blackfyre/wga/internal/requestprotection"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
@@ -16,8 +18,11 @@ import (
 // delegates parsing, querying, and read-model assembly to buildArtistIndexView
 // and only maps the result onto the HTTP response.
 func processArtists(app *pocketbase.PocketBase, c *core.RequestEvent) error {
-	view, canonicalURL, err := buildArtistIndexView(app, c.Request.URL.Query())
+	view, canonicalURL, err := buildArtistIndexViewContext(c.Request.Context(), app, c.Request.URL.Query(), requestprotection.Checkpoint)
 	if err != nil {
+		if isExpectedCancellation(err) {
+			return err
+		}
 		app.Logger().Error("Build artist index", "error", err)
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
@@ -29,17 +34,28 @@ func processArtists(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, utils.AssetUrl(canonicalURL))
 
 	var buffer bytes.Buffer
-	if utils.IsHtmxRequest(c) && !utils.RequestsMainContentArea(c) {
-		err = pages.ArtistsBlock(view).Render(ctx, &buffer)
-	} else {
-		err = pages.ArtistsPage(view).Render(ctx, &buffer)
-	}
+	err = renderArtistIndex(c.Request.Context(), func() error {
+		if utils.IsHtmxRequest(c) && !utils.RequestsMainContentArea(c) {
+			return pages.ArtistsBlock(view).Render(ctx, &buffer)
+		}
+		return pages.ArtistsPage(view).Render(ctx, &buffer)
+	})
 	if err != nil {
+		if isExpectedCancellation(err) {
+			return err
+		}
 		app.Logger().Error("Error rendering artists", "error", err.Error())
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	return c.HTML(http.StatusOK, buffer.String())
+}
+
+func renderArtistIndex(ctx context.Context, render func() error) error {
+	if err := requestprotection.Checkpoint(ctx, "artists.search.render"); err != nil {
+		return err
+	}
+	return render()
 }
 
 func RegisterHandlers(app *pocketbase.PocketBase, environment config.Environment) {

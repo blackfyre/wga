@@ -36,6 +36,7 @@ var TwitterTitleKey ContextKey = "twitter:title"
 var TwitterDescriptionKey ContextKey = "twitter:description"
 var TwitterImageKey ContextKey = "twitter:image"
 var CanonicalUrlKey ContextKey = "canonical:url"
+var AlternateMarkdownURLKey ContextKey = "alternate:markdown:url"
 
 func ContextFromRequest(request *http.Request) context.Context {
 	if request == nil {
@@ -153,6 +154,16 @@ func GetTitle(c context.Context) string {
 // Otherwise, an empty string is returned.
 func GetCanonicalUrl(c context.Context) string {
 	if v, ok := c.Value(CanonicalUrlKey).(string); ok {
+		return v
+	}
+
+	return ""
+}
+
+// GetAlternateMarkdownURL returns the generated Markdown alternate URL stored
+// in the render context, or an empty string when the page has no alternate.
+func GetAlternateMarkdownURL(c context.Context) string {
+	if v, ok := c.Value(AlternateMarkdownURLKey).(string); ok {
 		return v
 	}
 

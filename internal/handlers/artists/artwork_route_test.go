@@ -185,15 +185,8 @@ func TestProcessArtworkPreservesCancelledRenderCause(t *testing.T) {
 		t.Fatalf("process artwork error = %v, want context.Canceled", err)
 	}
 
-	failure, ok := utils.ServerFailureFrom(event)
-	if !ok {
-		t.Fatal("expected cancelled render failure metadata")
-	}
-	if failure.Category != "page_render" {
-		t.Errorf("failure category = %q, want page_render", failure.Category)
-	}
-	if !errors.Is(failure.Cause, context.Canceled) {
-		t.Errorf("failure cause = %v, want context.Canceled", failure.Cause)
+	if _, ok := utils.ServerFailureFrom(event); ok {
+		t.Fatal("artwork cancellation recorded a server fault")
 	}
 }
 
@@ -302,9 +295,18 @@ func TestArtworkRouteRendersCountedHoldingAndFullHTMXParity(t *testing.T) {
 			"form": []string{}, "image": "related.jpg", "date_start": 1900 + i,
 		})
 	}
+	path := "/artists/synthetic-artist-artistone000001/a-painting-workone00000001"
+	withoutMarkdown := request(path)
+	if withoutMarkdown.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", withoutMarkdown.Code)
+	}
+	if strings.Contains(withoutMarkdown.Header().Get("Link"), "text/markdown") || strings.Contains(withoutMarkdown.Body.String(), `type="text/markdown"`) {
+		t.Fatal("artwork response advertised an unavailable Markdown resource")
+	}
+	publishGeneratedMarkdownFixture(t, app, "agents/artworks/workone00000001.md", "https://gallery.example"+path, []string{path})
 
-	full := request("/artists/synthetic-artist-artistone000001/a-painting-workone00000001")
-	fragment := request("/artists/synthetic-artist-artistone000001/a-painting-workone00000001", true)
+	full := request(path)
+	fragment := request(path, true)
 	if full.Code != http.StatusOK || fragment.Code != http.StatusOK {
 		t.Fatalf("full/HTMX status = %d/%d, want 200/200", full.Code, fragment.Code)
 	}
@@ -319,6 +321,17 @@ func TestArtworkRouteRendersCountedHoldingAndFullHTMXParity(t *testing.T) {
 	}
 	if got := fragment.Header().Get("HX-Push-Url"); got != "/artists/synthetic-artist-artistone000001/a-painting-workone00000001" {
 		t.Errorf("HTMX HX-Push-Url = %q, want canonical artwork URL", got)
+	}
+	for name, recorder := range map[string]*httptest.ResponseRecorder{"full": full, "HTMX": fragment} {
+		if got := recorder.Header().Get("Link"); !strings.Contains(got, "/agents/artworks/workone00000001.md") {
+			t.Errorf("%s Link = %q, want Markdown alternate", name, got)
+		}
+		if !strings.Contains(recorder.Header().Get("Vary"), "Accept") {
+			t.Errorf("%s Vary = %q, want Accept", name, recorder.Header().Get("Vary"))
+		}
+	}
+	if !strings.Contains(full.Body.String(), `rel="alternate" type="text/markdown"`) || !strings.Contains(full.Body.String(), "/agents/artworks/workone00000001.md") {
+		t.Error("full response should advertise the Markdown alternate in document metadata")
 	}
 }
 

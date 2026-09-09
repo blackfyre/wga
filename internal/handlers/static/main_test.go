@@ -11,10 +11,11 @@ import (
 	"testing"
 
 	"github.com/blackfyre/wga/internal/config"
+	"github.com/blackfyre/wga/internal/generatedpublication"
 	"github.com/blackfyre/wga/internal/handlers/landing"
+	"github.com/blackfyre/wga/internal/logging"
 	"github.com/blackfyre/wga/internal/testutils"
 	apputils "github.com/blackfyre/wga/internal/utils"
-	"github.com/blackfyre/wga/internal/utils/sitemap"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
@@ -76,6 +77,182 @@ func TestAssetRouteServesEmbeddedCSS(t *testing.T) {
 	}
 
 	scenario.Test(t)
+}
+
+func writeGeneratedAgentFixture(t *testing.T, app core.App) {
+	t.Helper()
+	staging, err := generatedpublication.NewStaging(app)
+	if err != nil {
+		t.Fatal(err)
+	}
+	version := "publication-test"
+	current := filepath.Join(staging, "agent-content")
+	if err := os.MkdirAll(filepath.Join(current, "agents", "artists"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(current, "llms.txt"), []byte("# WGA discovery\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	llmsMetadata := `{"canonical_url":"https://gallery.example/llms.txt","accepted_paths":["/llms.txt"]}`
+	if err := os.WriteFile(filepath.Join(current, "llms-metadata.json"), []byte(llmsMetadata), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(current, "agents", "artists", "artistone000001.md"), []byte("# Artist\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	manifest := `{"resources":{"agents/artists/artistone000001.md":"https://gallery.example/artists/synthetic-artist-artistone000001"}}`
+	if err := os.WriteFile(filepath.Join(current, "manifest.json"), []byte(manifest), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := generatedpublication.Publish(app, staging, version); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestGeneratedAgentRoutesServeOnlyCurrentMarkdown(t *testing.T) {
+	app := newStaticTestApp(t)
+	writeGeneratedAgentFixture(t, app)
+	RegisterHandlers(app, config.EnvironmentProduction)
+
+	router, err := apis.NewRouter(app)
+	if err != nil {
+		t.Fatal(err)
+	}
+	serveEvent := &core.ServeEvent{App: app, Router: router}
+	if err := app.OnServe().Trigger(serveEvent, func(se *core.ServeEvent) error {
+		mux, err := se.Router.BuildMux()
+		if err != nil {
+			return err
+		}
+		cases := []struct {
+			path      string
+			status    int
+			body      string
+			canonical string
+		}{
+			{path: "/llms.txt", status: http.StatusOK, body: "# WGA discovery", canonical: "https://gallery.example/llms.txt"},
+			{path: "/agents/artists/artistone000001.md", status: http.StatusOK, body: "# Artist", canonical: "https://gallery.example/artists/synthetic-artist-artistone000001"},
+			{path: "/agents/artists/missing00000001.md", status: http.StatusNotFound},
+			{path: "/agents/artists/not-markdown.txt", status: http.StatusNotFound},
+			{path: "/agents/artworks/missing00000001.md", status: http.StatusNotFound},
+		}
+		for _, test := range cases {
+			recorder := httptest.NewRecorder()
+			mux.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, test.path, nil))
+			if recorder.Code != test.status {
+				t.Errorf("%s status = %d, want %d", test.path, recorder.Code, test.status)
+			}
+			if test.status != http.StatusOK {
+				if got := recorder.Header().Get("Cache-Control"); got != agentContentNoStore {
+					t.Errorf("%s Cache-Control = %q, want %q", test.path, got, agentContentNoStore)
+				}
+				continue
+			}
+			if got := recorder.Header().Get("Content-Type"); got != "text/markdown; charset=utf-8" {
+				t.Errorf("%s Content-Type = %q", test.path, got)
+			}
+			if got := recorder.Header().Get("Cache-Control"); got != agentContentCacheControl {
+				t.Errorf("%s Cache-Control = %q", test.path, got)
+			}
+			if got := recorder.Header().Get("Link"); got != "<"+test.canonical+">; rel=\"canonical\"" {
+				t.Errorf("%s Link = %q", test.path, got)
+			}
+			if got := recorder.Header().Values("Set-Cookie"); len(got) != 0 {
+				t.Errorf("%s Set-Cookie = %q", test.path, got)
+			}
+			if !strings.Contains(recorder.Body.String(), test.body) {
+				t.Errorf("%s body = %q", test.path, recorder.Body.String())
+			}
+		}
+		return nil
+	}); err != nil {
+		t.Fatalf("trigger serve event: %v", err)
+	}
+}
+
+func TestSitemapReadFailureIsLogged(t *testing.T) {
+	var captured func() []*core.Log
+
+	scenario := tests.ApiScenario{
+		Name:            "sitemap read failure returns shared 500 with request log",
+		Method:          http.MethodGet,
+		URL:             "/sitemap.xml",
+		ExpectedStatus:  http.StatusInternalServerError,
+		ExpectedContent: []string{"The archive could not complete that request."},
+		TestAppFactory: func(t testing.TB) *tests.TestApp {
+			app := newStaticTestApp(t)
+			captured = testutils.CaptureLogs(app)
+			logging.RegisterRequestIDMiddleware(app)
+			staging, err := generatedpublication.NewStaging(app)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := os.MkdirAll(filepath.Join(staging, "sitemap", "sitemap.xml"), 0o755); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := generatedpublication.Publish(app, staging, "broken-sitemap"); err != nil {
+				t.Fatal(err)
+			}
+			RegisterHandlers(app, config.EnvironmentProduction)
+			return app
+		},
+		AfterTestFunc: func(t testing.TB, app *tests.TestApp, _ *http.Response) {
+			testutils.FlushLogs(t, app)
+			entry := testutils.LogWithEvent(captured(), "sitemap.read.failed")
+			if entry == nil {
+				t.Fatal("expected a sitemap read failure log")
+			}
+			if entry.Data["error_type"] == "" {
+				t.Fatal("expected a sitemap read error type")
+			}
+			if fmt.Sprint(entry.Data["request_id"]) == "" {
+				t.Fatal("expected a sitemap read request ID")
+			}
+		},
+	}
+
+	scenario.Test(t)
+}
+
+func TestGeneratedAgentRoutesRevalidateCurrentPublication(t *testing.T) {
+	app := newStaticTestApp(t)
+	writeGeneratedAgentFixture(t, app)
+	RegisterHandlers(app, config.EnvironmentProduction)
+
+	router, err := apis.NewRouter(app)
+	if err != nil {
+		t.Fatal(err)
+	}
+	serveEvent := &core.ServeEvent{App: app, Router: router}
+	if err := app.OnServe().Trigger(serveEvent, func(se *core.ServeEvent) error {
+		mux, err := se.Router.BuildMux()
+		if err != nil {
+			return err
+		}
+		first := httptest.NewRecorder()
+		mux.ServeHTTP(first, httptest.NewRequest(http.MethodGet, "/agents/artists/artistone000001.md", nil))
+		etag := first.Header().Get("ETag")
+		if first.Code != http.StatusOK || etag == "" {
+			t.Fatalf("initial response = %d ETag %q", first.Code, etag)
+		}
+		if got := first.Header().Get("Cache-Control"); got != "public, no-cache, must-revalidate" {
+			t.Fatalf("Cache-Control = %q", got)
+		}
+
+		request := httptest.NewRequest(http.MethodGet, "/agents/artists/artistone000001.md", nil)
+		request.Header.Set("If-None-Match", etag)
+		revalidated := httptest.NewRecorder()
+		mux.ServeHTTP(revalidated, request)
+		if revalidated.Code != http.StatusNotModified || revalidated.Body.Len() != 0 {
+			t.Fatalf("revalidated response = %d body %q", revalidated.Code, revalidated.Body.String())
+		}
+		if revalidated.Header().Get("ETag") != etag {
+			t.Fatalf("revalidated ETag = %q, want %q", revalidated.Header().Get("ETag"), etag)
+		}
+		return nil
+	}); err != nil {
+		t.Fatalf("trigger serve event: %v", err)
+	}
 }
 
 func createStaticPage(t testing.TB, app core.App, slug, title, content string) {
@@ -194,7 +371,11 @@ func configureStaticPublicURL(t testing.TB) {
 
 func writeSitemapFiles(t testing.TB, app core.App) {
 	t.Helper()
-	directory := sitemap.Directory(app)
+	staging, err := generatedpublication.NewStaging(app)
+	if err != nil {
+		t.Fatalf("create generated staging directory: %v", err)
+	}
+	directory := filepath.Join(staging, "sitemap")
 	if err := os.MkdirAll(directory, 0o755); err != nil {
 		t.Fatalf("create sitemap directory: %v", err)
 	}
@@ -205,17 +386,26 @@ func writeSitemapFiles(t testing.TB, app core.App) {
 			t.Fatalf("write %s: %v", filename, err)
 		}
 	}
+	if _, err := generatedpublication.Publish(app, staging, "static-test"); err != nil {
+		t.Fatalf("publish sitemap files: %v", err)
+	}
 }
 
 func TestSitemapRoutesServeCanonicalFilesAndDiscovery(t *testing.T) {
 	cases := []struct {
 		path     string
-		contains string
+		contains []string
 	}{
-		{path: "/sitemap.xml", contains: "sitemapindex"},
-		{path: "/sitemap/artists.xml", contains: "urlset"},
-		{path: "/robots.txt", contains: "Sitemap: https://gallery.example/sitemap.xml"},
-		{path: "/sitemap.xsl", contains: `href="https://gallery.example/assets/css/style.css"`},
+		{path: "/sitemap.xml", contains: []string{"sitemapindex"}},
+		{path: "/sitemap/artists.xml", contains: []string{"urlset"}},
+		{path: "/robots.txt", contains: []string{
+			"User-agent: *",
+			"Disallow: /dual-mode",
+			"Disallow: /artworks/results",
+			"Disallow: /*?",
+			"Sitemap: https://gallery.example/sitemap.xml",
+		}},
+		{path: "/sitemap.xsl", contains: []string{`href="https://gallery.example/assets/css/style.css"`}},
 	}
 
 	for _, tc := range cases {
@@ -225,7 +415,7 @@ func TestSitemapRoutesServeCanonicalFilesAndDiscovery(t *testing.T) {
 				Method:          http.MethodGet,
 				URL:             tc.path,
 				ExpectedStatus:  http.StatusOK,
-				ExpectedContent: []string{tc.contains},
+				ExpectedContent: tc.contains,
 				TestAppFactory: func(t testing.TB) *tests.TestApp {
 					configureStaticPublicURL(t)
 					app := newStaticTestApp(t)
@@ -236,6 +426,25 @@ func TestSitemapRoutesServeCanonicalFilesAndDiscovery(t *testing.T) {
 			}
 			scenario.Test(t)
 		})
+	}
+}
+
+func TestRobotsTextPublishesCompleteCrawlerContract(t *testing.T) {
+	const sitemapURL = "https://gallery.example/sitemap.xml"
+	want := "User-agent: *\n" +
+		"Disallow: /dual-mode\n" +
+		"Disallow: /artworks/results\n" +
+		"Disallow: /*?\n" +
+		"Sitemap: " + sitemapURL + "\n"
+
+	got := robotsText(sitemapURL)
+	if got != want {
+		t.Fatalf("robots.txt = %q; want %q", got, want)
+	}
+	for _, canonicalPrefix := range []string{"Disallow: /artists", "Disallow: /agents"} {
+		if strings.Contains(got, canonicalPrefix) {
+			t.Fatalf("robots.txt excludes canonical records with %q", canonicalPrefix)
+		}
 	}
 }
 

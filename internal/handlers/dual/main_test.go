@@ -9,14 +9,17 @@ import (
 	"net/http/httptest"
 	neturl "net/url"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
+	"github.com/blackfyre/wga/internal/requestprotection"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/tools/router"
 )
 
 func mustParseQuery(t *testing.T, raw string) neturl.Values {
@@ -1153,6 +1156,123 @@ func TestDualModeRouteRendersFullAndHTMX(t *testing.T) {
 	}
 	if !strings.Contains(partial.Body.String(), `id="dual-area"`) {
 		t.Error("HTMX response should render the dual block fragment")
+	}
+}
+
+func TestDualModeCancellationStopsSubsequentWindowAndRenderStages(t *testing.T) {
+	app := newDualTestApp(t)
+	seedDualArtistAndWork(t, app)
+	ctx, cancel := context.WithCancel(context.Background())
+	request := httptest.NewRequest(http.MethodGet, "/dual-mode?left=/artists/rembrandt-artistone000001&right=/artists/rembrandt-artistone000001/the-night-watch-artworkone00001", nil).WithContext(ctx)
+	event := &core.RequestEvent{Event: router.Event{Request: request, Response: httptest.NewRecorder()}}
+	stages := []string{}
+	checkpoint := func(ctx context.Context, stage string) error {
+		stages = append(stages, stage)
+		if stage == "dual.right.window" {
+			cancel()
+		}
+		return requestprotection.Checkpoint(ctx, stage)
+	}
+
+	err := renderDualModePageWithCheckpoint(app, event, checkpoint)
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("renderDualModePageWithCheckpoint() error = %v, want context.Canceled", err)
+	}
+	if len(stages) == 0 || stages[len(stages)-1] != "dual.right.window" {
+		t.Fatalf("started stages = %v, want cancellation at right window", stages)
+	}
+	if slices.Contains(stages, "dual.projection") || slices.Contains(stages, "dual.render") {
+		t.Fatalf("cancellation started later stages: %v", stages)
+	}
+}
+
+func TestDualModeCancellationStopsInsideWindowQueries(t *testing.T) {
+	for _, test := range []struct {
+		name  string
+		path  string
+		stage string
+	}{
+		{name: "index", path: "/dual-mode", stage: "dual.window.index.artists"},
+		{name: "artist", path: "/dual-mode?left=/artists/rembrandt-artistone000001", stage: "dual.window.artist.works"},
+		{name: "work", path: "/dual-mode?left=/artists/rembrandt-artistone000001/the-night-watch-artworkone00001", stage: "dual.window.work.glossary"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			app := newDualTestApp(t)
+			seedDualArtistAndWork(t, app)
+			ctx, cancel := context.WithCancel(context.Background())
+			request := httptest.NewRequest(http.MethodGet, test.path, nil).WithContext(ctx)
+			event := &core.RequestEvent{Event: router.Event{Request: request, Response: httptest.NewRecorder()}}
+			stages := []string{}
+			checkpoint := func(ctx context.Context, stage string) error {
+				stages = append(stages, stage)
+				if stage == test.stage {
+					cancel()
+				}
+				return requestprotection.Checkpoint(ctx, stage)
+			}
+
+			err := renderDualModePageWithCheckpoint(app, event, checkpoint)
+			if !errors.Is(err, context.Canceled) {
+				t.Fatalf("renderDualModePageWithCheckpoint() error = %v, want context.Canceled", err)
+			}
+			if !slices.Contains(stages, test.stage) {
+				t.Fatalf("target stage %q was not reached: %v", test.stage, stages)
+			}
+			if slices.Contains(stages, "dual.right.window") || slices.Contains(stages, "dual.render") {
+				t.Fatalf("cancellation started later stages: %v", stages)
+			}
+		})
+	}
+}
+
+func TestDualReferenceCancellationStopsSubsequentQueries(t *testing.T) {
+	allStages := []string{"dual.reference.schools", "dual.reference.periods", "dual.reference.birth_bounds"}
+	for stopIndex, stopStage := range allStages {
+		t.Run(stopStage, func(t *testing.T) {
+			app := newDualTestApp(t)
+			ctx, cancel := context.WithCancel(context.Background())
+			stages := []string{}
+			checkpoint := func(ctx context.Context, stage string) error {
+				stages = append(stages, stage)
+				if stage == stopStage {
+					cancel()
+				}
+				return requestprotection.Checkpoint(ctx, stage)
+			}
+
+			if _, err := loadDualReferenceContext(ctx, app, checkpoint); !errors.Is(err, context.Canceled) {
+				t.Fatalf("loadDualReferenceContext() error = %v, want context.Canceled", err)
+			}
+			want := allStages[:stopIndex+1]
+			if !reflect.DeepEqual(stages, want) {
+				t.Fatalf("started stages = %v, want %v", stages, want)
+			}
+		})
+	}
+}
+
+func TestDualLookupCancellationSkipsRender(t *testing.T) {
+	app := newDualTestApp(t)
+	seedDualArtistAndWork(t, app)
+	ctx, cancel := context.WithCancel(context.Background())
+	request := httptest.NewRequest(http.MethodGet, "/dual-mode/lookup?kind=artist&q=rembrandt", nil).WithContext(ctx)
+	event := &core.RequestEvent{Event: router.Event{Request: request, Response: httptest.NewRecorder()}}
+	stages := []string{}
+	checkpoint := func(ctx context.Context, stage string) error {
+		stages = append(stages, stage)
+		if stage == "dual.lookup.render" {
+			cancel()
+		}
+		return requestprotection.Checkpoint(ctx, stage)
+	}
+
+	err := renderDualLookupResultsWithCheckpoint(app, event, checkpoint)
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("renderDualLookupResultsWithCheckpoint() error = %v, want context.Canceled", err)
+	}
+	want := []string{"dual.lookup.records", "dual.lookup.render"}
+	if !reflect.DeepEqual(stages, want) {
+		t.Fatalf("started stages = %v, want %v", stages, want)
 	}
 }
 
