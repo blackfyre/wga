@@ -11,18 +11,55 @@ import (
 	"strings"
 
 	"github.com/pocketbase/pocketbase/core"
+	"golang.org/x/sys/unix"
 )
 
 const (
 	directoryName = "generated-publications"
 	versionsName  = "versions"
 	currentName   = "current"
+	lockName      = "publication.lock"
 )
 
 // ErrNoCurrentPublication reports that no shared publication has been selected
 // yet. Readers may use a compatible legacy publication during migration only
 // for this state, not for a transient race involving an existing marker.
 var ErrNoCurrentPublication = errors.New("no current generated publication")
+
+// Lock serializes generation against every process sharing an application data
+// directory. Closing it releases the advisory filesystem lock.
+type Lock struct {
+	file *os.File
+}
+
+// AcquireLock obtains the cross-process lock that must cover staging,
+// publication selection, and pruning as one lifecycle.
+func AcquireLock(app core.App) (*Lock, error) {
+	root := Directory(app)
+	if err := os.MkdirAll(root, 0o755); err != nil {
+		return nil, fmt.Errorf("create generated-publication directory: %w", err)
+	}
+	file, err := os.OpenFile(filepath.Join(root, lockName), os.O_CREATE|os.O_RDWR, 0o600)
+	if err != nil {
+		return nil, fmt.Errorf("open generated-publication lock: %w", err)
+	}
+	if err := unix.Flock(int(file.Fd()), unix.LOCK_EX); err != nil {
+		_ = file.Close()
+		return nil, fmt.Errorf("lock generated publication: %w", err)
+	}
+	return &Lock{file: file}, nil
+}
+
+// Close releases the cross-process publication lock.
+func (l *Lock) Close() error {
+	if l == nil || l.file == nil {
+		return nil
+	}
+	unlockErr := unix.Flock(int(l.file.Fd()), unix.LOCK_UN)
+	closeErr := l.file.Close()
+	l.file = nil
+	return errors.Join(unlockErr, closeErr)
+}
 
 func Directory(app core.App) string {
 	return filepath.Join(app.DataDir(), directoryName)

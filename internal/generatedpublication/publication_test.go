@@ -1,13 +1,45 @@
 package generatedpublication
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tests"
+	"golang.org/x/sys/unix"
 )
+
+func TestAcquireLockExcludesAnotherFileDescriptor(t *testing.T) {
+	app, err := tests.NewTestAppWithConfig(core.BaseAppConfig{DataDir: t.TempDir(), EncryptionEnv: "test-encryption-key"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(app.Cleanup)
+
+	lock, err := AcquireLock(app)
+	if err != nil {
+		t.Fatal(err)
+	}
+	file, err := os.OpenFile(filepath.Join(Directory(app), lockName), os.O_RDWR, 0o600)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	if err := unix.Flock(int(file.Fd()), unix.LOCK_EX|unix.LOCK_NB); !errors.Is(err, unix.EWOULDBLOCK) && !errors.Is(err, unix.EAGAIN) {
+		t.Fatalf("second lock error = %v, want would-block", err)
+	}
+	if err := lock.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := unix.Flock(int(file.Fd()), unix.LOCK_EX|unix.LOCK_NB); err != nil {
+		t.Fatalf("lock after release: %v", err)
+	}
+	if err := unix.Flock(int(file.Fd()), unix.LOCK_UN); err != nil {
+		t.Fatal(err)
+	}
+}
 
 func TestFailedPublicationLeavesAllReadersOnPreviousVersion(t *testing.T) {
 	app, err := tests.NewTestAppWithConfig(core.BaseAppConfig{DataDir: t.TempDir(), EncryptionEnv: "test-encryption-key"})

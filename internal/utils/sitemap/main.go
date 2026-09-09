@@ -94,9 +94,16 @@ func readCurrent(app core.App, relative string, resolveCurrent func(core.App) (s
 
 // GenerateSiteMap creates and publishes a complete sitemap set. A failed run
 // leaves the currently published index untouched.
-func GenerateSiteMap(app core.App, sitemapConfig config.Sitemap) (Result, error) {
+func GenerateSiteMap(app core.App, sitemapConfig config.Sitemap) (result Result, err error) {
 	generationMu.Lock()
 	defer generationMu.Unlock()
+	publicationLock, err := generatedpublication.AcquireLock(app)
+	if err != nil {
+		return Result{}, err
+	}
+	defer func() {
+		err = errors.Join(err, publicationLock.Close())
+	}()
 
 	generation := time.Now().UTC().Format("20060102T150405.000000000")
 	version := "publication-" + generation
@@ -147,7 +154,7 @@ func GenerateSiteMap(app core.App, sitemapConfig config.Sitemap) (Result, error)
 		return Result{}, err
 	}
 
-	result := Result{
+	result = Result{
 		URLCount:           artistURLs + artworkURLs,
 		ExcludedCount:      artistExcluded + artworkExcluded,
 		AgentArtistCount:   agentResult.ArtistCount,
