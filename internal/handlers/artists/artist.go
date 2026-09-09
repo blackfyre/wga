@@ -314,9 +314,7 @@ func RenderArtistContent(app *pocketbase.PocketBase, c *core.RequestEvent, artis
 func processArtist(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 	slug := c.Request.PathValue("name")
 	markdownPath := generatedMarkdownPath("artists", slug)
-	if redirected, err := negotiateMarkdown(c, "artists", slug); redirected {
-		return err
-	}
+	c.Response.Header().Add("Vary", "Accept")
 
 	id := utils.ExtractIdFromString(slug)
 	if err := requestprotection.Checkpoint(c.Request.Context(), "artist.detail.lookup"); err != nil {

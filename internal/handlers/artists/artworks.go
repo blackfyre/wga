@@ -60,9 +60,7 @@ func processArtworkWithCheckpoint(c *core.RequestEvent, app *pocketbase.PocketBa
 	artistSlug := c.Request.PathValue("name")
 	artworkSlug := c.Request.PathValue("awid")
 	markdownPath := generatedMarkdownPath("artworks", artworkSlug)
-	if redirected, err := negotiateMarkdown(c, "artworks", artworkSlug); redirected {
-		return err
-	}
+	c.Response.Header().Add("Vary", "Accept")
 
 	// Split the slug on the last dash and use the last part as the artist id
 	artistSlugParts := strings.Split(artistSlug, "-")

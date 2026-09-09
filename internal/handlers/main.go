@@ -47,6 +47,7 @@ func RegisterHandlers(app *pocketbase.PocketBase, environment config.Environment
 	if err := registerProtectedReadMiddleware(app, publicURL.String(), clientIdentity, publicReadPolicy); err != nil {
 		return err
 	}
+	registerMarkdownNegotiationMiddleware(app)
 	registerTrustedHeadMarkupMiddleware(app)
 
 	cookie, err := itineraryhandlers.ActiveCookie(itineraryPolicy)
