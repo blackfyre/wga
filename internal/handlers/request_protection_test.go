@@ -45,6 +45,12 @@ func TestProtectedReadMiddlewareRejectsBeforeHandlerWork(t *testing.T) {
 			status:  http.StatusMisdirectedRequest,
 		},
 		{
+			name:    "deployment host with encoded route literal",
+			url:     "https://wga-production.up.railway.app/%61rtists",
+			headers: trustedProtectionHeaders("198.51.100.7", protectionTestSecret),
+			status:  http.StatusMisdirectedRequest,
+		},
+		{
 			name:    "missing origin authentication",
 			url:     "https://beta.wga.hu/artists",
 			headers: trustedProtectionHeaders("198.51.100.7", ""),

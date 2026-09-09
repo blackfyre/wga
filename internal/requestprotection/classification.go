@@ -34,50 +34,69 @@ func Classify(method string, path string) Profile {
 	if method != http.MethodGet && method != http.MethodHead {
 		return ProfileUnclassified
 	}
+	segments, ok := decodedPathSegments(path)
+	if !ok {
+		return ProfileUnclassified
+	}
 
-	switch path {
-	case "/artists", "/artworks", "/artworks/results":
+	switch {
+	case pathSegmentsEqual(segments, "artists"), pathSegmentsEqual(segments, "artworks"), pathSegmentsEqual(segments, "artworks", "results"):
 		return ProfileSearch
-	case "/dual-mode", "/dual-mode/lookup":
+	case pathSegmentsEqual(segments, "dual-mode"), pathSegmentsEqual(segments, "dual-mode", "lookup"):
 		return ProfileFragment
-	case "/health", "/robots.txt", "/sitemap.xml", "/sitemap.xsl":
+	case pathSegmentsEqual(segments, "health"), pathSegmentsEqual(segments, "robots.txt"), pathSegmentsEqual(segments, "sitemap.xml"), pathSegmentsEqual(segments, "sitemap.xsl"):
 		return ProfileExempt
 	}
 
-	if hasPathPrefix(path, "/assets/") || hasPathPrefix(path, "/sitemap/") || hasPathPrefix(path, "/_/") {
+	if len(segments) > 0 && (segments[0] == "assets" || segments[0] == "sitemap" || segments[0] == "_") {
 		return ProfileExempt
 	}
-	if isArtistDetail(path) || isAgentDetail(path) {
+	if isArtistDetail(segments) || isAgentDetail(segments) {
 		return ProfileDetail
 	}
 
 	return ProfileUnclassified
 }
 
-func hasPathPrefix(path string, prefix string) bool {
-	return path == strings.TrimSuffix(prefix, "/") || strings.HasPrefix(path, prefix)
+func decodedPathSegments(path string) ([]string, bool) {
+	if !strings.HasPrefix(path, "/") || path == "/" {
+		return nil, path == "/"
+	}
+	raw := strings.Split(strings.TrimPrefix(path, "/"), "/")
+	if len(raw) > 1 && raw[len(raw)-1] == "" {
+		raw = raw[:len(raw)-1]
+	}
+	segments := make([]string, len(raw))
+	for index, segment := range raw {
+		decoded, err := url.PathUnescape(segment)
+		if err != nil || decoded == "" {
+			return nil, false
+		}
+		segments[index] = decoded
+	}
+	return segments, true
 }
 
-func isArtistDetail(path string) bool {
-	const prefix = "/artists/"
-	if !strings.HasPrefix(path, prefix) {
+func pathSegmentsEqual(segments []string, expected ...string) bool {
+	if len(segments) != len(expected) {
 		return false
 	}
-
-	segments := strings.Split(strings.TrimPrefix(path, prefix), "/")
-	if len(segments) < 1 || len(segments) > 3 {
-		return false
-	}
-	for _, segment := range segments {
-		if segment == "" {
+	for index := range segments {
+		if segments[index] != expected[index] {
 			return false
 		}
 	}
-	return len(segments) < 3 || segments[1] == "selections"
+	return true
 }
 
-func isAgentDetail(path string) bool {
-	segments := strings.Split(strings.TrimPrefix(path, "/"), "/")
+func isArtistDetail(segments []string) bool {
+	if len(segments) < 2 || len(segments) > 4 || segments[0] != "artists" {
+		return false
+	}
+	return len(segments) < 4 || segments[2] == "selections"
+}
+
+func isAgentDetail(segments []string) bool {
 	if len(segments) != 3 || segments[0] != "agents" || (segments[1] != "artists" && segments[1] != "artworks") {
 		return false
 	}

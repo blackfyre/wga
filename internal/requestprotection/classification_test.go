@@ -13,6 +13,7 @@ func TestClassify(t *testing.T) {
 		want   Profile
 	}{
 		{name: "artist search GET", method: http.MethodGet, path: "/artists", want: ProfileSearch},
+		{name: "artist search encoded literal", method: http.MethodGet, path: "/%61rtists", want: ProfileSearch},
 		{name: "artist search HEAD", method: http.MethodHead, path: "/artists", want: ProfileSearch},
 		{name: "artwork search", method: http.MethodGet, path: "/artworks", want: ProfileSearch},
 		{name: "artwork results", method: http.MethodGet, path: "/artworks/results", want: ProfileSearch},
