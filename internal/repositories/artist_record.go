@@ -46,6 +46,29 @@ func (r *ArtistRecordRepository) FindPublishedArtist(id string) (*core.Record, e
 	})
 }
 
+// ListPublishedArtists returns every published artist with the authoritative
+// identity fields required by the canonical public artist record.
+func (r *ArtistRecordRepository) ListPublishedArtists() ([]*core.Record, error) {
+	present, err := artistsIdentityFieldsPresent(r.app)
+	if err != nil {
+		return nil, err
+	}
+	if !present {
+		return []*core.Record{}, nil
+	}
+
+	query := r.app.RecordQuery(constants.CollectionArtists)
+	query.AndWhere(dbx.NewExp("published = true"))
+	query.AndWhere(dbx.NewExp(publishedArtistIdentity))
+	query.OrderBy("name ASC", "id ASC")
+
+	records := []*core.Record{}
+	if err := query.All(&records); err != nil {
+		return nil, err
+	}
+	return records, nil
+}
+
 // CountPublishedWorks returns the number of published artworks whose author
 // relation includes the given artist.
 func (r *ArtistRecordRepository) CountPublishedWorks(artistID string) (int, error) {

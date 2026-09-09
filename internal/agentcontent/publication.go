@@ -16,7 +16,8 @@ import (
 
 	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/constants"
-	urlutils "github.com/blackfyre/wga/internal/utils/url"
+	"github.com/blackfyre/wga/internal/repositories"
+	"github.com/blackfyre/wga/internal/utils"
 	"github.com/pocketbase/pocketbase/core"
 )
 
@@ -177,7 +178,7 @@ func generatePublication(app core.App, publicURL config.PublicURL, staging strin
 		return PublicationResult{}, nil, fmt.Errorf("write staged llms.txt: %w", err)
 	}
 
-	artistRecords, err := app.FindRecordsByFilter(constants.CollectionArtists, "published = true", "+name", 0, 0)
+	artistRecords, err := repositories.NewArtistRecordRepository(app).ListPublishedArtists()
 	if err != nil {
 		return PublicationResult{}, nil, fmt.Errorf("fetch artists for agent content: %w", err)
 	}
@@ -204,15 +205,18 @@ func generatePublication(app core.App, publicURL config.PublicURL, staging strin
 			result.ExcludedCount++
 			continue
 		}
-		author, ok := artists[authorIDs[0]]
-		if !ok {
+		var author *core.Record
+		for _, authorID := range authorIDs {
+			if eligible := artists[authorID]; eligible != nil {
+				author = eligible
+				break
+			}
+		}
+		if author == nil {
 			result.ExcludedCount++
 			continue
 		}
-		canonical := baseURL + urlutils.GenerateFullArtworkUrl(urlutils.ArtworkUrlDTO{
-			ArtistName: author.GetString("name"), ArtworkTitle: record.GetString("title"),
-			ArtistId: author.Id, ArtworkId: record.Id,
-		})
+		canonical := baseURL + canonicalArtworkPath(author, record)
 		link := Link{Label: record.GetString("title"), URL: canonical}
 		artworks = append(artworks, artworkProjection{record: record, author: author, canonical: canonical, link: link})
 		linksByArtist[author.Id] = append(linksByArtist[author.Id], link)
@@ -246,7 +250,7 @@ func generatePublication(app core.App, publicURL config.PublicURL, staging strin
 			return PublicationResult{}, nil, fmt.Errorf("load schools for artist %s: %w", record.Id, err)
 		}
 		content, err := RenderArtist(Artist{
-			Name: record.GetString("name"), CanonicalURL: baseURL + urlutils.GenerateArtistUrlFromRecord(record),
+			Name: record.GetString("name"), CanonicalURL: baseURL + canonicalArtistPath(record),
 			Lifespan: artistLifespan(record), Profession: record.GetString("profession"), School: school,
 			Biography: plainText(record.GetString("bio")), Attribution: attribution,
 			RelatedArtworks: linksByArtist[record.Id][:min(len(linksByArtist[record.Id]), MaxRelatedLinks)],
@@ -259,7 +263,7 @@ func generatePublication(app core.App, publicURL config.PublicURL, staging strin
 			return PublicationResult{}, nil, fmt.Errorf("write staged artist %s: %w", record.Id, err)
 		}
 		expected[filepath.ToSlash(relative)] = struct{}{}
-		manifest.Resources[filepath.ToSlash(relative)] = baseURL + urlutils.GenerateArtistUrlFromRecord(record)
+		manifest.Resources[filepath.ToSlash(relative)] = baseURL + canonicalArtistPath(record)
 		result.ArtistCount++
 	}
 
@@ -273,7 +277,7 @@ func generatePublication(app core.App, publicURL config.PublicURL, staging strin
 		}
 		content, err := RenderArtwork(Artwork{
 			Title: projection.record.GetString("title"), CanonicalURL: projection.canonical,
-			Artist: Link{Label: projection.author.GetString("name"), URL: baseURL + urlutils.GenerateArtistUrlFromRecord(projection.author)},
+			Artist: Link{Label: projection.author.GetString("name"), URL: baseURL + canonicalArtistPath(projection.author)},
 			Date:   artworkDate(projection.record), Technique: projection.record.GetString("technique"),
 			Dimensions: dimensions, Location: location, Commentary: projection.record.GetString("source_comment"),
 			Attribution: attribution, RelatedArtworks: related,
@@ -308,6 +312,14 @@ func validRecord(record *core.Record, labelField string) bool {
 	return strings.TrimSpace(record.GetString(labelField)) != ""
 }
 
+func canonicalArtistPath(record *core.Record) string {
+	return "/artists/" + utils.GenerateArtistSlug(record)
+}
+
+func canonicalArtworkPath(artist *core.Record, artwork *core.Record) string {
+	return canonicalArtistPath(artist) + "/" + utils.Slugify(artwork.GetString("title")) + "-" + artwork.Id
+}
+
 func relationNames(app core.App, collection string, ids []string) (string, error) {
 	if len(ids) == 0 {
 		return "", nil
@@ -332,17 +344,17 @@ func artistLifespan(record *core.Record) string {
 	if birth <= 0 && death <= 0 {
 		return ""
 	}
-	format := func(year int, exact string) string {
+	format := func(year int, exact bool) string {
 		if year <= 0 {
 			return "?"
 		}
 		value := strconv.Itoa(year)
-		if exact == "no" {
+		if !exact {
 			value = "c. " + value
 		}
 		return value
 	}
-	return format(birth, record.GetString("exact_year_of_birth")) + "–" + format(death, record.GetString("exact_year_of_death"))
+	return format(birth, record.GetBool("exact_year_of_birth")) + "–" + format(death, record.GetBool("exact_year_of_death"))
 }
 
 func artworkDate(record *core.Record) string {

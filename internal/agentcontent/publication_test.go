@@ -33,11 +33,14 @@ func newPublicationTestApp(t *testing.T) *tests.TestApp {
 	artists.MarkAsNew()
 	artists.Fields.Add(
 		&core.TextField{Name: "name"},
+		&core.TextField{Name: "filing_name"},
+		&core.TextField{Name: "short_name"},
+		&core.TextField{Name: "slug"},
 		&core.BoolField{Name: "published"},
 		&core.NumberField{Name: "year_of_birth"},
 		&core.NumberField{Name: "year_of_death"},
-		&core.TextField{Name: "exact_year_of_birth"},
-		&core.TextField{Name: "exact_year_of_death"},
+		&core.BoolField{Name: "exact_year_of_birth"},
+		&core.BoolField{Name: "exact_year_of_death"},
 		&core.TextField{Name: "profession"},
 		&core.TextField{Name: "bio"},
 		&core.RelationField{Name: "school", CollectionId: schools.Id, MaxSelect: 10},
@@ -109,10 +112,14 @@ func TestPublishSelectsCompletePublicAgentContent(t *testing.T) {
 	app := newPublicationTestApp(t)
 	school := createPublicationRecord(t, app, constants.CollectionSchools, map[string]any{"name": "Dutch School"})
 	artist := createPublicationRecord(t, app, constants.CollectionArtists, map[string]any{
-		"name": "Jane Doe", "published": true, "year_of_birth": 1600, "year_of_death": 1670,
+		"name": "Jane Doe", "filing_name": "Doe, Jane", "short_name": "Jane", "slug": "authoritative-jane", "published": true,
+		"year_of_birth": 1600, "year_of_death": 1670, "exact_year_of_birth": true, "exact_year_of_death": false,
 		"profession": "painter", "school": []string{school.Id}, "bio": "<p>Public biography.</p>",
 	})
-	hiddenArtist := createPublicationRecord(t, app, constants.CollectionArtists, map[string]any{"name": "Hidden Artist", "published": false})
+	hiddenArtist := createPublicationRecord(t, app, constants.CollectionArtists, publicationArtist("Hidden Artist", "hidden-artist", false))
+	incompleteArtist := createPublicationRecord(t, app, constants.CollectionArtists, map[string]any{
+		"name": "Incomplete Artist", "filing_name": "Artist, Incomplete", "slug": "incomplete-artist", "published": true,
+	})
 	artwork := createPublicationRecord(t, app, constants.CollectionArtworks, map[string]any{
 		"title": "Blue Study", "published": true, "author": []string{artist.Id}, "date_start": 1640,
 		"technique": "Oil on canvas", "comment": "Blue Study · Gallery, London · 20 × 30 cm", "source_comment": "Public commentary.",
@@ -121,13 +128,16 @@ func TestPublishSelectsCompletePublicAgentContent(t *testing.T) {
 		"title": "Hidden Work", "published": false, "author": []string{artist.Id},
 	})
 	createPublicationRecord(t, app, constants.CollectionArtworks, map[string]any{"title": "Incomplete Work", "published": true})
+	coauthoredArtwork := createPublicationRecord(t, app, constants.CollectionArtworks, map[string]any{
+		"title": "Shared Study", "published": true, "author": []string{hiddenArtist.Id, artist.Id},
+	})
 
 	result, err := Publish(app, publicationPublicURL(t))
 	if err != nil {
 		t.Fatalf("publish agent content: %v", err)
 	}
-	if result.ArtistCount != 1 || result.ArtworkCount != 1 || result.ExcludedCount != 1 {
-		t.Fatalf("result = %+v, want one artist, one artwork, and one exclusion", result)
+	if result.ArtistCount != 1 || result.ArtworkCount != 2 || result.ExcludedCount != 1 {
+		t.Fatalf("result = %+v, want one artist, two artworks, and one exclusion", result)
 	}
 	if result.CleanupErr != nil {
 		t.Fatalf("clean publications: %v", result.CleanupErr)
@@ -141,17 +151,19 @@ func TestPublishSelectsCompletePublicAgentContent(t *testing.T) {
 	}
 
 	assertPublicationContains(t, filepath.Join(current, llmsFilename), "https://gallery.example/sitemap.xml", "/agents/artists/{id}.md")
-	assertPublicationContains(t, filepath.Join(current, "agents", "artists", artist.Id+".md"), "# Jane Doe", "Dutch School", "Public biography.")
+	assertPublicationContains(t, filepath.Join(current, "agents", "artists", artist.Id+".md"), "# Jane Doe", "Dutch School", "Public biography.", "Lifespan: 1600–c. 1670")
 	assertPublicationContains(t, filepath.Join(current, "agents", "artworks", artwork.Id+".md"), "# Blue Study", "Gallery, London", "20 × 30 cm")
+	assertPublicationContains(t, filepath.Join(current, "agents", "artworks", coauthoredArtwork.Id+".md"), "# Shared Study", "/artists/authoritative-jane-"+artist.Id)
 	resource, err := ReadCurrent(app, "agents/artists/"+artist.Id+".md")
 	if err != nil {
 		t.Fatalf("read current artist content: %v", err)
 	}
-	if resource.CanonicalURL != "https://gallery.example/artists/jane-doe-"+artist.Id || !strings.Contains(string(resource.Content), "# Jane Doe") {
+	if resource.CanonicalURL != "https://gallery.example/artists/authoritative-jane-"+artist.Id || !strings.Contains(string(resource.Content), "# Jane Doe") {
 		t.Fatalf("current artist resource = %+v", resource)
 	}
 	for _, unavailable := range []string{
 		filepath.Join(current, "agents", "artists", hiddenArtist.Id+".md"),
+		filepath.Join(current, "agents", "artists", incompleteArtist.Id+".md"),
 		filepath.Join(current, "agents", "artworks", hiddenArtwork.Id+".md"),
 		filepath.Join(current, "agents", "artists", "missing.md"),
 	} {
@@ -173,7 +185,7 @@ func TestPublishSelectsCompletePublicAgentContent(t *testing.T) {
 
 func TestPublishFailureLeavesPreviousPublicationSelected(t *testing.T) {
 	app := newPublicationTestApp(t)
-	artist := createPublicationRecord(t, app, constants.CollectionArtists, map[string]any{"name": "Jane Doe", "published": true})
+	artist := createPublicationRecord(t, app, constants.CollectionArtists, publicationArtist("Jane Doe", "jane-doe", true))
 	if _, err := Publish(app, publicationPublicURL(t)); err != nil {
 		t.Fatalf("publish initial agent content: %v", err)
 	}
@@ -214,7 +226,7 @@ func TestPublishFailureLeavesPreviousPublicationSelected(t *testing.T) {
 
 func TestPublishPrunesStaleGeneratedRecords(t *testing.T) {
 	app := newPublicationTestApp(t)
-	artist := createPublicationRecord(t, app, constants.CollectionArtists, map[string]any{"name": "Jane Doe", "published": true})
+	artist := createPublicationRecord(t, app, constants.CollectionArtists, publicationArtist("Jane Doe", "jane-doe", true))
 	artwork := createPublicationRecord(t, app, constants.CollectionArtworks, map[string]any{
 		"title": "Blue Study", "published": true, "author": []string{artist.Id},
 	})
@@ -238,6 +250,12 @@ func TestPublishPrunesStaleGeneratedRecords(t *testing.T) {
 	}
 	if _, err := os.Stat(first.Directory); !os.IsNotExist(err) {
 		t.Fatalf("previous publication was not pruned: %v", err)
+	}
+}
+
+func publicationArtist(name string, slug string, published bool) map[string]any {
+	return map[string]any{
+		"name": name, "filing_name": name, "short_name": name, "slug": slug, "published": published,
 	}
 }
 
