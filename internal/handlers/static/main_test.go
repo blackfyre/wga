@@ -92,10 +92,14 @@ func writeGeneratedAgentFixture(t *testing.T, app core.App) {
 	if err := os.WriteFile(filepath.Join(current, "llms.txt"), []byte("# WGA discovery\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
+	llmsMetadata := `{"canonical_url":"https://gallery.example/llms.txt","accepted_paths":["/llms.txt"]}`
+	if err := os.WriteFile(filepath.Join(current, "llms-metadata.json"), []byte(llmsMetadata), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	if err := os.WriteFile(filepath.Join(current, "agents", "artists", "artistone000001.md"), []byte("# Artist\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	manifest := `{"resources":{"llms.txt":"https://gallery.example/llms.txt","agents/artists/artistone000001.md":"https://gallery.example/artists/synthetic-artist-artistone000001"}}`
+	manifest := `{"resources":{"agents/artists/artistone000001.md":"https://gallery.example/artists/synthetic-artist-artistone000001"}}`
 	if err := os.WriteFile(filepath.Join(current, "manifest.json"), []byte(manifest), 0o644); err != nil {
 		t.Fatal(err)
 	}

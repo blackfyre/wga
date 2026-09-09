@@ -303,6 +303,26 @@ func TestMissingResourceDoesNotParsePublicationManifest(t *testing.T) {
 	}
 }
 
+func TestReadLLMsDoesNotParseCatalogueManifest(t *testing.T) {
+	app := newPublicationTestApp(t)
+	createPublicationRecord(t, app, constants.CollectionArtists, publicationArtist("Jane Doe", "jane-doe", true))
+	result, err := publishAgentContent(t, app)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(result.Directory, manifestFilename), []byte("not json"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	resource, err := ReadCurrent(app, llmsFilename)
+	if err != nil {
+		t.Fatalf("read llms.txt with invalid catalogue manifest: %v", err)
+	}
+	if resource.CanonicalURL != "https://gallery.example/llms.txt" || !strings.Contains(string(resource.Content), "# Web Gallery of Art") {
+		t.Fatalf("llms.txt resource = %+v", resource)
+	}
+}
+
 func TestPublishPrunesStaleGeneratedRecords(t *testing.T) {
 	app := newPublicationTestApp(t)
 	artist := createPublicationRecord(t, app, constants.CollectionArtists, publicationArtist("Jane Doe", "jane-doe", true))

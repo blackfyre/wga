@@ -27,6 +27,7 @@ const (
 	// generated agent-facing resources and their manifest.
 	PublicationDirectoryName = "agent-content"
 	llmsFilename             = "llms.txt"
+	llmsMetadataFilename     = "llms-metadata.json"
 	manifestFilename         = "manifest.json"
 )
 
@@ -46,6 +47,11 @@ type PublicationResult struct {
 type publicationManifest struct {
 	Resources     map[string]string   `json:"resources"`
 	AcceptedPaths map[string][]string `json:"accepted_paths,omitempty"`
+}
+
+type resourceMetadata struct {
+	CanonicalURL  string   `json:"canonical_url"`
+	AcceptedPaths []string `json:"accepted_paths,omitempty"`
 }
 
 // Resource is one generated public representation and its canonical HTML URL.
@@ -117,30 +123,50 @@ func readCurrent(app core.App, relative string, includeContent bool) (Resource, 
 			}
 			return Resource{}, fmt.Errorf("read generated agent content: %w", err)
 		}
-		manifestData, err := os.ReadFile(filepath.Join(current, manifestFilename))
+		metadata, err := readResourceMetadata(current, relative)
 		if err != nil {
 			if errors.Is(err, fs.ErrNotExist) && attempt == 0 {
 				continue
 			}
-			return Resource{}, fmt.Errorf("read agent-content manifest: %w", err)
+			return Resource{}, err
 		}
-		var manifest publicationManifest
-		if err := json.Unmarshal(manifestData, &manifest); err != nil {
-			return Resource{}, fmt.Errorf("parse agent-content manifest: %w", err)
-		}
-		canonical, ok := manifest.Resources[relative]
-		if !ok {
-			return Resource{}, fs.ErrNotExist
-		}
-		acceptedPaths := manifest.AcceptedPaths[relative]
+		acceptedPaths := metadata.AcceptedPaths
 		if len(acceptedPaths) == 0 {
-			if parsed, err := url.Parse(canonical); err == nil && parsed.Path != "" {
+			if parsed, err := url.Parse(metadata.CanonicalURL); err == nil && parsed.Path != "" {
 				acceptedPaths = []string{parsed.Path}
 			}
 		}
-		return Resource{Content: content, CanonicalURL: canonical, AcceptedPaths: acceptedPaths}, nil
+		return Resource{Content: content, CanonicalURL: metadata.CanonicalURL, AcceptedPaths: acceptedPaths}, nil
 	}
 	return Resource{}, fs.ErrNotExist
+}
+
+func readResourceMetadata(current string, relative string) (resourceMetadata, error) {
+	if relative == llmsFilename {
+		data, err := os.ReadFile(filepath.Join(current, llmsMetadataFilename))
+		if err != nil {
+			return resourceMetadata{}, fmt.Errorf("read llms metadata: %w", err)
+		}
+		var metadata resourceMetadata
+		if err := json.Unmarshal(data, &metadata); err != nil {
+			return resourceMetadata{}, fmt.Errorf("parse llms metadata: %w", err)
+		}
+		return metadata, nil
+	}
+
+	data, err := os.ReadFile(filepath.Join(current, manifestFilename))
+	if err != nil {
+		return resourceMetadata{}, fmt.Errorf("read agent-content manifest: %w", err)
+	}
+	var manifest publicationManifest
+	if err := json.Unmarshal(data, &manifest); err != nil {
+		return resourceMetadata{}, fmt.Errorf("parse agent-content manifest: %w", err)
+	}
+	canonical, ok := manifest.Resources[relative]
+	if !ok {
+		return resourceMetadata{}, fs.ErrNotExist
+	}
+	return resourceMetadata{CanonicalURL: canonical, AcceptedPaths: manifest.AcceptedPaths[relative]}, nil
 }
 
 // Generate writes and validates agent resources inside a shared unpublished
@@ -171,13 +197,20 @@ type artworkProjection struct {
 
 func generatePublication(app core.App, publicURL config.PublicURL, staging string) (PublicationResult, map[string]struct{}, error) {
 	baseURL := strings.TrimRight(publicURL.String(), "/")
-	expected := map[string]struct{}{llmsFilename: {}, manifestFilename: {}}
+	expected := map[string]struct{}{llmsFilename: {}, llmsMetadataFilename: {}, manifestFilename: {}}
 	manifest := publicationManifest{
-		Resources:     map[string]string{llmsFilename: baseURL + "/llms.txt"},
-		AcceptedPaths: map[string][]string{llmsFilename: {"/llms.txt"}},
+		Resources:     make(map[string]string),
+		AcceptedPaths: make(map[string][]string),
 	}
 	if err := os.WriteFile(filepath.Join(staging, llmsFilename), renderLLMs(baseURL), 0o644); err != nil {
 		return PublicationResult{}, nil, fmt.Errorf("write staged llms.txt: %w", err)
+	}
+	llmsMetadata, err := json.Marshal(resourceMetadata{CanonicalURL: baseURL + "/llms.txt", AcceptedPaths: []string{"/llms.txt"}})
+	if err != nil {
+		return PublicationResult{}, nil, fmt.Errorf("marshal llms metadata: %w", err)
+	}
+	if err := os.WriteFile(filepath.Join(staging, llmsMetadataFilename), append(llmsMetadata, '\n'), 0o644); err != nil {
+		return PublicationResult{}, nil, fmt.Errorf("write staged llms metadata: %w", err)
 	}
 
 	artistRecords, err := repositories.NewArtistRecordRepository(app).ListPublishedArtists()
