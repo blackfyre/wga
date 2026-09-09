@@ -64,6 +64,7 @@ not cf.bot_management.verified_bot and (
   http.request.uri.path eq "/artworks" or
   http.request.uri.path eq "/artworks/results" or
   http.request.uri.path eq "/dual-mode" or
+  http.request.uri.path eq "/dual-mode/lookup" or
   starts_with(http.request.uri.path, "/agents/")
 )
 ```
