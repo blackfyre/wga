@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/logging"
 	"github.com/blackfyre/wga/internal/requestfailure"
 	"github.com/blackfyre/wga/internal/requestprotection"
@@ -13,7 +14,7 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
-func registerProtectedReadMiddleware(app core.App, publicURL string, authenticateOrigin requesttrust.OriginAuthenticator, resolveIdentity requesttrust.Resolver, policy *requestprotection.Policy) error {
+func registerProtectedReadMiddleware(app core.App, environment config.Environment, publicURL string, authenticateOrigin requesttrust.OriginAuthenticator, resolveIdentity requesttrust.Resolver, policy *requestprotection.Policy) error {
 	if authenticateOrigin == nil || resolveIdentity == nil || policy == nil {
 		return fmt.Errorf("protected-read middleware requires origin authenticator, identity resolver, and admission policy")
 	}
@@ -25,7 +26,7 @@ func registerProtectedReadMiddleware(app core.App, publicURL string, authenticat
 
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		se.Router.BindFunc(func(e *core.RequestEvent) error {
-			return protectPublicRead(app, canonicalHost, authenticateOrigin, resolveIdentity, policy, e)
+			return protectPublicRead(app, environment, canonicalHost, authenticateOrigin, resolveIdentity, policy, e)
 		})
 		return se.Next()
 	})
@@ -33,20 +34,22 @@ func registerProtectedReadMiddleware(app core.App, publicURL string, authenticat
 	return nil
 }
 
-func protectPublicRead(app core.App, canonicalHost requestprotection.CanonicalHost, authenticateOrigin requesttrust.OriginAuthenticator, resolveIdentity requesttrust.Resolver, policy *requestprotection.Policy, e *core.RequestEvent) error {
+func protectPublicRead(app core.App, environment config.Environment, canonicalHost requestprotection.CanonicalHost, authenticateOrigin requesttrust.OriginAuthenticator, resolveIdentity requesttrust.Resolver, policy *requestprotection.Policy, e *core.RequestEvent) error {
 	profile := requestprotection.Classify(e.Request.Method, e.Request.URL.EscapedPath())
 	if !profile.Protected() {
 		return e.Next()
 	}
 
-	if !canonicalHost.Allows(profile, e.Request.Host) {
-		logProtectionDecision(app, e, policy.IngressDecision(profile, requestprotection.DecisionHost, http.StatusMisdirectedRequest))
-		return plainProtectionResponse(e, http.StatusMisdirectedRequest, 0)
-	}
+	if environment != config.EnvironmentDevelopment && environment != config.EnvironmentTest {
+		if !canonicalHost.Allows(profile, e.Request.Host) {
+			logProtectionDecision(app, e, policy.IngressDecision(profile, requestprotection.DecisionHost, http.StatusMisdirectedRequest))
+			return plainProtectionResponse(e, http.StatusMisdirectedRequest, 0)
+		}
 
-	if !authenticateOrigin(e.Request) {
-		logProtectionDecision(app, e, policy.IngressDecision(profile, requestprotection.DecisionOriginAuth, http.StatusForbidden))
-		return plainProtectionResponse(e, http.StatusForbidden, 0)
+		if !authenticateOrigin(e.Request) {
+			logProtectionDecision(app, e, policy.IngressDecision(profile, requestprotection.DecisionOriginAuth, http.StatusForbidden))
+			return plainProtectionResponse(e, http.StatusForbidden, 0)
+		}
 	}
 	identity, resolved := resolveIdentity(e.Request)
 	if !resolved {

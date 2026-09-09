@@ -44,7 +44,7 @@ func RegisterHandlers(app *pocketbase.PocketBase, environment config.Environment
 	app.Logger().Debug("Registering route handlers...")
 	p := bluemonday.NewPolicy()
 
-	if err := registerProtectedReadMiddleware(app, publicURL.String(), authenticateOrigin, clientIdentity, publicReadPolicy); err != nil {
+	if err := registerProtectedReadMiddleware(app, environment, publicURL.String(), authenticateOrigin, clientIdentity, publicReadPolicy); err != nil {
 		return err
 	}
 	registerMarkdownNegotiationMiddleware(app)

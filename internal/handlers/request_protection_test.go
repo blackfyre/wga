@@ -114,7 +114,7 @@ func TestProtectedReadMiddlewareRejectsBeforeHandlerWork(t *testing.T) {
 						requesttrust.NewCloudflareOriginSecrets(protectionTestSecret, ""),
 					)
 					authenticator := protectionTestOriginAuthenticator()
-					if err := registerProtectedReadMiddleware(app, "https://beta.wga.hu", authenticator, resolver, policy); err != nil {
+					if err := registerProtectedReadMiddleware(app, config.EnvironmentStaging, "https://beta.wga.hu", authenticator, resolver, policy); err != nil {
 						t.Fatalf("register middleware: %v", err)
 					}
 					app.OnServe().BindFunc(func(se *core.ServeEvent) error {
@@ -133,6 +133,52 @@ func TestProtectedReadMiddlewareRejectsBeforeHandlerWork(t *testing.T) {
 					}
 					if got := response.Header.Get("Retry-After"); got != test.wantRetryAfter {
 						t.Fatalf("Retry-After = %q; want %q", got, test.wantRetryAfter)
+					}
+				},
+			}
+
+			scenario.Test(t)
+		})
+	}
+}
+
+func TestProtectedReadMiddlewareSkipsEdgeIngressLocally(t *testing.T) {
+	for _, environment := range []config.Environment{config.EnvironmentDevelopment, config.EnvironmentTest} {
+		t.Run(string(environment), func(t *testing.T) {
+			var authenticatorCalls atomic.Int32
+			var handlerCalls atomic.Int32
+
+			scenario := tests.ApiScenario{
+				Name:            "local protected read",
+				Method:          http.MethodGet,
+				URL:             "http://127.0.0.1:9876/artists",
+				ExpectedStatus:  http.StatusOK,
+				ExpectedContent: []string{"local handler invoked"},
+				TestAppFactory: func(t testing.TB) *tests.TestApp {
+					app := testutils.NewTestApp(t)
+					resolver := requesttrust.New(requesttrust.SourceDirect)
+					authenticator := func(*http.Request) bool {
+						authenticatorCalls.Add(1)
+						return false
+					}
+					if err := registerProtectedReadMiddleware(app, environment, "http://localhost:8090", authenticator, resolver, newHTTPProtectionPolicy(t)); err != nil {
+						t.Fatalf("register middleware: %v", err)
+					}
+					app.OnServe().BindFunc(func(se *core.ServeEvent) error {
+						se.Router.GET("/artists", func(e *core.RequestEvent) error {
+							handlerCalls.Add(1)
+							return e.String(http.StatusOK, "local handler invoked")
+						})
+						return se.Next()
+					})
+					return app
+				},
+				AfterTestFunc: func(t testing.TB, _ *tests.TestApp, _ *http.Response) {
+					if got := authenticatorCalls.Load(); got != 0 {
+						t.Fatalf("origin authenticator called %d times", got)
+					}
+					if got := handlerCalls.Load(); got != 1 {
+						t.Fatalf("handler called %d times", got)
 					}
 				},
 			}
@@ -307,7 +353,7 @@ func TestProtectedReadMiddlewareLogsStablePrivateDecisions(t *testing.T) {
 						requesttrust.SourceCloudflareRailway,
 						requesttrust.NewCloudflareOriginSecrets(protectionTestSecret, ""),
 					)
-					if err := registerProtectedReadMiddleware(app, "https://beta.wga.hu", protectionTestOriginAuthenticator(), resolver, policy); err != nil {
+					if err := registerProtectedReadMiddleware(app, config.EnvironmentStaging, "https://beta.wga.hu", protectionTestOriginAuthenticator(), resolver, policy); err != nil {
 						t.Fatalf("register middleware: %v", err)
 					}
 					app.OnServe().BindFunc(func(se *core.ServeEvent) error {
@@ -586,7 +632,7 @@ func newProtectionContractApp(t testing.TB) *tests.TestApp {
 		requesttrust.SourceCloudflareRailway,
 		requesttrust.NewCloudflareOriginSecrets(protectionTestSecret, ""),
 	)
-	if err := registerProtectedReadMiddleware(app, "https://beta.wga.hu", protectionTestOriginAuthenticator(), resolver, newHTTPProtectionPolicy(t)); err != nil {
+	if err := registerProtectedReadMiddleware(app, config.EnvironmentStaging, "https://beta.wga.hu", protectionTestOriginAuthenticator(), resolver, newHTTPProtectionPolicy(t)); err != nil {
 		t.Fatalf("register middleware: %v", err)
 	}
 	return app
