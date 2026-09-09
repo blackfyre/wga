@@ -243,6 +243,11 @@ func TestArtworkFilterBlockRendersCatalogueFilters(t *testing.T) {
 	if !strings.Contains(rendered, `name="technique"`) {
 		t.Error("expected the technique search input")
 	}
+	for _, legend := range []string{"SCHOOL", "FORM", "TYPE", "PERIOD"} {
+		if !strings.Contains(rendered, `sr-only">`+legend+`</legend>`) {
+			t.Errorf("expected the embedded %s chip legend to be visually hidden", legend)
+		}
+	}
 }
 
 func TestArtworkFilterBlockRendersSemanticFacetDisclosures(t *testing.T) {

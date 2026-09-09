@@ -52,11 +52,12 @@ type ChipOption struct {
 
 // ChipGroup is a labelled group of mutually exclusive filter choices.
 type ChipGroup struct {
-	Legend  string
-	Name    string
-	Note    string
-	Inline  bool
-	Options []ChipOption
+	Legend             string
+	Name               string
+	Note               string
+	Inline             bool
+	VisuallyHideLegend bool
+	Options            []ChipOption
 }
 
 // NavChip is a navigational filter link. HxTarget is an optional enhancement.

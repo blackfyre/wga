@@ -164,16 +164,16 @@ templ ArtworkSeachFilterBlock(b ArtworkSearchView) {
 			</label>
 		}
 		@artworkSearchFacet(b.Facets.School) {
-			@components.ChipGroup(b.SchoolGroup)
+			@components.ChipGroup(artworkSearchChipGroup(b.SchoolGroup))
 		}
 		@artworkSearchFacet(b.Facets.Form) {
-			@components.ChipGroup(b.FormGroup)
+			@components.ChipGroup(artworkSearchChipGroup(b.FormGroup))
 		}
 		@artworkSearchFacet(b.Facets.Type) {
-			@components.ChipGroup(b.TypeGroup)
+			@components.ChipGroup(artworkSearchChipGroup(b.TypeGroup))
 		}
 		@artworkSearchFacet(b.Facets.Period) {
-			@components.ChipGroup(b.PeriodGroup)
+			@components.ChipGroup(artworkSearchChipGroup(b.PeriodGroup))
 		}
 		@artworkSearchFacet(b.Facets.Collection.Facet) {
 			<label class="block">
@@ -211,6 +211,12 @@ templ ArtworkSeachFilterBlock(b ArtworkSearchView) {
 			Searching the collection...
 		</div>
 	</form>
+}
+
+func artworkSearchChipGroup(group dto.ChipGroup) dto.ChipGroup {
+	group.Inline = true
+	group.VisuallyHideLegend = true
+	return group
 }
 
 templ ArtworkSortControl(r ArtworkSearchResultsView) {

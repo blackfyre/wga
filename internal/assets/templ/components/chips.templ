@@ -4,7 +4,7 @@ import "github.com/blackfyre/wga/internal/assets/templ/dto"
 
 templ ChipGroup(group dto.ChipGroup) {
 	<fieldset class={ templ.KV("border-b border-base-content/15 py-5", !group.Inline) }>
-		<legend class={ "font-mono text-(length:--t-11) tracking-[1.5px] text-muted", templ.KV("mb-3", group.Note == ""), templ.KV("mb-1.5", group.Note != "") }>{ group.Legend }</legend>
+		<legend class={ "font-mono text-(length:--t-11) tracking-[1.5px] text-muted", templ.KV("sr-only", group.VisuallyHideLegend), templ.KV("mb-3", !group.VisuallyHideLegend && group.Note == ""), templ.KV("mb-1.5", !group.VisuallyHideLegend && group.Note != "") }>{ group.Legend }</legend>
 		if group.Note != "" {
 			<p class="mb-3 font-mono text-(length:--t-10) leading-relaxed text-faint">{ group.Note }</p>
 		}
