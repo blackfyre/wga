@@ -221,11 +221,16 @@ func processArtworkWithCheckpoint(c *core.RequestEvent, app *pocketbase.PocketBa
 	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", content.Title, content.FilingName))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, aw.GetString("comment"))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, utils.AssetUrl(canonicalURL))
-	ctx = decorateMarkdownAlternate(ctx, markdownPath)
+	markdownAvailable := generatedMarkdownAvailable(app, markdownPath, expectedPageUrl)
+	if markdownAvailable {
+		ctx = decorateMarkdownAlternate(ctx, markdownPath)
+	}
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgImageKey, utils.AssetUrl(content.Image.Image))
 
 	c.Response.Header().Set("HX-Push-Url", canonicalURL)
-	advertiseMarkdown(c, markdownPath)
+	if markdownAvailable {
+		advertiseMarkdown(c, markdownPath)
+	}
 
 	var buff bytes.Buffer
 

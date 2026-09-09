@@ -295,9 +295,15 @@ func TestArtworkRouteRendersCountedHoldingAndFullHTMXParity(t *testing.T) {
 			"form": []string{}, "image": "related.jpg", "date_start": 1900 + i,
 		})
 	}
+	path := "/artists/synthetic-artist-artistone000001/a-painting-workone00000001"
+	withoutMarkdown := request(path)
+	if strings.Contains(withoutMarkdown.Header().Get("Link"), "text/markdown") || strings.Contains(withoutMarkdown.Body.String(), `type="text/markdown"`) {
+		t.Fatal("artwork response advertised an unavailable Markdown resource")
+	}
+	publishGeneratedMarkdownFixture(t, app, "agents/artworks/workone00000001.md", "https://gallery.example"+path, []string{path})
 
-	full := request("/artists/synthetic-artist-artistone000001/a-painting-workone00000001")
-	fragment := request("/artists/synthetic-artist-artistone000001/a-painting-workone00000001", true)
+	full := request(path)
+	fragment := request(path, true)
 	if full.Code != http.StatusOK || fragment.Code != http.StatusOK {
 		t.Fatalf("full/HTMX status = %d/%d, want 200/200", full.Code, fragment.Code)
 	}

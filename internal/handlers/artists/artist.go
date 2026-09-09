@@ -351,13 +351,18 @@ func processArtist(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", view.FilingName, view.LifeSummary))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, artist.GetString("bio"))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, utils.AssetUrl(fullUrl))
-	ctx = decorateMarkdownAlternate(ctx, markdownPath)
+	markdownAvailable := generatedMarkdownAvailable(app, markdownPath, fullUrl)
+	if markdownAvailable {
+		ctx = decorateMarkdownAlternate(ctx, markdownPath)
+	}
 	if image := artistOpenGraphImage(view); image != "" {
 		ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgImageKey, image)
 	}
 
 	c.Response.Header().Set("HX-Push-Url", fullUrl)
-	advertiseMarkdown(c, markdownPath)
+	if markdownAvailable {
+		advertiseMarkdown(c, markdownPath)
+	}
 
 	var buff bytes.Buffer
 	if err := requestprotection.Checkpoint(c.Request.Context(), "artist.detail.render"); err != nil {
