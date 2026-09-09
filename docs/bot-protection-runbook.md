@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Use this runbook to operate WGA's Cloudflare Free and Railway request-protection boundary. Apply changes to staging first. Never record origin secrets, raw client addresses, proxy headers, cookies, query strings, or catalogue slugs in tickets, logs, screenshots, or command output.
+Use this runbook to operate WGA's Cloudflare Free and Railway request-protection boundary. Apply changes to staging first. Never record origin secrets, raw client addresses, unallowlisted proxy headers, cookies, query strings, or catalogue slugs in tickets, logs, screenshots, or command output. The DNS and proxy gate may retain only the bounded `server`, `CF-Ray`, and `colo` fields shown below.
 
 The trusted request path is:
 
@@ -156,7 +156,7 @@ Rollback the layer shown by the evidence, preserving independent controls:
 2. Disable the Cloudflare rate-limit rule for incorrect edge `429` responses.
 3. Disable the agent cache rule for stale or incorrectly eligible generated responses; purge only affected agent URLs when necessary.
 4. Change application mode from `enforce` to `observe`, then to `off` only if application admission is responsible.
-5. For an origin-secret mismatch, restore the previously verified transform value during the two-key overlap. If no accepted key remains, restore `WGA_CLIENT_IP_SOURCE=railway` and deploy before removing the Cloudflare-only variables.
+5. For an origin-secret mismatch, restore the previously verified transform value during the two-key overlap. If no accepted key remains, restore a valid Cloudflare secret or establish an equivalent authenticated origin boundary before deploying; do not fall back to `WGA_CLIENT_IP_SOURCE=railway` while the public Railway hostname remains reachable, and do not remove Cloudflare-only variables as a substitute for origin containment.
 
 Keep the origin-header transform enabled while WGA uses `cloudflare-railway`, even when protection mode is `observe` or `off`. Do not grey-cloud the DNS record as a routine rollback; that restores a direct origin path and removes Cloudflare controls.
 
@@ -170,4 +170,4 @@ Retain only what is needed to approve or reject a rollout:
 - aggregate origin request counts proving that edge-blocked requests did not arrive;
 - cache status sequence and response cache policy for representative generated, missing, HTML, HTMX, and `Set-Cookie` responses.
 
-Redact or omit raw IP addresses, secret values and hashes, request and proxy headers, cookies, query strings, catalogue slugs, limiter keys, personal data, and response bodies. Expected protection rejections and cancellations are operational outcomes, not Sentry server faults.
+Redact or omit raw IP addresses, secret values and hashes, request headers, unallowlisted proxy headers, cookies, query strings, catalogue slugs, limiter keys, personal data, and response bodies. For the DNS and proxy gate, retain only `server`, `CF-Ray`, and `colo`; no other proxy headers are approved. Expected protection rejections and cancellations are operational outcomes, not Sentry server faults.
