@@ -189,7 +189,9 @@ func processArtworkWithCheckpoint(c *core.RequestEvent, app *pocketbase.PocketBa
 	if err := checkpoint(c.Request.Context(), "artwork.detail.related_content"); err != nil {
 		return artworkCancellationError(c, err)
 	}
-	populateArtworkRelated(app, aw, &content, basis, expectedPageUrl)
+	if err := populateArtworkRelatedContext(c.Request.Context(), app, aw, &content, basis, expectedPageUrl, checkpoint); err != nil {
+		return artworkCancellationError(c, err)
+	}
 
 	if err := checkpoint(c.Request.Context(), "artwork.detail.schools"); err != nil {
 		return artworkCancellationError(c, err)
@@ -482,27 +484,51 @@ func artworkCommentaryHTML(sourceComment string) string {
 // populateArtworkRelated resolves the active related-work basis and fills the
 // related-work images and basis controls into the artwork DTO.
 func populateArtworkRelated(app *pocketbase.PocketBase, artwork *core.Record, content *dto.Artwork, basis repositories.RelatedWorkBasis, baseURL string) {
-	result, err := repositories.NewRelatedWorkResolver(app).Resolve(artwork, basis)
+	_ = populateArtworkRelatedContext(context.Background(), app, artwork, content, basis, baseURL, requestprotection.Checkpoint)
+}
+
+func populateArtworkRelatedContext(ctx context.Context, app *pocketbase.PocketBase, artwork *core.Record, content *dto.Artwork, basis repositories.RelatedWorkBasis, baseURL string, checkpoint artworkDetailCheckpoint) error {
+	result, err := repositories.NewRelatedWorkResolver(app).ResolveContext(ctx, artwork, basis, func(ctx context.Context, stage string) error {
+		return checkpoint(ctx, "artwork.detail.related."+stage)
+	})
 	if err != nil {
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			return err
+		}
 		app.Logger().Warn("Failed to resolve related artworks", "artwork_id", artwork.Id, "error", err)
 	}
 
-	content.RelatedWorks = buildRelatedWorkImages(app, result.Basis, result.Works, content.HxTarget)
+	content.RelatedWorks, err = buildRelatedWorkImagesContext(ctx, app, result.Basis, result.Works, content.HxTarget, checkpoint)
+	if err != nil {
+		return err
+	}
 	content.Related = buildRelatedWorkState(result.Basis, result.Holding, content, artwork, baseURL)
+	return nil
 }
 
 // buildRelatedWorkImages maps resolver records onto the related-work card
 // projection using the source-eligible related-card profile and the canonical
 // per-work artwork URL.
 func buildRelatedWorkImages(app *pocketbase.PocketBase, basis repositories.RelatedWorkBasis, works []*core.Record, hxTarget string) dto.ImageGrid {
+	related, _ := buildRelatedWorkImagesContext(context.Background(), app, basis, works, hxTarget, requestprotection.Checkpoint)
+	return related
+}
+
+func buildRelatedWorkImagesContext(ctx context.Context, app *pocketbase.PocketBase, basis repositories.RelatedWorkBasis, works []*core.Record, hxTarget string, checkpoint artworkDetailCheckpoint) (dto.ImageGrid, error) {
 	related := dto.ImageGrid{}
 	for _, work := range works {
+		if err := checkpoint(ctx, "artwork.detail.related.work"); err != nil {
+			return nil, err
+		}
 		image := utils.AssetUrl("/assets/images/no-image.png")
 		if imageName := work.GetString("image"); imageName != "" {
 			image = url.GenerateArtworkImageURL(work, url.DeliveryProfileRelatedTimelineCard, "")
 		}
 
-		routeName, filingName, shortName, artistID := resolveWorkArtist(app, work)
+		routeName, filingName, shortName, artistID, err := resolveWorkArtistContext(ctx, app, work, checkpoint)
+		if err != nil {
+			return nil, err
+		}
 		workURL := url.GenerateArtworkUrl(url.ArtworkUrlDTO{
 			ArtworkTitle: work.GetString("title"),
 			ArtworkId:    work.Id,
@@ -537,7 +563,7 @@ func buildRelatedWorkImages(app *pocketbase.PocketBase, basis repositories.Relat
 		})
 	}
 
-	return related
+	return related, nil
 }
 
 // resolveWorkArtist returns the first published author's route, filing, short name and id for
@@ -545,17 +571,25 @@ func buildRelatedWorkImages(app *pocketbase.PocketBase, basis repositories.Relat
 // authors are skipped so a related card never leaks unpublished artist data or
 // links to an unpublished artist record.
 func resolveWorkArtist(app *pocketbase.PocketBase, work *core.Record) (string, string, string, string) {
+	routeName, filingName, shortName, artistID, _ := resolveWorkArtistContext(context.Background(), app, work, requestprotection.Checkpoint)
+	return routeName, filingName, shortName, artistID
+}
+
+func resolveWorkArtistContext(ctx context.Context, app *pocketbase.PocketBase, work *core.Record, checkpoint artworkDetailCheckpoint) (string, string, string, string, error) {
 	authorIDs := work.GetStringSlice("author")
 	repo := repositories.NewArtistRecordRepository(app)
 	for _, authorID := range authorIDs {
+		if err := checkpoint(ctx, "artwork.detail.related.work_author"); err != nil {
+			return "", "", "", "", err
+		}
 		artist, err := repo.FindPublishedArtist(authorID)
 		if err != nil {
 			continue
 		}
-		return artist.GetString("name"), artist.GetString("filing_name"), artist.GetString("short_name"), artist.Id
+		return artist.GetString("name"), artist.GetString("filing_name"), artist.GetString("short_name"), artist.Id, nil
 	}
 
-	return "", "", "", ""
+	return "", "", "", "", nil
 }
 
 // buildArtworkMusic derives the deterministic period-music card from the

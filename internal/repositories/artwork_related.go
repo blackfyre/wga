@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -121,6 +122,10 @@ type RelatedWorkResolver struct {
 	app core.App
 }
 
+// RelatedWorkCheckpoint allows callers to stop between bounded related-work
+// phases without coupling the repository to request-protection telemetry.
+type RelatedWorkCheckpoint func(context.Context, string) error
+
 func NewRelatedWorkResolver(app core.App) *RelatedWorkResolver {
 	return &RelatedWorkResolver{app: app}
 }
@@ -129,15 +134,32 @@ func NewRelatedWorkResolver(app core.App) *RelatedWorkResolver {
 // re-normalised defensively so an invalid value resolves to the default rather
 // than erroring.
 func (r *RelatedWorkResolver) Resolve(artwork *core.Record, basis RelatedWorkBasis) (RelatedWorkResult, error) {
+	return r.ResolveContext(context.Background(), artwork, basis, func(ctx context.Context, _ string) error {
+		return ctx.Err()
+	})
+}
+
+// ResolveContext resolves related works with cancellation boundaries between
+// candidate selection, in-memory ranking, and holding lookup.
+func (r *RelatedWorkResolver) ResolveContext(ctx context.Context, artwork *core.Record, basis RelatedWorkBasis, checkpoint RelatedWorkCheckpoint) (RelatedWorkResult, error) {
 	basis = ParseRelatedWorkBasis(string(basis))
 
+	if err := checkpoint(ctx, "candidates"); err != nil {
+		return RelatedWorkResult{}, err
+	}
 	candidates, err := r.candidates(artwork, basis)
 	if err != nil {
 		return RelatedWorkResult{}, err
 	}
 
+	if err := checkpoint(ctx, "selection"); err != nil {
+		return RelatedWorkResult{}, err
+	}
 	works := selectClosestDateWorks(candidates, artwork.GetInt("date_start"), relatedWorksLimit)
 
+	if err := checkpoint(ctx, "holding"); err != nil {
+		return RelatedWorkResult{}, err
+	}
 	holding, err := r.holding(artwork, basis)
 	if err != nil {
 		return RelatedWorkResult{}, err

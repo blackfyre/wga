@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/blackfyre/wga/internal/config"
+	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/repositories"
 	"github.com/blackfyre/wga/internal/requestprotection"
 	"github.com/blackfyre/wga/internal/utils"
@@ -115,6 +116,56 @@ func TestArtworkDetailCancellationStopsProjection(t *testing.T) {
 		t.Fatalf("recorded failure = %+v, want original cancellation cause", failure)
 	}
 	want := []string{"artwork.detail.artist_lookup", "artwork.detail.artwork_lookup", "artwork.detail.projection"}
+	if !reflect.DeepEqual(stages, want) {
+		t.Fatalf("started stages = %v, want %v", stages, want)
+	}
+}
+
+func TestArtworkDetailCancellationStopsBetweenRelatedQueries(t *testing.T) {
+	app, _ := newArtworkRouteApp(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	request := httptest.NewRequest(http.MethodGet, "/artists/synthetic-artist-artistone000001/a-painting-workone00000001", nil).WithContext(ctx)
+	request.SetPathValue("name", "synthetic-artist-artistone000001")
+	request.SetPathValue("awid", "a-painting-workone00000001")
+	event := &core.RequestEvent{Event: router.Event{Request: request, Response: httptest.NewRecorder()}}
+	stages := []string{}
+	checkpoint := func(ctx context.Context, stage string) error {
+		stages = append(stages, stage)
+		if stage == "artwork.detail.related.holding" {
+			cancel()
+		}
+		return requestprotection.Checkpoint(ctx, stage)
+	}
+
+	err := processArtworkWithCheckpoint(event, app, config.EnvironmentTest, checkpoint)
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("processArtworkWithCheckpoint() error = %v, want cancellation", err)
+	}
+	if len(stages) == 0 || stages[len(stages)-1] != "artwork.detail.related.holding" {
+		t.Fatalf("started stages = %v, want cancellation before holding query", stages)
+	}
+}
+
+func TestRelatedArtworkCancellationStopsAuthorExpansion(t *testing.T) {
+	app, _ := newArtworkRouteApp(t)
+	work, err := app.FindRecordById(constants.CollectionArtworks, "workone00000001")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	stages := []string{}
+	checkpoint := func(ctx context.Context, stage string) error {
+		stages = append(stages, stage)
+		if stage == "artwork.detail.related.work_author" {
+			cancel()
+		}
+		return requestprotection.Checkpoint(ctx, stage)
+	}
+
+	if _, err := buildRelatedWorkImagesContext(ctx, app, repositories.RelatedByArtist, []*core.Record{work}, "#target", checkpoint); !errors.Is(err, context.Canceled) {
+		t.Fatalf("buildRelatedWorkImagesContext() error = %v, want cancellation", err)
+	}
+	want := []string{"artwork.detail.related.work", "artwork.detail.related.work_author"}
 	if !reflect.DeepEqual(stages, want) {
 		t.Fatalf("started stages = %v, want %v", stages, want)
 	}
