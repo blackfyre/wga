@@ -26,6 +26,7 @@ func TestPrefersMarkdown(t *testing.T) {
 		{accept: "text/markdown;q=0, */*;q=1", want: false},
 		{accept: "text/markdown;q=0.9, text/*;q=0.5", want: true},
 		{accept: "text/html,application/xhtml+xml,*/*", want: false},
+		{accept: "application/xhtml+xml;q=1, text/markdown;q=0.5", want: true},
 		{accept: "text/*", want: false},
 		{accept: "*/*", want: false},
 		{accept: "", want: false},

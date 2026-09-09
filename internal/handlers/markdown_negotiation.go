@@ -95,10 +95,6 @@ type representationQuality struct {
 func prefersMarkdown(accept string) bool {
 	markdown := acceptedQuality(accept, markdownMediaType)
 	html := acceptedQuality(accept, "text/html")
-	xhtml := acceptedQuality(accept, "application/xhtml+xml")
-	if xhtml.value > html.value {
-		html = xhtml
-	}
 	return markdown.value > 0 && (markdown.value > html.value || markdown.value == html.value && markdown.specificity == 2)
 }
 
