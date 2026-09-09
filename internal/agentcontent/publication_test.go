@@ -268,6 +268,13 @@ func TestPublishedArtworkAcceptsEveryPublicCoauthorPath(t *testing.T) {
 	if strings.Join(resource.AcceptedPaths, "\n") != strings.Join(want, "\n") {
 		t.Fatalf("accepted paths = %v, want %v", resource.AcceptedPaths, want)
 	}
+	coauthor, err := ReadCurrent(app, "agents/artists/"+second.Id+".md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(coauthor.Content), canonicalArtworkPath(second, artwork)) {
+		t.Fatalf("coauthor document omitted canonical related work:\n%s", coauthor.Content)
+	}
 }
 
 func TestMissingResourceDoesNotParsePublicationManifest(t *testing.T) {

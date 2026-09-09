@@ -186,12 +186,14 @@ func generatePublication(app core.App, publicURL config.PublicURL, staging strin
 			continue
 		}
 		var author *core.Record
+		eligibleAuthors := make([]*core.Record, 0, len(authorIDs))
 		acceptedPaths := make([]string, 0, len(authorIDs))
 		for _, authorID := range authorIDs {
 			if eligible := artists[authorID]; eligible != nil {
 				if author == nil {
 					author = eligible
 				}
+				eligibleAuthors = append(eligibleAuthors, eligible)
 				acceptedPaths = append(acceptedPaths, canonicalArtworkPath(eligible, record))
 			}
 		}
@@ -202,7 +204,12 @@ func generatePublication(app core.App, publicURL config.PublicURL, staging strin
 		canonical := baseURL + canonicalArtworkPath(author, record)
 		link := Link{Label: record.GetString("title"), URL: canonical}
 		artworks = append(artworks, artworkProjection{record: record, author: author, canonical: canonical, acceptedPaths: acceptedPaths, link: link})
-		linksByArtist[author.Id] = append(linksByArtist[author.Id], link)
+		for _, eligible := range eligibleAuthors {
+			linksByArtist[eligible.Id] = append(linksByArtist[eligible.Id], Link{
+				Label: record.GetString("title"),
+				URL:   baseURL + canonicalArtworkPath(eligible, record),
+			})
+		}
 	}
 	for artistID, links := range linksByArtist {
 		sort.Slice(links, func(left, right int) bool {
