@@ -64,6 +64,8 @@ When a feature stores personal data, define its purpose and retention outcome. R
 
 Use Conventional Commit types for commits and pull-request titles. Keep documentation aligned with the executable configuration and CI workflow; task plans, review notes, and historical summaries are not a substitute for current guidance.
 
+Use `docs/bot-protection-runbook.md` for the Cloudflare and Railway request-protection rollout, origin-secret rotation, cache verification, privacy-safe evidence, and rollback procedure.
+
 ## Licence notices and SBOM
 
 `internal/licences/manifest.json` is the reviewed record of every third-party component shipped by WGA. It contains source evidence, licence text, NOTICE material, integrity data, distribution target, and dependency relationships for the reviewed component version.

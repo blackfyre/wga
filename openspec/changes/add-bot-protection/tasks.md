@@ -51,7 +51,7 @@
 
 ## 9. Staged operational rollout
 
-- [ ] 9.1 Read the documentation maintenance sources and document the Cloudflare Free rule expressions, agent Markdown discovery/cache contract, generated-publication recovery, origin-secret setup/rotation, protection modes, threshold tuning, DNS checks, Bot Fight Mode rollback, and application rollback; verify documentation formatting/checks pass without recording the secret.
+- [x] 9.1 Read the documentation maintenance sources and document the Cloudflare Free rule expressions, agent Markdown discovery/cache contract, generated-publication recovery, origin-secret setup/rotation, protection modes, threshold tuning, DNS checks, Bot Fight Mode rollback, and application rollback; verify documentation formatting/checks pass without recording the secret.
 - [ ] 9.2 Deploy application protection to staging in observe mode and exercise sustained plus burst HTML and agent traffic; verify rejected-request latency stays below 100 ms, repeated Markdown requests become edge cache hits, health remains continuously available, memory remains stable, expected cancellations stay out of Sentry, and recorded CPU/latency evidence supports the selected enforcement thresholds.
 - [ ] 9.3 Enable staging enforcement with Cloudflare protections active; verify direct Railway requests fail even with a spoofed canonical Host, legitimate canonical navigation remains functional, Cloudflare and application limits each activate under their intended load, and rollback to observe mode succeeds.
 - [ ] 9.4 Rotate the origin secret in staging using the current/next keyring sequence and verify uninterrupted authenticated traffic, rejection of the retired value, and absence of secret material from logs and Sentry.
