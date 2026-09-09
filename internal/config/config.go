@@ -512,8 +512,8 @@ func (c Config) Server() (Server, error) {
 	if c.clientIPSource.value == ClientIPSourceCloudflareRailway && c.cloudflareSecrets.value.Current().Value() == "" {
 		protectionTrustErr = required("WGA_CLOUDFLARE_EDGE_SECRET")
 	}
-	if c.environment.err == nil && (c.environment.value == EnvironmentStaging || c.environment.value == EnvironmentProduction) && c.requestProtection.value.Mode != ProtectionModeOff && c.clientIPSource.value != ClientIPSourceCloudflareRailway {
-		protectionTrustErr = errors.Join(protectionTrustErr, fmt.Errorf("WGA_CLIENT_IP_SOURCE must be cloudflare-railway when public request protection is enabled"))
+	if c.environment.err == nil && (c.environment.value == EnvironmentStaging || c.environment.value == EnvironmentProduction) && c.clientIPSource.value != ClientIPSourceCloudflareRailway {
+		protectionTrustErr = errors.Join(protectionTrustErr, fmt.Errorf("WGA_CLIENT_IP_SOURCE must be cloudflare-railway in staging and production"))
 	}
 
 	return server, errors.Join(

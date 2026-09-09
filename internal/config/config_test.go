@@ -88,7 +88,7 @@ func TestServerCaptchaPolicy(t *testing.T) {
 			environment:    "production",
 			secret:         "captcha-secret",
 			siteKey:        "captcha-site-key",
-			clientIPSource: "railway",
+			clientIPSource: "cloudflare-railway",
 			wantVerify:     true,
 		},
 	}
@@ -100,6 +100,9 @@ func TestServerCaptchaPolicy(t *testing.T) {
 			values["WGA_RECAPTCHA_SECRET"] = test.secret
 			values["WGA_RECAPTCHA_SITE_KEY"] = test.siteKey
 			values["WGA_CLIENT_IP_SOURCE"] = test.clientIPSource
+			if test.clientIPSource == "cloudflare-railway" {
+				values["WGA_CLOUDFLARE_EDGE_SECRET"] = cloudflareSecret(0x40)
+			}
 
 			server, err := LoadFrom(lookup(values)).Server()
 			if test.wantErr != "" {
@@ -136,7 +139,9 @@ func TestServerClientIPSource(t *testing.T) {
 		{name: "development explicit cloudflare via railway", environment: "development", source: "cloudflare-railway", want: ClientIPSourceCloudflareRailway},
 		{name: "production requires explicit source", environment: "production", wantErr: "WGA_CLIENT_IP_SOURCE"},
 		{name: "staging requires explicit source", environment: "staging", wantErr: "WGA_CLIENT_IP_SOURCE"},
-		{name: "production explicit railway", environment: "production", source: "railway", want: ClientIPSourceRailway},
+		{name: "production rejects railway", environment: "production", source: "railway", wantErr: "must be cloudflare-railway"},
+		{name: "staging rejects direct", environment: "staging", source: "direct", wantErr: "must be cloudflare-railway"},
+		{name: "production accepts authenticated cloudflare", environment: "production", source: "cloudflare-railway", want: ClientIPSourceCloudflareRailway},
 		{name: "unknown source", environment: "development", source: "forwarded", wantErr: "WGA_CLIENT_IP_SOURCE"},
 	}
 
