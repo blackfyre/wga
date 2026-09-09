@@ -61,6 +61,25 @@ func (CloudflareOriginSecrets) GoString() string {
 // publication must fail closed.
 type Resolver func(*http.Request) (string, bool)
 
+// OriginAuthenticator reports whether a request crossed the configured
+// authenticated origin boundary. Identity parsing remains a separate step so
+// operational telemetry can distinguish the two failure classes.
+type OriginAuthenticator func(*http.Request) bool
+
+// NewOriginAuthenticator returns the origin-boundary validator for source.
+// Direct and Railway-only sources do not define an additional authenticated
+// origin boundary; Cloudflare-via-Railway requires both its edge marker and
+// configured origin secret.
+func NewOriginAuthenticator(source Source, cloudflareSecrets ...CloudflareOriginSecrets) OriginAuthenticator {
+	if source != SourceCloudflareRailway {
+		return func(*http.Request) bool { return true }
+	}
+	if len(cloudflareSecrets) != 1 || cloudflareSecrets[0].current == "" {
+		return func(*http.Request) bool { return false }
+	}
+	return newCloudflareOriginAuthenticator(cloudflareSecrets[0])
+}
+
 // New returns the resolver for the configured source. An unrecognised source
 // resolves to the fail-closed direct resolver, matching the validation already
 // performed by config.LoadFrom.
@@ -123,16 +142,27 @@ func resolveRailway(r *http.Request) (string, bool) {
 }
 
 func newCloudflareRailwayResolver(secrets CloudflareOriginSecrets) Resolver {
-	currentDigest := sha256.Sum256([]byte(secrets.current))
-	nextDigest := sha256.Sum256([]byte(secrets.next))
-	hasNext := secrets.next != ""
+	authenticate := newCloudflareOriginAuthenticator(secrets)
 
 	return func(r *http.Request) (string, bool) {
-		if r == nil || !validRailwayEdge(r.Header) || !validCloudflareOrigin(r.Header, currentDigest, nextDigest, hasNext) {
+		if !authenticate(r) {
 			return "", false
 		}
 
 		return singleIPHeader(r.Header, "CF-Connecting-IP")
+	}
+}
+
+func newCloudflareOriginAuthenticator(secrets CloudflareOriginSecrets) OriginAuthenticator {
+	currentDigest := sha256.Sum256([]byte(secrets.current))
+	nextDigest := sha256.Sum256([]byte(secrets.next))
+	hasNext := secrets.next != ""
+
+	return func(r *http.Request) bool {
+		if r == nil || !validRailwayEdge(r.Header) || !validCloudflareOrigin(r.Header, currentDigest, nextDigest, hasNext) {
+			return false
+		}
+		return true
 	}
 }
 

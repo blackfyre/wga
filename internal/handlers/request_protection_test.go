@@ -101,7 +101,8 @@ func TestProtectedReadMiddlewareRejectsBeforeHandlerWork(t *testing.T) {
 						requesttrust.SourceCloudflareRailway,
 						requesttrust.NewCloudflareOriginSecrets(protectionTestSecret, ""),
 					)
-					if err := registerProtectedReadMiddleware(app, "https://beta.wga.hu", resolver, policy); err != nil {
+					authenticator := protectionTestOriginAuthenticator()
+					if err := registerProtectedReadMiddleware(app, "https://beta.wga.hu", authenticator, resolver, policy); err != nil {
 						t.Fatalf("register middleware: %v", err)
 					}
 					app.OnServe().BindFunc(func(se *core.ServeEvent) error {
@@ -209,6 +210,15 @@ func TestProtectedReadMiddlewareLogsStablePrivateDecisions(t *testing.T) {
 			decision: requestprotection.DecisionOriginAuth,
 		},
 		{
+			name:     "identity rejection",
+			mode:     config.ProtectionModeEnforce,
+			url:      "https://beta.wga.hu/artists/" + privateSlug,
+			headers:  trustedProtectionHeaders("not-an-ip", protectionTestSecret),
+			status:   http.StatusForbidden,
+			event:    "request_protection.identity_rejected",
+			decision: requestprotection.DecisionIdentityReject,
+		},
+		{
 			name:     "client rate rejection",
 			mode:     config.ProtectionModeEnforce,
 			url:      "https://beta.wga.hu/artists/" + privateSlug,
@@ -285,7 +295,7 @@ func TestProtectedReadMiddlewareLogsStablePrivateDecisions(t *testing.T) {
 						requesttrust.SourceCloudflareRailway,
 						requesttrust.NewCloudflareOriginSecrets(protectionTestSecret, ""),
 					)
-					if err := registerProtectedReadMiddleware(app, "https://beta.wga.hu", resolver, policy); err != nil {
+					if err := registerProtectedReadMiddleware(app, "https://beta.wga.hu", protectionTestOriginAuthenticator(), resolver, policy); err != nil {
 						t.Fatalf("register middleware: %v", err)
 					}
 					app.OnServe().BindFunc(func(se *core.ServeEvent) error {
@@ -564,8 +574,15 @@ func newProtectionContractApp(t testing.TB) *tests.TestApp {
 		requesttrust.SourceCloudflareRailway,
 		requesttrust.NewCloudflareOriginSecrets(protectionTestSecret, ""),
 	)
-	if err := registerProtectedReadMiddleware(app, "https://beta.wga.hu", resolver, newHTTPProtectionPolicy(t)); err != nil {
+	if err := registerProtectedReadMiddleware(app, "https://beta.wga.hu", protectionTestOriginAuthenticator(), resolver, newHTTPProtectionPolicy(t)); err != nil {
 		t.Fatalf("register middleware: %v", err)
 	}
 	return app
+}
+
+func protectionTestOriginAuthenticator() requesttrust.OriginAuthenticator {
+	return requesttrust.NewOriginAuthenticator(
+		requesttrust.SourceCloudflareRailway,
+		requesttrust.NewCloudflareOriginSecrets(protectionTestSecret, ""),
+	)
 }

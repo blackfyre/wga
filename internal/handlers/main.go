@@ -39,12 +39,12 @@ import (
 // It returns an error when an integration that must fail closed at startup
 // (currently the visitor-itinerary anonymous-write surface) rejects its
 // security policy.
-func RegisterHandlers(app *pocketbase.PocketBase, environment config.Environment, captcha config.Captcha, postcardKeyring config.PostcardTokenKeyring, contributorReader contributorworkflow.Reader, captchaVerifier antiabuse.Verifier, itineraryPolicy itineraryhandlers.SecurityPolicy, clientIdentity requesttrust.Resolver, publicURL config.PublicURL, publicReadPolicy *requestprotection.Policy) error {
+func RegisterHandlers(app *pocketbase.PocketBase, environment config.Environment, captcha config.Captcha, postcardKeyring config.PostcardTokenKeyring, contributorReader contributorworkflow.Reader, captchaVerifier antiabuse.Verifier, itineraryPolicy itineraryhandlers.SecurityPolicy, authenticateOrigin requesttrust.OriginAuthenticator, clientIdentity requesttrust.Resolver, publicURL config.PublicURL, publicReadPolicy *requestprotection.Policy) error {
 
 	app.Logger().Debug("Registering route handlers...")
 	p := bluemonday.NewPolicy()
 
-	if err := registerProtectedReadMiddleware(app, publicURL.String(), clientIdentity, publicReadPolicy); err != nil {
+	if err := registerProtectedReadMiddleware(app, publicURL.String(), authenticateOrigin, clientIdentity, publicReadPolicy); err != nil {
 		return err
 	}
 	registerMarkdownNegotiationMiddleware(app)

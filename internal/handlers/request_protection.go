@@ -13,9 +13,9 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
-func registerProtectedReadMiddleware(app core.App, publicURL string, resolveIdentity requesttrust.Resolver, policy *requestprotection.Policy) error {
-	if resolveIdentity == nil || policy == nil {
-		return fmt.Errorf("protected-read middleware requires identity resolver and admission policy")
+func registerProtectedReadMiddleware(app core.App, publicURL string, authenticateOrigin requesttrust.OriginAuthenticator, resolveIdentity requesttrust.Resolver, policy *requestprotection.Policy) error {
+	if authenticateOrigin == nil || resolveIdentity == nil || policy == nil {
+		return fmt.Errorf("protected-read middleware requires origin authenticator, identity resolver, and admission policy")
 	}
 
 	canonicalHost, err := requestprotection.NewCanonicalHost(publicURL)
@@ -25,7 +25,7 @@ func registerProtectedReadMiddleware(app core.App, publicURL string, resolveIden
 
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		se.Router.BindFunc(func(e *core.RequestEvent) error {
-			return protectPublicRead(app, canonicalHost, resolveIdentity, policy, e)
+			return protectPublicRead(app, canonicalHost, authenticateOrigin, resolveIdentity, policy, e)
 		})
 		return se.Next()
 	})
@@ -33,7 +33,7 @@ func registerProtectedReadMiddleware(app core.App, publicURL string, resolveIden
 	return nil
 }
 
-func protectPublicRead(app core.App, canonicalHost requestprotection.CanonicalHost, resolveIdentity requesttrust.Resolver, policy *requestprotection.Policy, e *core.RequestEvent) error {
+func protectPublicRead(app core.App, canonicalHost requestprotection.CanonicalHost, authenticateOrigin requesttrust.OriginAuthenticator, resolveIdentity requesttrust.Resolver, policy *requestprotection.Policy, e *core.RequestEvent) error {
 	profile := requestprotection.Classify(e.Request.Method, e.Request.URL.Path)
 	if !profile.Protected() {
 		return e.Next()
@@ -44,9 +44,13 @@ func protectPublicRead(app core.App, canonicalHost requestprotection.CanonicalHo
 		return plainProtectionResponse(e, http.StatusMisdirectedRequest, 0)
 	}
 
+	if !authenticateOrigin(e.Request) {
+		logProtectionDecision(app, e, policy.IngressDecision(profile, requestprotection.DecisionOriginAuth, http.StatusForbidden))
+		return plainProtectionResponse(e, http.StatusForbidden, 0)
+	}
 	identity, resolved := resolveIdentity(e.Request)
 	if !resolved {
-		logProtectionDecision(app, e, policy.IngressDecision(profile, requestprotection.DecisionOriginAuth, http.StatusForbidden))
+		logProtectionDecision(app, e, policy.IngressDecision(profile, requestprotection.DecisionIdentityReject, http.StatusForbidden))
 		return plainProtectionResponse(e, http.StatusForbidden, 0)
 	}
 
@@ -94,6 +98,8 @@ func logProtectionDecision(app core.App, e *core.RequestEvent, admission request
 		event = "request_protection.host_rejected"
 	case requestprotection.DecisionOriginAuth:
 		event = "request_protection.origin_authentication_rejected"
+	case requestprotection.DecisionIdentityReject:
+		event = "request_protection.identity_rejected"
 	case requestprotection.DecisionClientRate:
 		event = "request_protection.client_rate_rejected"
 	case requestprotection.DecisionGlobalCapacity:

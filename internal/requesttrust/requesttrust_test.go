@@ -131,6 +131,29 @@ func TestCloudflareRailwayAuthenticatesCurrentAndNextSecrets(t *testing.T) {
 	}
 }
 
+func TestCloudflareOriginAuthenticationIsIndependentOfClientIdentity(t *testing.T) {
+	authenticate := NewOriginAuthenticator(
+		SourceCloudflareRailway,
+		NewCloudflareOriginSecrets("configured-secret", ""),
+	)
+	request := httptest.NewRequest(http.MethodGet, "/", nil)
+	request.Header.Set("X-Railway-Edge", "edge-pop")
+	request.Header.Set("X-WGA-Edge-Secret", "configured-secret")
+
+	if !authenticate(request) {
+		t.Fatal("valid Railway marker and origin secret were not authenticated")
+	}
+	if _, ok := New(SourceCloudflareRailway, NewCloudflareOriginSecrets("configured-secret", ""))(request); ok {
+		t.Fatal("request without CF-Connecting-IP resolved a client identity")
+	}
+
+	request.Header.Set("X-WGA-Edge-Secret", "visitor-secret")
+	request.Header.Set("CF-Connecting-IP", "198.51.100.7")
+	if authenticate(request) {
+		t.Fatal("invalid origin secret authenticated")
+	}
+}
+
 func TestCloudflareRailwayRequiresConfiguredOriginAuthentication(t *testing.T) {
 	request := httptest.NewRequest(http.MethodGet, "/", nil)
 	request.Header.Set("X-Railway-Edge", "edge-pop")

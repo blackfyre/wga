@@ -88,13 +88,13 @@ func main() {
 		contributorProvider := contributors.NewGitHubProvider(&http.Client{Timeout: 10 * time.Second})
 		captchaVerifier := antiabuse.NewRecaptchaVerifier(&http.Client{Timeout: 5 * time.Second}, serverConfig.Captcha.Secret())
 		nextCloudflareSecret, _ := serverConfig.CloudflareOriginSecrets.Next()
-		clientIdentity := requesttrust.New(
-			requesttrust.Source(serverConfig.ClientIPSource),
-			requesttrust.NewCloudflareOriginSecrets(
-				serverConfig.CloudflareOriginSecrets.Current().Value(),
-				nextCloudflareSecret.Value(),
-			),
+		identitySource := requesttrust.Source(serverConfig.ClientIPSource)
+		originSecrets := requesttrust.NewCloudflareOriginSecrets(
+			serverConfig.CloudflareOriginSecrets.Current().Value(),
+			nextCloudflareSecret.Value(),
 		)
+		clientIdentity := requesttrust.New(identitySource, originSecrets)
+		authenticateOrigin := requesttrust.NewOriginAuthenticator(identitySource, originSecrets)
 		itineraryPolicy, err := itinerarySecurityPolicy(serverConfig, clientIdentity)
 		if err != nil {
 			log.Fatal(err)
@@ -103,7 +103,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		if err := handlers.RegisterHandlers(app, serverConfig.Environment, serverConfig.Captcha, serverConfig.Postcards.TokenKeyring(), contributorStore, captchaVerifier, itineraryPolicy, clientIdentity, serverConfig.PublicURL, publicReadPolicy); err != nil {
+		if err := handlers.RegisterHandlers(app, serverConfig.Environment, serverConfig.Captcha, serverConfig.Postcards.TokenKeyring(), contributorStore, captchaVerifier, itineraryPolicy, authenticateOrigin, clientIdentity, serverConfig.PublicURL, publicReadPolicy); err != nil {
 			log.Fatal(err)
 		}
 		crontab.RegisterCronJobs(app, serverConfig.Postcards, serverConfig.Sitemap(), contributors.NewRefreshJob(app, contributorProvider, contributorStore))
