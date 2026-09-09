@@ -8,6 +8,7 @@ import (
 
 	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/constants"
+	"github.com/blackfyre/wga/internal/generatedpublication"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tests"
 )
@@ -92,6 +93,27 @@ func publicationPublicURL(t *testing.T) config.PublicURL {
 	return sitemap.PublicURL
 }
 
+func publishAgentContent(t *testing.T, app core.App) (PublicationResult, error) {
+	t.Helper()
+	staging, err := generatedpublication.NewStaging(app)
+	if err != nil {
+		return PublicationResult{}, err
+	}
+	defer os.RemoveAll(staging)
+	result, err := Generate(app, publicationPublicURL(t), filepath.Join(staging, publicationDirectoryName))
+	if err != nil {
+		return PublicationResult{}, err
+	}
+	version := "test-" + strings.TrimPrefix(filepath.Base(staging), ".staging-")
+	published, err := generatedpublication.Publish(app, staging, version)
+	if err != nil {
+		return PublicationResult{}, err
+	}
+	result.Directory = filepath.Join(published, publicationDirectoryName)
+	result.CleanupErr = generatedpublication.Prune(app, version)
+	return result, nil
+}
+
 func createPublicationRecord(t *testing.T, app core.App, collectionName string, values map[string]any) *core.Record {
 	t.Helper()
 	collection, err := app.FindCollectionByNameOrId(collectionName)
@@ -132,7 +154,7 @@ func TestPublishSelectsCompletePublicAgentContent(t *testing.T) {
 		"title": "Shared Study", "published": true, "author": []string{hiddenArtist.Id, artist.Id},
 	})
 
-	result, err := Publish(app, publicationPublicURL(t))
+	result, err := publishAgentContent(t, app)
 	if err != nil {
 		t.Fatalf("publish agent content: %v", err)
 	}
@@ -186,7 +208,7 @@ func TestPublishSelectsCompletePublicAgentContent(t *testing.T) {
 func TestPublishFailureLeavesPreviousPublicationSelected(t *testing.T) {
 	app := newPublicationTestApp(t)
 	artist := createPublicationRecord(t, app, constants.CollectionArtists, publicationArtist("Jane Doe", "jane-doe", true))
-	if _, err := Publish(app, publicationPublicURL(t)); err != nil {
+	if _, err := publishAgentContent(t, app); err != nil {
 		t.Fatalf("publish initial agent content: %v", err)
 	}
 	previous, err := CurrentDirectory(app)
@@ -205,7 +227,7 @@ func TestPublishFailureLeavesPreviousPublicationSelected(t *testing.T) {
 	if err := app.Delete(artworks); err != nil {
 		t.Fatalf("remove artworks collection: %v", err)
 	}
-	if _, err := Publish(app, publicationPublicURL(t)); err == nil {
+	if _, err := publishAgentContent(t, app); err == nil {
 		t.Fatal("publication succeeded without the artworks collection")
 	}
 	current, err := CurrentDirectory(app)
@@ -230,7 +252,7 @@ func TestPublishPrunesStaleGeneratedRecords(t *testing.T) {
 	artwork := createPublicationRecord(t, app, constants.CollectionArtworks, map[string]any{
 		"title": "Blue Study", "published": true, "author": []string{artist.Id},
 	})
-	first, err := Publish(app, publicationPublicURL(t))
+	first, err := publishAgentContent(t, app)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -238,7 +260,7 @@ func TestPublishPrunesStaleGeneratedRecords(t *testing.T) {
 	if err := app.Save(artwork); err != nil {
 		t.Fatal(err)
 	}
-	second, err := Publish(app, publicationPublicURL(t))
+	second, err := publishAgentContent(t, app)
 	if err != nil {
 		t.Fatal(err)
 	}

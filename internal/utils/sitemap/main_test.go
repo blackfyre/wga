@@ -25,7 +25,13 @@ func newSitemapTestApp(t *testing.T) *tests.TestApp {
 	artists := core.NewBaseCollection(constants.CollectionArtists)
 	artists.Id = constants.CollectionArtists
 	artists.MarkAsNew()
-	artists.Fields.Add(&core.TextField{Name: "name"}, &core.BoolField{Name: "published"})
+	artists.Fields.Add(
+		&core.TextField{Name: "name"},
+		&core.TextField{Name: "filing_name"},
+		&core.TextField{Name: "short_name"},
+		&core.TextField{Name: "slug"},
+		&core.BoolField{Name: "published"},
+	)
 	if err := app.Save(artists); err != nil {
 		t.Fatalf("save artists collection: %v", err)
 	}
@@ -84,8 +90,12 @@ func createSitemapRecord(t *testing.T, app core.App, collectionName string, valu
 
 func TestGenerateSiteMapPublishesCanonicalPublicURLs(t *testing.T) {
 	app := newSitemapTestApp(t)
-	artist := createSitemapRecord(t, app, constants.CollectionArtists, map[string]any{"name": "Jane Doe", "published": true})
-	createSitemapRecord(t, app, constants.CollectionArtists, map[string]any{"name": "Hidden Artist", "published": false})
+	artist := createSitemapRecord(t, app, constants.CollectionArtists, map[string]any{
+		"name": "Jane Doe", "filing_name": "Doe, Jane", "short_name": "Jane", "slug": "jane-doe", "published": true,
+	})
+	createSitemapRecord(t, app, constants.CollectionArtists, map[string]any{
+		"name": "Hidden Artist", "filing_name": "Artist, Hidden", "short_name": "Hidden", "slug": "hidden-artist", "published": false,
+	})
 	artwork := createSitemapRecord(t, app, constants.CollectionArtworks, map[string]any{"title": "Blue Study", "published": true, "author": []string{artist.Id}})
 	createSitemapRecord(t, app, constants.CollectionArtworks, map[string]any{"title": "Hidden Work", "published": false, "author": []string{artist.Id}})
 	createSitemapRecord(t, app, constants.CollectionArtworks, map[string]any{"title": "Incomplete Work", "published": true})
@@ -104,7 +114,11 @@ func TestGenerateSiteMapPublishesCanonicalPublicURLs(t *testing.T) {
 		t.Fatalf("cleanup sitemap files: %v", result.CleanupErr)
 	}
 
-	indexData, err := os.ReadFile(filepath.Join(Directory(app), indexFilename))
+	current, err := CurrentDirectory(app)
+	if err != nil {
+		t.Fatalf("resolve current sitemap: %v", err)
+	}
+	indexData, err := os.ReadFile(filepath.Join(current, indexFilename))
 	if err != nil {
 		t.Fatalf("read sitemap index: %v", err)
 	}
@@ -122,7 +136,7 @@ func TestGenerateSiteMapPublishesCanonicalPublicURLs(t *testing.T) {
 	allURLs := ""
 	for _, entry := range index.Maps {
 		filename := filepath.Base(entry.Loc)
-		child, err := os.ReadFile(filepath.Join(Directory(app), filename))
+		child, err := os.ReadFile(filepath.Join(current, filename))
 		if err != nil {
 			t.Fatalf("read child sitemap %s: %v", filename, err)
 		}
@@ -143,46 +157,5 @@ func TestGenerateSiteMapPublishesCanonicalPublicURLs(t *testing.T) {
 	}
 	if !strings.Contains(allURLs, `<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>`) {
 		t.Fatal("child sitemap does not reference the sitemap stylesheet")
-	}
-}
-
-func TestPublishFailureLeavesPreviousIndex(t *testing.T) {
-	output := t.TempDir()
-	oldIndex := filepath.Join(output, indexFilename)
-	if err := os.WriteFile(oldIndex, []byte("old index"), 0o644); err != nil {
-		t.Fatalf("write old index: %v", err)
-	}
-	staging := t.TempDir()
-	if err := os.WriteFile(filepath.Join(staging, indexFilename), []byte("new index"), 0o644); err != nil {
-		t.Fatalf("write staged index: %v", err)
-	}
-
-	if err := publish(staging, output, map[string]struct{}{"missing.xml": {}}); err == nil {
-		t.Fatal("expected child publication error")
-	}
-	data, err := os.ReadFile(oldIndex)
-	if err != nil {
-		t.Fatalf("read old index: %v", err)
-	}
-	if string(data) != "old index" {
-		t.Fatalf("published index = %q, want old index", data)
-	}
-}
-
-func TestPruneRemovesStaleChildMaps(t *testing.T) {
-	output := t.TempDir()
-	for _, filename := range []string{"current.xml", "stale.xml", indexFilename} {
-		if err := os.WriteFile(filepath.Join(output, filename), []byte("xml"), 0o644); err != nil {
-			t.Fatalf("write %s: %v", filename, err)
-		}
-	}
-	if err := prune(output, map[string]struct{}{"current.xml": {}}); err != nil {
-		t.Fatalf("prune sitemap files: %v", err)
-	}
-	if _, err := os.Stat(filepath.Join(output, "stale.xml")); !os.IsNotExist(err) {
-		t.Fatalf("stale sitemap still exists: %v", err)
-	}
-	if _, err := os.Stat(filepath.Join(output, indexFilename)); err != nil {
-		t.Fatalf("index was pruned: %v", err)
 	}
 }

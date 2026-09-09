@@ -10,12 +10,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/blackfyre/wga/internal/agentcontent"
 	"github.com/blackfyre/wga/internal/config"
+	"github.com/blackfyre/wga/internal/generatedpublication"
 	"github.com/blackfyre/wga/internal/handlers/landing"
 	"github.com/blackfyre/wga/internal/testutils"
 	apputils "github.com/blackfyre/wga/internal/utils"
-	"github.com/blackfyre/wga/internal/utils/sitemap"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
@@ -81,9 +80,12 @@ func TestAssetRouteServesEmbeddedCSS(t *testing.T) {
 
 func writeGeneratedAgentFixture(t *testing.T, app core.App) {
 	t.Helper()
-	root := agentcontent.Directory(app)
+	staging, err := generatedpublication.NewStaging(app)
+	if err != nil {
+		t.Fatal(err)
+	}
 	version := "publication-test"
-	current := filepath.Join(root, "versions", version)
+	current := filepath.Join(staging, "agent-content")
 	if err := os.MkdirAll(filepath.Join(current, "agents", "artists"), 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -97,7 +99,7 @@ func writeGeneratedAgentFixture(t *testing.T, app core.App) {
 	if err := os.WriteFile(filepath.Join(current, "manifest.json"), []byte(manifest), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(root, "current"), []byte(version+"\n"), 0o644); err != nil {
+	if _, err := generatedpublication.Publish(app, staging, version); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -279,7 +281,11 @@ func configureStaticPublicURL(t testing.TB) {
 
 func writeSitemapFiles(t testing.TB, app core.App) {
 	t.Helper()
-	directory := sitemap.Directory(app)
+	staging, err := generatedpublication.NewStaging(app)
+	if err != nil {
+		t.Fatalf("create generated staging directory: %v", err)
+	}
+	directory := filepath.Join(staging, "sitemap")
 	if err := os.MkdirAll(directory, 0o755); err != nil {
 		t.Fatalf("create sitemap directory: %v", err)
 	}
@@ -289,6 +295,9 @@ func writeSitemapFiles(t testing.TB, app core.App) {
 		if err := os.WriteFile(filepath.Join(directory, filename), []byte(content), 0o644); err != nil {
 			t.Fatalf("write %s: %v", filename, err)
 		}
+	}
+	if _, err := generatedpublication.Publish(app, staging, "static-test"); err != nil {
+		t.Fatalf("publish sitemap files: %v", err)
 	}
 }
 

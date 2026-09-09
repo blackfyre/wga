@@ -12,10 +12,10 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/constants"
+	"github.com/blackfyre/wga/internal/generatedpublication"
 	"github.com/blackfyre/wga/internal/repositories"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/pocketbase/pocketbase/core"
@@ -23,14 +23,11 @@ import (
 
 const (
 	publicationDirectoryName = "agent-content"
-	versionsDirectoryName    = "versions"
-	currentFilename          = "current"
 	llmsFilename             = "llms.txt"
 	manifestFilename         = "manifest.json"
 )
 
 var (
-	publicationMu  = sync.Mutex{}
 	htmlTagPattern = regexp.MustCompile(`<[^>]*>`)
 )
 
@@ -53,24 +50,14 @@ type Resource struct {
 	CanonicalURL string
 }
 
-// Directory returns the durable root for versioned agent-content publications.
-func Directory(app core.App) string {
-	return filepath.Join(app.DataDir(), publicationDirectoryName)
-}
-
 // CurrentDirectory resolves the complete publication selected by the atomic
 // current-version marker.
 func CurrentDirectory(app core.App) (string, error) {
-	root := Directory(app)
-	data, err := os.ReadFile(filepath.Join(root, currentFilename))
+	publication, err := generatedpublication.CurrentDirectory(app)
 	if err != nil {
-		return "", fmt.Errorf("read current agent-content publication: %w", err)
+		return "", err
 	}
-	version := strings.TrimSpace(string(data))
-	if version == "" || filepath.Base(version) != version || version == "." || version == ".." {
-		return "", fmt.Errorf("invalid current agent-content publication")
-	}
-	current := filepath.Join(root, versionsDirectoryName, version)
+	current := filepath.Join(publication, publicationDirectoryName)
 	info, err := os.Stat(current)
 	if err != nil {
 		return "", fmt.Errorf("stat current agent-content publication: %w", err)
@@ -122,24 +109,12 @@ func ReadCurrent(app core.App, relative string) (Resource, error) {
 	return Resource{}, fs.ErrNotExist
 }
 
-// Publish generates, validates, and atomically selects a complete set of
-// session-independent agent resources. Failures before the marker switch leave
-// the previous publication selected.
-func Publish(app core.App, publicURL config.PublicURL) (PublicationResult, error) {
-	publicationMu.Lock()
-	defer publicationMu.Unlock()
-
-	root := Directory(app)
-	versions := filepath.Join(root, versionsDirectoryName)
-	if err := os.MkdirAll(versions, 0o755); err != nil {
-		return PublicationResult{}, fmt.Errorf("create agent-content publication directory: %w", err)
-	}
-	staging, err := os.MkdirTemp(versions, ".staging-")
-	if err != nil {
+// Generate writes and validates agent resources inside a shared unpublished
+// staging directory. The sitemap workflow selects the complete publication.
+func Generate(app core.App, publicURL config.PublicURL, staging string) (PublicationResult, error) {
+	if err := os.MkdirAll(staging, 0o755); err != nil {
 		return PublicationResult{}, fmt.Errorf("create agent-content staging directory: %w", err)
 	}
-	defer os.RemoveAll(staging)
-
 	result, expected, err := generatePublication(app, publicURL, staging)
 	if err != nil {
 		return PublicationResult{}, err
@@ -148,18 +123,7 @@ func Publish(app core.App, publicURL config.PublicURL) (PublicationResult, error
 		return PublicationResult{}, err
 	}
 
-	version := "publication-" + strings.TrimPrefix(filepath.Base(staging), ".staging-")
-	published := filepath.Join(versions, version)
-	if err := os.Rename(staging, published); err != nil {
-		return PublicationResult{}, fmt.Errorf("publish staged agent content: %w", err)
-	}
-	if err := selectPublication(root, version); err != nil {
-		_ = os.RemoveAll(published)
-		return PublicationResult{}, err
-	}
-
-	result.Directory = published
-	result.CleanupErr = prunePublications(versions, version)
+	result.Directory = staging
 	return result, nil
 }
 
@@ -445,45 +409,4 @@ func validatePublication(staging string, expected map[string]struct{}) error {
 		return fmt.Errorf("validate staged agent content: found %d files, expected %d", len(seen), len(expected))
 	}
 	return nil
-}
-
-func selectPublication(root, version string) error {
-	marker, err := os.CreateTemp(root, ".current-")
-	if err != nil {
-		return fmt.Errorf("create agent-content publication marker: %w", err)
-	}
-	markerPath := marker.Name()
-	defer os.Remove(markerPath)
-	if _, err := marker.WriteString(version + "\n"); err != nil {
-		_ = marker.Close()
-		return fmt.Errorf("write agent-content publication marker: %w", err)
-	}
-	if err := marker.Sync(); err != nil {
-		_ = marker.Close()
-		return fmt.Errorf("sync agent-content publication marker: %w", err)
-	}
-	if err := marker.Close(); err != nil {
-		return fmt.Errorf("close agent-content publication marker: %w", err)
-	}
-	if err := os.Rename(markerPath, filepath.Join(root, currentFilename)); err != nil {
-		return fmt.Errorf("select agent-content publication: %w", err)
-	}
-	return nil
-}
-
-func prunePublications(versions, current string) error {
-	entries, err := os.ReadDir(versions)
-	if err != nil {
-		return fmt.Errorf("list agent-content publications: %w", err)
-	}
-	var cleanupErr error
-	for _, entry := range entries {
-		if entry.Name() == current || !entry.IsDir() {
-			continue
-		}
-		if err := os.RemoveAll(filepath.Join(versions, entry.Name())); err != nil {
-			cleanupErr = errors.Join(cleanupErr, fmt.Errorf("remove stale agent-content publication: %w", err))
-		}
-	}
-	return cleanupErr
 }

@@ -20,7 +20,6 @@ import (
 	"github.com/blackfyre/wga/internal/logging"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/blackfyre/wga/internal/utils/sitemap"
-	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 )
 
@@ -78,6 +77,17 @@ func serveAgentContent(app core.App, c *core.RequestEvent, relative string) erro
 	return c.Blob(http.StatusOK, "text/markdown; charset=utf-8", resource.Content)
 }
 
+func serveSitemap(app core.App, c *core.RequestEvent, relative string) error {
+	content, err := sitemap.ReadCurrent(app, relative)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return utils.NotFoundError(c)
+		}
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "sitemap_read", Cause: err})
+	}
+	return c.Blob(http.StatusOK, "application/xml; charset=utf-8", content)
+}
+
 func generatedRecordRelative(kind, filename string) (string, bool) {
 	id, ok := strings.CutSuffix(filename, ".md")
 	if !ok || id == "" {
@@ -130,11 +140,12 @@ func RegisterHandlers(app core.App, environment config.Environment) {
 		})
 
 		// Sitemap
-		sitemapFiles := os.DirFS(sitemap.Directory(app))
 		se.Router.GET("/sitemap.xml", func(c *core.RequestEvent) error {
-			return c.FileFS(sitemapFiles, "sitemap.xml")
+			return serveSitemap(app, c, "sitemap.xml")
 		})
-		se.Router.GET("/sitemap/{path...}", apis.Static(sitemapFiles, false))
+		se.Router.GET("/sitemap/{path...}", func(c *core.RequestEvent) error {
+			return serveSitemap(app, c, c.Request.PathValue("path"))
+		})
 		se.Router.GET("/sitemap.xsl", func(c *core.RequestEvent) error {
 			return c.Blob(http.StatusOK, "text/xsl; charset=utf-8", []byte(sitemapStylesheet(tmplUtils.AssetUrl("/assets/css/style.css"))))
 		})
