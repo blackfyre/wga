@@ -48,13 +48,21 @@ func assetCacheControl(path string) string {
 	return ""
 }
 
-const agentContentCacheControl = "public, max-age=300, s-maxage=86400"
+const (
+	agentContentCacheControl = "public, max-age=300, s-maxage=86400"
+	agentContentNoStore      = "private, no-store"
+)
+
+func agentContentNotFound(c *core.RequestEvent) error {
+	c.Response.Header().Set("Cache-Control", agentContentNoStore)
+	return utils.NotFoundError(c)
+}
 
 func serveAgentContent(app core.App, c *core.RequestEvent, relative string) error {
 	resource, err := agentcontent.ReadCurrent(app, relative)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
-			return utils.NotFoundError(c)
+			return agentContentNotFound(c)
 		}
 		logging.RequestLogger(app, c).Error("Generated agent content read failed",
 			"event", "agent_content.read.failed",
@@ -141,7 +149,7 @@ func RegisterHandlers(app core.App, environment config.Environment) {
 			se.Router.GET("/agents/"+kind+"/{filename}", func(c *core.RequestEvent) error {
 				relative, ok := generatedRecordRelative(kind, c.Request.PathValue("filename"))
 				if !ok {
-					return utils.NotFoundError(c)
+					return agentContentNotFound(c)
 				}
 				return serveAgentContent(app, c, relative)
 			})

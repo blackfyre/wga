@@ -136,6 +136,9 @@ func TestGeneratedAgentRoutesServeOnlyCurrentMarkdown(t *testing.T) {
 				t.Errorf("%s status = %d, want %d", test.path, recorder.Code, test.status)
 			}
 			if test.status != http.StatusOK {
+				if got := recorder.Header().Get("Cache-Control"); got != agentContentNoStore {
+					t.Errorf("%s Cache-Control = %q, want %q", test.path, got, agentContentNoStore)
+				}
 				continue
 			}
 			if got := recorder.Header().Get("Content-Type"); got != "text/markdown; charset=utf-8" {
