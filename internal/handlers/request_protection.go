@@ -34,7 +34,7 @@ func registerProtectedReadMiddleware(app core.App, publicURL string, authenticat
 }
 
 func protectPublicRead(app core.App, canonicalHost requestprotection.CanonicalHost, authenticateOrigin requesttrust.OriginAuthenticator, resolveIdentity requesttrust.Resolver, policy *requestprotection.Policy, e *core.RequestEvent) error {
-	profile := requestprotection.Classify(e.Request.Method, e.Request.URL.Path)
+	profile := requestprotection.Classify(e.Request.Method, e.Request.URL.EscapedPath())
 	if !profile.Protected() {
 		return e.Next()
 	}

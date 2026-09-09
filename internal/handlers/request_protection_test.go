@@ -39,6 +39,12 @@ func TestProtectedReadMiddlewareRejectsBeforeHandlerWork(t *testing.T) {
 			status:  http.StatusMisdirectedRequest,
 		},
 		{
+			name:    "deployment host with escaped artist segment",
+			url:     "https://wga-production.up.railway.app/artists/foo%2Fbar%2Falias-artistone000001",
+			headers: trustedProtectionHeaders("198.51.100.7", protectionTestSecret),
+			status:  http.StatusMisdirectedRequest,
+		},
+		{
 			name:    "missing origin authentication",
 			url:     "https://beta.wga.hu/artists",
 			headers: trustedProtectionHeaders("198.51.100.7", ""),
