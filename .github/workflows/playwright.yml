@@ -139,6 +139,9 @@ jobs:
         shardTotal: [4]
     runs-on: ubuntu-latest
     environment: playwright
+    env:
+      WGA_PROTOCOL: http
+      WGA_HOSTNAME: 127.0.0.1:8090
     steps:
       - uses: actions/checkout@v4
       - name: Set up bun
@@ -188,8 +191,6 @@ jobs:
         working-directory: ./wga_tmp
         env:
           WGA_ENV: test
-          WGA_PROTOCOL: http
-          WGA_HOSTNAME: localhost:8090
           WGA_ADMIN_EMAIL: some.random.email@local.host
           WGA_ADMIN_PASSWORD: VerySecurePassword
           WGA_SMTP_HOST: 127.0.0.1
@@ -220,8 +221,6 @@ jobs:
         run: bunx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
         env:
           MAILPIT_URL: http://127.0.0.1:8025
-          WGA_PROTOCOL: ${{ vars.WGA_PROTOCOL }}
-          WGA_HOSTNAME: ${{ vars.WGA_HOSTNAME }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
