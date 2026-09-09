@@ -246,6 +246,46 @@ func TestPublishFailureLeavesPreviousPublicationSelected(t *testing.T) {
 	}
 }
 
+func TestPublishedArtworkAcceptsEveryPublicCoauthorPath(t *testing.T) {
+	app := newPublicationTestApp(t)
+	first := createPublicationRecord(t, app, constants.CollectionArtists, publicationArtist("First Author", "first-author", true))
+	second := createPublicationRecord(t, app, constants.CollectionArtists, publicationArtist("Second Author", "second-author", true))
+	artwork := createPublicationRecord(t, app, constants.CollectionArtworks, map[string]any{
+		"title": "Shared Work", "published": true, "author": []string{first.Id, second.Id},
+	})
+	if _, err := publishAgentContent(t, app); err != nil {
+		t.Fatal(err)
+	}
+
+	resource, err := ReadCurrent(app, "agents/artworks/"+artwork.Id+".md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{
+		canonicalArtworkPath(first, artwork),
+		canonicalArtworkPath(second, artwork),
+	}
+	if strings.Join(resource.AcceptedPaths, "\n") != strings.Join(want, "\n") {
+		t.Fatalf("accepted paths = %v, want %v", resource.AcceptedPaths, want)
+	}
+}
+
+func TestMissingResourceDoesNotParsePublicationManifest(t *testing.T) {
+	app := newPublicationTestApp(t)
+	createPublicationRecord(t, app, constants.CollectionArtists, publicationArtist("Jane Doe", "jane-doe", true))
+	result, err := publishAgentContent(t, app)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(result.Directory, manifestFilename), []byte("not json"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := ReadCurrent(app, "agents/artists/missing.md"); !os.IsNotExist(err) {
+		t.Fatalf("missing resource error = %v, want not exist without manifest parsing", err)
+	}
+}
+
 func TestPublishPrunesStaleGeneratedRecords(t *testing.T) {
 	app := newPublicationTestApp(t)
 	artist := createPublicationRecord(t, app, constants.CollectionArtists, publicationArtist("Jane Doe", "jane-doe", true))

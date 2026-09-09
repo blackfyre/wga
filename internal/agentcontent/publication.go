@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html"
 	"io/fs"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -41,13 +42,15 @@ type PublicationResult struct {
 }
 
 type publicationManifest struct {
-	Resources map[string]string `json:"resources"`
+	Resources     map[string]string   `json:"resources"`
+	AcceptedPaths map[string][]string `json:"accepted_paths,omitempty"`
 }
 
 // Resource is one generated public representation and its canonical HTML URL.
 type Resource struct {
-	Content      []byte
-	CanonicalURL string
+	Content       []byte
+	CanonicalURL  string
+	AcceptedPaths []string
 }
 
 // CurrentDirectory resolves the complete publication selected by the atomic
@@ -82,6 +85,16 @@ func ReadCurrent(app core.App, relative string) (Resource, error) {
 			}
 			return Resource{}, err
 		}
+		content, err := os.ReadFile(filepath.Join(current, filepath.FromSlash(relative)))
+		if err != nil {
+			if errors.Is(err, fs.ErrNotExist) && attempt == 0 {
+				continue
+			}
+			if errors.Is(err, fs.ErrNotExist) {
+				return Resource{}, fs.ErrNotExist
+			}
+			return Resource{}, fmt.Errorf("read generated agent content: %w", err)
+		}
 		manifestData, err := os.ReadFile(filepath.Join(current, manifestFilename))
 		if err != nil {
 			if errors.Is(err, fs.ErrNotExist) && attempt == 0 {
@@ -97,14 +110,13 @@ func ReadCurrent(app core.App, relative string) (Resource, error) {
 		if !ok {
 			return Resource{}, fs.ErrNotExist
 		}
-		content, err := os.ReadFile(filepath.Join(current, filepath.FromSlash(relative)))
-		if err != nil {
-			if errors.Is(err, fs.ErrNotExist) && attempt == 0 {
-				continue
+		acceptedPaths := manifest.AcceptedPaths[relative]
+		if len(acceptedPaths) == 0 {
+			if parsed, err := url.Parse(canonical); err == nil && parsed.Path != "" {
+				acceptedPaths = []string{parsed.Path}
 			}
-			return Resource{}, fmt.Errorf("read generated agent content: %w", err)
 		}
-		return Resource{Content: content, CanonicalURL: canonical}, nil
+		return Resource{Content: content, CanonicalURL: canonical, AcceptedPaths: acceptedPaths}, nil
 	}
 	return Resource{}, fs.ErrNotExist
 }
@@ -128,16 +140,20 @@ func Generate(app core.App, publicURL config.PublicURL, staging string) (Publica
 }
 
 type artworkProjection struct {
-	record    *core.Record
-	author    *core.Record
-	canonical string
-	link      Link
+	record        *core.Record
+	author        *core.Record
+	canonical     string
+	acceptedPaths []string
+	link          Link
 }
 
 func generatePublication(app core.App, publicURL config.PublicURL, staging string) (PublicationResult, map[string]struct{}, error) {
 	baseURL := strings.TrimRight(publicURL.String(), "/")
 	expected := map[string]struct{}{llmsFilename: {}, manifestFilename: {}}
-	manifest := publicationManifest{Resources: map[string]string{llmsFilename: baseURL + "/llms.txt"}}
+	manifest := publicationManifest{
+		Resources:     map[string]string{llmsFilename: baseURL + "/llms.txt"},
+		AcceptedPaths: map[string][]string{llmsFilename: {"/llms.txt"}},
+	}
 	if err := os.WriteFile(filepath.Join(staging, llmsFilename), renderLLMs(baseURL), 0o644); err != nil {
 		return PublicationResult{}, nil, fmt.Errorf("write staged llms.txt: %w", err)
 	}
@@ -170,10 +186,13 @@ func generatePublication(app core.App, publicURL config.PublicURL, staging strin
 			continue
 		}
 		var author *core.Record
+		acceptedPaths := make([]string, 0, len(authorIDs))
 		for _, authorID := range authorIDs {
 			if eligible := artists[authorID]; eligible != nil {
-				author = eligible
-				break
+				if author == nil {
+					author = eligible
+				}
+				acceptedPaths = append(acceptedPaths, canonicalArtworkPath(eligible, record))
 			}
 		}
 		if author == nil {
@@ -182,7 +201,7 @@ func generatePublication(app core.App, publicURL config.PublicURL, staging strin
 		}
 		canonical := baseURL + canonicalArtworkPath(author, record)
 		link := Link{Label: record.GetString("title"), URL: canonical}
-		artworks = append(artworks, artworkProjection{record: record, author: author, canonical: canonical, link: link})
+		artworks = append(artworks, artworkProjection{record: record, author: author, canonical: canonical, acceptedPaths: acceptedPaths, link: link})
 		linksByArtist[author.Id] = append(linksByArtist[author.Id], link)
 	}
 	for artistID, links := range linksByArtist {
@@ -228,6 +247,7 @@ func generatePublication(app core.App, publicURL config.PublicURL, staging strin
 		}
 		expected[filepath.ToSlash(relative)] = struct{}{}
 		manifest.Resources[filepath.ToSlash(relative)] = baseURL + canonicalArtistPath(record)
+		manifest.AcceptedPaths[filepath.ToSlash(relative)] = []string{canonicalArtistPath(record)}
 		result.ArtistCount++
 	}
 
@@ -255,6 +275,7 @@ func generatePublication(app core.App, publicURL config.PublicURL, staging strin
 		}
 		expected[filepath.ToSlash(relative)] = struct{}{}
 		manifest.Resources[filepath.ToSlash(relative)] = projection.canonical
+		manifest.AcceptedPaths[filepath.ToSlash(relative)] = projection.acceptedPaths
 		result.ArtworkCount++
 	}
 	manifestData, err := json.Marshal(manifest)

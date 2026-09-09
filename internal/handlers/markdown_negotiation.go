@@ -39,7 +39,7 @@ func negotiateGeneratedMarkdown(app core.App, e *core.RequestEvent, read generat
 		return next()
 	}
 	e.Response.Header().Add("Vary", "Accept")
-	if !prefersMarkdown(e.Request.Header.Get("Accept")) {
+	if !prefersMarkdown(strings.Join(e.Request.Header.Values("Accept"), ",")) {
 		return next()
 	}
 
@@ -48,10 +48,23 @@ func negotiateGeneratedMarkdown(app core.App, e *core.RequestEvent, read generat
 		return next()
 	}
 	canonical, err := url.Parse(resource.CanonicalURL)
-	if err != nil || canonical.Path != e.Request.URL.Path {
+	if err != nil || !resourceAcceptsPath(resource, canonical.Path, e.Request.URL.Path) {
 		return next()
 	}
 	return e.Redirect(http.StatusTemporaryRedirect, location)
+}
+
+func resourceAcceptsPath(resource agentcontent.Resource, canonicalPath string, requestedPath string) bool {
+	accepted := resource.AcceptedPaths
+	if len(accepted) == 0 {
+		accepted = []string{canonicalPath}
+	}
+	for _, path := range accepted {
+		if path == requestedPath {
+			return true
+		}
+	}
+	return false
 }
 
 func generatedMarkdownResource(path string) (relative string, location string, ok bool) {

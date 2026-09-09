@@ -68,6 +68,54 @@ func TestMarkdownNegotiationPrecedesDocumentWork(t *testing.T) {
 	}
 }
 
+func TestMarkdownNegotiationCombinesAcceptFieldLines(t *testing.T) {
+	path := "/artists/authoritative-name-artistone000001"
+	event, recorder := markdownNegotiationEvent(path, "text/markdown;q=0.5")
+	event.Request.Header.Add("Accept", "text/html;q=1")
+	nextCalled := false
+
+	err := negotiateGeneratedMarkdown(nil, event, func(core.App, string) (agentcontent.Resource, error) {
+		return agentcontent.Resource{CanonicalURL: "https://gallery.example" + path}, nil
+	}, func() error {
+		nextCalled = true
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !nextCalled || recorder.Code == http.StatusTemporaryRedirect {
+		t.Fatal("combined Accept preference did not preserve HTML")
+	}
+}
+
+func TestMarkdownNegotiationAcceptsPublicCoauthorRoute(t *testing.T) {
+	requested := "/artists/second-author-artisttwo000001/shared-work-workone00000001"
+	event, recorder := markdownNegotiationEvent(requested, "text/markdown")
+	nextCalled := false
+
+	err := negotiateGeneratedMarkdown(nil, event, func(core.App, string) (agentcontent.Resource, error) {
+		return agentcontent.Resource{
+			CanonicalURL: "https://gallery.example/artists/first-author-artistone000001/shared-work-workone00000001",
+			AcceptedPaths: []string{
+				"/artists/first-author-artistone000001/shared-work-workone00000001",
+				requested,
+			},
+		}, nil
+	}, func() error {
+		nextCalled = true
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if nextCalled {
+		t.Fatal("public coauthor route continued into HTML work")
+	}
+	if recorder.Code != http.StatusTemporaryRedirect || recorder.Header().Get("Location") != "/agents/artworks/workone00000001.md" {
+		t.Fatalf("response = %d Location %q", recorder.Code, recorder.Header().Get("Location"))
+	}
+}
+
 func TestMarkdownNegotiationPreservesRecordValidation(t *testing.T) {
 	for _, test := range []struct {
 		name      string
