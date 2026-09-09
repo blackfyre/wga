@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	neturl "net/url"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 
@@ -1182,9 +1183,50 @@ func TestDualModeCancellationStopsSubsequentWindowAndRenderStages(t *testing.T) 
 	if !ok || !errors.Is(failure.Cause, context.Canceled) {
 		t.Fatalf("recorded failure = %+v, want context.Canceled", failure)
 	}
-	want := []string{"dual.reference", "dual.left.resolve", "dual.right.resolve", "dual.left.window", "dual.right.window"}
-	if !reflect.DeepEqual(stages, want) {
-		t.Fatalf("started stages = %v, want %v", stages, want)
+	if len(stages) == 0 || stages[len(stages)-1] != "dual.right.window" {
+		t.Fatalf("started stages = %v, want cancellation at right window", stages)
+	}
+	if slices.Contains(stages, "dual.projection") || slices.Contains(stages, "dual.render") {
+		t.Fatalf("cancellation started later stages: %v", stages)
+	}
+}
+
+func TestDualModeCancellationStopsInsideWindowQueries(t *testing.T) {
+	for _, test := range []struct {
+		name  string
+		path  string
+		stage string
+	}{
+		{name: "index", path: "/dual-mode", stage: "dual.window.index.artists"},
+		{name: "artist", path: "/dual-mode?left=/artists/rembrandt-artistone000001", stage: "dual.window.artist.works"},
+		{name: "work", path: "/dual-mode?left=/artists/rembrandt-artistone000001/the-night-watch-artworkone00001", stage: "dual.window.work.glossary"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			app := newDualTestApp(t)
+			seedDualArtistAndWork(t, app)
+			ctx, cancel := context.WithCancel(context.Background())
+			request := httptest.NewRequest(http.MethodGet, test.path, nil).WithContext(ctx)
+			event := &core.RequestEvent{Event: router.Event{Request: request, Response: httptest.NewRecorder()}}
+			stages := []string{}
+			checkpoint := func(ctx context.Context, stage string) error {
+				stages = append(stages, stage)
+				if stage == test.stage {
+					cancel()
+				}
+				return requestprotection.Checkpoint(ctx, stage)
+			}
+
+			err := renderDualModePageWithCheckpoint(app, event, checkpoint)
+			if !errors.Is(err, context.Canceled) {
+				t.Fatalf("renderDualModePageWithCheckpoint() error = %v, want context.Canceled", err)
+			}
+			if !slices.Contains(stages, test.stage) {
+				t.Fatalf("target stage %q was not reached: %v", test.stage, stages)
+			}
+			if slices.Contains(stages, "dual.right.window") || slices.Contains(stages, "dual.render") {
+				t.Fatalf("cancellation started later stages: %v", stages)
+			}
+		})
 	}
 }
 
