@@ -105,6 +105,11 @@ func serveSitemap(app core.App, c *core.RequestEvent, relative string) error {
 		if errors.Is(err, fs.ErrNotExist) {
 			return utils.NotFoundError(c)
 		}
+		logging.RequestLogger(app, c).Error("Sitemap read failed",
+			"event", "sitemap.read.failed",
+			"error_type", logging.ErrorType(err),
+			"error", logging.Redact(err),
+		)
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "sitemap_read", Cause: err})
 	}
 	return c.Blob(http.StatusOK, "application/xml; charset=utf-8", content)

@@ -13,6 +13,7 @@ import (
 	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/generatedpublication"
 	"github.com/blackfyre/wga/internal/handlers/landing"
+	"github.com/blackfyre/wga/internal/logging"
 	"github.com/blackfyre/wga/internal/testutils"
 	apputils "github.com/blackfyre/wga/internal/utils"
 	"github.com/pocketbase/pocketbase"
@@ -167,6 +168,50 @@ func TestGeneratedAgentRoutesServeOnlyCurrentMarkdown(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("trigger serve event: %v", err)
 	}
+}
+
+func TestSitemapReadFailureIsLogged(t *testing.T) {
+	var captured func() []*core.Log
+
+	scenario := tests.ApiScenario{
+		Name:            "sitemap read failure returns shared 500 with request log",
+		Method:          http.MethodGet,
+		URL:             "/sitemap.xml",
+		ExpectedStatus:  http.StatusInternalServerError,
+		ExpectedContent: []string{"The archive could not complete that request."},
+		TestAppFactory: func(t testing.TB) *tests.TestApp {
+			app := newStaticTestApp(t)
+			captured = testutils.CaptureLogs(app)
+			logging.RegisterRequestIDMiddleware(app)
+			staging, err := generatedpublication.NewStaging(app)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := os.MkdirAll(filepath.Join(staging, "sitemap", "sitemap.xml"), 0o755); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := generatedpublication.Publish(app, staging, "broken-sitemap"); err != nil {
+				t.Fatal(err)
+			}
+			RegisterHandlers(app, config.EnvironmentProduction)
+			return app
+		},
+		AfterTestFunc: func(t testing.TB, app *tests.TestApp, _ *http.Response) {
+			testutils.FlushLogs(t, app)
+			entry := testutils.LogWithEvent(captured(), "sitemap.read.failed")
+			if entry == nil {
+				t.Fatal("expected a sitemap read failure log")
+			}
+			if entry.Data["error_type"] == "" {
+				t.Fatal("expected a sitemap read error type")
+			}
+			if fmt.Sprint(entry.Data["request_id"]) == "" {
+				t.Fatal("expected a sitemap read request ID")
+			}
+		},
+	}
+
+	scenario.Test(t)
 }
 
 func TestGeneratedAgentRoutesRevalidateCurrentPublication(t *testing.T) {
