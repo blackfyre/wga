@@ -2,6 +2,7 @@ package artists
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -12,6 +13,7 @@ import (
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
 	"github.com/blackfyre/wga/internal/logging"
 	"github.com/blackfyre/wga/internal/repositories"
+	"github.com/blackfyre/wga/internal/requestprotection"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
@@ -21,10 +23,20 @@ import (
 // resolves the artist and selection through their bounded read-models, enforces
 // artist ownership and publication, and renders the selection page.
 func processSelection(c *core.RequestEvent, app *pocketbase.PocketBase) error {
+	return processSelectionWithCheckpoint(c, app, requestprotection.Checkpoint)
+}
+
+type selectionDetailCheckpoint func(context.Context, string) error
+
+func processSelectionWithCheckpoint(c *core.RequestEvent, app *pocketbase.PocketBase, checkpoint selectionDetailCheckpoint) error {
 	artistSlug := c.Request.PathValue("name")
 	selectionID := c.Request.PathValue("selectionID")
+	ctx := c.Request.Context()
 
 	artistID := utils.ExtractIdFromString(artistSlug)
+	if err := checkpoint(ctx, "selection.detail.artist_lookup"); err != nil {
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
+	}
 	artist, err := repositories.NewArtistRecordRepository(app).FindPublishedArtist(artistID)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
@@ -38,6 +50,9 @@ func processSelection(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 		return c.Redirect(http.StatusMovedPermanently, buildSelectionURL(expectedSlug, selectionID))
 	}
 
+	if err := checkpoint(ctx, "selection.detail.selection_lookup"); err != nil {
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
+	}
 	selection, err := repositories.NewArtistSelectionsRepository(app).FindPublishedSelection(artistID, selectionID)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
@@ -46,7 +61,7 @@ func processSelection(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 		return utils.NotFoundError(c)
 	}
 
-	view, err := buildSelectionView(app, artist, selection)
+	view, err := buildSelectionViewContext(ctx, app, artist, selection, checkpoint)
 	if err != nil {
 		logging.RequestLogger(app, c).Error("Build selection view", "selection", selectionID, "error", err)
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
@@ -54,14 +69,17 @@ func processSelection(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 
 	fullURL := buildSelectionURL(expectedSlug, selectionID)
 
-	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", view.DisplayTitle, view.ArtistFilingName))
-	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, selectionDescription(view))
-	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, utils.AssetUrl(fullURL))
+	renderCtx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", view.DisplayTitle, view.ArtistFilingName))
+	renderCtx = tmplUtils.DecorateContext(renderCtx, tmplUtils.DescriptionKey, selectionDescription(view))
+	renderCtx = tmplUtils.DecorateContext(renderCtx, tmplUtils.CanonicalUrlKey, utils.AssetUrl(fullURL))
 
 	c.Response.Header().Set("HX-Push-Url", fullURL)
 
 	var buff bytes.Buffer
-	if err := pages.SelectionPage(view).Render(ctx, &buff); err != nil {
+	if err := checkpoint(ctx, "selection.detail.render"); err != nil {
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
+	}
+	if err := pages.SelectionPage(view).Render(renderCtx, &buff); err != nil {
 		logging.RequestLogger(app, c).Error("Error rendering selection page", "error", err)
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
@@ -81,15 +99,28 @@ func buildSelectionURL(artistSlug string, selectionID string) string {
 // bounded selection repository. Commentary is sanitised through the record's
 // trusted-HTML boundary before it reaches templ.Raw.
 func buildSelectionView(app *pocketbase.PocketBase, artist *core.Record, selection *core.Record) (pages.SelectionView, error) {
+	return buildSelectionViewContext(context.Background(), app, artist, selection, requestprotection.Checkpoint)
+}
+
+func buildSelectionViewContext(ctx context.Context, app *pocketbase.PocketBase, artist *core.Record, selection *core.Record, checkpoint selectionDetailCheckpoint) (pages.SelectionView, error) {
 	repo := repositories.NewArtistSelectionsRepository(app)
 
+	if err := checkpoint(ctx, "selection.detail.works"); err != nil {
+		return pages.SelectionView{}, err
+	}
 	works, err := repo.ListSelectionArtworks(artist.Id, selection)
 	if err != nil {
 		return pages.SelectionView{}, err
 	}
 
+	if err := checkpoint(ctx, "selection.detail.related_content"); err != nil {
+		return pages.SelectionView{}, err
+	}
 	all, err := repo.ListPublishedSelections(artist.Id, 0)
 	if err != nil {
+		return pages.SelectionView{}, err
+	}
+	if err := checkpoint(ctx, "selection.detail.projection"); err != nil {
 		return pages.SelectionView{}, err
 	}
 

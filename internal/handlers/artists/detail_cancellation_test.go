@@ -71,3 +71,45 @@ func TestArtworkDetailCancellationStopsProjection(t *testing.T) {
 		t.Fatalf("started stages = %v, want %v", stages, want)
 	}
 }
+
+func TestSelectionDetailCancellationStopsSubsequentStages(t *testing.T) {
+	allStages := []string{
+		"selection.detail.artist_lookup",
+		"selection.detail.selection_lookup",
+		"selection.detail.works",
+		"selection.detail.related_content",
+		"selection.detail.projection",
+		"selection.detail.render",
+	}
+	for stopIndex, stopStage := range allStages {
+		t.Run(stopStage, func(t *testing.T) {
+			app, _ := newSelectionRouteApp(t)
+			ctx, cancel := context.WithCancel(context.Background())
+			request := httptest.NewRequest(http.MethodGet, "/artists/synthetic-artist-artistone000001/selections/rselect00000001", nil).WithContext(ctx)
+			request.SetPathValue("name", "synthetic-artist-artistone000001")
+			request.SetPathValue("selectionID", "rselect00000001")
+			event := &core.RequestEvent{Event: router.Event{Request: request, Response: httptest.NewRecorder()}}
+			stages := []string{}
+			checkpoint := func(ctx context.Context, stage string) error {
+				stages = append(stages, stage)
+				if stage == stopStage {
+					cancel()
+				}
+				return requestprotection.Checkpoint(ctx, stage)
+			}
+
+			err := processSelectionWithCheckpoint(event, app, checkpoint)
+			if !errors.Is(err, context.Canceled) {
+				t.Fatalf("processSelectionWithCheckpoint() error = %v, want original cause", err)
+			}
+			failure, ok := utils.ServerFailureFrom(event)
+			if !ok || !errors.Is(failure.Cause, context.Canceled) {
+				t.Fatalf("recorded failure = %+v, want original cancellation cause", failure)
+			}
+			want := allStages[:stopIndex+1]
+			if !reflect.DeepEqual(stages, want) {
+				t.Fatalf("started stages = %v, want %v", stages, want)
+			}
+		})
+	}
+}
