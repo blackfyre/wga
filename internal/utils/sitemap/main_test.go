@@ -2,6 +2,7 @@ package sitemap
 
 import (
 	"encoding/xml"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -157,5 +158,50 @@ func TestGenerateSiteMapPublishesCanonicalPublicURLs(t *testing.T) {
 	}
 	if !strings.Contains(allURLs, `<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>`) {
 		t.Fatal("child sitemap does not reference the sitemap stylesheet")
+	}
+}
+
+func TestCurrentDirectoryFallsBackToLegacyPublication(t *testing.T) {
+	app := newSitemapTestApp(t)
+	legacy := filepath.Join(app.DataDir(), legacyDirectoryName)
+	if err := os.MkdirAll(legacy, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(legacy, indexFilename), []byte("legacy sitemap"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	current, err := CurrentDirectory(app)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if current != legacy {
+		t.Fatalf("current directory = %q, want legacy %q", current, legacy)
+	}
+	data, err := ReadCurrent(app, indexFilename)
+	if err != nil || string(data) != "legacy sitemap" {
+		t.Fatalf("legacy sitemap = %q, %v", data, err)
+	}
+}
+
+func TestReadCurrentRetriesDirectoryResolutionRace(t *testing.T) {
+	app := newSitemapTestApp(t)
+	current := t.TempDir()
+	if err := os.WriteFile(filepath.Join(current, indexFilename), []byte("current sitemap"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	attempts := 0
+	data, err := readCurrent(app, indexFilename, func(core.App) (string, error) {
+		attempts++
+		if attempts == 1 {
+			return "", fs.ErrNotExist
+		}
+		return current, nil
+	})
+	if err != nil || string(data) != "current sitemap" {
+		t.Fatalf("retried sitemap = %q, %v", data, err)
+	}
+	if attempts != 2 {
+		t.Fatalf("directory resolutions = %d, want 2", attempts)
 	}
 }

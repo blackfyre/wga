@@ -3,7 +3,9 @@
 package generatedpublication
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,6 +18,11 @@ const (
 	versionsName  = "versions"
 	currentName   = "current"
 )
+
+// ErrNoCurrentPublication reports that no shared publication has been selected
+// yet. Readers may use a compatible legacy publication during migration only
+// for this state, not for a transient race involving an existing marker.
+var ErrNoCurrentPublication = errors.New("no current generated publication")
 
 func Directory(app core.App) string {
 	return filepath.Join(app.DataDir(), directoryName)
@@ -37,6 +44,9 @@ func CurrentDirectory(app core.App) (string, error) {
 	root := Directory(app)
 	data, err := os.ReadFile(filepath.Join(root, currentName))
 	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return "", fmt.Errorf("%w: %w", ErrNoCurrentPublication, err)
+		}
 		return "", fmt.Errorf("read current generated publication: %w", err)
 	}
 	version := strings.TrimSpace(string(data))

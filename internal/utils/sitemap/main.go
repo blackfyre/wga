@@ -24,10 +24,11 @@ import (
 )
 
 const (
-	directoryName = "sitemap"
-	indexFilename = "sitemap.xml"
-	childPath     = "/sitemap/"
-	xslPath       = "/sitemap.xsl"
+	directoryName       = "sitemap"
+	legacyDirectoryName = "sitemaps"
+	indexFilename       = "sitemap.xml"
+	childPath           = "/sitemap/"
+	xslPath             = "/sitemap.xsl"
 )
 
 var generationMu sync.Mutex
@@ -46,18 +47,40 @@ type Result struct {
 func CurrentDirectory(app core.App) (string, error) {
 	publication, err := generatedpublication.CurrentDirectory(app)
 	if err != nil {
+		if errors.Is(err, generatedpublication.ErrNoCurrentPublication) {
+			return legacyCurrentDirectory(app)
+		}
 		return "", err
 	}
 	return filepath.Join(publication, directoryName), nil
 }
 
+func legacyCurrentDirectory(app core.App) (string, error) {
+	legacy := filepath.Join(app.DataDir(), legacyDirectoryName)
+	info, err := os.Stat(filepath.Join(legacy, indexFilename))
+	if err != nil {
+		return "", fmt.Errorf("stat legacy sitemap publication: %w", err)
+	}
+	if info.IsDir() {
+		return "", fmt.Errorf("legacy sitemap index is not a file")
+	}
+	return legacy, nil
+}
+
 func ReadCurrent(app core.App, relative string) ([]byte, error) {
+	return readCurrent(app, relative, CurrentDirectory)
+}
+
+func readCurrent(app core.App, relative string, resolveCurrent func(core.App) (string, error)) ([]byte, error) {
 	if !fs.ValidPath(relative) {
 		return nil, fs.ErrNotExist
 	}
 	for attempt := 0; attempt < 2; attempt++ {
-		current, err := CurrentDirectory(app)
+		current, err := resolveCurrent(app)
 		if err != nil {
+			if errors.Is(err, fs.ErrNotExist) && attempt == 0 {
+				continue
+			}
 			return nil, err
 		}
 		data, err := os.ReadFile(filepath.Join(current, filepath.FromSlash(relative)))
