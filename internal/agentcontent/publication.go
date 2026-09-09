@@ -23,7 +23,9 @@ import (
 )
 
 const (
-	publicationDirectoryName = "agent-content"
+	// PublicationDirectoryName is the shared publication subdirectory containing
+	// generated agent-facing resources and their manifest.
+	PublicationDirectoryName = "agent-content"
 	llmsFilename             = "llms.txt"
 	manifestFilename         = "manifest.json"
 )
@@ -60,7 +62,7 @@ func CurrentDirectory(app core.App) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	current := filepath.Join(publication, publicationDirectoryName)
+	current := filepath.Join(publication, PublicationDirectoryName)
 	info, err := os.Stat(current)
 	if err != nil {
 		return "", fmt.Errorf("stat current agent-content publication: %w", err)
@@ -74,6 +76,16 @@ func CurrentDirectory(app core.App) (string, error) {
 // ReadCurrent reads a resource from one complete selected publication without
 // consulting PocketBase. It retries once if pruning races a marker read.
 func ReadCurrent(app core.App, relative string) (Resource, error) {
+	return readCurrent(app, relative, true)
+}
+
+// LookupCurrent returns canonical metadata only after confirming that the
+// selected publication contains both the resource file and manifest entry.
+func LookupCurrent(app core.App, relative string) (Resource, error) {
+	return readCurrent(app, relative, false)
+}
+
+func readCurrent(app core.App, relative string, includeContent bool) (Resource, error) {
 	if !fs.ValidPath(relative) {
 		return Resource{}, fs.ErrNotExist
 	}
@@ -85,7 +97,17 @@ func ReadCurrent(app core.App, relative string) (Resource, error) {
 			}
 			return Resource{}, err
 		}
-		content, err := os.ReadFile(filepath.Join(current, filepath.FromSlash(relative)))
+		resourcePath := filepath.Join(current, filepath.FromSlash(relative))
+		var content []byte
+		if includeContent {
+			content, err = os.ReadFile(resourcePath)
+		} else {
+			var info fs.FileInfo
+			info, err = os.Stat(resourcePath)
+			if err == nil && info.IsDir() {
+				err = fs.ErrNotExist
+			}
+		}
 		if err != nil {
 			if errors.Is(err, fs.ErrNotExist) && attempt == 0 {
 				continue

@@ -100,7 +100,7 @@ func publishAgentContent(t *testing.T, app core.App) (PublicationResult, error) 
 		return PublicationResult{}, err
 	}
 	defer os.RemoveAll(staging)
-	result, err := Generate(app, publicationPublicURL(t), filepath.Join(staging, publicationDirectoryName))
+	result, err := Generate(app, publicationPublicURL(t), filepath.Join(staging, PublicationDirectoryName))
 	if err != nil {
 		return PublicationResult{}, err
 	}
@@ -109,7 +109,7 @@ func publishAgentContent(t *testing.T, app core.App) (PublicationResult, error) 
 	if err != nil {
 		return PublicationResult{}, err
 	}
-	result.Directory = filepath.Join(published, publicationDirectoryName)
+	result.Directory = filepath.Join(published, PublicationDirectoryName)
 	result.CleanupErr = generatedpublication.Prune(app, version)
 	return result, nil
 }
@@ -268,6 +268,13 @@ func TestPublishedArtworkAcceptsEveryPublicCoauthorPath(t *testing.T) {
 	if strings.Join(resource.AcceptedPaths, "\n") != strings.Join(want, "\n") {
 		t.Fatalf("accepted paths = %v, want %v", resource.AcceptedPaths, want)
 	}
+	metadata, err := LookupCurrent(app, "agents/artworks/"+artwork.Id+".md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(metadata.Content) != 0 || metadata.CanonicalURL != resource.CanonicalURL || strings.Join(metadata.AcceptedPaths, "\n") != strings.Join(want, "\n") {
+		t.Fatalf("metadata lookup = %+v", metadata)
+	}
 	coauthor, err := ReadCurrent(app, "agents/artists/"+second.Id+".md")
 	if err != nil {
 		t.Fatal(err)
@@ -290,6 +297,9 @@ func TestMissingResourceDoesNotParsePublicationManifest(t *testing.T) {
 
 	if _, err := ReadCurrent(app, "agents/artists/missing.md"); !os.IsNotExist(err) {
 		t.Fatalf("missing resource error = %v, want not exist without manifest parsing", err)
+	}
+	if _, err := LookupCurrent(app, "agents/artists/missing.md"); !os.IsNotExist(err) {
+		t.Fatalf("missing metadata error = %v, want not exist without manifest parsing", err)
 	}
 }
 

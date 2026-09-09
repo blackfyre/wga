@@ -19,7 +19,7 @@ type generatedResourceReader func(core.App, string) (agentcontent.Resource, erro
 func registerMarkdownNegotiationMiddleware(app core.App) {
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		se.Router.BindFunc(func(e *core.RequestEvent) error {
-			return negotiateGeneratedMarkdown(app, e, agentcontent.ReadCurrent, e.Next)
+			return negotiateGeneratedMarkdown(app, e, agentcontent.LookupCurrent, e.Next)
 		})
 		return se.Next()
 	})

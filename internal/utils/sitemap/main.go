@@ -145,7 +145,7 @@ func GenerateSiteMap(app core.App, sitemapConfig config.Sitemap) (result Result,
 	if err != nil {
 		return Result{}, err
 	}
-	agentResult, err := agentcontent.Generate(app, sitemapConfig.PublicURL, filepath.Join(staging, "agent-content"))
+	agentResult, err := agentcontent.Generate(app, sitemapConfig.PublicURL, filepath.Join(staging, agentcontent.PublicationDirectoryName))
 	if err != nil {
 		return Result{}, fmt.Errorf("generate agent content: %w", err)
 	}
