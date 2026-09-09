@@ -47,7 +47,7 @@
 - [x] 8.2 Configure Cloudflare SSL/TLS Full (strict), Browser Integrity Check, Always Use HTTPS after canonical verification, and a Request Header Transform Rule that overwrites `X-WGA-Edge-Secret`; verify a canonical request reaches staging with the configured secret while a visitor-supplied value is overwritten.
 - [x] 8.3 Configure the single Free rate-limit rule to exclude verified bots and cover `/artists`, `/artists/*`, `/artworks`, `/artworks/results`, `/dual-mode`, and `/agents/*`, initially blocking above 15 requests per IP per ten seconds for ten seconds; verify Cloudflare Security Events and origin logs show excess requests blocked before origin while verified-bot traffic is excluded.
 - [x] 8.4 Establish a functional baseline, enable Free Bot Fight Mode, and exercise monitoring, accessibility, browser, HTMX, and canonical crawler checks; verify Security Events are reviewed and that disabling Bot Fight Mode independently restores any legitimate traffic it incorrectly blocks.
-- [ ] 8.5 Confirm Cloudflare Managed `robots.txt` remains disabled and configure a dedicated Cache Rule only for successful `/agents/*` and `/llms.txt` responses; verify agent resources become edge cache hits while 404, `Set-Cookie`, full-page HTML, and HTMX responses remain ineligible.
+- [x] 8.5 Confirm Cloudflare Managed `robots.txt` remains disabled and configure a dedicated Cache Rule only for successful `/agents/*` and `/llms.txt` responses; verify agent resources become edge cache hits while 404, `Set-Cookie`, full-page HTML, and HTMX responses remain ineligible.
 
 ## 9. Staged operational rollout
 
