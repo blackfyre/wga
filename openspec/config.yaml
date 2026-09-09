@@ -1,6 +1,8 @@
 schema: spec-driven
 
 context: |
+  Treat active OpenSpec artifacts as authoritative for intended behaviour and scope.
+  Surface conflicts between code and specifications instead of resolving them silently.
   Prefer the smallest coherent change that satisfies the specification.
   Do not include implementation details in artifacts unless they materially constrain the solution.
   Do not add unrelated refactors, cleanup, or speculative features to a change.
@@ -19,7 +21,7 @@ rules:
 operations:
   apply:
     guidance:
-      - Work one unchecked task at a time unless two tasks are inseparable.
+      - Work one unchecked task at a time unless the user explicitly asks for a batch.
       - Read only task-relevant artifacts and code before broadening context.
       - Run focused deterministic checks before marking a task complete.
       - Do not mark a task complete when required verification is failing.

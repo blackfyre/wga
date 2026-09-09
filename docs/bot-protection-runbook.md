@@ -106,8 +106,10 @@ dig +short A beta.wga.hu @8.8.8.8
 dig +short AAAA beta.wga.hu @8.8.8.8
 dig +short A beta.wga.hu
 dig +short AAAA beta.wga.hu
-curl --fail --silent --show-error --dump-header - --output /dev/null https://beta.wga.hu/health
-curl --fail --silent --show-error https://beta.wga.hu/cdn-cgi/trace
+curl --fail --silent --show-error --output /dev/null \
+  --write-out 'status=%{http_code}\nserver=%header{server}\ncf_ray=%header{cf-ray}\n' \
+  https://beta.wga.hu/health
+curl --fail --silent --show-error https://beta.wga.hu/cdn-cgi/trace | grep '^colo='
 ```
 
 Stop if any answer exposes a Railway CNAME or address, or if HTTPS lacks `server: cloudflare`, `CF-Ray`, and a successful `/cdn-cgi/trace`. Flush or replace a stale recursive resolver and repeat every check; changing or toggling an already-correct Cloudflare record does not repair an upstream resolver cache.
@@ -119,7 +121,7 @@ Advance only when the current gate has deterministic evidence:
 1. **Proxy:** DNS and HTTPS pass the proxy gate above.
 2. **Origin authentication:** deploy `cloudflare-railway` identity settings and the matching Cloudflare transform. A canonical protected request succeeds, a visitor-supplied secret is overwritten, and a direct-origin request with an invalid secret returns `403` before WGA's handler.
 3. **Observe:** set `WGA_PUBLIC_REQUEST_PROTECTION_MODE=observe`. Exercise normal browser, keyboard, HTMX, monitoring, crawler, and generated-content flows. Review aggregate would-reject events and tune only from evidence.
-4. **Cloudflare rate limit:** send a controlled staging burst. The first 15 requests in ten seconds may reach Railway; excess requests must return Cloudflare `429` with `Retry-After: 10`, appear as `ratelimit` blocks in Security Events, and be absent from Railway origin logs. Confirm the rule expression still excludes verified bots.
+4. **Cloudflare rate limit:** send a controlled staging burst. The first 15 requests in ten seconds may reach Railway; excess requests must be blocked by Cloudflare and appear as `ratelimit` blocks in Security Events. Verify the deployed `429` and `Retry-After` behaviour, record any bounded origin spillover allowed by Cloudflare's counter lag, and confirm the rule expression still excludes verified bots.
 5. **Generated cache:** request `/llms.txt` and one published `/agents/*` resource twice with a unique harmless cache key. Each must transition from `MISS` to `REVALIDATED`, with the latter response served from Cloudflare after an `ETag` check at the origin. Republish a changed fixture and confirm the next request returns the new representation rather than stale cached content. Repeated generated-resource 404s must remain `BYPASS` or otherwise never become `HIT`; full-page HTML, HTMX, and `Set-Cookie` responses must remain `DYNAMIC` or `BYPASS`.
 6. **Bot Fight Mode:** record the functional baseline before enabling it. Repeat monitoring, accessibility, browser, HTMX, robots, sitemap, and canonical crawler checks after enabling it. Review Security Events for false positives and prove that Bot Fight Mode can be disabled without changing the rate-limit or application controls.
 7. **Enforce:** after the observation evidence is accepted, set `WGA_PUBLIC_REQUEST_PROTECTION_MODE=enforce` in staging. Verify direct-origin, host, rate, and capacity rejection responses, then repeat the legitimate-traffic checks before production rollout.
