@@ -1,6 +1,7 @@
 package requestprotection
 
 import (
+	"container/list"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
@@ -28,20 +29,19 @@ type rateWindow struct {
 }
 
 type clientRateState struct {
-	createdOrder uint64
-	windows      map[Profile]rateWindow
+	windows map[Profile]rateWindow
 }
 
 // RateLimiter provides bounded, privacy-preserving fixed-window accounting for
 // protected public-read profiles. It retains only process-private keyed
 // identity digests and never stores the resolved raw identity.
 type RateLimiter struct {
-	mu        sync.Mutex
-	limits    RateLimits
-	key       [sha256.Size]byte
-	clients   map[privateIdentity]*clientRateState
-	nextOrder uint64
-	now       func() time.Time
+	mu      sync.Mutex
+	limits  RateLimits
+	key     [sha256.Size]byte
+	clients map[privateIdentity]*clientRateState
+	order   *list.List
+	now     func() time.Time
 }
 
 // NewRateLimiter creates an independent limiter with a random process-private
@@ -64,6 +64,7 @@ func newRateLimiter(limits RateLimits, key [sha256.Size]byte, now func() time.Ti
 		limits:  limits,
 		key:     key,
 		clients: make(map[privateIdentity]*clientRateState, limits.EntryCapacity),
+		order:   list.New(),
 		now:     now,
 	}
 }
@@ -88,20 +89,19 @@ func (l *RateLimiter) AllowResolved(identity string, resolved bool, profile Prof
 	defer l.mu.Unlock()
 
 	now := l.now()
-	l.removeExpired(now)
-
 	key := l.privateIdentity(identity)
 	state := l.clients[key]
 	if state == nil {
 		if len(l.clients) >= l.limits.EntryCapacity {
 			l.removeOldest()
 		}
-		l.nextOrder++
 		state = &clientRateState{
-			createdOrder: l.nextOrder,
-			windows:      make(map[Profile]rateWindow, 3),
+			windows: make(map[Profile]rateWindow, 3),
 		}
+		l.order.PushBack(key)
 		l.clients[key] = state
+	} else {
+		l.removeExpired(state, now)
 	}
 
 	window := state.windows[profile]
@@ -155,31 +155,22 @@ func (l *RateLimiter) privateIdentity(identity string) privateIdentity {
 	return key
 }
 
-func (l *RateLimiter) removeExpired(now time.Time) {
-	for key, state := range l.clients {
-		for profile, window := range state.windows {
-			if now.Sub(window.startedAt) >= clientRateWindow {
-				delete(state.windows, profile)
-			}
-		}
-		if len(state.windows) == 0 {
-			delete(l.clients, key)
+// removeExpired lazily clears one client's bounded profile set. A client has at
+// most three windows, so request cost is constant regardless of identity-table
+// capacity.
+func (l *RateLimiter) removeExpired(state *clientRateState, now time.Time) {
+	for profile, window := range state.windows {
+		if now.Sub(window.startedAt) >= clientRateWindow {
+			delete(state.windows, profile)
 		}
 	}
 }
 
 func (l *RateLimiter) removeOldest() {
-	var oldestKey privateIdentity
-	var oldestOrder uint64
-	found := false
-	for key, state := range l.clients {
-		if !found || state.createdOrder < oldestOrder {
-			oldestKey = key
-			oldestOrder = state.createdOrder
-			found = true
-		}
+	oldest := l.order.Front()
+	if oldest == nil {
+		return
 	}
-	if found {
-		delete(l.clients, oldestKey)
-	}
+	delete(l.clients, oldest.Value.(privateIdentity))
+	l.order.Remove(oldest)
 }

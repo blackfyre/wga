@@ -75,6 +75,9 @@ func TestRateLimiterEvictsOldestEntryAtFixedCapacity(t *testing.T) {
 	if len(limiter.clients) != 2 {
 		t.Fatalf("retained entries = %d; want 2", len(limiter.clients))
 	}
+	if limiter.order.Len() != len(limiter.clients) {
+		t.Fatalf("eviction order entries = %d; want %d", limiter.order.Len(), len(limiter.clients))
+	}
 	if _, found := limiter.clients[oldest]; found {
 		t.Fatal("oldest entry was not evicted")
 	}
