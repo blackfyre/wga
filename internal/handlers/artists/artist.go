@@ -318,7 +318,7 @@ func processArtist(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 
 	id := utils.ExtractIdFromString(slug)
 	if err := requestprotection.Checkpoint(c.Request.Context(), "artist.detail.lookup"); err != nil {
-		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
+		return err
 	}
 	artist, err := repositories.NewArtistRecordRepository(app).FindPublishedArtist(id)
 	if err != nil {
@@ -336,6 +336,9 @@ func processArtist(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 	viewStarted := time.Now()
 	view, err := buildArtistRecordViewContext(c.Request.Context(), app, artist, logger, requestprotection.Checkpoint)
 	if err != nil {
+		if isExpectedCancellation(err) {
+			return err
+		}
 		logger.Error("Build artist record failed",
 			"event", "artists.record_view.failed",
 			"duration_ms", time.Since(viewStarted).Milliseconds(),
@@ -358,7 +361,7 @@ func processArtist(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 
 	var buff bytes.Buffer
 	if err := requestprotection.Checkpoint(c.Request.Context(), "artist.detail.render"); err != nil {
-		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
+		return err
 	}
 	if utils.IsHtmxRequest(c) {
 		err = pages.ArtistRecordBlock(view).Render(ctx, &buff)
@@ -366,11 +369,18 @@ func processArtist(c *core.RequestEvent, app *pocketbase.PocketBase) error {
 		err = pages.ArtistRecordPage(view).Render(ctx, &buff)
 	}
 	if err != nil {
+		if isExpectedCancellation(err) {
+			return err
+		}
 		app.Logger().Error("Error rendering artist page", "error", err.Error())
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
 	return c.HTML(http.StatusOK, buff.String())
+}
+
+func isExpectedCancellation(err error) bool {
+	return requestprotection.IsCancellation(err)
 }
 
 func artistLookupError(c *core.RequestEvent, app *pocketbase.PocketBase, slug string, err error) error {

@@ -46,6 +46,9 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 	view, canonical, err := buildArtworkSearchViewContext(c.Request.Context(), app, queryParams, page, artworkSearchPageSize, requestprotection.Checkpoint)
 	if err != nil {
+		if requestprotection.IsCancellation(err) {
+			return err
+		}
 		if errors.Is(err, errConflictingVenueFilters) {
 			app.Logger().Warn("Rejected conflicting artwork venue filters")
 			return utils.BadRequestError(c)
@@ -75,6 +78,9 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	})
 
 	if err != nil {
+		if requestprotection.IsCancellation(err) {
+			return err
+		}
 		app.Logger().Error("Error rendering artwork search page", "error", err.Error())
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}

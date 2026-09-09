@@ -1,8 +1,26 @@
 package requestprotection
 
-import "context"
+import (
+	"context"
+	"errors"
+)
 
 type cancellationObserverKey struct{}
+
+// CancellationError identifies cancellation observed at a protected workflow
+// checkpoint while preserving the original context cause for errors.Is.
+type CancellationError struct {
+	cause error
+}
+
+func (e *CancellationError) Error() string { return e.cause.Error() }
+func (e *CancellationError) Unwrap() error { return e.cause }
+
+// IsCancellation reports whether err originated from a protected checkpoint.
+func IsCancellation(err error) bool {
+	var cancellation *CancellationError
+	return errors.As(err, &cancellation)
+}
 
 // CancellationEvent contains only bounded, server-controlled request metadata.
 type CancellationEvent struct {
@@ -33,5 +51,5 @@ func Checkpoint(ctx context.Context, stage string) error {
 	if observer, ok := ctx.Value(cancellationObserverKey{}).(func(string)); ok {
 		observer(stage)
 	}
-	return ctx.Err()
+	return &CancellationError{cause: ctx.Err()}
 }

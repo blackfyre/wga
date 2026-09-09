@@ -193,25 +193,8 @@ func processArtworkWithCheckpoint(c *core.RequestEvent, app *pocketbase.PocketBa
 		return artworkCancellationError(c, err)
 	}
 
-	if err := checkpoint(c.Request.Context(), "artwork.detail.schools"); err != nil {
+	if err := populateArtworkSchoolsContext(c.Request.Context(), app, artist, &content, checkpoint); err != nil {
 		return artworkCancellationError(c, err)
-	}
-	school := artist.GetStringSlice("school")
-
-	var schoolCollector []string
-
-	for _, s := range school {
-		r, err := app.FindRecordById(constants.CollectionSchools, s)
-
-		if err != nil {
-			app.Logger().Error("school not found", "error", err.Error())
-			continue
-		}
-
-		schoolCollector = append(schoolCollector, r.GetString("name"))
-
-		content.Schools = strings.Join(schoolCollector, ", ")
-
 	}
 
 	// Annotate the source-backed commentary with glossary terms.
@@ -260,7 +243,25 @@ func processArtworkWithCheckpoint(c *core.RequestEvent, app *pocketbase.PocketBa
 }
 
 func artworkCancellationError(c *core.RequestEvent, err error) error {
-	return utils.ServerFaultError(c, utils.ServerFailure{Category: "page_render", Cause: err})
+	_ = c
+	return err
+}
+
+func populateArtworkSchoolsContext(ctx context.Context, app *pocketbase.PocketBase, artist *core.Record, content *dto.Artwork, checkpoint artworkDetailCheckpoint) error {
+	schoolCollector := []string{}
+	for _, schoolID := range artist.GetStringSlice("school") {
+		if err := checkpoint(ctx, "artwork.detail.school"); err != nil {
+			return err
+		}
+		record, err := app.FindRecordById(constants.CollectionSchools, schoolID)
+		if err != nil {
+			app.Logger().Error("school not found", "error", err.Error())
+			continue
+		}
+		schoolCollector = append(schoolCollector, record.GetString("name"))
+	}
+	content.Schools = strings.Join(schoolCollector, ", ")
+	return nil
 }
 
 func RenderArtworkContent(app *pocketbase.PocketBase, c *core.RequestEvent, artwork *core.Record, hxTarget string, showBreadcrumbs bool) (dto.Artwork, error) {

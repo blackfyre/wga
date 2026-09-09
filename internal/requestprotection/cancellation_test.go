@@ -36,3 +36,15 @@ func TestCheckpointDoesNotObserveActiveContext(t *testing.T) {
 		t.Fatal("active checkpoint emitted cancellation telemetry")
 	}
 }
+
+func TestIsCancellationRequiresCheckpointOrigin(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	err := Checkpoint(ctx, "detail.render")
+	if !IsCancellation(err) || !errors.Is(err, context.Canceled) {
+		t.Fatalf("checkpoint error = %v, want tagged context cancellation", err)
+	}
+	if IsCancellation(context.Canceled) {
+		t.Fatal("raw context cancellation was mistaken for a checkpoint outcome")
+	}
+}

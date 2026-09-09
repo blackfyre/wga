@@ -128,8 +128,11 @@ func renderDualModePageWithCheckpoint(app *pocketbase.PocketBase, c *core.Reques
 	if err := checkpoint(c.Request.Context(), "dual.reference"); err != nil {
 		return dualCancellationError(c, err)
 	}
-	ref, err := loadDualReference(app)
+	ref, err := loadDualReferenceContext(c.Request.Context(), app, checkpoint)
 	if err != nil {
+		if requestprotection.IsCancellation(err) {
+			return err
+		}
 		app.Logger().Error("Error loading dual mode reference data", "error", err.Error())
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
@@ -145,6 +148,9 @@ func renderDualModePageWithCheckpoint(app *pocketbase.PocketBase, c *core.Reques
 	}
 	leftPath, err := resolvePaneCanonicalPathContext(c.Request.Context(), app, state.left, checkpoint)
 	if err != nil {
+		if requestprotection.IsCancellation(err) {
+			return err
+		}
 		app.Logger().Error("Error resolving left pane path", "error", err.Error())
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
@@ -153,6 +159,9 @@ func renderDualModePageWithCheckpoint(app *pocketbase.PocketBase, c *core.Reques
 	}
 	rightPath, err := resolvePaneCanonicalPathContext(c.Request.Context(), app, state.right, checkpoint)
 	if err != nil {
+		if requestprotection.IsCancellation(err) {
+			return err
+		}
 		app.Logger().Error("Error resolving right pane path", "error", err.Error())
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
@@ -164,6 +173,9 @@ func renderDualModePageWithCheckpoint(app *pocketbase.PocketBase, c *core.Reques
 	}
 	leftWindow, err := buildWindowContext(c.Request.Context(), app, "left", state.left, state, ref, checkpoint)
 	if err != nil {
+		if requestprotection.IsCancellation(err) {
+			return err
+		}
 		app.Logger().Error("Error rendering left window", "error", err.Error())
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
@@ -173,6 +185,9 @@ func renderDualModePageWithCheckpoint(app *pocketbase.PocketBase, c *core.Reques
 	}
 	rightWindow, err := buildWindowContext(c.Request.Context(), app, "right", state.right, state, ref, checkpoint)
 	if err != nil {
+		if requestprotection.IsCancellation(err) {
+			return err
+		}
 		app.Logger().Error("Error rendering right window", "error", err.Error())
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
@@ -203,6 +218,9 @@ func renderDualModePageWithCheckpoint(app *pocketbase.PocketBase, c *core.Reques
 		err = pages.DualModePage(view).Render(ctx, &buff)
 	}
 	if err != nil {
+		if requestprotection.IsCancellation(err) {
+			return err
+		}
 		app.Logger().Error("Error rendering dual mode page", "error", err.Error())
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
@@ -211,7 +229,8 @@ func renderDualModePageWithCheckpoint(app *pocketbase.PocketBase, c *core.Reques
 }
 
 func dualCancellationError(c *core.RequestEvent, err error) error {
-	return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
+	_ = c
+	return err
 }
 
 func baseDualWindow(side string, pane dualPaneState, state dualState) pages.DualWindow {
@@ -295,10 +314,6 @@ func buildWindowContext(ctx context.Context, app *pocketbase.PocketBase, side st
 	default:
 		return buildIndexWindowContext(ctx, app, side, pane, state, ref, window, checkpoint)
 	}
-}
-
-func buildIndexWindow(app *pocketbase.PocketBase, side string, pane dualPaneState, state dualState, ref dualReference, window pages.DualWindow) (pages.DualWindow, error) {
-	return buildIndexWindowContext(context.Background(), app, side, pane, state, ref, window, requestprotection.Checkpoint)
 }
 
 func buildIndexWindowContext(ctx context.Context, app *pocketbase.PocketBase, side string, pane dualPaneState, state dualState, ref dualReference, window pages.DualWindow, checkpoint dualCheckpoint) (pages.DualWindow, error) {
@@ -680,8 +695,15 @@ func (i dualIndexState) repositoryFilter(periodStart int, periodEnd int) reposit
 // ---------------------------------------------------------------------------
 
 func loadDualReference(app core.App) (dualReference, error) {
+	return loadDualReferenceContext(context.Background(), app, requestprotection.Checkpoint)
+}
+
+func loadDualReferenceContext(ctx context.Context, app core.App, checkpoint dualCheckpoint) (dualReference, error) {
 	var ref dualReference
 
+	if err := checkpoint(ctx, "dual.reference.schools"); err != nil {
+		return ref, err
+	}
 	schoolRecords, err := app.FindRecordsByFilter(constants.CollectionSchools, "", "+name", 0, 0)
 	if err != nil {
 		return ref, err
@@ -700,6 +722,9 @@ func loadDualReference(app core.App) (dualReference, error) {
 		}
 	}
 
+	if err := checkpoint(ctx, "dual.reference.periods"); err != nil {
+		return ref, err
+	}
 	periodRecords, err := app.FindRecordsByFilter("art_periods", "", "+start,+name", 0, 0)
 	if err != nil {
 		return ref, err
@@ -717,6 +742,9 @@ func loadDualReference(app core.App) (dualReference, error) {
 	}
 
 	repo := repositories.NewArtistIndexRepository(app)
+	if err := checkpoint(ctx, "dual.reference.birth_bounds"); err != nil {
+		return ref, err
+	}
 	ref.bornMin, ref.bornMax, err = repo.BirthYearBounds()
 	if err != nil {
 		return ref, err

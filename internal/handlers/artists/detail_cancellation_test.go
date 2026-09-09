@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/repositories"
@@ -40,6 +41,22 @@ func TestArtistDetailCancellationStopsRelatedContent(t *testing.T) {
 	want := []string{"artist.detail.work_count", "artist.detail.works", "artist.detail.related_content"}
 	if !reflect.DeepEqual(stages, want) {
 		t.Fatalf("started stages = %v, want %v", stages, want)
+	}
+}
+
+func TestArtistDetailCancellationIsNotRecordedAsServerFault(t *testing.T) {
+	app := newArtistRecordApp(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	request := httptest.NewRequest(http.MethodGet, "/artists/artist-artistone000001", nil).WithContext(ctx)
+	request.SetPathValue("name", "artist-artistone000001")
+	event := &core.RequestEvent{Event: router.Event{Request: request, Response: httptest.NewRecorder()}}
+
+	if err := processArtist(event, app); !errors.Is(err, context.Canceled) {
+		t.Fatalf("processArtist() error = %v, want context.Canceled", err)
+	}
+	if _, ok := utils.ServerFailureFrom(event); ok {
+		t.Fatal("artist cancellation recorded a server fault")
 	}
 }
 
@@ -111,9 +128,8 @@ func TestArtworkDetailCancellationStopsProjection(t *testing.T) {
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("processArtworkWithCheckpoint() response error = %v, want cancelled write", err)
 	}
-	failure, ok := utils.ServerFailureFrom(event)
-	if !ok || !errors.Is(failure.Cause, context.Canceled) {
-		t.Fatalf("recorded failure = %+v, want original cancellation cause", failure)
+	if _, ok := utils.ServerFailureFrom(event); ok {
+		t.Fatal("artwork cancellation recorded a server fault")
 	}
 	want := []string{"artwork.detail.artist_lookup", "artwork.detail.artwork_lookup", "artwork.detail.projection"}
 	if !reflect.DeepEqual(stages, want) {
@@ -171,6 +187,30 @@ func TestRelatedArtworkCancellationStopsAuthorExpansion(t *testing.T) {
 	}
 }
 
+func TestArtworkSchoolCancellationStopsBeforeLookup(t *testing.T) {
+	app, _ := newArtworkRouteApp(t)
+	artist, err := app.FindRecordById(constants.CollectionArtists, "artistone000001")
+	if err != nil {
+		t.Fatal(err)
+	}
+	artist.Set("school", []string{"schoolone000001"})
+	ctx, cancel := context.WithCancel(context.Background())
+	content := dto.Artwork{}
+	stages := []string{}
+	checkpoint := func(ctx context.Context, stage string) error {
+		stages = append(stages, stage)
+		cancel()
+		return requestprotection.Checkpoint(ctx, stage)
+	}
+
+	if err := populateArtworkSchoolsContext(ctx, app, artist, &content, checkpoint); !errors.Is(err, context.Canceled) {
+		t.Fatalf("populateArtworkSchoolsContext() error = %v, want cancellation", err)
+	}
+	if !reflect.DeepEqual(stages, []string{"artwork.detail.school"}) {
+		t.Fatalf("started stages = %v", stages)
+	}
+}
+
 func TestSelectionDetailCancellationStopsSubsequentStages(t *testing.T) {
 	allStages := []string{
 		"selection.detail.artist_lookup",
@@ -201,9 +241,8 @@ func TestSelectionDetailCancellationStopsSubsequentStages(t *testing.T) {
 			if !errors.Is(err, context.Canceled) {
 				t.Fatalf("processSelectionWithCheckpoint() error = %v, want original cause", err)
 			}
-			failure, ok := utils.ServerFailureFrom(event)
-			if !ok || !errors.Is(failure.Cause, context.Canceled) {
-				t.Fatalf("recorded failure = %+v, want original cancellation cause", failure)
+			if _, ok := utils.ServerFailureFrom(event); ok {
+				t.Fatal("selection cancellation recorded a server fault")
 			}
 			want := allStages[:stopIndex+1]
 			if !reflect.DeepEqual(stages, want) {

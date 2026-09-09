@@ -3,12 +3,32 @@ package artworks
 import (
 	"context"
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"reflect"
 	"testing"
 
 	"github.com/blackfyre/wga/internal/requestprotection"
+	"github.com/blackfyre/wga/internal/utils"
+	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/tools/router"
 )
+
+func TestArtworkSearchCancellationIsNotRecordedAsServerFault(t *testing.T) {
+	app := newArtworkSearchApp(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	request := httptest.NewRequest(http.MethodGet, "/artworks", nil).WithContext(ctx)
+	event := &core.RequestEvent{Event: router.Event{Request: request, Response: httptest.NewRecorder()}}
+
+	if err := search(app, event); !errors.Is(err, context.Canceled) {
+		t.Fatalf("search() error = %v, want context.Canceled", err)
+	}
+	if _, ok := utils.ServerFailureFrom(event); ok {
+		t.Fatal("artwork search cancellation recorded a server fault")
+	}
+}
 
 func TestArtworkSearchCancellationStopsSubsequentRepositoryStage(t *testing.T) {
 	app := newArtworkSearchApp(t)

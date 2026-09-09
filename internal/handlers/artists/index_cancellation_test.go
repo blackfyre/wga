@@ -3,12 +3,32 @@ package artists
 import (
 	"context"
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"reflect"
 	"testing"
 
 	"github.com/blackfyre/wga/internal/requestprotection"
+	"github.com/blackfyre/wga/internal/utils"
+	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/tools/router"
 )
+
+func TestArtistSearchCancellationIsNotRecordedAsServerFault(t *testing.T) {
+	app := newArtistRecordApp(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	request := httptest.NewRequest(http.MethodGet, "/artists", nil).WithContext(ctx)
+	event := &core.RequestEvent{Event: router.Event{Request: request, Response: httptest.NewRecorder()}}
+
+	if err := processArtists(app, event); !errors.Is(err, context.Canceled) {
+		t.Fatalf("processArtists() error = %v, want context.Canceled", err)
+	}
+	if _, ok := utils.ServerFailureFrom(event); ok {
+		t.Fatal("artist search cancellation recorded a server fault")
+	}
+}
 
 func TestArtistSearchCancellationStopsSubsequentRepositoryStage(t *testing.T) {
 	app := newArtistRecordApp(t)

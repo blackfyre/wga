@@ -185,15 +185,8 @@ func TestProcessArtworkPreservesCancelledRenderCause(t *testing.T) {
 		t.Fatalf("process artwork error = %v, want context.Canceled", err)
 	}
 
-	failure, ok := utils.ServerFailureFrom(event)
-	if !ok {
-		t.Fatal("expected cancelled render failure metadata")
-	}
-	if failure.Category != "page_render" {
-		t.Errorf("failure category = %q, want page_render", failure.Category)
-	}
-	if !errors.Is(failure.Cause, context.Canceled) {
-		t.Errorf("failure cause = %v, want context.Canceled", failure.Cause)
+	if _, ok := utils.ServerFailureFrom(event); ok {
+		t.Fatal("artwork cancellation recorded a server fault")
 	}
 }
 

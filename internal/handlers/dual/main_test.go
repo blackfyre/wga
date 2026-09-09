@@ -16,7 +16,6 @@ import (
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	"github.com/blackfyre/wga/internal/requestprotection"
-	apputils "github.com/blackfyre/wga/internal/utils"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
@@ -1179,10 +1178,6 @@ func TestDualModeCancellationStopsSubsequentWindowAndRenderStages(t *testing.T) 
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("renderDualModePageWithCheckpoint() error = %v, want context.Canceled", err)
 	}
-	failure, ok := apputils.ServerFailureFrom(event)
-	if !ok || !errors.Is(failure.Cause, context.Canceled) {
-		t.Fatalf("recorded failure = %+v, want context.Canceled", failure)
-	}
 	if len(stages) == 0 || stages[len(stages)-1] != "dual.right.window" {
 		t.Fatalf("started stages = %v, want cancellation at right window", stages)
 	}
@@ -1225,6 +1220,32 @@ func TestDualModeCancellationStopsInsideWindowQueries(t *testing.T) {
 			}
 			if slices.Contains(stages, "dual.right.window") || slices.Contains(stages, "dual.render") {
 				t.Fatalf("cancellation started later stages: %v", stages)
+			}
+		})
+	}
+}
+
+func TestDualReferenceCancellationStopsSubsequentQueries(t *testing.T) {
+	allStages := []string{"dual.reference.schools", "dual.reference.periods", "dual.reference.birth_bounds"}
+	for stopIndex, stopStage := range allStages {
+		t.Run(stopStage, func(t *testing.T) {
+			app := newDualTestApp(t)
+			ctx, cancel := context.WithCancel(context.Background())
+			stages := []string{}
+			checkpoint := func(ctx context.Context, stage string) error {
+				stages = append(stages, stage)
+				if stage == stopStage {
+					cancel()
+				}
+				return requestprotection.Checkpoint(ctx, stage)
+			}
+
+			if _, err := loadDualReferenceContext(ctx, app, checkpoint); !errors.Is(err, context.Canceled) {
+				t.Fatalf("loadDualReferenceContext() error = %v, want context.Canceled", err)
+			}
+			want := allStages[:stopIndex+1]
+			if !reflect.DeepEqual(stages, want) {
+				t.Fatalf("started stages = %v, want %v", stages, want)
 			}
 		})
 	}

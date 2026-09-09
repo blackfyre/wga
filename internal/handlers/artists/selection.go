@@ -35,7 +35,7 @@ func processSelectionWithCheckpoint(c *core.RequestEvent, app *pocketbase.Pocket
 
 	artistID := utils.ExtractIdFromString(artistSlug)
 	if err := checkpoint(ctx, "selection.detail.artist_lookup"); err != nil {
-		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
+		return err
 	}
 	artist, err := repositories.NewArtistRecordRepository(app).FindPublishedArtist(artistID)
 	if err != nil {
@@ -51,7 +51,7 @@ func processSelectionWithCheckpoint(c *core.RequestEvent, app *pocketbase.Pocket
 	}
 
 	if err := checkpoint(ctx, "selection.detail.selection_lookup"); err != nil {
-		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
+		return err
 	}
 	selection, err := repositories.NewArtistSelectionsRepository(app).FindPublishedSelection(artistID, selectionID)
 	if err != nil {
@@ -63,8 +63,8 @@ func processSelectionWithCheckpoint(c *core.RequestEvent, app *pocketbase.Pocket
 
 	view, err := buildSelectionViewContext(ctx, app, artist, selection, checkpoint)
 	if err != nil {
-		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-			return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
+		if requestprotection.IsCancellation(err) {
+			return err
 		}
 		logging.RequestLogger(app, c).Error("Build selection view", "error", err)
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
@@ -80,7 +80,7 @@ func processSelectionWithCheckpoint(c *core.RequestEvent, app *pocketbase.Pocket
 
 	var buff bytes.Buffer
 	if err := checkpoint(ctx, "selection.detail.render"); err != nil {
-		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
+		return err
 	}
 	if err := pages.SelectionPage(view).Render(renderCtx, &buff); err != nil {
 		logging.RequestLogger(app, c).Error("Error rendering selection page", "error", err)
