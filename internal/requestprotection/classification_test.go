@@ -17,8 +17,10 @@ func TestClassify(t *testing.T) {
 		{name: "artwork search", method: http.MethodGet, path: "/artworks", want: ProfileSearch},
 		{name: "artwork results", method: http.MethodGet, path: "/artworks/results", want: ProfileSearch},
 		{name: "dual fragment", method: http.MethodGet, path: "/dual-mode", want: ProfileFragment},
+		{name: "dual lookup", method: http.MethodGet, path: "/dual-mode/lookup", want: ProfileFragment},
 		{name: "artist detail", method: http.MethodGet, path: "/artists/claude-monet", want: ProfileDetail},
 		{name: "artwork detail", method: http.MethodGet, path: "/artists/claude-monet/water-lilies", want: ProfileDetail},
+		{name: "selection detail", method: http.MethodGet, path: "/artists/claude-monet/selections/water", want: ProfileDetail},
 		{name: "agent artist detail", method: http.MethodGet, path: "/agents/artists/artist-id.md", want: ProfileDetail},
 		{name: "agent artwork detail", method: http.MethodHead, path: "/agents/artworks/artwork-id.md", want: ProfileDetail},
 		{name: "health", method: http.MethodGet, path: "/health", want: ProfileExempt},
@@ -30,8 +32,7 @@ func TestClassify(t *testing.T) {
 		{name: "admin root", method: http.MethodGet, path: "/_/", want: ProfileExempt},
 		{name: "admin asset", method: http.MethodGet, path: "/_/assets/app.js", want: ProfileExempt},
 		{name: "write method", method: http.MethodPost, path: "/artists", want: ProfileUnclassified},
-		{name: "dual lookup remains unclassified", method: http.MethodGet, path: "/dual-mode/lookup", want: ProfileUnclassified},
-		{name: "selection remains unclassified", method: http.MethodGet, path: "/artists/name/selections/id", want: ProfileUnclassified},
+		{name: "unknown three-segment artist route", method: http.MethodGet, path: "/artists/name/unknown/id", want: ProfileUnclassified},
 		{name: "unknown route", method: http.MethodGet, path: "/future-route", want: ProfileUnclassified},
 	}
 

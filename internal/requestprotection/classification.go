@@ -38,7 +38,7 @@ func Classify(method string, path string) Profile {
 	switch path {
 	case "/artists", "/artworks", "/artworks/results":
 		return ProfileSearch
-	case "/dual-mode":
+	case "/dual-mode", "/dual-mode/lookup":
 		return ProfileFragment
 	case "/health", "/robots.txt", "/sitemap.xml", "/sitemap.xsl":
 		return ProfileExempt
@@ -65,7 +65,7 @@ func isArtistDetail(path string) bool {
 	}
 
 	segments := strings.Split(strings.TrimPrefix(path, prefix), "/")
-	if len(segments) < 1 || len(segments) > 2 {
+	if len(segments) < 1 || len(segments) > 3 {
 		return false
 	}
 	for _, segment := range segments {
@@ -73,7 +73,7 @@ func isArtistDetail(path string) bool {
 			return false
 		}
 	}
-	return true
+	return len(segments) < 3 || segments[1] == "selections"
 }
 
 func isAgentDetail(path string) bool {
