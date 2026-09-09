@@ -418,7 +418,7 @@ func buildArtistRecordViewContext(ctx context.Context, app *pocketbase.PocketBas
 		return pages.ArtistView{}, err
 	}
 	stepStarted = time.Now()
-	selections, err := buildSelectionPreviews(app, artist, workCount)
+	selections, err := buildSelectionPreviewsContext(ctx, app, artist, workCount, checkpoint)
 	if err != nil {
 		logArtistRecordStepFailure(logger, "build_selection_previews", stepStarted, err)
 		return pages.ArtistView{}, err
@@ -637,8 +637,15 @@ const selectionPreviewWorkLimit = 4
 // counts, sanitised commentary, bounded representative works, and the stable
 // selection route.
 func buildSelectionPreviews(app *pocketbase.PocketBase, artist *core.Record, workCount int) ([]pages.SelectionPreview, error) {
+	return buildSelectionPreviewsContext(context.Background(), app, artist, workCount, requestprotection.Checkpoint)
+}
+
+func buildSelectionPreviewsContext(ctx context.Context, app *pocketbase.PocketBase, artist *core.Record, workCount int, checkpoint artistDetailCheckpoint) ([]pages.SelectionPreview, error) {
 	repo := repositories.NewArtistSelectionsRepository(app)
 
+	if err := checkpoint(ctx, "artist.detail.selection_count"); err != nil {
+		return nil, err
+	}
 	count, err := repo.CountPublishedSelections(artist.Id)
 	if err != nil {
 		return nil, err
@@ -647,6 +654,9 @@ func buildSelectionPreviews(app *pocketbase.PocketBase, artist *core.Record, wor
 		return nil, nil
 	}
 
+	if err := checkpoint(ctx, "artist.detail.selections"); err != nil {
+		return nil, err
+	}
 	selections, err := repo.ListPublishedSelections(artist.Id, 0)
 	if err != nil {
 		return nil, err
@@ -655,6 +665,9 @@ func buildSelectionPreviews(app *pocketbase.PocketBase, artist *core.Record, wor
 	slug := utils.GenerateArtistSlug(artist)
 	previews := make([]pages.SelectionPreview, 0, len(selections))
 	for _, selection := range selections {
+		if err := checkpoint(ctx, "artist.detail.selection_works"); err != nil {
+			return nil, err
+		}
 		works, err := repo.ListSelectionArtworks(artist.Id, selection)
 		if err != nil {
 			return nil, err

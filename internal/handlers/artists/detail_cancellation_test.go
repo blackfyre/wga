@@ -42,6 +42,54 @@ func TestArtistDetailCancellationStopsRelatedContent(t *testing.T) {
 	}
 }
 
+func TestArtistSelectionPreviewCancellationStopsLoopExpansion(t *testing.T) {
+	app := newArtistRecordApp(t)
+	seedPublishedArtist(t, app)
+	for _, selection := range []struct {
+		id    string
+		title string
+	}{
+		{id: "selectionone001", title: "First selection"},
+		{id: "selectiontwo001", title: "Second selection"},
+	} {
+		saveRecordRecord(t, app, "art_selections", selection.id, map[string]any{
+			"artist": []string{"artistone000001"}, "title": selection.title, "display_title": selection.title,
+			"artworks": []string{"artworkone00001"}, "source_path": selection.id, "source_hash": selection.id,
+			"content_hash": selection.id, "published": true,
+		})
+	}
+	artist, err := repositories.NewArtistRecordRepository(app).FindPublishedArtist("artistone000001")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	stages := []string{}
+	workStages := 0
+	checkpoint := func(ctx context.Context, stage string) error {
+		stages = append(stages, stage)
+		if stage == "artist.detail.selection_works" {
+			workStages++
+			if workStages == 2 {
+				cancel()
+			}
+		}
+		return requestprotection.Checkpoint(ctx, stage)
+	}
+
+	if _, err := buildSelectionPreviewsContext(ctx, app, artist, 2, checkpoint); !errors.Is(err, context.Canceled) {
+		t.Fatalf("buildSelectionPreviewsContext() error = %v, want cancellation", err)
+	}
+	want := []string{
+		"artist.detail.selection_count",
+		"artist.detail.selections",
+		"artist.detail.selection_works",
+		"artist.detail.selection_works",
+	}
+	if !reflect.DeepEqual(stages, want) {
+		t.Fatalf("started stages = %v, want %v", stages, want)
+	}
+}
+
 func TestArtworkDetailCancellationStopsProjection(t *testing.T) {
 	app, _ := newArtworkRouteApp(t)
 	ctx, cancel := context.WithCancel(context.Background())
