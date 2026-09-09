@@ -63,7 +63,10 @@ func processSelectionWithCheckpoint(c *core.RequestEvent, app *pocketbase.Pocket
 
 	view, err := buildSelectionViewContext(ctx, app, artist, selection, checkpoint)
 	if err != nil {
-		logging.RequestLogger(app, c).Error("Build selection view", "selection", selectionID, "error", err)
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
+		}
+		logging.RequestLogger(app, c).Error("Build selection view", "error", err)
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
