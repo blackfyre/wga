@@ -165,6 +165,47 @@ func TestGeneratedAgentRoutesServeOnlyCurrentMarkdown(t *testing.T) {
 	}
 }
 
+func TestGeneratedAgentRoutesRevalidateCurrentPublication(t *testing.T) {
+	app := newStaticTestApp(t)
+	writeGeneratedAgentFixture(t, app)
+	RegisterHandlers(app, config.EnvironmentProduction)
+
+	router, err := apis.NewRouter(app)
+	if err != nil {
+		t.Fatal(err)
+	}
+	serveEvent := &core.ServeEvent{App: app, Router: router}
+	if err := app.OnServe().Trigger(serveEvent, func(se *core.ServeEvent) error {
+		mux, err := se.Router.BuildMux()
+		if err != nil {
+			return err
+		}
+		first := httptest.NewRecorder()
+		mux.ServeHTTP(first, httptest.NewRequest(http.MethodGet, "/agents/artists/artistone000001.md", nil))
+		etag := first.Header().Get("ETag")
+		if first.Code != http.StatusOK || etag == "" {
+			t.Fatalf("initial response = %d ETag %q", first.Code, etag)
+		}
+		if got := first.Header().Get("Cache-Control"); got != "public, no-cache, must-revalidate" {
+			t.Fatalf("Cache-Control = %q", got)
+		}
+
+		request := httptest.NewRequest(http.MethodGet, "/agents/artists/artistone000001.md", nil)
+		request.Header.Set("If-None-Match", etag)
+		revalidated := httptest.NewRecorder()
+		mux.ServeHTTP(revalidated, request)
+		if revalidated.Code != http.StatusNotModified || revalidated.Body.Len() != 0 {
+			t.Fatalf("revalidated response = %d body %q", revalidated.Code, revalidated.Body.String())
+		}
+		if revalidated.Header().Get("ETag") != etag {
+			t.Fatalf("revalidated ETag = %q, want %q", revalidated.Header().Get("ETag"), etag)
+		}
+		return nil
+	}); err != nil {
+		t.Fatalf("trigger serve event: %v", err)
+	}
+}
+
 func createStaticPage(t testing.TB, app core.App, slug, title, content string) {
 	t.Helper()
 

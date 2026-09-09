@@ -2,7 +2,9 @@ package static
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"database/sql"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -48,7 +50,7 @@ func assetCacheControl(path string) string {
 }
 
 const (
-	agentContentCacheControl = "public, max-age=300, s-maxage=86400"
+	agentContentCacheControl = "public, no-cache, must-revalidate"
 	agentContentNoStore      = "private, no-store"
 )
 
@@ -73,8 +75,28 @@ func serveAgentContent(app core.App, c *core.RequestEvent, relative string) erro
 
 	c.Response.Header().Set("Cache-Control", agentContentCacheControl)
 	c.Response.Header().Set("Link", fmt.Sprintf("<%s>; rel=\"canonical\"", resource.CanonicalURL))
+	etag := agentContentETag(resource.Content)
+	c.Response.Header().Set("ETag", etag)
 	c.Response.Header().Del("Set-Cookie")
+	if matchesETag(c.Request.Header.Get("If-None-Match"), etag) {
+		return c.NoContent(http.StatusNotModified)
+	}
 	return c.Blob(http.StatusOK, "text/markdown; charset=utf-8", resource.Content)
+}
+
+func agentContentETag(content []byte) string {
+	digest := sha256.Sum256(content)
+	return `"` + hex.EncodeToString(digest[:]) + `"`
+}
+
+func matchesETag(ifNoneMatch string, etag string) bool {
+	for _, candidate := range strings.Split(ifNoneMatch, ",") {
+		candidate = strings.TrimSpace(candidate)
+		if candidate == "*" || candidate == etag || strings.TrimPrefix(candidate, "W/") == etag {
+			return true
+		}
+	}
+	return false
 }
 
 func serveSitemap(app core.App, c *core.RequestEvent, relative string) error {

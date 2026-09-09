@@ -75,7 +75,7 @@ starts_with(http.request.uri.path, "/agents/") or
 http.request.uri.path eq "/llms.txt"
 ```
 
-Do not add response status TTL overrides. Successful generated resources publish `public` cache headers, while misses publish `private, no-store`. Cloudflare must respect those origin decisions.
+Do not add response status or edge-TTL overrides. Successful generated resources publish `public, no-cache, must-revalidate` with a content-derived `ETag`, while misses publish `private, no-store`. Cloudflare must respect those origin decisions so every cached response is revalidated against the current publication before use and corrected or unpublished records cannot remain stale at the edge.
 
 ## Generated-publication recovery
 
@@ -120,7 +120,7 @@ Advance only when the current gate has deterministic evidence:
 2. **Origin authentication:** deploy `cloudflare-railway` identity settings and the matching Cloudflare transform. A canonical protected request succeeds, a visitor-supplied secret is overwritten, and a direct-origin request with an invalid secret returns `403` before WGA's handler.
 3. **Observe:** set `WGA_PUBLIC_REQUEST_PROTECTION_MODE=observe`. Exercise normal browser, keyboard, HTMX, monitoring, crawler, and generated-content flows. Review aggregate would-reject events and tune only from evidence.
 4. **Cloudflare rate limit:** send a controlled staging burst. The first 15 requests in ten seconds may reach Railway; excess requests must return Cloudflare `429` with `Retry-After: 10`, appear as `ratelimit` blocks in Security Events, and be absent from Railway origin logs. Confirm the rule expression still excludes verified bots.
-5. **Generated cache:** request `/llms.txt` and one published `/agents/*` resource twice with a unique harmless cache key. Each must transition from `MISS` to `HIT`. Repeated generated-resource 404s must remain `BYPASS` or otherwise never become `HIT`; full-page HTML, HTMX, and `Set-Cookie` responses must remain `DYNAMIC` or `BYPASS`.
+5. **Generated cache:** request `/llms.txt` and one published `/agents/*` resource twice with a unique harmless cache key. Each must transition from `MISS` to `REVALIDATED`, with the latter response served from Cloudflare after an `ETag` check at the origin. Republish a changed fixture and confirm the next request returns the new representation rather than stale cached content. Repeated generated-resource 404s must remain `BYPASS` or otherwise never become `HIT`; full-page HTML, HTMX, and `Set-Cookie` responses must remain `DYNAMIC` or `BYPASS`.
 6. **Bot Fight Mode:** record the functional baseline before enabling it. Repeat monitoring, accessibility, browser, HTMX, robots, sitemap, and canonical crawler checks after enabling it. Review Security Events for false positives and prove that Bot Fight Mode can be disabled without changing the rate-limit or application controls.
 7. **Enforce:** after the observation evidence is accepted, set `WGA_PUBLIC_REQUEST_PROTECTION_MODE=enforce` in staging. Verify direct-origin, host, rate, and capacity rejection responses, then repeat the legitimate-traffic checks before production rollout.
 
