@@ -60,14 +60,22 @@ func TestArtworkAvailabilityCacheHookInvalidatesAfterMutations(t *testing.T) {
 	artwork.Set("title", "Hook Work")
 	artwork.Set("author", []string{artist.Id})
 	artwork.Set("published", true)
+	revision := repositories.ArtworkCatalogueRevision(app)
 	if err := app.Save(artwork); err != nil {
 		t.Fatalf("save artwork: %v", err)
+	}
+	if got := repositories.ArtworkCatalogueRevision(app); got != revision+1 {
+		t.Fatalf("catalogue revision after create = %d, want %d", got, revision+1)
 	}
 	assertHookArtistAvailability(t, repo, true)
 
 	artwork.Set("published", false)
+	revision = repositories.ArtworkCatalogueRevision(app)
 	if err := app.Save(artwork); err != nil {
 		t.Fatalf("unpublish artwork: %v", err)
+	}
+	if got := repositories.ArtworkCatalogueRevision(app); got != revision+1 {
+		t.Fatalf("catalogue revision after update = %d, want %d", got, revision+1)
 	}
 	assertHookArtistAvailability(t, repo, false)
 

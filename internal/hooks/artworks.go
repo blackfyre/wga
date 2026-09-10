@@ -8,6 +8,7 @@ import (
 
 func artworkCatalogueCacheHook(app core.App) {
 	invalidate := func(e *core.RecordEvent) error {
+		repositories.AdvanceArtworkCatalogueRevision(e.App)
 		repositories.InvalidateArtistAvailability(e.App)
 		repositories.InvalidateCollectionHoldings(e.App)
 		return e.Next()

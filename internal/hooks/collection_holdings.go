@@ -17,6 +17,7 @@ func collectionHoldingsCacheHook(app core.App) {
 	app.OnRecordAfterDeleteSuccess(constants.CollectionLocations).BindFunc(invalidateHoldings)
 
 	invalidateArtistProjections := func(e *core.RecordEvent) error {
+		repositories.AdvanceArtworkCatalogueRevision(e.App)
 		repositories.InvalidateCollectionHoldings(e.App)
 		repositories.InvalidateArtistAvailability(e.App)
 		return e.Next()

@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	neturl "net/url"
 	"strconv"
@@ -15,6 +16,7 @@ import (
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
 	"github.com/blackfyre/wga/internal/constants"
+	"github.com/blackfyre/wga/internal/repositories"
 	"github.com/blackfyre/wga/internal/requestprotection"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/blackfyre/wga/internal/utils/url"
@@ -171,7 +173,8 @@ func buildArtworkSearchResultsViewContext(ctx context.Context, app *pocketbase.P
 	var records []*core.Record
 	var recordsCount int
 	for attempt := 0; attempt < 2; attempt++ {
-		offset := (requestedPage - 1) * limit
+		revision := repositories.ArtworkCatalogueRevision(app)
+		offset := artworkSearchPageOffset(requestedPage, limit)
 		pageRows, rowsErr := listArtworkPageRowsForCollection(app, collection, filters, limit, offset)
 		if rowsErr != nil {
 			return artworkSearchResultsContext{}, rowsErr
@@ -200,6 +203,9 @@ func buildArtworkSearchResultsViewContext(ctx context.Context, app *pocketbase.P
 			return artworkSearchResultsContext{}, err
 		}
 		records, rowsErr = listArtworkRecordsByPageRowsForCollection(app, collection, filters, pageRows)
+		if rowsErr == nil && revision != repositories.ArtworkCatalogueRevision(app) {
+			rowsErr = errArtworkPageChanged
+		}
 		if !errors.Is(rowsErr, errArtworkPageChanged) {
 			if rowsErr != nil {
 				return artworkSearchResultsContext{}, rowsErr
@@ -225,6 +231,16 @@ func buildArtworkSearchResultsViewContext(ctx context.Context, app *pocketbase.P
 		view:            view,
 		canonical:       buildArtworkSearchPath("/artworks", filters, dualModeContext),
 	}, nil
+}
+
+func artworkSearchPageOffset(page int, limit int) int {
+	if page <= 1 || limit <= 0 {
+		return 0
+	}
+	if page-1 > math.MaxInt/limit {
+		return math.MaxInt
+	}
+	return (page - 1) * limit
 }
 
 func buildArtworkSearchViewContext(ctx context.Context, app *pocketbase.PocketBase, values neturl.Values, page int, limit int, checkpoint artworkSearchCheckpoint) (pages.ArtworkSearchView, string, error) {

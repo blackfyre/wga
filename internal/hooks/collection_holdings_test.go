@@ -59,8 +59,20 @@ func TestCollectionHoldingsCacheHooksInvalidateAfterMutations(t *testing.T) {
 	artist.Set("filing_name", "Holding Artist")
 	artist.Set("short_name", "Holding Artist")
 	artist.Set("published", true)
+	revision := repositories.ArtworkCatalogueRevision(app)
 	if err := app.Save(artist); err != nil {
 		t.Fatalf("save artist: %v", err)
+	}
+	if got := repositories.ArtworkCatalogueRevision(app); got != revision+1 {
+		t.Fatalf("catalogue revision after artist create = %d, want %d", got, revision+1)
+	}
+	artist.Set("name", "Renamed Holding Artist")
+	revision = repositories.ArtworkCatalogueRevision(app)
+	if err := app.Save(artist); err != nil {
+		t.Fatalf("rename artist: %v", err)
+	}
+	if got := repositories.ArtworkCatalogueRevision(app); got != revision+1 {
+		t.Fatalf("catalogue revision after artist update = %d, want %d", got, revision+1)
 	}
 	location := core.NewRecord(locations)
 	location.Id = "holdingloc00001"

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	neturl "net/url"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	"github.com/blackfyre/wga/internal/config"
+	"github.com/blackfyre/wga/internal/repositories"
 	"github.com/blackfyre/wga/internal/requestprotection"
 	apputils "github.com/blackfyre/wga/internal/utils"
 	"github.com/pocketbase/dbx"
@@ -777,6 +779,80 @@ func TestArtworkSearchRevalidatesPageBeforeHydration(t *testing.T) {
 	}
 	if result.view.ResultCount != 0 || len(result.view.Artworks) != 0 {
 		t.Fatalf("revalidated result = count %d, artworks %#v; want current empty result", result.view.ResultCount, result.view.Artworks)
+	}
+}
+
+func TestArtworkSearchRetriesWhenSortOrderChangesDuringHydration(t *testing.T) {
+	app := newArtworkSearchApp(t)
+	saveSearchArtist(t, app, "sortartist00001", "Sort Artist")
+	saveSearchArtwork(t, app, searchArtworkSeed{
+		id: "sortalpha000001", title: "Alpha Work",
+		authors: []string{"sortartist00001"}, year: 1500, published: true,
+	})
+	saveSearchArtwork(t, app, searchArtworkSeed{
+		id: "sortbravo000001", title: "Bravo Work",
+		authors: []string{"sortartist00001"}, year: 1500, published: true,
+	})
+
+	var changed atomic.Bool
+	checkpoint := func(_ context.Context, name string) error {
+		if name != "artworks.search.records" || !changed.CompareAndSwap(false, true) {
+			return nil
+		}
+		record, err := app.FindRecordById("artworks", "sortalpha000001")
+		if err != nil {
+			return err
+		}
+		record.Set("title", "Zulu Work")
+		if err := app.Save(record); err != nil {
+			return err
+		}
+		repositories.AdvanceArtworkCatalogueRevision(app)
+		return nil
+	}
+
+	result, err := buildArtworkSearchResultsViewContext(
+		context.Background(),
+		app,
+		neturl.Values{"sort": {sortTitle}},
+		1,
+		1,
+		checkpoint,
+	)
+	if err != nil {
+		t.Fatalf("build search results: %v", err)
+	}
+	if len(result.view.Artworks) != 1 || result.view.Artworks[0].Id != "sortbravo000001" {
+		t.Fatalf("revalidated artworks = %#v, want Bravo Work", result.view.Artworks)
+	}
+}
+
+func TestArtworkSearchMaximumPageClampsToCanonicalLastPage(t *testing.T) {
+	app := newArtworkSearchApp(t)
+	saveSearchArtist(t, app, "maxpageartist01", "Maximum Page Artist")
+	for i, title := range []string{"Alpha Work", "Bravo Work", "Charlie Work"} {
+		saveSearchArtwork(t, app, searchArtworkSeed{
+			id: fmt.Sprintf("maxpagework%04d", i), title: title,
+			authors: []string{"maxpageartist01"}, year: 1500, published: true,
+		})
+	}
+
+	result, err := buildArtworkSearchResultsViewContext(
+		context.Background(),
+		app,
+		neturl.Values{"sort": {sortTitle}},
+		math.MaxInt,
+		2,
+		requestprotection.Checkpoint,
+	)
+	if err != nil {
+		t.Fatalf("build maximum-page results: %v", err)
+	}
+	if len(result.view.Artworks) != 1 || result.view.Artworks[0].Title != "Charlie Work" {
+		t.Fatalf("last-page artworks = %#v, want Charlie Work", result.view.Artworks)
+	}
+	if result.canonical != "/artworks?page=2&sort=title" {
+		t.Fatalf("canonical = %q, want final page", result.canonical)
 	}
 }
 
