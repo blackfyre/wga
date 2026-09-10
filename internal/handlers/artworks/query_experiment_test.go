@@ -77,7 +77,7 @@ func combinedArtworkPage(app *pocketbase.PocketBase, f *filters, limit int, offs
 	if len(rows) == 0 {
 		return nil, 0, nil
 	}
-	records, err := listArtworkRecordsByPageRowsForCollection(app, collection, rows)
+	records, err := listArtworkRecordsByPageRowsForCollection(app, collection, f, rows)
 	return records, rows[0].Total, err
 }
 

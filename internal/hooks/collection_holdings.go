@@ -7,14 +7,21 @@ import (
 )
 
 func collectionHoldingsCacheHook(app core.App) {
-	invalidate := func(e *core.RecordEvent) error {
+	invalidateHoldings := func(e *core.RecordEvent) error {
 		repositories.InvalidateCollectionHoldings(e.App)
 		return e.Next()
 	}
 
-	for _, collection := range []string{constants.CollectionLocations, constants.CollectionArtists} {
-		app.OnRecordAfterCreateSuccess(collection).BindFunc(invalidate)
-		app.OnRecordAfterUpdateSuccess(collection).BindFunc(invalidate)
-		app.OnRecordAfterDeleteSuccess(collection).BindFunc(invalidate)
+	app.OnRecordAfterCreateSuccess(constants.CollectionLocations).BindFunc(invalidateHoldings)
+	app.OnRecordAfterUpdateSuccess(constants.CollectionLocations).BindFunc(invalidateHoldings)
+	app.OnRecordAfterDeleteSuccess(constants.CollectionLocations).BindFunc(invalidateHoldings)
+
+	invalidateArtistProjections := func(e *core.RecordEvent) error {
+		repositories.InvalidateCollectionHoldings(e.App)
+		repositories.InvalidateArtistAvailability(e.App)
+		return e.Next()
 	}
+	app.OnRecordAfterCreateSuccess(constants.CollectionArtists).BindFunc(invalidateArtistProjections)
+	app.OnRecordAfterUpdateSuccess(constants.CollectionArtists).BindFunc(invalidateArtistProjections)
+	app.OnRecordAfterDeleteSuccess(constants.CollectionArtists).BindFunc(invalidateArtistProjections)
 }

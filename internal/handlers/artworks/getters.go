@@ -497,7 +497,7 @@ func venueNameMatchesQuery(label string, query string) bool {
 		return true
 	}
 
-	return strings.Contains(sqliteNoCaseKey(label), sqliteNoCaseKey(query))
+	return strings.Contains(strings.ToLower(label), strings.ToLower(query))
 }
 
 func venueFacetNote(options venueFacetOptions) string {

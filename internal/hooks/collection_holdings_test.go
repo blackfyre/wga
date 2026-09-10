@@ -20,6 +20,11 @@ func TestCollectionHoldingsCacheHooksInvalidateAfterMutations(t *testing.T) {
 	artists.Id = "holding_artists"
 	artists.MarkAsNew()
 	artists.Fields.Add(&core.TextField{Id: "holding_artist_name", Name: "name", Required: true})
+	artists.Fields.Add(
+		&core.TextField{Id: "holding_artist_filing", Name: "filing_name"},
+		&core.TextField{Id: "holding_artist_short", Name: "short_name"},
+		&core.BoolField{Id: "holding_artist_published", Name: "published"},
+	)
 	if err := app.Save(artists); err != nil {
 		t.Fatalf("save artists collection: %v", err)
 	}
@@ -51,6 +56,9 @@ func TestCollectionHoldingsCacheHooksInvalidateAfterMutations(t *testing.T) {
 	artist := core.NewRecord(artists)
 	artist.Id = "holdingartist01"
 	artist.Set("name", "Holding Artist")
+	artist.Set("filing_name", "Holding Artist")
+	artist.Set("short_name", "Holding Artist")
+	artist.Set("published", true)
 	if err := app.Save(artist); err != nil {
 		t.Fatalf("save artist: %v", err)
 	}
@@ -78,6 +86,8 @@ func TestCollectionHoldingsCacheHooksInvalidateAfterMutations(t *testing.T) {
 		t.Fatalf("rename location: %v", err)
 	}
 	assertCollectionHolding(t, app, location.Id, "Renamed Museum", 1)
+	repo := repositories.NewArtistIndexRepository(app)
+	assertHookArtistAvailability(t, repo, true)
 
 	artwork.Set("published", false)
 	if err := app.Save(artwork); err != nil {
@@ -94,18 +104,22 @@ func TestCollectionHoldingsCacheHooksInvalidateAfterMutations(t *testing.T) {
 		t.Fatalf("delete artist: %v", err)
 	}
 	assertCollectionHolding(t, app, location.Id, "Renamed Museum", 0)
+	restoredArtist := core.NewRecord(artists)
+	restoredArtist.Id = artist.Id
+	restoredArtist.Set("name", "Restored Artist")
+	restoredArtist.Set("filing_name", "Restored Artist")
+	restoredArtist.Set("short_name", "Restored Artist")
+	restoredArtist.Set("published", true)
+	if err := app.Save(restoredArtist); err != nil {
+		t.Fatalf("restore artist: %v", err)
+	}
+	assertHookArtistAvailability(t, repo, false)
+
 	if _, err := app.DB().NewQuery("UPDATE artworks SET author = {:author} WHERE id = {:id}").Bind(dbx.Params{
 		"author": `["` + artist.Id + `"]`,
 		"id":     artwork.Id,
 	}).Execute(); err != nil {
 		t.Fatalf("restore persisted artwork relation: %v", err)
-	}
-
-	restoredArtist := core.NewRecord(artists)
-	restoredArtist.Id = artist.Id
-	restoredArtist.Set("name", "Restored Artist")
-	if err := app.Save(restoredArtist); err != nil {
-		t.Fatalf("restore artist: %v", err)
 	}
 	assertCollectionHolding(t, app, location.Id, "Renamed Museum", 1)
 

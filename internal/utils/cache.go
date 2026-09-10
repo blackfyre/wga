@@ -1,11 +1,14 @@
 package utils
 
 import (
+	"errors"
 	"sync"
 	"time"
 
 	"github.com/pocketbase/pocketbase/core"
 )
+
+var errCachedValueLoaderPanicked = errors.New("cached value loader panicked")
 
 const (
 	cacheExpirySuffix = ":meta:expires_unix_nano"
@@ -102,19 +105,31 @@ func GetOrLoadCachedValue[T any](app core.App, key string, ttl time.Duration, lo
 	state.loading = loading
 	state.mu.Unlock()
 
-	value, err := load()
+	var value T
+	var err error
+	defer func() {
+		panicValue := recover()
 
-	state.mu.Lock()
-	loading.value = value
-	loading.err = err
-	if err == nil && generation == state.generation {
-		SetCachedValue(app, key, value, ttl)
-	}
-	if state.loading == loading {
-		state.loading = nil
-	}
-	close(loading.done)
-	state.mu.Unlock()
+		state.mu.Lock()
+		loading.value = value
+		loading.err = err
+		if panicValue != nil {
+			loading.err = errCachedValueLoaderPanicked
+		} else if err == nil && generation == state.generation {
+			SetCachedValue(app, key, value, ttl)
+		}
+		if state.loading == loading {
+			state.loading = nil
+		}
+		close(loading.done)
+		state.mu.Unlock()
+
+		if panicValue != nil {
+			panic(panicValue)
+		}
+	}()
+
+	value, err = load()
 
 	if err != nil {
 		return zero, err

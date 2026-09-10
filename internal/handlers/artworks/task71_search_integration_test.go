@@ -156,6 +156,12 @@ func TestSQLiteNoCaseCompareMatchesASCIIOrdering(t *testing.T) {
 	}
 }
 
+func TestVenueNameMatchesQueryFoldsUnicodeCase(t *testing.T) {
+	if !venueNameMatchesQuery("Óbuda Museum", "óbuda") {
+		t.Fatal("expected collection-name search to match Unicode case variants")
+	}
+}
+
 func TestTask71RouteFullHtmxAndOrdinaryGETParity(t *testing.T) {
 	app := newArtworkSearchApp(t)
 	saveSearchArtist(t, app, "artisttask71004", "Task Artist")

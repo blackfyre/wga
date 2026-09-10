@@ -3,6 +3,7 @@ package artworks
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -712,6 +713,73 @@ func TestBuildArtworkSearchViewClampsOutOfRangePage(t *testing.T) {
 	}
 }
 
+func TestArtworkPageCountUsesDistinctArtworkIDsAcrossMatchingAuthors(t *testing.T) {
+	app := newArtworkSearchApp(t)
+	saveSearchArtist(t, app, "alphaartist0001", "Alpha Artist")
+	saveSearchArtist(t, app, "betaartist00001", "Beta Artist")
+	saveSearchArtwork(t, app, searchArtworkSeed{
+		id: "sharedwork00001", title: "Shared Work",
+		authors: []string{"alphaartist0001", "betaartist00001"}, year: 1500, published: true,
+	})
+
+	collection, err := app.FindCollectionByNameOrId("artworks")
+	if err != nil {
+		t.Fatalf("find artworks: %v", err)
+	}
+	f := &filters{Query: "Artist", Sort: sortCatalogue, SortDir: sortAsc}
+	rows, err := listArtworkPageRowsForCollection(app, collection, f, 1, 0)
+	if err != nil {
+		t.Fatalf("list artwork page rows: %v", err)
+	}
+	if len(rows) != 1 || rows[0].ID != "sharedwork00001" || rows[0].Total != 1 {
+		t.Fatalf("rows = %#v, want the sole artwork with total 1", rows)
+	}
+
+	result, err := buildArtworkSearchResultsViewContext(context.Background(), app, neturl.Values{"q": {"Artist"}}, 2, 1, requestprotection.Checkpoint)
+	if err != nil {
+		t.Fatalf("build out-of-range results: %v", err)
+	}
+	if result.view.ResultCount != 1 || len(result.view.Artworks) != 1 || result.view.Artworks[0].Id != "sharedwork00001" {
+		t.Fatalf("out-of-range result = count %d, artworks %#v; want the sole distinct artwork", result.view.ResultCount, result.view.Artworks)
+	}
+}
+
+func TestArtworkSearchRevalidatesPageBeforeHydration(t *testing.T) {
+	app := newArtworkSearchApp(t)
+	saveSearchArtist(t, app, "snapshotartist1", "Snapshot Artist")
+	saveSearchArtwork(t, app, searchArtworkSeed{
+		id: "snapshotwork001", title: "Snapshot Work",
+		authors: []string{"snapshotartist1"}, year: 1500, published: true,
+	})
+
+	deleted := make(chan error, 1)
+	checkpoint := func(_ context.Context, name string) error {
+		if name != "artworks.search.records" {
+			return nil
+		}
+		go func() {
+			_, err := app.ConcurrentDB().NewQuery("DELETE FROM artworks WHERE id = {:id}").
+				Bind(dbx.Params{"id": "snapshotwork001"}).
+				Execute()
+			deleted <- err
+		}()
+		select {
+		case err := <-deleted:
+			return err
+		case <-time.After(5 * time.Second):
+			return errors.New("concurrent artwork delete did not complete")
+		}
+	}
+
+	result, err := buildArtworkSearchResultsViewContext(context.Background(), app, neturl.Values{}, 1, 16, checkpoint)
+	if err != nil {
+		t.Fatalf("build search results: %v", err)
+	}
+	if result.view.ResultCount != 0 || len(result.view.Artworks) != 0 {
+		t.Fatalf("revalidated result = count %d, artworks %#v; want current empty result", result.view.ResultCount, result.view.Artworks)
+	}
+}
+
 func TestBuildArtworkSearchViewIssuesBoundedQueries(t *testing.T) {
 	small := newArtworkSearchApp(t)
 	saveSearchArtist(t, small, "artistone000001", "Artist One")
@@ -750,6 +818,24 @@ func TestBuildArtworkSearchViewIssuesBoundedQueries(t *testing.T) {
 	}
 	if smallCount != largeCount {
 		t.Errorf("query count grew with artwork count: %d (5 artworks) vs %d (60 artworks)", smallCount, largeCount)
+	}
+
+	firstPageCount, err := countSearchQueries(large, func() error {
+		_, err := buildArtworkSearchResultsViewContext(context.Background(), large, neturl.Values{}, 1, 16, requestprotection.Checkpoint)
+		return err
+	})
+	if err != nil {
+		t.Fatalf("first-page results build: %v", err)
+	}
+	outOfRangeCount, err := countSearchQueries(large, func() error {
+		_, err := buildArtworkSearchResultsViewContext(context.Background(), large, neturl.Values{}, 999, 16, requestprotection.Checkpoint)
+		return err
+	})
+	if err != nil {
+		t.Fatalf("out-of-range results build: %v", err)
+	}
+	if outOfRangeCount != firstPageCount+1 {
+		t.Errorf("out-of-range query count = %d, want one recovery statement beyond first-page count %d", outOfRangeCount, firstPageCount)
 	}
 }
 

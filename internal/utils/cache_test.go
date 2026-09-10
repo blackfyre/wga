@@ -233,6 +233,61 @@ func TestGetOrLoadCachedValueSharesButDoesNotCacheFailure(t *testing.T) {
 	})
 }
 
+func TestGetOrLoadCachedValueReleasesWaitersWhenLoaderPanics(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		app := pocketbase.NewWithConfig(pocketbase.Config{DefaultDataDir: "./wga_data"})
+		const key = "cache:test:panic"
+		const panicValue = "loader panic"
+		started := make(chan struct{})
+		release := make(chan struct{})
+		panics := make(chan any, 1)
+		waiterErrors := make(chan error, 1)
+		var loads atomic.Int32
+
+		go func() {
+			defer func() { panics <- recover() }()
+			_, _ = GetOrLoadCachedValue(app, key, time.Hour, func() (string, error) {
+				loads.Add(1)
+				close(started)
+				<-release
+				panic(panicValue)
+			})
+		}()
+
+		<-started
+		go func() {
+			_, err := GetOrLoadCachedValue(app, key, time.Hour, func() (string, error) {
+				loads.Add(1)
+				return "unexpected", nil
+			})
+			waiterErrors <- err
+		}()
+		synctest.Wait()
+		if got := loads.Load(); got != 1 {
+			t.Fatalf("loader calls before panic = %d, want 1", got)
+		}
+
+		close(release)
+		if got := <-panics; got != panicValue {
+			t.Fatalf("recovered panic = %#v, want %q", got, panicValue)
+		}
+		if err := <-waiterErrors; !errors.Is(err, errCachedValueLoaderPanicked) {
+			t.Fatalf("waiter error = %v, want %v", err, errCachedValueLoaderPanicked)
+		}
+
+		value, err := GetOrLoadCachedValue(app, key, time.Hour, func() (string, error) {
+			loads.Add(1)
+			return "recovered", nil
+		})
+		if err != nil || value != "recovered" {
+			t.Fatalf("retry = (%q, %v), want (recovered, nil)", value, err)
+		}
+		if got := loads.Load(); got != 2 {
+			t.Fatalf("loader calls after retry = %d, want 2", got)
+		}
+	})
+}
+
 func TestGetOrLoadCachedValueLoadsUnrelatedKeysIndependently(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		app := pocketbase.NewWithConfig(pocketbase.Config{DefaultDataDir: "./wga_data"})

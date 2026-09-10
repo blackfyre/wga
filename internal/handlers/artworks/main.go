@@ -167,46 +167,48 @@ func buildArtworkSearchResultsViewContext(ctx context.Context, app *pocketbase.P
 	if err != nil {
 		return artworkSearchResultsContext{}, err
 	}
-	offset := (page - 1) * limit
-	pageRows, err := listArtworkPageRowsForCollection(app, collection, filters, limit, offset)
-	if err != nil {
-		return artworkSearchResultsContext{}, err
-	}
-	recordsCount := 0
-	if len(pageRows) > 0 {
-		recordsCount = pageRows[0].Total
-	} else if page > 1 {
-		// A window query returns no total when OFFSET is beyond the last row. Load
-		// the first page to recover the total, then select the canonical last page.
-		pageRows, err = listArtworkPageRowsForCollection(app, collection, filters, limit, 0)
-		if err != nil {
-			return artworkSearchResultsContext{}, err
+	requestedPage := page
+	var records []*core.Record
+	var recordsCount int
+	for attempt := 0; attempt < 2; attempt++ {
+		offset := (requestedPage - 1) * limit
+		pageRows, rowsErr := listArtworkPageRowsForCollection(app, collection, filters, limit, offset)
+		if rowsErr != nil {
+			return artworkSearchResultsContext{}, rowsErr
 		}
+		if len(pageRows) == 0 && requestedPage > 1 {
+			pageRows, rowsErr = listCanonicalArtworkPageRows(app, collection, filters, limit)
+			if rowsErr != nil {
+				return artworkSearchResultsContext{}, rowsErr
+			}
+		}
+
+		recordsCount = 0
 		if len(pageRows) > 0 {
 			recordsCount = pageRows[0].Total
 		}
-	}
-
-	pageCount := (recordsCount + limit - 1) / limit
-	if pageCount == 0 {
-		page = 1
-	} else if page > pageCount {
-		page = pageCount
-		if page > 1 {
-			pageRows, err = listArtworkPageRowsForCollection(app, collection, filters, limit, (page-1)*limit)
-			if err != nil {
-				return artworkSearchResultsContext{}, err
-			}
+		pageCount := (recordsCount + limit - 1) / limit
+		page = requestedPage
+		if pageCount == 0 {
+			page = 1
+		} else if page > pageCount {
+			page = pageCount
 		}
-	}
-	filters.Page = strconv.Itoa(page)
+		filters.Page = strconv.Itoa(page)
 
-	if err := checkpoint(ctx, "artworks.search.records"); err != nil {
-		return artworkSearchResultsContext{}, err
-	}
-	records, err := listArtworkRecordsByPageRowsForCollection(app, collection, pageRows)
-	if err != nil {
-		return artworkSearchResultsContext{}, err
+		if err := checkpoint(ctx, "artworks.search.records"); err != nil {
+			return artworkSearchResultsContext{}, err
+		}
+		records, rowsErr = listArtworkRecordsByPageRowsForCollection(app, collection, filters, pageRows)
+		if !errors.Is(rowsErr, errArtworkPageChanged) {
+			if rowsErr != nil {
+				return artworkSearchResultsContext{}, rowsErr
+			}
+			break
+		}
+		if attempt == 1 {
+			return artworkSearchResultsContext{}, rowsErr
+		}
 	}
 
 	if err := checkpoint(ctx, "artworks.search.projection"); err != nil {
