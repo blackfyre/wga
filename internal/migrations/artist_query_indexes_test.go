@@ -57,6 +57,18 @@ func TestArtistQueryIndexesMigrationLifecycle(t *testing.T) {
 		}
 	}
 	assertPhysicalArtistIndexes(t, app, true)
+	assertArtistQueryPlanUsesIndex(t, app,
+		"filing_name ASC, id ASC",
+		artistIndexPublishedFiling,
+	)
+	assertArtistQueryPlanUsesIndex(t, app,
+		"filing_name DESC, id ASC",
+		artistIndexPublishedFilingDesc,
+	)
+	assertArtistQueryPlanUsesIndex(t, app,
+		"(year_of_birth = 0) ASC, year_of_birth ASC, filing_name ASC, id ASC",
+		artistIndexPublishedBirth,
+	)
 	assertIndexArtistPreserved(t, app, record.Id)
 
 	if err := removeArtistQueryIndexes(app); err != nil {
@@ -116,6 +128,35 @@ func assertPhysicalArtistIndexes(t *testing.T, app core.App, want bool) {
 		if found != want {
 			t.Fatalf("physical index %q present = %t, want %t; indexes = %#v", name, found, want, names)
 		}
+	}
+}
+
+func assertArtistQueryPlanUsesIndex(t *testing.T, app core.App, orderBy string, index string) {
+	t.Helper()
+	rows := []struct {
+		Detail string `db:"detail"`
+	}{}
+	query := `EXPLAIN QUERY PLAN
+		SELECT Artists.*
+		FROM Artists
+		WHERE published = true
+			AND filing_name IS NOT NULL AND TRIM(filing_name) != ''
+			AND short_name IS NOT NULL AND TRIM(short_name) != ''
+		ORDER BY ` + orderBy + `
+		LIMIT 60 OFFSET 0`
+	if err := app.DB().NewQuery(query).All(&rows); err != nil {
+		t.Fatalf("explain artist order %q: %v", orderBy, err)
+	}
+	details := make([]string, 0, len(rows))
+	for _, row := range rows {
+		details = append(details, row.Detail)
+	}
+	plan := strings.Join(details, "\n")
+	if !strings.Contains(plan, "USING INDEX "+index) {
+		t.Fatalf("artist order %q plan = %q, want index %q", orderBy, plan, index)
+	}
+	if strings.Contains(plan, "TEMP B-TREE") {
+		t.Fatalf("artist order %q retained temporary sort: %q", orderBy, plan)
 	}
 }
 
