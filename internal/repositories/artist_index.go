@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"errors"
 	"sort"
-	"strconv"
 	"strings"
 
+	"github.com/blackfyre/wga/internal/utils"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
 )
@@ -16,6 +16,10 @@ import (
 // fields (filing and short form) must be present. Prior-bootstrap records carry
 // blank filing/short fields and are denied rather than reconstructed.
 const publishedArtistIdentity = "filing_name IS NOT NULL AND TRIM(filing_name) != '' AND short_name IS NOT NULL AND TRIM(short_name) != ''"
+
+const artistAvailabilityCacheKey = "artists:index:published-artwork-authors"
+
+type artistAvailabilitySet map[string]struct{}
 
 // filingInitialFold maps the non-ASCII producer filing initials present in the
 // supplied dataset to their ASCII navigation letter. Navigation only: the
@@ -78,11 +82,23 @@ type IndexedArtist struct {
 
 // ArtistIndexRepository is the bounded read-model for the public artist index.
 type ArtistIndexRepository struct {
-	app core.App
+	app                    core.App
+	loadArtistAvailability func() (artistAvailabilitySet, error)
 }
 
 func NewArtistIndexRepository(app core.App) *ArtistIndexRepository {
-	return &ArtistIndexRepository{app: app}
+	return &ArtistIndexRepository{
+		app: app,
+		loadArtistAvailability: func() (artistAvailabilitySet, error) {
+			return loadPublishedArtworkAuthorIDs(app)
+		},
+	}
+}
+
+// InvalidateArtistAvailability advances the projection generation so the next
+// lookup observes current persisted artwork relations.
+func InvalidateArtistAvailability(app core.App) {
+	utils.DeleteCachedValue(app, artistAvailabilityCacheKey)
 }
 
 // CountArtists returns the number of published artists matching the filter.
@@ -110,8 +126,8 @@ func (r *ArtistIndexRepository) CountArtists(filter ArtistIndexFilter) (int, err
 }
 
 // ListArtists returns the published artists matching the filter in deterministic
-// order. Availability is resolved once per page with a single bound aggregate
-// query and is skipped entirely for an empty page.
+// order. Availability is intersected from the application-scoped published-work
+// projection and is skipped entirely for an empty page.
 func (r *ArtistIndexRepository) ListArtists(filter ArtistIndexFilter) ([]IndexedArtist, error) {
 	present, err := artistsIdentityFieldsPresent(r.app)
 	if err != nil {
@@ -152,18 +168,15 @@ func (r *ArtistIndexRepository) ListArtists(filter ArtistIndexFilter) ([]Indexed
 		return nil, nil
 	}
 
-	ids := make([]string, len(records))
-	for i, record := range records {
-		ids[i] = record.Id
-	}
-	available, err := r.publishedArtworkAuthorIDs(ids)
+	available, err := r.publishedArtworkAuthorIDs()
 	if err != nil {
 		return nil, err
 	}
 
 	result := make([]IndexedArtist, len(records))
 	for i, record := range records {
-		result[i] = IndexedArtist{Record: record, Available: available[record.Id]}
+		_, hasPublishedArtwork := available[record.Id]
+		result[i] = IndexedArtist{Record: record, Available: hasPublishedArtwork}
 	}
 
 	return result, nil
@@ -308,39 +321,36 @@ func filingLetterExpression(letter string) dbx.Expression {
 	return dbx.Or(exprs...)
 }
 
-// publishedArtworkAuthorIDs returns the subset of candidateIDs that have at least
-// one published artwork. It runs a single bound aggregate query; an empty
-// candidate set returns an empty result without querying.
-func (r *ArtistIndexRepository) publishedArtworkAuthorIDs(candidateIDs []string) (map[string]bool, error) {
-	available := map[string]bool{}
-	if len(candidateIDs) == 0 {
-		return available, nil
+// publishedArtworkAuthorIDs returns the complete application-scoped set of
+// artists referenced anywhere in published artwork author relations. Each cache
+// generation performs the catalogue-wide expansion once; bounded artist pages
+// then resolve availability by intersecting their records with this set.
+func (r *ArtistIndexRepository) publishedArtworkAuthorIDs() (artistAvailabilitySet, error) {
+	load := r.loadArtistAvailability
+	if load == nil {
+		load = func() (artistAvailabilitySet, error) {
+			return loadPublishedArtworkAuthorIDs(r.app)
+		}
 	}
+	return utils.GetOrLoadCachedValue(r.app, artistAvailabilityCacheKey, 0, load)
+}
 
-	placeholders := make([]string, len(candidateIDs))
-	params := dbx.Params{}
-	for i, id := range candidateIDs {
-		key := "artist_id_" + strconv.Itoa(i)
-		placeholders[i] = "{:" + key + "}"
-		params[key] = id
-	}
-
+func loadPublishedArtworkAuthorIDs(app core.App) (artistAvailabilitySet, error) {
 	rows := []struct {
 		AuthorID string `db:"author_id"`
 	}{}
-	query := `
+	if err := app.DB().NewQuery(`
 		SELECT DISTINCT je.value AS author_id
 		FROM Artworks
 		CROSS JOIN json_each(Artworks.author) je
-		WHERE Artworks.published IS true
-		  AND je.value IN (` + strings.Join(placeholders, ", ") + `)
-	`
-	if err := r.app.DB().NewQuery(query).Bind(params).All(&rows); err != nil {
+		WHERE Artworks.published IS true AND je.value != ''
+	`).All(&rows); err != nil {
 		return nil, err
 	}
 
+	available := make(artistAvailabilitySet, len(rows))
 	for _, row := range rows {
-		available[row.AuthorID] = true
+		available[row.AuthorID] = struct{}{}
 	}
 
 	return available, nil

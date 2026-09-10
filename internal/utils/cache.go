@@ -1,11 +1,14 @@
 package utils
 
 import (
+	"errors"
 	"sync"
 	"time"
 
 	"github.com/pocketbase/pocketbase/core"
 )
+
+var errCachedValueLoaderPanicked = errors.New("cached value loader panicked")
 
 const (
 	cacheExpirySuffix = ":meta:expires_unix_nano"
@@ -15,6 +18,14 @@ const (
 type cachedValueState struct {
 	mu         sync.Mutex
 	generation uint64
+	loading    *cachedValueLoad
+}
+
+type cachedValueLoad struct {
+	generation uint64
+	done       chan struct{}
+	value      any
+	err        error
 }
 
 func cacheExpiryKey(key string) string {
@@ -75,20 +86,54 @@ func GetOrLoadCachedValue[T any](app core.App, key string, ttl time.Duration, lo
 		return cached, nil
 	}
 	generation := state.generation
+	if loading := state.loading; loading != nil && loading.generation == generation {
+		state.mu.Unlock()
+		<-loading.done
+		if loading.err != nil {
+			return zero, loading.err
+		}
+		if value, ok := loading.value.(T); ok {
+			return value, nil
+		}
+		return GetOrLoadCachedValue(app, key, ttl, load)
+	}
+
+	loading := &cachedValueLoad{
+		generation: generation,
+		done:       make(chan struct{}),
+	}
+	state.loading = loading
 	state.mu.Unlock()
 
-	value, err := load()
+	var value T
+	var err error
+	defer func() {
+		panicValue := recover()
+
+		state.mu.Lock()
+		loading.value = value
+		loading.err = err
+		if panicValue != nil {
+			loading.err = errCachedValueLoaderPanicked
+		} else if err == nil && generation == state.generation {
+			SetCachedValue(app, key, value, ttl)
+		}
+		if state.loading == loading {
+			state.loading = nil
+		}
+		close(loading.done)
+		state.mu.Unlock()
+
+		if panicValue != nil {
+			panic(panicValue)
+		}
+	}()
+
+	value, err = load()
+
 	if err != nil {
 		return zero, err
 	}
-
-	state.mu.Lock()
-	defer state.mu.Unlock()
-
-	if generation == state.generation {
-		SetCachedValue(app, key, value, ttl)
-	}
-
 	return value, nil
 }
 

@@ -60,6 +60,35 @@ func TestTask71VenueFiltersAndPublishedHoldingCounts(t *testing.T) {
 	}
 }
 
+func TestCollectionHoldingsProjectionPreservesEmptyVenueOutputs(t *testing.T) {
+	t.Run("no locations", func(t *testing.T) {
+		app := newArtworkSearchApp(t)
+		options, err := getVenueOptions(app, "", "")
+		if err != nil {
+			t.Fatalf("venue options: %v", err)
+		}
+		if len(options.entries) != 0 || options.totalOptions != 0 || options.totalHoldings != 0 {
+			t.Fatalf("empty venue options = %#v", options)
+		}
+	})
+
+	t.Run("selected location without eligible holdings", func(t *testing.T) {
+		app := newArtworkSearchApp(t)
+		saveSearchLocation(t, app, "loctaskempty001", "Empty Museum")
+
+		options, err := getVenueOptions(app, "", "loctaskempty001")
+		if err != nil {
+			t.Fatalf("venue options: %v", err)
+		}
+		if len(options.entries) != 1 || options.entries[0] != (venueOption{value: "loctaskempty001", label: "Empty Museum"}) {
+			t.Fatalf("selected zero-count location = %#v", options.entries)
+		}
+		if options.totalOptions != 0 || options.totalHoldings != 0 || options.omittedOptions != 0 || options.omittedHoldings != 0 {
+			t.Fatalf("selected zero-count totals = %#v", options)
+		}
+	})
+}
+
 func TestTask71VenueFacetIsBoundedAndQueryCountStable(t *testing.T) {
 	app := newArtworkSearchApp(t)
 	saveSearchArtist(t, app, "artisttask71002", "Task Artist")
@@ -105,6 +134,31 @@ func TestTask71VenueFacetTieOrderAndHonestOmittedHoldingsNote(t *testing.T) {
 	note := venueFacetNote(options)
 	if note != "Showing 40 of 42 collections; omitted collections hold 2 works. Keep typing to narrow." {
 		t.Fatalf("omitted holdings note = %q", note)
+	}
+}
+
+func TestSQLiteNoCaseCompareMatchesASCIIOrdering(t *testing.T) {
+	for _, tc := range []struct {
+		name        string
+		left, right string
+		want        int
+	}{
+		{name: "case insensitive equality", left: "Alpha", right: "alpha", want: 0},
+		{name: "folded order", left: "beta", right: "Gamma", want: -1},
+		{name: "prefix", left: "Museum", right: "Museum Two", want: -1},
+		{name: "non ASCII remains byte ordered", left: "Á", right: "É", want: -1},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := sqliteNoCaseCompare(tc.left, tc.right); got != tc.want {
+				t.Fatalf("sqliteNoCaseCompare(%q, %q) = %d, want %d", tc.left, tc.right, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestVenueNameMatchesQueryFoldsUnicodeCase(t *testing.T) {
+	if !venueNameMatchesQuery("Óbuda Museum", "óbuda") {
+		t.Fatal("expected collection-name search to match Unicode case variants")
 	}
 }
 

@@ -1,0 +1,20 @@
+package hooks
+
+import (
+	"github.com/blackfyre/wga/internal/constants"
+	"github.com/blackfyre/wga/internal/repositories"
+	"github.com/pocketbase/pocketbase/core"
+)
+
+func artworkCatalogueCacheHook(app core.App) {
+	invalidate := func(e *core.RecordEvent) error {
+		repositories.AdvanceArtworkCatalogueRevision(e.App)
+		repositories.InvalidateArtistAvailability(e.App)
+		repositories.InvalidateCollectionHoldings(e.App)
+		return e.Next()
+	}
+
+	app.OnRecordAfterCreateSuccess(constants.CollectionArtworks).BindFunc(invalidate)
+	app.OnRecordAfterUpdateSuccess(constants.CollectionArtworks).BindFunc(invalidate)
+	app.OnRecordAfterDeleteSuccess(constants.CollectionArtworks).BindFunc(invalidate)
+}

@@ -8,9 +8,9 @@ import (
 
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/constants"
+	"github.com/blackfyre/wga/internal/repositories"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/blackfyre/wga/internal/utils/url"
-	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 )
 
@@ -324,10 +324,10 @@ type venueOption struct {
 	count int
 }
 
-// venueFacetOptions is the bounded result of the single collection aggregate.
-// retained carries the selected venue when it is a real holding that fell
-// outside the forty-option cap or was excluded by venue_q; unknownSelected is
-// set when the selected venue has no matching location record at all.
+// venueFacetOptions is the bounded result derived from the complete collection
+// projection. retained carries an existing selected location that fell outside
+// the forty-option cap or was excluded by venue_q; unknownSelected is set when
+// the selected venue has no matching location record at all.
 type venueFacetOptions struct {
 	entries         []venueOption
 	totalOptions    int
@@ -339,126 +339,99 @@ type venueFacetOptions struct {
 	unknownSelected bool
 }
 
-type venueOptionRow struct {
-	Value         string `db:"value"`
-	Label         string `db:"label"`
-	HoldingCount  int    `db:"holding_count"`
-	TotalOptions  int    `db:"total_options"`
-	TotalHoldings int    `db:"total_holdings"`
-}
-
-// getVenueOptions returns at most forty collection options from one aggregate
-// query. Counts include only published works whose first author exists, matching
-// the artwork-search result predicate without a stricter artist-published rule.
-// VenueQuery is applied only to collection names; it never enters the artwork
-// result predicate or a holding's own count.
+// getVenueOptions filters, orders, and bounds the complete counted holdings
+// projection in memory. VenueQuery changes only the collection choices; it never
+// enters the artwork result predicate or a holding's own count.
 func getVenueOptions(app *pocketbase.PocketBase, venueQuery string, selectedVenue string) (venueFacetOptions, error) {
-	query := `
-		WITH eligible_holdings AS (
-			SELECT
-				locations.id AS value,
-				locations.name AS label,
-				COUNT(DISTINCT artworks.id) AS holding_count
-			FROM locations
-			INNER JOIN artworks ON artworks.current_location_id = locations.id
-			INNER JOIN artists ON artists.id = json_extract(artworks.author, '$[0]')
-			WHERE artworks.published = TRUE
-				AND json_array_length(artworks.author) > 0
-				AND ({:venue_query} = '' OR instr(lower(locations.name), lower({:venue_query})) > 0)
-			GROUP BY locations.id, locations.name
-		), counted_holdings AS (
-			SELECT
-				value,
-				label,
-				holding_count,
-				COUNT(*) OVER () AS total_options,
-				SUM(holding_count) OVER () AS total_holdings
-			FROM eligible_holdings
-		)
-		SELECT value, label, holding_count, total_options, total_holdings
-		FROM counted_holdings
-		ORDER BY holding_count DESC, label COLLATE NOCASE ASC, label ASC, value ASC
-		LIMIT {:limit}`
-
-	rows := []venueOptionRow{}
-	err := app.DB().NewQuery(query).Bind(dbx.Params{
-		"venue_query": venueQuery,
-		"limit":       artworkVenueOptionsLimit,
-	}).All(&rows)
+	holdings, err := repositories.LoadCollectionHoldings(app)
 	if err != nil {
 		return venueFacetOptions{}, err
 	}
 
-	options := venueFacetOptions{
-		entries: make([]venueOption, 0, len(rows)),
-	}
-	seenSelected := false
-	for _, row := range rows {
-		options.entries = append(options.entries, venueOption{
-			value: row.Value,
-			label: row.Label,
-			count: row.HoldingCount,
-		})
-		options.totalOptions = row.TotalOptions
-		options.totalHoldings = row.TotalHoldings
-		if selectedVenue != "" && row.Value == selectedVenue {
-			seenSelected = true
+	options := venueFacetOptions{entries: make([]venueOption, 0, len(holdings))}
+	for _, holding := range holdings {
+		option := venueOption{value: holding.Value, label: holding.Label, count: holding.Count}
+		if selectedVenue != "" && option.value == selectedVenue {
+			options.retained = option
+			options.retainedSet = true
 		}
+		if option.count <= 0 || !venueNameMatchesQuery(option.label, venueQuery) {
+			continue
+		}
+		options.entries = append(options.entries, option)
+		options.totalOptions++
+		options.totalHoldings += option.count
 	}
 
-	if selectedVenue != "" && !seenSelected {
-		if err := retainSelectedVenue(app, selectedVenue, &options); err != nil {
-			return venueFacetOptions{}, err
+	sort.Slice(options.entries, func(i, j int) bool {
+		left, right := options.entries[i], options.entries[j]
+		if left.count != right.count {
+			return left.count > right.count
 		}
+		if foldedOrder := sqliteNoCaseCompare(left.label, right.label); foldedOrder != 0 {
+			return foldedOrder < 0
+		}
+		if left.label != right.label {
+			return left.label < right.label
+		}
+		return left.value < right.value
+	})
+	if len(options.entries) > artworkVenueOptionsLimit {
+		options.entries = options.entries[:artworkVenueOptionsLimit]
+	}
+
+	selectedShown := false
+	for _, entry := range options.entries {
+		if entry.value == selectedVenue {
+			selectedShown = true
+			break
+		}
+	}
+	if selectedVenue != "" && selectedShown {
+		options.retainedSet = false
+	} else if selectedVenue != "" && !options.retainedSet {
+		options.unknownSelected = true
 	}
 
 	finalizeVenueOptions(venueQuery, selectedVenue, &options)
-
 	return options, nil
 }
 
-// retainSelectedVenue resolves the selected venue when it fell outside the
-// capped list or the name query. A real holding is retained with its name and
-// full eligible count; a value with no location record is marked unknown so the
-// facet can render an honest zero/unavailable choice rather than dropping the
-// selection.
-func retainSelectedVenue(app *pocketbase.PocketBase, selectedVenue string, options *venueFacetOptions) error {
-	rows := []venueOptionRow{}
-	err := app.DB().NewQuery(`
-		SELECT
-			locations.id AS value,
-			locations.name AS label,
-			COUNT(artworks.id) AS holding_count
-		FROM locations
-		LEFT JOIN artworks
-			ON artworks.current_location_id = locations.id
-			AND artworks.published = TRUE
-			AND json_array_length(artworks.author) > 0
-			AND EXISTS (
-				SELECT 1 FROM artists
-				WHERE artists.id = json_extract(artworks.author, '$[0]')
-			)
-		WHERE locations.id = {:venue_id}
-		GROUP BY locations.id, locations.name`).Bind(dbx.Params{
-		"venue_id": selectedVenue,
-	}).All(&rows)
-	if err != nil {
-		return err
+// sqliteNoCaseCompare mirrors SQLite's ASCII-only NOCASE byte ordering without
+// allocating folded strings for each sort comparison.
+func sqliteNoCaseCompare(left string, right string) int {
+	for i := 0; i < min(len(left), len(right)); i++ {
+		leftByte, rightByte := left[i], right[i]
+		if leftByte >= 'A' && leftByte <= 'Z' {
+			leftByte += 'a' - 'A'
+		}
+		if rightByte >= 'A' && rightByte <= 'Z' {
+			rightByte += 'a' - 'A'
+		}
+		if leftByte < rightByte {
+			return -1
+		}
+		if leftByte > rightByte {
+			return 1
+		}
 	}
-
-	if len(rows) == 0 {
-		options.unknownSelected = true
-		return nil
+	if len(left) < len(right) {
+		return -1
 	}
-
-	options.retained = venueOption{
-		value: rows[0].Value,
-		label: rows[0].Label,
-		count: rows[0].HoldingCount,
+	if len(left) > len(right) {
+		return 1
 	}
-	options.retainedSet = true
+	return 0
+}
 
-	return nil
+func sqliteNoCaseKey(value string) string {
+	folded := []byte(value)
+	for i, char := range folded {
+		if char >= 'A' && char <= 'Z' {
+			folded[i] = char + ('a' - 'A')
+		}
+	}
+	return string(folded)
 }
 
 // unknownVenueLabel is the honest display label for a selected venue value that

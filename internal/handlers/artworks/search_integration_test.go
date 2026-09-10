@@ -3,10 +3,13 @@ package artworks
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	neturl "net/url"
+	"reflect"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -14,6 +17,8 @@ import (
 
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	"github.com/blackfyre/wga/internal/config"
+	"github.com/blackfyre/wga/internal/repositories"
+	"github.com/blackfyre/wga/internal/requestprotection"
 	apputils "github.com/blackfyre/wga/internal/utils"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
@@ -150,6 +155,52 @@ type searchArtworkSeed struct {
 	dateStart int
 	dateEnd   int
 	published bool
+}
+
+func TestArtworkSearchFullViewComposesCanonicalResultsWorkflow(t *testing.T) {
+	app := newArtworkSearchApp(t)
+	saveSearchArtist(t, app, "artistone000001", "Artist One")
+	for index, title := range []string{"Alpha Work", "Bravo Work", "Charlie Work"} {
+		saveSearchArtwork(t, app, searchArtworkSeed{
+			id:        workID(fmt.Sprintf("compose%d", index)),
+			title:     title,
+			authors:   []string{"artistone000001"},
+			sourceRow: index + 1,
+			published: true,
+		})
+	}
+
+	values := neturl.Values{
+		"dir":  {"desc"},
+		"page": {"2"},
+		"q":    {"Work"},
+		"sort": {"title"},
+		"view": {"list"},
+	}
+	resultsContext, err := buildArtworkSearchResultsViewContext(context.Background(), app, values, 2, 2, requestprotection.Checkpoint)
+	if err != nil {
+		t.Fatalf("build results workflow: %v", err)
+	}
+	full, canonical, err := buildArtworkSearchViewContext(context.Background(), app, values, 2, 2, requestprotection.Checkpoint)
+	if err != nil {
+		t.Fatalf("build full view: %v", err)
+	}
+
+	if canonical != resultsContext.canonical {
+		t.Fatalf("full canonical = %q, results canonical = %q", canonical, resultsContext.canonical)
+	}
+	if !reflect.DeepEqual(full.Results, resultsContext.view) {
+		t.Fatalf("full results differ from canonical results workflow:\nfull: %#v\nresults: %#v", full.Results, resultsContext.view)
+	}
+	if resultsContext.view.ResultCount != 3 {
+		t.Fatalf("result count = %d, want 3", resultsContext.view.ResultCount)
+	}
+	if len(resultsContext.view.Artworks) != 1 || resultsContext.view.Artworks[0].Title != "Alpha Work" {
+		t.Fatalf("second descending page = %#v, want Alpha Work", resultsContext.view.Artworks)
+	}
+	if resultsContext.view.Pagination == "" {
+		t.Fatal("results workflow omitted pagination")
+	}
 }
 
 func saveSearchTaxonomy(t *testing.T, app *pocketbase.PocketBase, collection string, id string, slug string, name string) {
@@ -664,6 +715,147 @@ func TestBuildArtworkSearchViewClampsOutOfRangePage(t *testing.T) {
 	}
 }
 
+func TestArtworkPageCountUsesDistinctArtworkIDsAcrossMatchingAuthors(t *testing.T) {
+	app := newArtworkSearchApp(t)
+	saveSearchArtist(t, app, "alphaartist0001", "Alpha Artist")
+	saveSearchArtist(t, app, "betaartist00001", "Beta Artist")
+	saveSearchArtwork(t, app, searchArtworkSeed{
+		id: "sharedwork00001", title: "Shared Work",
+		authors: []string{"alphaartist0001", "betaartist00001"}, year: 1500, published: true,
+	})
+
+	collection, err := app.FindCollectionByNameOrId("artworks")
+	if err != nil {
+		t.Fatalf("find artworks: %v", err)
+	}
+	f := &filters{Query: "Artist", Sort: sortCatalogue, SortDir: sortAsc}
+	rows, err := listArtworkPageRowsForCollection(app, collection, f, 1, 0)
+	if err != nil {
+		t.Fatalf("list artwork page rows: %v", err)
+	}
+	if len(rows) != 1 || rows[0].ID != "sharedwork00001" || rows[0].Total != 1 {
+		t.Fatalf("rows = %#v, want the sole artwork with total 1", rows)
+	}
+
+	result, err := buildArtworkSearchResultsViewContext(context.Background(), app, neturl.Values{"q": {"Artist"}}, 2, 1, requestprotection.Checkpoint)
+	if err != nil {
+		t.Fatalf("build out-of-range results: %v", err)
+	}
+	if result.view.ResultCount != 1 || len(result.view.Artworks) != 1 || result.view.Artworks[0].Id != "sharedwork00001" {
+		t.Fatalf("out-of-range result = count %d, artworks %#v; want the sole distinct artwork", result.view.ResultCount, result.view.Artworks)
+	}
+}
+
+func TestArtworkSearchRevalidatesPageBeforeHydration(t *testing.T) {
+	app := newArtworkSearchApp(t)
+	saveSearchArtist(t, app, "snapshotartist1", "Snapshot Artist")
+	saveSearchArtwork(t, app, searchArtworkSeed{
+		id: "snapshotwork001", title: "Snapshot Work",
+		authors: []string{"snapshotartist1"}, year: 1500, published: true,
+	})
+
+	deleted := make(chan error, 1)
+	checkpoint := func(_ context.Context, name string) error {
+		if name != "artworks.search.records" {
+			return nil
+		}
+		go func() {
+			_, err := app.ConcurrentDB().NewQuery("DELETE FROM artworks WHERE id = {:id}").
+				Bind(dbx.Params{"id": "snapshotwork001"}).
+				Execute()
+			deleted <- err
+		}()
+		select {
+		case err := <-deleted:
+			return err
+		case <-time.After(5 * time.Second):
+			return errors.New("concurrent artwork delete did not complete")
+		}
+	}
+
+	result, err := buildArtworkSearchResultsViewContext(context.Background(), app, neturl.Values{}, 1, 16, checkpoint)
+	if err != nil {
+		t.Fatalf("build search results: %v", err)
+	}
+	if result.view.ResultCount != 0 || len(result.view.Artworks) != 0 {
+		t.Fatalf("revalidated result = count %d, artworks %#v; want current empty result", result.view.ResultCount, result.view.Artworks)
+	}
+}
+
+func TestArtworkSearchRetriesWhenSortOrderChangesDuringHydration(t *testing.T) {
+	app := newArtworkSearchApp(t)
+	saveSearchArtist(t, app, "sortartist00001", "Sort Artist")
+	saveSearchArtwork(t, app, searchArtworkSeed{
+		id: "sortalpha000001", title: "Alpha Work",
+		authors: []string{"sortartist00001"}, year: 1500, published: true,
+	})
+	saveSearchArtwork(t, app, searchArtworkSeed{
+		id: "sortbravo000001", title: "Bravo Work",
+		authors: []string{"sortartist00001"}, year: 1500, published: true,
+	})
+
+	var changed atomic.Bool
+	checkpoint := func(_ context.Context, name string) error {
+		if name != "artworks.search.records" || !changed.CompareAndSwap(false, true) {
+			return nil
+		}
+		record, err := app.FindRecordById("artworks", "sortalpha000001")
+		if err != nil {
+			return err
+		}
+		record.Set("title", "Zulu Work")
+		if err := app.Save(record); err != nil {
+			return err
+		}
+		repositories.AdvanceArtworkCatalogueRevision(app)
+		return nil
+	}
+
+	result, err := buildArtworkSearchResultsViewContext(
+		context.Background(),
+		app,
+		neturl.Values{"sort": {sortTitle}},
+		1,
+		1,
+		checkpoint,
+	)
+	if err != nil {
+		t.Fatalf("build search results: %v", err)
+	}
+	if len(result.view.Artworks) != 1 || result.view.Artworks[0].Id != "sortbravo000001" {
+		t.Fatalf("revalidated artworks = %#v, want Bravo Work", result.view.Artworks)
+	}
+}
+
+func TestArtworkSearchMaximumPageClampsToCanonicalLastPage(t *testing.T) {
+	app := newArtworkSearchApp(t)
+	saveSearchArtist(t, app, "maxpageartist01", "Maximum Page Artist")
+	for i, title := range []string{"Alpha Work", "Bravo Work", "Charlie Work"} {
+		saveSearchArtwork(t, app, searchArtworkSeed{
+			id: fmt.Sprintf("maxpagework%04d", i), title: title,
+			authors: []string{"maxpageartist01"}, year: 1500, published: true,
+		})
+	}
+
+	result, err := buildArtworkSearchResultsViewContext(
+		context.Background(),
+		app,
+		neturl.Values{"sort": {sortTitle}},
+		math.MaxInt,
+		2,
+		requestprotection.Checkpoint,
+	)
+	if err != nil {
+		t.Fatalf("build maximum-page results: %v", err)
+	}
+	if len(result.view.Artworks) != 1 || result.view.Artworks[0].Title != "Charlie Work" {
+		t.Fatalf("last-page artworks = %#v, want Charlie Work", result.view.Artworks)
+	}
+	if result.canonical != "/artworks?page=2&sort=title" {
+		t.Fatalf("canonical = %q, want final page", result.canonical)
+	}
+}
+
 func TestBuildArtworkSearchViewIssuesBoundedQueries(t *testing.T) {
 	small := newArtworkSearchApp(t)
 	saveSearchArtist(t, small, "artistone000001", "Artist One")
@@ -702,6 +894,24 @@ func TestBuildArtworkSearchViewIssuesBoundedQueries(t *testing.T) {
 	}
 	if smallCount != largeCount {
 		t.Errorf("query count grew with artwork count: %d (5 artworks) vs %d (60 artworks)", smallCount, largeCount)
+	}
+
+	firstPageCount, err := countSearchQueries(large, func() error {
+		_, err := buildArtworkSearchResultsViewContext(context.Background(), large, neturl.Values{}, 1, 16, requestprotection.Checkpoint)
+		return err
+	})
+	if err != nil {
+		t.Fatalf("first-page results build: %v", err)
+	}
+	outOfRangeCount, err := countSearchQueries(large, func() error {
+		_, err := buildArtworkSearchResultsViewContext(context.Background(), large, neturl.Values{}, 999, 16, requestprotection.Checkpoint)
+		return err
+	})
+	if err != nil {
+		t.Fatalf("out-of-range results build: %v", err)
+	}
+	if outOfRangeCount != firstPageCount+1 {
+		t.Errorf("out-of-range query count = %d, want one recovery statement beyond first-page count %d", outOfRangeCount, firstPageCount)
 	}
 }
 

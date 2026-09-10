@@ -3,6 +3,7 @@ package repositories
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
@@ -268,6 +269,137 @@ func TestArtistIndexRepositoryMatchesUnicodeCaseVariants(t *testing.T) {
 	}
 	if len(artists) != 1 || artists[0].Record.Id != "artistdurer0000" {
 		t.Fatalf("artists = %#v, want DÜRER", artists)
+	}
+}
+
+func TestArtistIndexRepositoryPublishedArtworkAuthorIDsProjection(t *testing.T) {
+	t.Run("empty data", func(t *testing.T) {
+		app := newArtistIndexTestApp(t)
+
+		available, err := NewArtistIndexRepository(app).publishedArtworkAuthorIDs()
+		if err != nil {
+			t.Fatalf("load empty availability: %v", err)
+		}
+		if len(available) != 0 {
+			t.Fatalf("empty availability = %v, want empty", available)
+		}
+	})
+
+	t.Run("published relations", func(t *testing.T) {
+		app := newArtistIndexTestApp(t)
+		saveArtistIndexArtist(t, app, artistIndexArtistSeed{id: "directart100000", name: "Direct Artist", published: true})
+		saveArtistIndexArtist(t, app, artistIndexArtistSeed{id: "coauthart000001", name: "Co-author Artist", published: true})
+		saveArtistIndexArtist(t, app, artistIndexArtistSeed{id: "hiddenart000001", name: "Hidden Work Artist", published: true})
+
+		// Repeated published relations collapse to one set member.
+		saveArtistIndexArtwork(t, app, "workdirect10000", []string{"directart100000"}, true)
+		saveArtistIndexArtwork(t, app, "workshared10000", []string{"directart100000", "coauthart000001"}, true)
+		// Unpublished works do not confer availability.
+		saveArtistIndexArtwork(t, app, "workhidden10000", []string{"hiddenart000001"}, false)
+
+		available, err := NewArtistIndexRepository(app).publishedArtworkAuthorIDs()
+		if err != nil {
+			t.Fatalf("load availability: %v", err)
+		}
+		if len(available) != 2 {
+			t.Fatalf("availability = %v, want direct artist and co-author only", available)
+		}
+		for _, id := range []string{"directart100000", "coauthart000001"} {
+			if _, ok := available[id]; !ok {
+				t.Errorf("availability missing %q", id)
+			}
+		}
+		if _, ok := available["hiddenart000001"]; ok {
+			t.Error("unpublished artwork conferred availability")
+		}
+	})
+}
+
+func TestArtistIndexAvailabilityInvalidationDuringLoadDoesNotRestoreStaleProjection(t *testing.T) {
+	app := newArtistIndexTestApp(t)
+	started := make(chan struct{})
+	release := make(chan struct{})
+	loads := 0
+	repo := &ArtistIndexRepository{
+		app: app,
+		loadArtistAvailability: func() (artistAvailabilitySet, error) {
+			loads++
+			if loads == 1 {
+				close(started)
+				<-release
+				return artistAvailabilitySet{"staleartist0001": {}}, nil
+			}
+			return artistAvailabilitySet{"freshartist0001": {}}, nil
+		},
+	}
+
+	first := make(chan artistAvailabilitySet, 1)
+	go func() {
+		available, _ := repo.publishedArtworkAuthorIDs()
+		first <- available
+	}()
+
+	select {
+	case <-started:
+	case <-time.After(2 * time.Second):
+		t.Fatal("availability load did not start")
+	}
+	InvalidateArtistAvailability(app)
+	close(release)
+
+	select {
+	case available := <-first:
+		if _, ok := available["staleartist0001"]; !ok {
+			t.Fatalf("in-flight caller received %v, want its completed stale generation", available)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("invalidated availability load did not complete")
+	}
+
+	available, err := repo.publishedArtworkAuthorIDs()
+	if err != nil {
+		t.Fatalf("load fresh availability: %v", err)
+	}
+	if loads != 2 {
+		t.Fatalf("availability loads = %d, want 2 generations", loads)
+	}
+	if _, ok := available["freshartist0001"]; !ok {
+		t.Fatalf("fresh availability = %v, want fresh artist", available)
+	}
+	if _, ok := available["staleartist0001"]; ok {
+		t.Fatalf("stale availability was restored after invalidation: %v", available)
+	}
+}
+
+func TestArtistIndexRepositoryReusesAvailabilityAcrossPagesAndInstances(t *testing.T) {
+	app := newArtistIndexTestApp(t)
+	saveArtistIndexArtist(t, app, artistIndexArtistSeed{id: "pageartist00001", name: "Alpha Artist", published: true})
+	saveArtistIndexArtist(t, app, artistIndexArtistSeed{id: "pageartist00002", name: "Beta Artist", published: true})
+	saveArtistIndexArtwork(t, app, "pageartwork0001", []string{"pageartist00001", "pageartist00002"}, true)
+
+	queryCount, err := countRecordQueries(app, func() error {
+		first, err := NewArtistIndexRepository(app).ListArtists(ArtistIndexFilter{Limit: 1})
+		if err != nil {
+			return err
+		}
+		if len(first) != 1 || !first[0].Available {
+			t.Fatalf("first page = %#v, want one available artist", first)
+		}
+
+		second, err := NewArtistIndexRepository(app).ListArtists(ArtistIndexFilter{Limit: 1, Offset: 1})
+		if err != nil {
+			return err
+		}
+		if len(second) != 1 || !second[0].Available {
+			t.Fatalf("second page = %#v, want one available artist", second)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("list repeated artist pages: %v", err)
+	}
+	if queryCount != 3 {
+		t.Fatalf("query count = %d, want two bounded artist reads plus one shared availability read", queryCount)
 	}
 }
 

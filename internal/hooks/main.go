@@ -6,4 +6,6 @@ func RegisterHooks(app core.App) {
 	app.Logger().Debug("Registering hooks...")
 	fileDownloadHook(app)
 	guestbookYearsCacheHook(app)
+	artworkCatalogueCacheHook(app)
+	collectionHoldingsCacheHook(app)
 }
