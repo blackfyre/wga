@@ -47,21 +47,22 @@ type ArtworkSearchResultsView struct {
 
 // ArtworkSearchView is the page-owned contract for the artwork catalogue.
 type ArtworkSearchView struct {
-	NameField       dto.Field
-	TechniqueField  dto.Field
-	ArtistID        string
-	SchoolGroup     dto.ChipGroup
-	FormGroup       dto.ChipGroup
-	TypeGroup       dto.ChipGroup
-	PeriodGroup     dto.ChipGroup
-	LocationGroup   dto.ChipGroup
-	Facets          ArtworkSearchFacets
-	Sort            string
-	Dir             string
-	ClearUrl        string
-	DualModeContext *ArtworkSearchDualMode
-	HxTarget        string
-	Results         ArtworkSearchResultsView
+	NameField             dto.Field
+	TechniqueField        dto.Field
+	ArtistID              string
+	ArtistScopeFilingName string
+	SchoolGroup           dto.ChipGroup
+	FormGroup             dto.ChipGroup
+	TypeGroup             dto.ChipGroup
+	PeriodGroup           dto.ChipGroup
+	LocationGroup         dto.ChipGroup
+	Facets                ArtworkSearchFacets
+	Sort                  string
+	Dir                   string
+	ClearUrl              string
+	DualModeContext       *ArtworkSearchDualMode
+	HxTarget              string
+	Results               ArtworkSearchResultsView
 }
 
 // ArtworkSearchPage is the template for the artwork catalogue page.
@@ -122,6 +123,12 @@ templ ArtworkSeachFilterBlock(b ArtworkSearchView) {
 			<input type="hidden" name="dual_left_render_to" value={ b.DualModeContext.LeftRenderTo }/>
 			<input type="hidden" name="dual_right_render_to" value={ b.DualModeContext.RightRenderTo }/>
 			<input type="hidden" name="dual_target" value={ b.DualModeContext.Target }/>
+		}
+		if b.ArtistScopeFilingName != "" {
+			<div data-artwork-artist-scope aria-label="Active artist" class="mb-5 border-l-2 border-primary pl-3">
+				<p class="font-mono text-[10px] tracking-[1.5px] text-base-content/60">ARTIST</p>
+				<p class="mt-1 text-sm font-semibold leading-snug text-base-content">{ b.ArtistScopeFilingName }</p>
+			</div>
 		}
 		<div class="flex items-baseline justify-between border-b border-base-content pb-3">
 			<p class="font-mono text-[11px] tracking-[1.5px]">
