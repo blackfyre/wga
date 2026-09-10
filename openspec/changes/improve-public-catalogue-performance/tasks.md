@@ -16,7 +16,7 @@
 
 ## 4. Reusable collection holdings
 
-- [ ] 4.1 Load collection holdings as one compact, complete counted projection and apply name filtering, deterministic ordering, the forty-option bound, selected-value retention, and omitted totals in memory; verify focused tests reproduce all existing venue-facet outputs for empty, searched, selected, truncated, and unknown selections.
+- [x] 4.1 Load collection holdings as one compact, complete counted projection and apply name filtering, deterministic ordering, the forty-option bound, selected-value retention, and omitted totals in memory; verify focused tests reproduce all existing venue-facet outputs for empty, searched, selected, truncated, and unknown selections.
 - [ ] 4.2 Invalidate collection holdings after relevant artwork, location, and artist lifecycle changes, and verify save/delete plus concurrent invalidation tests prove the next request observes current persisted labels, eligibility, and counts.
 - [ ] 4.3 Verify concurrent cold artwork searches share one collection projection load and subsequent venue queries reuse it without unbounded query-key growth by running focused handler and cache concurrency tests under the race detector.
 
