@@ -5,7 +5,7 @@
 ## 2. Results-only artwork search
 
 - [x] 2.1 Extract one canonical artwork-results workflow and make the full search view compose it; verify focused workflow tests prove identical filters, result ordering, totals, pagination, canonical state, and cancellation checkpoints.
-- [ ] 2.2 Route `/artworks/results` through the results-only workflow without loading facet projections, while preserving full-page and `#artwork-search` responses; verify handler spies plus focused HTTP tests assert the required reads, fragment shape, `HX-Push-Url`, and direct non-HTMX fallback behaviour.
+- [x] 2.2 Route `/artworks/results` through the results-only workflow without loading facet projections, while preserving full-page and `#artwork-search` responses; verify handler spies plus focused HTTP tests assert the required reads, fragment shape, `HX-Push-Url`, and direct non-HTMX fallback behaviour.
 - [ ] 2.3 Exercise the artwork-search HTMX contract in Chromium with `bunx playwright test playwright-tests/artwork-search.spec.ts playwright-tests/artwork-search-task71.spec.ts` against a running application and verify filtering, paging, URL updates, target swaps, and no-JavaScript submission remain functional.
 
 ## 3. Reusable artist availability

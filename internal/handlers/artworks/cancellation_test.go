@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/blackfyre/wga/internal/requestprotection"
@@ -69,6 +70,44 @@ func TestArtworkSearchResultsWorkflowChecksCancellationBeforeProjection(t *testi
 	want := []string{"artworks.search.count", "artworks.search.records", "artworks.search.projection"}
 	if !reflect.DeepEqual(stages, want) {
 		t.Fatalf("started stages = %v, want %v", stages, want)
+	}
+}
+
+func TestArtworkSearchResultsHandlerSkipsFacetStages(t *testing.T) {
+	app := newArtworkSearchApp(t)
+	saveSearchArtist(t, app, "artistresult001", "Result Artist")
+	saveSearchArtwork(t, app, searchArtworkSeed{
+		id:        "workresult00001",
+		title:     "Result Work",
+		authors:   []string{"artistresult001"},
+		published: true,
+	})
+	request := httptest.NewRequest(http.MethodGet, "/artworks/results?q=Result", nil)
+	request.Header.Set("HX-Request", "true")
+	recorder := httptest.NewRecorder()
+	event := &core.RequestEvent{Event: router.Event{Request: request, Response: recorder}}
+	stages := []string{}
+	checkpoint := func(_ context.Context, stage string) error {
+		stages = append(stages, stage)
+		return nil
+	}
+
+	if err := searchWithCheckpoint(app, event, checkpoint); err != nil {
+		t.Fatalf("searchWithCheckpoint() error = %v", err)
+	}
+	want := []string{"artworks.search.count", "artworks.search.records", "artworks.search.projection"}
+	if !reflect.DeepEqual(stages, want) {
+		t.Fatalf("started stages = %v, want only result stages %v", stages, want)
+	}
+	body := recorder.Body.String()
+	if !strings.Contains(body, `id="artwork-search-results"`) || !strings.Contains(body, "Result Work") {
+		t.Fatalf("results fragment missing expected content: %s", body)
+	}
+	if strings.Contains(body, `id="artwork-filters"`) {
+		t.Fatal("results fragment included filter facets")
+	}
+	if got := recorder.Header().Get("HX-Push-Url"); got != "/artworks/results?q=Result" {
+		t.Fatalf("HX-Push-Url = %q, want results URL", got)
 	}
 }
 

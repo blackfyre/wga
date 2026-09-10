@@ -32,6 +32,34 @@ func searchPage(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 }
 
 func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
+	return searchWithCheckpoint(app, c, requestprotection.Checkpoint)
+}
+
+type artworkSearchResponseKind uint8
+
+const (
+	artworkSearchFullPage artworkSearchResponseKind = iota
+	artworkSearchBlock
+	artworkSearchResultsFragment
+)
+
+func artworkSearchResponseFor(c *core.RequestEvent) artworkSearchResponseKind {
+	if !utils.IsHtmxRequest(c) {
+		return artworkSearchFullPage
+	}
+
+	htmxTarget := strings.TrimPrefix(strings.TrimSpace(c.Request.Header.Get("HX-Target")), "#")
+	if htmxTarget == "artwork-search" {
+		return artworkSearchBlock
+	}
+	if c.Request.URL.Path == "/artworks/results" {
+		return artworkSearchResultsFragment
+	}
+
+	return artworkSearchFullPage
+}
+
+func searchWithCheckpoint(app *pocketbase.PocketBase, c *core.RequestEvent, checkpoint artworkSearchCheckpoint) error {
 	page := 1
 
 	queryParams := c.Request.URL.Query()
@@ -44,7 +72,22 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 		page = parsed
 	}
 
-	view, canonical, err := buildArtworkSearchViewContext(c.Request.Context(), app, queryParams, page, artworkSearchPageSize, requestprotection.Checkpoint)
+	responseKind := artworkSearchResponseFor(c)
+	var view pages.ArtworkSearchView
+	var results pages.ArtworkSearchResultsView
+	var canonical string
+	var err error
+	if responseKind == artworkSearchResultsFragment {
+		resultsContext, resultsErr := buildArtworkSearchResultsViewContext(c.Request.Context(), app, queryParams, page, artworkSearchPageSize, checkpoint)
+		if resultsErr == nil {
+			results = resultsContext.view
+			canonical = resultsContext.canonical
+		}
+		err = resultsErr
+	} else {
+		view, canonical, err = buildArtworkSearchViewContext(c.Request.Context(), app, queryParams, page, artworkSearchPageSize, checkpoint)
+		results = view.Results
+	}
 	if err != nil {
 		if requestprotection.IsCancellation(err) {
 			return err
@@ -66,12 +109,11 @@ func search(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	var buff bytes.Buffer
 
 	err = renderArtworkSearch(c.Request.Context(), func() error {
-		htmxTarget := strings.TrimPrefix(strings.TrimSpace(c.Request.Header.Get("HX-Target")), "#")
-		switch {
-		case utils.IsHtmxRequest(c) && htmxTarget == "artwork-search":
+		switch responseKind {
+		case artworkSearchBlock:
 			return pages.ArtworkSearchBlock(view).Render(ctx, &buff)
-		case utils.IsHtmxRequest(c) && c.Request.URL.Path == "/artworks/results":
-			return pages.ArtworkSearchResults(view.Results).Render(ctx, &buff)
+		case artworkSearchResultsFragment:
+			return pages.ArtworkSearchResults(results).Render(ctx, &buff)
 		default:
 			return pages.ArtworkSearchPage(view).Render(ctx, &buff)
 		}
