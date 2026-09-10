@@ -96,30 +96,30 @@ All measured requests returned HTTP 200 with zero load-generator errors.
 
 Unprofiled load results were:
 
-| Route | Baseline req/s | Final req/s | Throughput | Baseline mean | Final mean | Baseline p95 | Final p95 |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `/artworks` | 5.65 | 16.81 | +197.5% | 1,376.08 ms | 472.60 ms | 1,608.83 ms | 552.97 ms |
-| `/artworks/results` | 5.44 | 17.04 | +213.2% | 1,439.95 ms | 467.34 ms | 1,652.08 ms | 507.69 ms |
-| `/dual-mode` | 18.39 | 97.57 | +430.6% | 434.93 ms | 81.83 ms | 429.82 ms | 86.33 ms |
+| Route               | Baseline req/s | Final req/s | Throughput | Baseline mean | Final mean | Baseline p95 | Final p95 |
+| ------------------- | -------------: | ----------: | ---------: | ------------: | ---------: | -----------: | --------: |
+| `/artworks`         |           5.65 |       16.81 |    +197.5% |   1,376.08 ms |  472.60 ms |  1,608.83 ms | 552.97 ms |
+| `/artworks/results` |           5.44 |       17.04 |    +213.2% |   1,439.95 ms |  467.34 ms |  1,652.08 ms | 507.69 ms |
+| `/dual-mode`        |          18.39 |       97.57 |    +430.6% |     434.93 ms |   81.83 ms |    429.82 ms |  86.33 ms |
 
 Ten-second CPU profiles ran under the same eight-client load. Total samples can
 exceed wall time because requests execute across cores; dividing by completed
 requests gives the comparable CPU cost:
 
-| Route | Baseline samples / requests | Final samples / requests | CPU per request | Change |
-| --- | ---: | ---: | ---: | ---: |
-| `/artworks` | 39.59 s / 56 | 43.15 s / 176 | 706.96 → 245.17 ms | -65.3% |
-| `/artworks/results` | 39.26 s / 57 | 40.34 s / 168 | 688.77 → 240.12 ms | -65.1% |
-| `/dual-mode` | 50.09 s / 184 | 39.38 s / 977 | 272.23 → 40.31 ms | -85.2% |
+| Route               | Baseline samples / requests | Final samples / requests |    CPU per request | Change |
+| ------------------- | --------------------------: | -----------------------: | -----------------: | -----: |
+| `/artworks`         |                39.59 s / 56 |            43.15 s / 176 | 706.96 → 245.17 ms | -65.3% |
+| `/artworks/results` |                39.26 s / 57 |            40.34 s / 168 | 688.77 → 240.12 ms | -65.1% |
+| `/dual-mode`        |               50.09 s / 184 |            39.38 s / 977 |  272.23 → 40.31 ms | -85.2% |
 
 Exact `runtime.MemStats` deltas around separate ten-second runs supplied
 allocation counts rather than relying on sampled-profile totals:
 
-| Route | Baseline bytes/request | Final bytes/request | Baseline mallocs/request | Final mallocs/request |
-| --- | ---: | ---: | ---: | ---: |
-| `/artworks` | 1,451,462 | 1,415,550 (-2.5%) | 10,567 | 9,790 (-7.4%) |
-| `/artworks/results` | 777,719 | 725,909 (-6.7%) | 7,326 | 6,545 (-10.7%) |
-| `/dual-mode` | 2,140,278 | 2,100,161 (-1.9%) | 19,564 | 19,109 (-2.3%) |
+| Route               | Baseline bytes/request | Final bytes/request | Baseline mallocs/request | Final mallocs/request |
+| ------------------- | ---------------------: | ------------------: | -----------------------: | --------------------: |
+| `/artworks`         |              1,451,462 |   1,415,550 (-2.5%) |                   10,567 |         9,790 (-7.4%) |
+| `/artworks/results` |                777,719 |     725,909 (-6.7%) |                    7,326 |        6,545 (-10.7%) |
+| `/dual-mode`        |              2,140,278 |   2,100,161 (-1.9%) |                   19,564 |        19,109 (-2.3%) |
 
 An initial sampled allocation profile exposed avoidable allocation in the new
 in-memory collection ordering: repeatedly constructing folded labels and growing
