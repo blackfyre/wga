@@ -10,7 +10,7 @@
 
 ## 3. Reusable artist availability
 
-- [ ] 3.1 Replace per-page artwork relation expansion with a compact application-scoped set of every artist ID referenced by published works, and verify repository tests cover empty data, unpublished works, duplicate relations, and artists appearing only as co-authors.
+- [x] 3.1 Replace per-page artwork relation expansion with a compact application-scoped set of every artist ID referenced by published works, and verify repository tests cover empty data, unpublished works, duplicate relations, and artists appearing only as co-authors.
 - [ ] 3.2 Invalidate the artist-availability projection after relevant artwork saves and deletes using thin lifecycle hooks, and verify focused tests include mutation and invalidation-during-load cases without allowing an obsolete load to repopulate the cache.
 - [ ] 3.3 Use the reusable availability projection from the public artist index and both Dual Mode panes, and verify existing repository and Dual Mode tests plus a query-count assertion prove repeated page requests do not repeat the catalogue-wide relation query.
 

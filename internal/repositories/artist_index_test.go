@@ -271,6 +271,49 @@ func TestArtistIndexRepositoryMatchesUnicodeCaseVariants(t *testing.T) {
 	}
 }
 
+func TestArtistIndexRepositoryPublishedArtworkAuthorIDsProjection(t *testing.T) {
+	t.Run("empty data", func(t *testing.T) {
+		app := newArtistIndexTestApp(t)
+
+		available, err := NewArtistIndexRepository(app).publishedArtworkAuthorIDs()
+		if err != nil {
+			t.Fatalf("load empty availability: %v", err)
+		}
+		if len(available) != 0 {
+			t.Fatalf("empty availability = %v, want empty", available)
+		}
+	})
+
+	t.Run("published relations", func(t *testing.T) {
+		app := newArtistIndexTestApp(t)
+		saveArtistIndexArtist(t, app, artistIndexArtistSeed{id: "directart100000", name: "Direct Artist", published: true})
+		saveArtistIndexArtist(t, app, artistIndexArtistSeed{id: "coauthart000001", name: "Co-author Artist", published: true})
+		saveArtistIndexArtist(t, app, artistIndexArtistSeed{id: "hiddenart000001", name: "Hidden Work Artist", published: true})
+
+		// Repeated published relations collapse to one set member.
+		saveArtistIndexArtwork(t, app, "workdirect10000", []string{"directart100000"}, true)
+		saveArtistIndexArtwork(t, app, "workshared10000", []string{"directart100000", "coauthart000001"}, true)
+		// Unpublished works do not confer availability.
+		saveArtistIndexArtwork(t, app, "workhidden10000", []string{"hiddenart000001"}, false)
+
+		available, err := NewArtistIndexRepository(app).publishedArtworkAuthorIDs()
+		if err != nil {
+			t.Fatalf("load availability: %v", err)
+		}
+		if len(available) != 2 {
+			t.Fatalf("availability = %v, want direct artist and co-author only", available)
+		}
+		for _, id := range []string{"directart100000", "coauthart000001"} {
+			if _, ok := available[id]; !ok {
+				t.Errorf("availability missing %q", id)
+			}
+		}
+		if _, ok := available["hiddenart000001"]; ok {
+			t.Error("unpublished artwork conferred availability")
+		}
+	})
+}
+
 func TestArtistIndexRepositoryDerivesAvailability(t *testing.T) {
 	app := newArtistIndexTestApp(t)
 	saveArtistIndexArtist(t, app, artistIndexArtistSeed{id: "artavail1000000", name: "Available Artist", published: true})
