@@ -163,9 +163,28 @@ func buildArtworkSearchResultsViewContext(ctx context.Context, app *pocketbase.P
 	if err := checkpoint(ctx, "artworks.search.count"); err != nil {
 		return artworkSearchResultsContext{}, err
 	}
-	recordsCount, err := countArtworkRecords(app, filters)
+	collection, err := app.FindCollectionByNameOrId(constants.CollectionArtworks)
 	if err != nil {
 		return artworkSearchResultsContext{}, err
+	}
+	offset := (page - 1) * limit
+	pageRows, err := listArtworkPageRowsForCollection(app, collection, filters, limit, offset)
+	if err != nil {
+		return artworkSearchResultsContext{}, err
+	}
+	recordsCount := 0
+	if len(pageRows) > 0 {
+		recordsCount = pageRows[0].Total
+	} else if page > 1 {
+		// A window query returns no total when OFFSET is beyond the last row. Load
+		// the first page to recover the total, then select the canonical last page.
+		pageRows, err = listArtworkPageRowsForCollection(app, collection, filters, limit, 0)
+		if err != nil {
+			return artworkSearchResultsContext{}, err
+		}
+		if len(pageRows) > 0 {
+			recordsCount = pageRows[0].Total
+		}
 	}
 
 	pageCount := (recordsCount + limit - 1) / limit
@@ -173,14 +192,19 @@ func buildArtworkSearchResultsViewContext(ctx context.Context, app *pocketbase.P
 		page = 1
 	} else if page > pageCount {
 		page = pageCount
+		if page > 1 {
+			pageRows, err = listArtworkPageRowsForCollection(app, collection, filters, limit, (page-1)*limit)
+			if err != nil {
+				return artworkSearchResultsContext{}, err
+			}
+		}
 	}
 	filters.Page = strconv.Itoa(page)
-	offset := (page - 1) * limit
 
 	if err := checkpoint(ctx, "artworks.search.records"); err != nil {
 		return artworkSearchResultsContext{}, err
 	}
-	records, err := listArtworkRecords(app, filters, limit, offset)
+	records, err := listArtworkRecordsByPageRowsForCollection(app, collection, pageRows)
 	if err != nil {
 		return artworkSearchResultsContext{}, err
 	}

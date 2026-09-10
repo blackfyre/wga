@@ -1,12 +1,18 @@
 package artworks
 
 import (
-	"github.com/blackfyre/wga/internal/constants"
+	"fmt"
+
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 	pbsearch "github.com/pocketbase/pocketbase/tools/search"
 )
+
+type artworkPageRow struct {
+	ID    string `db:"id"`
+	Total int    `db:"total"`
+}
 
 // attachArtworkConditions attaches the catalogue filter conditions to the query.
 func attachArtworkConditions(query *dbx.SelectQuery, resolver *core.RecordFieldResolver, f *filters) error {
@@ -44,17 +50,13 @@ func attachArtworkSort(query *dbx.SelectQuery, resolver *core.RecordFieldResolve
 	return nil
 }
 
-// listArtworkRecords returns the bounded page of artwork records matching the
-// filters, in deterministic sort order.
-func listArtworkRecords(app *pocketbase.PocketBase, f *filters, limit int, offset int) ([]*core.Record, error) {
-	collection, err := app.FindCollectionByNameOrId(constants.CollectionArtworks)
-	if err != nil {
-		return nil, err
-	}
-
-	query := app.RecordQuery(collection)
+// listArtworkPageRows evaluates the filtered, ordered page and its complete
+// result count in one pass. Record hydration is deliberately separate and
+// bounded to these IDs so the expensive filter predicates are not repeated.
+func listArtworkPageRowsForCollection(app *pocketbase.PocketBase, collection *core.Collection, f *filters, limit int, offset int) ([]artworkPageRow, error) {
+	baseID := app.DB().QuoteSimpleTableName(collection.Name) + "." + app.DB().QuoteSimpleColumnName("id")
+	query := app.RecordQuery(collection).Select(baseID+" AS id", "COUNT(*) OVER() AS total")
 	resolver := core.NewRecordFieldResolver(app, collection, nil, true)
-
 	if err := attachArtworkConditions(query, resolver, f); err != nil {
 		return nil, err
 	}
@@ -64,7 +66,6 @@ func listArtworkRecords(app *pocketbase.PocketBase, f *filters, limit int, offse
 	if err := resolver.UpdateQuery(query); err != nil {
 		return nil, err
 	}
-
 	if offset > 0 {
 		query.Offset(int64(offset))
 	}
@@ -72,39 +73,41 @@ func listArtworkRecords(app *pocketbase.PocketBase, f *filters, limit int, offse
 		query.Limit(int64(limit))
 	}
 
-	records := []*core.Record{}
-	if err := query.All(&records); err != nil {
+	rows := []artworkPageRow{}
+	if err := query.All(&rows); err != nil {
 		return nil, err
 	}
-
-	return records, nil
+	return rows, nil
 }
 
-// countArtworkRecords returns the number of artwork records matching the
-// filters. The count ignores sorting and reuses the same condition set so the
-// page total always matches the list query.
-func countArtworkRecords(app *pocketbase.PocketBase, f *filters) (int, error) {
-	collection, err := app.FindCollectionByNameOrId(constants.CollectionArtworks)
-	if err != nil {
-		return 0, err
+// listArtworkRecordsByPageRowsForCollection hydrates the bounded page and
+// restores the exact order selected by listArtworkPageRowsForCollection.
+func listArtworkRecordsByPageRowsForCollection(app *pocketbase.PocketBase, collection *core.Collection, rows []artworkPageRow) ([]*core.Record, error) {
+	if len(rows) == 0 {
+		return nil, nil
 	}
-
 	baseID := app.DB().QuoteSimpleTableName(collection.Name) + "." + app.DB().QuoteSimpleColumnName("id")
-
-	query := app.RecordQuery(collection).Select("COUNT(DISTINCT " + baseID + ")")
-	resolver := core.NewRecordFieldResolver(app, collection, nil, true)
-
-	if err := attachArtworkConditions(query, resolver, f); err != nil {
-		return 0, err
-	}
-	if err := resolver.UpdateQuery(query); err != nil {
-		return 0, err
+	ids := make([]any, len(rows))
+	for i, row := range rows {
+		ids[i] = row.ID
 	}
 
-	var count int
-	if err := query.Row(&count); err != nil {
-		return 0, err
+	records := []*core.Record{}
+	if err := app.RecordQuery(collection).AndWhere(dbx.In(baseID, ids...)).All(&records); err != nil {
+		return nil, err
 	}
-
-	return count, nil
+	byID := make(map[string]*core.Record, len(records))
+	for _, record := range records {
+		byID[record.Id] = record
+	}
+	ordered := make([]*core.Record, 0, len(rows))
+	for _, row := range rows {
+		if record := byID[row.ID]; record != nil {
+			ordered = append(ordered, record)
+		}
+	}
+	if len(ordered) != len(rows) {
+		return nil, fmt.Errorf("hydrate artwork page: found %d of %d selected records", len(ordered), len(rows))
+	}
+	return ordered, nil
 }

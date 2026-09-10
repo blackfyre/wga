@@ -28,7 +28,7 @@
 
 ## 6. Artwork list/count experiment
 
-- [ ] 6.1 Compare the existing separate artwork list/count queries with a combined window-count candidate for unfiltered, text, exact-artist including co-authors, venue, and date-range cases; retain the combined production query only if outputs are identical and representative CPU/allocation benchmarks improve without a material supported-case regression, otherwise leave production behaviour unchanged and report the rejection evidence.
+- [x] 6.1 Compare the existing separate artwork list/count queries with a combined window-count candidate for unfiltered, text, exact-artist including co-authors, venue, and date-range cases; retain the combined production query only if outputs are identical and representative CPU/allocation benchmarks improve without a material supported-case regression, otherwise leave production behaviour unchanged and report the rejection evidence.
 
 ## 7. Final performance and regression verification
 
