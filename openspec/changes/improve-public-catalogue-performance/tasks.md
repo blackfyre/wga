@@ -23,7 +23,7 @@
 ## 5. Artist query indexes
 
 - [x] 5.1 Capture `EXPLAIN QUERY PLAN` evidence for the supported published-artist name and birth ordering paths, select only indexes that remove demonstrated scans or temporary sorts, and record the exercised query shapes and database-size delta in the task completion evidence.
-- [ ] 5.2 Add the selected artist indexes through a timestamped reversible PocketBase migration and verify migration up/down tests prove exact index creation, rollback, existing-data preservation, and idempotent migration execution.
+- [x] 5.2 Add the selected artist indexes through a timestamped reversible PocketBase migration and verify migration up/down tests prove exact index creation, rollback, existing-data preservation, and idempotent migration execution.
 - [ ] 5.3 Run focused artist repository tests for ascending name, descending name, birth order, paging, letter, school, period, and born-range filters, and confirm post-migration query plans use the intended indexes without changing returned IDs or order.
 
 ## 6. Artwork list/count experiment
