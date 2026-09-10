@@ -82,11 +82,23 @@ type IndexedArtist struct {
 
 // ArtistIndexRepository is the bounded read-model for the public artist index.
 type ArtistIndexRepository struct {
-	app core.App
+	app                    core.App
+	loadArtistAvailability func() (artistAvailabilitySet, error)
 }
 
 func NewArtistIndexRepository(app core.App) *ArtistIndexRepository {
-	return &ArtistIndexRepository{app: app}
+	return &ArtistIndexRepository{
+		app: app,
+		loadArtistAvailability: func() (artistAvailabilitySet, error) {
+			return loadPublishedArtworkAuthorIDs(app)
+		},
+	}
+}
+
+// InvalidateArtistAvailability advances the projection generation so the next
+// lookup observes current persisted artwork relations.
+func InvalidateArtistAvailability(app core.App) {
+	utils.DeleteCachedValue(app, artistAvailabilityCacheKey)
 }
 
 // CountArtists returns the number of published artists matching the filter.
@@ -314,24 +326,32 @@ func filingLetterExpression(letter string) dbx.Expression {
 // generation performs the catalogue-wide expansion once; bounded artist pages
 // then resolve availability by intersecting their records with this set.
 func (r *ArtistIndexRepository) publishedArtworkAuthorIDs() (artistAvailabilitySet, error) {
-	return utils.GetOrLoadCachedValue(r.app, artistAvailabilityCacheKey, 0, func() (artistAvailabilitySet, error) {
-		rows := []struct {
-			AuthorID string `db:"author_id"`
-		}{}
-		if err := r.app.DB().NewQuery(`
-			SELECT DISTINCT je.value AS author_id
-			FROM Artworks
-			CROSS JOIN json_each(Artworks.author) je
-			WHERE Artworks.published IS true AND je.value != ''
-		`).All(&rows); err != nil {
-			return nil, err
+	load := r.loadArtistAvailability
+	if load == nil {
+		load = func() (artistAvailabilitySet, error) {
+			return loadPublishedArtworkAuthorIDs(r.app)
 		}
+	}
+	return utils.GetOrLoadCachedValue(r.app, artistAvailabilityCacheKey, 0, load)
+}
 
-		available := make(artistAvailabilitySet, len(rows))
-		for _, row := range rows {
-			available[row.AuthorID] = struct{}{}
-		}
+func loadPublishedArtworkAuthorIDs(app core.App) (artistAvailabilitySet, error) {
+	rows := []struct {
+		AuthorID string `db:"author_id"`
+	}{}
+	if err := app.DB().NewQuery(`
+		SELECT DISTINCT je.value AS author_id
+		FROM Artworks
+		CROSS JOIN json_each(Artworks.author) je
+		WHERE Artworks.published IS true AND je.value != ''
+	`).All(&rows); err != nil {
+		return nil, err
+	}
 
-		return available, nil
-	})
+	available := make(artistAvailabilitySet, len(rows))
+	for _, row := range rows {
+		available[row.AuthorID] = struct{}{}
+	}
+
+	return available, nil
 }

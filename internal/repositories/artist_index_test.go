@@ -3,6 +3,7 @@ package repositories
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
@@ -312,6 +313,62 @@ func TestArtistIndexRepositoryPublishedArtworkAuthorIDsProjection(t *testing.T) 
 			t.Error("unpublished artwork conferred availability")
 		}
 	})
+}
+
+func TestArtistIndexAvailabilityInvalidationDuringLoadDoesNotRestoreStaleProjection(t *testing.T) {
+	app := newArtistIndexTestApp(t)
+	started := make(chan struct{})
+	release := make(chan struct{})
+	loads := 0
+	repo := &ArtistIndexRepository{
+		app: app,
+		loadArtistAvailability: func() (artistAvailabilitySet, error) {
+			loads++
+			if loads == 1 {
+				close(started)
+				<-release
+				return artistAvailabilitySet{"staleartist0001": {}}, nil
+			}
+			return artistAvailabilitySet{"freshartist0001": {}}, nil
+		},
+	}
+
+	first := make(chan artistAvailabilitySet, 1)
+	go func() {
+		available, _ := repo.publishedArtworkAuthorIDs()
+		first <- available
+	}()
+
+	select {
+	case <-started:
+	case <-time.After(2 * time.Second):
+		t.Fatal("availability load did not start")
+	}
+	InvalidateArtistAvailability(app)
+	close(release)
+
+	select {
+	case available := <-first:
+		if _, ok := available["staleartist0001"]; !ok {
+			t.Fatalf("in-flight caller received %v, want its completed stale generation", available)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("invalidated availability load did not complete")
+	}
+
+	available, err := repo.publishedArtworkAuthorIDs()
+	if err != nil {
+		t.Fatalf("load fresh availability: %v", err)
+	}
+	if loads != 2 {
+		t.Fatalf("availability loads = %d, want 2 generations", loads)
+	}
+	if _, ok := available["freshartist0001"]; !ok {
+		t.Fatalf("fresh availability = %v, want fresh artist", available)
+	}
+	if _, ok := available["staleartist0001"]; ok {
+		t.Fatalf("stale availability was restored after invalidation: %v", available)
+	}
 }
 
 func TestArtistIndexRepositoryDerivesAvailability(t *testing.T) {
