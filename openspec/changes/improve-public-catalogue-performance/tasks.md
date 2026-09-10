@@ -33,4 +33,4 @@
 ## 7. Final performance and regression verification
 
 - [x] 7.1 Repeat the production-shaped concurrent profile matrix for `/artworks`, `/artworks/results`, and `/dual-mode`, recording dataset cardinality, request concurrency, throughput, latency, CPU samples, allocations per request, forced-GC retained heap, and dominant call paths; verify removed catalogue-wide work no longer appears per request and investigate any material regression before completion.
-- [ ] 7.2 Run formatting, `go vet ./...`, `go test ./... -cover`, and the focused Playwright artwork-search checks, then verify the final diff contains no startup-generation, Cloudflare, external-cache, admission-threshold, public-route, or unrelated runtime-tuning changes.
+- [x] 7.2 Run formatting, `go vet ./...`, `go test ./... -cover`, and the focused Playwright artwork-search checks, then verify the final diff contains no startup-generation, Cloudflare, external-cache, admission-threshold, public-route, or unrelated runtime-tuning changes.

@@ -156,3 +156,26 @@ artwork route, 95.98% for results-only, and 85.98% for Dual Mode—but it now se
 substantially more requests with lower CPU and allocation cost per request. No
 material throughput, latency, CPU, allocation, or retained-heap regression
 remained after investigation.
+
+### Task 7.2 — final regression and scope verification
+
+- Ran `gofmt` over every changed Go source and Prettier over every changed
+  JavaScript, TypeScript, and Markdown source.
+- `go vet ./...` passed.
+- `go test ./... -cover` passed: 1,964 tests across 61 packages.
+- `mise run app:build` regenerated frontend, email, Templ, licence, and Go build
+  outputs successfully.
+- The focused Chromium command passed all 35 artwork-search tests against an
+  isolated built application and synthetic fixture augmented with one eligible
+  collection holding:
+
+  ```text
+  playwright test artwork-search.spec.ts artwork-search-task71.spec.ts
+  ```
+
+- The final diff from baseline commit `83e6a35e` contains only the approved
+  artwork search, artist availability, collection holdings, shared cache,
+  invalidation hook, artist-index migration, tests, and OpenSpec evidence. It
+  contains no startup-generation, Cloudflare, external-cache,
+  admission-threshold, public-route registration, or unrelated runtime-tuning
+  changes.
