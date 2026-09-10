@@ -69,13 +69,13 @@ WGA_PERF_DATA_DIR=<isolated-production-shaped-data> go test ./internal/handlers/
 
 Median results on an AMD Ryzen 7 7800X3D were:
 
-| Case | Separate ns/op | Combined ns/op | Time | Bytes/op | Allocs/op |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Unfiltered | 206,875,197 | 153,419,884 | -25.8% | -9.3% | -4.3% |
-| Text (`Madonna`) | 339,097,616 | 185,719,145 | -45.2% | -15.5% | -9.0% |
-| Exact artist | 199,656,008 | 127,544,144 | -36.1% | -12.1% | -6.9% |
-| Venue | 14,114,029 | 10,837,172 | -23.2% | -8.4% | -4.8% |
-| Date range | 190,994,341 | 111,192,226 | -41.8% | -8.9% | -5.4% |
+| Case             | Separate ns/op | Combined ns/op |   Time | Bytes/op | Allocs/op |
+| ---------------- | -------------: | -------------: | -----: | -------: | --------: |
+| Unfiltered       |    206,875,197 |    153,419,884 | -25.8% |    -9.3% |     -4.3% |
+| Text (`Madonna`) |    339,097,616 |    185,719,145 | -45.2% |   -15.5% |     -9.0% |
+| Exact artist     |    199,656,008 |    127,544,144 | -36.1% |   -12.1% |     -6.9% |
+| Venue            |     14,114,029 |     10,837,172 | -23.2% |    -8.4% |     -4.8% |
+| Date range       |    190,994,341 |    111,192,226 | -41.8% |    -8.9% |     -5.4% |
 
 A five-case, five-iteration process-level comparison reported 5.11 seconds of
 user CPU for the separate path and 3.49 seconds for the combined path (-31.7%);
