@@ -6,9 +6,10 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
-func artworkAvailabilityCacheHook(app core.App) {
+func artworkCatalogueCacheHook(app core.App) {
 	invalidate := func(e *core.RecordEvent) error {
 		repositories.InvalidateArtistAvailability(e.App)
+		repositories.InvalidateCollectionHoldings(e.App)
 		return e.Next()
 	}
 

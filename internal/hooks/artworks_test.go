@@ -40,7 +40,7 @@ func TestArtworkAvailabilityCacheHookInvalidatesAfterMutations(t *testing.T) {
 		t.Fatalf("save artworks collection: %v", err)
 	}
 
-	artworkAvailabilityCacheHook(app)
+	artworkCatalogueCacheHook(app)
 
 	artist := core.NewRecord(artists)
 	artist.Id = "hookartist00001"

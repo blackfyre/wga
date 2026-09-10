@@ -8,6 +8,7 @@ import (
 
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/constants"
+	"github.com/blackfyre/wga/internal/repositories"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/blackfyre/wga/internal/utils/url"
 	"github.com/pocketbase/pocketbase"
@@ -30,13 +31,12 @@ const artworkVenueOptionsLimit = 40
 const artworkLocationOptionsLimit = artworkVenueOptionsLimit
 
 const (
-	artTypesCacheKey           = "artworks:search:art-types"
-	artFormsCacheKey           = "artworks:search:art-forms"
-	artSchoolsCacheKey         = "artworks:search:art-schools"
-	artistNamesCacheKey        = "artworks:search:artist-names"
-	artPeriodsCacheKey         = "artworks:search:art-periods"
-	locationsCacheKey          = "artworks:search:locations"
-	collectionHoldingsCacheKey = "artworks:search:collection-holdings"
+	artTypesCacheKey    = "artworks:search:art-types"
+	artFormsCacheKey    = "artworks:search:art-forms"
+	artSchoolsCacheKey  = "artworks:search:art-schools"
+	artistNamesCacheKey = "artworks:search:artist-names"
+	artPeriodsCacheKey  = "artworks:search:art-periods"
+	locationsCacheKey   = "artworks:search:locations"
 )
 
 // getArtTypesOptions returns a map of art type slugs and their corresponding names.
@@ -339,70 +339,28 @@ type venueFacetOptions struct {
 	unknownSelected bool
 }
 
-type collectionHoldingRow struct {
-	Value        string `db:"value"`
-	Label        string `db:"label"`
-	HoldingCount int    `db:"holding_count"`
-}
-
-// collectionHoldings loads every location and its eligible published-work
-// count. Zero-count locations remain in the compact projection so an existing
-// selected value can be retained without another query.
-func collectionHoldings(app *pocketbase.PocketBase) ([]venueOption, error) {
-	return utils.GetOrLoadCachedValue(app, collectionHoldingsCacheKey, 0, func() ([]venueOption, error) {
-		rows := []collectionHoldingRow{}
-		err := app.DB().NewQuery(`
-			SELECT
-				locations.id AS value,
-				locations.name AS label,
-				COUNT(DISTINCT artworks.id) AS holding_count
-			FROM locations
-			LEFT JOIN artworks
-				ON artworks.current_location_id = locations.id
-				AND artworks.published = TRUE
-				AND json_array_length(artworks.author) > 0
-				AND EXISTS (
-					SELECT 1 FROM artists
-					WHERE artists.id = json_extract(artworks.author, '$[0]')
-				)
-			GROUP BY locations.id, locations.name`).All(&rows)
-		if err != nil {
-			return nil, err
-		}
-
-		holdings := make([]venueOption, 0, len(rows))
-		for _, row := range rows {
-			holdings = append(holdings, venueOption{
-				value: row.Value,
-				label: row.Label,
-				count: row.HoldingCount,
-			})
-		}
-		return holdings, nil
-	})
-}
-
 // getVenueOptions filters, orders, and bounds the complete counted holdings
 // projection in memory. VenueQuery changes only the collection choices; it never
 // enters the artwork result predicate or a holding's own count.
 func getVenueOptions(app *pocketbase.PocketBase, venueQuery string, selectedVenue string) (venueFacetOptions, error) {
-	holdings, err := collectionHoldings(app)
+	holdings, err := repositories.LoadCollectionHoldings(app)
 	if err != nil {
 		return venueFacetOptions{}, err
 	}
 
 	options := venueFacetOptions{entries: make([]venueOption, 0, min(len(holdings), artworkVenueOptionsLimit))}
 	for _, holding := range holdings {
-		if selectedVenue != "" && holding.value == selectedVenue {
-			options.retained = holding
+		option := venueOption{value: holding.Value, label: holding.Label, count: holding.Count}
+		if selectedVenue != "" && option.value == selectedVenue {
+			options.retained = option
 			options.retainedSet = true
 		}
-		if holding.count <= 0 || !venueNameMatchesQuery(holding.label, venueQuery) {
+		if option.count <= 0 || !venueNameMatchesQuery(option.label, venueQuery) {
 			continue
 		}
-		options.entries = append(options.entries, holding)
+		options.entries = append(options.entries, option)
 		options.totalOptions++
-		options.totalHoldings += holding.count
+		options.totalHoldings += option.count
 	}
 
 	sort.Slice(options.entries, func(i, j int) bool {
