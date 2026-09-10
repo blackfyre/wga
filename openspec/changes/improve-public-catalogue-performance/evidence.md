@@ -81,3 +81,78 @@ A five-case, five-iteration process-level comparison reported 5.11 seconds of
 user CPU for the separate path and 3.49 seconds for the combined path (-31.7%);
 system CPU fell from 1.73 to 1.15 seconds. Every required case improved elapsed
 time, bytes, and allocations, so the combined path was retained.
+
+## Final production-shaped profile matrix
+
+### Task 7.1 — before/after concurrent profiles
+
+The baseline was commit `83e6a35e`, immediately before this change. Both builds
+used Go 1.27.0 and independent copies of the same database: 5,829 artists,
+52,866 artworks, and 957 locations. Each route received one warm-up request,
+then eight concurrent clients for ten seconds with request protection disabled.
+`/artworks/results` carried `HX-Request: true` and targeted
+`artwork-search-results`; the other routes were ordinary public GET requests.
+All measured requests returned HTTP 200 with zero load-generator errors.
+
+Unprofiled load results were:
+
+| Route | Baseline req/s | Final req/s | Throughput | Baseline mean | Final mean | Baseline p95 | Final p95 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `/artworks` | 5.65 | 16.81 | +197.5% | 1,376.08 ms | 472.60 ms | 1,608.83 ms | 552.97 ms |
+| `/artworks/results` | 5.44 | 17.04 | +213.2% | 1,439.95 ms | 467.34 ms | 1,652.08 ms | 507.69 ms |
+| `/dual-mode` | 18.39 | 97.57 | +430.6% | 434.93 ms | 81.83 ms | 429.82 ms | 86.33 ms |
+
+Ten-second CPU profiles ran under the same eight-client load. Total samples can
+exceed wall time because requests execute across cores; dividing by completed
+requests gives the comparable CPU cost:
+
+| Route | Baseline samples / requests | Final samples / requests | CPU per request | Change |
+| --- | ---: | ---: | ---: | ---: |
+| `/artworks` | 39.59 s / 56 | 43.15 s / 176 | 706.96 → 245.17 ms | -65.3% |
+| `/artworks/results` | 39.26 s / 57 | 40.34 s / 168 | 688.77 → 240.12 ms | -65.1% |
+| `/dual-mode` | 50.09 s / 184 | 39.38 s / 977 | 272.23 → 40.31 ms | -85.2% |
+
+Exact `runtime.MemStats` deltas around separate ten-second runs supplied
+allocation counts rather than relying on sampled-profile totals:
+
+| Route | Baseline bytes/request | Final bytes/request | Baseline mallocs/request | Final mallocs/request |
+| --- | ---: | ---: | ---: | ---: |
+| `/artworks` | 1,451,462 | 1,415,550 (-2.5%) | 10,567 | 9,790 (-7.4%) |
+| `/artworks/results` | 777,719 | 725,909 (-6.7%) | 7,326 | 6,545 (-10.7%) |
+| `/dual-mode` | 2,140,278 | 2,100,161 (-1.9%) | 19,564 | 19,109 (-2.3%) |
+
+An initial sampled allocation profile exposed avoidable allocation in the new
+in-memory collection ordering: repeatedly constructing folded labels and growing
+the option slice accounted for about 122 KiB per full-page request. The final
+implementation preallocates from the bounded 957-location projection and uses an
+allocation-free ASCII `NOCASE` comparator. Focused race tests preserved the
+ordering and forty-option contracts, and the exact counters above show that the
+apparent full-page regression was removed.
+
+Forced-GC post-load `HeapAlloc` was 3.94 → 4.00 MiB for `/artworks`, 3.64 →
+3.96 MiB for `/artworks/results`, and 3.87 → 4.59 MiB for `/dual-mode`.
+The largest increase was 0.72 MiB and includes the deliberately bounded shared
+artist-availability set. Post-warm heap profile differences contained runtime,
+regular-expression, buffer, and SQLite sampling buckets, but no growing
+route-owned response cache or request-keyed catalogue projection.
+
+Dominant call-path comparison confirmed that the removed work no longer occurs
+per request:
+
+- Baseline `/artworks` spent 45.72% cumulative CPU in the catalogue-wide
+  `getVenueOptions` SQL query; the warmed final profile spent 0.18% in its
+  in-memory ordering, with no collection-holdings loader query sampled.
+- Baseline `/artworks/results` ran the full search-view builder for 96.84% of
+  sampled CPU, including facets. The final route ran only
+  `buildArtworkSearchResultsViewContext`; its remaining dominant work was the
+  combined ordered page/window-count query.
+- Baseline `/dual-mode` spent 70.79% cumulative CPU in the per-request
+  `publishedArtworkAuthorIDs` catalogue scan. The final profile contained no
+  sample for `loadPublishedArtworkAuthorIDs`; remaining application work was
+  headed by the bounded artist count (40.73%) and list (2.89%) queries.
+
+SQLite remains the dominant execution engine—96.08% cumulative CPU for the full
+artwork route, 95.98% for results-only, and 85.98% for Dual Mode—but it now serves
+substantially more requests with lower CPU and allocation cost per request. No
+material throughput, latency, CPU, allocation, or retained-heap regression
+remained after investigation.

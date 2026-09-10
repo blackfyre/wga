@@ -137,6 +137,25 @@ func TestTask71VenueFacetTieOrderAndHonestOmittedHoldingsNote(t *testing.T) {
 	}
 }
 
+func TestSQLiteNoCaseCompareMatchesASCIIOrdering(t *testing.T) {
+	for _, tc := range []struct {
+		name        string
+		left, right string
+		want        int
+	}{
+		{name: "case insensitive equality", left: "Alpha", right: "alpha", want: 0},
+		{name: "folded order", left: "beta", right: "Gamma", want: -1},
+		{name: "prefix", left: "Museum", right: "Museum Two", want: -1},
+		{name: "non ASCII remains byte ordered", left: "Á", right: "É", want: -1},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := sqliteNoCaseCompare(tc.left, tc.right); got != tc.want {
+				t.Fatalf("sqliteNoCaseCompare(%q, %q) = %d, want %d", tc.left, tc.right, got, tc.want)
+			}
+		})
+	}
+}
+
 func TestTask71RouteFullHtmxAndOrdinaryGETParity(t *testing.T) {
 	app := newArtworkSearchApp(t)
 	saveSearchArtist(t, app, "artisttask71004", "Task Artist")

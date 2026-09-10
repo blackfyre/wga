@@ -348,7 +348,7 @@ func getVenueOptions(app *pocketbase.PocketBase, venueQuery string, selectedVenu
 		return venueFacetOptions{}, err
 	}
 
-	options := venueFacetOptions{entries: make([]venueOption, 0, min(len(holdings), artworkVenueOptionsLimit))}
+	options := venueFacetOptions{entries: make([]venueOption, 0, len(holdings))}
 	for _, holding := range holdings {
 		option := venueOption{value: holding.Value, label: holding.Label, count: holding.Count}
 		if selectedVenue != "" && option.value == selectedVenue {
@@ -368,9 +368,8 @@ func getVenueOptions(app *pocketbase.PocketBase, venueQuery string, selectedVenu
 		if left.count != right.count {
 			return left.count > right.count
 		}
-		leftFolded, rightFolded := sqliteNoCaseKey(left.label), sqliteNoCaseKey(right.label)
-		if leftFolded != rightFolded {
-			return leftFolded < rightFolded
+		if foldedOrder := sqliteNoCaseCompare(left.label, right.label); foldedOrder != 0 {
+			return foldedOrder < 0
 		}
 		if left.label != right.label {
 			return left.label < right.label
@@ -396,6 +395,33 @@ func getVenueOptions(app *pocketbase.PocketBase, venueQuery string, selectedVenu
 
 	finalizeVenueOptions(venueQuery, selectedVenue, &options)
 	return options, nil
+}
+
+// sqliteNoCaseCompare mirrors SQLite's ASCII-only NOCASE byte ordering without
+// allocating folded strings for each sort comparison.
+func sqliteNoCaseCompare(left string, right string) int {
+	for i := 0; i < min(len(left), len(right)); i++ {
+		leftByte, rightByte := left[i], right[i]
+		if leftByte >= 'A' && leftByte <= 'Z' {
+			leftByte += 'a' - 'A'
+		}
+		if rightByte >= 'A' && rightByte <= 'Z' {
+			rightByte += 'a' - 'A'
+		}
+		if leftByte < rightByte {
+			return -1
+		}
+		if leftByte > rightByte {
+			return 1
+		}
+	}
+	if len(left) < len(right) {
+		return -1
+	}
+	if len(left) > len(right) {
+		return 1
+	}
+	return 0
 }
 
 func sqliteNoCaseKey(value string) string {
