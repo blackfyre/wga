@@ -103,20 +103,27 @@ func buildArtworkSearchView(app *pocketbase.PocketBase, values neturl.Values, pa
 
 type artworkSearchCheckpoint func(context.Context, string) error
 
-func buildArtworkSearchViewContext(ctx context.Context, app *pocketbase.PocketBase, values neturl.Values, page int, limit int, checkpoint artworkSearchCheckpoint) (pages.ArtworkSearchView, string, error) {
+type artworkSearchResultsContext struct {
+	filters         *filters
+	dualModeContext *pages.ArtworkSearchDualMode
+	view            pages.ArtworkSearchResultsView
+	canonical       string
+}
+
+func buildArtworkSearchResultsViewContext(ctx context.Context, app *pocketbase.PocketBase, values neturl.Values, page int, limit int, checkpoint artworkSearchCheckpoint) (artworkSearchResultsContext, error) {
 	filters := buildFilters(values)
 	dualModeContext := getDualModeSearchContext(values)
 
 	if filters.VenueConflict {
-		return pages.ArtworkSearchView{}, "", errConflictingVenueFilters
+		return artworkSearchResultsContext{}, errConflictingVenueFilters
 	}
 
 	if err := checkpoint(ctx, "artworks.search.count"); err != nil {
-		return pages.ArtworkSearchView{}, "", err
+		return artworkSearchResultsContext{}, err
 	}
 	recordsCount, err := countArtworkRecords(app, filters)
 	if err != nil {
-		return pages.ArtworkSearchView{}, "", err
+		return artworkSearchResultsContext{}, err
 	}
 
 	pageCount := (recordsCount + limit - 1) / limit
@@ -129,12 +136,36 @@ func buildArtworkSearchViewContext(ctx context.Context, app *pocketbase.PocketBa
 	offset := (page - 1) * limit
 
 	if err := checkpoint(ctx, "artworks.search.records"); err != nil {
-		return pages.ArtworkSearchView{}, "", err
+		return artworkSearchResultsContext{}, err
 	}
 	records, err := listArtworkRecords(app, filters, limit, offset)
 	if err != nil {
+		return artworkSearchResultsContext{}, err
+	}
+
+	if err := checkpoint(ctx, "artworks.search.projection"); err != nil {
+		return artworkSearchResultsContext{}, err
+	}
+	view, err := buildArtworkSearchResults(app, filters, dualModeContext, records, recordsCount, page, limit)
+	if err != nil {
+		return artworkSearchResultsContext{}, err
+	}
+
+	return artworkSearchResultsContext{
+		filters:         filters,
+		dualModeContext: dualModeContext,
+		view:            view,
+		canonical:       buildArtworkSearchPath("/artworks", filters, dualModeContext),
+	}, nil
+}
+
+func buildArtworkSearchViewContext(ctx context.Context, app *pocketbase.PocketBase, values neturl.Values, page int, limit int, checkpoint artworkSearchCheckpoint) (pages.ArtworkSearchView, string, error) {
+	resultsContext, err := buildArtworkSearchResultsViewContext(ctx, app, values, page, limit, checkpoint)
+	if err != nil {
 		return pages.ArtworkSearchView{}, "", err
 	}
+	filters := resultsContext.filters
+	dualModeContext := resultsContext.dualModeContext
 
 	if err := checkpoint(ctx, "artworks.search.forms"); err != nil {
 		return pages.ArtworkSearchView{}, "", err
@@ -171,14 +202,6 @@ func buildArtworkSearchViewContext(ctx context.Context, app *pocketbase.PocketBa
 	if err != nil {
 		return pages.ArtworkSearchView{}, "", err
 	}
-	if err := checkpoint(ctx, "artworks.search.projection"); err != nil {
-		return pages.ArtworkSearchView{}, "", err
-	}
-	results, err := buildArtworkSearchResults(app, filters, dualModeContext, records, recordsCount, page, limit)
-	if err != nil {
-		return pages.ArtworkSearchView{}, "", err
-	}
-
 	schoolGroup := buildChipGroup("SCHOOL", "art_school", artSchoolOptions, filters.SchoolString)
 	formGroup := buildChipGroup("FORM", "art_form", artFormOptions, filters.ArtFormString)
 	typeGroup := buildChipGroup("TYPE", "art_type", artTypeOptions, filters.ArtTypeString)
@@ -214,12 +237,10 @@ func buildArtworkSearchViewContext(ctx context.Context, app *pocketbase.PocketBa
 		ClearUrl:        buildArtworkSearchClearPath(dualModeContext),
 		DualModeContext: dualModeContext,
 		HxTarget:        "#artwork-search",
-		Results:         results,
+		Results:         resultsContext.view,
 	}
 
-	canonical := buildArtworkSearchPath("/artworks", filters, dualModeContext)
-
-	return view, canonical, nil
+	return view, resultsContext.canonical, nil
 }
 
 func buildArtworkSearchResults(app *pocketbase.PocketBase, filters *filters, dualModeContext *pages.ArtworkSearchDualMode, records []*core.Record, recordsCount int, page int, limit int) (pages.ArtworkSearchResultsView, error) {

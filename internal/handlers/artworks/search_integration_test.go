@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	neturl "net/url"
+	"reflect"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	"github.com/blackfyre/wga/internal/config"
+	"github.com/blackfyre/wga/internal/requestprotection"
 	apputils "github.com/blackfyre/wga/internal/utils"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
@@ -150,6 +152,52 @@ type searchArtworkSeed struct {
 	dateStart int
 	dateEnd   int
 	published bool
+}
+
+func TestArtworkSearchFullViewComposesCanonicalResultsWorkflow(t *testing.T) {
+	app := newArtworkSearchApp(t)
+	saveSearchArtist(t, app, "artistone000001", "Artist One")
+	for index, title := range []string{"Alpha Work", "Bravo Work", "Charlie Work"} {
+		saveSearchArtwork(t, app, searchArtworkSeed{
+			id:        workID(fmt.Sprintf("compose%d", index)),
+			title:     title,
+			authors:   []string{"artistone000001"},
+			sourceRow: index + 1,
+			published: true,
+		})
+	}
+
+	values := neturl.Values{
+		"dir":  {"desc"},
+		"page": {"2"},
+		"q":    {"Work"},
+		"sort": {"title"},
+		"view": {"list"},
+	}
+	resultsContext, err := buildArtworkSearchResultsViewContext(context.Background(), app, values, 2, 2, requestprotection.Checkpoint)
+	if err != nil {
+		t.Fatalf("build results workflow: %v", err)
+	}
+	full, canonical, err := buildArtworkSearchViewContext(context.Background(), app, values, 2, 2, requestprotection.Checkpoint)
+	if err != nil {
+		t.Fatalf("build full view: %v", err)
+	}
+
+	if canonical != resultsContext.canonical {
+		t.Fatalf("full canonical = %q, results canonical = %q", canonical, resultsContext.canonical)
+	}
+	if !reflect.DeepEqual(full.Results, resultsContext.view) {
+		t.Fatalf("full results differ from canonical results workflow:\nfull: %#v\nresults: %#v", full.Results, resultsContext.view)
+	}
+	if resultsContext.view.ResultCount != 3 {
+		t.Fatalf("result count = %d, want 3", resultsContext.view.ResultCount)
+	}
+	if len(resultsContext.view.Artworks) != 1 || resultsContext.view.Artworks[0].Title != "Alpha Work" {
+		t.Fatalf("second descending page = %#v, want Alpha Work", resultsContext.view.Artworks)
+	}
+	if resultsContext.view.Pagination == "" {
+		t.Fatal("results workflow omitted pagination")
+	}
 }
 
 func saveSearchTaxonomy(t *testing.T, app *pocketbase.PocketBase, collection string, id string, slug string, name string) {

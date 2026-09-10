@@ -51,6 +51,27 @@ func TestArtworkSearchCancellationStopsSubsequentRepositoryStage(t *testing.T) {
 	}
 }
 
+func TestArtworkSearchResultsWorkflowChecksCancellationBeforeProjection(t *testing.T) {
+	app := newArtworkSearchApp(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	stages := []string{}
+	checkpoint := func(ctx context.Context, stage string) error {
+		stages = append(stages, stage)
+		if stage == "artworks.search.projection" {
+			cancel()
+		}
+		return requestprotection.Checkpoint(ctx, stage)
+	}
+
+	if _, err := buildArtworkSearchResultsViewContext(ctx, app, url.Values{}, 1, artworkSearchPageSize, checkpoint); !errors.Is(err, context.Canceled) {
+		t.Fatalf("buildArtworkSearchResultsViewContext() error = %v, want original cancellation cause", err)
+	}
+	want := []string{"artworks.search.count", "artworks.search.records", "artworks.search.projection"}
+	if !reflect.DeepEqual(stages, want) {
+		t.Fatalf("started stages = %v, want %v", stages, want)
+	}
+}
+
 func TestArtworkSearchCancellationSkipsRender(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
