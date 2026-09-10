@@ -1,0 +1,3 @@
+## 1. Exact artist search interaction
+
+- [x] 1.1 Reproduce the artist-record-to-artwork-search refinement in Playwright; correct the demonstrated form/HTMX contract so the hidden `artist_id`, canonical URL, exact result constraint, and replacement DOM retain the scope; resolve the published artist's filing name only for complete search views and render it as scope metadata separate from the editable `q` field, with no details for an unresolved or unpublished ID; add focused view/template coverage for resolved, empty-result, unresolved, reset, and results-only cases; then run `templ generate`, the affected Go tests, and the focused Playwright artwork-search scenario successfully.

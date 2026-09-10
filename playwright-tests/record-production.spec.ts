@@ -60,3 +60,53 @@ test.describe("production records without JavaScript", () => {
 		).toBeVisible();
 	});
 });
+
+test("artist record scope remains visible through live artwork refinement", async ({
+	page,
+}) => {
+	const artistID = "r9fb82d431d2a5c";
+	await page.goto(artistPath);
+	await page
+		.getByRole("link", {
+			name: /FIND MORE BY Benozzo Gozzoli IN THE ARTWORK SEARCH/,
+		})
+		.click();
+
+	const form = page.locator("#artwork-filters");
+	await expect(page).toHaveURL(
+		(url) =>
+			url.pathname === "/artworks" &&
+			url.searchParams.get("artist_id") === artistID,
+	);
+	await expect(form.locator("input[name='artist_id']")).toHaveValue(artistID);
+	await expect(form.locator("[data-artwork-artist-scope]")).toContainText(
+		"GOZZOLI, Benozzo",
+	);
+
+	const query = form.locator("#artwork-query");
+	await expect(query).toBeEditable();
+	const refinement = page.waitForResponse((response) => {
+		const url = new URL(response.url());
+		return (
+			url.pathname === "/artworks" &&
+			url.searchParams.get("artist_id") === artistID &&
+			url.searchParams.get("q") === "Mocking"
+		);
+	});
+	await query.fill("Mocking");
+	await refinement;
+
+	await expect(page).toHaveURL(
+		(url) =>
+			url.pathname === "/artworks" &&
+			url.searchParams.get("artist_id") === artistID &&
+			url.searchParams.get("q") === "Mocking",
+	);
+	await expect(form.locator("input[name='artist_id']")).toHaveValue(artistID);
+	await expect(form.locator("[data-artwork-artist-scope]")).toContainText(
+		"GOZZOLI, Benozzo",
+	);
+	await expect(page.locator("#artwork-search-results")).toContainText(
+		"The Mocking of Christ",
+	);
+});

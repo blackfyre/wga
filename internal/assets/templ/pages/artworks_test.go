@@ -250,6 +250,34 @@ func TestArtworkFilterBlockRendersCatalogueFilters(t *testing.T) {
 	}
 }
 
+func TestArtworkFilterBlockPresentsExactArtistScopeSeparatelyFromQuery(t *testing.T) {
+	view := sampleArtworkSearchView()
+	view.ArtistID = "artistone000001"
+	view.ArtistScopeFilingName = "GOZZOLI, Benozzo"
+	view.NameField.Value = "Mocking"
+
+	rendered := renderArtworkFilterBlock(t, view)
+
+	if !strings.Contains(rendered, `type="hidden" name="artist_id" value="artistone000001"`) {
+		t.Error("expected exact artist ID as hidden submitted state")
+	}
+	if !strings.Contains(rendered, `data-artwork-artist-scope`) || !strings.Contains(rendered, "GOZZOLI, Benozzo") {
+		t.Error("expected visible filing-name artist scope")
+	}
+	if !strings.Contains(rendered, `id="artwork-query"`) || !strings.Contains(rendered, `value="Mocking"`) {
+		t.Error("expected the independent text refinement value")
+	}
+	if strings.Contains(rendered, "readonly") {
+		t.Error("artist scope must not make the text query read-only")
+	}
+
+	view.ArtistScopeFilingName = ""
+	unresolved := renderArtworkFilterBlock(t, view)
+	if strings.Contains(unresolved, `data-artwork-artist-scope`) {
+		t.Error("unresolved artist ID must not expose artist-scope details")
+	}
+}
+
 func TestArtworkFilterBlockRendersSemanticFacetDisclosures(t *testing.T) {
 	rendered := renderArtworkFilterBlock(t, sampleArtworkSearchView())
 

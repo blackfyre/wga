@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"cmp"
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"math"
@@ -250,6 +251,10 @@ func buildArtworkSearchViewContext(ctx context.Context, app *pocketbase.PocketBa
 	}
 	filters := resultsContext.filters
 	dualModeContext := resultsContext.dualModeContext
+	artistScopeFilingName, err := resolveArtworkSearchArtistScope(ctx, app, filters.ArtistID, checkpoint)
+	if err != nil {
+		return pages.ArtworkSearchView{}, "", err
+	}
 
 	if err := checkpoint(ctx, "artworks.search.forms"); err != nil {
 		return pages.ArtworkSearchView{}, "", err
@@ -309,22 +314,42 @@ func buildArtworkSearchViewContext(ctx context.Context, app *pocketbase.PocketBa
 			Value:       filters.TechniqueString,
 			Placeholder: "e.g. oil on canvas",
 		},
-		ArtistID:        filters.ArtistID,
-		SchoolGroup:     schoolGroup,
-		FormGroup:       formGroup,
-		TypeGroup:       typeGroup,
-		PeriodGroup:     periodGroup,
-		LocationGroup:   collectionGroup,
-		Facets:          buildArtworkSearchFacets(filters, schoolGroup, formGroup, typeGroup, periodGroup, venueOptions),
-		Sort:            filters.Sort,
-		Dir:             filters.SortDir,
-		ClearUrl:        buildArtworkSearchClearPath(dualModeContext),
-		DualModeContext: dualModeContext,
-		HxTarget:        "#artwork-search",
-		Results:         resultsContext.view,
+		ArtistID:              filters.ArtistID,
+		ArtistScopeFilingName: artistScopeFilingName,
+		SchoolGroup:           schoolGroup,
+		FormGroup:             formGroup,
+		TypeGroup:             typeGroup,
+		PeriodGroup:           periodGroup,
+		LocationGroup:         collectionGroup,
+		Facets:                buildArtworkSearchFacets(filters, schoolGroup, formGroup, typeGroup, periodGroup, venueOptions),
+		Sort:                  filters.Sort,
+		Dir:                   filters.SortDir,
+		ClearUrl:              buildArtworkSearchClearPath(dualModeContext),
+		DualModeContext:       dualModeContext,
+		HxTarget:              "#artwork-search",
+		Results:               resultsContext.view,
 	}
 
 	return view, resultsContext.canonical, nil
+}
+
+func resolveArtworkSearchArtistScope(ctx context.Context, app *pocketbase.PocketBase, artistID string, checkpoint artworkSearchCheckpoint) (string, error) {
+	if artistID == "" {
+		return "", nil
+	}
+	if err := checkpoint(ctx, "artworks.search.artist_scope"); err != nil {
+		return "", err
+	}
+
+	artist, err := repositories.NewArtistRecordRepository(app).FindPublishedArtist(artistID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+
+	return artist.GetString("filing_name"), nil
 }
 
 func buildArtworkSearchResults(app *pocketbase.PocketBase, filters *filters, dualModeContext *pages.ArtworkSearchDualMode, records []*core.Record, recordsCount int, page int, limit int) (pages.ArtworkSearchResultsView, error) {

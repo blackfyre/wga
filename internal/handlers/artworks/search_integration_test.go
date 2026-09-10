@@ -110,6 +110,7 @@ func newArtworkSearchApp(t *testing.T) *pocketbase.PocketBase {
 		&core.TextField{Id: "artist_name", Name: "name", Required: true},
 		&core.TextField{Id: "artist_filing_name", Name: "filing_name"},
 		&core.TextField{Id: "artist_short_name", Name: "short_name"},
+		&core.BoolField{Id: "artist_published", Name: "published"},
 	)
 	if err := app.Save(artists); err != nil {
 		t.Fatalf("save artists: %v", err)
@@ -260,6 +261,7 @@ func saveSearchArtist(t *testing.T, app *pocketbase.PocketBase, id string, name 
 	record.Set("name", name)
 	record.Set("filing_name", name)
 	record.Set("short_name", name)
+	record.Set("published", true)
 	if err := app.Save(record); err != nil {
 		t.Fatalf("save artist %s: %v", id, err)
 	}
@@ -350,6 +352,12 @@ func TestBuildArtworkSearchViewFiltersByExactArtistID(t *testing.T) {
 	if view.ArtistID != "artistone000001" {
 		t.Errorf("view artist ID = %q, want artistone000001", view.ArtistID)
 	}
+	if view.ArtistScopeFilingName != "Aachen, Hans von" {
+		t.Errorf("artist scope = %q, want Aachen, Hans von", view.ArtistScopeFilingName)
+	}
+	if view.ClearUrl != "/artworks" {
+		t.Errorf("clear URL = %q, want /artworks without artist scope", view.ClearUrl)
+	}
 	if view.Results.ListUrl != "/artworks?artist_id=artistone000001&view=list" {
 		t.Errorf("list URL = %q", view.Results.ListUrl)
 	}
@@ -378,6 +386,37 @@ func TestBuildArtworkSearchViewFiltersByExactArtistID(t *testing.T) {
 	}
 	if unknown.Results.ResultCount != 0 || len(unknown.Results.Artworks) != 0 {
 		t.Fatalf("unknown artist results = %d, want 0", unknown.Results.ResultCount)
+	}
+	if unknown.ArtistScopeFilingName != "" {
+		t.Errorf("unknown artist scope = %q, want empty", unknown.ArtistScopeFilingName)
+	}
+
+	saveSearchArtist(t, app, "unpublish000001", "Artist, Unpublished")
+	unpublishedArtist, err := app.FindRecordById("artists", "unpublish000001")
+	if err != nil {
+		t.Fatalf("find unpublished artist fixture: %v", err)
+	}
+	unpublishedArtist.Set("published", false)
+	if err := app.Save(unpublishedArtist); err != nil {
+		t.Fatalf("save unpublished artist fixture: %v", err)
+	}
+	unpublished, _, err := buildArtworkSearchView(app, neturl.Values{"artist_id": {"unpublish000001"}}, 1, 16)
+	if err != nil {
+		t.Fatalf("build unpublished artist view: %v", err)
+	}
+	if unpublished.ArtistScopeFilingName != "" {
+		t.Errorf("unpublished artist scope = %q, want empty", unpublished.ArtistScopeFilingName)
+	}
+
+	empty, _, err := buildArtworkSearchView(app, neturl.Values{
+		"artist_id": {"artistone000001"},
+		"q":         {"No such work"},
+	}, 1, 16)
+	if err != nil {
+		t.Fatalf("build empty refined artist view: %v", err)
+	}
+	if empty.Results.ResultCount != 0 || empty.ArtistScopeFilingName != "Aachen, Hans von" {
+		t.Errorf("empty refined artist view = count %d, scope %q", empty.Results.ResultCount, empty.ArtistScopeFilingName)
 	}
 }
 
@@ -1025,6 +1064,9 @@ func TestArtworksRouteRendersFullPageAndFragment(t *testing.T) {
 		if !strings.Contains(body, `type="hidden" name="artist_id" value="artistone000001"`) {
 			t.Error("full page must retain exact artist ID as non-visible GET state")
 		}
+		if !strings.Contains(body, `data-artwork-artist-scope`) || !strings.Contains(body, "Artist One") {
+			t.Error("full page must present the resolved artist scope")
+		}
 
 		fragment := httptest.NewRecorder()
 		fragmentRequest := httptest.NewRequest(http.MethodGet, "/artworks/results?artist_id=artistone000001&q=Only&sort=date", nil)
@@ -1042,6 +1084,9 @@ func TestArtworksRouteRendersFullPageAndFragment(t *testing.T) {
 		}
 		if strings.Contains(fragmentBody, "id=\"artwork-filters\"") {
 			t.Error("fragment must not include the filter form")
+		}
+		if strings.Contains(fragmentBody, `data-artwork-artist-scope`) {
+			t.Error("results-only fragment must not include artist-scope presentation")
 		}
 		if !strings.Contains(fragmentBody, "Only Work") {
 			t.Error("fragment must retain the artist holding while refining the catalogue query")
