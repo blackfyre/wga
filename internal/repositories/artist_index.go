@@ -126,8 +126,8 @@ func (r *ArtistIndexRepository) CountArtists(filter ArtistIndexFilter) (int, err
 }
 
 // ListArtists returns the published artists matching the filter in deterministic
-// order. Availability is resolved once per page with a single bound aggregate
-// query and is skipped entirely for an empty page.
+// order. Availability is intersected from the application-scoped published-work
+// projection and is skipped entirely for an empty page.
 func (r *ArtistIndexRepository) ListArtists(filter ArtistIndexFilter) ([]IndexedArtist, error) {
 	present, err := artistsIdentityFieldsPresent(r.app)
 	if err != nil {

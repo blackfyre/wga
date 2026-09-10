@@ -371,6 +371,38 @@ func TestArtistIndexAvailabilityInvalidationDuringLoadDoesNotRestoreStaleProject
 	}
 }
 
+func TestArtistIndexRepositoryReusesAvailabilityAcrossPagesAndInstances(t *testing.T) {
+	app := newArtistIndexTestApp(t)
+	saveArtistIndexArtist(t, app, artistIndexArtistSeed{id: "pageartist00001", name: "Alpha Artist", published: true})
+	saveArtistIndexArtist(t, app, artistIndexArtistSeed{id: "pageartist00002", name: "Beta Artist", published: true})
+	saveArtistIndexArtwork(t, app, "pageartwork0001", []string{"pageartist00001", "pageartist00002"}, true)
+
+	queryCount, err := countRecordQueries(app, func() error {
+		first, err := NewArtistIndexRepository(app).ListArtists(ArtistIndexFilter{Limit: 1})
+		if err != nil {
+			return err
+		}
+		if len(first) != 1 || !first[0].Available {
+			t.Fatalf("first page = %#v, want one available artist", first)
+		}
+
+		second, err := NewArtistIndexRepository(app).ListArtists(ArtistIndexFilter{Limit: 1, Offset: 1})
+		if err != nil {
+			return err
+		}
+		if len(second) != 1 || !second[0].Available {
+			t.Fatalf("second page = %#v, want one available artist", second)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("list repeated artist pages: %v", err)
+	}
+	if queryCount != 3 {
+		t.Fatalf("query count = %d, want two bounded artist reads plus one shared availability read", queryCount)
+	}
+}
+
 func TestArtistIndexRepositoryDerivesAvailability(t *testing.T) {
 	app := newArtistIndexTestApp(t)
 	saveArtistIndexArtist(t, app, artistIndexArtistSeed{id: "artavail1000000", name: "Available Artist", published: true})
