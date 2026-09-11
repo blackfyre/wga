@@ -546,7 +546,7 @@ templ dualWorkPane(w DualWindow) {
 	<div class="flex flex-wrap gap-2.5 mt-5 mb-7">
 		@components.AddToItineraryAction(w.Work.ArtworkID, components.AddToItineraryRow)
 		if w.Send.Href != "" {
-			<a href={ templ.URL(w.Send.Href) } hx-get={ w.Send.Href } hx-target="#dual-area" hx-select="#dual-area" hx-swap="outerHTML" class="wga-button wga-button-primary font-mono text-(length:--t-11) tracking-[1.5px] h-[46px]">{ w.Send.Label }</a>
+			<a href={ templ.URL(w.Send.Href) } hx-get={ w.Send.Href } hx-target="#dual-area" hx-select="#dual-area" hx-swap="outerHTML" class="wga-button wga-button-outline-primary font-mono text-(length:--t-11) tracking-[1.5px] h-[46px]">{ w.Send.Label }</a>
 		}
 	</div>
 

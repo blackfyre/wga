@@ -65,11 +65,11 @@ var laneNames = []string{"movements", "artists", "works", "buildings", "events",
 // The 33 --t-* relative type-scale tokens, in rem, exactly as the reference
 // declares them on :root.
 var typeScale = map[string]string{
-	"t-9": "0.5625rem", "t-95": "0.59375rem", "t-10": "0.625rem", "t-105": "0.65625rem",
-	"t-11": "0.6875rem", "t-115": "0.71875rem", "t-12": "0.75rem", "t-125": "0.78125rem",
-	"t-13": "0.8125rem", "t-135": "0.84375rem", "t-14": "0.875rem", "t-15": "0.9375rem",
-	"t-16": "1rem", "t-17": "1.0625rem", "t-18": "1.125rem", "t-19": "1.1875rem",
-	"t-20": "1.25rem", "t-21": "1.3125rem", "t-22": "1.375rem", "t-26": "1.625rem",
+	"t-9": "0.6875rem", "t-95": "0.71875rem", "t-10": "0.75rem", "t-105": "0.78125rem",
+	"t-11": "0.8125rem", "t-115": "0.84375rem", "t-12": "0.875rem", "t-125": "0.90625rem",
+	"t-13": "0.9375rem", "t-135": "0.953125rem", "t-14": "0.96875rem", "t-15": "1rem",
+	"t-16": "1.0625rem", "t-17": "1.09375rem", "t-18": "1.15625rem", "t-19": "1.21875rem",
+	"t-20": "1.28125rem", "t-21": "1.34375rem", "t-22": "1.40625rem", "t-26": "1.625rem",
 	"t-27": "1.6875rem", "t-28": "1.75rem", "t-30": "1.875rem", "t-32": "2rem",
 	"t-34": "2.125rem", "t-36": "2.25rem", "t-38": "2.375rem", "t-40": "2.5rem",
 	"t-44": "2.75rem", "t-46": "2.875rem", "t-48": "3rem", "t-52": "3.25rem",
