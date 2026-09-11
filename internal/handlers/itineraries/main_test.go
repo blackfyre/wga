@@ -131,7 +131,7 @@ func TestHtmxMutationsReturnFragmentAndOobTargets(t *testing.T) {
 	cookie, csrf := sessionForMux(t, mux)
 
 	// Add returns the tray as the primary target and the builder block OOB.
-	add := hxPostForm(t, mux, "/itineraries/draft/add", cookie, csrf, url.Values{"artwork_id": {testArtworkID}})
+	add := hxPostBuilderForm(t, mux, "/itineraries/draft/add", cookie, csrf, url.Values{"artwork_id": {testArtworkID}})
 	if add.Code != http.StatusOK {
 		t.Fatalf("add status = %d, want 200", add.Code)
 	}
@@ -171,7 +171,7 @@ func TestConsecutiveDistinctAddsThroughRenderedBuilder(t *testing.T) {
 
 	ids := []string{"aw0000000000001", "aw0000000000002", "aw0000000000003"}
 	for index, artworkID := range ids {
-		add := hxPostForm(t, mux, "/itineraries/draft/add", cookie, csrf, url.Values{"artwork_id": {artworkID}})
+		add := hxPostBuilderForm(t, mux, "/itineraries/draft/add", cookie, csrf, url.Values{"artwork_id": {artworkID}})
 		if add.Code != http.StatusOK {
 			t.Fatalf("add %d status = %d, want 200: %s", index+1, add.Code, add.Body.String())
 		}
@@ -513,7 +513,7 @@ func TestAddPreservesPickerStateThroughOobBuilder(t *testing.T) {
 
 	// An add performed while the picker is open and filtered must preserve the
 	// disclosure, query, and selected stop in the out-of-band builder refresh.
-	add := hxPostForm(t, mux, "/itineraries/draft/add", cookie, csrf, url.Values{
+	add := hxPostBuilderForm(t, mux, "/itineraries/draft/add", cookie, csrf, url.Values{
 		"artwork_id": {testArtworkID},
 		"picker":     {"1"},
 		"pq":         {"sun"},
@@ -1142,6 +1142,14 @@ func postForm(t *testing.T, mux http.Handler, path string, cookie *http.Cookie, 
 }
 
 func hxPostForm(t *testing.T, mux http.Handler, path string, cookie *http.Cookie, csrf string, extra url.Values) *httptest.ResponseRecorder {
+	return hxPostFormFrom(t, mux, path, cookie, csrf, extra, "")
+}
+
+func hxPostBuilderForm(t *testing.T, mux http.Handler, path string, cookie *http.Cookie, csrf string, extra url.Values) *httptest.ResponseRecorder {
+	return hxPostFormFrom(t, mux, path, cookie, csrf, extra, "http://example.com/itineraries/new")
+}
+
+func hxPostFormFrom(t *testing.T, mux http.Handler, path string, cookie *http.Cookie, csrf string, extra url.Values, currentURL string) *httptest.ResponseRecorder {
 	t.Helper()
 	form := url.Values{"_csrf": {csrf}}
 	for key, values := range extra {
@@ -1153,6 +1161,9 @@ func hxPostForm(t *testing.T, mux http.Handler, path string, cookie *http.Cookie
 	request := httptest.NewRequest(http.MethodPost, path, strings.NewReader(form.Encode()))
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	request.Header.Set("HX-Request", "true")
+	if currentURL != "" {
+		request.Header.Set("HX-Current-URL", currentURL)
+	}
 	if cookie != nil {
 		request.AddCookie(cookie)
 	}

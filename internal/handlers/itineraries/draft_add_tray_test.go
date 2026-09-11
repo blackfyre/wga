@@ -59,9 +59,31 @@ func TestAddResponseTrayCarriesClearAction(t *testing.T) {
 		}
 	}
 
-	// The OOB builder refresh still targets the builder block.
-	if !strings.Contains(body, `<section id="itinerary-builder" hx-swap-oob="true"`) {
-		t.Error("add response must refresh the builder block OOB")
+	// This request represents an add control outside the builder, so its response
+	// must not ask HTMX to swap a target that is absent from the current page.
+	if strings.Contains(body, `id="itinerary-builder"`) {
+		t.Error("non-builder add response must not include a builder OOB swap")
+	}
+}
+
+func TestAddResponseRefreshesBuilderWhenCurrentPageContainsIt(t *testing.T) {
+	_, mux := newItineraryMux(t)
+	cookie, csrf := sessionForMux(t, mux)
+
+	form := url.Values{"_csrf": {csrf}, "artwork_id": {testArtworkID}}
+	request := httptest.NewRequest(http.MethodPost, "/itineraries/draft/add", strings.NewReader(form.Encode()))
+	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	request.Header.Set("HX-Request", "true")
+	request.Header.Set("HX-Current-URL", "http://example.com/itineraries/new?picker=1")
+	request.AddCookie(cookie)
+	response := httptest.NewRecorder()
+	mux.ServeHTTP(response, request)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("add status = %d, want 200", response.Code)
+	}
+	if !strings.Contains(response.Body.String(), `<section id="itinerary-builder" hx-swap-oob="true"`) {
+		t.Error("builder-page add response must refresh the builder block OOB")
 	}
 }
 
@@ -98,8 +120,8 @@ func TestTrayTargetedClearReturnsTrayPrimary(t *testing.T) {
 	if strings.Contains(body, `id="itinerary-tray" hx-swap-oob`) {
 		t.Error("tray-targeted clear tray must not be OOB")
 	}
-	if !strings.Contains(body, `<section id="itinerary-builder" hx-swap-oob="true"`) {
-		t.Error("tray-targeted clear must refresh the builder OOB")
+	if strings.Contains(body, `id="itinerary-builder"`) {
+		t.Error("non-builder tray clear must not include a builder OOB swap")
 	}
 	if strings.Contains(body, "ITINERARY DRAFT ·") {
 		t.Error("cleared tray must not render the draft bar")

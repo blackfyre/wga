@@ -153,8 +153,8 @@ func respondBuilder(app core.App, c *core.RequestEvent, owner string, token stri
 	return c.Redirect(http.StatusSeeOther, builderURL(state))
 }
 
-// renderTrayWithBuilder renders the tray as the primary HTMX target plus an
-// out-of-band builder refresh, used by the add route so both surfaces update.
+// renderTrayWithBuilder renders the tray as the primary HTMX target and refreshes
+// the builder out of band only when the current page actually contains it.
 // The tray's CLEAR action reads its synchroniser token from the read-only
 // itinerary projection carried in the render context, exactly as the central
 // middleware supplies it for full-page renders. A POST add does not pass through
@@ -163,11 +163,6 @@ func respondBuilder(app core.App, c *core.RequestEvent, owner string, token stri
 // builder embeds its own token through the builder view.
 func renderTrayWithBuilder(app core.App, c *core.RequestEvent, owner string, token string, state builderState) error {
 	tray, err := loadTrayView(app, owner)
-	if err != nil {
-		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
-	}
-
-	view, err := loadBuilderView(app, owner, itineraryworkflow.CSRFToken(token), state)
 	if err != nil {
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
@@ -183,11 +178,26 @@ func renderTrayWithBuilder(app core.App, c *core.RequestEvent, owner string, tok
 	if err := components.ItineraryTray(tray, false).Render(ctxb, &buf); err != nil {
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
-	if err := pages.ItineraryBuilder(view, true).Render(ctxb, &buf); err != nil {
-		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
+	if currentPageHasBuilder(c) {
+		view, err := loadBuilderView(app, owner, itineraryworkflow.CSRFToken(token), state)
+		if err != nil {
+			return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
+		}
+		if err := pages.ItineraryBuilder(view, true).Render(ctxb, &buf); err != nil {
+			return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
+		}
 	}
 
 	return c.HTML(http.StatusOK, buf.String())
+}
+
+// currentPageHasBuilder reports whether the HTMX request originated from the
+// itinerary builder. HX-Current-URL describes the browser document containing
+// the request initiator; using it prevents an OOB swap from targeting an absent
+// #itinerary-builder on artwork and discovery pages.
+func currentPageHasBuilder(c *core.RequestEvent) bool {
+	current, err := url.Parse(c.Request.Header.Get("HX-Current-URL"))
+	return err == nil && current.Path == "/itineraries/new"
 }
 
 func (ctx *securityContext) setMeta(app *pocketbase.PocketBase, c *core.RequestEvent) error {

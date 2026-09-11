@@ -160,18 +160,19 @@ test.describe("builder", () => {
 			.nth(0);
 		const artist = await sourceCard.locator("p").innerText();
 		expect(artist).not.toBe("");
-		const artistQuery = artist.split(/\s+/).at(-1);
-		expect(artistQuery).toBeTruthy();
 		await page.goto("/itineraries/new?picker=1");
 		// The visible search input is the only search-typed pq control; the
 		// builder-state forms carry hidden pq inputs.
 		const query = page.locator('input[type="search"][name="pq"]');
 		await expect(query).toBeVisible();
 
-		await query.fill(artistQuery ?? artist);
+		await query.fill(artist);
 		page.once("dialog", (dialog) => dialog.accept());
-		await page.getByRole("button", { name: "SEARCH" }).click();
-		await expect(query).toHaveValue(artistQuery ?? artist);
+		await page
+			.locator("#itinerary-builder")
+			.getByRole("button", { name: "SEARCH" })
+			.click();
+		await expect(query).toHaveValue(artist);
 		// The picker returns works whose artist actually matches, not just a
 		// non-zero result count.
 		const matchingWorks = page.locator("ul li").filter({
@@ -197,6 +198,11 @@ test.describe("task 9.2 tray regression", () => {
 		const card = page
 			.locator("section[aria-label='Shuffled artworks'] article")
 			.first();
+		const artworkPath = await card
+			.getByRole("link")
+			.first()
+			.getAttribute("href");
+		expect(artworkPath).toMatch(/^\/artists\/[^/]+\/[^/]+$/);
 		const add = card.getByRole("button", {
 			name: "ADD TO AN ITINERARY +",
 		});
@@ -216,7 +222,9 @@ test.describe("task 9.2 tray regression", () => {
 		await page.getByRole("button", { name: "CLEAR" }).click();
 		await expect(page.locator("#itinerary-tray")).toBeEmpty();
 
-		await page.goto("/dual-mode");
+		await page.goto(
+			`/dual-mode?wide=1&left=${encodeURIComponent(artworkPath ?? "")}`,
+		);
 		await expect(
 			page.getByRole("button", { name: "ADD TO AN ITINERARY +" }).first(),
 		).toHaveCSS("height", "46px");
@@ -266,6 +274,7 @@ test.describe("publication and slideshow", () => {
 		await expect(page.getByText(/STOP 01 OF 2/)).toBeVisible();
 
 		// Ordering: move the second work up so it becomes the first stop.
+		page.once("dialog", (dialog) => dialog.accept());
 		await page
 			.getByRole("button", { name: `Move ${secondTitle} earlier` })
 			.click();
@@ -276,6 +285,7 @@ test.describe("publication and slideshow", () => {
 		await expect(page.locator("aside ol li").nth(0)).toContainText(secondTitle);
 
 		// Removal: drop the second work (now the moved-up stop's neighbour).
+		page.once("dialog", (dialog) => dialog.accept());
 		await page.getByRole("button", { name: `Remove ${secondTitle}` }).click();
 		await expect(page.getByText(/STOP 01 OF 1/)).toBeVisible();
 
