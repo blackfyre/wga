@@ -76,7 +76,8 @@ test("renders a truthful necessary-only notice and reopens preferences", async (
 			enlargedFeedback.y + enlargedFeedback.height <= enlargedNotice.y,
 	).toBeTruthy();
 	await page.evaluate(() => {
-		document.documentElement.dataset.theme = "wga-rams-dark";
+		document.documentElement.dataset.palette = "bone";
+		document.documentElement.dataset.theme = "dark";
 	});
 	await expect(consentModal).toHaveCSS("background-color", "rgb(26, 24, 20)");
 	await page.emulateMedia({ reducedMotion: "reduce" });

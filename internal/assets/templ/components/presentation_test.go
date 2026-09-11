@@ -69,7 +69,7 @@ func TestWorkCardsAndRowsAreOrdinaryLinksWithoutViewerHook(t *testing.T) {
 	}
 
 	card := renderComponent(t, WorkCard(work))
-	if !strings.Contains(card, `class="flex items-end border border-base-content/15 bg-base-300 p-2.5 aspect-[4/5] mb-2.5"`) || strings.Contains(card, `class="mt-3 text-sm`) {
+	if !strings.Contains(card, `class="flex items-end border border-wga-ink/15 bg-wga-fill p-2.5 aspect-[4/5] mb-2.5"`) || strings.Contains(card, `class="mt-3 text-sm`) {
 		t.Fatal("work card must place its reference spacing on the plate rather than the title")
 	}
 
@@ -137,7 +137,7 @@ func TestPlateUsesSeparateDisplayAndZoomURLsWithAccessibleFallbacks(t *testing.T
 
 func TestDialogBodyProvidesTextualBackdropDismissalWithoutFloatingGlyph(t *testing.T) {
 	rendered := renderComponent(t, DialogBody())
-	for _, expected := range []string{`data-dialog-close`, `aria-label="Close dialog"`, `method="dialog"`, `class="modal-backdrop`, `>close</button>`} {
+	for _, expected := range []string{`data-dialog-close`, `aria-label="Close dialog"`, `method="dialog"`, `class="wga-dialog-backdrop`, `>close</button>`} {
 		if !strings.Contains(rendered, expected) {
 			t.Fatalf("dialog body missing %s", expected)
 		}
@@ -151,7 +151,7 @@ func TestDialogBodyProvidesTextualBackdropDismissalWithoutFloatingGlyph(t *testi
 	}
 
 	button := renderComponent(t, DialogButton("/feedback", "Feedback"))
-	for _, expected := range []string{`hx-on:click="wga.dialog.open()"`, `hx-target="#d"`, `hx-select=".modal-box, form[method=dialog].modal-backdrop"`} {
+	for _, expected := range []string{`hx-on:click="wga.dialog.open()"`, `hx-target="#d"`, `hx-select=".wga-dialog-panel, form[method=dialog].wga-dialog-backdrop"`} {
 		if !strings.Contains(button, expected) {
 			t.Fatalf("dialog invoker missing %s", expected)
 		}

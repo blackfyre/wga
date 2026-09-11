@@ -122,16 +122,16 @@ function bindBuilderTabs(): void {
 				"[data-itinerary-tab-item]",
 			)) {
 				const active = item.dataset.itineraryTabItem === selected;
-				item.classList.toggle("bg-primary/6", active);
-				item.classList.toggle("border-base-content", active);
-				item.classList.toggle("border-base-content/15", !active);
+				item.classList.toggle("bg-wga-accent-bg/6", active);
+				item.classList.toggle("border-wga-ink", active);
+				item.classList.toggle("border-wga-ink/15", !active);
 			}
 			for (const label of document.querySelectorAll<HTMLElement>(
 				"[data-itinerary-tab-label]",
 			)) {
 				const active = label.dataset.itineraryTabLabel === selected;
-				label.classList.toggle("text-primary", active);
-				label.classList.toggle("text-base-content/40", !active);
+				label.classList.toggle("text-wga-accent", active);
+				label.classList.toggle("text-wga-ink/40", !active);
 			}
 		});
 	}
@@ -157,8 +157,8 @@ function bindBuilderNarrationStatus(): void {
 				}
 				status.textContent =
 					count === 0 ? "NO NARRATION YET" : `${count} CHARS`;
-				status.classList.toggle("text-warning", count === 0);
-				status.classList.toggle("text-base-content/60", count > 0);
+				status.classList.toggle("text-wga-warning", count === 0);
+				status.classList.toggle("text-wga-ink/60", count > 0);
 			}
 		});
 	}
@@ -180,11 +180,11 @@ function bindBuilderVisibility(): void {
 				if (label === null) {
 					continue;
 				}
-				label.classList.toggle("border-primary", candidate.checked);
-				label.classList.toggle("bg-primary", candidate.checked);
-				label.classList.toggle("text-primary-content", candidate.checked);
+				label.classList.toggle("border-wga-accent", candidate.checked);
+				label.classList.toggle("bg-wga-accent-bg", candidate.checked);
+				label.classList.toggle("text-wga-inv-fg", candidate.checked);
 				label.classList.toggle("border-control", !candidate.checked);
-				label.classList.toggle("text-base-content/70", !candidate.checked);
+				label.classList.toggle("text-wga-ink/70", !candidate.checked);
 			}
 		});
 	}

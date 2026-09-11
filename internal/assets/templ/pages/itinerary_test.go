@@ -144,7 +144,7 @@ func TestItineraryBuilderMutationFormsDisableInheritedSelect(t *testing.T) {
 			t.Errorf("builder must not autosave through %q", forbidden)
 		}
 	}
-	if !strings.Contains(rendered, `data-itinerary-visibility`) || !strings.Contains(rendered, `border-primary bg-primary text-primary-content`) {
+	if !strings.Contains(rendered, `data-itinerary-visibility`) || !strings.Contains(rendered, `border-wga-accent bg-wga-accent-bg text-wga-inv-fg`) {
 		t.Error("visibility controls must expose their selected state for client-side updates")
 	}
 	if strings.Count(rendered, `hx-confirm="Discard unfinished title, introduction, maker, and narration?"`) < 4 {

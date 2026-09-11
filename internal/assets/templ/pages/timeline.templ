@@ -127,9 +127,9 @@ templ TimelineBlock(c TimelineView) {
 				<nav aria-label="Timeline presets" class="mt-6 flex flex-wrap gap-1.5">
 					for _, chip := range c.Presets {
 						if chip.Active {
-							<a href={ templ.SafeURL(chip.Href) } class="min-w-0 max-w-full break-words border border-primary bg-primary px-3.5 py-1.5 font-mono text-(length:--t-11) tracking-[1px] text-primary-content transition-colors" aria-current="page" hx-get={ chip.Href } hx-target="#timeline" hx-select="#timeline" hx-swap="outerHTML">{ chip.Label }</a>
+							<a href={ templ.SafeURL(chip.Href) } class="min-w-0 max-w-full break-words border border-wga-accent bg-wga-accent-bg px-3.5 py-1.5 font-mono text-(length:--t-11) tracking-[1px] text-wga-inv-fg transition-colors" aria-current="page" hx-get={ chip.Href } hx-target="#timeline" hx-select="#timeline" hx-swap="outerHTML">{ chip.Label }</a>
 						} else {
-							<a href={ templ.SafeURL(chip.Href) } class="min-w-0 max-w-full break-words border border-control px-3.5 py-1.5 font-mono text-(length:--t-11) tracking-[1px] text-base-content/70 transition-colors hover:border-base-content" hx-get={ chip.Href } hx-target="#timeline" hx-select="#timeline" hx-swap="outerHTML">{ chip.Label }</a>
+							<a href={ templ.SafeURL(chip.Href) } class="min-w-0 max-w-full break-words border border-control px-3.5 py-1.5 font-mono text-(length:--t-11) tracking-[1px] text-wga-ink/70 transition-colors hover:border-wga-ink" hx-get={ chip.Href } hx-target="#timeline" hx-select="#timeline" hx-swap="outerHTML">{ chip.Label }</a>
 						}
 					}
 				</nav>
@@ -148,13 +148,13 @@ templ TimelineBlock(c TimelineView) {
 					@components.RangeField(c.WindowRange)
 				</div>
 				<noscript>
-					<button type="submit" class="mt-4 bg-primary px-4 py-2 font-mono text-(length:--t-11) tracking-[1px] text-primary-content">APPLY WINDOW</button>
+					<button type="submit" class="mt-4 bg-wga-accent-bg px-4 py-2 font-mono text-(length:--t-11) tracking-[1px] text-wga-inv-fg">APPLY WINDOW</button>
 				</noscript>
 			</form>
 			<div class="mt-10">
-				<div class="flex h-11 items-end gap-px overflow-hidden border border-base-content/15 bg-base-200/40" aria-hidden="true">
+				<div class="flex h-11 items-end gap-px overflow-hidden border border-wga-ink/15 bg-wga-surface-2/40" aria-hidden="true">
 					for _, bar := range c.Density {
-						<div class="min-w-0 flex-1 bg-primary/60" style={ "height:" + strconv.Itoa(bar.HeightPct) + "%" }></div>
+						<div class="min-w-0 flex-1 bg-wga-accent-bg/60" style={ "height:" + strconv.Itoa(bar.HeightPct) + "%" }></div>
 					}
 				</div>
 				<div class="sr-only">
@@ -183,10 +183,10 @@ templ TimelineBlock(c TimelineView) {
 					<h2 class="font-mono text-(length:--t-11) tracking-[1.5px] text-muted">ART PERIODS IN THIS WINDOW</h2>
 					<ul class="mt-4">
 						for _, band := range c.Bands {
-							<li class="flex flex-wrap items-center gap-4 border-b border-base-content/10 py-2">
+							<li class="flex flex-wrap items-center gap-4 border-b border-wga-ink/10 py-2">
 								<span class="w-44 shrink-0 max-w-full break-words text-(length:--t-14) font-semibold">{ band.Name }</span>
-								<div class="relative h-5 flex-1 border border-base-content/10 bg-base-200/40" title={ band.Description }>
-									<div class="absolute top-0 bottom-0 border-x border-primary/40 bg-primary/25" style={ "left:" + pct(band.LeftPct) + "%;width:" + pct(band.WidthPct) + "%" }></div>
+								<div class="relative h-5 flex-1 border border-wga-ink/10 bg-wga-surface-2/40" title={ band.Description }>
+									<div class="absolute top-0 bottom-0 border-x border-wga-accent/40 bg-wga-accent-bg/25" style={ "left:" + pct(band.LeftPct) + "%;width:" + pct(band.WidthPct) + "%" }></div>
 								</div>
 								<span class="w-28 shrink-0 max-w-full break-words text-right font-mono text-(length:--t-11) text-muted">{ band.SpanLabel }</span>
 							</li>
@@ -198,12 +198,12 @@ templ TimelineBlock(c TimelineView) {
 			<section class="mt-12" aria-label="Works positioned across the window">
 				<h2 class="font-mono text-(length:--t-11) tracking-[1.5px] text-muted">WORKS ACROSS THE WINDOW</h2>
 				<div class="relative mt-4 h-16">
-					<div class="absolute inset-x-0 top-1/2 h-px bg-base-content/30" aria-hidden="true"></div>
+					<div class="absolute inset-x-0 top-1/2 h-px bg-wga-ink/30" aria-hidden="true"></div>
 					<ul class="list-none" aria-label={ marksAria(c) }>
 						for _, mark := range c.Marks {
 							<li class="absolute top-1/2 -translate-x-1/2 -translate-y-1/2" style={ "left:" + pct(mark.LeftPct) + "%" }>
 								<a href={ templ.SafeURL(mark.Href) } title={ mark.Label } aria-label={ mark.Label } class="block p-1.5 transition-opacity hover:opacity-60">
-									<span class="block h-2.5 w-2.5 rotate-45 bg-primary"></span>
+									<span class="block h-2.5 w-2.5 rotate-45 bg-wga-accent-bg"></span>
 								</a>
 							</li>
 						}
@@ -223,7 +223,7 @@ templ TimelineBlock(c TimelineView) {
 				</div>
 			} else {
 				<section class="mt-12" aria-label="Works in this window">
-					<div class="flex flex-wrap items-baseline justify-between gap-4 border-b border-base-content pb-2.5">
+					<div class="flex flex-wrap items-baseline justify-between gap-4 border-b border-wga-ink pb-2.5">
 						<h2 class="font-mono text-(length:--t-11) tracking-[1.5px]">WORKS IN THIS WINDOW</h2>
 						<p class="font-mono text-(length:--t-10) tracking-[1px] text-faint">{ c.WorksRangeLabel }</p>
 					</div>
@@ -234,16 +234,16 @@ templ TimelineBlock(c TimelineView) {
 						}
 					</ul>
 					if c.PageCount > 1 {
-						<nav class="mt-10 flex items-center justify-between border-t border-base-content/15 pt-5" aria-label="Works pagination">
+						<nav class="mt-10 flex items-center justify-between border-t border-wga-ink/15 pt-5" aria-label="Works pagination">
 							<p class="font-mono text-(length:--t-11) tracking-[1px] text-muted">{ fmt.Sprintf("PAGE %d OF %d", c.Page, c.PageCount) }</p>
 							<div class="flex gap-3.5 font-mono text-(length:--t-11) tracking-[1px]">
 								if c.Page > 1 {
-									<a href={ templ.SafeURL(c.PrevUrl) } hx-get={ c.PrevUrl } hx-target="#timeline" hx-select="#timeline" hx-swap="outerHTML" class="text-primary transition-opacity hover:opacity-60">← PREV</a>
+									<a href={ templ.SafeURL(c.PrevUrl) } hx-get={ c.PrevUrl } hx-target="#timeline" hx-select="#timeline" hx-swap="outerHTML" class="text-wga-accent transition-opacity hover:opacity-60">← PREV</a>
 								} else {
 									<span class="text-faint-2">← PREV</span>
 								}
 								if c.Page < c.PageCount {
-									<a href={ templ.SafeURL(c.NextUrl) } hx-get={ c.NextUrl } hx-target="#timeline" hx-select="#timeline" hx-swap="outerHTML" class="text-primary transition-opacity hover:opacity-60">NEXT →</a>
+									<a href={ templ.SafeURL(c.NextUrl) } hx-get={ c.NextUrl } hx-target="#timeline" hx-select="#timeline" hx-swap="outerHTML" class="text-wga-accent transition-opacity hover:opacity-60">NEXT →</a>
 								} else {
 									<span class="text-faint-2">NEXT →</span>
 								}
@@ -270,9 +270,9 @@ templ TimelineBlock(c TimelineView) {
 templ timelineLanes(c TimelineView) {
 	if len(c.Lanes) > 0 {
 		<section class="mt-8" aria-label="Timeline lanes">
-			<ul class="grid grid-cols-2 gap-px border border-base-content/15 bg-base-content/15 md:grid-cols-6">
+			<ul class="grid grid-cols-2 gap-px border border-wga-ink/15 bg-wga-ink/15 md:grid-cols-6">
 				for _, lane := range c.Lanes {
-					<li class="bg-base-100 px-3.5 py-3.5">
+					<li class="bg-wga-bg px-3.5 py-3.5">
 						<span class="block text-(length:--t-26) font-semibold tracking-[-0.5px]">{ laneCountLabel(lane) }</span>
 						<span class="mt-1.5 block font-mono text-(length:--t-10) tracking-[1.5px] text-muted">{ lane.Label }</span>
 						<span class="mt-1 block font-mono text-(length:--t-9) tracking-[1px] text-faint-2">{ laneStateLabel(lane) }</span>
@@ -291,16 +291,16 @@ templ timelineArtists(c TimelineView) {
 	<section class="mt-12" aria-label="Artists in this window">
 		<h2 class="font-mono text-(length:--t-11) tracking-[1.5px] text-muted">ARTISTS IN THIS WINDOW</h2>
 		if len(c.Artists) > 0 {
-			<ul class="mt-4 divide-y divide-base-content/10 border-y border-base-content/10">
+			<ul class="mt-4 divide-y divide-wga-ink/10 border-y border-wga-ink/10">
 				for _, artist := range c.Artists {
 					<li class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-2.5">
-						<a href={ templ.SafeURL(artist.Href) } class="min-w-0 max-w-full break-words text-(length:--t-15) font-semibold text-base-content transition-opacity hover:opacity-60">{ artist.Name }</a>
+						<a href={ templ.SafeURL(artist.Href) } class="min-w-0 max-w-full break-words text-(length:--t-15) font-semibold text-wga-ink transition-opacity hover:opacity-60">{ artist.Name }</a>
 						<span class="shrink-0 font-mono text-(length:--t-11) tracking-[1px] text-muted">{ artist.Meta }</span>
 					</li>
 				}
 			</ul>
 		} else {
-			<p class="mt-4 max-w-[560px] text-(length:--t-15) leading-relaxed text-base-content/70 text-pretty">No artists are dated inside this window.</p>
+			<p class="mt-4 max-w-[560px] text-(length:--t-15) leading-relaxed text-wga-ink/70 text-pretty">No artists are dated inside this window.</p>
 		}
 	</section>
 }
@@ -310,7 +310,7 @@ templ timelineArtists(c TimelineView) {
 templ timelineUnavailableLane(label string, note string) {
 	<section class="mt-10" aria-label={ label }>
 		<h2 class="font-mono text-(length:--t-11) tracking-[1.5px] text-muted">{ label }</h2>
-		<p class="mt-4 max-w-[560px] text-(length:--t-15) leading-relaxed text-base-content/70 text-pretty">{ note }</p>
+		<p class="mt-4 max-w-[560px] text-(length:--t-15) leading-relaxed text-wga-ink/70 text-pretty">{ note }</p>
 	</section>
 }
 

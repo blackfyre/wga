@@ -13,6 +13,7 @@ Existing unimplemented changes for itineraries, artwork relationships, and thumb
 - Serve the real data set through thirteen approved image profiles, with source-eligible downscales pre-generated and originals used whenever a profile would upscale.
 - Give regular visitors coherent discovery and participation paths, and give scholars inspectable, citable, shareable record and comparison paths.
 - Make visual, functional, responsive, keyboard, no-JavaScript, and assistive-technology acceptance explicit.
+- Own the production token and component vocabulary directly, without daisyUI, while retaining Tailwind for build-time utilities and responsive composition.
 
 **Non-Goals:**
 
@@ -20,6 +21,7 @@ Existing unimplemented changes for itineraries, artwork relationships, and thumb
 - Ship the prototype's development-only viewport frame switch to public visitors.
 - Add accounts, collaborative itinerary editing, or an unbounded generic relationship graph.
 - Preserve the embedded synthetic data set as a production fallback.
+- Remove Tailwind or replace the server-rendered Templ and HTMX presentation model.
 
 ## Decisions
 
@@ -35,13 +37,19 @@ Where an immutable reference literal conflicts with a documented measurable rule
 
 The itinerary tray is a dark-inverted shared surface with visible clear and builder actions. Tray visibility reserves bottom space for both `#mc-area` and the fixed toast container so notifications cannot appear behind it. Statistics supplies server-rendered chart-equivalent visual summaries as well as data tables when JavaScript is unavailable. Exact capability composition is part of acceptance: selections use section `21` and the responsive two-column/four-column work-card grid; Guided Tours uses the four reference facts; and Timeline exposes artists, works, movements, buildings, events, and music lanes while leaving any lane without approved data honestly empty or unavailable rather than fabricating content.
 
-### Separate palette identity from light/dark scheme
+### Own the visual system directly and retain Tailwind as the utility layer
 
-Appearance has two independent axes. The palette axis contains `bone`, `classic`, `verdigris`, `gothic`, `renaissance`, `baroque`, `rococo`, `classical`, `impressionist`, `catppuccin`, and `tokyo`; the scheme axis contains `light` and `dark`. Their product resolves to the corresponding daisyUI theme without altering markup or layout. Each palette supplies the immutable reference's complete semantic role set, chart-series ramp, and Timeline-lane colour/foreground pairs. Literal interface colours outside those role definitions are not accepted. Exact clean-reference literals control the 52 identified locations where the reference's values and prose contrast floors conflict; those 53 measured pair failures are a declared acceptance exception, while all unaffected contrast and role checks remain mandatory.
+The authoritative prototype already expresses appearance through independent `data-palette` and `data-theme` root attributes and application-owned semantic custom properties. Production SHALL follow that model directly. The palette axis contains `bone`, `classic`, `verdigris`, `gothic`, `renaissance`, `baroque`, `rococo`, `classical`, `impressionist`, `catppuccin`, and `tokyo`; the scheme axis contains `light` and `dark`. CSS selectors resolve their product into the reference role set without synthesising product theme names.
 
-The browser stores palette and explicit scheme separately in local storage for pre-paint resolution and in cookies so server-rendered preference controls can mark an honest state. The inline head resolver applies both axes before the stylesheet; an explicit scheme outranks the operating system, while an unset scheme continues following operating-system changes. `baroque` and `tokyo` are dark-only: both scheme resolutions use their dark build, LIGHT is disabled with an explanation, and the underlying stored scheme is not overwritten.
+Tailwind remains the build-time utility, source-scanning, typography, and responsive-layout layer. Its CSS-first theme and utility facilities expose WGA-named roles and shared primitives to Templ and browser code. The final source and dependency graph contain no daisyUI package, plugin, theme block, component class, or compatibility API. In particular, text accent and filled accent ground remain separate roles instead of being compressed into one generic primary colour.
+
+Each palette supplies the immutable reference's complete semantic role set, chart-series ramp, and Timeline-lane colour/foreground pairs. Literal interface colours outside those role definitions are not accepted. Exact clean-reference literals control the 52 identified locations where the reference's values and prose contrast floors conflict; those 53 measured pair failures are a declared acceptance exception, while all unaffected contrast and role checks remain mandatory.
+
+The browser stores palette and explicit scheme separately in local storage for pre-paint resolution and in cookies so server-rendered preference controls can mark an honest state. The inline head resolver applies both root attributes before the stylesheet; an explicit scheme outranks the operating system, while an unset scheme continues following operating-system changes. `baroque` and `tokyo` are dark-only: their palette selectors always apply the dark role set, LIGHT is disabled with an explanation, and the underlying stored scheme is not overwritten.
 
 Palette, scheme, and Bionic Reading live together in a footer-opened preferences panel rather than separate expanding footer controls or a settings route. Its trigger states the active combination, palette choices are grouped by provenance, and each palette uses text plus a split paper/ink swatch so colour is not its sole identifier. With JavaScript unavailable the page follows the operating-system scheme and hides or disables manual controls honestly.
+
+Keeping daisyUI only as a hidden compatibility namespace was rejected: it would preserve the ambiguous component and colour vocabulary, leave future code coupled to an absent framework, and fail the intent to remove daisyUI completely. Removing Tailwind was also rejected because the reference Templ composition and production templates already depend extensively on its utility and responsive model; replacing it would enlarge the change without improving fidelity or ownership.
 
 ### Reconcile existing OpenSpec work instead of preserving it unchanged
 
@@ -113,6 +121,7 @@ Go tests cover workflows, routes, queries, migrations, data-import contracts, an
 - [Large artwork files cause slow or expensive delivery] → Use only the defined source-eligible rendition per surface and reserve the 2000px profile for deliberate viewer use.
 - [Anonymous public workflows are abused or retain personal data too long] → Validate, rate-limit, moderate, redact, and run explicit lifecycle jobs with documented retention outcomes.
 - [Pixel-perfect claims vary across engines] → Use Chrome screenshots as the reference and require functional, accessible layout equivalence elsewhere.
+- [Removing a broadly used semantic styling namespace can create silent visual regressions] → Introduce and verify the native WGA token contract first, migrate component and utility consumers while compatibility is explicit, then remove every compatibility alias and the dependency before running the release screenshot matrix.
 - [The viewer library cannot meet modal accessibility requirements] → Replace or adapt it behind the shared viewer contract before release.
 - [The reference Templ theme helper contains stale comments and a duplicated `else` in its current working source] → Port the accepted palette/scheme behaviour and tested token values, not the reference implementation verbatim.
 
@@ -120,7 +129,7 @@ Go tests cover workflows, routes, queries, migrations, data-import contracts, an
 
 1. Audit current routes, DTOs, data fields, OpenSpec changes, and `wga-src` output against the release capability matrix.
 2. Add original image dimensions to the source hand-off and WGA records, then use the manual provisioning runbook to validate the producer manifest and every source-eligible downscale, pre-populate PocketBase storage, install the database at the existing `WGA_SEED_SQLITE_PATH`, and record evidence before startup.
-3. Add shared visual, navigation, preference, keyboard, dialog, and media foundations without removing server-rendered route behaviour.
+3. Establish native palette/scheme attributes and WGA-owned semantic tokens, migrate shared component and utility consumers, then remove daisyUI and its temporary compatibility surface without changing server-rendered route behaviour.
 4. Deliver capability tracks with their migrations, workflows, route contracts, fixtures, and browser acceptance evidence.
 5. Require the external seed path in the production provisioning record while preserving WGA's existing empty-path synthetic fixtures for focused development and tests.
 6. Run release visual, accessibility, real-data, privacy/lifecycle, and rollback checks before promoting the release.

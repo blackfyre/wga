@@ -43,10 +43,10 @@ func TestGenerateCurrentRelativePageUrl(t *testing.T) {
 				},
 			}
 
-		if got := GenerateCurrentRelativePageUrl(event); got != test.want {
-			t.Fatalf("expected %q, got %q", test.want, got)
-		}
-	})
+			if got := GenerateCurrentRelativePageUrl(event); got != test.want {
+				t.Fatalf("expected %q, got %q", test.want, got)
+			}
+		})
 	}
 }
 
@@ -116,7 +116,7 @@ func TestErrorHelpersRenderSharedShellWithExactStatuses(t *testing.T) {
 			},
 		},
 		{
-			name:   "server fault",
+			name: "server fault",
 			render: func(event *core.RequestEvent) error {
 				return ServerFaultError(event)
 			},

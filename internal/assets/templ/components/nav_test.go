@@ -115,7 +115,7 @@ func TestTopNavMobileDisclosurePreservesKeyboardContracts(t *testing.T) {
 	for _, expected := range []string{
 		`<details class="col-span-full row-start-1" data-kbd-mobile-navigation>`,
 		`<summary class="ml-auto flex h-11 w-11 cursor-pointer list-none flex-col items-center justify-center gap-1.5" aria-label="Open primary navigation">`,
-		`<nav class="mt-4 border-t border-base-content/15 bg-base-100 pt-4" aria-label="Primary navigation" data-mobile-navigation`,
+		`<nav class="mt-4 border-t border-wga-ink/15 bg-wga-bg pt-4" aria-label="Primary navigation" data-mobile-navigation`,
 		`data-kbd-search`,
 	} {
 		if !strings.Contains(rendered, expected) {
@@ -215,7 +215,7 @@ func TestTopNavMobileDisclosureUsesNormalFlowFullWidthPanel(t *testing.T) {
 		`<div class="grid grid-cols-[minmax(0,1fr)_2.75rem] items-start gap-6 min-[720px]:hidden">`,
 		`<details class="col-span-full row-start-1" data-kbd-mobile-navigation>`,
 		`<summary class="ml-auto flex h-11 w-11 cursor-pointer list-none flex-col items-center justify-center gap-1.5" aria-label="Open primary navigation">`,
-		`<nav class="mt-4 border-t border-base-content/15 bg-base-100 pt-4" aria-label="Primary navigation" data-mobile-navigation`,
+		`<nav class="mt-4 border-t border-wga-ink/15 bg-wga-bg pt-4" aria-label="Primary navigation" data-mobile-navigation`,
 	} {
 		if !strings.Contains(rendered, expected) {
 			t.Fatalf("expected mobile disclosure panel contract %q", expected)

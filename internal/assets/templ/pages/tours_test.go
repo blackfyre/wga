@@ -370,7 +370,7 @@ func TestTourLinkHtmxBoundaries(t *testing.T) {
 	}
 
 	// The breadcrumb to the index is cross-page and inherits the shell's #mc-area.
-	if !strings.Contains(body, `href="/tours" hx-get="/tours" class="text-primary"`) {
+	if !strings.Contains(body, `href="/tours" hx-get="/tours" class="text-wga-accent"`) {
 		t.Errorf("breadcrumb must use the ordinary #mc-area shell navigation: %s", body)
 	}
 }

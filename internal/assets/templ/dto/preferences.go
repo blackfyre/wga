@@ -7,8 +7,7 @@ import (
 )
 
 // PaletteOption describes one of the eleven reference palettes. Paper and Ink
-// are the pair's split-swatch colours; Theme is the daisyUI light theme name,
-// whose dark build is Theme+"-dark" unless the palette is dark-only.
+// are the pair's split-swatch colours.
 type PaletteOption struct {
 	Key      string
 	Label    string
@@ -17,7 +16,6 @@ type PaletteOption struct {
 	Paper    string
 	Ink      string
 	DarkOnly bool
-	Theme    string
 }
 
 // DefaultPaletteKey is the palette served when no explicit palette is stored.
@@ -26,17 +24,17 @@ const DefaultPaletteKey = "bone"
 // PaletteOptions is the single source of truth for the eleven reference
 // palettes, in presentation order. The first entry is the default.
 var PaletteOptions = []PaletteOption{
-	{Key: "bone", Label: "BONE", Group: "THIS ARCHIVE", Desc: "Bone white and deep navy — the default", Paper: "#f4f2ed", Ink: "#003366", Theme: "wga-rams"},
-	{Key: "classic", Label: "CLASSIC", Group: "THIS ARCHIVE", Desc: "The blue and orange of the original wga.hu", Paper: "#f0f6ff", Ink: "#003366", Theme: "wga-classic"},
-	{Key: "verdigris", Label: "VERDIGRIS", Group: "THIS ARCHIVE", Desc: "Oxidised copper on grey-green paper", Paper: "#edf1ec", Ink: "#1f5e55", Theme: "wga-verdigris"},
-	{Key: "gothic", Label: "GOTHIC", Group: "FROM THE COLLECTION", Desc: "Gold ground, ultramarine, vermilion", Paper: "#f7efdc", Ink: "#24418f", Theme: "wga-gothic"},
-	{Key: "renaissance", Label: "RENAISSANCE", Group: "FROM THE COLLECTION", Desc: "Fresco plaster, sanguine chalk, azurite", Paper: "#f3ede1", Ink: "#8a3324", Theme: "wga-renaissance"},
-	{Key: "baroque", Label: "BAROQUE", Group: "FROM THE COLLECTION", Desc: "Tenebrism — dark only", Paper: "#17110c", Ink: "#e0b450", DarkOnly: true, Theme: "wga-baroque"},
-	{Key: "rococo", Label: "ROCOCO", Group: "FROM THE COLLECTION", Desc: "Pale rose, celadon and gilt", Paper: "#f7eff2", Ink: "#9b2f5f", Theme: "wga-rococo"},
-	{Key: "classical", Label: "CLASSICAL", Group: "FROM THE COLLECTION", Desc: "Wedgwood ground, marble, Pompeian red", Paper: "#edeff1", Ink: "#3a5a7a", Theme: "wga-classical"},
-	{Key: "impressionist", Label: "IMPRESSIONIST", Group: "FROM THE COLLECTION", Desc: "Cerulean and lilac shadow on a pale field", Paper: "#f4f1f5", Ink: "#1a5f80", Theme: "wga-impressionist"},
-	{Key: "catppuccin", Label: "CATPPUCCIN", Group: "BORROWED", Desc: "Latte by day, Mocha by night", Paper: "#eff1f5", Ink: "#1e66f5", Theme: "wga-catppuccin"},
-	{Key: "tokyo", Label: "TOKYO NIGHT", Group: "BORROWED", Desc: "Dark only — no light half", Paper: "#1a1b26", Ink: "#7aa2f7", DarkOnly: true, Theme: "wga-tokyo"},
+	{Key: "bone", Label: "BONE", Group: "THIS ARCHIVE", Desc: "Bone white and deep navy — the default", Paper: "#f4f2ed", Ink: "#003366"},
+	{Key: "classic", Label: "CLASSIC", Group: "THIS ARCHIVE", Desc: "The blue and orange of the original wga.hu", Paper: "#f0f6ff", Ink: "#003366"},
+	{Key: "verdigris", Label: "VERDIGRIS", Group: "THIS ARCHIVE", Desc: "Oxidised copper on grey-green paper", Paper: "#edf1ec", Ink: "#1f5e55"},
+	{Key: "gothic", Label: "GOTHIC", Group: "FROM THE COLLECTION", Desc: "Gold ground, ultramarine, vermilion", Paper: "#f7efdc", Ink: "#24418f"},
+	{Key: "renaissance", Label: "RENAISSANCE", Group: "FROM THE COLLECTION", Desc: "Fresco plaster, sanguine chalk, azurite", Paper: "#f3ede1", Ink: "#8a3324"},
+	{Key: "baroque", Label: "BAROQUE", Group: "FROM THE COLLECTION", Desc: "Tenebrism — dark only", Paper: "#17110c", Ink: "#e0b450", DarkOnly: true},
+	{Key: "rococo", Label: "ROCOCO", Group: "FROM THE COLLECTION", Desc: "Pale rose, celadon and gilt", Paper: "#f7eff2", Ink: "#9b2f5f"},
+	{Key: "classical", Label: "CLASSICAL", Group: "FROM THE COLLECTION", Desc: "Wedgwood ground, marble, Pompeian red", Paper: "#edeff1", Ink: "#3a5a7a"},
+	{Key: "impressionist", Label: "IMPRESSIONIST", Group: "FROM THE COLLECTION", Desc: "Cerulean and lilac shadow on a pale field", Paper: "#f4f1f5", Ink: "#1a5f80"},
+	{Key: "catppuccin", Label: "CATPPUCCIN", Group: "BORROWED", Desc: "Latte by day, Mocha by night", Paper: "#eff1f5", Ink: "#1e66f5"},
+	{Key: "tokyo", Label: "TOKYO NIGHT", Group: "BORROWED", Desc: "Dark only — no light half", Paper: "#1a1b26", Ink: "#7aa2f7", DarkOnly: true},
 }
 
 // Preferences is the validated server projection of a visitor's stored
@@ -113,19 +111,6 @@ func PaletteGroups() []string {
 	return groups
 }
 
-// ThemeFor resolves the daisyUI theme name for a palette and scheme. A
-// dark-only palette always resolves to its single dark build.
-func ThemeFor(palette string, scheme string) string {
-	option, _ := PaletteByKey(palette)
-	if option.DarkOnly {
-		return option.Theme
-	}
-	if scheme == "dark" {
-		return option.Theme + "-dark"
-	}
-	return option.Theme
-}
-
 // PreferencesSummary states the active palette, scheme, and reading mode as a
 // compact cookie-derived line for the footer trigger.
 func PreferencesSummary(prefs Preferences) string {
@@ -141,18 +126,12 @@ func PreferencesSummary(prefs Preferences) string {
 	return summary
 }
 
-// ThemeTableJSON returns a JSON object mapping each palette key to its
-// [light, dark] daisyUI theme names, for the inline pre-paint resolver. A
-// dark-only palette repeats its single dark build in both positions.
-func ThemeTableJSON() string {
-	type entry [2]string
-	table := make(map[string]entry, len(PaletteOptions))
+// PaletteTableJSON returns the known palette keys and whether each is dark-only
+// for the inline pre-paint resolver.
+func PaletteTableJSON() string {
+	table := make(map[string]bool, len(PaletteOptions))
 	for _, option := range PaletteOptions {
-		dark := option.Theme + "-dark"
-		if option.DarkOnly {
-			dark = option.Theme
-		}
-		table[option.Key] = entry{option.Theme, dark}
+		table[option.Key] = option.DarkOnly
 	}
 
 	bytes, err := json.Marshal(table)
@@ -163,9 +142,9 @@ func ThemeTableJSON() string {
 }
 
 // resolverScriptBody is the inline pre-paint resolver. The two %s placeholders
-// receive the palette x scheme theme table and the quoted default palette key.
+// receive the palette table and the quoted default palette key.
 const resolverScriptBody = `(function () {
-	var THEMES = %s;
+		var PALETTES = %s;
 	var DEFAULT_PALETTE = %s;
 
 	function readLocalStorage(key) {
@@ -199,10 +178,10 @@ const resolverScriptBody = `(function () {
 	}
 
 	var palette = readLocalStorage("wga-palette");
-	if (!THEMES[palette]) {
+	if (!Object.prototype.hasOwnProperty.call(PALETTES, palette)) {
 		palette = readCookie("wga_palette");
 	}
-	if (!THEMES[palette]) {
+	if (!Object.prototype.hasOwnProperty.call(PALETTES, palette)) {
 		palette = DEFAULT_PALETTE;
 	}
 
@@ -214,13 +193,13 @@ const resolverScriptBody = `(function () {
 		scheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 	}
 
-	var pair = THEMES[palette];
-	document.documentElement.dataset.theme = pair[scheme === "dark" ? 1 : 0];
+	document.documentElement.dataset.palette = palette;
+	document.documentElement.dataset.theme = PALETTES[palette] ? "dark" : scheme;
 }());`
 
 // ThemeResolverScript returns the complete inline pre-paint palette/scheme head
-// script, derived from PaletteOptions so the theme table cannot drift from the
+// script, derived from PaletteOptions so the palette table cannot drift from the
 // rendered preferences panel.
 func ThemeResolverScript() string {
-	return "<script>\n" + fmt.Sprintf(resolverScriptBody, ThemeTableJSON(), strconv.Quote(DefaultPaletteKey)) + "\n</script>"
+	return "<script>\n" + fmt.Sprintf(resolverScriptBody, PaletteTableJSON(), strconv.Quote(DefaultPaletteKey)) + "\n</script>"
 }

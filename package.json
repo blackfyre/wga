@@ -34,7 +34,6 @@
     "choices.js": "^11.2.4",
     "concurrently": "^10.0.5",
     "cssnano": "^9.0.1",
-    "daisyui": "^5.7.22",
     "dotenv": "^17.4.2",
     "esbuild": "0.28.2",
     "esbuild-plugin-copy": "^2.1.1",

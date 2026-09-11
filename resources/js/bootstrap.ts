@@ -4,8 +4,6 @@ import "htmx.org";
 import htmx from "htmx.org";
 import warningSign from "../assets/warning-sign.svg";
 import {
-	type Palette,
-	type Scheme,
 	clearPalette,
 	clearScheme,
 	closePreferences,
@@ -13,6 +11,8 @@ import {
 	currentScheme,
 	initialiseAppearancePreferences,
 	openPreferences,
+	type Palette,
+	type Scheme,
 	setPalette,
 	setScheme,
 } from "./appearance";
@@ -29,7 +29,6 @@ import { initKeyboardNavigation } from "./keyboard";
 import logger from "./logger";
 import { initPeriodMusic } from "./music";
 import { closeMobileNavigation, syncNavigation } from "./public-shell";
-import { initStatisticsChart } from "./statistics";
 import { registerTourHelpers } from "./tours";
 import { viewerImageURL } from "./viewer";
 
@@ -225,10 +224,10 @@ const feedbackSetPlaceholder = (field: HTMLInputElement) => {
 			continue;
 		}
 
-		label.classList.toggle("bg-primary", choice.checked);
-		label.classList.toggle("border-primary", choice.checked);
-		label.classList.toggle("text-primary-content", choice.checked);
-		label.classList.toggle("border-base-content/25", !choice.checked);
+		label.classList.toggle("bg-wga-accent-bg", choice.checked);
+		label.classList.toggle("border-wga-accent", choice.checked);
+		label.classList.toggle("text-wga-inv-fg", choice.checked);
+		label.classList.toggle("border-wga-ink/25", !choice.checked);
 	}
 };
 
@@ -300,7 +299,7 @@ const trapDialogFocus = (event: KeyboardEvent) => {
 
 const showDialog = () => {
 	const dialog = wgaInternal.els.dialog;
-	if (!dialog || !dialog.querySelector(".modal-box")) {
+	if (!dialog?.querySelector(".wga-dialog-panel")) {
 		return;
 	}
 
@@ -418,7 +417,7 @@ const configureViewerSurface = (label: string, viewer: Viewer) => {
 		close.type = "button";
 		close.dataset.viewerClose = "true";
 		close.className =
-			"absolute right-4 top-4 z-10 border border-current bg-base-100 px-3 py-2 font-mono text-[11px] tracking-[1.5px] text-base-content";
+			"absolute right-4 top-4 z-10 border border-current bg-wga-bg px-3 py-2 font-mono text-[11px] tracking-[1.5px] text-wga-ink";
 		close.setAttribute("aria-label", "Close artwork viewer");
 		close.textContent = "CLOSE";
 		close.addEventListener("click", () => viewer.hide());
@@ -633,7 +632,7 @@ const maybeInitStatisticsCharts = async () => {
 };
 
 const dualLookupFailureContent =
-	'<p class="p-4 text-sm text-base-content/70">Unable to load lookup results.</p>';
+	'<p class="p-4 text-sm text-wga-ink/70">Unable to load lookup results.</p>';
 
 const requestDualLookupResults = async (
 	kind: string,
@@ -793,7 +792,12 @@ const wgaInternal: wgaInternals = {
 			document.body.addEventListener("htmx:beforeSwap", (evt) => {
 				glossaryClosePopup();
 				statisticsModule?.destroyStatisticsCharts();
-				const event = evt as CustomEvent<{ target: Element; xhr: XMLHttpRequest; shouldSwap: boolean; isError: boolean }>;
+				const event = evt as CustomEvent<{
+					target: Element;
+					xhr: XMLHttpRequest;
+					shouldSwap: boolean;
+					isError: boolean;
+				}>;
 				if (
 					event.detail.target.id === "postcard-compose" &&
 					[422, 429].includes(event.detail.xhr.status)
@@ -859,14 +863,14 @@ const wgaInternal: wgaInternals = {
 					return `
         <div class="trix-button-row">
           <span class="trix-button-group trix-button-group--text-tools" data-trix-button-group="text-tools">
-            <button type="button" class="trix-button trix-button--icon trix-button--icon-bold btn-neutral" data-trix-attribute="bold" data-trix-key="b" title="Bold" tabindex="-1">Bold</button>
-            <button type="button" class="trix-button trix-button--icon trix-button--icon-italic btn-neutral" data-trix-attribute="italic" data-trix-key="i" title="Italic" tabindex="-1">Italic</button>
-            <button type="button" class="trix-button trix-button--icon trix-button--icon-strike btn-neutral" data-trix-attribute="strike" title="Strike" tabindex="-1">Strike</button>
+            <button type="button" class="trix-button trix-button--icon trix-button--icon-bold" data-trix-attribute="bold" data-trix-key="b" title="Bold" tabindex="-1">Bold</button>
+            <button type="button" class="trix-button trix-button--icon trix-button--icon-italic" data-trix-attribute="italic" data-trix-key="i" title="Italic" tabindex="-1">Italic</button>
+            <button type="button" class="trix-button trix-button--icon trix-button--icon-strike" data-trix-attribute="strike" title="Strike" tabindex="-1">Strike</button>
           </span>
     
           <span class="trix-button-group trix-button-group--block-tools" data-trix-button-group="block-tools">
-            <button type="button" class="trix-button trix-button--icon trix-button--icon-heading-1 btn-neutral" data-trix-attribute="heading1" title="Heading 1" tabindex="-1">Heading 1</button>
-            <button type="button" class="trix-button trix-button--icon trix-button--icon-quote btn-neutral" data-trix-attribute="quote" title="Quote" tabindex="-1">Quote</button>
+            <button type="button" class="trix-button trix-button--icon trix-button--icon-heading-1" data-trix-attribute="heading1" title="Heading 1" tabindex="-1">Heading 1</button>
+            <button type="button" class="trix-button trix-button--icon trix-button--icon-quote" data-trix-attribute="quote" title="Quote" tabindex="-1">Quote</button>
           </span>
     
         </div>`;
@@ -1013,11 +1017,11 @@ const wgaInternal: wgaInternals = {
 			logger.debug("Toast creation started", { message, type });
 			// Define variants for color, title, and icon
 			const colorVariants = {
-				info: "alert alert-info cursor-pointer sm:alert-horizontal",
-				alert: "alert cursor-pointer sm:alert-horizontal",
-				warning: "alert alert-warning cursor-pointer sm:alert-horizontal",
-				error: "alert alert-error cursor-pointer sm:alert-horizontal",
-				success: "alert alert-success cursor-pointer sm:alert-horizontal",
+				info: "wga-alert border-wga-info text-wga-info cursor-pointer",
+				alert: "wga-alert cursor-pointer",
+				warning: "wga-alert border-wga-warning text-wga-warning cursor-pointer",
+				error: "wga-alert border-wga-error text-wga-error cursor-pointer",
+				success: "wga-alert border-wga-success text-wga-success cursor-pointer",
 			};
 
 			const titleVariants = {
@@ -1032,7 +1036,7 @@ const wgaInternal: wgaInternals = {
 				info: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>`,
-				alert: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-info h-6 w-6 shrink-0">
+				alert: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-wga-info h-6 w-6 shrink-0">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
       </svg>`,
 				warning: warningSign,
@@ -1059,7 +1063,7 @@ const wgaInternal: wgaInternals = {
 			// Set classes and attributes
 			toast.className =
 				colorVariants[type] ||
-				"alert alert-info cursor-pointer sm:alert-horizontal";
+				"wga-alert border-wga-info text-wga-info cursor-pointer";
 			toast.setAttribute("role", "alert");
 
 			// Compose toast content

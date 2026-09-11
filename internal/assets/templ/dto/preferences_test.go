@@ -25,63 +25,31 @@ func TestPaletteOptionsCompleteAndUnique(t *testing.T) {
 			t.Fatalf("duplicate palette key %q", option.Key)
 		}
 		seen[option.Key] = true
-		if option.Label == "" || option.Group == "" || option.Desc == "" || option.Paper == "" || option.Ink == "" || option.Theme == "" {
+		if option.Label == "" || option.Group == "" || option.Desc == "" || option.Paper == "" || option.Ink == "" {
 			t.Fatalf("palette %q has an empty presentation field", option.Key)
 		}
 	}
 }
 
-func TestThemeTableMatchesPaletteThemeMapping(t *testing.T) {
-	want := map[string][2]string{
-		"bone":          {"wga-rams", "wga-rams-dark"},
-		"classic":       {"wga-classic", "wga-classic-dark"},
-		"verdigris":     {"wga-verdigris", "wga-verdigris-dark"},
-		"gothic":        {"wga-gothic", "wga-gothic-dark"},
-		"renaissance":   {"wga-renaissance", "wga-renaissance-dark"},
-		"baroque":       {"wga-baroque", "wga-baroque"},
-		"rococo":        {"wga-rococo", "wga-rococo-dark"},
-		"classical":     {"wga-classical", "wga-classical-dark"},
-		"impressionist": {"wga-impressionist", "wga-impressionist-dark"},
-		"catppuccin":    {"wga-catppuccin", "wga-catppuccin-dark"},
-		"tokyo":         {"wga-tokyo", "wga-tokyo"},
+func TestPaletteTableMatchesPaletteOptions(t *testing.T) {
+	want := map[string]bool{
+		"bone": false, "classic": false, "verdigris": false,
+		"gothic": false, "renaissance": false, "baroque": true,
+		"rococo": false, "classical": false, "impressionist": false,
+		"catppuccin": false, "tokyo": true,
 	}
 
-	var got map[string][2]string
-	if err := json.Unmarshal([]byte(ThemeTableJSON()), &got); err != nil {
-		t.Fatalf("unmarshal theme table: %v", err)
+	var got map[string]bool
+	if err := json.Unmarshal([]byte(PaletteTableJSON()), &got); err != nil {
+		t.Fatalf("unmarshal palette table: %v", err)
 	}
 	if len(got) != len(want) {
 		t.Fatalf("theme table has %d entries, want %d", len(got), len(want))
 	}
-	for key, pair := range want {
-		if got[key] != pair {
-			t.Errorf("theme table[%q] = %v, want %v", key, got[key], pair)
+	for key, darkOnly := range want {
+		if got[key] != darkOnly {
+			t.Errorf("palette table[%q] = %v, want %v", key, got[key], darkOnly)
 		}
-	}
-}
-
-func TestThemeFor(t *testing.T) {
-	tests := []struct {
-		name    string
-		palette string
-		scheme  string
-		want    string
-	}{
-		{name: "bone light", palette: "bone", scheme: "light", want: "wga-rams"},
-		{name: "bone dark", palette: "bone", scheme: "dark", want: "wga-rams-dark"},
-		{name: "classic light", palette: "classic", scheme: "light", want: "wga-classic"},
-		{name: "classic dark", palette: "classic", scheme: "dark", want: "wga-classic-dark"},
-		{name: "baroque light resolves dark", palette: "baroque", scheme: "light", want: "wga-baroque"},
-		{name: "baroque dark", palette: "baroque", scheme: "dark", want: "wga-baroque"},
-		{name: "tokyo light resolves dark", palette: "tokyo", scheme: "light", want: "wga-tokyo"},
-		{name: "unknown palette defaults bone", palette: "neon", scheme: "dark", want: "wga-rams-dark"},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			if got := ThemeFor(test.palette, test.scheme); got != test.want {
-				t.Fatalf("ThemeFor(%q, %q) = %q, want %q", test.palette, test.scheme, got, test.want)
-			}
-		})
 	}
 }
 
@@ -186,11 +154,11 @@ func TestThemeResolverScriptContracts(t *testing.T) {
 		`"wga_theme"`,
 		`"wga_light"`,
 		`"wga_dark"`,
-		`"wga-rams"`,
-		`"wga-rams-dark"`,
-		`"wga-baroque"`,
-		`"wga-tokyo"`,
+		`"bone"`,
+		`"baroque":true`,
+		`"tokyo":true`,
 		`prefers-color-scheme: dark`,
+		`document.documentElement.dataset.palette`,
 		`document.documentElement.dataset.theme`,
 	} {
 		if !strings.Contains(script, want) {
@@ -228,8 +196,8 @@ func TestThemeResolverScriptPaletteFallbackPrecedence(t *testing.T) {
 	// Each fallback is validity-guarded, so a valid cookie is selected before
 	// the bone default is ever considered.
 	for _, guarded := range []string{
-		"if (!THEMES[palette]) {\n\t\tpalette = readCookie(\"wga_palette\");",
-		"if (!THEMES[palette]) {\n\t\tpalette = DEFAULT_PALETTE;",
+		"if (!Object.prototype.hasOwnProperty.call(PALETTES, palette)) {\n\t\tpalette = readCookie(\"wga_palette\");",
+		"if (!Object.prototype.hasOwnProperty.call(PALETTES, palette)) {\n\t\tpalette = DEFAULT_PALETTE;",
 	} {
 		if !strings.Contains(script, guarded) {
 			t.Errorf("resolver missing validity-guarded fallback %q", guarded)

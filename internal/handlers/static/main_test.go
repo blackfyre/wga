@@ -67,7 +67,7 @@ func TestAssetRouteServesEmbeddedCSS(t *testing.T) {
 		URL:            "/assets/css/style.css",
 		ExpectedStatus: http.StatusOK,
 		ExpectedContent: []string{
-			"--color-base-100",
+			"--color-wga-bg",
 		},
 		TestAppFactory: func(t testing.TB) *tests.TestApp {
 			app := newStaticTestApp(t)

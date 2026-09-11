@@ -93,7 +93,7 @@ func TestFooterRetainsPreferenceAndConsentMounts(t *testing.T) {
 		`data-wga-bionic-toggle`,
 		`data-cc="show-preferencesModal"`,
 		`data-wga-cookie-settings`,
-		`aria-hidden="true" class="hidden hover:text-primary"`,
+		`aria-hidden="true" class="hidden hover:text-wga-accent"`,
 		`tabindex="-1"`,
 	} {
 		if !strings.Contains(rendered, expected) {
@@ -258,10 +258,10 @@ func TestFooterMarksBionicReadingFromRequestCookie(t *testing.T) {
 		cookie *http.Cookie
 		button string
 	}{
-		{name: "absent", button: `aria-checked="false" data-wga-bionic-toggle class="border border-base-content/20 bg-base-100`},
-		{name: "off", cookie: &http.Cookie{Name: "wga_bionic", Value: "off"}, button: `aria-checked="false" data-wga-bionic-toggle class="border border-base-content/20 bg-base-100`},
-		{name: "on", cookie: &http.Cookie{Name: "wga_bionic", Value: "on"}, button: `aria-checked="true" data-wga-bionic-toggle class="border border-primary bg-primary`},
-		{name: "malformed", cookie: &http.Cookie{Name: "wga_bionic", Value: "enabled"}, button: `aria-checked="false" data-wga-bionic-toggle class="border border-base-content/20 bg-base-100`},
+		{name: "absent", button: `aria-checked="false" data-wga-bionic-toggle class="border border-wga-ink/20 bg-wga-bg`},
+		{name: "off", cookie: &http.Cookie{Name: "wga_bionic", Value: "off"}, button: `aria-checked="false" data-wga-bionic-toggle class="border border-wga-ink/20 bg-wga-bg`},
+		{name: "on", cookie: &http.Cookie{Name: "wga_bionic", Value: "on"}, button: `aria-checked="true" data-wga-bionic-toggle class="border border-wga-accent bg-wga-accent-bg`},
+		{name: "malformed", cookie: &http.Cookie{Name: "wga_bionic", Value: "enabled"}, button: `aria-checked="false" data-wga-bionic-toggle class="border border-wga-ink/20 bg-wga-bg`},
 	}
 
 	for _, tt := range tests {

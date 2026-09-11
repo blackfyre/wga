@@ -16,12 +16,12 @@ templ RangeField(field dto.RangeField) {
 		</div>
 		<div data-artwork-year-range class={ "relative", templ.KV("h-11", field.Brush), templ.KV("h-5", !field.Brush) }>
 			if field.Brush {
-				<span class="absolute top-0 bottom-0 border-x-2 border-primary bg-primary/10" role="presentation" style={ rangeFillStyle(field) }></span>
+				<span class="absolute top-0 bottom-0 border-x-2 border-wga-accent bg-wga-accent-bg/10" role="presentation" style={ rangeFillStyle(field) }></span>
 			} else {
-				<span class="absolute top-[9px] right-0 left-0 h-px bg-base-content/30" role="presentation"></span>
+				<span class="absolute top-[9px] right-0 left-0 h-px bg-wga-ink/30" role="presentation"></span>
 			}
 			if !field.Brush {
-				<span class="absolute top-[9px] h-[3px] bg-primary" role="presentation" style={ rangeFillStyle(field) }></span>
+				<span class="absolute top-[9px] h-[3px] bg-wga-accent-bg" role="presentation" style={ rangeFillStyle(field) }></span>
 			}
 			<input id={ field.FromID } name={ field.FromName } type="range" min={ rangeValue(rangeMin(field)) } max={ rangeValue(rangeMax(field)) } step={ rangeValue(rangeStep(field)) } value={ rangeValue(rangeFrom(field)) } aria-label="Range starts" aria-describedby={ field.FromID + "-to-" + field.ToID + "-output" } class={ "wga-range", templ.KV("wga-range-brush", field.Brush) }/>
 			<input id={ field.ToID } name={ field.ToName } type="range" min={ rangeValue(rangeMin(field)) } max={ rangeValue(rangeMax(field)) } step={ rangeValue(rangeStep(field)) } value={ rangeValue(rangeTo(field)) } aria-label="Range ends" aria-describedby={ field.FromID + "-to-" + field.ToID + "-output" } class={ "wga-range", templ.KV("wga-range-brush", field.Brush) }/>

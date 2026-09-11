@@ -228,7 +228,7 @@ func sitemapStylesheet(cssURL string) string {
   <xsl:output method="html" encoding="UTF-8"/>
   <xsl:template match="/">
     <html><head><meta charset="utf-8"/><title>Web Gallery of Art sitemap</title><link rel="stylesheet" href="%s"/></head>
-    <body class="bg-base-100 text-base-content"><main class="mx-auto max-w-5xl px-6 py-12"><p class="text-sm tracking-widest">WEB GALLERY OF ART</p><h1 class="mt-4 text-4xl font-semibold">Sitemap</h1><ol class="mt-8 space-y-3"><xsl:for-each select="//*[local-name()='sitemap'] | //*[local-name()='url']"><li><a class="link link-primary" href="{*[local-name()='loc']}"><xsl:value-of select="*[local-name()='loc']"/></a></li></xsl:for-each></ol></main></body>
+    <body class="bg-wga-bg text-wga-ink"><main class="mx-auto max-w-5xl px-6 py-12"><p class="text-sm tracking-widest">WEB GALLERY OF ART</p><h1 class="mt-4 text-4xl font-semibold">Sitemap</h1><ol class="mt-8 space-y-3"><xsl:for-each select="//*[local-name()='sitemap'] | //*[local-name()='url']"><li><a class="wga-link" href="{*[local-name()='loc']}"><xsl:value-of select="*[local-name()='loc']"/></a></li></xsl:for-each></ol></main></body>
     </html>
   </xsl:template>
 </xsl:stylesheet>`, cssURL)

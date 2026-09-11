@@ -39,13 +39,13 @@ templ ContributorsPage(c ContributorsPageDTO) {
 }
 
 templ Contributor(contributor GithubContributor) {
-	<li class="flex items-center gap-3 border-b border-base-content/15 py-4">
+	<li class="flex items-center gap-3 border-b border-wga-ink/15 py-4">
 		if contributor.AvatarURL != "" {
-			<img class="h-10 w-10 shrink-0 border border-base-content/15 object-cover" src={ contributor.AvatarURL } alt="" />
+			<img class="h-10 w-10 shrink-0 border border-wga-ink/15 object-cover" src={ contributor.AvatarURL } alt="" />
 		}
 		<div class="min-w-0 flex-1">
 			if contributor.HTMLURL != "" {
-				<a href={ contributor.HTMLURL } class="no-external-link-marker font-mono text-(length:--t-13) hover:text-primary transition-colors">
+				<a href={ contributor.HTMLURL } class="no-external-link-marker font-mono text-(length:--t-13) hover:text-wga-accent transition-colors">
 					{ contributor.Login }
 				</a>
 			} else {
@@ -60,7 +60,7 @@ templ ContributorsBlock(c ContributorsPageDTO) {
 	<section class="container mx-auto px-4 pb-20 pt-10 md:px-0">
 		@components.PageHead("11 — CONTRIBUTORS", "Contributors", "The people who have contributed to the Web Gallery of Art.")
 		<article>
-			<div class="flex items-baseline justify-between border-b border-base-content pb-3">
+			<div class="flex items-baseline justify-between border-b border-wga-ink pb-3">
 				<h2 class="font-mono text-(length:--t-11) tracking-[1.5px]">CODE CONTRIBUTORS</h2>
 				<p class="font-mono text-(length:--t-10) tracking-[1px] text-muted">{ fmt.Sprintf("%d PEOPLE", len(c.Contributors)) }</p>
 			</div>

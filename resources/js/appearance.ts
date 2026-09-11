@@ -24,26 +24,6 @@ export const PALETTE_COOKIE_NAME = "wga_palette";
 const DEFAULT_PALETTE: Palette = "bone";
 const DARK_ONLY_PALETTES: ReadonlySet<Palette> = new Set(["baroque", "tokyo"]);
 
-const THEME_NAMES: Record<Palette, Record<Scheme, string>> = {
-	bone: { light: "wga-rams", dark: "wga-rams-dark" },
-	classic: { light: "wga-classic", dark: "wga-classic-dark" },
-	verdigris: { light: "wga-verdigris", dark: "wga-verdigris-dark" },
-	gothic: { light: "wga-gothic", dark: "wga-gothic-dark" },
-	renaissance: {
-		light: "wga-renaissance",
-		dark: "wga-renaissance-dark",
-	},
-	baroque: { light: "wga-baroque", dark: "wga-baroque" },
-	rococo: { light: "wga-rococo", dark: "wga-rococo-dark" },
-	classical: { light: "wga-classical", dark: "wga-classical-dark" },
-	impressionist: {
-		light: "wga-impressionist",
-		dark: "wga-impressionist-dark",
-	},
-	catppuccin: { light: "wga-catppuccin", dark: "wga-catppuccin-dark" },
-	tokyo: { light: "wga-tokyo", dark: "wga-tokyo" },
-};
-
 let initialised = false;
 let sessionScheme: Scheme | null = null;
 let sessionPalette: Palette | null = null;
@@ -80,10 +60,6 @@ export function effectiveScheme(scheme: Scheme, palette: Palette): Scheme {
 		return "dark";
 	}
 	return scheme;
-}
-
-export function resolveThemeName(scheme: Scheme, palette: Palette): string {
-	return THEME_NAMES[palette][scheme];
 }
 
 function cookieValue(name: string): string | null {
@@ -183,10 +159,10 @@ function markSchemeControls(scheme: Scheme, palette: Palette): void {
 		const disabled = value === "light" && isDarkOnlyPalette(palette);
 		control.setAttribute("aria-pressed", String(active));
 		control.disabled = disabled;
-		control.classList.toggle("bg-primary", active);
-		control.classList.toggle("text-primary-content", active);
-		control.classList.toggle("bg-base-100", !active);
-		control.classList.toggle("text-base-content/75", !active);
+		control.classList.toggle("bg-wga-accent-bg", active);
+		control.classList.toggle("text-wga-inv-fg", active);
+		control.classList.toggle("bg-wga-bg", !active);
+		control.classList.toggle("text-wga-ink/75", !active);
 		if (disabled) {
 			control.title = `${paletteLabel(palette)} is a dark-only palette`;
 		} else {
@@ -201,17 +177,17 @@ function markPaletteControls(palette: Palette): void {
 	)) {
 		const active = control.dataset.wgaPalette === palette;
 		control.setAttribute("aria-checked", String(active));
-		control.classList.toggle("bg-primary/10", active);
+		control.classList.toggle("bg-wga-accent-bg/10", active);
 		control.classList.toggle(
-			"shadow-[inset_3px_0_0_var(--color-primary)]",
+			"shadow-[inset_3px_0_0_var(--wga-accent-bg)]",
 			active,
 		);
-		control.classList.toggle("bg-base-100", !active);
-		control.classList.toggle("hover:bg-base-200", !active);
+		control.classList.toggle("bg-wga-bg", !active);
+		control.classList.toggle("hover:bg-wga-surface-2", !active);
 
 		const label = control.querySelector<HTMLElement>("[data-wga-palette-name]");
-		label?.classList.toggle("text-primary", active);
-		label?.classList.toggle("text-base-content", !active);
+		label?.classList.toggle("text-wga-accent", active);
+		label?.classList.toggle("text-wga-ink", !active);
 
 		let marker = control.querySelector<HTMLElement>(
 			"[data-wga-palette-in-use]",
@@ -221,7 +197,7 @@ function markPaletteControls(palette: Palette): void {
 				marker = document.createElement("span");
 				marker.dataset.wgaPaletteInUse = "true";
 				marker.className =
-					"ml-auto shrink-0 font-mono text-[9px] tracking-[1.5px] text-primary";
+					"ml-auto shrink-0 font-mono text-[9px] tracking-[1.5px] text-wga-accent";
 				marker.textContent = "IN USE";
 				control.append(marker);
 			}
@@ -309,7 +285,8 @@ function bindPreferencesPanel(): void {
 export function reconcileAppearancePreferences(): void {
 	const scheme = currentScheme();
 	const palette = currentPalette();
-	document.documentElement.dataset.theme = resolveThemeName(scheme, palette);
+	document.documentElement.dataset.palette = palette;
+	document.documentElement.dataset.theme = effectiveScheme(scheme, palette);
 	markSchemeControls(scheme, palette);
 	markPaletteControls(palette);
 	markSchemeExplanation(palette);

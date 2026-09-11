@@ -69,12 +69,12 @@ func newImportedTimelineApp(t *testing.T) *pocketbase.PocketBase {
 	configureImportedMigrations.Do(func() {
 		configuration := config.LoadFrom(func(key string) string {
 			values := map[string]string{
-				"WGA_PROTOCOL":       "http",
-				"WGA_HOSTNAME":       "gallery.example",
-				"WGA_SMTP_HOST":      "smtp.example",
-				"WGA_SMTP_PORT":      "2525",
-				"WGA_SENDER_NAME":    "WGA Test",
-				"WGA_SENDER_ADDRESS": "sender@example.com",
+				"WGA_PROTOCOL":         "http",
+				"WGA_HOSTNAME":         "gallery.example",
+				"WGA_SMTP_HOST":        "smtp.example",
+				"WGA_SMTP_PORT":        "2525",
+				"WGA_SENDER_NAME":      "WGA Test",
+				"WGA_SENDER_ADDRESS":   "sender@example.com",
 				"WGA_SEED_SQLITE_PATH": sqlitePath,
 			}
 			return values[key]
@@ -123,14 +123,14 @@ func TestImportedSeedProvidesExactly32ApprovedPeriods(t *testing.T) {
 	// spread of approved spans, proving the real import path carries the
 	// producer chronology rather than synthesising it.
 	expected := map[string][2]int{
-		"Early Christian":               {100, 500},
-		"Byzantine":                     {313, 1453},
-		"Mannerism / Late Renaissance":  {1520, 1600},
-		"Baroque":                       {1600, 1750},
-		"Neoclassicism / Neoclassical":  {1750, 1800},
-		"Impressionism":                 {1872, 1892},
-		"Abstract Expressionism":        {1943, 1965},
-		"Op Art":                        {1960, 1970},
+		"Early Christian":              {100, 500},
+		"Byzantine":                    {313, 1453},
+		"Mannerism / Late Renaissance": {1520, 1600},
+		"Baroque":                      {1600, 1750},
+		"Neoclassicism / Neoclassical": {1750, 1800},
+		"Impressionism":                {1872, 1892},
+		"Abstract Expressionism":       {1943, 1965},
+		"Op Art":                       {1960, 1970},
 	}
 	found := map[string]artPeriod{}
 	for _, period := range periods {

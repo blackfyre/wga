@@ -1,4 +1,4 @@
-import { type Page, expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 
 const viewports = [
 	{ width: 390, height: 900 },
@@ -174,10 +174,7 @@ test("artist index composes without overflow across viewports", async ({
 test("artist index honours dark theme and reduced motion", async ({ page }) => {
 	await page.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" });
 	await page.goto("/artists");
-	await expect(page.locator("html")).toHaveAttribute(
-		"data-theme",
-		"wga-rams-dark",
-	);
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 	await expect(page.locator("#artists h1")).toBeVisible();
 });
 

@@ -196,7 +196,7 @@ test.describe("bionic reading", () => {
 
 		await page.evaluate(() => {
 			const target = document.createElement("section");
-			target.innerHTML = `<p id="bionic-loaded">Loaded prose.</p><div data-wga-bionic-control class="hidden items-center gap-2"><button type="button" role="switch" aria-label="Bionic reading" aria-checked="false" data-wga-bionic-toggle class="border border-base-content/20 bg-base-100">BIONIC</button></div>`;
+			target.innerHTML = `<p id="bionic-loaded">Loaded prose.</p><div data-wga-bionic-control class="hidden items-center gap-2"><button type="button" role="switch" aria-label="Bionic reading" aria-checked="false" data-wga-bionic-toggle class="border border-wga-ink/20 bg-wga-bg">BIONIC</button></div>`;
 			document.querySelector("main")?.append(target);
 			document.dispatchEvent(
 				new CustomEvent("htmx:afterSwap", {
@@ -217,7 +217,7 @@ test.describe("bionic reading", () => {
 			page.locator("[data-wga-bionic-toggle]").last(),
 		).toHaveAttribute("aria-checked", "true");
 		await expect(page.locator("[data-wga-bionic-toggle]").last()).toHaveClass(
-			/bg-primary/,
+			/bg-wga-accent-bg/,
 		);
 
 		const markCount = await page

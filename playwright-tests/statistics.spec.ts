@@ -263,10 +263,7 @@ test("a live theme change redraws chart output with dark tokens", async ({
 
 	await page.locator("[data-wga-preferences-open]").click();
 	await page.getByRole("button", { name: "DARK" }).first().click();
-	await expect(page.locator("html")).toHaveAttribute(
-		"data-theme",
-		"wga-rams-dark",
-	);
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 
 	await page.waitForFunction(
 		(previous) => {

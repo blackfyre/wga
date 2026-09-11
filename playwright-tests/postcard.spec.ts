@@ -101,7 +101,7 @@ for (const viewport of [
 		await page.goto(`/postcard/send?awid=${syntheticArtworkID}`);
 		await expect(page.locator("#postcard-compose")).toBeVisible();
 		await expect(page.locator("#postcard_create")).toBeVisible();
-		await expect(page.locator(".modal-box")).toHaveCount(0);
+		await expect(page.locator(".wga-dialog-panel")).toHaveCount(0);
 	});
 }
 

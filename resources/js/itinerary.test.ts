@@ -214,8 +214,8 @@ test("updates a filmstrip narration status while typing", () => {
 	input?.();
 
 	expect(status.textContent).toBe("6 CHARS");
-	expect(classes.get("text-warning")).toBe(false);
-	expect(classes.get("text-base-content/60")).toBe(true);
+	expect(classes.get("text-wga-warning")).toBe(false);
+	expect(classes.get("text-wga-ink/60")).toBe(true);
 });
 
 test("highlights the currently selected visibility option", () => {
@@ -260,9 +260,9 @@ test("highlights the currently selected visibility option", () => {
 	registerItineraryHelpers();
 	change?.();
 
-	expect(classes.get("listed:bg-primary")).toBe(false);
-	expect(classes.get("link-only:bg-primary")).toBe(true);
-	expect(classes.get("link-only:text-primary-content")).toBe(true);
+	expect(classes.get("listed:bg-wga-accent-bg")).toBe(false);
+	expect(classes.get("link-only:bg-wga-accent-bg")).toBe(true);
+	expect(classes.get("link-only:text-wga-inv-fg")).toBe(true);
 });
 
 test("prefetches at most two neighbouring stops", () => {

@@ -141,9 +141,9 @@ func TestItineraryTrayExactPresentationAndThumbnailOrder(t *testing.T) {
 	}
 	rendered := output.String()
 	for _, expected := range []string{
-		`class="fixed inset-x-0 bottom-0 z-[45] border-t border-neutral-content/20 bg-neutral animate-[wga-rise_240ms_cubic-bezier(0.22,0.61,0.36,1)]"`,
+		`class="fixed inset-x-0 bottom-0 z-[45] border-t border-wga-inv-fg/20 bg-wga-inv-bg animate-[wga-rise_240ms_cubic-bezier(0.22,0.61,0.36,1)]"`,
 		`role="region" aria-label="Itinerary draft"`, `ITINERARY DRAFT · 2 OF 15`,
-		`class="h-7 w-7 border border-neutral-content/25 bg-neutral-content/10 object-cover"`,
+		`class="h-7 w-7 border border-wga-inv-fg/25 bg-wga-inv-fg/10 object-cover"`,
 		`>CLEAR</button>`, `href="/itineraries/new"`, `>ARRANGE &amp; NARRATE →</a>`,
 		`method="post" action="/itineraries/draft/clear"`,
 		`hx-post="/itineraries/draft/clear" hx-target="#itinerary-tray" hx-swap="outerHTML" hx-select="unset"`,
@@ -168,7 +168,7 @@ func TestItineraryTrayMapsReferenceShell(t *testing.T) {
 	}
 
 	rendered := output.String()
-	shell := `class="fixed inset-x-0 bottom-0 z-[45] border-t border-neutral-content/20 bg-neutral animate-[wga-rise_240ms_cubic-bezier(0.22,0.61,0.36,1)]"`
+	shell := `class="fixed inset-x-0 bottom-0 z-[45] border-t border-wga-inv-fg/20 bg-wga-inv-bg animate-[wga-rise_240ms_cubic-bezier(0.22,0.61,0.36,1)]"`
 	if !strings.Contains(rendered, shell) {
 		t.Errorf("tray shell missing reference mapping %q", shell)
 	}

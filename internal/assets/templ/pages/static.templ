@@ -48,10 +48,10 @@ templ StaticPageBlock(sp StaticPageDTO) {
 			if len(sp.TOC) > 0 {
 				<nav class="w-full shrink-0 md:sticky md:top-8 md:w-52 md:self-start" aria-label="Contents">
 					<p class="mb-3 font-mono text-(length:--t-10) tracking-[1.5px] text-muted">CONTENTS</p>
-					<ol class="border-t border-base-content/15">
+					<ol class="border-t border-wga-ink/15">
 						for _, item := range sp.TOC {
-							<li class={ "border-b border-base-content/15", templ.KV("pl-4", item.Level == 3) }>
-								<a class="block py-2.5 font-mono text-xs text-base-content/70 transition-colors hover:text-primary" href={ templ.URL("#" + item.ID) }>{ item.Title }</a>
+							<li class={ "border-b border-wga-ink/15", templ.KV("pl-4", item.Level == 3) }>
+								<a class="block py-2.5 font-mono text-xs text-wga-ink/70 transition-colors hover:text-wga-accent" href={ templ.URL("#" + item.ID) }>{ item.Title }</a>
 							</li>
 						}
 					</ol>

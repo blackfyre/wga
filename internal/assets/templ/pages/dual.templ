@@ -207,18 +207,18 @@ templ dualNarrow(v DualModeView) {
 		<div class="max-w-[430px]">
 			<p class="font-mono text-(length:--t-11) tracking-[2px] text-muted mb-3">09 — DUAL MODE</p>
 			<h1 class="text-(length:--t-27) font-semibold leading-tight mb-3">This mode needs a wide screen</h1>
-			<p class="text-base leading-[1.65] text-base-content/70 mb-5 text-pretty">
+			<p class="text-base leading-[1.65] text-wga-ink/70 mb-5 text-pretty">
 				Dual mode gives each half of the display a complete record page — image,
 				cataloguing, commentary, citation. Below about 1080 pixels there is no honest
 				way to show two of those at once, so the mode is not offered on phones or
 				tablets in either orientation.
 			</p>
-			<p class="text-(length:--t-15) leading-[1.65] text-base-content/70 mb-5 text-pretty">
+			<p class="text-(length:--t-15) leading-[1.65] text-wga-ink/70 mb-5 text-pretty">
 				If you are reading this because you enlarged the page rather than because the
 				screen is small, the measurement is wrong and you are right. Open it anyway.
 			</p>
 			<div class="flex flex-wrap gap-5.5">
-				<a href={ templ.URL(v.WideHref) } hx-get={ v.WideHref } hx-target="#dual-area" hx-select="#dual-area" hx-swap="outerHTML" class="font-mono text-(length:--t-11) tracking-[1.5px] text-primary hover:opacity-60 transition-opacity">OPEN IT ANYWAY →</a>
+				<a href={ templ.URL(v.WideHref) } hx-get={ v.WideHref } hx-target="#dual-area" hx-select="#dual-area" hx-swap="outerHTML" class="font-mono text-(length:--t-11) tracking-[1.5px] text-wga-accent hover:opacity-60 transition-opacity">OPEN IT ANYWAY →</a>
 				<a href={ templ.URL(v.ExitHref) } hx-get={ v.ExitHref } class="font-mono text-(length:--t-11) tracking-[1.5px] text-muted hover:opacity-60 transition-opacity">← LEAVE DUAL MODE</a>
 			</div>
 		</div>
@@ -228,24 +228,24 @@ templ dualNarrow(v DualModeView) {
 templ dualBar(v DualModeView) {
 	<div class="wga-dual-bar">
 		<div class="flex items-center gap-3">
-			<span class="w-[26px] h-[26px] border-[1.5px] border-base-content flex items-center justify-center font-mono text-(length:--t-9) font-bold">WGA</span>
+			<span class="w-[26px] h-[26px] border-[1.5px] border-wga-ink flex items-center justify-center font-mono text-(length:--t-9) font-bold">WGA</span>
 			<span class="font-mono text-(length:--t-11) tracking-[2px]">09 — DUAL MODE</span>
 			@components.HelpTip("DUAL MODE", "Two copies of the collection, running independently either side of the divide. Each window keeps its own record, its own history and its own image size, and shows everything the single-window page shows.")
 		</div>
 		<div class="flex items-center gap-[18px]">
-			<a href={ templ.URL(v.SwapHref) } hx-get={ v.SwapHref } hx-target="#dual-area" hx-select="#dual-area" hx-swap="outerHTML" class="font-mono text-(length:--t-11) tracking-[1px] text-primary hover:opacity-60 transition-opacity">⇄ SWAP WINDOWS</a>
-			<a href={ templ.URL(v.ResetHref) } hx-get={ v.ResetHref } hx-target="#dual-area" hx-select="#dual-area" hx-swap="outerHTML" class="font-mono text-(length:--t-11) tracking-[1px] text-muted hover:text-primary transition-colors">RESET BOTH</a>
+			<a href={ templ.URL(v.SwapHref) } hx-get={ v.SwapHref } hx-target="#dual-area" hx-select="#dual-area" hx-swap="outerHTML" class="font-mono text-(length:--t-11) tracking-[1px] text-wga-accent hover:opacity-60 transition-opacity">⇄ SWAP WINDOWS</a>
+			<a href={ templ.URL(v.ResetHref) } hx-get={ v.ResetHref } hx-target="#dual-area" hx-select="#dual-area" hx-swap="outerHTML" class="font-mono text-(length:--t-11) tracking-[1px] text-muted hover:text-wga-accent transition-colors">RESET BOTH</a>
 			@components.HelpTip("SWAP AND RESET", "Swap exchanges the two windows, carrying their histories and their link routing with them. Reset returns both to the artist index.")
-			<a href={ templ.URL(v.ExitHref) } hx-get={ v.ExitHref } class="font-mono text-(length:--t-11) tracking-[1.5px] border border-base-content/30 px-2.5 py-[5px] hover:border-base-content transition-colors">EXIT ✕</a>
+			<a href={ templ.URL(v.ExitHref) } hx-get={ v.ExitHref } class="font-mono text-(length:--t-11) tracking-[1.5px] border border-wga-ink/30 px-2.5 py-[5px] hover:border-wga-ink transition-colors">EXIT ✕</a>
 		</div>
 	</div>
 }
 
 templ DualWindowPane(w DualWindow) {
 	<article id={ "dual-" + w.Key } class="wga-dual-pane" aria-label={ w.Key + " window" }>
-		<div class="flex items-center justify-between gap-3.5 px-7 py-2.5 border-b border-base-content/15 shrink-0">
+		<div class="flex items-center justify-between gap-3.5 px-7 py-2.5 border-b border-wga-ink/15 shrink-0">
 			<div class="flex items-center gap-2.5 min-w-0">
-				<span class="font-mono text-(length:--t-10) tracking-[1.5px] bg-primary text-base-100 px-[7px] py-[3px]">{ w.Tag }</span>
+				<span class="font-mono text-(length:--t-10) tracking-[1.5px] bg-wga-accent-bg text-wga-bg px-[7px] py-[3px]">{ w.Tag }</span>
 				<nav class="font-mono text-(length:--t-11) flex items-baseline gap-1.5 min-w-0 overflow-hidden whitespace-nowrap" aria-label={ "Trail, " + w.Label + " window" }>
 					for i, c := range w.Crumb {
 						if i > 0 {
@@ -254,25 +254,25 @@ templ DualWindowPane(w DualWindow) {
 						if c.Href == "" {
 							<span class="text-muted truncate min-w-0" aria-current="page" title={ c.Label }>{ c.Label }</span>
 						} else {
-							<a href={ templ.URL(c.Href) } hx-get={ c.Href } hx-target={ w.SelfSel } hx-select={ w.SelfSel } hx-swap="outerHTML" class="text-primary hover:opacity-60 transition-opacity shrink-0">{ c.Label }</a>
+							<a href={ templ.URL(c.Href) } hx-get={ c.Href } hx-target={ w.SelfSel } hx-select={ w.SelfSel } hx-swap="outerHTML" class="text-wga-accent hover:opacity-60 transition-opacity shrink-0">{ c.Label }</a>
 						}
 					}
 				</nav>
 			</div>
 			<div class="flex items-center gap-3.5 shrink-0">
 				if w.Key == "left" {
-					<button type="button" class="font-mono text-(length:--t-10) tracking-[1px] text-muted hover:text-primary transition-colors" onclick="window.wga.dual.openLookup('left')">CHOOSE</button>
+					<button type="button" class="font-mono text-(length:--t-10) tracking-[1px] text-muted hover:text-wga-accent transition-colors" onclick="window.wga.dual.openLookup('left')">CHOOSE</button>
 				} else {
-					<button type="button" class="font-mono text-(length:--t-10) tracking-[1px] text-muted hover:text-primary transition-colors" onclick="window.wga.dual.openLookup('right')">CHOOSE</button>
+					<button type="button" class="font-mono text-(length:--t-10) tracking-[1px] text-muted hover:text-wga-accent transition-colors" onclick="window.wga.dual.openLookup('right')">CHOOSE</button>
 				}
 				if w.BackHref != "" {
-					<a href={ templ.URL(w.BackHref) } hx-get={ w.BackHref } hx-target={ w.SelfSel } hx-select={ w.SelfSel } hx-swap="outerHTML" class="font-mono text-(length:--t-10) tracking-[1px] text-primary hover:opacity-60 transition-opacity">← BACK</a>
+					<a href={ templ.URL(w.BackHref) } hx-get={ w.BackHref } hx-target={ w.SelfSel } hx-select={ w.SelfSel } hx-swap="outerHTML" class="font-mono text-(length:--t-10) tracking-[1px] text-wga-accent hover:opacity-60 transition-opacity">← BACK</a>
 				}
-				<a href={ templ.URL(w.IndexHref) } hx-get={ w.IndexHref } hx-target={ w.SelfSel } hx-select={ w.SelfSel } hx-swap="outerHTML" class="font-mono text-(length:--t-10) tracking-[1px] text-muted hover:text-primary transition-colors">INDEX</a>
+				<a href={ templ.URL(w.IndexHref) } hx-get={ w.IndexHref } hx-target={ w.SelfSel } hx-select={ w.SelfSel } hx-swap="outerHTML" class="font-mono text-(length:--t-10) tracking-[1px] text-muted hover:text-wga-accent transition-colors">INDEX</a>
 			</div>
 		</div>
 
-		<div class="flex items-center gap-2.5 px-7 py-2 border-b border-base-content/15 shrink-0">
+		<div class="flex items-center gap-2.5 px-7 py-2 border-b border-wga-ink/15 shrink-0">
 			<span class="font-mono text-(length:--t-10) tracking-[1.5px] text-faint">LINKS OPEN IN</span>
 			<a
 				href={ templ.URL(w.RouteHref) }
@@ -282,8 +282,8 @@ templ DualWindowPane(w DualWindow) {
 				hx-swap="outerHTML"
 				aria-current={ dualAriaCurrent(!w.RoutesToSelf) }
 				class={ "font-mono text-(length:--t-10) tracking-[1px] px-2.5 py-1 border transition-colors",
-					templ.KV("border-base-content/30 hover:border-primary", w.RoutesToSelf),
-					templ.KV("bg-primary border-primary text-base-100 hover:opacity-85", !w.RoutesToSelf) }
+					templ.KV("border-wga-ink/30 hover:border-wga-accent", w.RoutesToSelf),
+					templ.KV("bg-wga-accent-bg border-wga-accent text-wga-bg hover:opacity-85", !w.RoutesToSelf) }
 			>
 				if w.RoutesToSelf {
 					THIS WINDOW
@@ -310,19 +310,19 @@ templ DualWindowPane(w DualWindow) {
 templ dualIndexPane(w DualWindow) {
 	<p class="font-mono text-(length:--t-11) tracking-[2px] text-muted mb-2.5">01 — ARTIST INDEX</p>
 	<h2 class="text-(length:--t-26) font-semibold leading-tight mb-2">Artists</h2>
-	<p class="max-w-[420px] text-sm leading-[1.6] text-base-content/70 mb-5 text-pretty">
+	<p class="max-w-[420px] text-sm leading-[1.6] text-wga-ink/70 mb-5 text-pretty">
 		Painters, sculptors and architects in the collection. Browse alphabetically,
 		or filter by school and period.
 	</p>
 
-	<nav class="flex flex-wrap gap-[2px] border-b border-base-content/15 pb-5" aria-label={ "Filter " + w.Key + " artists by letter" }>
+	<nav class="flex flex-wrap gap-[2px] border-b border-wga-ink/15 pb-5" aria-label={ "Filter " + w.Key + " artists by letter" }>
 		<a
 			href={ templ.URL(w.Index.AllUrl) }
 			hx-get={ w.Index.AllUrl }
 			hx-target={ w.SelfSel }
 			hx-select={ w.SelfSel }
 			hx-swap="outerHTML"
-			class={ "px-[9px] py-1 font-mono text-[10px] tracking-[1px] transition-colors", templ.KV("bg-neutral text-neutral-content", !hasDualSelectedLetter(w.Index.Letters)), templ.KV("text-base-content/70 hover:text-base-content", hasDualSelectedLetter(w.Index.Letters)) }
+			class={ "px-[9px] py-1 font-mono text-[10px] tracking-[1px] transition-colors", templ.KV("bg-wga-inv-bg text-wga-inv-fg", !hasDualSelectedLetter(w.Index.Letters)), templ.KV("text-wga-ink/70 hover:text-wga-ink", hasDualSelectedLetter(w.Index.Letters)) }
 			aria-current={ dualAriaCurrent(!hasDualSelectedLetter(w.Index.Letters)) }
 		>ALL</a>
 		for _, letter := range w.Index.Letters {
@@ -333,7 +333,7 @@ templ dualIndexPane(w DualWindow) {
 					hx-target={ w.SelfSel }
 					hx-select={ w.SelfSel }
 					hx-swap="outerHTML"
-					class={ "px-[9px] py-1 font-mono text-[10px] tracking-[1px] transition-colors", templ.KV("bg-neutral text-neutral-content", letter.Selected), templ.KV("text-base-content/70 hover:text-base-content", !letter.Selected) }
+					class={ "px-[9px] py-1 font-mono text-[10px] tracking-[1px] transition-colors", templ.KV("bg-wga-inv-bg text-wga-inv-fg", letter.Selected), templ.KV("text-wga-ink/70 hover:text-wga-ink", !letter.Selected) }
 					aria-current={ dualAriaCurrent(letter.Selected) }
 				>{ letter.Label }</a>
 			} else {
@@ -356,7 +356,7 @@ templ dualIndexPane(w DualWindow) {
 			<input type="hidden" name={ hidden.Name } value={ hidden.Value }/>
 		}
 		@components.ChipGroup(w.Index.SchoolGroup)
-		<div class="flex items-end gap-6 py-5 border-b border-base-content/15">
+		<div class="flex items-end gap-6 py-5 border-b border-wga-ink/15">
 			<div class="flex-1 min-w-0">
 				@components.Field(w.Index.NameField)
 			</div>
@@ -368,7 +368,7 @@ templ dualIndexPane(w DualWindow) {
 			@components.RangeField(w.Index.BornRange)
 		}
 		<noscript>
-			<button type="submit" class="bg-primary px-4 py-2 font-mono text-[11px] tracking-[1px] text-primary-content mt-4">APPLY FILTERS</button>
+			<button type="submit" class="bg-wga-accent-bg px-4 py-2 font-mono text-[11px] tracking-[1px] text-wga-inv-fg mt-4">APPLY FILTERS</button>
 		</noscript>
 	</form>
 
@@ -383,7 +383,7 @@ templ dualIndexPane(w DualWindow) {
 				hx-target={ w.SelfSel }
 				hx-select={ w.SelfSel }
 				hx-swap="outerHTML"
-				class={ "border px-3 py-1.5 font-mono text-(length:--t-10) tracking-[1px] transition-colors", templ.KV("border-primary bg-primary text-primary-content", w.Index.View == "grid"), templ.KV("border-control text-base-content/70 hover:border-base-content", w.Index.View != "grid") }
+				class={ "border px-3 py-1.5 font-mono text-(length:--t-10) tracking-[1px] transition-colors", templ.KV("border-wga-accent bg-wga-accent-bg text-wga-inv-fg", w.Index.View == "grid"), templ.KV("border-control text-wga-ink/70 hover:border-wga-ink", w.Index.View != "grid") }
 				aria-current={ dualAriaCurrent(w.Index.View == "grid") }
 			>GRID</a>
 			<a
@@ -392,10 +392,10 @@ templ dualIndexPane(w DualWindow) {
 				hx-target={ w.SelfSel }
 				hx-select={ w.SelfSel }
 				hx-swap="outerHTML"
-				class={ "border px-3 py-1.5 font-mono text-(length:--t-10) tracking-[1px] transition-colors", templ.KV("border-primary bg-primary text-primary-content", w.Index.View == "list"), templ.KV("border-control text-base-content/70 hover:border-base-content", w.Index.View != "list") }
+				class={ "border px-3 py-1.5 font-mono text-(length:--t-10) tracking-[1px] transition-colors", templ.KV("border-wga-accent bg-wga-accent-bg text-wga-inv-fg", w.Index.View == "list"), templ.KV("border-control text-wga-ink/70 hover:border-wga-ink", w.Index.View != "list") }
 				aria-current={ dualAriaCurrent(w.Index.View == "list") }
 			>LIST</a>
-			<a href={ templ.URL(w.Index.SortHref) } hx-get={ w.Index.SortHref } hx-target={ w.SelfSel } hx-select={ w.SelfSel } hx-swap="outerHTML" class="font-mono text-(length:--t-10) tracking-[1px] text-primary ml-1 hover:opacity-60 transition-opacity">SORT: { w.Index.SortLabel } ↕</a>
+			<a href={ templ.URL(w.Index.SortHref) } hx-get={ w.Index.SortHref } hx-target={ w.SelfSel } hx-select={ w.SelfSel } hx-swap="outerHTML" class="font-mono text-(length:--t-10) tracking-[1px] text-wga-accent ml-1 hover:opacity-60 transition-opacity">SORT: { w.Index.SortLabel } ↕</a>
 		</div>
 	</div>
 
@@ -423,7 +423,7 @@ templ dualIndexPane(w DualWindow) {
 	} else {
 		<p id={ "dual-scroll-hint-" + w.Key } class="sr-only">Scroll horizontally with the left and right arrow keys while this table is focused.</p>
 		<div class="overflow-x-auto" role="region" aria-label="Artists in the collection" tabindex="0" data-dual-horizontal-scroll aria-describedby={ "dual-scroll-hint-" + w.Key }>
-			<table class="table table-sm min-w-[640px]">
+			<table class="wga-table wga-table-compact min-w-[640px]">
 				<caption class="sr-only">Artists in the collection</caption>
 				<thead>
 					<tr class="font-mono text-(length:--t-9) tracking-[1px] text-muted">
@@ -436,7 +436,7 @@ templ dualIndexPane(w DualWindow) {
 				</thead>
 				<tbody>
 					for _, row := range w.Index.Artists {
-						<tr class={ "transition-colors", templ.KV("hover:bg-primary/5", !row.Unavailable), templ.KV("opacity-50", row.Unavailable) }>
+						<tr class={ "transition-colors", templ.KV("hover:bg-wga-accent-bg/5", !row.Unavailable), templ.KV("opacity-50", row.Unavailable) }>
 							<th scope="row" class="font-semibold text-sm">
 								if row.Unavailable {
 									{ row.Name }
@@ -445,10 +445,10 @@ templ dualIndexPane(w DualWindow) {
 									<a href={ templ.URL(row.Href) } hx-get={ row.Href } hx-target={ w.TargetSel } hx-select={ w.TargetSel } hx-swap="outerHTML">{ row.Name }</a>
 								}
 							</th>
-							<td class="font-mono text-(length:--t-11) text-base-content/70 whitespace-nowrap">{ row.Dates }</td>
-							<td class="font-mono text-(length:--t-11) text-base-content/70 whitespace-nowrap">{ row.School }</td>
-							<td class="font-mono text-(length:--t-11) text-base-content/70 whitespace-nowrap">{ dualPeriodLabel(row.Period) }</td>
-							<td class="font-mono text-(length:--t-11) text-base-content/70 whitespace-nowrap">{ row.Form }</td>
+							<td class="font-mono text-(length:--t-11) text-wga-ink/70 whitespace-nowrap">{ row.Dates }</td>
+							<td class="font-mono text-(length:--t-11) text-wga-ink/70 whitespace-nowrap">{ row.School }</td>
+							<td class="font-mono text-(length:--t-11) text-wga-ink/70 whitespace-nowrap">{ dualPeriodLabel(row.Period) }</td>
+							<td class="font-mono text-(length:--t-11) text-wga-ink/70 whitespace-nowrap">{ row.Form }</td>
 						</tr>
 					}
 				</tbody>
@@ -472,7 +472,7 @@ templ dualArtistPane(w DualWindow) {
 	<div class="flex items-start justify-between gap-6 mb-6">
 		<div class="min-w-0">
 			<h2 class="text-(length:--t-30) font-semibold tracking-[-0.5px] leading-[1.12]">{ w.Artist.FilingName }</h2>
-			<p class="font-mono text-(length:--t-12) tracking-[1px] text-primary mt-2">{ w.Artist.Dates }</p>
+			<p class="font-mono text-(length:--t-12) tracking-[1px] text-wga-accent mt-2">{ w.Artist.Dates }</p>
 		</div>
 		<figure class="w-[104px] shrink-0">
 			@components.Plate(dto.Plate{DisplayURL: w.Artist.Portrait, Alt: "Portrait of " + w.Artist.FilingName, Label: "PORTRAIT — " + w.Artist.FilingName, Placeholder: "PORTRAIT — " + w.Artist.FilingName, Aspect: "aspect-square", Contain: false})
@@ -494,10 +494,10 @@ templ dualArtistPane(w DualWindow) {
 		</div>
 	</div>
 
-	<div class="flex items-baseline justify-between gap-4 pb-3 mb-4 border-t border-base-content/15 pt-4">
+	<div class="flex items-baseline justify-between gap-4 pb-3 mb-4 border-t border-wga-ink/15 pt-4">
 		<h3 class="font-mono text-(length:--t-11) tracking-[1.5px]">{ w.Artist.Heading }</h3>
 		if w.Send.Href != "" {
-			<a href={ templ.URL(w.Send.Href) } hx-get={ w.Send.Href } hx-target="#dual-area" hx-select="#dual-area" hx-swap="outerHTML" class="font-mono text-(length:--t-10) tracking-[1px] text-primary hover:opacity-60 transition-opacity">{ w.Send.Label }</a>
+			<a href={ templ.URL(w.Send.Href) } hx-get={ w.Send.Href } hx-target="#dual-area" hx-select="#dual-area" hx-swap="outerHTML" class="font-mono text-(length:--t-10) tracking-[1px] text-wga-accent hover:opacity-60 transition-opacity">{ w.Send.Label }</a>
 		}
 	</div>
 	@dualCardGrid(w.Artist.Works, w.TargetSel)
@@ -509,10 +509,10 @@ templ dualWorkPane(w DualWindow) {
 	<p class="font-mono text-(length:--t-11) tracking-[2px] text-muted mb-2.5">03 — ARTWORK</p>
 	<h2 class="text-(length:--t-30) font-semibold tracking-[-0.5px] leading-[1.12]">{ w.Work.Title }</h2>
 	if w.Work.Byline != "" {
-		<a href={ templ.URL(w.Work.ArtistHref) } hx-get={ w.Work.ArtistHref } hx-target={ w.TargetSel } hx-select={ w.TargetSel } hx-swap="outerHTML" class="block font-mono text-(length:--t-12) tracking-[1px] text-primary mt-2 mb-5 hover:opacity-60 transition-opacity">{ w.Work.Byline }</a>
+		<a href={ templ.URL(w.Work.ArtistHref) } hx-get={ w.Work.ArtistHref } hx-target={ w.TargetSel } hx-select={ w.TargetSel } hx-swap="outerHTML" class="block font-mono text-(length:--t-12) tracking-[1px] text-wga-accent mt-2 mb-5 hover:opacity-60 transition-opacity">{ w.Work.Byline }</a>
 	}
 
-	<figure class={ "bg-base-300 border border-base-content/15 flex items-center justify-center p-4", w.Work.PlateClass }>
+	<figure class={ "bg-wga-fill border border-wga-ink/15 flex items-center justify-center p-4", w.Work.PlateClass }>
 		if w.Work.Image != "" {
 			<a href={ templ.SafeURL(w.Work.Zoom) } data-viewer class="block h-full w-full" aria-label={ "View larger image of " + w.Work.Title }>
 				<img src={ w.Work.Image } alt={ w.Work.Title } data-zoom-url={ w.Work.Zoom } class="h-full w-full object-contain"/>
@@ -534,8 +534,8 @@ templ dualWorkPane(w DualWindow) {
 					hx-swap="outerHTML"
 					aria-current={ dualAriaCurrent(size.Selected) }
 					class={ "font-mono text-(length:--t-10) tracking-[1px] px-2.5 py-[5px] border transition-colors",
-						templ.KV("bg-primary border-primary text-base-100", size.Selected),
-						templ.KV("border-control text-base-content/70 hover:border-primary hover:text-primary", !size.Selected) }
+						templ.KV("bg-wga-accent-bg border-wga-accent text-wga-bg", size.Selected),
+						templ.KV("border-control text-wga-ink/70 hover:border-wga-accent hover:text-wga-accent", !size.Selected) }
 				>{ size.Label }</a>
 			}
 			@components.HelpTip("STUDY IMAGE", "Image size is per window, so one side can hold a detail at full size while the other stays small. The reproduction is served at the source width when the selected size would upscale it.")
@@ -546,13 +546,13 @@ templ dualWorkPane(w DualWindow) {
 	<div class="flex flex-wrap gap-2.5 mt-5 mb-7">
 		@components.AddToItineraryAction(w.Work.ArtworkID, components.AddToItineraryRow)
 		if w.Send.Href != "" {
-			<a href={ templ.URL(w.Send.Href) } hx-get={ w.Send.Href } hx-target="#dual-area" hx-select="#dual-area" hx-swap="outerHTML" class="btn btn-outline btn-primary font-mono text-(length:--t-11) tracking-[1.5px] h-[46px]">{ w.Send.Label }</a>
+			<a href={ templ.URL(w.Send.Href) } hx-get={ w.Send.Href } hx-target="#dual-area" hx-select="#dual-area" hx-swap="outerHTML" class="wga-button wga-button-primary font-mono text-(length:--t-11) tracking-[1.5px] h-[46px]">{ w.Send.Label }</a>
 		}
 	</div>
 
 	@components.MetaList(w.Work.Meta)
 	if len(w.Work.Palette) > 0 {
-		<div class="mt-5 flex flex-col gap-2 border-b border-base-content/15 py-3">
+		<div class="mt-5 flex flex-col gap-2 border-b border-wga-ink/15 py-3">
 			<div class="flex items-center gap-2">
 				<p class="font-mono text-(length:--t-11) tracking-[1px] text-muted">PALETTE</p>
 				@components.HelpTip("PALETTE", "Dominant colours sampled from the study image. Values are indicative, not a pigment analysis.")
@@ -562,7 +562,7 @@ templ dualWorkPane(w DualWindow) {
 	}
 
 	if w.Work.Comment != "" {
-		<div class="mt-8 pt-4 border-t border-base-content/15">
+		<div class="mt-8 pt-4 border-t border-wga-ink/15">
 			<h3 class="font-mono text-(length:--t-11) tracking-[1.5px] text-muted mb-3">COMMENTARY</h3>
 			<div class="content max-w-[620px] text-(length:--t-15) leading-[1.7]">
 				@templ.Raw(w.Work.Comment)
@@ -591,15 +591,15 @@ templ dualCardGrid(cards []DualCard, target string) {
 }
 
 templ DualLookupDialog() {
-	<dialog id="artist_lookup" class="modal" aria-labelledby="dual-lookup-title">
-		<div class="modal-box">
+	<dialog id="artist_lookup" class="wga-dialog" aria-labelledby="dual-lookup-title">
+		<div class="wga-dialog-panel">
 			<h3 id="dual-lookup-title" class="text-lg font-bold">Load pane</h3>
 			<p class="py-4">Search published artists or artworks, or paste a canonical path.</p>
 			<div id="dual-lookup-form" class="grid gap-3">
 				<label class="form-control w-full" for="dual-lookup-kind">
-					<span class="label-text text-sm">Search for</span>
+					<span class="text-sm">Search for</span>
 					<select
-						class="select select-bordered w-full"
+						class="wga-control w-full"
 						id="dual-lookup-kind"
 						name="kind"
 					>
@@ -608,10 +608,10 @@ templ DualLookupDialog() {
 					</select>
 				</label>
 				<label class="form-control w-full" for="dual-lookup-query">
-					<span class="label-text text-sm">Search collection</span>
+					<span class="text-sm">Search collection</span>
 					<input
 						autocomplete="off"
-						class="input input-bordered w-full"
+						class="wga-control w-full"
 						id="dual-lookup-query"
 						name="q"
 						placeholder="Type at least two characters"
@@ -619,23 +619,23 @@ templ DualLookupDialog() {
 					/>
 				</label>
 			</div>
-			<div id="dual-lookup-results" class="mt-4 max-h-80 overflow-y-auto rounded-box border border-base-300" aria-live="polite">
-				<p class="p-4 text-sm text-base-content/70">Start typing to search artists.</p>
+			<div id="dual-lookup-results" class="mt-4 max-h-80 overflow-y-auto border border-wga-fill" aria-live="polite">
+				<p class="p-4 text-sm text-wga-ink/70">Start typing to search artists.</p>
 			</div>
-			<form id="dual-lookup-path-form" method="dialog" class="mt-4 grid gap-3 border-t border-base-300 pt-4">
+			<form id="dual-lookup-path-form" method="dialog" class="mt-4 grid gap-3 border-t border-wga-fill pt-4">
 				<label class="form-control w-full" for="dual-lookup-path">
-					<span class="label-text text-sm">Canonical path</span>
+					<span class="text-sm">Canonical path</span>
 					<input
-						class="input input-bordered w-full"
+						class="wga-control w-full"
 						id="dual-lookup-path"
 						placeholder="/artists/... or /artworks/..."
 						type="text"
 					/>
 				</label>
-				<button id="dual-lookup-path-submit" type="submit" class="btn btn-secondary btn-sm">Load pane</button>
+				<button id="dual-lookup-path-submit" type="submit" class="wga-button wga-button-secondary wga-button-sm">Load pane</button>
 			</form>
 		</div>
-		<form method="dialog" class="modal-backdrop">
+		<form method="dialog" class="wga-dialog-backdrop">
 			<button>close</button>
 		</form>
 	</dialog>
@@ -643,22 +643,22 @@ templ DualLookupDialog() {
 
 templ DualLookupResultContent(c DualLookupResults) {
 	if c.Query == "" {
-		<p class="p-4 text-sm text-base-content/70">Start typing to search { c.Kind }s.</p>
+		<p class="p-4 text-sm text-wga-ink/70">Start typing to search { c.Kind }s.</p>
 	} else if c.QueryTooShort {
-		<p class="p-4 text-sm text-base-content/70">Enter at least two characters to search.</p>
+		<p class="p-4 text-sm text-wga-ink/70">Enter at least two characters to search.</p>
 	} else if len(c.Results) == 0 {
-		<p class="p-4 text-sm text-base-content/70">No { c.Kind }s match “{ c.Query }”.</p>
+		<p class="p-4 text-sm text-wga-ink/70">No { c.Kind }s match “{ c.Query }”.</p>
 	} else {
 		for _, result := range c.Results {
 			<button
 				type="button"
-				class="btn btn-ghost h-auto w-full justify-start rounded-none px-4 py-3 text-left"
+				class="wga-button wga-button-ghost h-auto w-full justify-start rounded-none px-4 py-3 text-left"
 				data-dual-lookup-path={ result.Url }
 				data-dual-lookup-result
 			>
 				<span>{ result.Label }</span>
 				if result.Context != "" {
-					<span class="ml-2 text-sm font-normal text-base-content/70">{ result.Context }</span>
+					<span class="ml-2 text-sm font-normal text-wga-ink/70">{ result.Context }</span>
 				}
 			</button>
 		}

@@ -1,4 +1,4 @@
-import { type Locator, type Page, expect, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 
 import {
 	expectNoPageErrors,
@@ -224,10 +224,7 @@ test.describe("shared public shell", () => {
 		await expect(dark).toBeFocused();
 		await expect(dark).toHaveCSS("outline-style", /solid|dotted|dashed/);
 		await page.keyboard.press("Enter");
-		await expect(page.locator("html")).toHaveAttribute(
-			"data-theme",
-			"wga-rams-dark",
-		);
+		await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 		const bionic = page.getByRole("switch", { name: "Bionic reading" });
 		await tabTo(page, bionic);
 		await page.keyboard.press("Space");
@@ -255,10 +252,7 @@ test.describe("shared public shell", () => {
 			await page.goto("/");
 			await page.locator("[data-wga-preferences-open]").click();
 			await page.locator('[data-wga-scheme="dark"]').click();
-			await expect(page.locator("html")).toHaveAttribute(
-				"data-theme",
-				"wga-rams-dark",
-			);
+			await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 			const roles = await page.evaluate(() => {
 				const root = getComputedStyle(document.documentElement);
 				const body = getComputedStyle(document.body);
@@ -274,9 +268,12 @@ test.describe("shared public shell", () => {
 				};
 				return {
 					colorScheme: root.colorScheme,
-					base: root.getPropertyValue("--color-base-100").trim(),
-					content: root.getPropertyValue("--color-base-content").trim(),
-					primary: root.getPropertyValue("--color-primary").trim(),
+					base: root.getPropertyValue("--wga-bg").trim().toLowerCase(),
+					content: root.getPropertyValue("--wga-ink").trim().toLowerCase(),
+					primary: root
+						.getPropertyValue("--wga-accent-bg")
+						.trim()
+						.toLowerCase(),
 					headerColor: getComputedStyle(
 						document.querySelector("header") as Element,
 					).color,

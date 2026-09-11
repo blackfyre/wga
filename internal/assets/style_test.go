@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
@@ -22,12 +23,10 @@ import (
 var themeGolden []byte
 
 type golden struct {
-	DaisyUI  map[string]map[string]string `json:"daisyui"`
 	WgaRoles map[string]map[string]string `json:"wgaRoles"`
 }
 
-// palette -> is dark-only. Bone is the default pair; its daisyUI theme is the
-// historical "wga-rams" name, every other palette is "wga-<palette>".
+// paletteTheme maps the native palette/scheme axes to the immutable golden keys.
 var paletteTheme = map[string]struct{ light, dark string }{
 	"bone":          {"wga-rams", "wga-rams-dark"},
 	"classic":       {"wga-classic", "wga-classic-dark"},
@@ -111,6 +110,57 @@ func readSource(t *testing.T) string {
 	return string(b)
 }
 
+func TestPublicSourcesUseWgaOwnedStyleVocabulary(t *testing.T) {
+	t.Helper()
+	forbidden := regexp.MustCompile(`(?:^|[\s"'=])((?:bg|text|border|outline|ring|shadow|stroke|fill|divide)-(?:base-(?:100|200|300|content)|primary(?:-content)?|secondary(?:-content)?|accent(?:-content)?|neutral(?:-content)?|info(?:-content)?|success(?:-content)?|warning(?:-content)?|error(?:-content)?)|btn(?:-(?:primary|secondary|outline|ghost|neutral|sm))?|badge(?:-(?:primary|secondary))?|card-(?:body|title|actions)|modal-(?:box|backdrop)|table-sm|input-bordered|select-bordered|link-primary|alert-(?:info|warning|error|success|horizontal)|skeleton|rounded-box|label-text)\b`)
+
+	roots := []string{"templ", "../../resources/js", "../../resources/css"}
+	for _, root := range roots {
+		err := filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			ext := filepath.Ext(path)
+			if entry.IsDir() || (ext != ".templ" && ext != ".ts" && ext != ".pcss") || strings.HasSuffix(path, ".test.ts") {
+				return nil
+			}
+			source, readErr := os.ReadFile(path)
+			if readErr != nil {
+				return readErr
+			}
+			if match := forbidden.FindSubmatch(source); match != nil {
+				t.Errorf("%s retains third-party style vocabulary %q", path, match[1])
+			}
+			return nil
+		})
+		if err != nil {
+			t.Fatalf("scan public style consumers under %s: %v", root, err)
+		}
+	}
+}
+
+func TestThirdPartyStyleDependencyIsAbsent(t *testing.T) {
+	t.Helper()
+	needle := strings.Join([]string{"daisy", "ui"}, "")
+	for _, path := range []string{
+		"../../package.json",
+		"../../bun.lock",
+		"../../package-lock.json",
+		"../../yarn.lock",
+		"../../resources/css/style.pcss",
+		"../licences/manifest.json",
+		"views/open-source-licences.html",
+	} {
+		source, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatalf("read %s: %v", path, err)
+		}
+		if strings.Contains(strings.ToLower(string(source)), needle) {
+			t.Errorf("%s retains removed style dependency metadata", path)
+		}
+	}
+}
+
 func TestExternalLinkMarkerOptOutIsScoped(t *testing.T) {
 	source := readSource(t)
 	selector := `)):not(.has-sm-icon):not(.no-external-link-marker):after {`
@@ -142,46 +192,14 @@ func stripComments(css string) string {
 	return regexp.MustCompile(`(?s)/\*.*?\*/`).ReplaceAllString(css, "")
 }
 
-// daisyThemeBlock is one `@plugin "daisyui/theme" { ... }` definition.
-type daisyThemeBlock struct {
-	name        string
-	colorScheme string
-	roles       map[string]string
-}
-
-func parseDaisyThemes(css string) map[string]daisyThemeBlock {
-	css = stripComments(css)
-	out := map[string]daisyThemeBlock{}
-	blockRe := regexp.MustCompile(`@plugin\s+"daisyui/theme"\s*\{([^}]*)\}`)
-	nameRe := regexp.MustCompile(`name\s*:\s*"([^"]+)"`)
-	schemeRe := regexp.MustCompile(`color-scheme\s*:\s*"?([a-z]+)"?`)
-	roleRe := regexp.MustCompile(`--color-([a-z0-9-]+)\s*:\s*([^;]+);`)
-	for _, m := range blockRe.FindAllStringSubmatch(css, -1) {
-		body := m[1]
-		n := nameRe.FindStringSubmatch(body)
-		if n == nil {
-			continue
-		}
-		b := daisyThemeBlock{name: n[1], roles: map[string]string{}}
-		if s := schemeRe.FindStringSubmatch(body); s != nil {
-			b.colorScheme = s[1]
-		}
-		for _, r := range roleRe.FindAllStringSubmatch(body, -1) {
-			b.roles[r[1]] = strings.TrimSpace(r[2])
-		}
-		out[b.name] = b
-	}
-	return out
-}
-
-// parseWgaRoles maps each theme name (and :root) to its --wga-* declaration
-// set. Multi-selector blocks (the bone light/dark aliases) are expanded so
-// every name in the selector list carries the same roles.
+// parseWgaRoles maps each native palette/scheme selector (and :root) to the
+// immutable golden key for its --wga-* declaration set.
 func parseWgaRoles(css string) map[string]map[string]string {
 	css = stripComments(css)
 	out := map[string]map[string]string{}
 	blockRe := regexp.MustCompile(`([^{}]+)\{([^{}]*--wga-[a-z0-9-]+\s*:[^{}]*)\}`)
-	themeRe := regexp.MustCompile(`\[data-theme="([^"]+)"\]`)
+	paletteRe := regexp.MustCompile(`\[data-palette="([^"]+)"\]`)
+	schemeRe := regexp.MustCompile(`\[data-theme="(light|dark)"\]`)
 	roleRe := regexp.MustCompile(`--wga-([a-z0-9-]+)\s*:\s*([^;]+);`)
 	for _, m := range blockRe.FindAllStringSubmatch(css, -1) {
 		selector, body := m[1], m[2]
@@ -193,10 +211,19 @@ func parseWgaRoles(css string) map[string]map[string]string {
 			continue
 		}
 		names := []string{}
-		for _, t := range themeRe.FindAllStringSubmatch(selector, -1) {
-			names = append(names, t[1])
+		paletteMatch := paletteRe.FindStringSubmatch(selector)
+		if paletteMatch != nil {
+			palette := paletteMatch[1]
+			pair, ok := paletteTheme[palette]
+			if ok {
+				name := pair.light
+				if scheme := schemeRe.FindStringSubmatch(selector); scheme != nil && scheme[1] == "dark" {
+					name = pair.dark
+				}
+				names = append(names, name)
+			}
 		}
-		if strings.Contains(selector, ":root") {
+		if strings.HasPrefix(strings.TrimSpace(selector), ":root,") || strings.TrimSpace(selector) == ":root" {
 			names = append(names, ":root")
 		}
 		for _, name := range names {
@@ -376,7 +403,6 @@ func compositeOver(rgba [3]uint8, alpha float64, ground [3]uint8) [3]uint8 {
 func TestStylePCSSThemeContract(t *testing.T) {
 	css := readSource(t)
 	golden := loadGolden(t)
-	daisy := parseDaisyThemes(css)
 	wga := parseWgaRoles(css)
 	acceptedExceptions := contrastExceptionSet(t)
 	seenExceptions := map[string]struct{}{}
@@ -422,6 +448,57 @@ func TestStylePCSSThemeContract(t *testing.T) {
 		}
 	})
 
+	t.Run("native palette and scheme selectors", func(t *testing.T) {
+		for palette := range paletteTheme {
+			if darkOnly[palette] {
+				if !strings.Contains(css, `:root[data-palette="`+palette+`"] {`) {
+					t.Errorf("missing native dark-only selector for %q", palette)
+				}
+				continue
+			}
+			for _, scheme := range []string{"light", "dark"} {
+				selector := `:root[data-palette="` + palette + `"][data-theme="` + scheme + `"] {`
+				if !strings.Contains(css, selector) {
+					t.Errorf("missing native selector %s", selector)
+				}
+			}
+		}
+	})
+
+	t.Run("native roles follow the operating system without attributes", func(t *testing.T) {
+		for _, want := range []string{
+			`@media (prefers-color-scheme: dark) {`,
+			`:root:not([data-palette]) {`,
+			`--wga-bg: #1A1814;`,
+			`--wga-ink: #EDEAE1;`,
+		} {
+			if !strings.Contains(css, want) {
+				t.Errorf("missing no-JavaScript operating-system fallback %q", want)
+			}
+		}
+	})
+
+	t.Run("tailwind exposes every WGA role", func(t *testing.T) {
+		for _, role := range wgaRoles {
+			mapping := `--color-wga-` + role + `: var(--wga-` + role + `);`
+			if !strings.Contains(css, mapping) {
+				t.Errorf("missing Tailwind role mapping %q", mapping)
+			}
+		}
+	})
+
+	t.Run("third-party theme surface is absent", func(t *testing.T) {
+		forbidden := []*regexp.Regexp{
+			regexp.MustCompile(`@plugin\s+"[^"]+/theme"`),
+			regexp.MustCompile(`--color-(?:base-(?:100|200|300|content)|primary(?:-content)?|secondary(?:-content)?|accent(?:-content)?|neutral(?:-content)?|info(?:-content)?|success(?:-content)?|warning(?:-content)?|error(?:-content)?)\s*:`),
+		}
+		for _, pattern := range forbidden {
+			if match := pattern.FindString(css); match != "" {
+				t.Errorf("stylesheet retains third-party theme API %q", match)
+			}
+		}
+	})
+
 	t.Run("role classes", func(t *testing.T) {
 		for _, want := range []string{
 			".text-muted { color: var(--wga-muted); }",
@@ -431,113 +508,6 @@ func TestStylePCSSThemeContract(t *testing.T) {
 		} {
 			if !strings.Contains(css, want) {
 				t.Errorf("missing class rule: %s", want)
-			}
-		}
-	})
-
-	t.Run("theme names", func(t *testing.T) {
-		for palette, names := range paletteTheme {
-			for _, name := range []string{names.light, names.dark} {
-				if _, ok := daisy[name]; !ok {
-					t.Errorf("missing daisyUI theme %q", name)
-					continue
-				}
-				if _, ok := wga[name]; !ok {
-					t.Errorf("missing --wga-* role set for %q", name)
-				}
-			}
-			if darkOnly[palette] {
-				// A dark-only palette must not expose a -dark theme; its one
-				// theme resolves for both scheme halves.
-				if _, ok := daisy[names.light+"-dark"]; ok {
-					t.Errorf("dark-only %q must not define %q", palette, names.light+"-dark")
-				}
-				if daisy[names.light].colorScheme != "dark" {
-					t.Errorf("dark-only %q colour-scheme = %q, want dark", palette, daisy[names.light].colorScheme)
-				}
-			} else {
-				if names.light == names.dark {
-					t.Errorf("palette %q is not dark-only but light==dark (%q)", palette, names.light)
-				}
-			}
-		}
-		// Legacy bootstrap themes must remain available.
-		for _, name := range []string{"wga_light", "wga_dark"} {
-			if _, ok := daisy[name]; !ok {
-				t.Errorf("missing legacy daisyUI theme %q", name)
-			}
-		}
-	})
-
-	t.Run("colour scheme per theme", func(t *testing.T) {
-		for palette, names := range paletteTheme {
-			for _, name := range []string{names.light, names.dark} {
-				blk, ok := daisy[name]
-				if !ok {
-					continue
-				}
-				want := "light"
-				if name == names.dark || darkOnly[palette] {
-					want = "dark"
-				}
-				if blk.colorScheme != want {
-					t.Errorf("%s colour-scheme = %q, want %q", name, blk.colorScheme, want)
-				}
-			}
-		}
-	})
-
-	t.Run("daisyui role parity", func(t *testing.T) {
-		for name, ref := range golden.DaisyUI {
-			blk, ok := daisy[name]
-			if !ok {
-				t.Errorf("daisyUI theme %q missing from source", name)
-				continue
-			}
-			for role, want := range ref {
-				got, ok := blk.roles[role]
-				if !ok {
-					t.Errorf("%s: missing --color-%s", name, role)
-					continue
-				}
-				if normColor(got) != normColor(want) {
-					t.Errorf("%s: --color-%s = %q, want %q", name, role, got, want)
-				}
-			}
-			// The two accent roles reuse reference-owned pairs; the four form-
-			// feedback content roles must be present. Their exact values are
-			// held to the 4.5:1 floor against their own grounds in the
-			// "semantic content contrast" subtest.
-			scheme := blk.colorScheme
-			if scheme == "" {
-				scheme = "light"
-			}
-			for role, want := range deriveAccentRoles(blk.roles, scheme) {
-				got, ok := blk.roles[role]
-				if !ok {
-					t.Errorf("%s: missing derived --color-%s", name, role)
-					continue
-				}
-				if normColor(got) != normColor(want) {
-					t.Errorf("%s: derived --color-%s = %q, want %q", name, role, got, want)
-				}
-			}
-			for _, role := range []string{"info-content", "success-content", "warning-content", "error-content"} {
-				if v, ok := blk.roles[role]; !ok || v == "" {
-					t.Errorf("%s: missing derived --color-%s", name, role)
-				}
-			}
-		}
-	})
-
-	t.Run("semantic content contrast", func(t *testing.T) {
-		// Every content role must clear the 4.5:1 text floor against its
-		// semantic background — the eleven derived palettes and the pre-existing
-		// bone/legacy themes alike.
-		for name, blk := range daisy {
-			requireContrast(t, name, blk.roles["accent-content"], blk.roles["accent"], 4.5)
-			for _, role := range []string{"info", "success", "warning", "error"} {
-				requireContrast(t, name, blk.roles[role+"-content"], blk.roles[role], 4.5)
 			}
 		}
 	})
@@ -612,9 +582,9 @@ func TestStylePCSSThemeContract(t *testing.T) {
 			}
 			// Every step clears the 3:1 non-text floor against the page ground,
 			// except for the immutable reference pairs in the exact ledger.
-			if name == ":root" || name == "wga_light" {
-				// :root is the bootstrap alias of wga-rams, whose rendered theme
-				// selector is measured below; do not count it twice in the ledger.
+			if name == ":root" {
+				// :root is the no-JavaScript bootstrap copy of the bone/light
+				// selector measured below; do not count it twice in the ledger.
 				continue
 			}
 			for i := 0; i < 7; i++ {
@@ -686,21 +656,4 @@ func TestStylePCSSThemeContract(t *testing.T) {
 			}
 		}
 	})
-}
-
-// deriveAccentRoles returns the two daisyUI `accent` roles, which are reused
-// reference-owned roles: the neutral pair in light schemes, the secondary pair
-// in dark. Because accent-content is the content colour of the exact same role
-// accent copies, this pair is contrast-safe by construction.
-func deriveAccentRoles(ref map[string]string, scheme string) map[string]string {
-	if scheme == "light" {
-		return map[string]string{
-			"accent":         ref["neutral"],
-			"accent-content": ref["neutral-content"],
-		}
-	}
-	return map[string]string{
-		"accent":         ref["secondary"],
-		"accent-content": ref["secondary-content"],
-	}
 }

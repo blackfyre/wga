@@ -184,21 +184,21 @@ func (p *Pagination) getUrl(page int, text string) string {
 // The function takes a `text` parameter, which is the text to be displayed inside the link.
 // It generates an HTML string with the active page link using the provided `text`.
 func (p *Pagination) GetActivePageWrapper(text string) string {
-	return "<a class=\"inline-flex items-center border-t-2 border-primary px-4 pt-4 text-sm font-medium text-primary\" aria-label=\"Page " + text + "\" aria-current=\"page\">" + text + "</a>"
+	return "<a class=\"inline-flex items-center border-t-2 border-wga-accent px-4 pt-4 text-sm font-medium text-wga-accent\" aria-label=\"Page " + text + "\" aria-current=\"page\">" + text + "</a>"
 }
 
 // GetDisabledPageWrapper returns a disabled page wrapper HTML element for pagination.
 // It takes a `text` parameter representing the text to be displayed within the wrapper.
 // The method returns a string containing the disabled page wrapper HTML element.
 func (p *Pagination) GetDisabledPageWrapper(text string) string {
-	return "<a class=\"inline-flex items-center border-t-2 border-transparent pr-1 pt-4 text-sm font-medium text-base-content/60 cursor-not-allowed\">" + text + "</a>"
+	return "<a class=\"inline-flex items-center border-t-2 border-transparent pr-1 pt-4 text-sm font-medium text-wga-ink/60 cursor-not-allowed\">" + text + "</a>"
 }
 
 // GetAvailablePageWrapper returns a string representing a pagination link with the given href, page number, and htmxUrl.
 // If htmxTarget is specified, it adds the hx-target attribute to the link.
 func (p *Pagination) GetAvailablePageWrapper(href, page, htmxUrl string) string {
 
-	str := "<a class='inline-flex items-center border-t-2 border-transparent pr-1 pt-4 text-sm font-medium text-base-content/70 hover:border-secondary hover:text-secondary' aria-label='Goto page " + page + "' hx-get='" + htmxUrl + "' href='" + href
+	str := "<a class='inline-flex items-center border-t-2 border-transparent pr-1 pt-4 text-sm font-medium text-wga-ink/70 hover:border-wga-muted hover:text-wga-muted' aria-label='Goto page " + page + "' hx-get='" + htmxUrl + "' href='" + href
 
 	if p.htmxTarget != "" {
 		str = str + "' hx-target='#" + p.htmxTarget + "' hx-select='#" + p.htmxTarget + "' hx-swap='outerHTML"
@@ -211,7 +211,7 @@ func (p *Pagination) GetAvailablePageWrapper(href, page, htmxUrl string) string 
 
 // GetDots returns the HTML representation of the dots used for pagination ellipsis.
 func (p *Pagination) GetDots() string {
-	return "<span class=\"inline-flex items-center border-t-2 border-transparent pr-1 pt-4 text-sm font-medium text-base-content/60 cursor-not-allowed \">&hellip;</span>"
+	return "<span class=\"inline-flex items-center border-t-2 border-transparent pr-1 pt-4 text-sm font-medium text-wga-ink/60 cursor-not-allowed \">&hellip;</span>"
 }
 
 // GetPreviousButton returns the HTML string for the previous button in the pagination.

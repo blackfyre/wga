@@ -39,8 +39,6 @@ test("selects the same active destination for every shell navigation surface", (
 			destinations,
 		),
 	).toBe("/artists");
-	expect(activeNavigationPath("/statistics", destinations)).toBe(
-		"/statistics",
-	);
+	expect(activeNavigationPath("/statistics", destinations)).toBe("/statistics");
 	expect(activeNavigationPath("/", destinations)).toBe("/");
 });

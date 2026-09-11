@@ -66,20 +66,20 @@ export const syncNavigation = () => {
 	const currentPath = window.location.pathname;
 	syncLinks(
 		"header > nav[aria-label='Primary navigation'] > ul a",
-		["border-primary", "text-primary"],
+		["border-wga-accent", "text-wga-accent"],
 		currentPath,
 	);
 	syncLinks(
 		"header > nav[aria-label='Primary navigation'] > details a",
-		["bg-primary/10", "text-primary"],
+		["bg-wga-accent-bg/10", "text-wga-accent"],
 		currentPath,
 	);
 	syncLinks(
 		"[data-mobile-navigation] a",
-		["bg-primary", "text-primary-content", "pl-3"],
+		["bg-wga-accent-bg", "text-wga-inv-fg", "pl-3"],
 		currentPath,
 	);
-	syncLinks("footer a", ["text-primary"], currentPath);
+	syncLinks("footer a", ["text-wga-accent"], currentPath);
 	syncLinks("header a[href='/']", [], currentPath);
 
 	const more = document.querySelector<HTMLDetailsElement>(
@@ -88,8 +88,8 @@ export const syncNavigation = () => {
 	if (more !== null) {
 		const active = more.querySelector("a[aria-current='page']") !== null;
 		const summary = more.querySelector("summary");
-		summary?.classList.toggle("border-primary", active);
-		summary?.classList.toggle("text-primary", active);
+		summary?.classList.toggle("border-wga-accent", active);
+		summary?.classList.toggle("text-wga-accent", active);
 	}
 };
 

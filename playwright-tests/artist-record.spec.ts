@@ -1,4 +1,4 @@
-import { type Locator, type Page, expect, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 
 const artistRecordPath = "/artists/synthetic-artist-01-ad32608c6e36b2e";
 
@@ -244,10 +244,7 @@ test("artist record honours dark theme and reduced motion", async ({
 }) => {
 	await page.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" });
 	await page.goto(artistRecordPath);
-	await expect(page.locator("html")).toHaveAttribute(
-		"data-theme",
-		"wga-rams-dark",
-	);
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 	await expect(page.locator("h1")).toBeVisible();
 });
 

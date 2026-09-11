@@ -66,15 +66,15 @@ templ LayoutBase(bodyClasses string, HtmxTargetArea string) {
 			}
 		</head>
 		<body class={ bodyClasses } hx-indicator=".progress-indicator" hx-target={ getHtmxDefaultArea(HtmxTargetArea) } hx-select={ getHtmxDefaultArea(HtmxTargetArea) } hx-swap="outerHTML">
-			<div class="progress-indicator h-[3px] bg-primary">
+			<div class="progress-indicator h-[3px] bg-wga-accent-bg">
 				<div class="indeterminate"></div>
 			</div>
 			{ children... }
-			<dialog id="d" aria-label="Dialog" aria-modal="true" class="modal m-auto border border-base-content p-0 text-base-content backdrop:bg-base-content/30"></dialog>
+			<dialog id="d" aria-label="Dialog" aria-modal="true" class="wga-dialog m-auto border border-wga-ink p-0 text-wga-ink backdrop:bg-wga-ink/30"></dialog>
 			@components.KeyboardLayer()
 			<a
 				href="https://github.com/blackfyre/wga/issues?q=sort%3Aupdated-desc+is%3Aissue+state%3Aopen+"
-				class="wga-feedback-anchor fixed right-4 bottom-4 z-50 bg-neutral px-4.5 py-[13px] font-mono text-[11px] tracking-[1.5px] text-neutral-content transition-colors hover:bg-primary md:right-8 md:bottom-8"
+				class="wga-feedback-anchor fixed right-4 bottom-4 z-50 bg-wga-inv-bg px-4.5 py-[13px] font-mono text-[11px] tracking-[1.5px] text-wga-inv-fg transition-colors hover:bg-wga-accent-bg md:right-8 md:bottom-8"
 			>FEEDBACK</a>
 			<div class={ toastContainerClass(utils.GetItineraryTray(ctx)) } id="toast-container"></div>
 			<script type="module" src="/assets/js/app.js"></script>
@@ -85,10 +85,10 @@ templ LayoutBase(bodyClasses string, HtmxTargetArea string) {
 templ LayoutMain() {
 	@LayoutBase("min-h-screen", "") {
 		if utils.GetEnvironment(ctx) != "production" {
-			<section class="border-b border-base-content/15">
+			<section class="border-b border-wga-ink/15">
 				<div class="container mx-auto flex items-center gap-3 px-4 py-2.5 md:px-0">
-					<span class="bg-primary px-2 py-1 font-mono text-[9px] tracking-[1.5px] text-primary-content">STAGING</span>
-					<p class="font-mono text-[10px] tracking-[1px] text-base-content/60">DEVELOPMENT BUILD — NOT FOR PUBLIC USE. CONTRIBUTE ON GITHUB.</p>
+					<span class="bg-wga-accent-bg px-2 py-1 font-mono text-[9px] tracking-[1.5px] text-wga-inv-fg">STAGING</span>
+					<p class="font-mono text-[10px] tracking-[1px] text-wga-ink/60">DEVELOPMENT BUILD — NOT FOR PUBLIC USE. CONTRIBUTE ON GITHUB.</p>
 				</div>
 			</section>
 		}
@@ -116,10 +116,10 @@ func itineraryMainClass(tray dto.ItineraryTrayView) string {
 // notification cannot render behind the bar.
 func toastContainerClass(tray dto.ItineraryTrayView) string {
 	if tray.Count > 0 {
-		return "toast bottom-28 md:bottom-20"
+		return "wga-toast-stack bottom-28 md:bottom-20"
 	}
 
-	return "toast"
+	return "wga-toast-stack"
 }
 
 templ LayoutSlim() {

@@ -5,6 +5,7 @@ WGA's public application has working catalogue foundations, but its public journ
 ## What Changes
 
 - Adopt the complete non-development public feature set and Rams-inspired visual system from `wga-visual-overhaul`, including its system-font-only typography, named muted/faint/control-border roles, complete relative type scale, eleven independently remembered light/dark palette pairs, and reference-specific responsive composition, with pixel-accurate Chrome reference rendering at 390px, 834px, and 1440px viewports.
+- Remove daisyUI completely and make the public visual system application-owned. Retain Tailwind as the build-time utility and responsive-layout layer, with WGA-owned semantic tokens and shared component styling derived from the authoritative prototype rather than a third-party theme or component vocabulary.
 - Deliver the full public collection experience: home and navigation; artist, artwork, and selection records; artwork search; inspiration; timeline; dual mode; glossary; statistics; guided tours; and reference pages.
 - Build the release timeline from approved art-period spans and published artwork creation dates; defer external historical-event entries until a later source-backed change.
 - Deliver visitor participation: postcards, guestbook signing and browsing, direct project issue-tracker feedback, anonymous itineraries, published itinerary slideshows, and the persistent itinerary tray.
@@ -29,7 +30,7 @@ WGA's public application has working catalogue foundations, but its public journ
 
 ### Modified Capabilities
 
-- `public-page-experience`: Adopt the complete responsive public shell, visual system, navigation information architecture, preferences, and public-route presentation.
+- `public-page-experience`: Adopt the complete responsive public shell, application-owned visual system, navigation information architecture, preferences, and public-route presentation without daisyUI.
 - `catalogue-exploration`: Expand catalogue filtering, sorting, record presentation, and complete two-pane comparison behaviour. Tone-keyword exploration is deferred to a later source-backed change.
 - `visual-thumbnail-delivery`: Use every reference-defined delivery profile without upscaling and require source-eligible staged variants from the real data release.
 - `keyboard-navigation`: Cover every release screen and on-page action with the reference keyboard contract.
@@ -41,6 +42,7 @@ WGA's public application has working catalogue foundations, but its public journ
 ## Impact
 
 - Public Templ pages, shared layouts/components, CSS theme, browser helpers, handlers, feature workflows, PocketBase migrations, collections, routes, and release provisioning documentation.
+- Frontend dependencies, Tailwind theme exposure, appearance resolvers, styling-contract tests, generated notices, and release assets change to remove daisyUI and its component/theme API while preserving the accepted visual and interaction contract.
 - The existing itinerary, relationship-path, and thumbnail OpenSpec changes require review and amendment where their scope or assumptions differ from this release contract.
 - `wga-src` is the real-data source and must deliver its production SQLite database, staged PocketBase storage tree, and producer manifest together; the release operator manually provisions that hand-off through WGA's existing external-seed contract and records the verification evidence, while handlers use complete thumbnail URLs rather than generate image variants on demand.
 - Release acceptance covers Chrome visual comparison and functional/accessibility checks in current and previous Chrome, Edge, Firefox, Safari macOS/iOS, and Chrome Android, with defined keyboard, NVDA, VoiceOver, and TalkBack checks.

@@ -1,10 +1,10 @@
 package components
 
 templ DialogBody() {
-	<div class="modal-box relative max-h-[calc(100vh-2rem)] overflow-y-auto border border-base-content bg-base-100 p-5 md:p-7">
+	<div class="wga-dialog-panel relative max-h-[calc(100vh-2rem)] overflow-y-auto border border-wga-ink bg-wga-bg p-5 md:p-7">
 		{ children... }
 	</div>
-	<form method="dialog" class="modal-backdrop fixed inset-0 -z-10 bg-base-content/30">
+	<form method="dialog" class="wga-dialog-backdrop fixed inset-0 -z-10 bg-wga-ink/30">
 		<button type="submit" data-dialog-close aria-label="Close dialog">close</button>
 	</form>
 }
@@ -14,8 +14,8 @@ templ DialogButton(href string, text string) {
 		hx-get={ href }
 		hx-on:click="wga.dialog.open()"
 		hx-target="#d"
-		hx-select=".modal-box, form[method=dialog].modal-backdrop"
-		class="inline-flex bg-primary px-4 py-3 font-mono text-[11px] tracking-[1.5px] text-primary-content"
+		hx-select=".wga-dialog-panel, form[method=dialog].wga-dialog-backdrop"
+		class="inline-flex bg-wga-accent-bg px-4 py-3 font-mono text-[11px] tracking-[1.5px] text-wga-inv-fg"
 		hx-swap="innerHTML"
 	>
 		{ text }

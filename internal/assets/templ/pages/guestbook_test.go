@@ -114,16 +114,16 @@ func TestGuestbookBlockAlwaysShowsYearNavigation(t *testing.T) {
 	tests := []struct {
 		name         string
 		yearOptions  []string
-			wantSelector bool
+		wantSelector bool
 	}{
 		{
 			name:         "no years",
-				wantSelector: true,
+			wantSelector: true,
 		},
 		{
 			name:         "one year",
 			yearOptions:  []string{"2020"},
-				wantSelector: true,
+			wantSelector: true,
 		},
 		{
 			name:         "multiple years",

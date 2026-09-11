@@ -1,4 +1,4 @@
-import { type Page, expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 
 const viewports = [
 	{ width: 390, columns: 1 },
@@ -72,10 +72,7 @@ test("inspiration supports keyboard focus, dark theme, and reduced motion", asyn
 }) => {
 	await page.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" });
 	await page.goto("/inspire");
-	await expect(page.locator("html")).toHaveAttribute(
-		"data-theme",
-		"wga-rams-dark",
-	);
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 	const anotherSet = page
 		.locator("a[href='/inspire']")
 		.filter({ hasText: "ANOTHER SET" });

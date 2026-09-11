@@ -589,7 +589,7 @@ func TestDualIndexTableUsesAccessibleScrollRegion(t *testing.T) {
 		`aria-describedby="dual-scroll-hint-left"`,
 		`id="dual-scroll-hint-left"`,
 		"Scroll horizontally with the left and right arrow keys while this table is focused.",
-		`<table class="table table-sm min-w-[640px]">`,
+		`<table class="wga-table wga-table-compact min-w-[640px]">`,
 	} {
 		if !strings.Contains(markup, expected) {
 			t.Errorf("index table scroll region does not contain %q", expected)

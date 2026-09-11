@@ -7,9 +7,9 @@ type FeedbackView struct {
 
 templ FeedbackForm(v FeedbackView) {
 	@DialogBody() {
-		<div class="flex items-start justify-between gap-6 border-b border-base-content pb-4">
+		<div class="flex items-start justify-between gap-6 border-b border-wga-ink pb-4">
 			<div>
-				<p class="mb-2 font-mono text-[10px] tracking-[1.5px] text-base-content/60">FEEDBACK</p>
+				<p class="mb-2 font-mono text-[10px] tracking-[1.5px] text-wga-ink/60">FEEDBACK</p>
 				<h1 data-dialog-title class="text-[22px] font-semibold tracking-[-0.2px]">Tell us what is wrong</h1>
 			</div>
 		</div>
@@ -17,34 +17,34 @@ templ FeedbackForm(v FeedbackView) {
 			hx-post="/feedback"
 			hx-encoding="multipart/form-data"
 			hx-target="#d"
-			hx-select=".modal-box, form[method=dialog].modal-backdrop"
+			hx-select=".wga-dialog-panel, form[method=dialog].wga-dialog-backdrop"
 			id="feedback_send_form"
 			hx-swap="innerHTML"
 			hx-disabled-elt="input,button,select,textarea"
 			class="pt-5.5"
 		>
 			<fieldset class="mb-5.5">
-				<legend class="mb-2.5 font-mono text-[10px] tracking-[1.5px] text-base-content/60">WHAT IS THIS ABOUT?</legend>
+				<legend class="mb-2.5 font-mono text-[10px] tracking-[1.5px] text-wga-ink/60">WHAT IS THIS ABOUT?</legend>
 				<div class="flex flex-wrap gap-1.5">
-					<label class="cursor-pointer border border-primary bg-primary px-3.5 py-1.5 font-mono text-[11px] tracking-[1px] text-primary-content transition-colors"><input checked class="sr-only" data-placeholder="Tell us what you noticed." hx-on:change="wga.feedback.setPlaceholder(this)" name="category" type="radio" value="general"/>GENERAL</label>
-					<label class="cursor-pointer border border-base-content/25 px-3.5 py-1.5 font-mono text-[11px] tracking-[1px] text-base-content/70 transition-colors hover:border-base-content"><input class="sr-only" data-placeholder="Describe the correction and, if possible, the source." hx-on:change="wga.feedback.setPlaceholder(this)" name="category" type="radio" value="correction"/>CORRECTION</label>
-					<label class="cursor-pointer border border-base-content/25 px-3.5 py-1.5 font-mono text-[11px] tracking-[1px] text-base-content/70 transition-colors hover:border-base-content"><input class="sr-only" data-placeholder="Tell us what happened and how to reproduce it." hx-on:change="wga.feedback.setPlaceholder(this)" name="category" type="radio" value="technical"/>TECHNICAL</label>
-					<label class="cursor-pointer border border-base-content/25 px-3.5 py-1.5 font-mono text-[11px] tracking-[1px] text-base-content/70 transition-colors hover:border-base-content"><input class="sr-only" data-placeholder="Describe the improvement you would find useful." hx-on:change="wga.feedback.setPlaceholder(this)" name="category" type="radio" value="suggestion"/>SUGGESTION</label>
+					<label class="cursor-pointer border border-wga-accent bg-wga-accent-bg px-3.5 py-1.5 font-mono text-[11px] tracking-[1px] text-wga-inv-fg transition-colors"><input checked class="sr-only" data-placeholder="Tell us what you noticed." hx-on:change="wga.feedback.setPlaceholder(this)" name="category" type="radio" value="general"/>GENERAL</label>
+					<label class="cursor-pointer border border-wga-ink/25 px-3.5 py-1.5 font-mono text-[11px] tracking-[1px] text-wga-ink/70 transition-colors hover:border-wga-ink"><input class="sr-only" data-placeholder="Describe the correction and, if possible, the source." hx-on:change="wga.feedback.setPlaceholder(this)" name="category" type="radio" value="correction"/>CORRECTION</label>
+					<label class="cursor-pointer border border-wga-ink/25 px-3.5 py-1.5 font-mono text-[11px] tracking-[1px] text-wga-ink/70 transition-colors hover:border-wga-ink"><input class="sr-only" data-placeholder="Tell us what happened and how to reproduce it." hx-on:change="wga.feedback.setPlaceholder(this)" name="category" type="radio" value="technical"/>TECHNICAL</label>
+					<label class="cursor-pointer border border-wga-ink/25 px-3.5 py-1.5 font-mono text-[11px] tracking-[1px] text-wga-ink/70 transition-colors hover:border-wga-ink"><input class="sr-only" data-placeholder="Describe the improvement you would find useful." hx-on:change="wga.feedback.setPlaceholder(this)" name="category" type="radio" value="suggestion"/>SUGGESTION</label>
 				</div>
 			</fieldset>
 			<label class="mb-5.5 block" for="feedback-message">
-				<span class="mb-2 block font-mono text-[10px] tracking-[1.5px] text-base-content/60">YOUR MESSAGE — <output id="feedback-chars">600</output> CHARACTERS LEFT</span>
-				<textarea class="min-h-[120px] w-full border border-base-content/30 bg-transparent p-3 text-[15px] leading-relaxed" id="feedback-message" maxlength="600" name="message" placeholder="e.g. the date given for this work is a decade too early." required hx-on:input="wga.feedback.countdown(this)"></textarea>
+				<span class="mb-2 block font-mono text-[10px] tracking-[1.5px] text-wga-ink/60">YOUR MESSAGE — <output id="feedback-chars">600</output> CHARACTERS LEFT</span>
+				<textarea class="min-h-[120px] w-full border border-wga-ink/30 bg-transparent p-3 text-[15px] leading-relaxed" id="feedback-message" maxlength="600" name="message" placeholder="e.g. the date given for this work is a decade too early." required hx-on:input="wga.feedback.countdown(this)"></textarea>
 			</label>
-			<label class="mb-5.5 block" for="feedback-email"><span class="mb-2 block font-mono text-[10px] tracking-[1.5px] text-base-content/60">EMAIL — OPTIONAL, ONLY IF YOU WANT A REPLY</span><input class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2 text-[15px] outline-none focus:ring-0" id="feedback-email" name="sender_email" type="email" autocomplete="email" placeholder="you@example.com"/></label>
-			<dl class="mb-5.5 border-t border-base-content/15 pt-3.5">
+			<label class="mb-5.5 block" for="feedback-email"><span class="mb-2 block font-mono text-[10px] tracking-[1.5px] text-wga-ink/60">EMAIL — OPTIONAL, ONLY IF YOU WANT A REPLY</span><input class="w-full border-0 border-b border-wga-ink bg-transparent px-0 py-2 text-[15px] outline-none focus:ring-0" id="feedback-email" name="sender_email" type="email" autocomplete="email" placeholder="you@example.com"/></label>
+			<dl class="mb-5.5 border-t border-wga-ink/15 pt-3.5">
 				<div class="flex justify-between gap-4 py-[7px]">
-					<dt class="font-mono text-[10px] tracking-[1px] text-base-content/60">SENT WITH THIS REPORT</dt>
-					<dd class="font-mono text-[11px] text-base-content/70">{ v.Context }</dd>
+					<dt class="font-mono text-[10px] tracking-[1px] text-wga-ink/60">SENT WITH THIS REPORT</dt>
+					<dd class="font-mono text-[11px] text-wga-ink/70">{ v.Context }</dd>
 				</div>
 				<div class="flex justify-between gap-4 py-[7px]">
-					<dt class="font-mono text-[10px] tracking-[1px] text-base-content/60">BUILD</dt>
-					<dd class="font-mono text-[11px] text-base-content/70">{ v.Build }</dd>
+					<dt class="font-mono text-[10px] tracking-[1px] text-wga-ink/60">BUILD</dt>
+					<dd class="font-mono text-[11px] text-wga-ink/70">{ v.Build }</dd>
 				</div>
 			</dl>
 			<label aria-hidden="true" class="hpt" for="name"></label>
@@ -68,8 +68,8 @@ templ FeedbackForm(v FeedbackView) {
 				placeholder="Your e-mail here"
 			/>
 			<div class="mt-6 flex flex-col-reverse gap-2 md:flex-row">
-				<button class="flex-1 bg-primary px-4 py-3 font-mono text-[11px] tracking-[1.5px] text-primary-content" type="submit">SEND REPORT →</button>
-				<button type="button" class="border border-base-content/30 px-4 py-3 font-mono text-[11px] tracking-[1.5px]" hx-on:click="wga.dialog.close();">CANCEL</button>
+				<button class="flex-1 bg-wga-accent-bg px-4 py-3 font-mono text-[11px] tracking-[1.5px] text-wga-inv-fg" type="submit">SEND REPORT →</button>
+				<button type="button" class="border border-wga-ink/30 px-4 py-3 font-mono text-[11px] tracking-[1.5px]" hx-on:click="wga.dialog.close();">CANCEL</button>
 			</div>
 		</form>
 	}
@@ -77,16 +77,16 @@ templ FeedbackForm(v FeedbackView) {
 
 templ FeedbackReceived() {
 	@DialogBody() {
-		<div class="flex items-start justify-between gap-6 border-b border-base-content pb-4">
+		<div class="flex items-start justify-between gap-6 border-b border-wga-ink pb-4">
 			<div>
-				<p class="mb-2 font-mono text-[10px] tracking-[1.5px] text-base-content/60">FEEDBACK</p>
+				<p class="mb-2 font-mono text-[10px] tracking-[1.5px] text-wga-ink/60">FEEDBACK</p>
 				<h1 data-dialog-title class="text-[22px] font-semibold tracking-[-0.2px]">Thank you — report received</h1>
 			</div>
 		</div>
 		<div class="pt-7">
-			<p class="mb-5.5 flex h-11 w-11 items-center justify-center border border-primary font-mono text-lg text-primary">✓</p>
+			<p class="mb-5.5 flex h-11 w-11 items-center justify-center border border-wga-accent font-mono text-lg text-wga-accent">✓</p>
 			<p class="text-base leading-relaxed">Your report has been saved for review. Corrections to collection records are usually applied within a week.</p>
-			<button class="mt-4.5 font-mono text-[11px] tracking-[1px] text-primary transition-opacity hover:opacity-60" type="button" hx-on:click="wga.dialog.close();">CLOSE</button>
+			<button class="mt-4.5 font-mono text-[11px] tracking-[1px] text-wga-accent transition-opacity hover:opacity-60" type="button" hx-on:click="wga.dialog.close();">CLOSE</button>
 		</div>
 	}
 }

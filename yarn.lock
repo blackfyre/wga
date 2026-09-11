@@ -1495,11 +1495,6 @@ csso@^5.0.5:
   dependencies:
     css-tree "~2.2.0"
 
-daisyui@^5.7.22:
-  version "5.7.22"
-  resolved "https://registry.npmjs.org/daisyui/-/daisyui-5.7.22.tgz"
-  integrity sha512-pYii+2NCN0+OIL6Lpuc054LK0QJeNv+GRK9UzN1GRmjdYhYO6WFl0QLoj5oPcitPD7o+okiiI0SKFkn641TxmA==
-
 dependency-graph@^1.0.0:
   version "1.0.0"
   resolved "https://registry.npmjs.org/dependency-graph/-/dependency-graph-1.0.0.tgz"

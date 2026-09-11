@@ -37,7 +37,7 @@ func TestSendPostcardRendersPageAndHtmxFragment(t *testing.T) {
 			if recorder.Code != http.StatusOK || !strings.Contains(body, "Selected work") || !strings.Contains(body, "id=\"postcard-compose\"") {
 				t.Fatalf("compose response status=%d body=%q", recorder.Code, body)
 			}
-			if test.htmx && strings.Contains(body, "modal-box") {
+			if test.htmx && strings.Contains(body, "wga-dialog-panel") {
 				t.Fatal("HTMX composer response retained dialog markup")
 			}
 		})

@@ -27,13 +27,13 @@ func TestParseIndexQueryDefaults(t *testing.T) {
 
 func TestParseIndexQueryAllowListsValues(t *testing.T) {
 	values := neturl.Values{
-		"q":        {"  Van Gogh  "},
-		"letter":   {"s"},
-		"school":   {"dutch"},
-		"period":   {"periodid123"},
-		"view":     {"list"},
-		"sort":     {"birth"},
-		"page":     {"3"},
+		"q":         {"  Van Gogh  "},
+		"letter":    {"s"},
+		"school":    {"dutch"},
+		"period":    {"periodid123"},
+		"view":      {"list"},
+		"sort":      {"birth"},
+		"page":      {"3"},
 		"born_from": {"1600"},
 		"born_to":   {"1700"},
 	}

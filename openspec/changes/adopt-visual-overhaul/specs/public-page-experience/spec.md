@@ -71,6 +71,20 @@ The system SHALL provide the eleven reference palettes `bone`, `classic`, `verdi
 - **WHEN** a visitor opens a public route without JavaScript
 - **THEN** the page follows the operating-system light/dark scheme, core content remains available, and unavailable manual palette or scheme controls are not presented as working.
 
+### Requirement: Public visual styling is application-owned
+
+The system SHALL implement the accepted public visual and interaction contract through WGA-owned semantic roles and shared presentation primitives. The distributed application SHALL NOT depend on or ship daisyUI, its Tailwind plugin, its theme mechanism, its component classes, or a compatibility API that preserves that vocabulary. Retaining Tailwind as a build-time utility and responsive-layout layer SHALL NOT change the accepted reference rendering or progressive-enhancement behaviour.
+
+#### Scenario: Release inspects the frontend dependency and styling surface
+
+- **WHEN** release verification inspects frontend dependencies, CSS inputs, generated assets, Templ classes, and browser helpers
+- **THEN** no daisyUI dependency, plugin, generated style, theme contract, component class, or compatibility alias remains.
+
+#### Scenario: Visitor uses a WGA-owned visual primitive
+
+- **WHEN** a public route renders a colour role, action, field, table, dialog, card, link, or loading placeholder
+- **THEN** the surface retains the accepted reference appearance, semantics, keyboard behaviour, responsive composition, and palette/scheme response without daisyUI.
+
 ### Requirement: Public modal surfaces follow an accessible modal contract
 
 The system SHALL use a labelled modal surface with deliberate initial focus, background inaccessibility, a visible dismissal control positioned in the reference header rule, Escape dismissal where safe, reduced-motion support, and focus restoration to its invoker.

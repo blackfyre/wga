@@ -112,13 +112,13 @@ func TestLayoutMainReservesSpaceForTray(t *testing.T) {
 			name:       "non-empty tray reserves bottom space",
 			tray:       dto.ItineraryTrayView{Count: 1, BuilderURL: "/itineraries/new"},
 			mainClass:  `id="mc-area" class="wga-enter pb-28 md:pb-20"`,
-			toastClass: `class="toast bottom-28 md:bottom-20" id="toast-container"`,
+			toastClass: `class="wga-toast-stack bottom-28 md:bottom-20" id="toast-container"`,
 		},
 		{
 			name:       "empty tray reserves no bottom space",
 			tray:       dto.ItineraryTrayView{},
 			mainClass:  `id="mc-area" class="wga-enter"`,
-			toastClass: `class="toast" id="toast-container"`,
+			toastClass: `class="wga-toast-stack" id="toast-container"`,
 		},
 	}
 
@@ -188,10 +188,11 @@ func TestLayoutBaseAppliesThemeBeforeStylesheet(t *testing.T) {
 		`"wga_palette"`,
 		`"wga-theme"`,
 		`"wga_theme"`,
-		`"wga-rams"`,
-		`"wga-rams-dark"`,
-		`"wga-baroque"`,
-		`"wga-tokyo"`,
+		`"bone"`,
+		`"baroque":true`,
+		`"tokyo":true`,
+		`dataset.palette`,
+		`dataset.theme`,
 		`prefers-color-scheme: dark`,
 	} {
 		if !strings.Contains(rendered[script:stylesheet], expected) {

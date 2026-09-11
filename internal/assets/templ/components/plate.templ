@@ -3,7 +3,7 @@ package components
 import "github.com/blackfyre/wga/internal/assets/templ/dto"
 
 templ Plate(plate dto.Plate) {
-	<div class={ "flex items-end border border-base-content/15 bg-base-300 p-2.5", plate.Aspect, templ.KV("justify-center", plate.Aspect == "") }>
+	<div class={ "flex items-end border border-wga-ink/15 bg-wga-fill p-2.5", plate.Aspect, templ.KV("justify-center", plate.Aspect == "") }>
 		if plate.DisplayURL != "" {
 			if plate.ZoomURL != "" {
 				<a href={ templ.SafeURL(plate.ZoomURL) } class="relative block h-full w-full" data-viewer data-viewer-label={ plateLabel(plate) } aria-label={ plateLabel(plate) }>
@@ -20,7 +20,7 @@ templ Plate(plate dto.Plate) {
 }
 
 templ ZoomHint() {
-	<span class="pointer-events-none absolute right-3 bottom-3 flex items-center gap-2 bg-neutral py-1.5 pl-[7px] pr-[9px] text-neutral-content">
+	<span class="pointer-events-none absolute right-3 bottom-3 flex items-center gap-2 bg-wga-inv-bg py-1.5 pl-[7px] pr-[9px] text-wga-inv-fg">
 		<svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true">
 			<circle cx="5.4" cy="5.4" r="4"></circle>
 			<path d="M8.4 8.4 L12 12"></path>

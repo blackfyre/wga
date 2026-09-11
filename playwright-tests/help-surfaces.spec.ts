@@ -200,8 +200,9 @@ test("shared help surfaces remain readable across themes, enlarged text, and red
 	await page.setViewportSize({ width: 390, height: 844 });
 	await mountFixture(page);
 
-	for (const theme of ["wga-rams", "wga-rams-dark"]) {
+	for (const theme of ["light", "dark"]) {
 		await page.locator("html").evaluate((element, value) => {
+			element.setAttribute("data-palette", "bone");
 			element.setAttribute("data-theme", value);
 		}, theme);
 		await page.locator("#help").focus();

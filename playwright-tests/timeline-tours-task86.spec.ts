@@ -385,7 +385,12 @@ task86Evidence("Task 8.6 Timeline", () => {
 			await page.goto("/timeline?from=100&to=1994");
 			await page.locator('input[name="from"]').fill("1600");
 			await page.locator('input[name="to"]').fill("1700");
-			await page.getByRole("button", { name: "APPLY WINDOW" }).click();
+			await Promise.all([
+				page.waitForURL(/from=1600&to=1700$/, { waitUntil: "commit" }),
+				page
+					.getByRole("button", { name: "APPLY WINDOW" })
+					.click({ force: true, noWaitAfter: true }),
+			]);
 			await expect(page).toHaveURL(/from=1600&to=1700$/);
 			await expect(page.locator("#timeline")).toContainText("1600–1700");
 			await expect(

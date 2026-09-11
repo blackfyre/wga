@@ -116,12 +116,12 @@ function updateControls(on: boolean): void {
 		"[data-wga-bionic-toggle]",
 	)) {
 		toggle.setAttribute("aria-checked", String(on));
-		toggle.classList.toggle("bg-primary", on);
-		toggle.classList.toggle("text-primary-content", on);
-		toggle.classList.toggle("border-primary", on);
-		toggle.classList.toggle("bg-base-100", !on);
-		toggle.classList.toggle("text-base-content/75", !on);
-		toggle.classList.toggle("border-base-content/20", !on);
+		toggle.classList.toggle("bg-wga-accent-bg", on);
+		toggle.classList.toggle("text-wga-inv-fg", on);
+		toggle.classList.toggle("border-wga-accent", on);
+		toggle.classList.toggle("bg-wga-bg", !on);
+		toggle.classList.toggle("text-wga-ink/75", !on);
+		toggle.classList.toggle("border-wga-ink/20", !on);
 	}
 }
 

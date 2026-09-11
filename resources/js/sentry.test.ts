@@ -39,7 +39,10 @@ test("initialises Sentry only when a DSN is configured", () => {
 	}) as typeof import("@sentry/browser").init;
 
 	expect(
-		initialiseSentry({ dsn: "", environment: "development", release: "" }, initialise),
+		initialiseSentry(
+			{ dsn: "", environment: "development", release: "" },
+			initialise,
+		),
 	).toBe(false);
 	expect(calls).toEqual([]);
 	expect(
@@ -83,9 +86,9 @@ test("does not report successful initialisation when the SDK returns no client",
 		expect(
 			initialiseSentry(
 				{
-				dsn: "https://public@example.ingest.sentry.io/1",
-				environment: "production",
-				release: "test-release",
+					dsn: "https://public@example.ingest.sentry.io/1",
+					environment: "production",
+					release: "test-release",
 				},
 				(() => undefined) as typeof import("@sentry/browser").init,
 			),
@@ -103,9 +106,9 @@ test("continues when Sentry initialisation throws", () => {
 		expect(
 			initialiseSentry(
 				{
-				dsn: "https://public@example.ingest.sentry.io/1",
-				environment: "production",
-				release: "test-release",
+					dsn: "https://public@example.ingest.sentry.io/1",
+					environment: "production",
+					release: "test-release",
 				},
 				(() => {
 					throw new Error("initialisation failed");
@@ -201,7 +204,9 @@ test("removes console breadcrumb arguments", () => {
 });
 
 test("fails closed for malformed URLs", () => {
-	const event = scrubSentryEvent({ request: { url: "http://[invalid?token=secret" } });
+	const event = scrubSentryEvent({
+		request: { url: "http://[invalid?token=secret" },
+	});
 	expect(event.request?.url).toBe("[invalid-url]");
 });
 

@@ -31,10 +31,10 @@ templ GlossaryBlock(view GlossaryView) {
 	<section id="glossary" class="container mx-auto px-4 pb-20 pt-10 md:px-0 wga-enter">
 		@components.PageHead("13 — GLOSSARY", "Glossary", "Terms used in the commentaries and catalogue entries.")
 
-		<nav class="mt-10 flex flex-wrap gap-[2px] border-b border-base-content/15 pb-5" aria-label="Filter terms by letter">
+		<nav class="mt-10 flex flex-wrap gap-[2px] border-b border-wga-ink/15 pb-5" aria-label="Filter terms by letter">
 			<a
 				href="/glossary"
-				class={ "px-[11px] py-1.5 font-mono text-xs tracking-[1px] transition-colors", templ.KV("bg-neutral text-neutral-content", view.SelectedLetter == ""), templ.KV("text-base-content/70 hover:text-base-content", view.SelectedLetter != "") }
+				class={ "px-[11px] py-1.5 font-mono text-xs tracking-[1px] transition-colors", templ.KV("bg-wga-inv-bg text-wga-inv-fg", view.SelectedLetter == ""), templ.KV("text-wga-ink/70 hover:text-wga-ink", view.SelectedLetter != "") }
 				aria-current={ glossaryAriaCurrent(view.SelectedLetter == "") }
 			>ALL</a>
 			for _, letter := range view.Letters {
@@ -44,7 +44,7 @@ templ GlossaryBlock(view GlossaryView) {
 					hx-target="#glossary"
 					hx-select="#glossary"
 					hx-swap="outerHTML"
-					class={ "px-[11px] py-1.5 font-mono text-xs tracking-[1px] transition-colors", templ.KV("bg-neutral text-neutral-content", view.SelectedLetter == letter), templ.KV("text-base-content/70 hover:text-base-content", view.SelectedLetter != letter) }
+					class={ "px-[11px] py-1.5 font-mono text-xs tracking-[1px] transition-colors", templ.KV("bg-wga-inv-bg text-wga-inv-fg", view.SelectedLetter == letter), templ.KV("text-wga-ink/70 hover:text-wga-ink", view.SelectedLetter != letter) }
 					aria-current={ glossaryAriaCurrent(view.SelectedLetter == letter) }
 				>{ letter }</a>
 			}
@@ -56,24 +56,24 @@ templ GlossaryBlock(view GlossaryView) {
 			}
 			<label class="w-full md:w-80">
 				<span class="sr-only">Search terms and definitions</span>
-				<input class="w-full border-0 border-b border-base-content bg-transparent px-0 py-2 text-sm outline-none focus:ring-0" type="search" name="q" value={ view.Query } placeholder="Search terms and definitions"/>
+				<input class="w-full border-0 border-b border-wga-ink bg-transparent px-0 py-2 text-sm outline-none focus:ring-0" type="search" name="q" value={ view.Query } placeholder="Search terms and definitions"/>
 			</label>
-			<p class="font-mono text-xs tracking-[1px] text-base-content/60" aria-live="polite">{ len(view.Terms) } SHOWN</p>
+			<p class="font-mono text-xs tracking-[1px] text-wga-ink/60" aria-live="polite">{ len(view.Terms) } SHOWN</p>
 		</form>
 
 		if len(view.Terms) > 0 {
 			<dl class="grid grid-cols-1 md:grid-cols-2 md:gap-x-14">
 				for _, term := range view.Terms {
-					<div class="border-t border-base-content/15 py-[22px]">
+					<div class="border-t border-wga-ink/15 py-[22px]">
 						<dt class="mb-2 text-xl font-semibold tracking-[-0.2px]">{ term.Expression }</dt>
 						<dd class="text-[15px] leading-relaxed">@templ.Raw(term.Definition)</dd>
 					</div>
 				}
 			</dl>
 		} else {
-			<div class="border-t border-base-content/15 py-12">
+			<div class="border-t border-wga-ink/15 py-12">
 				<p class="mb-2 text-lg font-semibold">No terms match.</p>
-				<a href="/glossary" hx-get="/glossary" hx-target="#glossary" hx-select="#glossary" hx-swap="outerHTML" class="font-mono text-[11px] tracking-[1px] text-primary transition-opacity hover:opacity-60">CLEAR SEARCH →</a>
+				<a href="/glossary" hx-get="/glossary" hx-target="#glossary" hx-select="#glossary" hx-swap="outerHTML" class="font-mono text-[11px] tracking-[1px] text-wga-accent transition-opacity hover:opacity-60">CLEAR SEARCH →</a>
 			</div>
 		}
 	</section>

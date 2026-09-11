@@ -3,17 +3,17 @@ package components
 import "github.com/blackfyre/wga/internal/assets/templ/dto"
 
 templ PublicArtworkCard(i dto.Image) {
-	<article class="group border-t border-base-content/15 pt-3">
+	<article class="group border-t border-wga-ink/15 pt-3">
 		<a href={ templ.SafeURL(i.Url) } class="block">
-			<figure class="aspect-[4/3] overflow-hidden bg-base-300">
+			<figure class="aspect-[4/3] overflow-hidden bg-wga-fill">
 				<img src={ i.Image } alt={ i.Title + " by " + i.Artist.Name } loading="lazy" class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"/>
 			</figure>
 			<h2 class="mt-3 text-(length:--t-18) font-semibold leading-tight">{ i.Title }</h2>
 			if i.Artist.Name != "" {
-				<p class="mt-1 font-mono text-(length:--t-10) tracking-[1px] text-primary">{ i.Artist.Name }</p>
+				<p class="mt-1 font-mono text-(length:--t-10) tracking-[1px] text-wga-accent">{ i.Artist.Name }</p>
 			}
 		</a>
-		<a href={ templ.SafeURL(i.Url) } class="mt-3 inline-block font-mono text-(length:--t-10) tracking-[1px] text-primary hover:opacity-60">VIEW WORK →</a>
+		<a href={ templ.SafeURL(i.Url) } class="mt-3 inline-block font-mono text-(length:--t-10) tracking-[1px] text-wga-accent hover:opacity-60">VIEW WORK →</a>
 		if i.Id != "" {
 			<div class="mt-3">@AddToItineraryAction(i.Id, AddToItineraryBlock)</div>
 		}

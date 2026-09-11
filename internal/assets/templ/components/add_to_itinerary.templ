@@ -58,9 +58,9 @@ templ AddToItineraryAction(artworkID string, variant AddToItineraryVariant) {
 func addButtonClass(variant string, added bool) string {
 	class := "border font-mono text-(length:--t-10) tracking-[1px] transition-colors"
 	if added {
-		class += " cursor-not-allowed border-base-content/20 px-3 py-1.5 text-base-content/40"
+		class += " cursor-not-allowed border-wga-ink/20 px-3 py-1.5 text-wga-ink/40"
 	} else {
-		class += " border-control px-3 py-1.5 text-base-content/70 hover:border-base-content"
+		class += " border-control px-3 py-1.5 text-wga-ink/70 hover:border-wga-ink"
 	}
 	if variant == "block" {
 		class += " block w-full"

@@ -109,10 +109,7 @@ test.describe("task 9.2 itinerary tray acceptance", () => {
 		await page.addInitScript(() => localStorage.setItem("wga-theme", "dark"));
 		await page.setViewportSize({ width: 1440, height: 834 });
 		await page.reload();
-		await expect(page.locator("html")).toHaveAttribute(
-			"data-theme",
-			"wga-rams-dark",
-		);
+		await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 		await expect(page.locator("#itinerary-tray")).toContainText("1 OF 15");
 		await noHorizontalOverflow(page);
 

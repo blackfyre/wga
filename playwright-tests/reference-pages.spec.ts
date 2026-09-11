@@ -1,4 +1,4 @@
-import { type Page, expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 
 const referencePages = [
 	{ path: "/pages/about", title: "About" },
@@ -102,10 +102,7 @@ test.describe("reference destinations", () => {
 		await page.setViewportSize({ width: 390, height: 900 });
 		await page.goto(referencePages[0].path);
 		await page.getByRole("button", { name: "DARK", exact: true }).click();
-		await expect(page.locator("html")).toHaveAttribute(
-			"data-theme",
-			"wga-rams-dark",
-		);
+		await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 
 		for (const width of [390, 834, 1440]) {
 			for (const reference of referencePages) {
@@ -113,7 +110,7 @@ test.describe("reference destinations", () => {
 				await page.goto(reference.path);
 				await expect(page.locator("html")).toHaveAttribute(
 					"data-theme",
-					"wga-rams-dark",
+					"dark",
 				);
 				await expect(
 					page.getByRole("heading", {

@@ -22,6 +22,11 @@ for (const colorScheme of ["light", "dark"] as const) {
 		await page.emulateMedia({ colorScheme });
 		await page.goto("/");
 
+		await expect(page.locator("html")).toHaveAttribute("data-palette", "bone");
+		await expect(page.locator("html")).toHaveAttribute(
+			"data-theme",
+			colorScheme,
+		);
 		await expect(page.locator("html")).toHaveCSS("color-scheme", colorScheme);
 	});
 }
@@ -29,12 +34,34 @@ for (const colorScheme of ["light", "dark"] as const) {
 test.describe("without JavaScript", () => {
 	test.use({ javaScriptEnabled: false });
 
-	test("uses the browser dark preference by default", async ({ page }) => {
-		await page.emulateMedia({ colorScheme: "dark" });
-		await page.goto("/");
+	for (const preference of [
+		{ scheme: "light", background: "#f4f2ed" },
+		{ scheme: "dark", background: "#1a1814" },
+	] as const) {
+		test(`uses the browser ${preference.scheme} preference for native roles`, async ({
+			page,
+		}) => {
+			await page.emulateMedia({ colorScheme: preference.scheme });
+			await page.goto("/");
 
-		await expect(page.locator("html")).toHaveCSS("color-scheme", "dark");
-	});
+			await expect(page.locator("html")).not.toHaveAttribute("data-palette");
+			await expect(page.locator("html")).not.toHaveAttribute("data-theme");
+			await expect(page.locator("html")).toHaveCSS(
+				"color-scheme",
+				preference.scheme,
+			);
+			expect(
+				await page
+					.locator("html")
+					.evaluate((root) =>
+						getComputedStyle(root)
+							.getPropertyValue("--wga-bg")
+							.trim()
+							.toLowerCase(),
+					),
+			).toBe(preference.background);
+		});
+	}
 });
 
 test("switches and remembers the selected colour scheme", async ({ page }) => {
@@ -43,12 +70,10 @@ test("switches and remembers the selected colour scheme", async ({ page }) => {
 
 	const dark = page.locator('[data-wga-scheme="dark"]');
 	await dark.click();
-	await expect(page.locator("html")).toHaveAttribute(
-		"data-theme",
-		"wga-rams-dark",
-	);
+	await expect(page.locator("html")).toHaveAttribute("data-palette", "bone");
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 	await expect(dark).toHaveAttribute("aria-pressed", "true");
-	await expect(dark).toHaveClass(/bg-primary/);
+	await expect(dark).toHaveClass(/bg-wga-accent-bg/);
 
 	await expect(page).toHaveURL(/\/$/);
 	expect(await page.evaluate(() => localStorage.getItem("wga-theme"))).toBe(
@@ -61,20 +86,18 @@ test("switches and remembers the selected colour scheme", async ({ page }) => {
 	);
 
 	await page.reload();
-	await expect(page.locator("html")).toHaveAttribute(
-		"data-theme",
-		"wga-rams-dark",
-	);
+	await expect(page.locator("html")).toHaveAttribute("data-palette", "bone");
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 	await page.locator("[data-wga-preferences-open]").click();
 	const light = page.locator('[data-wga-scheme="light"]');
 	await light.click();
-	await expect(page.locator("html")).toHaveAttribute("data-theme", "wga-rams");
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 	expect(await page.evaluate(() => localStorage.getItem("wga-theme"))).toBe(
 		"light",
 	);
 });
 
-test("uses a legacy stored theme without changing the applied Rams name", async ({
+test("normalises a legacy stored scheme into native root state", async ({
 	page,
 }) => {
 	await page.addInitScript(() => {
@@ -82,21 +105,19 @@ test("uses a legacy stored theme without changing the applied Rams name", async 
 	});
 	await page.goto("/");
 
-	await expect(page.locator("html")).toHaveAttribute(
-		"data-theme",
-		"wga-rams-dark",
-	);
+	await expect(page.locator("html")).toHaveAttribute("data-palette", "bone");
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 });
 
 test("uses a cookie-only dark preference before the stylesheet loads", async ({
 	page,
 }) => {
-	let themeAtStylesheetRequest = "";
+	let appearanceAtStylesheetRequest = { palette: "", theme: "" };
 	await page.route("**/assets/css/style.css", async (route) => {
-		const theme = await page.locator("html").getAttribute("data-theme");
-		if (theme) {
-			themeAtStylesheetRequest = theme;
-		}
+		appearanceAtStylesheetRequest = {
+			palette: (await page.locator("html").getAttribute("data-palette")) ?? "",
+			theme: (await page.locator("html").getAttribute("data-theme")) ?? "",
+		};
 		await route.continue();
 	});
 	await page.addInitScript(() => {
@@ -106,11 +127,11 @@ test("uses a cookie-only dark preference before the stylesheet loads", async ({
 	await page.emulateMedia({ colorScheme: "light" });
 	await page.goto("/");
 
-	expect(themeAtStylesheetRequest).toBe("wga-rams-dark");
-	await expect(page.locator("html")).toHaveAttribute(
-		"data-theme",
-		"wga-rams-dark",
-	);
+	expect(appearanceAtStylesheetRequest).toEqual({
+		palette: "bone",
+		theme: "dark",
+	});
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 });
 
 test("uses a cookie-only light preference over a dark operating system", async ({
@@ -123,7 +144,8 @@ test("uses a cookie-only light preference over a dark operating system", async (
 	await page.emulateMedia({ colorScheme: "dark" });
 	await page.goto("/");
 
-	await expect(page.locator("html")).toHaveAttribute("data-theme", "wga-rams");
+	await expect(page.locator("html")).toHaveAttribute("data-palette", "bone");
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 	expect(
 		await page.evaluate(() => {
 			const application = window as unknown as {
@@ -150,10 +172,8 @@ test("uses a valid cookie when localStorage is unavailable", async ({
 	// The injected storage getter deliberately throws during initialisation.
 	resetErrorCapture();
 
-	await expect(page.locator("html")).toHaveAttribute(
-		"data-theme",
-		"wga-rams-dark",
-	);
+	await expect(page.locator("html")).toHaveAttribute("data-palette", "bone");
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 });
 
 test("returns to operating system tracking after clearing the preference", async ({
@@ -161,16 +181,13 @@ test("returns to operating system tracking after clearing the preference", async
 }) => {
 	await page.emulateMedia({ colorScheme: "dark" });
 	await page.goto("/");
-	await expect(page.locator("html")).toHaveAttribute(
-		"data-theme",
-		"wga-rams-dark",
-	);
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 
 	await page.locator("[data-wga-preferences-open]").click();
 	await page.locator('[data-wga-scheme="light"]').click();
 	await page.emulateMedia({ colorScheme: "light" });
 	await page.emulateMedia({ colorScheme: "dark" });
-	await expect(page.locator("html")).toHaveAttribute("data-theme", "wga-rams");
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 
 	await page.evaluate(() => {
 		const application = window as unknown as {
@@ -178,10 +195,7 @@ test("returns to operating system tracking after clearing the preference", async
 		};
 		application.wga.theme.clear();
 	});
-	await expect(page.locator("html")).toHaveAttribute(
-		"data-theme",
-		"wga-rams-dark",
-	);
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 	expect(
 		await page.evaluate(() => localStorage.getItem("wga-theme")),
 	).toBeNull();
@@ -190,7 +204,7 @@ test("returns to operating system tracking after clearing the preference", async
 	);
 
 	await page.emulateMedia({ colorScheme: "light" });
-	await expect(page.locator("html")).toHaveAttribute("data-theme", "wga-rams");
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 
 	await page.evaluate(() => {
 		for (const toggle of document.querySelectorAll("[data-wga-scheme]")) {
@@ -213,10 +227,8 @@ test("changes palette without changing the explicit scheme", async ({
 	await page.locator('[data-wga-palette="classic"]').click();
 	await page.reload();
 
-	await expect(page.locator("html")).toHaveAttribute(
-		"data-theme",
-		"wga-classic-dark",
-	);
+	await expect(page.locator("html")).toHaveAttribute("data-palette", "classic");
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 	await expect(page.locator('[data-wga-scheme="dark"]')).toHaveAttribute(
 		"aria-pressed",
 		"true",
@@ -250,9 +262,10 @@ test("restores a cookie-only palette independently from its scheme", async ({
 	await page.goto("/");
 
 	await expect(page.locator("html")).toHaveAttribute(
-		"data-theme",
-		"wga-classical-dark",
+		"data-palette",
+		"classical",
 	);
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 	expect(
 		await page.evaluate(() => localStorage.getItem("wga-theme")),
 	).toBeNull();
@@ -294,10 +307,8 @@ test("keeps session palette and scheme choices when storage is blocked", async (
 		application.wga.palette.set("classic");
 	});
 
-	await expect(page.locator("html")).toHaveAttribute(
-		"data-theme",
-		"wga-classic-dark",
-	);
+	await expect(page.locator("html")).toHaveAttribute("data-palette", "classic");
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 	expect(await page.context().cookies()).toEqual(
 		expect.arrayContaining([
 			expect.objectContaining({ name: "wga_theme", value: "dark" }),
@@ -320,10 +331,8 @@ test("dark-only palettes preserve the stored light scheme", async ({
 		application.wga.palette.set("baroque");
 	});
 
-	await expect(page.locator("html")).toHaveAttribute(
-		"data-theme",
-		"wga-baroque",
-	);
+	await expect(page.locator("html")).toHaveAttribute("data-palette", "baroque");
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 	await expect(light).toBeDisabled();
 	await expect(light).toHaveAttribute(
 		"title",
@@ -339,10 +348,8 @@ test("dark-only palettes preserve the stored light scheme", async ({
 		};
 		application.wga.palette.set("classic");
 	});
-	await expect(page.locator("html")).toHaveAttribute(
-		"data-theme",
-		"wga-classic",
-	);
+	await expect(page.locator("html")).toHaveAttribute("data-palette", "classic");
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 	await expect(light).toBeEnabled();
 });
 
@@ -363,50 +370,33 @@ test("an unset scheme continues following live operating-system changes", async 
 		application.wga.theme.clear();
 	});
 	await expect(page.locator("html")).toHaveAttribute(
-		"data-theme",
-		"wga-verdigris",
+		"data-palette",
+		"verdigris",
 	);
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 
 	await page.emulateMedia({ colorScheme: "dark" });
 	await expect(page.locator("html")).toHaveAttribute(
-		"data-theme",
-		"wga-verdigris-dark",
+		"data-palette",
+		"verdigris",
 	);
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 	await page.emulateMedia({ colorScheme: "light" });
-	await expect(page.locator("html")).toHaveAttribute(
-		"data-theme",
-		"wga-verdigris",
-	);
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 });
 
-const FIRST_PAINT_PALETTES: Array<{
-	key: string;
-	light: string;
-	dark: string;
-}> = [
-	{ key: "bone", light: "wga-rams", dark: "wga-rams-dark" },
-	{ key: "classic", light: "wga-classic", dark: "wga-classic-dark" },
-	{ key: "verdigris", light: "wga-verdigris", dark: "wga-verdigris-dark" },
-	{ key: "gothic", light: "wga-gothic", dark: "wga-gothic-dark" },
-	{
-		key: "renaissance",
-		light: "wga-renaissance",
-		dark: "wga-renaissance-dark",
-	},
-	{ key: "baroque", light: "wga-baroque", dark: "wga-baroque" },
-	{ key: "rococo", light: "wga-rococo", dark: "wga-rococo-dark" },
-	{ key: "classical", light: "wga-classical", dark: "wga-classical-dark" },
-	{
-		key: "impressionist",
-		light: "wga-impressionist",
-		dark: "wga-impressionist-dark",
-	},
-	{
-		key: "catppuccin",
-		light: "wga-catppuccin",
-		dark: "wga-catppuccin-dark",
-	},
-	{ key: "tokyo", light: "wga-tokyo", dark: "wga-tokyo" },
+const FIRST_PAINT_PALETTES: Array<{ key: string; darkOnly?: boolean }> = [
+	{ key: "bone" },
+	{ key: "classic" },
+	{ key: "verdigris" },
+	{ key: "gothic" },
+	{ key: "renaissance" },
+	{ key: "baroque", darkOnly: true },
+	{ key: "rococo" },
+	{ key: "classical" },
+	{ key: "impressionist" },
+	{ key: "catppuccin" },
+	{ key: "tokyo", darkOnly: true },
 ];
 
 for (const palette of FIRST_PAINT_PALETTES) {
@@ -414,12 +404,13 @@ for (const palette of FIRST_PAINT_PALETTES) {
 		test(`resolves ${palette.key} ${scheme} before the stylesheet`, async ({
 			page,
 		}) => {
-			let themeAtStylesheetRequest = "";
+			let appearanceAtStylesheetRequest = { palette: "", theme: "" };
 			await page.route("**/assets/css/style.css", async (route) => {
-				const theme = await page.locator("html").getAttribute("data-theme");
-				if (theme) {
-					themeAtStylesheetRequest = theme;
-				}
+				appearanceAtStylesheetRequest = {
+					palette:
+						(await page.locator("html").getAttribute("data-palette")) ?? "",
+					theme: (await page.locator("html").getAttribute("data-theme")) ?? "",
+				};
 				await route.continue();
 			});
 			await page.addInitScript(
@@ -433,23 +424,30 @@ for (const palette of FIRST_PAINT_PALETTES) {
 			);
 			await page.goto("/");
 
-			const expected = scheme === "dark" ? palette.dark : palette.light;
-			expect(themeAtStylesheetRequest).toBe(expected);
+			const expectedTheme = palette.darkOnly ? "dark" : scheme;
+			expect(appearanceAtStylesheetRequest).toEqual({
+				palette: palette.key,
+				theme: expectedTheme,
+			});
+			await expect(page.locator("html")).toHaveAttribute(
+				"data-palette",
+				palette.key,
+			);
 			await expect(page.locator("html")).toHaveAttribute(
 				"data-theme",
-				expected,
+				expectedTheme,
 			);
 		});
 	}
 }
 
 test("uses a cookie-only palette before the stylesheet", async ({ page }) => {
-	let themeAtStylesheetRequest = "";
+	let appearanceAtStylesheetRequest = { palette: "", theme: "" };
 	await page.route("**/assets/css/style.css", async (route) => {
-		const theme = await page.locator("html").getAttribute("data-theme");
-		if (theme) {
-			themeAtStylesheetRequest = theme;
-		}
+		appearanceAtStylesheetRequest = {
+			palette: (await page.locator("html").getAttribute("data-palette")) ?? "",
+			theme: (await page.locator("html").getAttribute("data-theme")) ?? "",
+		};
 		await route.continue();
 	});
 	await page.addInitScript(() => {
@@ -460,22 +458,26 @@ test("uses a cookie-only palette before the stylesheet", async ({ page }) => {
 	await page.emulateMedia({ colorScheme: "light" });
 	await page.goto("/");
 
-	expect(themeAtStylesheetRequest).toBe("wga-verdigris");
+	expect(appearanceAtStylesheetRequest).toEqual({
+		palette: "verdigris",
+		theme: "light",
+	});
 	await expect(page.locator("html")).toHaveAttribute(
-		"data-theme",
-		"wga-verdigris",
+		"data-palette",
+		"verdigris",
 	);
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 });
 
 test("falls back from an invalid stored palette to a valid palette cookie before the stylesheet", async ({
 	page,
 }) => {
-	let themeAtStylesheetRequest = "";
+	let appearanceAtStylesheetRequest = { palette: "", theme: "" };
 	await page.route("**/assets/css/style.css", async (route) => {
-		const theme = await page.locator("html").getAttribute("data-theme");
-		if (theme) {
-			themeAtStylesheetRequest = theme;
-		}
+		appearanceAtStylesheetRequest = {
+			palette: (await page.locator("html").getAttribute("data-palette")) ?? "",
+			theme: (await page.locator("html").getAttribute("data-theme")) ?? "",
+		};
 		await route.continue();
 	});
 	await page.addInitScript(() => {
@@ -486,9 +488,13 @@ test("falls back from an invalid stored palette to a valid palette cookie before
 	await page.emulateMedia({ colorScheme: "dark" });
 	await page.goto("/");
 
-	expect(themeAtStylesheetRequest).toBe("wga-classical-dark");
+	expect(appearanceAtStylesheetRequest).toEqual({
+		palette: "classical",
+		theme: "dark",
+	});
 	await expect(page.locator("html")).toHaveAttribute(
-		"data-theme",
-		"wga-classical-dark",
+		"data-palette",
+		"classical",
 	);
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 });

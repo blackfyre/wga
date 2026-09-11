@@ -230,14 +230,14 @@ func TestTimelineBlockRendersResponsiveMarkup(t *testing.T) {
 	}
 	// Every preset anchor may shrink below its content width and break long
 	// labels, so 33 presets can never overflow a narrow container.
-	if !strings.Contains(rendered, `class="min-w-0 max-w-full break-words border border-primary`) {
+	if !strings.Contains(rendered, `class="min-w-0 max-w-full break-words border border-wga-accent`) {
 		t.Error("active preset anchor must carry min-w-0 max-w-full break-words")
 	}
 	if !strings.Contains(rendered, `class="min-w-0 max-w-full break-words border border-control`) {
 		t.Error("inactive preset anchor must carry min-w-0 max-w-full break-words")
 	}
 	// Density bars may shrink to zero so ~190 decade bins cannot overflow.
-	if !strings.Contains(rendered, `class="min-w-0 flex-1 bg-primary/60"`) {
+	if !strings.Contains(rendered, `class="min-w-0 flex-1 bg-wga-accent-bg/60"`) {
 		t.Error("density bars must shrink via min-w-0 flex-1")
 	}
 	// The works grid uses one column until 400px so the full-width itinerary
@@ -251,13 +251,13 @@ func TestTimelineBlockRendersResponsiveMarkup(t *testing.T) {
 	}
 	// Band rows reflow at narrow/zoomed widths: the row wraps and the fixed
 	// name/date children cap and break rather than forcing a 640px minimum.
-	if !strings.Contains(rendered, `class="flex flex-wrap items-center gap-4 border-b border-base-content/10 py-2"`) {
+	if !strings.Contains(rendered, `class="flex flex-wrap items-center gap-4 border-b border-wga-ink/10 py-2"`) {
 		t.Error("band row must wrap via flex flex-wrap")
 	}
 	if !strings.Contains(rendered, `class="w-44 shrink-0 max-w-full break-words text-(length:--t-14) font-semibold"`) {
 		t.Error("band name must cap and break via max-w-full break-words")
 	}
-	if !strings.Contains(rendered, `class="relative h-5 flex-1 border border-base-content/10 bg-base-200/40"`) {
+	if !strings.Contains(rendered, `class="relative h-5 flex-1 border border-wga-ink/10 bg-wga-surface-2/40"`) {
 		t.Error("band lane must flex via flex-1")
 	}
 	if !strings.Contains(rendered, `class="w-28 shrink-0 max-w-full break-words text-right font-mono text-(length:--t-11) text-muted"`) {

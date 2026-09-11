@@ -1,4 +1,4 @@
-import { type Page, expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 
 import {
 	expectNoPageErrors,
@@ -20,9 +20,9 @@ const PALETTE_KEYS = [
 	"tokyo",
 ] as const;
 
-const DARK_ONLY: Array<{ key: string; label: string; theme: string }> = [
-	{ key: "baroque", label: "BAROQUE", theme: "wga-baroque" },
-	{ key: "tokyo", label: "TOKYO NIGHT", theme: "wga-tokyo" },
+const DARK_ONLY: Array<{ key: string; label: string }> = [
+	{ key: "baroque", label: "BAROQUE" },
+	{ key: "tokyo", label: "TOKYO NIGHT" },
 ];
 
 function openPreferences(page: Page) {
@@ -102,17 +102,17 @@ test("moves the IN USE marker and label highlight on palette selection", async (
 		page.locator('[data-wga-palette="classic"] [data-wga-palette-in-use]'),
 	).toHaveCount(1);
 	await expect(page.locator('[data-wga-palette="classic"]')).toHaveClass(
-		/bg-primary\/10/,
+		/bg-wga-accent-bg\/10/,
 	);
 	await expect(page.locator('[data-wga-palette="bone"]')).not.toHaveClass(
-		/bg-primary\/10/,
+		/bg-wga-accent-bg\/10/,
 	);
 	await expect(
 		page.locator('[data-wga-palette="classic"] [data-wga-palette-name]'),
-	).toHaveClass(/text-primary/);
+	).toHaveClass(/text-wga-accent/);
 	await expect(
 		page.locator('[data-wga-palette="bone"] [data-wga-palette-name]'),
-	).toHaveClass(/text-base-content/);
+	).toHaveClass(/text-wga-ink/);
 });
 
 for (const palette of DARK_ONLY) {
@@ -129,9 +129,10 @@ for (const palette of DARK_ONLY) {
 		await page.locator(`[data-wga-palette="${palette.key}"]`).click();
 
 		await expect(page.locator("html")).toHaveAttribute(
-			"data-theme",
-			palette.theme,
+			"data-palette",
+			palette.key,
 		);
+		await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 		await expect(light).toBeDisabled();
 		await expect(light).toHaveAttribute(
 			"title",
@@ -147,9 +148,10 @@ for (const palette of DARK_ONLY) {
 		await page.locator('[data-wga-palette="classic"]').click();
 		await expect(light).toBeEnabled();
 		await expect(page.locator("html")).toHaveAttribute(
-			"data-theme",
-			"wga-classic",
+			"data-palette",
+			"classic",
 		);
+		await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 	});
 }
 

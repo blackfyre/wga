@@ -16,8 +16,8 @@ templ WorkCard(work dto.Work) {
 }
 
 templ WorkRow(work dto.Work) {
-	<a href={ templ.SafeURL(work.URL) } class="flex items-center gap-4 py-3 border-b border-base-content/15 hover:bg-primary/5 transition-colors">
-		<span class="w-11 h-[54px] shrink-0 bg-base-300 border border-base-content/15">
+	<a href={ templ.SafeURL(work.URL) } class="flex items-center gap-4 py-3 border-b border-wga-ink/15 hover:bg-wga-accent-bg/5 transition-colors">
+		<span class="w-11 h-[54px] shrink-0 bg-wga-fill border border-wga-ink/15">
 			if work.ImageURL != "" {
 				<img src={ work.ImageURL } alt="" loading="lazy" class="w-full h-full object-cover"/>
 			}

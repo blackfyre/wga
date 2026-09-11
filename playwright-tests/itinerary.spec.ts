@@ -1,4 +1,4 @@
-import { type Locator, type Page, expect, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 
 const viewports = [390, 834, 1440] as const;
 
@@ -133,10 +133,7 @@ test.describe("itinerary index", () => {
 		});
 		await page.setViewportSize({ width: 1440, height: 900 });
 		await page.goto("/itineraries");
-		await expect(page.locator("html")).toHaveAttribute(
-			"data-theme",
-			"wga-rams-dark",
-		);
+		await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 		await expect(
 			page.getByText("16 — VISITOR ITINERARIES", { exact: true }),
 		).toBeVisible();

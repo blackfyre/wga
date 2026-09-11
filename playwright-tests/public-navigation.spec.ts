@@ -580,10 +580,7 @@ test("open mobile navigation stays in bounds in dark mode", async ({
 	await page.goto("/");
 	await page.locator("[data-wga-preferences-open]").click();
 	await page.locator('[data-wga-scheme="dark"]').click();
-	await expect(page.locator("html")).toHaveAttribute(
-		"data-theme",
-		"wga-rams-dark",
-	);
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 	await page.keyboard.press("Escape");
 	const menu = page.locator("header details[data-kbd-mobile-navigation]");
 	await menu.locator("summary[aria-label='Open primary navigation']").click();

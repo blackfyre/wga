@@ -75,14 +75,14 @@ templ ArtistsBlock(c ArtistsView) {
 		@components.PageHead("01 — ARTIST INDEX", "Artists",
 			"Painters, sculptors and architects in the collection. Browse alphabetically, or filter by school and period.")
 
-		<nav class="mt-10 flex flex-wrap gap-[2px] border-b border-base-content/15 pb-5" aria-label="Filter artists by letter">
+		<nav class="mt-10 flex flex-wrap gap-[2px] border-b border-wga-ink/15 pb-5" aria-label="Filter artists by letter">
 			<a
 				href={ templ.URL(c.AllUrl) }
 				hx-get={ c.AllUrl }
 				hx-target="#artists"
 				hx-select="#artists"
 				hx-swap="outerHTML"
-				class={ "px-[11px] py-1.5 font-mono text-xs tracking-[1px] transition-colors", templ.KV("bg-neutral text-neutral-content", c.SelectedLetter == ""), templ.KV("text-base-content/70 hover:text-base-content", c.SelectedLetter != "") }
+				class={ "px-[11px] py-1.5 font-mono text-xs tracking-[1px] transition-colors", templ.KV("bg-wga-inv-bg text-wga-inv-fg", c.SelectedLetter == ""), templ.KV("text-wga-ink/70 hover:text-wga-ink", c.SelectedLetter != "") }
 				aria-current={ artistsAriaCurrent(c.SelectedLetter == "") }
 			>ALL</a>
 			for _, letter := range c.Letters {
@@ -93,7 +93,7 @@ templ ArtistsBlock(c ArtistsView) {
 						hx-target="#artists"
 						hx-select="#artists"
 						hx-swap="outerHTML"
-						class={ "px-[11px] py-1.5 font-mono text-xs tracking-[1px] transition-colors", templ.KV("bg-neutral text-neutral-content", letter.Selected), templ.KV("text-base-content/70 hover:text-base-content", !letter.Selected) }
+						class={ "px-[11px] py-1.5 font-mono text-xs tracking-[1px] transition-colors", templ.KV("bg-wga-inv-bg text-wga-inv-fg", letter.Selected), templ.KV("text-wga-ink/70 hover:text-wga-ink", !letter.Selected) }
 						aria-current={ artistsAriaCurrent(letter.Selected) }
 					>{ letter.Label }</a>
 				} else {
@@ -121,7 +121,7 @@ templ ArtistsBlock(c ArtistsView) {
 			if c.Sort != "" && c.Sort != "az" {
 				<input type="hidden" name="sort" value={ c.Sort }/>
 			}
-			<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 py-5 border-b border-base-content/15">
+			<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 py-5 border-b border-wga-ink/15">
 				@components.ChipGroup(dto.ChipGroup{Legend: "SCHOOL", Name: "school", Inline: true, Options: c.Schools})
 				<div class="flex flex-wrap items-center gap-2 shrink-0">
 					<span class="font-mono text-(length:--t-11) tracking-[1px] text-muted mr-1.5">VIEW</span>
@@ -131,7 +131,7 @@ templ ArtistsBlock(c ArtistsView) {
 						hx-target="#artists"
 						hx-select="#artists"
 						hx-swap="outerHTML"
-						class={ "border px-3.5 py-1.5 font-mono text-(length:--t-11) tracking-[1px] transition-colors", templ.KV("border-primary bg-primary text-primary-content", c.View != "list"), templ.KV("border-control text-base-content/70 hover:border-base-content", c.View == "list") }
+						class={ "border px-3.5 py-1.5 font-mono text-(length:--t-11) tracking-[1px] transition-colors", templ.KV("border-wga-accent bg-wga-accent-bg text-wga-inv-fg", c.View != "list"), templ.KV("border-control text-wga-ink/70 hover:border-wga-ink", c.View == "list") }
 						aria-current={ artistsAriaCurrent(c.View != "list") }
 					>GRID</a>
 					<a
@@ -140,13 +140,13 @@ templ ArtistsBlock(c ArtistsView) {
 						hx-target="#artists"
 						hx-select="#artists"
 						hx-swap="outerHTML"
-						class={ "border px-3.5 py-1.5 font-mono text-(length:--t-11) tracking-[1px] transition-colors", templ.KV("border-primary bg-primary text-primary-content", c.View == "list"), templ.KV("border-control text-base-content/70 hover:border-base-content", c.View != "list") }
+						class={ "border px-3.5 py-1.5 font-mono text-(length:--t-11) tracking-[1px] transition-colors", templ.KV("border-wga-accent bg-wga-accent-bg text-wga-inv-fg", c.View == "list"), templ.KV("border-control text-wga-ink/70 hover:border-wga-ink", c.View != "list") }
 						aria-current={ artistsAriaCurrent(c.View == "list") }
 					>LIST</a>
 				</div>
 			</div>
 
-			<div class="flex flex-col md:flex-row gap-8 md:gap-12 py-6 border-b border-base-content/15">
+			<div class="flex flex-col md:flex-row gap-8 md:gap-12 py-6 border-b border-wga-ink/15">
 				<div class="flex-1 min-w-0">
 					@components.Field(c.NameField)
 				</div>
@@ -161,7 +161,7 @@ templ ArtistsBlock(c ArtistsView) {
 			</div>
 
 			<noscript>
-				<button type="submit" class="bg-primary px-4 py-2 font-mono text-[11px] tracking-[1px] text-primary-content mt-4">APPLY FILTERS</button>
+				<button type="submit" class="bg-wga-accent-bg px-4 py-2 font-mono text-[11px] tracking-[1px] text-wga-inv-fg mt-4">APPLY FILTERS</button>
 			</noscript>
 		</form>
 
@@ -175,26 +175,26 @@ templ ArtistsBlock(c ArtistsView) {
 				hx-target="#artists"
 				hx-select="#artists"
 				hx-swap="outerHTML"
-				class="font-mono text-xs text-primary hover:opacity-60 transition-opacity"
+				class="font-mono text-xs text-wga-accent hover:opacity-60 transition-opacity"
 			>SORT: { c.SortLabel } ↕</a>
 		</div>
 
 		if len(c.Artists) == 0 {
-			<div class="border-b border-base-content/15 py-14">
+			<div class="border-b border-wga-ink/15 py-14">
 				<h2 class="mb-2 text-lg font-semibold">No artists match these filters.</h2>
-				<p class="mb-4 max-w-[380px] text-(length:--t-15) leading-relaxed text-base-content/70 text-pretty">Widen the birth-year range or clear the school and period filters — the index is uneven across periods.</p>
+				<p class="mb-4 max-w-[380px] text-(length:--t-15) leading-relaxed text-wga-ink/70 text-pretty">Widen the birth-year range or clear the school and period filters — the index is uneven across periods.</p>
 				<a
 					href={ templ.URL(c.ResetUrl) }
 					hx-get={ c.ResetUrl }
 					hx-target="#artists"
 					hx-select="#artists"
 					hx-swap="outerHTML"
-					class="font-mono text-(length:--t-11) tracking-[1px] text-primary transition-opacity hover:opacity-60"
+					class="font-mono text-(length:--t-11) tracking-[1px] text-wga-accent transition-opacity hover:opacity-60"
 				>RESET FILTERS →</a>
 			</div>
 		} else if c.View == "list" {
 			<div class="overflow-x-auto">
-				<table class="table table-sm min-w-[640px]" data-kbd-list data-kbd-cols="1">
+				<table class="wga-table wga-table-compact min-w-[640px]" data-kbd-list data-kbd-cols="1">
 					<caption class="sr-only">Artists in the collection</caption>
 					<thead>
 						<tr class="font-mono text-(length:--t-10) tracking-[1.5px] text-muted">
@@ -208,15 +208,15 @@ templ ArtistsBlock(c ArtistsView) {
 					<tbody>
 						for index, artist := range c.Artists {
 							if artist.Available {
-								<tr class="transition-colors hover:bg-primary/5">
+								<tr class="transition-colors hover:bg-wga-accent-bg/5">
 									<th scope="row" class="font-semibold text-(length:--t-15)" data-kbd-idx={ strconv.Itoa(navigableIndex(c.Artists, index)) } data-kbd-href={ artist.URL }>
 										@components.KeyboardCaret()
 										<a href={ templ.URL(artist.URL) } hx-get={ artist.URL }>@ArtistName(artist.Name, c.NameQuery)</a>
 									</th>
-									<td class="font-mono text-xs text-base-content/70">{ artist.Dates }</td>
-									<td class="font-mono text-xs text-base-content/70">{ artist.School }</td>
-									<td class="font-mono text-xs text-base-content/70">{ periodLabel(artist.Period) }</td>
-									<td class="font-mono text-xs text-base-content/70">{ artist.Form }</td>
+									<td class="font-mono text-xs text-wga-ink/70">{ artist.Dates }</td>
+									<td class="font-mono text-xs text-wga-ink/70">{ artist.School }</td>
+									<td class="font-mono text-xs text-wga-ink/70">{ periodLabel(artist.Period) }</td>
+									<td class="font-mono text-xs text-wga-ink/70">{ artist.Form }</td>
 								</tr>
 							} else {
 								<tr class="opacity-50">
@@ -224,10 +224,10 @@ templ ArtistsBlock(c ArtistsView) {
 										<span>@ArtistName(artist.Name, c.NameQuery)</span>
 										<span class="mt-0.5 block font-mono text-(length:--t-9) tracking-[1px] text-faint">NOT DIGITISED</span>
 									</th>
-									<td class="font-mono text-xs text-base-content/70">{ artist.Dates }</td>
-									<td class="font-mono text-xs text-base-content/70">{ artist.School }</td>
-									<td class="font-mono text-xs text-base-content/70">{ periodLabel(artist.Period) }</td>
-									<td class="font-mono text-xs text-base-content/70">{ artist.Form }</td>
+									<td class="font-mono text-xs text-wga-ink/70">{ artist.Dates }</td>
+									<td class="font-mono text-xs text-wga-ink/70">{ artist.School }</td>
+									<td class="font-mono text-xs text-wga-ink/70">{ periodLabel(artist.Period) }</td>
+									<td class="font-mono text-xs text-wga-ink/70">{ artist.Form }</td>
 								</tr>
 							}
 						}
@@ -269,16 +269,16 @@ templ ArtistsBlock(c ArtistsView) {
 		}
 
 		if c.PageCount > 1 {
-			<nav class="mt-10 flex items-center justify-between border-t border-base-content/15 pt-5" aria-label="Pagination">
+			<nav class="mt-10 flex items-center justify-between border-t border-wga-ink/15 pt-5" aria-label="Pagination">
 				<p class="font-mono text-xs text-muted">{ fmt.Sprintf("PAGE %d OF %d", c.Page, c.PageCount) }</p>
 				<div class="flex gap-3.5 font-mono text-xs tracking-[1px]">
 					if c.Page > 1 {
-						<a href={ templ.URL(c.PrevUrl) } hx-get={ c.PrevUrl } hx-target="#artists" hx-select="#artists" hx-swap="outerHTML" class="text-primary transition-opacity hover:opacity-60">← PREV</a>
+						<a href={ templ.URL(c.PrevUrl) } hx-get={ c.PrevUrl } hx-target="#artists" hx-select="#artists" hx-swap="outerHTML" class="text-wga-accent transition-opacity hover:opacity-60">← PREV</a>
 					} else {
 						<span class="text-faint-2">← PREV</span>
 					}
 					if c.Page < c.PageCount {
-						<a href={ templ.URL(c.NextUrl) } hx-get={ c.NextUrl } hx-target="#artists" hx-select="#artists" hx-swap="outerHTML" class="text-primary transition-opacity hover:opacity-60">NEXT →</a>
+						<a href={ templ.URL(c.NextUrl) } hx-get={ c.NextUrl } hx-target="#artists" hx-select="#artists" hx-swap="outerHTML" class="text-wga-accent transition-opacity hover:opacity-60">NEXT →</a>
 					} else {
 						<span class="text-faint-2">NEXT →</span>
 					}

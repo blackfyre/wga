@@ -63,23 +63,23 @@ templ StatisticsBlock(c StatisticsPageDTO) {
 		<title>{ utils.GetTitle(ctx) }</title>
 	</head>
 	<section id="statistics" class="container mx-auto px-4 pb-20 pt-12 md:px-0 wga-enter">
-		<p class="mb-3 font-mono text-[11px] tracking-[2px] text-base-content/60">15 — STATISTICS</p>
+		<p class="mb-3 font-mono text-[11px] tracking-[2px] text-wga-ink/60">15 — STATISTICS</p>
 		<h1 class="mb-3 text-[32px] font-semibold leading-[1.1] tracking-[-0.5px] md:text-[44px]">Statistics</h1>
-		<p class="mb-11 max-w-[560px] leading-relaxed text-base-content/70">Published records only, grouped into fifty-year birth periods. Every chart is followed by the same figures as a table.</p>
-		<div class="mb-14 flex gap-8 border-y border-base-content/15 py-[26px] md:gap-16">
+		<p class="mb-11 max-w-[560px] leading-relaxed text-wga-ink/70">Published records only, grouped into fifty-year birth periods. Every chart is followed by the same figures as a table.</p>
+		<div class="mb-14 flex gap-8 border-y border-wga-ink/15 py-[26px] md:gap-16">
 			<div>
-				<p class="mb-2 font-mono text-[10px] tracking-[1.5px] text-base-content/60">ARTISTS</p>
+				<p class="mb-2 font-mono text-[10px] tracking-[1.5px] text-wga-ink/60">ARTISTS</p>
 				<p class="text-[30px] font-semibold leading-[1.1] tracking-[-0.8px] md:text-[38px]">{ c.ArtistCount }</p>
 			</div>
 			<div>
-				<p class="mb-2 font-mono text-[10px] tracking-[1.5px] text-base-content/60">ARTWORKS</p>
+				<p class="mb-2 font-mono text-[10px] tracking-[1.5px] text-wga-ink/60">ARTWORKS</p>
 				<p class="text-[30px] font-semibold leading-[1.1] tracking-[-0.8px] md:text-[38px]">{ c.ArtworkCount }</p>
 			</div>
 		</div>
 		<section class="mb-[72px]">
-			<div class="flex flex-wrap items-baseline justify-between gap-4 border-b border-base-content pb-3">
+			<div class="flex flex-wrap items-baseline justify-between gap-4 border-b border-wga-ink pb-3">
 				<h2 class="text-xl font-semibold">Art form distribution</h2>
-				<p class="font-mono text-[10px] tracking-[1px] text-base-content/60">ARTWORKS BY FORM</p>
+				<p class="font-mono text-[10px] tracking-[1px] text-wga-ink/60">ARTWORKS BY FORM</p>
 			</div>
 			if len(c.ArtFormSummary) > 0 {
 				<noscript>
@@ -91,7 +91,7 @@ templ StatisticsBlock(c StatisticsPageDTO) {
 					<div class="relative w-[210px] shrink-0 self-center md:w-[240px] md:self-start">
 						<canvas id="art-form-chart" role="img" aria-label="Art form distribution chart" aria-describedby="art-form-summary"></canvas>
 						<div class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center" aria-hidden="true">
-							<p class="font-mono text-[10px] tracking-[1px] text-base-content/60">TOTAL</p>
+							<p class="font-mono text-[10px] tracking-[1px] text-wga-ink/60">TOTAL</p>
 							<p class="mt-[3px] text-xl font-semibold tracking-[-0.3px]">{ c.ArtworkCount }</p>
 						</div>
 					</div>
@@ -102,9 +102,9 @@ templ StatisticsBlock(c StatisticsPageDTO) {
 			</div>
 		</section>
 		<section class="mb-[72px]">
-			<div class="flex flex-wrap items-baseline justify-between gap-4 border-b border-base-content pb-3">
+			<div class="flex flex-wrap items-baseline justify-between gap-4 border-b border-wga-ink pb-3">
 				<h2 class="text-xl font-semibold">Artworks by school &amp; period</h2>
-				<p class="font-mono text-[10px] tracking-[1px] text-base-content/60">STACKED BY SCHOOL · BIRTH PERIOD</p>
+				<p class="font-mono text-[10px] tracking-[1px] text-wga-ink/60">STACKED BY SCHOOL · BIRTH PERIOD</p>
 			</div>
 			<canvas id="artworks-by-period-chart" class="mt-8" role="img" aria-label="Artworks by school and period chart" aria-describedby="artworks-period-summary"></canvas>
 			if len(c.ArtworksPeriodSummary) > 0 {
@@ -116,9 +116,9 @@ templ StatisticsBlock(c StatisticsPageDTO) {
 			@schoolPeriodSummary("artworks-period-summary", "Artworks by school and birth period data", "No published artworks are grouped by school and birth period.", c.ArtworksPeriodSummary)
 		</section>
 		<section>
-			<div class="flex flex-wrap items-baseline justify-between gap-4 border-b border-base-content pb-3">
+			<div class="flex flex-wrap items-baseline justify-between gap-4 border-b border-wga-ink pb-3">
 				<h2 class="text-xl font-semibold">Artists by school &amp; period</h2>
-				<p class="font-mono text-[10px] tracking-[1px] text-base-content/60">STACKED BY SCHOOL · BIRTH PERIOD</p>
+				<p class="font-mono text-[10px] tracking-[1px] text-wga-ink/60">STACKED BY SCHOOL · BIRTH PERIOD</p>
 			</div>
 			<canvas id="artists-by-period-chart" class="mt-8" role="img" aria-label="Artists by school and period chart" aria-describedby="artists-period-summary"></canvas>
 			if len(c.ArtistsPeriodSummary) > 0 {
@@ -129,7 +129,7 @@ templ StatisticsBlock(c StatisticsPageDTO) {
 			}
 			@schoolPeriodSummary("artists-period-summary", "Artists by school and birth period data", "No published artists are grouped by school and birth period.", c.ArtistsPeriodSummary)
 		</section>
-		<p class="mt-11 border-t border-base-content/15 pt-5 font-mono text-[10px] leading-relaxed text-base-content/60">
+		<p class="mt-11 border-t border-wga-ink/15 pt-5 font-mono text-[10px] leading-relaxed text-wga-ink/60">
 			RECOMPUTED NIGHTLY FROM PUBLISHED RECORDS. ARTISTS WITHOUT A RECORDED BIRTH YEAR ARE EXCLUDED FROM THE PERIOD CHARTS. SCHOOLS OUTSIDE THE SEVEN LARGEST ARE GROUPED AS OTHER.
 		</p>
 		<div id="art-form-data" hidden data-json={ c.ArtFormData }></div>
@@ -145,12 +145,12 @@ templ artFormBars(rows []StatisticsArtFormRow) {
 	<ul class="mt-8 flex flex-col gap-3" aria-hidden="true">
 		for i, row := range rows {
 			<li class="flex items-center gap-3">
-				<span class="h-2.5 w-2.5 shrink-0 border border-base-content/15" style={ "background:" + formTone(i) }></span>
+				<span class="h-2.5 w-2.5 shrink-0 border border-wga-ink/15" style={ "background:" + formTone(i) }></span>
 				<span class="w-[120px] shrink-0 truncate text-sm md:w-[140px]">{ row.Name }</span>
-				<div class="h-3 min-w-0 flex-1 overflow-hidden bg-base-content/10">
+				<div class="h-3 min-w-0 flex-1 overflow-hidden bg-wga-ink/10">
 					<span class="block h-full" style={ fmt.Sprintf("width:%.3f%%;background:%s", artFormSharePct(rows, row.Count), formTone(i)) }></span>
 				</div>
-				<span class="shrink-0 font-mono text-[11px] text-base-content/60">{ artFormShare(rows, row.Count) }</span>
+				<span class="shrink-0 font-mono text-[11px] text-wga-ink/60">{ artFormShare(rows, row.Count) }</span>
 			</li>
 		}
 	</ul>
@@ -162,11 +162,11 @@ templ artFormBars(rows []StatisticsArtFormRow) {
 templ artFormSummary(rows []StatisticsArtFormRow) {
 	<div id="art-form-summary" class="overflow-x-auto">
 		if len(rows) == 0 {
-			<p class="py-6 text-[15px] leading-relaxed text-base-content/70" role="status">No published artworks are grouped by art form.</p>
+			<p class="py-6 text-[15px] leading-relaxed text-wga-ink/70" role="status">No published artworks are grouped by art form.</p>
 		} else {
 			<table class="w-full text-sm">
-				<caption class="caption-top pb-3 text-left font-mono text-[10px] tracking-[1px] text-base-content/60">Art form distribution data</caption>
-				<thead class="border-y border-base-content/15 font-mono text-[10px] tracking-[1px] text-base-content/60">
+				<caption class="caption-top pb-3 text-left font-mono text-[10px] tracking-[1px] text-wga-ink/60">Art form distribution data</caption>
+				<thead class="border-y border-wga-ink/15 font-mono text-[10px] tracking-[1px] text-wga-ink/60">
 					<tr>
 						<th scope="col" class="py-3 text-left font-normal">ART FORM</th>
 						<th scope="col" class="py-3 text-right font-normal">ARTWORKS</th>
@@ -175,15 +175,15 @@ templ artFormSummary(rows []StatisticsArtFormRow) {
 				</thead>
 				<tbody>
 					for i, row := range rows {
-						<tr class="border-b border-base-content/15">
+						<tr class="border-b border-wga-ink/15">
 							<th scope="row" class="art-form-label py-3 text-left font-normal">
 								<span class="flex items-center gap-2.5">
-									<span class="h-2.5 w-2.5 shrink-0 border border-base-content/15" style={ "background:" + formTone(i) }></span>
+									<span class="h-2.5 w-2.5 shrink-0 border border-wga-ink/15" style={ "background:" + formTone(i) }></span>
 									<span>{ row.Name }</span>
 								</span>
 							</th>
 							<td class="py-3 text-right font-mono text-[11px]">{ row.Count }</td>
-							<td class="py-3 text-right font-mono text-[11px] text-base-content/60">{ artFormShare(rows, row.Count) }</td>
+							<td class="py-3 text-right font-mono text-[11px] text-wga-ink/60">{ artFormShare(rows, row.Count) }</td>
 						</tr>
 					}
 				</tbody>
@@ -195,11 +195,11 @@ templ artFormSummary(rows []StatisticsArtFormRow) {
 // schoolLegend names each school with its tone swatch so the canvas and the
 // CSS bars share one legend, with or without JavaScript.
 templ schoolLegend() {
-	<ul class="mt-6 flex flex-wrap gap-x-5 gap-y-2 border-t border-base-content/15 pt-4">
+	<ul class="mt-6 flex flex-wrap gap-x-5 gap-y-2 border-t border-wga-ink/15 pt-4">
 		for _, school := range schoolOrder {
 			<li class="flex items-center gap-[7px]">
-				<span class="h-2.5 w-2.5 shrink-0 border border-base-content/15" style={ "background:" + schoolTone[school] }></span>
-				<span class="font-mono text-[10px] tracking-[0.5px] text-base-content/70">{ school }</span>
+				<span class="h-2.5 w-2.5 shrink-0 border border-wga-ink/15" style={ "background:" + schoolTone[school] }></span>
+				<span class="font-mono text-[10px] tracking-[0.5px] text-wga-ink/70">{ school }</span>
 			</li>
 		}
 	</ul>
@@ -211,11 +211,11 @@ templ schoolLegend() {
 templ schoolPeriodSummary(id string, caption string, emptyMessage string, rows []StatisticsSchoolPeriodRow) {
 	<div id={ id } class="mt-9 overflow-x-auto">
 		if len(rows) == 0 {
-			<p class="py-6 text-[15px] leading-relaxed text-base-content/70" role="status">{ emptyMessage }</p>
+			<p class="py-6 text-[15px] leading-relaxed text-wga-ink/70" role="status">{ emptyMessage }</p>
 		} else {
 			<table class="min-w-[560px] text-sm">
-				<caption class="caption-top pb-3 text-left font-mono text-[10px] tracking-[1px] text-base-content/60">{ caption }</caption>
-				<thead class="border-y border-base-content/15 font-mono text-[10px] tracking-[1px] text-base-content/60">
+				<caption class="caption-top pb-3 text-left font-mono text-[10px] tracking-[1px] text-wga-ink/60">{ caption }</caption>
+				<thead class="border-y border-wga-ink/15 font-mono text-[10px] tracking-[1px] text-wga-ink/60">
 					<tr>
 						<th scope="col" class="py-3 text-left font-normal">BIRTH PERIOD</th>
 						for _, school := range schoolOrder {
@@ -226,7 +226,7 @@ templ schoolPeriodSummary(id string, caption string, emptyMessage string, rows [
 				</thead>
 				<tbody>
 					for _, period := range periodsOf(rows) {
-						<tr class="border-b border-base-content/15">
+						<tr class="border-b border-wga-ink/15">
 							<th scope="row" class="py-3 text-left font-mono text-[11px] font-normal">{ period }</th>
 							for _, school := range schoolOrder {
 								<td class="py-3 text-right font-mono text-[11px]">{ countFor(rows, period, school) }</td>
@@ -252,15 +252,15 @@ templ StatisticsPeriodBars(rows []StatisticsSchoolPeriodRow) {
 		<div class="flex h-[190px] min-w-max items-stretch gap-[5px] md:h-[260px] md:gap-3">
 			for _, period := range periodsOf(rows) {
 				<div class="group flex h-full w-16 shrink-0 flex-col md:w-20">
-					<p class="mb-2 shrink-0 whitespace-nowrap text-center font-mono text-[10px] tracking-[0.5px] text-transparent transition-colors group-hover:text-primary">{ periodTotal(rows, period) }</p>
+					<p class="mb-2 shrink-0 whitespace-nowrap text-center font-mono text-[10px] tracking-[0.5px] text-transparent transition-colors group-hover:text-wga-accent">{ periodTotal(rows, period) }</p>
 					<div class="flex min-h-0 flex-1 flex-col justify-end">
 						for _, school := range schoolOrder {
 							if countFor(rows, period, school) > 0 {
-								<span class="block shrink-0 border-t border-base-100 opacity-[0.82] transition-opacity group-hover:opacity-100" style={ fmt.Sprintf("height:%.3f%%;background:%s", barShare(rows, period, school), schoolTone[school]) }></span>
+								<span class="block shrink-0 border-t border-wga-bg opacity-[0.82] transition-opacity group-hover:opacity-100" style={ fmt.Sprintf("height:%.3f%%;background:%s", barShare(rows, period, school), schoolTone[school]) }></span>
 							}
 						}
 					</div>
-					<p class="mt-2.5 shrink-0 whitespace-nowrap text-center font-mono text-[10px] tracking-[0.5px] text-base-content/60 transition-colors group-hover:text-base-content">{ period }</p>
+					<p class="mt-2.5 shrink-0 whitespace-nowrap text-center font-mono text-[10px] tracking-[0.5px] text-wga-ink/60 transition-colors group-hover:text-wga-ink">{ period }</p>
 				</div>
 			}
 		</div>
