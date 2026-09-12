@@ -168,7 +168,7 @@ function markPaletteControls(palette: Palette): void {
 				marker = document.createElement("span");
 				marker.dataset.wgaPaletteInUse = "true";
 				marker.className =
-					"ml-auto shrink-0 font-mono text-[9px] tracking-[1.5px] text-wga-accent";
+					"ml-auto shrink-0 font-mono text-(length:--t-10) tracking-[1.5px] text-wga-action";
 				marker.textContent = "IN USE";
 				control.append(marker);
 			}

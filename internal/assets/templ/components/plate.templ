@@ -14,7 +14,7 @@ templ Plate(plate dto.Plate) {
 				<img src={ plate.DisplayURL } alt={ plate.Alt } loading="lazy" class={ templ.KV("h-auto w-full", plate.Aspect == ""), templ.KV("h-full w-full", plate.Aspect != ""), templ.KV("object-contain", plate.Contain && plate.Aspect != ""), templ.KV("object-cover", !plate.Contain && plate.Aspect != "") }/>
 			}
 		} else {
-			<span class="font-mono text-(length:--t-9) uppercase tracking-[0.5px] text-faint-2 text-pretty">{ platePlaceholder(plate) }</span>
+			<span class="font-mono text-(length:--t-10) uppercase tracking-[0.5px] text-muted text-pretty">{ platePlaceholder(plate) }</span>
 		}
 	</div>
 }
@@ -26,7 +26,7 @@ templ ZoomHint() {
 			<path d="M8.4 8.4 L12 12"></path>
 			<path d="M3.6 5.4h3.6M5.4 3.6v3.6"></path>
 		</svg>
-		<span class="font-mono text-(length:--t-9) tracking-[1.5px]">CLICK TO ZOOM</span>
+		<span class="font-mono text-(length:--t-10) tracking-[1.5px]">CLICK TO ZOOM</span>
 	</span>
 }
 

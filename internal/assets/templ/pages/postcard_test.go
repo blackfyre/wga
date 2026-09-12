@@ -100,6 +100,13 @@ func TestPostcardComposerDisclosesMusicAvailability(t *testing.T) {
 	}
 }
 
+func TestPostcardRecipientInstructionUsesProseFloor(t *testing.T) {
+	rendered := renderPostcard(t, PostcardComposeBlock(PostcardComposeView{ImageID: "artwork-id", Image: "/image.jpg", Title: "Work", ArtistFilingName: "Artist, Filing"}))
+	if !strings.Contains(rendered, `class="mt-2 text-(length:--t-15) text-wga-ink/60">Add up to five addresses.</p>`) {
+		t.Fatal("recipient instruction must use the public prose type floor")
+	}
+}
+
 func TestPostcardRecipientRendersMusicOnlyWithMatchingPublishedSong(t *testing.T) {
 	var output bytes.Buffer
 	if err := PostcardPage(PostcardView{Title: "Work", ArtistFilingName: "Artist, Filing", Image: "/image.jpg", SenderName: "Sender", Message: "Hello"}).Render(context.Background(), &output); err != nil {

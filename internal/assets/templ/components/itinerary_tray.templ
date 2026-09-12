@@ -21,12 +21,18 @@ import (
 // and #toast-container must be re-synced here or page content or a toast would
 // render behind the fixed bar.
 templ ItineraryTray(tray dto.ItineraryTrayView, oob bool) {
-	<div id="itinerary-tray" if oob { hx-swap-oob="true" } hx-on::after-settle="const hasContent = this.children.length > 0; const toastContainer = document.getElementById('toast-container'); if (toastContainer) { toastContainer.classList.toggle('bottom-28', hasContent); toastContainer.classList.toggle('md:bottom-20', hasContent); } const mcArea = document.getElementById('mc-area'); if (mcArea) { mcArea.classList.toggle('pb-28', hasContent); mcArea.classList.toggle('md:pb-20', hasContent); }">
+	<div
+		id="itinerary-tray"
+		if oob {
+			hx-swap-oob="true"
+		}
+		hx-on::after-settle="const hasContent = this.children.length > 0; const toastContainer = document.getElementById('toast-container'); if (toastContainer) { toastContainer.classList.toggle('bottom-28', hasContent); toastContainer.classList.toggle('md:bottom-20', hasContent); } const mcArea = document.getElementById('mc-area'); if (mcArea) { mcArea.classList.toggle('pb-28', hasContent); mcArea.classList.toggle('md:pb-20', hasContent); }"
+	>
 		if tray.Count > 0 {
 			<div class="fixed inset-x-0 bottom-0 z-[45] border-t border-wga-inv-fg/20 bg-wga-inv-bg animate-[wga-rise_240ms_cubic-bezier(0.22,0.61,0.36,1)]" role="region" aria-label="Itinerary draft">
 				<div class="container mx-auto flex items-center gap-4 px-5 py-3 md:gap-7 md:px-10 md:py-3.5">
 					<div class="min-w-0 flex-1">
-						<p class="mb-1.5 font-mono text-(length:--t-9) tracking-[1.5px] text-wga-inv-fg/40">ITINERARY DRAFT · { strconv.Itoa(tray.Count) } OF { strconv.Itoa(itineraryworkflow.MaxStops) }</p>
+						<p class="mb-1.5 font-mono text-(length:--t-10) tracking-[1.5px] text-wga-inv-fg/60">ITINERARY DRAFT · { strconv.Itoa(tray.Count) } OF { strconv.Itoa(itineraryworkflow.MaxStops) }</p>
 						<div class="flex items-center gap-1.5" aria-hidden="true">
 							for _, thumb := range tray.Thumbs {
 								if thumb != "" {
@@ -42,7 +48,7 @@ templ ItineraryTray(tray dto.ItineraryTrayView, oob bool) {
 								<button type="submit" class="px-1 py-2.5 font-mono text-(length:--t-11) tracking-[1.5px] text-wga-inv-fg/40 transition-colors hover:text-wga-inv-fg/90">CLEAR</button>
 							</form>
 						}
-						<a href={ tray.BuilderURL } class="bg-wga-bg px-4 py-2.5 font-mono text-(length:--t-11) tracking-[1.5px] text-wga-ink transition-opacity hover:opacity-80">ARRANGE &amp; NARRATE →</a>
+						<a href={ tray.BuilderURL } class="bg-wga-bg px-4 py-2.5 font-mono text-(length:--t-11) tracking-[1.5px] text-wga-ink transition-colors hover:bg-wga-surface-2">ARRANGE &amp; NARRATE →</a>
 					</div>
 				</div>
 			</div>

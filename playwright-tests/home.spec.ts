@@ -102,6 +102,7 @@ test.describe("home collection entry", () => {
 		for (const cta of ctas) {
 			const link = discovery.locator("a").filter({ hasText: cta.name });
 			await expect(link).toHaveAttribute("href", cta.href);
+			await expect(link).toHaveCSS("height", "48px");
 			await tabTo(page, link);
 			await expect(link).toBeFocused();
 			await expect(link).toHaveCSS("outline-style", /solid|dotted|dashed/);

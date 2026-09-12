@@ -152,6 +152,9 @@ func TestSelectionContentRendersHoldingWithoutWorks(t *testing.T) {
 	if !strings.Contains(rendered, `href="/artworks?artist=D%C3%BCrer"`) {
 		t.Error("holding link must use the supplied HoldingURL")
 	}
+	if !strings.Contains(rendered, `class="wga-action-link wga-trailing-action`) {
+		t.Error("holding link must use the shared right-aligned directional action")
+	}
 }
 
 func TestSelectionContentEscapesDisplayTitle(t *testing.T) {

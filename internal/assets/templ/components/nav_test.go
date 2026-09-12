@@ -157,6 +157,17 @@ func TestTopNavDoesNotExposeKeyboardHelp(t *testing.T) {
 	}
 }
 
+func TestTopNavSearchButtonsUseSharedActionRole(t *testing.T) {
+	var output bytes.Buffer
+	if err := TopNav().Render(context.Background(), &output); err != nil {
+		t.Fatalf("render top navigation: %v", err)
+	}
+
+	if count := strings.Count(output.String(), `button class="wga-action-link font-mono`); count != 2 {
+		t.Fatalf("shared action role search button count = %d, want 2", count)
+	}
+}
+
 func TestTopNavKeepsMobileIdentityOutsideDisclosureContent(t *testing.T) {
 	var output bytes.Buffer
 	if err := TopNav().Render(context.Background(), &output); err != nil {

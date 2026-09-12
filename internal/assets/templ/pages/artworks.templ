@@ -75,9 +75,9 @@ templ ArtworkSearchPage(s ArtworkSearchView) {
 templ artworkSearchFacet(facet ArtworkSearchFacet) {
 	<details open?={ facet.Open } class={ "group py-3.5", templ.KV("border-b border-wga-ink/15", !facet.Last) }>
 		<summary class="flex cursor-pointer list-none items-baseline justify-between gap-2.5 marker:hidden [&::-webkit-details-marker]:hidden">
-			<span class="font-mono text-[10px] tracking-[1.5px] text-wga-ink/60">{ facet.Label }</span>
+			<span class="font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60">{ facet.Label }</span>
 			<span class="flex min-w-0 items-baseline gap-2">
-				<span class={ "max-w-[116px] truncate font-mono text-[10px] tracking-[1px]", templ.KV("font-semibold text-wga-ink", facet.Active), templ.KV("text-wga-ink/60", !facet.Active) }>{ facet.Summary }</span>
+				<span class={ "max-w-[116px] truncate font-mono text-(length:--t-10) tracking-[1px]", templ.KV("font-semibold text-wga-ink", facet.Active), templ.KV("text-wga-ink/60", !facet.Active) }>{ facet.Summary }</span>
 				<span class="w-2 text-center font-mono text-xs text-wga-ink/60" aria-hidden="true">
 					<span class="group-open:hidden">+</span>
 					<span class="hidden group-open:inline">−</span>
@@ -126,21 +126,21 @@ templ ArtworkSeachFilterBlock(b ArtworkSearchView) {
 		}
 		if b.ArtistScopeFilingName != "" {
 			<div data-artwork-artist-scope aria-label="Active artist" class="mb-5 border-l-2 border-wga-accent pl-3">
-				<p class="font-mono text-[10px] tracking-[1.5px] text-wga-ink/60">ARTIST</p>
+				<p class="font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60">ARTIST</p>
 				<p class="mt-1 text-sm font-semibold leading-snug text-wga-ink">{ b.ArtistScopeFilingName }</p>
 			</div>
 		}
 		<div class="flex items-baseline justify-between border-b border-wga-ink pb-3">
-			<p class="font-mono text-[11px] tracking-[1.5px]">
+			<p class="font-mono text-(length:--t-11) tracking-[1.5px]">
 				FILTERS
 				if b.Facets.ActiveCount > 0 {
 					<span class="text-wga-accent">{ artworkActiveCountLabel(b.Facets.ActiveCount) }</span>
 				}
 			</p>
 			if b.DualModeContext != nil {
-				<a class="font-mono text-[10px] tracking-[1px] text-wga-accent transition-opacity hover:opacity-60" href={ b.ClearUrl } hx-get={ b.ClearUrl } hx-target="#mc-area" hx-select="#mc-area" hx-swap="outerHTML">RESET</a>
+				<a class="wga-action-link font-mono text-(length:--t-10) tracking-[1px]" href={ b.ClearUrl } hx-get={ b.ClearUrl } hx-target="#mc-area" hx-select="#mc-area" hx-swap="outerHTML">RESET</a>
 			} else {
-				<a class="font-mono text-[10px] tracking-[1px] text-wga-accent transition-opacity hover:opacity-60" href={ b.ClearUrl }>RESET</a>
+				<a class="wga-action-link font-mono text-(length:--t-10) tracking-[1px]" href={ b.ClearUrl }>RESET</a>
 			}
 		</div>
 		@artworkSearchFacet(b.Facets.Query) {
@@ -202,18 +202,18 @@ templ ArtworkSeachFilterBlock(b ArtworkSearchView) {
 					<label class={ "flex cursor-pointer items-baseline justify-between gap-2.5 border-b border-wga-ink/10 py-1.5 text-sm leading-snug transition-colors hover:text-wga-accent", templ.KV("font-semibold text-wga-ink", option.Selected), templ.KV("text-wga-ink/70", !option.Selected) }>
 						<input type="radio" name={ b.Facets.Collection.Name } value={ option.Value } checked?={ option.Selected } class="sr-only"/>
 						<span>{ option.Label }</span>
-						<span class={ "shrink-0 font-mono text-[10px]", templ.KV("text-wga-ink", option.Selected), templ.KV("text-wga-ink/60", !option.Selected) }>{ option.Count }</span>
+						<span class={ "shrink-0 font-mono text-(length:--t-10)", templ.KV("text-wga-ink", option.Selected), templ.KV("text-wga-ink/60", !option.Selected) }>{ option.Count }</span>
 					</label>
 				}
 			</div>
 			if b.Facets.Collection.Note != "" {
-				<p class="mt-2.5 font-mono text-[10px] leading-relaxed text-wga-ink/60">{ b.Facets.Collection.Note }</p>
+				<p class="mt-2.5 font-mono text-(length:--t-10) leading-relaxed text-wga-ink/60">{ b.Facets.Collection.Note }</p>
 			}
 		}
 		@artworkSearchFacet(b.Facets.Year) {
 			@components.RangeField(b.Facets.YearRange)
 		}
-		<noscript><button type="submit" class="w-full bg-wga-accent-bg px-4 py-3 font-mono text-[11px] tracking-[1px] text-wga-inv-fg">APPLY FILTERS</button></noscript>
+		<noscript><button type="submit" class="wga-button wga-button-primary w-full font-mono text-(length:--t-11) tracking-[1px]">APPLY FILTERS</button></noscript>
 		<div id="artwork-search-indicator" class="htmx-indicator border border-wga-fill bg-wga-surface-2/70 p-3 text-sm text-wga-ink/80">
 			Searching the collection...
 		</div>
@@ -228,7 +228,7 @@ func artworkSearchChipGroup(group dto.ChipGroup) dto.ChipGroup {
 
 templ ArtworkSortControl(r ArtworkSearchResultsView) {
 	<div class="flex flex-wrap items-center gap-2">
-		<span class="font-mono text-[10px] tracking-[1.5px] text-wga-ink/60">SORT</span>
+		<span class="font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60">SORT</span>
 		for _, option := range r.SortOptions {
 			<a
 				href={ templ.SafeURL(option.Href) }
@@ -236,7 +236,7 @@ templ ArtworkSortControl(r ArtworkSearchResultsView) {
 				hx-target="#artwork-search"
 				hx-select="#artwork-search"
 				hx-swap="outerHTML"
-				class={ "border px-3.5 py-1.5 font-mono text-[11px] tracking-[1px] transition-colors", templ.KV("border-wga-accent bg-wga-accent-bg text-wga-inv-fg", option.Active), templ.KV("border-wga-ink/25 text-wga-ink/70 hover:border-wga-ink", !option.Active) }
+				class={ "border px-3.5 py-1.5 font-mono text-(length:--t-11) tracking-[1px] transition-colors", templ.KV("border-wga-accent bg-wga-accent-bg text-wga-inv-fg", option.Active), templ.KV("border-wga-ink/25 text-wga-ink/70 hover:border-wga-ink", !option.Active) }
 				aria-pressed={ fmt.Sprint(option.Active) }
 			>{ option.Label }</a>
 		}
@@ -247,7 +247,7 @@ templ ArtworkSortControl(r ArtworkSearchResultsView) {
 			hx-select="#artwork-search"
 			hx-swap="outerHTML"
 			aria-label="Reverse sort direction"
-			class="font-mono text-[10px] tracking-[1px] whitespace-nowrap px-2.5 py-1.5 border border-wga-ink/25 text-wga-ink/70 hover:border-wga-ink hover:text-wga-ink transition-colors"
+			class="font-mono text-(length:--t-10) tracking-[1px] whitespace-nowrap px-2.5 py-1.5 border border-wga-ink/25 text-wga-ink/70 hover:border-wga-ink hover:text-wga-ink transition-colors"
 		>{ r.SortDirLabel }</a>
 	</div>
 }
@@ -261,8 +261,8 @@ templ ArtworkSearchResults(r ArtworkSearchResultsView) {
 			<div class="flex flex-col items-start gap-3 md:flex-row md:items-center md:gap-5">
 				@ArtworkSortControl(r)
 				<div class="flex items-center gap-2">
-					<a href={ templ.SafeURL(r.GridUrl) } hx-get={ r.GridUrl } hx-target="#artwork-search" hx-select="#artwork-search" hx-swap="outerHTML" class={ "border px-3.5 py-1.5 font-mono text-[11px] tracking-[1px] transition-colors", templ.KV("border-wga-accent bg-wga-accent-bg text-wga-inv-fg", r.View == "grid"), templ.KV("border-wga-ink/25 text-wga-ink/70 hover:border-wga-ink", r.View != "grid") } aria-pressed={ fmt.Sprint(r.View == "grid") }>GRID</a>
-					<a href={ templ.SafeURL(r.ListUrl) } hx-get={ r.ListUrl } hx-target="#artwork-search" hx-select="#artwork-search" hx-swap="outerHTML" class={ "border px-3.5 py-1.5 font-mono text-[11px] tracking-[1px] transition-colors", templ.KV("border-wga-accent bg-wga-accent-bg text-wga-inv-fg", r.View == "list"), templ.KV("border-wga-ink/25 text-wga-ink/70 hover:border-wga-ink", r.View != "list") } aria-pressed={ fmt.Sprint(r.View == "list") }>LIST</a>
+					<a href={ templ.SafeURL(r.GridUrl) } hx-get={ r.GridUrl } hx-target="#artwork-search" hx-select="#artwork-search" hx-swap="outerHTML" class={ "border px-3.5 py-1.5 font-mono text-(length:--t-11) tracking-[1px] transition-colors", templ.KV("border-wga-accent bg-wga-accent-bg text-wga-inv-fg", r.View == "grid"), templ.KV("border-wga-ink/25 text-wga-ink/70 hover:border-wga-ink", r.View != "grid") } aria-pressed={ fmt.Sprint(r.View == "grid") }>GRID</a>
+					<a href={ templ.SafeURL(r.ListUrl) } hx-get={ r.ListUrl } hx-target="#artwork-search" hx-select="#artwork-search" hx-swap="outerHTML" class={ "border px-3.5 py-1.5 font-mono text-(length:--t-11) tracking-[1px] transition-colors", templ.KV("border-wga-accent bg-wga-accent-bg text-wga-inv-fg", r.View == "list"), templ.KV("border-wga-ink/25 text-wga-ink/70 hover:border-wga-ink", r.View != "list") } aria-pressed={ fmt.Sprint(r.View == "list") }>LIST</a>
 				</div>
 			</div>
 		</div>
@@ -274,13 +274,13 @@ templ ArtworkSearchResults(r ArtworkSearchResultsView) {
 			} else {
 				<div class="mt-7 grid grid-cols-2 gap-x-4 gap-y-9 md:grid-cols-3 md:gap-x-7" data-kbd-list data-kbd-cols="2" data-kbd-cols-md="3" data-view="grid">
 					for index, artwork := range r.Artworks {
-						<a href={ templ.SafeURL(artwork.Url) } hx-get={ artwork.Url } data-kbd-idx={ strconv.Itoa(index) } data-kbd-href={ artwork.Url } class="block transition-opacity hover:opacity-70">
+						<a href={ templ.SafeURL(artwork.Url) } hx-get={ artwork.Url } data-kbd-idx={ strconv.Itoa(index) } data-kbd-href={ artwork.Url } class="wga-record-card">
 							@components.KeyboardCaret()
 							<figure class="mb-2.5 aspect-[4/5] border border-wga-ink/15 bg-wga-fill p-2.5">
 								<img src={ artwork.Thumb } alt={ artwork.Title } class="h-full w-full object-cover"/>
 							</figure>
 							<p class="text-sm font-semibold leading-tight">{ artwork.Title }</p>
-							<p class="mt-[3px] font-mono text-[11px] leading-relaxed text-wga-ink/60">{ artwork.Artist.FilingName }<br/>{ artwork.Technique }</p>
+							<p class="mt-[3px] font-mono text-(length:--t-11) leading-relaxed text-wga-ink/60">{ artwork.Artist.FilingName }<br/>{ artwork.Technique }</p>
 						</a>
 					}
 				</div>
@@ -328,8 +328,8 @@ templ ArtworkSearchResultList(artworks dto.ImageGrid) {
 				<a href={ templ.SafeURL(artwork.Url) } hx-get={ artwork.Url } data-kbd-idx={ strconv.Itoa(index) } data-kbd-href={ artwork.Url } class="flex items-center gap-4 border-b border-wga-ink/15 py-3.5 transition-colors hover:bg-wga-accent-bg/5">
 					@components.KeyboardCaret()
 					<img src={ artwork.Thumb } alt={ artwork.Title } class="h-[54px] w-11 shrink-0 border border-wga-ink/15 bg-wga-fill object-cover"/>
-					<span class="min-w-0 flex-1"><span class="block text-[15px] font-semibold leading-tight">{ artwork.Title }</span><span class="mt-[3px] block font-mono text-[11px] text-wga-ink/60">{ artwork.Artist.FilingName }</span></span>
-					<span class="hidden shrink-0 font-mono text-[11px] text-wga-ink/70 md:block">{ artwork.Technique }</span>
+					<span class="min-w-0 flex-1"><span class="block text-(length:--t-15) font-semibold leading-tight">{ artwork.Title }</span><span class="mt-[3px] block font-mono text-(length:--t-11) text-wga-ink/60">{ artwork.Artist.FilingName }</span></span>
+					<span class="hidden shrink-0 font-mono text-(length:--t-11) text-wga-ink/70 md:block">{ artwork.Technique }</span>
 				</a>
 			</li>
 		}
@@ -355,8 +355,8 @@ templ ArtworkSearchDualModeResultGrid(artworks dto.ImageGrid, dualModeUrls map[s
 
 templ ArtworkSearchBlock(s ArtworkSearchView) {
 	<section id="artwork-search" class="container mx-auto px-4 pb-20 pt-10 md:px-0 wga-enter">
-		<p class="mb-3 font-mono text-[11px] tracking-[2px] text-wga-ink/60">12 — ARTWORK SEARCH</p>
-		<h1 class="mb-3 text-[44px] font-semibold leading-tight tracking-[-0.5px]">Artworks</h1>
+		<p class="mb-3 font-mono text-(length:--t-11) tracking-[2px] text-wga-ink/60">12 — ARTWORK SEARCH</p>
+		<h1 class="mb-3 text-(length:--t-44) font-semibold leading-tight tracking-[-0.5px]">Artworks</h1>
 		<p class="mb-11 max-w-[540px] text-base leading-relaxed text-wga-ink/70">Filter by title, school, form and technique — or narrow by period when you are working through a century rather than a name.</p>
 		<div class="flex flex-col items-start gap-10 md:flex-row md:gap-14">
 			<div class="w-full shrink-0 md:w-[250px]">

@@ -134,7 +134,7 @@ test.describe("task 9.2 itinerary tray acceptance", () => {
 		await expect(page.locator("#itinerary-tray")).toBeEmpty();
 	});
 
-	test("Dual Mode exposes the typed row action at 46px with its full label", async ({
+	test("Dual Mode exposes the typed row action at 48px with its full label", async ({
 		page,
 	}) => {
 		await page.setViewportSize({ width: 1440, height: 834 });
@@ -154,8 +154,8 @@ test.describe("task 9.2 itinerary tray acceptance", () => {
 			exact: true,
 		});
 		await expect(action).toHaveCount(1);
-		await expect(action).toHaveCSS("height", "46px");
-		await expect(action).toHaveAttribute("class", /h-\[46px\]/);
+		await expect(action).toHaveCSS("height", "48px");
+		await expect(action).toHaveAttribute("class", /h-12/);
 	});
 });
 

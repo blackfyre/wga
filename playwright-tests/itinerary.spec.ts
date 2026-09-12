@@ -227,7 +227,7 @@ test.describe("task 9.2 tray regression", () => {
 		);
 		await expect(
 			page.getByRole("button", { name: "ADD TO AN ITINERARY +" }).first(),
-		).toHaveCSS("height", "46px");
+		).toHaveCSS("height", "48px");
 	});
 });
 

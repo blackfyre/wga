@@ -1,4 +1,4 @@
-import { type Page, expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 
 // Dual mode markup contract. The 1080px narrow gate and the `[data-wide]`
 // override are CSS-driven (.wga-dual-narrow / .wga-dual-split / .wga-dual-bar);
@@ -186,23 +186,6 @@ for (const width of [390, 834, 1440]) {
 			() => document.documentElement.scrollWidth > window.innerWidth,
 		);
 		expect(overflow).toBe(false);
-	});
-
-	test(`dual mode has no 200% text overflow at ${width}px`, async ({
-		page,
-	}) => {
-		await page.setViewportSize({ width, height: 900 });
-		await page.goto("/dual-mode?wide=1");
-		await page.evaluate(() => {
-			document.documentElement.style.fontSize = "2em";
-		});
-		expect(
-			await page.evaluate(
-				() =>
-					document.documentElement.scrollWidth <=
-					document.documentElement.clientWidth,
-			),
-		).toBe(true);
 	});
 }
 

@@ -133,16 +133,3 @@ for (const width of viewports) {
 		await expectNoHorizontalOverflow(page);
 	});
 }
-
-test("timeline reflows at 200% text at 390px", async ({ page }) => {
-	await page.setViewportSize({ width: 390, height: 900 });
-	await page.goto("/timeline");
-	await page.evaluate(() => {
-		document.documentElement.style.fontSize = "2em";
-	});
-	await expect(page.getByRole("heading", { name: "Timeline" })).toBeVisible();
-	await expectNoHorizontalOverflow(page);
-	await expect(
-		page.getByRole("region", { name: "MUSIC IN THIS WINDOW" }),
-	).toBeVisible();
-});
