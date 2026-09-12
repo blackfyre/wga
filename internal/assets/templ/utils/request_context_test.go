@@ -6,102 +6,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	templutils "github.com/blackfyre/wga/internal/assets/templ/utils"
 )
 
-func TestContextFromRequestBionicReading(t *testing.T) {
-	tests := []struct {
-		name   string
-		cookie string
-		want   bool
-	}{
-		{name: "absent cookie"},
-		{name: "on", cookie: "on", want: true},
-		{name: "off", cookie: "off"},
-		{name: "unrecognised value", cookie: "enabled"},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			request := httptest.NewRequest(http.MethodGet, "/", nil)
-			if test.cookie != "" {
-				request.AddCookie(&http.Cookie{Name: "wga_bionic", Value: test.cookie})
-			}
-
-			if got := templutils.GetBionicReading(templutils.ContextFromRequest(request)); got != test.want {
-				t.Fatalf("expected bionic reading %t, got %t", test.want, got)
-			}
-		})
-	}
-}
-
 func TestContextFromRequestNilRequest(t *testing.T) {
-	if templutils.GetBionicReading(templutils.ContextFromRequest(nil)) {
-		t.Fatal("expected bionic reading to be disabled")
-	}
-}
-
-func TestContextFromRequestProjectsPreferences(t *testing.T) {
-	tests := []struct {
-		name    string
-		cookies []*http.Cookie
-		want    dto.Preferences
-	}{
-		{name: "defaults", want: dto.Preferences{Palette: dto.DefaultPaletteKey}},
-		{
-			name:    "palette only",
-			cookies: []*http.Cookie{{Name: "wga_palette", Value: "verdigris"}},
-			want:    dto.Preferences{Palette: "verdigris"},
-		},
-		{
-			name:    "invalid palette falls back",
-			cookies: []*http.Cookie{{Name: "wga_palette", Value: "neon"}},
-			want:    dto.Preferences{Palette: dto.DefaultPaletteKey},
-		},
-		{
-			name:    "scheme dark",
-			cookies: []*http.Cookie{{Name: "wga_theme", Value: "dark"}},
-			want:    dto.Preferences{Palette: dto.DefaultPaletteKey, Scheme: "dark"},
-		},
-		{
-			name:    "legacy scheme value",
-			cookies: []*http.Cookie{{Name: "wga_theme", Value: "wga_dark"}},
-			want:    dto.Preferences{Palette: dto.DefaultPaletteKey, Scheme: "dark"},
-		},
-		{
-			name:    "invalid scheme stays unset",
-			cookies: []*http.Cookie{{Name: "wga_theme", Value: "sepia"}},
-			want:    dto.Preferences{Palette: dto.DefaultPaletteKey},
-		},
-		{
-			name:    "bionic on",
-			cookies: []*http.Cookie{{Name: "wga_bionic", Value: "on"}},
-			want:    dto.Preferences{Palette: dto.DefaultPaletteKey, Bionic: true},
-		},
-		{
-			name: "combined",
-			cookies: []*http.Cookie{
-				{Name: "wga_palette", Value: "baroque"},
-				{Name: "wga_theme", Value: "light"},
-				{Name: "wga_bionic", Value: "on"},
-			},
-			want: dto.Preferences{Palette: "baroque", Scheme: "light", Bionic: true},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			request := httptest.NewRequest(http.MethodGet, "/", nil)
-			for _, cookie := range test.cookies {
-				request.AddCookie(cookie)
-			}
-
-			got := templutils.GetPreferences(templutils.ContextFromRequest(request))
-			if got != test.want {
-				t.Fatalf("preferences = %+v, want %+v", got, test.want)
-			}
-		})
+	if got := templutils.RequestPath(templutils.ContextFromRequest(nil)); got != "" {
+		t.Fatalf("expected empty request path, got %q", got)
 	}
 }
 
@@ -109,16 +19,11 @@ func TestContextFromRequestPreservesRequestContext(t *testing.T) {
 	type contextKey struct{}
 	key := contextKey{}
 	request := httptest.NewRequest(http.MethodGet, "/", nil).WithContext(context.WithValue(context.Background(), key, "value"))
-	request.AddCookie(&http.Cookie{Name: "wga_bionic", Value: "on"})
 
 	ctx := templutils.ContextFromRequest(request)
 	if got := ctx.Value(key); got != "value" {
 		t.Fatalf("expected preserved value %q, got %q", "value", got)
 	}
-	if !templutils.GetBionicReading(ctx) {
-		t.Fatal("expected bionic reading to be enabled")
-	}
-
 	cancelled, cancel := context.WithCancel(request.Context())
 	cancel()
 	cancelledRequest := request.WithContext(cancelled)

@@ -18,8 +18,6 @@ export type Palette = (typeof PALETTE_NAMES)[number];
 
 export const SCHEME_STORAGE_KEY = "wga-theme";
 export const PALETTE_STORAGE_KEY = "wga-palette";
-export const SCHEME_COOKIE_NAME = "wga_theme";
-export const PALETTE_COOKIE_NAME = "wga_palette";
 
 const DEFAULT_PALETTE: Palette = "bone";
 const DARK_ONLY_PALETTES: ReadonlySet<Palette> = new Set(["baroque", "tokyo"]);
@@ -62,17 +60,6 @@ export function effectiveScheme(scheme: Scheme, palette: Palette): Scheme {
 	return scheme;
 }
 
-function cookieValue(name: string): string | null {
-	const prefix = `${name}=`;
-	for (const item of document.cookie.split(";")) {
-		const cookie = item.trim();
-		if (cookie.startsWith(prefix)) {
-			return decodeURIComponent(cookie.slice(prefix.length));
-		}
-	}
-	return null;
-}
-
 function localStorageValue(key: string): string | null {
 	try {
 		return window.localStorage.getItem(key);
@@ -97,34 +84,18 @@ function removeLocalStorage(key: string): void {
 	}
 }
 
-function writeCookie(name: string, value: string): void {
-	document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=31536000; samesite=lax`;
-}
-
-function clearCookie(name: string): void {
-	document.cookie = `${name}=; path=/; max-age=0; samesite=lax`;
-}
-
 function storedScheme(): Scheme | null {
 	if (sessionScheme) {
 		return sessionScheme;
 	}
-	const localValue = parseScheme(localStorageValue(SCHEME_STORAGE_KEY));
-	if (localValue) {
-		return localValue;
-	}
-	return parseScheme(cookieValue(SCHEME_COOKIE_NAME));
+	return parseScheme(localStorageValue(SCHEME_STORAGE_KEY));
 }
 
 function storedPalette(): Palette | null {
 	if (sessionPalette) {
 		return sessionPalette;
 	}
-	const localValue = parsePalette(localStorageValue(PALETTE_STORAGE_KEY));
-	if (localValue) {
-		return localValue;
-	}
-	return parsePalette(cookieValue(PALETTE_COOKIE_NAME));
+	return parsePalette(localStorageValue(PALETTE_STORAGE_KEY));
 }
 
 export function currentScheme(): Scheme {
@@ -298,28 +269,24 @@ export function reconcileAppearancePreferences(): void {
 export function setScheme(scheme: Scheme): void {
 	sessionScheme = scheme;
 	writeLocalStorage(SCHEME_STORAGE_KEY, scheme);
-	writeCookie(SCHEME_COOKIE_NAME, scheme);
 	reconcileAppearancePreferences();
 }
 
 export function clearScheme(): void {
 	sessionScheme = null;
 	removeLocalStorage(SCHEME_STORAGE_KEY);
-	clearCookie(SCHEME_COOKIE_NAME);
 	reconcileAppearancePreferences();
 }
 
 export function setPalette(palette: Palette): void {
 	sessionPalette = palette;
 	writeLocalStorage(PALETTE_STORAGE_KEY, palette);
-	writeCookie(PALETTE_COOKIE_NAME, palette);
 	reconcileAppearancePreferences();
 }
 
 export function clearPalette(): void {
 	sessionPalette = null;
 	removeLocalStorage(PALETTE_STORAGE_KEY);
-	clearCookie(PALETTE_COOKIE_NAME);
 	reconcileAppearancePreferences();
 }
 
@@ -362,7 +329,6 @@ function migrateLegacyScheme(): void {
 		return;
 	}
 	writeLocalStorage(SCHEME_STORAGE_KEY, scheme);
-	writeCookie(SCHEME_COOKIE_NAME, scheme);
 }
 
 function constrainPaletteTooltip(swatch: HTMLButtonElement): void {

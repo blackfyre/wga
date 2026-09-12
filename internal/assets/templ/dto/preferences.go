@@ -37,16 +37,6 @@ var PaletteOptions = []PaletteOption{
 	{Key: "tokyo", Label: "TOKYO NIGHT", Group: "BORROWED", Desc: "Dark only — no light half", Paper: "#1a1b26", Ink: "#7aa2f7", DarkOnly: true},
 }
 
-// Preferences is the validated server projection of a visitor's stored
-// appearance choices. Palette is always a known key (defaults to bone). Scheme
-// is "light" or "dark", or "" when the visitor has not chosen (follow the
-// operating system).
-type Preferences struct {
-	Palette string
-	Scheme  string
-	Bionic  bool
-}
-
 // PaletteByKey returns the option for key and whether it matched. An unknown
 // key returns the default bone option with ok=false.
 func PaletteByKey(key string) (PaletteOption, bool) {
@@ -56,40 +46,6 @@ func PaletteByKey(key string) (PaletteOption, bool) {
 		}
 	}
 	return PaletteOptions[0], false
-}
-
-// NormalizePalette returns key when it is a known palette, else "".
-func NormalizePalette(key string) string {
-	if _, ok := PaletteByKey(key); ok {
-		return key
-	}
-	return ""
-}
-
-// NormalizeScheme maps a stored scheme value to "light" or "dark". It accepts
-// the legacy "wga_light" and "wga_dark" values used by earlier builds, and
-// returns "" for anything else (unset).
-func NormalizeScheme(value string) string {
-	switch value {
-	case "light", "wga_light":
-		return "light"
-	case "dark", "wga_dark":
-		return "dark"
-	default:
-		return ""
-	}
-}
-
-// DarkOnlyPalette reports whether key is a palette with no light build.
-func DarkOnlyPalette(key string) bool {
-	option, _ := PaletteByKey(key)
-	return option.DarkOnly
-}
-
-// PaletteLabel returns the display label for key, defaulting to bone.
-func PaletteLabel(key string) string {
-	option, _ := PaletteByKey(key)
-	return option.Label
 }
 
 // PaletteSwatchStyle returns the inline split paper/ink swatch background for
@@ -109,21 +65,6 @@ func PaletteGroups() []string {
 		}
 	}
 	return groups
-}
-
-// PreferencesSummary states the active palette, scheme, and reading mode as a
-// compact cookie-derived line for the footer trigger.
-func PreferencesSummary(prefs Preferences) string {
-	summary := PaletteLabel(prefs.Palette) + " · "
-	if prefs.Scheme == "dark" || DarkOnlyPalette(prefs.Palette) {
-		summary += "DARK"
-	} else {
-		summary += "LIGHT"
-	}
-	if prefs.Bionic {
-		summary += " · BIONIC"
-	}
-	return summary
 }
 
 // PaletteTableJSON returns the known palette keys and whether each is dark-only
@@ -155,18 +96,6 @@ const resolverScriptBody = `(function () {
 		}
 	}
 
-	function readCookie(name) {
-		var prefix = name + "=";
-		var cookies = document.cookie ? document.cookie.split("; ") : [];
-		for (var i = 0; i < cookies.length; i++) {
-			var cookie = cookies[i];
-			if (cookie.indexOf(prefix) === 0) {
-				return cookie.slice(prefix.length);
-			}
-		}
-		return null;
-	}
-
 	function normalizeScheme(value) {
 		if (value === "light" || value === "wga_light") {
 			return "light";
@@ -179,16 +108,10 @@ const resolverScriptBody = `(function () {
 
 	var palette = readLocalStorage("wga-palette");
 	if (!Object.prototype.hasOwnProperty.call(PALETTES, palette)) {
-		palette = readCookie("wga_palette");
-	}
-	if (!Object.prototype.hasOwnProperty.call(PALETTES, palette)) {
 		palette = DEFAULT_PALETTE;
 	}
 
 	var scheme = normalizeScheme(readLocalStorage("wga-theme"));
-	if (!scheme) {
-		scheme = normalizeScheme(readCookie("wga_theme"));
-	}
 	if (!scheme) {
 		scheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 	}

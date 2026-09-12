@@ -189,38 +189,25 @@ func TestServerFaultErrorRecordsOptionalFailure(t *testing.T) {
 	}
 }
 
-func TestErrorHelpersHonourBionicReadingContext(t *testing.T) {
-	tests := []struct {
-		name      string
-		cookie    string
-		wantState string
-	}{
-		{name: "disabled without cookie", wantState: `aria-checked="false"`},
-		{name: "enabled with on cookie", cookie: "on", wantState: `aria-checked="true"`},
+func TestErrorHelpersIgnoreBionicReadingCookie(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/pages/example", nil)
+	req.AddCookie(&http.Cookie{Name: "wga_bionic", Value: "on"})
+	event := &core.RequestEvent{
+		Event: router.Event{
+			Request:  req,
+			Response: httptest.NewRecorder(),
+		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodGet, "/pages/example", nil)
-			if test.cookie != "" {
-				req.AddCookie(&http.Cookie{Name: "wga_bionic", Value: test.cookie})
-			}
+	if err := NotFoundError(event); err != nil {
+		t.Fatalf("render not found helper: %v", err)
+	}
 
-			event := &core.RequestEvent{
-				Event: router.Event{
-					Request:  req,
-					Response: httptest.NewRecorder(),
-				},
-			}
-
-			if err := NotFoundError(event); err != nil {
-				t.Fatalf("render not found helper: %v", err)
-			}
-
-			recorder := event.Response.(*httptest.ResponseRecorder)
-			if !strings.Contains(recorder.Body.String(), test.wantState) {
-				t.Errorf("bionic toggle does not reflect the request context, want %s", test.wantState)
-			}
-		})
+	rendered := event.Response.(*httptest.ResponseRecorder).Body.String()
+	if !strings.Contains(rendered, `aria-checked="false" data-wga-bionic-toggle`) {
+		t.Error("expected a neutral client-owned bionic toggle")
+	}
+	if strings.Contains(rendered, `aria-checked="true" data-wga-bionic-toggle`) {
+		t.Error("error helper must ignore the legacy bionic cookie")
 	}
 }
