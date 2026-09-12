@@ -63,7 +63,7 @@ func addToItineraryButtonClass(variant AddToItineraryVariant, added bool, full b
 	case variant == AddToItineraryCompact:
 		class += " border-wga-accent text-wga-accent hover:border-wga-ink hover:bg-wga-accent-tint"
 	default:
-		class += " border-control hover:border-wga-accent hover:text-wga-accent"
+		class += " border-control hover:border-wga-accent hover:bg-wga-accent-tint hover:text-wga-accent"
 	}
 
 	return class
