@@ -20,3 +20,20 @@ The system SHALL not generate or imply selection commentary where none exists.
 #### Scenario: Selection has no commentary
 - **WHEN** a visitor opens a curated selection without supplied commentary
 - **THEN** the page states that the commentary is unavailable and does not substitute generated prose.
+
+### Requirement: Curated artist records provide an optional stable in-page index
+The system SHALL render `ON THIS PAGE` only when an artist record has one or more curated selections. Its ordinary fragment links SHALL target Biography, every selection form, and Cite This Record, and each selection entry SHALL report its shown-work count. The optional period-music player and TOC SHALL share one rail that becomes sticky from the reference medium breakpoint, subtracts the measured bottom stack from its available viewport height, and scrolls internally when necessary. Below that breakpoint the rail SHALL remain in normal document flow. An artist without curated selections SHALL omit the one-section TOC; when additional uncatalogued-on-page holdings exist, its artwork-search action SHALL instead appear after the citation as the final onward link. Scroll-position highlighting MAY enhance the links but SHALL NOT be required for navigation.
+
+#### Scenario: Visitor follows the artist record index
+- **WHEN** a visitor activates an `ON THIS PAGE` entry with a pointer or keyboard
+- **THEN** browser-native fragment navigation reaches the labelled artist-record section and remains functional without JavaScript.
+
+#### Scenario: Artist has no curated selection
+
+- **WHEN** an artist record contains biography, holdings, and citation but no curated selection
+- **THEN** no `ON THIS PAGE` navigation is rendered, the rail does not contain decorative navigation for a single argument, and any eligible `FIND MORE BY … IN THE ARTWORK SEARCH →` action follows the citation.
+
+#### Scenario: Sticky artist rail shares space with fixed workspaces
+
+- **WHEN** a curated artist record has period music or a TOC and a Study Board or itinerary tray is visible
+- **THEN** the combined rail remains within the viewport above the measured bottom stack and its own content scrolls without obscuring its links or player.

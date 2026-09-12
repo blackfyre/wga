@@ -13,3 +13,14 @@ The system SHALL expose the available section jumps, palette, search, list trave
 #### Scenario: Visitor opens keyboard help
 - **WHEN** a visitor activates the shortcut help control
 - **THEN** the help surface names the available action and its usable key without requiring undocumented knowledge.
+
+### Requirement: Reference navigation widgets have complete keyboard paths
+The system SHALL provide native or equivalent keyboard interaction for the artist portrait-comparison carousel and every Help table-of-contents row. Carousel controls SHALL expose their destination and current state, and table-of-contents navigation SHALL use ordinary fragment links or equivalent link semantics.
+
+#### Scenario: Visitor uses portrait comparison without a pointer
+- **WHEN** a visitor focuses the portrait-comparison controls and activates the previous or next action
+- **THEN** the comparison advances, announces or exposes the resulting state, and retains a visible focus path.
+
+#### Scenario: Visitor follows the Help table of contents
+- **WHEN** a visitor activates a table-of-contents row with Enter
+- **THEN** the corresponding section receives browser-native fragment navigation without requiring a pointer-specific listener.

@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Record pages offer optional session-wide period music
-The system SHALL offer an applicable period-music card on supported collection records without autoplay and SHALL use one named player window for the browser session. A card or direct player route SHALL expose a stored song only when both the song and its composer are explicitly published.
+The system SHALL offer an applicable period-music card on supported collection records without autoplay and SHALL use one named player window for the browser session. A card or direct player route SHALL expose a stored song only when both the song and its composer are explicitly published. Native audio controls SHALL disable download, remote playback, and playback-rate controls while remaining keyboard operable with a visible focus indicator.
 
 #### Scenario: Visitor starts music from a record
 - **WHEN** a visitor activates a period-music card
@@ -17,3 +17,7 @@ The system SHALL provide a normal link when JavaScript is unavailable and SHALL 
 #### Scenario: Browser blocks the player window
 - **WHEN** a visitor activates a music card and the browser blocks its window
 - **THEN** the originating record displays a notice explaining that playback could not be opened.
+
+#### Scenario: Visitor operates native player controls by keyboard
+- **WHEN** keyboard focus reaches the period-music audio controls
+- **THEN** visible focus remains present, playback remains operable, and download, remote-playback, and playback-rate affordances are unavailable.

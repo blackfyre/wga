@@ -36,8 +36,8 @@ that outcome.
 | Reference capability | Production owner | Status |
 | --- | --- | --- |
 | Layout, header, footer, feedback and keyboard mount | `internal/assets/templ/layouts/layout.templ`; `components/nav.templ`, `footer.templ`, `feedback.templ`, `keyboard.templ` | Existing shared mount; reference navigation grouping, footer preferences, and visual system require adoption. |
-| Theme | `resources/css/style.pcss`; `resources/js/bootstrap.ts` | Existing interaction; reference semantic token and no-flash contract require alignment. |
-| Bionic reading | `resources/js/bionic.ts`; page markup hooks | Existing helper; reference footer and cookie persistence contract require alignment. |
+| Theme | `resources/css/style.pcss`; `resources/js/bootstrap.ts` | Existing interaction; keep palette and scheme state entirely in client local storage, retain no-flash resolution through the inline client head script, and remove appearance cookies and server preference projection. |
+| Bionic reading | `resources/js/bionic.ts`; page markup hooks | Existing helper; keep persistence and transformation entirely client-side, remove the `wga_bionic` cookie and every server projection, and expose the control only after client initialisation. |
 | Keyboard and palette | `resources/js/keyboard.ts`; `components/keyboard.templ`; `internal/handlers/keyboard/` | Existing foundation; registry and full screen/action coverage require expansion. |
 | Feedback | Shared public layout | Floating control links directly to the public GitHub issue list; the in-application form is not the release entry point. |
 | Cookie notice | `resources/js/cookieconsent.ts` | Existing library-driven behaviour; reference presentation requires alignment. |
