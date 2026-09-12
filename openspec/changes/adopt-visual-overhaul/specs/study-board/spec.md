@@ -2,12 +2,12 @@
 
 ### Requirement: The Study Board is an anonymous URL-shareable workspace
 
-The system SHALL maintain an ordered, duplicate-free set of published artworks on a stable Study Board route. The canonical board URL SHALL contain the ordered artwork identifiers and SHALL be sufficient to share and restore the board without a server-persisted board record. A valid URL board SHALL outrank remembered browser-local state; otherwise the visitor's last browser-local board SHALL be restored. Invalid, missing, and unpublished identifiers SHALL be omitted without exposing their metadata.
+The system SHALL maintain an ordered, duplicate-free set of at most twelve published artworks on a stable Study Board route. The canonical board URL SHALL encode the ordered artwork identifiers as one comma-separated `board` query value and SHALL be sufficient to share and restore the board without a server-persisted board record. A valid URL board SHALL outrank remembered browser-local state; otherwise the visitor's last browser-local board SHALL be restored. Invalid, missing, and unpublished identifiers SHALL be omitted without exposing their metadata. After validation and duplicate removal, only the first twelve published identifiers SHALL be retained and the URL SHALL canonicalise to that bounded list.
 
 #### Scenario: Recipient opens a shared board
 
 - **WHEN** a recipient opens a board URL containing valid and invalid artwork identifiers
-- **THEN** the published valid works appear once in URL order, invalid entries expose no metadata, and no account or stored board record is required.
+- **THEN** the first twelve published valid works appear once in URL order, invalid entries expose no metadata, the URL canonicalises to those retained identifiers, and no account or stored board record is required.
 
 #### Scenario: Visitor returns without a board URL
 
@@ -16,12 +16,17 @@ The system SHALL maintain an ordered, duplicate-free set of published artworks o
 
 ### Requirement: Published works can be added from every reference surface
 
-The system SHALL expose state-aware Study Board controls on artwork records, artwork-search grid cards and dense rows, both Dual Mode panes, eligible Timeline work selections, Inspiration cover works, and command-palette artwork results. A control SHALL report `ADD TO STUDY BOARD +` before addition and `ON STUDY BOARD ✓` after addition, SHALL not duplicate an existing work, and SHALL not trigger an enclosing record navigation action.
+The system SHALL expose state-aware Study Board controls on artwork records, artwork-search grid cards and dense rows, both Dual Mode panes, eligible Timeline work selections, Inspiration cover works, and command-palette artwork results. A control SHALL report `ADD TO STUDY BOARD +` before addition and `ON STUDY BOARD ✓` after addition, SHALL not duplicate an existing work, and SHALL not trigger an enclosing record navigation action. Once twelve works are present, controls for works outside the board SHALL report the capacity-exhausted state and SHALL not mutate the board, its canonical URL, or remembered local state.
 
 #### Scenario: Visitor adds a work from artwork search
 
 - **WHEN** a visitor activates `ADD TO STUDY BOARD +` on an artwork-search result
 - **THEN** the work is appended once, the canonical board URL and local continuation state are updated, the control reports `ON STUDY BOARD ✓`, and the artwork record is not opened.
+
+#### Scenario: Visitor attempts to exceed board capacity
+
+- **WHEN** a visitor activates a Study Board control for another work while twelve works are already present
+- **THEN** the control reports that the board is at capacity, no work is added or displaced, and the canonical URL and local continuation state remain unchanged.
 
 ### Requirement: The Study Board supports visual and metadata comparison
 

@@ -204,10 +204,10 @@ func TestErrorHelpersIgnoreBionicReadingCookie(t *testing.T) {
 	}
 
 	rendered := event.Response.(*httptest.ResponseRecorder).Body.String()
-	if !strings.Contains(rendered, `aria-checked="false"`) {
+	if !strings.Contains(rendered, `aria-checked="false" data-wga-bionic-toggle`) {
 		t.Error("expected a neutral client-owned bionic toggle")
 	}
-	if strings.Contains(rendered, `aria-checked="true"`) {
+	if strings.Contains(rendered, `aria-checked="true" data-wga-bionic-toggle`) {
 		t.Error("error helper must ignore the legacy bionic cookie")
 	}
 }
