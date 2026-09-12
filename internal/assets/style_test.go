@@ -139,6 +139,55 @@ func TestPublicSourcesUseWgaOwnedStyleVocabulary(t *testing.T) {
 	}
 }
 
+func TestPublicSourcesUseRelativeTypeScale(t *testing.T) {
+	forbidden := regexp.MustCompile(`\btext-\[[0-9]+(?:\.[0-9]+)?px\]`)
+	lowestRung := regexp.MustCompile(`text-\(length:--t-9(?:5)?\)`)
+	opacityHover := regexp.MustCompile(`(?:group-)?hover:opacity`)
+
+	for _, root := range []string{"templ", "../../resources/js"} {
+		err := filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			ext := filepath.Ext(path)
+			if entry.IsDir() || (ext != ".templ" && ext != ".ts") || strings.HasSuffix(path, ".test.ts") {
+				return nil
+			}
+			source, readErr := os.ReadFile(path)
+			if readErr != nil {
+				return readErr
+			}
+			if match := forbidden.Find(source); match != nil {
+				t.Errorf("%s retains pixel-based typography %q; use the --t-* rem scale", path, match)
+			}
+			if filepath.Base(path) != "keyboard.templ" {
+				if match := lowestRung.Find(source); match != nil {
+					t.Errorf("%s uses the smallest type rung %q outside the keyboard hint", path, match)
+				}
+			}
+			if filepath.Base(path) != "statistics.templ" {
+				if match := opacityHover.Find(source); match != nil {
+					t.Errorf("%s retains opacity-based hover feedback %q; use action colour, record tint, or chip border-and-tint feedback", path, match)
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			t.Fatalf("scan public typography consumers under %s: %v", root, err)
+		}
+	}
+
+	css := readSource(t)
+	if match := regexp.MustCompile(`font-size:\s*[0-9.]+(?:px|rem)`).FindString(css); match != "" {
+		t.Errorf("resources/css/style.pcss retains literal typography %q; use the --t-* rem scale", match)
+	}
+	for _, webfont := range []string{"Lexend", "Merriweather", "Noto"} {
+		if strings.Contains(css, webfont) {
+			t.Errorf("resources/css/style.pcss retains non-system font %q", webfont)
+		}
+	}
+}
+
 func TestThirdPartyStyleDependencyIsAbsent(t *testing.T) {
 	t.Helper()
 	needle := strings.Join([]string{"daisy", "ui"}, "")

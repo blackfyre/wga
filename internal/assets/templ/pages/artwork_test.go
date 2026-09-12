@@ -245,7 +245,7 @@ func TestArtworkBlockStacksRecordActionsAtReferenceSpacing(t *testing.T) {
 	ctx := tmplUtils.WithItineraryProjection(context.Background(), "csrf-token", dto.ItineraryTrayView{}, map[string]bool{})
 	rendered := renderArtworkBlock(t, sampleArtwork(), ctx)
 
-	for _, expected := range []string{`class="mt-7 flex flex-col gap-2.5"`, `h-[50px] w-full items-center justify-center`, `h-[50px]`} {
+	for _, expected := range []string{`class="mt-7 flex flex-col gap-2.5"`, `wga-button wga-button-primary h-12 w-full`, `h-12`} {
 		if !strings.Contains(rendered, expected) {
 			t.Errorf("record actions must contain %q", expected)
 		}

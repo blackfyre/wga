@@ -30,7 +30,6 @@ templ GlossaryBlock(view GlossaryView) {
 	</head>
 	<section id="glossary" class="container mx-auto px-4 pb-20 pt-10 md:px-0 wga-enter">
 		@components.PageHead("13 — GLOSSARY", "Glossary", "Terms used in the commentaries and catalogue entries.")
-
 		<nav class="mt-10 flex flex-wrap gap-[2px] border-b border-wga-ink/15 pb-5" aria-label="Filter terms by letter">
 			<a
 				href="/glossary"
@@ -49,7 +48,6 @@ templ GlossaryBlock(view GlossaryView) {
 				>{ letter }</a>
 			}
 		</nav>
-
 		<form action="/glossary" method="GET" hx-get="/glossary" hx-target="#glossary" hx-select="#glossary" hx-swap="outerHTML" hx-trigger="input delay:300ms" class="flex flex-col justify-between gap-3.5 py-5 pb-8 md:flex-row md:items-baseline md:gap-8">
 			if view.SelectedLetter != "" {
 				<input type="hidden" name="letter" value={ view.SelectedLetter }/>
@@ -60,20 +58,20 @@ templ GlossaryBlock(view GlossaryView) {
 			</label>
 			<p class="font-mono text-xs tracking-[1px] text-wga-ink/60" aria-live="polite">{ len(view.Terms) } SHOWN</p>
 		</form>
-
 		if len(view.Terms) > 0 {
 			<dl class="grid grid-cols-1 md:grid-cols-2 md:gap-x-14">
 				for _, term := range view.Terms {
 					<div class="border-t border-wga-ink/15 py-[22px]">
 						<dt class="mb-2 text-xl font-semibold tracking-[-0.2px]">{ term.Expression }</dt>
-						<dd class="text-[15px] leading-relaxed">@templ.Raw(term.Definition)</dd>
+						<dd class="text-(length:--t-15) leading-relaxed">@templ.Raw(term.Definition)
+</dd>
 					</div>
 				}
 			</dl>
 		} else {
 			<div class="border-t border-wga-ink/15 py-12">
 				<p class="mb-2 text-lg font-semibold">No terms match.</p>
-				<a href="/glossary" hx-get="/glossary" hx-target="#glossary" hx-select="#glossary" hx-swap="outerHTML" class="font-mono text-[11px] tracking-[1px] text-wga-accent transition-opacity hover:opacity-60">CLEAR SEARCH →</a>
+				<a href="/glossary" hx-get="/glossary" hx-target="#glossary" hx-select="#glossary" hx-swap="outerHTML" class="wga-action-link font-mono text-(length:--t-11) tracking-[1px]">CLEAR SEARCH →</a>
 			</div>
 		}
 	</section>

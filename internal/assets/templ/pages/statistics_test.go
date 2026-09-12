@@ -55,8 +55,8 @@ func TestStatisticsBlockRendersAccessibleSummaries(t *testing.T) {
 		"TOTAL",
 		"SHARE",
 		"wga-enter",
-		"text-[32px]",
-		"md:text-[44px]",
+		"text-(length:--t-32)",
+		"md:text-(length:--t-44)",
 		"RECOMPUTED NIGHTLY FROM PUBLISHED RECORDS.",
 		"ARTISTS WITHOUT A RECORDED BIRTH YEAR ARE EXCLUDED FROM THE PERIOD CHARTS.",
 	} {

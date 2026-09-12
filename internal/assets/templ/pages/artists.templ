@@ -35,30 +35,30 @@ type ArtistRow struct {
 
 // ArtistsView is the page-owned contract for the artist index.
 type ArtistsView struct {
-	Letters       []ArtistLetter
-	Schools       []dto.ChipOption
-	Periods       []dto.ChipOption
-	NameField     dto.Field
-	BornRange     dto.RangeField
+	Letters        []ArtistLetter
+	Schools        []dto.ChipOption
+	Periods        []dto.ChipOption
+	NameField      dto.Field
+	BornRange      dto.RangeField
 	HasBirthBounds bool
-	NameQuery     string
+	NameQuery      string
 	SelectedLetter string
-	View          string
-	Sort          string
-	SortLabel     string
-	GridUrl       string
-	ListUrl       string
-	SortUrl       string
-	AllUrl        string
-	ResetUrl      string
-	PrevUrl       string
-	NextUrl       string
-	FilterNote    string
-	Total         int
-	Page          int
-	PageCount     int
-	Artists       []ArtistRow
-	Jsonld        string
+	View           string
+	Sort           string
+	SortLabel      string
+	GridUrl        string
+	ListUrl        string
+	SortUrl        string
+	AllUrl         string
+	ResetUrl       string
+	PrevUrl        string
+	NextUrl        string
+	FilterNote     string
+	Total          int
+	Page           int
+	PageCount      int
+	Artists        []ArtistRow
+	Jsonld         string
 }
 
 templ ArtistsPage(c ArtistsView) {
@@ -74,7 +74,6 @@ templ ArtistsBlock(c ArtistsView) {
 	<section id="artists" class="container mx-auto px-4 pb-20 pt-10 md:px-0 wga-enter">
 		@components.PageHead("01 — ARTIST INDEX", "Artists",
 			"Painters, sculptors and architects in the collection. Browse alphabetically, or filter by school and period.")
-
 		<nav class="mt-10 flex flex-wrap gap-[2px] border-b border-wga-ink/15 pb-5" aria-label="Filter artists by letter">
 			<a
 				href={ templ.URL(c.AllUrl) }
@@ -101,7 +100,6 @@ templ ArtistsBlock(c ArtistsView) {
 				}
 			}
 		</nav>
-
 		<form
 			id="artist-filters"
 			action="/artists"
@@ -145,7 +143,6 @@ templ ArtistsBlock(c ArtistsView) {
 					>LIST</a>
 				</div>
 			</div>
-
 			<div class="flex flex-col md:flex-row gap-8 md:gap-12 py-6 border-b border-wga-ink/15">
 				<div class="flex-1 min-w-0">
 					@components.Field(c.NameField)
@@ -159,12 +156,10 @@ templ ArtistsBlock(c ArtistsView) {
 					}
 				</div>
 			</div>
-
 			<noscript>
-				<button type="submit" class="bg-wga-accent-bg px-4 py-2 font-mono text-[11px] tracking-[1px] text-wga-inv-fg mt-4">APPLY FILTERS</button>
+				<button type="submit" class="wga-button wga-button-primary mt-4 font-mono text-(length:--t-11) tracking-[1px]">APPLY FILTERS</button>
 			</noscript>
 		</form>
-
 		<div class="flex items-baseline justify-between py-4 pb-7">
 			<p class="font-mono text-xs text-muted" aria-live="polite">
 				{ fmt.Sprintf("%d ARTISTS", c.Total) } { c.FilterNote }
@@ -175,10 +170,9 @@ templ ArtistsBlock(c ArtistsView) {
 				hx-target="#artists"
 				hx-select="#artists"
 				hx-swap="outerHTML"
-				class="font-mono text-xs text-wga-accent hover:opacity-60 transition-opacity"
+				class="wga-action-link font-mono text-xs"
 			>SORT: { c.SortLabel } ↕</a>
 		</div>
-
 		if len(c.Artists) == 0 {
 			<div class="border-b border-wga-ink/15 py-14">
 				<h2 class="mb-2 text-lg font-semibold">No artists match these filters.</h2>
@@ -189,7 +183,7 @@ templ ArtistsBlock(c ArtistsView) {
 					hx-target="#artists"
 					hx-select="#artists"
 					hx-swap="outerHTML"
-					class="font-mono text-(length:--t-11) tracking-[1px] text-wga-accent transition-opacity hover:opacity-60"
+					class="wga-action-link font-mono text-(length:--t-11) tracking-[1px]"
 				>RESET FILTERS →</a>
 			</div>
 		} else if c.View == "list" {
@@ -211,7 +205,8 @@ templ ArtistsBlock(c ArtistsView) {
 								<tr class="transition-colors hover:bg-wga-accent-bg/5">
 									<th scope="row" class="font-semibold text-(length:--t-15)" data-kbd-idx={ strconv.Itoa(navigableIndex(c.Artists, index)) } data-kbd-href={ artist.URL }>
 										@components.KeyboardCaret()
-										<a href={ templ.URL(artist.URL) } hx-get={ artist.URL }>@ArtistName(artist.Name, c.NameQuery)</a>
+										<a href={ templ.URL(artist.URL) } hx-get={ artist.URL }>@ArtistName(artist.Name, c.NameQuery)
+</a>
 									</th>
 									<td class="font-mono text-xs text-wga-ink/70">{ artist.Dates }</td>
 									<td class="font-mono text-xs text-wga-ink/70">{ artist.School }</td>
@@ -221,8 +216,9 @@ templ ArtistsBlock(c ArtistsView) {
 							} else {
 								<tr class="opacity-50">
 									<th scope="row" class="font-semibold text-(length:--t-15)">
-										<span>@ArtistName(artist.Name, c.NameQuery)</span>
-										<span class="mt-0.5 block font-mono text-(length:--t-9) tracking-[1px] text-faint">NOT DIGITISED</span>
+										<span>@ArtistName(artist.Name, c.NameQuery)
+</span>
+										<span class="mt-0.5 block font-mono text-(length:--t-10) tracking-[1px] text-faint">NOT DIGITISED</span>
 									</th>
 									<td class="font-mono text-xs text-wga-ink/70">{ artist.Dates }</td>
 									<td class="font-mono text-xs text-wga-ink/70">{ artist.School }</td>
@@ -240,9 +236,10 @@ templ ArtistsBlock(c ArtistsView) {
 					if artist.Available {
 						<li data-kbd-idx={ strconv.Itoa(navigableIndex(c.Artists, index)) } data-kbd-href={ artist.URL }>
 							@components.KeyboardCaret()
-							<a href={ templ.URL(artist.URL) } hx-get={ artist.URL } class="block transition-opacity hover:opacity-70">
+							<a href={ templ.URL(artist.URL) } hx-get={ artist.URL } class="wga-record-card">
 								@components.Plate(dto.Plate{DisplayURL: artist.Thumb, Alt: "Portrait of " + artist.Name, Placeholder: "PORTRAIT — " + artist.Name, Aspect: "aspect-square mb-3.5", Contain: false})
-								<span class="mb-1 block text-(length:--t-17) font-semibold break-words">@ArtistName(artist.Name, c.NameQuery)</span>
+								<span class="mb-1 block text-(length:--t-17) font-semibold break-words">@ArtistName(artist.Name, c.NameQuery)
+</span>
 								<span class="block font-mono text-(length:--t-11) leading-relaxed text-muted">
 									{ artist.Dates }
 									<br/>
@@ -254,38 +251,37 @@ templ ArtistsBlock(c ArtistsView) {
 						<li class="opacity-50">
 							<div class="block">
 								@components.Plate(dto.Plate{DisplayURL: artist.Thumb, Alt: "Portrait of " + artist.Name, Placeholder: "PORTRAIT — " + artist.Name, Aspect: "aspect-square mb-3.5", Contain: false})
-								<span class="mb-1 block text-(length:--t-17) font-semibold break-words">@ArtistName(artist.Name, c.NameQuery)</span>
+								<span class="mb-1 block text-(length:--t-17) font-semibold break-words">@ArtistName(artist.Name, c.NameQuery)
+</span>
 								<span class="block font-mono text-(length:--t-11) leading-relaxed text-muted">
 									{ artist.Dates }
 									<br/>
 									{ schoolPeriod(artist.School, artist.Period) }
 								</span>
-								<span class="mt-1 block font-mono text-(length:--t-9) tracking-[1px] text-faint">NOT DIGITISED</span>
+								<span class="mt-1 block font-mono text-(length:--t-10) tracking-[1px] text-faint">NOT DIGITISED</span>
 							</div>
 						</li>
 					}
 				}
 			</ul>
 		}
-
 		if c.PageCount > 1 {
 			<nav class="mt-10 flex items-center justify-between border-t border-wga-ink/15 pt-5" aria-label="Pagination">
 				<p class="font-mono text-xs text-muted">{ fmt.Sprintf("PAGE %d OF %d", c.Page, c.PageCount) }</p>
 				<div class="flex gap-3.5 font-mono text-xs tracking-[1px]">
 					if c.Page > 1 {
-						<a href={ templ.URL(c.PrevUrl) } hx-get={ c.PrevUrl } hx-target="#artists" hx-select="#artists" hx-swap="outerHTML" class="text-wga-accent transition-opacity hover:opacity-60">← PREV</a>
+						<a href={ templ.URL(c.PrevUrl) } hx-get={ c.PrevUrl } hx-target="#artists" hx-select="#artists" hx-swap="outerHTML" class="wga-action-link">← PREV</a>
 					} else {
 						<span class="text-faint-2">← PREV</span>
 					}
 					if c.Page < c.PageCount {
-						<a href={ templ.URL(c.NextUrl) } hx-get={ c.NextUrl } hx-target="#artists" hx-select="#artists" hx-swap="outerHTML" class="text-wga-accent transition-opacity hover:opacity-60">NEXT →</a>
+						<a href={ templ.URL(c.NextUrl) } hx-get={ c.NextUrl } hx-target="#artists" hx-select="#artists" hx-swap="outerHTML" class="wga-action-link">NEXT →</a>
 					} else {
 						<span class="text-faint-2">NEXT →</span>
 					}
 				</div>
 			</nav>
 		}
-
 		if c.Jsonld != "" {
 			@templ.Raw(c.Jsonld)
 		}

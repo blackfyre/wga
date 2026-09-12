@@ -15,7 +15,7 @@ templ DialogButton(href string, text string) {
 		hx-on:click="wga.dialog.open()"
 		hx-target="#d"
 		hx-select=".wga-dialog-panel, form[method=dialog].wga-dialog-backdrop"
-		class="inline-flex bg-wga-accent-bg px-4 py-3 font-mono text-[11px] tracking-[1.5px] text-wga-inv-fg"
+		class="inline-flex bg-wga-accent-bg px-4 py-3 font-mono text-(length:--t-11) tracking-[1.5px] text-wga-inv-fg"
 		hx-swap="innerHTML"
 	>
 		{ text }

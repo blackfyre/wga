@@ -41,7 +41,7 @@ func TestPageHeadAndSectionRuleUseHeadingHierarchy(t *testing.T) {
 	if !strings.Contains(rule, "<h2") || !strings.Contains(rule, ">Featured works</h2>") {
 		t.Fatal("section rule must provide a section h2")
 	}
-	if !strings.Contains(rule, `href="/artworks"`) || !strings.Contains(rule, "text-(length:--t-11)") || !strings.Contains(rule, "transition-opacity") {
+	if !strings.Contains(rule, `href="/artworks"`) || !strings.Contains(rule, "text-(length:--t-11)") || !strings.Contains(rule, "wga-action-link") {
 		t.Fatal("section rule must render its ordinary link")
 	}
 }
@@ -69,6 +69,9 @@ func TestWorkCardsAndRowsAreOrdinaryLinksWithoutViewerHook(t *testing.T) {
 	}
 
 	card := renderComponent(t, WorkCard(work))
+	if !strings.Contains(card, `class="wga-record-card"`) || strings.Contains(card, "hover:opacity-") {
+		t.Fatal("available work card must use the shared tint geometry without fading")
+	}
 	if !strings.Contains(card, `class="flex items-end border border-wga-ink/15 bg-wga-fill p-2.5 aspect-[4/5] mb-2.5"`) || strings.Contains(card, `class="mt-3 text-sm`) {
 		t.Fatal("work card must place its reference spacing on the plate rather than the title")
 	}
@@ -87,7 +90,7 @@ func TestWorkCardUsesTypedBlockAddControl(t *testing.T) {
 		t.Fatalf("render work card: %v", err)
 	}
 	rendered := output.String()
-	for _, expected := range []string{`h-[50px]`, `w-full`, "ADD TO AN ITINERARY +", `hx-select="unset"`} {
+	for _, expected := range []string{`h-12`, `w-full`, "ADD TO AN ITINERARY +", `hx-select="unset"`} {
 		if !strings.Contains(rendered, expected) {
 			t.Errorf("work card missing typed block contract %q", expected)
 		}
@@ -130,7 +133,7 @@ func TestPlateUsesSeparateDisplayAndZoomURLsWithAccessibleFallbacks(t *testing.T
 	}
 
 	placeholder := renderComponent(t, Plate(dto.Plate{Placeholder: "Reproduction unavailable"}))
-	if !strings.Contains(placeholder, "Reproduction unavailable") || !strings.Contains(placeholder, "text-(length:--t-9)") || !strings.Contains(placeholder, "text-faint-2") {
+	if !strings.Contains(placeholder, "Reproduction unavailable") || !strings.Contains(placeholder, "text-(length:--t-10)") || !strings.Contains(placeholder, "text-muted") {
 		t.Fatal("plate placeholder must be visible")
 	}
 }

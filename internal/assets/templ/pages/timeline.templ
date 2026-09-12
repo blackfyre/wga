@@ -148,7 +148,7 @@ templ TimelineBlock(c TimelineView) {
 					@components.RangeField(c.WindowRange)
 				</div>
 				<noscript>
-					<button type="submit" class="mt-4 bg-wga-accent-bg px-4 py-2 font-mono text-(length:--t-11) tracking-[1px] text-wga-inv-fg">APPLY WINDOW</button>
+					<button type="submit" class="wga-button wga-button-primary mt-4 font-mono text-(length:--t-11) tracking-[1px]">APPLY WINDOW</button>
 				</noscript>
 			</form>
 			<div class="mt-10">
@@ -202,7 +202,7 @@ templ TimelineBlock(c TimelineView) {
 					<ul class="list-none" aria-label={ marksAria(c) }>
 						for _, mark := range c.Marks {
 							<li class="absolute top-1/2 -translate-x-1/2 -translate-y-1/2" style={ "left:" + pct(mark.LeftPct) + "%" }>
-								<a href={ templ.SafeURL(mark.Href) } title={ mark.Label } aria-label={ mark.Label } class="block p-1.5 transition-opacity hover:opacity-60">
+								<a href={ templ.SafeURL(mark.Href) } title={ mark.Label } aria-label={ mark.Label } class="block p-1.5 transition-colors hover:bg-wga-accent-tint">
 									<span class="block h-2.5 w-2.5 rotate-45 bg-wga-accent-bg"></span>
 								</a>
 							</li>
@@ -229,8 +229,9 @@ templ TimelineBlock(c TimelineView) {
 					</div>
 					<ul class="mt-6 grid min-w-0 grid-cols-1 gap-x-4 gap-y-10 min-[400px]:grid-cols-2 md:grid-cols-4">
 						for _, work := range c.Works {
-							<li class="min-w-0">@components.WorkCard(work)
-</li>
+							<li class="min-w-0">
+								@components.WorkCard(work)
+							</li>
 						}
 					</ul>
 					if c.PageCount > 1 {
@@ -238,12 +239,12 @@ templ TimelineBlock(c TimelineView) {
 							<p class="font-mono text-(length:--t-11) tracking-[1px] text-muted">{ fmt.Sprintf("PAGE %d OF %d", c.Page, c.PageCount) }</p>
 							<div class="flex gap-3.5 font-mono text-(length:--t-11) tracking-[1px]">
 								if c.Page > 1 {
-									<a href={ templ.SafeURL(c.PrevUrl) } hx-get={ c.PrevUrl } hx-target="#timeline" hx-select="#timeline" hx-swap="outerHTML" class="text-wga-accent transition-opacity hover:opacity-60">← PREV</a>
+									<a href={ templ.SafeURL(c.PrevUrl) } hx-get={ c.PrevUrl } hx-target="#timeline" hx-select="#timeline" hx-swap="outerHTML" class="wga-action-link">← PREV</a>
 								} else {
 									<span class="text-faint-2">← PREV</span>
 								}
 								if c.Page < c.PageCount {
-									<a href={ templ.SafeURL(c.NextUrl) } hx-get={ c.NextUrl } hx-target="#timeline" hx-select="#timeline" hx-swap="outerHTML" class="text-wga-accent transition-opacity hover:opacity-60">NEXT →</a>
+									<a href={ templ.SafeURL(c.NextUrl) } hx-get={ c.NextUrl } hx-target="#timeline" hx-select="#timeline" hx-swap="outerHTML" class="wga-action-link">NEXT →</a>
 								} else {
 									<span class="text-faint-2">NEXT →</span>
 								}
@@ -275,7 +276,7 @@ templ timelineLanes(c TimelineView) {
 					<li class="bg-wga-bg px-3.5 py-3.5">
 						<span class="block text-(length:--t-26) font-semibold tracking-[-0.5px]">{ laneCountLabel(lane) }</span>
 						<span class="mt-1.5 block font-mono text-(length:--t-10) tracking-[1.5px] text-muted">{ lane.Label }</span>
-						<span class="mt-1 block font-mono text-(length:--t-9) tracking-[1px] text-faint-2">{ laneStateLabel(lane) }</span>
+						<span class="mt-1 block font-mono text-(length:--t-10) tracking-[1px] text-faint-2">{ laneStateLabel(lane) }</span>
 					</li>
 				}
 			</ul>
@@ -294,7 +295,7 @@ templ timelineArtists(c TimelineView) {
 			<ul class="mt-4 divide-y divide-wga-ink/10 border-y border-wga-ink/10">
 				for _, artist := range c.Artists {
 					<li class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-2.5">
-						<a href={ templ.SafeURL(artist.Href) } class="min-w-0 max-w-full break-words text-(length:--t-15) font-semibold text-wga-ink transition-opacity hover:opacity-60">{ artist.Name }</a>
+						<a href={ templ.SafeURL(artist.Href) } class="wga-record-card min-w-0 max-w-full break-words text-(length:--t-15) font-semibold text-wga-ink">{ artist.Name }</a>
 						<span class="shrink-0 font-mono text-(length:--t-11) tracking-[1px] text-muted">{ artist.Meta }</span>
 					</li>
 				}

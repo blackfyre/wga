@@ -417,7 +417,7 @@ const configureViewerSurface = (label: string, viewer: Viewer) => {
 		close.type = "button";
 		close.dataset.viewerClose = "true";
 		close.className =
-			"absolute right-4 top-4 z-10 border border-current bg-wga-bg px-3 py-2 font-mono text-[11px] tracking-[1.5px] text-wga-ink";
+			"absolute right-4 top-4 z-10 border border-current bg-wga-bg px-3 py-2 font-mono text-(length:--t-11) tracking-[1.5px] text-wga-ink";
 		close.setAttribute("aria-label", "Close artwork viewer");
 		close.textContent = "CLOSE";
 		close.addEventListener("click", () => viewer.hide());

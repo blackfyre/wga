@@ -182,8 +182,8 @@
 .wga-kbd-key {
 	padding: 4px 6px;
 	border: 1px solid color-mix(in oklab, var(--wga-ink) 25%, transparent);
-	font-family: ui-monospace, "SF Mono", Menlo, monospace;
-	font-size: 9.5px;
+	font-family: var(--font-mono);
+	font-size: var(--t-9);
 	letter-spacing: 1px;
 	line-height: 1;
 	white-space: nowrap;
@@ -194,8 +194,8 @@
 	top: 11px;
 	left: -18px;
 	color: var(--wga-accent-bg);
-	font-family: ui-monospace, "SF Mono", Menlo, monospace;
-	font-size: 12px;
+	font-family: var(--font-mono);
+	font-size: var(--t-10);
 	opacity: 0;
 	pointer-events: none;
 	transition: opacity 0.12s ease;
@@ -366,6 +366,8 @@
 	--color-wga-faint-2: var(--wga-faint-2);
 	--color-wga-accent: var(--wga-accent);
 	--color-wga-accent-2: var(--wga-accent-2);
+	--color-wga-action: var(--wga-action-ink);
+	--color-wga-action-hover: var(--wga-action-ink-hover);
 	--color-wga-accent-bg: var(--wga-accent-bg);
 	--color-wga-accent-bg-2: var(--wga-accent-bg-2);
 	--color-wga-accent-tint: var(--wga-accent-tint);
@@ -418,6 +420,8 @@
 }
 
 :root {
+	--wga-action-ink: var(--wga-accent);
+	--wga-action-ink-hover: var(--wga-accent-2);
 	--status-info: #003366;
 	--status-info-fg: #f4f2ed;
 	--status-success: #2e5b4a;
@@ -1647,10 +1651,46 @@
 }
 
 @layer components {
+	.wga-action-link {
+		color: var(--wga-action-ink);
+		transition: color 160ms ease;
+	}
+
+	.wga-action-link:hover {
+		color: var(--wga-action-ink-hover);
+	}
+
+	.wga-trailing-action {
+		display: block;
+		text-align: right;
+	}
+
+	.wga-record-card {
+		display: block;
+		margin: -0.625rem;
+		padding: 0.625rem;
+		transition: background-color 160ms ease;
+	}
+
+	.wga-record-card:hover {
+		background: var(--wga-accent-tint);
+	}
+
+	.wga-section-label {
+		font-family: var(--font-mono);
+		font-size: var(--t-11);
+		letter-spacing: 0.09375rem;
+	}
+
+	.wga-section-title {
+		font-size: var(--t-20);
+		font-weight: 600;
+	}
+
 	.wga-button {
 		display: inline-flex;
 		width: unset;
-		height: 2.5rem;
+		height: 3rem;
 		flex-shrink: 0;
 		flex-wrap: nowrap;
 		align-items: center;
@@ -1660,7 +1700,7 @@
 		border: 1px solid var(--wga-rule-control);
 		background: transparent;
 		color: var(--wga-ink);
-		font-size: 0.875rem;
+		font-size: var(--t-12);
 		font-weight: 600;
 		text-align: center;
 		text-decoration: none;
@@ -1723,7 +1763,7 @@
 	.wga-button-sm {
 		height: 2rem;
 		padding-inline: 0.75rem;
-		font-size: 0.75rem;
+		font-size: var(--t-10);
 	}
 
 	.wga-button:is(:disabled, [disabled], [aria-disabled="true"]) {
@@ -1759,7 +1799,7 @@
 		flex-direction: column;
 		gap: 0.5rem;
 		padding: 1.5rem;
-		font-size: 0.875rem;
+		font-size: var(--t-12);
 	}
 
 	.wga-card-body p {
@@ -1770,7 +1810,7 @@
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
-		font-size: 1.125rem;
+		font-size: var(--t-18);
 		font-weight: 600;
 	}
 
@@ -1828,7 +1868,7 @@
 		width: 100%;
 		border-collapse: separate;
 		border-spacing: 0;
-		font-size: 0.875rem;
+		font-size: var(--t-12);
 		text-align: left;
 	}
 
@@ -1839,7 +1879,7 @@
 
 	.wga-table :where(thead, tfoot) {
 		color: var(--wga-muted);
-		font-size: 0.875rem;
+		font-size: var(--t-12);
 		font-weight: 600;
 		white-space: nowrap;
 	}
@@ -1853,7 +1893,7 @@
 	}
 
 	.wga-table-compact :where(tbody tr) {
-		font-size: 0.75rem;
+		font-size: var(--t-10);
 	}
 
 	.wga-control {
@@ -1863,7 +1903,7 @@
 		border: 1px solid var(--wga-rule-2);
 		background: var(--wga-bg);
 		color: var(--wga-ink);
-		font-size: max(var(--font-size, 0rem), 0.875rem);
+		font-size: max(var(--font-size, 0rem), var(--t-12));
 		padding-inline: 0.75rem;
 		touch-action: manipulation;
 	}
@@ -1943,11 +1983,11 @@
     animation: wga-rise 280ms cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
   }
 
-  .wga-meta {
-    font-family: var(--font-mono);
-    font-size: 0.6875rem;
-    letter-spacing: 0.15em;
-  }
+	.wga-meta {
+		font-family: var(--font-mono);
+		font-size: var(--t-10);
+		letter-spacing: 0.15em;
+	}
 }
 
 @keyframes wga-pulse {
@@ -2032,11 +2072,11 @@
 }
 
 .font-display {
-  font-family: "Merriweather", serif;
+  font-family: var(--font-sans);
 }
 
 .font-ui {
-  font-family: "Lexend", sans-serif;
+  font-family: var(--font-sans);
 }
 
 .home-page {
@@ -2089,8 +2129,8 @@
 } */
 
 .home-kicker {
-  font-family: "Lexend", sans-serif;
-  font-size: 0.75rem;
+  font-family: var(--font-sans);
+  font-size: var(--t-10);
   font-weight: 700;
   letter-spacing: 0.22em;
   text-transform: uppercase;
@@ -2132,7 +2172,7 @@
 }
 
 .home-card__eyebrow {
-  font-size: 0.78rem;
+  font-size: var(--t-105);
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -2152,15 +2192,15 @@
 
   & strong {
     display: block;
-    font-family: "Merriweather", serif;
-    font-size: 1.05rem;
+    font-family: var(--font-sans);
+    font-size: var(--t-16);
     color: var(--wga-accent-bg);
   }
 
   & small {
     display: block;
     margin-top: 0.2rem;
-    font-size: 0.82rem;
+    font-size: var(--t-11);
     line-height: 1.5;
     color: color-mix(in oklab, var(--wga-ink) 72%, transparent);
   }
@@ -2186,7 +2226,7 @@
   & h1,
   & h2,
   & h3 {
-    font-family: "Merriweather", serif;
+    font-family: var(--font-sans);
     color: var(--wga-accent-bg);
   }
 
@@ -2268,20 +2308,20 @@ figure.hidden-caption {
 #cc-main .cm__title,
 #cc-main .pm__title {
   font-family: var(--font-mono);
-  font-size: 0.6875rem;
+  font-size: var(--t-10);
   letter-spacing: 0.15em;
 }
 
 #cc-main .cm__desc,
 #cc-main .pm__body {
-	font-size: 1rem;
+	font-size: var(--t-15);
 	line-height: 1.6;
 }
 
 #cc-main .cm__btn,
 #cc-main .pm__btn {
   font-family: var(--font-mono);
-  font-size: 0.6875rem;
+  font-size: var(--t-10);
   font-weight: 400;
   letter-spacing: 0.1em;
 }

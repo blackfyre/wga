@@ -13,9 +13,10 @@ templ PublicArtworkCard(i dto.Image) {
 				<p class="mt-1 font-mono text-(length:--t-10) tracking-[1px] text-wga-accent">{ i.Artist.Name }</p>
 			}
 		</a>
-		<a href={ templ.SafeURL(i.Url) } class="mt-3 inline-block font-mono text-(length:--t-10) tracking-[1px] text-wga-accent hover:opacity-60">VIEW WORK →</a>
+		<a href={ templ.SafeURL(i.Url) } class="wga-action-link mt-3 inline-block font-mono text-(length:--t-10) tracking-[1px]">VIEW WORK →</a>
 		if i.Id != "" {
-			<div class="mt-3">@AddToItineraryAction(i.Id, AddToItineraryBlock)</div>
+			<div class="mt-3">@AddToItineraryAction(i.Id, AddToItineraryBlock)
+</div>
 		}
 	</article>
 }

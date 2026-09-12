@@ -3,7 +3,7 @@ package components
 import "github.com/blackfyre/wga/internal/assets/templ/dto"
 
 templ WorkCard(work dto.Work) {
-	<a href={ templ.SafeURL(work.URL) } class="block hover:opacity-70 transition-opacity">
+	<a href={ templ.SafeURL(work.URL) } class="wga-record-card">
 		@Plate(dto.Plate{DisplayURL: work.ImageURL, Alt: work.Title + " by " + work.Artist, Placeholder: work.Title, Aspect: "aspect-[4/5] mb-2.5", Contain: false})
 		<span class="block text-sm font-semibold leading-tight">{ work.Title }</span>
 		if work.Metadata != "" {
@@ -11,12 +11,13 @@ templ WorkCard(work dto.Work) {
 		}
 	</a>
 	if work.ArtworkID != "" {
-		<div class="mt-2.5">@AddToItineraryAction(work.ArtworkID, AddToItineraryBlock)</div>
+		<div class="mt-2.5">@AddToItineraryAction(work.ArtworkID, AddToItineraryBlock)
+</div>
 	}
 }
 
 templ WorkRow(work dto.Work) {
-	<a href={ templ.SafeURL(work.URL) } class="flex items-center gap-4 py-3 border-b border-wga-ink/15 hover:bg-wga-accent-bg/5 transition-colors">
+	<a href={ templ.SafeURL(work.URL) } class="flex items-center gap-4 py-3 border-b border-wga-ink/15 hover:bg-wga-accent-tint transition-colors">
 		<span class="w-11 h-[54px] shrink-0 bg-wga-fill border border-wga-ink/15">
 			if work.ImageURL != "" {
 				<img src={ work.ImageURL } alt="" loading="lazy" class="w-full h-full object-cover"/>

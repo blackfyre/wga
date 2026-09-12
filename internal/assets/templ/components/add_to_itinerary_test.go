@@ -37,8 +37,8 @@ func renderAddButton(t *testing.T, ctx context.Context, variant string) string {
 
 // TestAddToItineraryActionVariants table-tests the accepted reference
 // presentation for every typed variant across the available, added, and full
-// states: exact wrapper/button classes, the 46px row and 50px block
-// dimensions, the compact short labels versus row/block full labels, and the
+// states: exact wrapper/button classes, the shared 48px row/block dimension,
+// the compact short labels versus row/block full labels, and the
 // shared disabled semantics.
 func TestAddToItineraryActionVariants(t *testing.T) {
 	base := "font-mono tracking-[1px] border transition-colors"
@@ -57,7 +57,7 @@ func TestAddToItineraryActionVariants(t *testing.T) {
 			name:    "compact available",
 			variant: AddToItineraryCompact,
 			wrapper: "shrink-0 self-center",
-			button:  base + " text-(length:--t-10) px-2.5 py-1.5 border-wga-accent text-wga-accent hover:opacity-70",
+			button:  base + " text-(length:--t-10) px-2.5 py-1.5 border-wga-accent text-wga-accent hover:border-wga-ink hover:bg-wga-accent-tint",
 			label:   "ADD",
 		},
 		{
@@ -80,53 +80,53 @@ func TestAddToItineraryActionVariants(t *testing.T) {
 			name:      "row available",
 			variant:   AddToItineraryRow,
 			wrapper:   "shrink-0",
-			button:    base + " text-(length:--t-11) tracking-[1.5px] px-[22px] h-[46px] border-control hover:border-wga-accent hover:text-wga-accent",
+			button:    base + " text-(length:--t-11) tracking-[1.5px] px-[22px] h-12 border-control hover:border-wga-accent hover:text-wga-accent",
 			label:     "ADD TO AN ITINERARY +",
-			dimension: "h-[46px]",
+			dimension: "h-12",
 		},
 		{
 			name:      "row added",
 			variant:   AddToItineraryRow,
 			added:     true,
 			wrapper:   "shrink-0",
-			button:    base + " text-(length:--t-11) tracking-[1.5px] px-[22px] h-[46px] border-wga-ink/20 bg-wga-ink/6 text-faint-2",
+			button:    base + " text-(length:--t-11) tracking-[1.5px] px-[22px] h-12 border-wga-ink/20 bg-wga-ink/6 text-faint-2",
 			label:     "IN YOUR ITINERARY ✓",
-			dimension: "h-[46px]",
+			dimension: "h-12",
 		},
 		{
 			name:      "row full",
 			variant:   AddToItineraryRow,
 			full:      true,
 			wrapper:   "shrink-0",
-			button:    base + " text-(length:--t-11) tracking-[1.5px] px-[22px] h-[46px] border-wga-ink/25 text-faint-2",
+			button:    base + " text-(length:--t-11) tracking-[1.5px] px-[22px] h-12 border-wga-ink/25 text-faint-2",
 			label:     "ITINERARY IS FULL",
-			dimension: "h-[46px]",
+			dimension: "h-12",
 		},
 		{
 			name:      "block available",
 			variant:   AddToItineraryBlock,
 			wrapper:   "w-full",
-			button:    base + " w-full text-xs tracking-[1.5px] px-6 h-[50px] border-control hover:border-wga-accent hover:text-wga-accent",
+			button:    base + " w-full text-xs tracking-[1.5px] px-6 h-12 border-control hover:border-wga-accent hover:text-wga-accent",
 			label:     "ADD TO AN ITINERARY +",
-			dimension: "h-[50px]",
+			dimension: "h-12",
 		},
 		{
 			name:      "block added",
 			variant:   AddToItineraryBlock,
 			added:     true,
 			wrapper:   "w-full",
-			button:    base + " w-full text-xs tracking-[1.5px] px-6 h-[50px] border-wga-ink/20 bg-wga-ink/6 text-faint-2",
+			button:    base + " w-full text-xs tracking-[1.5px] px-6 h-12 border-wga-ink/20 bg-wga-ink/6 text-faint-2",
 			label:     "IN YOUR ITINERARY ✓",
-			dimension: "h-[50px]",
+			dimension: "h-12",
 		},
 		{
 			name:      "block full",
 			variant:   AddToItineraryBlock,
 			full:      true,
 			wrapper:   "w-full",
-			button:    base + " w-full text-xs tracking-[1.5px] px-6 h-[50px] border-wga-ink/25 text-faint-2",
+			button:    base + " w-full text-xs tracking-[1.5px] px-6 h-12 border-wga-ink/25 text-faint-2",
 			label:     "ITINERARY IS FULL",
-			dimension: "h-[50px]",
+			dimension: "h-12",
 		},
 	}
 
@@ -163,7 +163,7 @@ func TestAddToItineraryActionVariants(t *testing.T) {
 			}
 
 			if tc.dimension == "" {
-				if strings.Contains(rendered, "h-[46px]") || strings.Contains(rendered, "h-[50px]") {
+				if strings.Contains(rendered, " h-12") {
 					t.Errorf("compact variant %s must not carry fixed row/block heights", tc.variant)
 				}
 			} else if !strings.Contains(rendered, tc.dimension) {
@@ -234,7 +234,7 @@ func TestAddToItineraryActionNormalisesInvalidVariant(t *testing.T) {
 		}
 	}
 
-	if strings.Contains(rendered, "h-[46px]") || strings.Contains(rendered, "h-[50px]") {
+	if strings.Contains(rendered, " h-12") {
 		t.Error("invalid variant must not render row/block dimensions")
 	}
 }

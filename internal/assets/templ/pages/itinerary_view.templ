@@ -15,7 +15,6 @@ import (
 // It renders as a fixed dark overlay over the ordinary layout rather than in a
 // new bare layout, so the header, footer and cookie notice keep working
 // underneath and no second document shell has to be maintained.
-
 templ ItineraryViewPage(view dto.ItineraryView) {
 	@layouts.LayoutMain() {
 		<section
@@ -27,12 +26,11 @@ templ ItineraryViewPage(view dto.ItineraryView) {
 			<div class="wga-viewer-stage">
 				<div class="flex shrink-0 items-start justify-between gap-6">
 					<div class="min-w-0">
-						<p class="mb-1.5 font-mono text-[9px] tracking-[1.5px] text-white/40">VISITOR ITINERARY</p>
-						<p class="text-[15px] font-semibold leading-tight text-white/90">{ view.Title }</p>
+						<p class="mb-1.5 font-mono text-(length:--t-10) tracking-[1.5px] text-white/60">VISITOR ITINERARY</p>
+						<p class="text-(length:--t-15) font-semibold leading-tight text-white/90">{ view.Title }</p>
 					</div>
-					<a href={ templ.SafeURL(view.ExitURL) } data-itinerary-exit class="shrink-0 px-1 font-mono text-[13px] text-white/40 transition-colors hover:text-white/90">✕ CLOSE</a>
+					<a href={ templ.SafeURL(view.ExitURL) } data-itinerary-exit class="shrink-0 px-1 font-mono text-(length:--t-13) text-white/60 transition-colors hover:text-white/90">✕ CLOSE</a>
 				</div>
-
 				<figure class="wga-viewer-plate">
 					if view.Plate.DisplayURL != "" {
 						if view.Plate.ZoomURL != "" {
@@ -44,10 +42,9 @@ templ ItineraryViewPage(view dto.ItineraryView) {
 							<img src={ view.Plate.DisplayURL } alt={ view.Plate.Alt } loading="lazy" class="max-h-full max-w-full object-contain"/>
 						}
 					} else {
-						<figcaption class="text-center font-mono text-[10px] uppercase tracking-[1px] text-white/25">{ view.Plate.Placeholder }</figcaption>
+						<figcaption class="text-center font-mono text-(length:--t-10) uppercase tracking-[1px] text-white/60">{ view.Plate.Placeholder }</figcaption>
 					}
 				</figure>
-
 				<div class="shrink-0">
 					<ol class="flex gap-1" aria-label="Progress">
 						for i, stopURL := range view.StopURLs {
@@ -58,25 +55,24 @@ templ ItineraryViewPage(view dto.ItineraryView) {
 					</ol>
 					<div class="mt-4 flex items-center justify-between gap-4">
 						if view.HasPrev {
-							<a href={ templ.SafeURL(view.PrevURL) } hx-get={ templ.SafeURL(view.PrevURL) } hx-target="#itinerary-viewer" hx-select="#itinerary-viewer" hx-swap="outerHTML" hx-push-url="true" rel="prev" data-itinerary-nav="prev" data-itinerary-prefetch class="font-mono text-[11px] tracking-[1.5px] text-white/90 transition-colors hover:text-white">← PREVIOUS</a>
+							<a href={ templ.SafeURL(view.PrevURL) } hx-get={ templ.SafeURL(view.PrevURL) } hx-target="#itinerary-viewer" hx-select="#itinerary-viewer" hx-swap="outerHTML" hx-push-url="true" rel="prev" data-itinerary-nav="prev" data-itinerary-prefetch class="font-mono text-(length:--t-11) tracking-[1.5px] text-white/90 transition-colors hover:text-white">← PREVIOUS</a>
 						} else {
-							<span class="font-mono text-[11px] tracking-[1.5px] text-white/25">← PREVIOUS</span>
+							<span class="font-mono text-(length:--t-11) tracking-[1.5px] text-white/25">← PREVIOUS</span>
 						}
-						<p class="font-mono text-[11px] tracking-[1.5px] text-white/40">{ fmt.Sprintf("%02d / %02d", view.Index+1, view.Total) }</p>
+						<p class="font-mono text-(length:--t-11) tracking-[1.5px] text-white/60">{ fmt.Sprintf("%02d / %02d", view.Index+1, view.Total) }</p>
 						if view.HasNext {
-							<a href={ templ.SafeURL(view.NextURL) } hx-get={ templ.SafeURL(view.NextURL) } hx-target="#itinerary-viewer" hx-select="#itinerary-viewer" hx-swap="outerHTML" hx-push-url="true" rel="next" data-itinerary-nav="next" data-itinerary-prefetch class="font-mono text-[11px] tracking-[1.5px] text-white/90 transition-colors hover:text-white">NEXT →</a>
+							<a href={ templ.SafeURL(view.NextURL) } hx-get={ templ.SafeURL(view.NextURL) } hx-target="#itinerary-viewer" hx-select="#itinerary-viewer" hx-swap="outerHTML" hx-push-url="true" rel="next" data-itinerary-nav="next" data-itinerary-prefetch class="font-mono text-(length:--t-11) tracking-[1.5px] text-white/90 transition-colors hover:text-white">NEXT →</a>
 						} else {
-							<span class="font-mono text-[11px] tracking-[1.5px] text-white/25">END OF ITINERARY</span>
+							<span class="font-mono text-(length:--t-11) tracking-[1.5px] text-white/25">END OF ITINERARY</span>
 						}
 					</div>
 				</div>
 			</div>
-
 			<aside class="wga-viewer-panel">
 				<div>
-					<p class="mb-4 font-mono text-[9px] tracking-[1.5px] text-white/40">{ fmt.Sprintf("STOP %02d OF %02d", view.Index+1, view.Total) }</p>
-					<h1 class="mb-2 text-[22px] font-semibold leading-tight tracking-[-0.3px] text-white/90 md:text-[27px]">{ view.StopTitle }</h1>
-					<p class="mb-6 font-mono text-[11px] leading-loose text-white/50">
+					<p class="mb-4 font-mono text-(length:--t-10) tracking-[1.5px] text-white/60">{ fmt.Sprintf("STOP %02d OF %02d", view.Index+1, view.Total) }</p>
+					<h1 class="mb-2 text-(length:--t-22) font-semibold leading-tight tracking-[-0.3px] text-white/90 md:text-(length:--t-27)">{ view.StopTitle }</h1>
+					<p class="mb-6 font-mono text-(length:--t-11) leading-loose text-white/50">
 						{ view.StopArtist }, { view.StopDate }
 						if view.StopSchool != "" {
 							<br/>
@@ -84,14 +80,14 @@ templ ItineraryViewPage(view dto.ItineraryView) {
 						}
 					</p>
 					if view.Narration == "" {
-						<p class="text-[15px] leading-relaxed text-white/60 md:text-base">
+						<p class="text-(length:--t-15) leading-relaxed text-white/60 md:text-base">
 							The maker left this plate without narration. Look at it for as long as you like.
 						</p>
 					} else {
-						<p class="text-[15px] leading-relaxed text-white/75 md:text-base">{ view.Narration }</p>
+						<p class="text-(length:--t-15) leading-relaxed text-white/75 md:text-base">{ view.Narration }</p>
 					}
 				</div>
-				<p class="mt-8 border-t border-white/15 pt-4 font-mono text-[9px] leading-loose tracking-[1.5px] text-white/40">
+				<p class="mt-8 border-t border-white/15 pt-4 font-mono text-(length:--t-10) leading-loose tracking-[1.5px] text-white/60">
 					NARRATION BY { view.Creator }
 					<br/>
 					USE ← AND → TO MOVE · ESC TO CLOSE

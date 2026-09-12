@@ -2,8 +2,8 @@ package components
 
 // AddToItineraryVariant is the validated presentation variant for the typed
 // shared itinerary add control. Compact is the small primary-edged chip used
-// in dense lists, Row is the 46px inline action row, and Block is the 50px
-// full-width record action. Call sites pass the matching typed constant; an
+// in dense lists, while Row and Block use the shared 48px primary-control rank.
+// Call sites pass the matching typed constant; an
 // unknown or empty value is normalised to Compact so it never produces
 // arbitrary markup.
 type AddToItineraryVariant string
@@ -40,17 +40,17 @@ func addToItineraryFormClass(variant AddToItineraryVariant) string {
 }
 
 // addToItineraryButtonClass builds the reference button class for the typed
-// variant and state. Compact is a small chip; row is a 46px inline action;
-// block is a 50px full-width action. Added, full, and available states each
+// variant and state. Compact is a small chip; row and block share the 48px
+// primary-control height. Added, full, and available states each
 // carry their own border/role treatment.
 func addToItineraryButtonClass(variant AddToItineraryVariant, added bool, full bool) string {
 	class := "font-mono tracking-[1px] border transition-colors"
 
 	switch variant {
 	case AddToItineraryRow:
-		class += " text-(length:--t-11) tracking-[1.5px] px-[22px] h-[46px]"
+		class += " text-(length:--t-11) tracking-[1.5px] px-[22px] h-12"
 	case AddToItineraryBlock:
-		class += " w-full text-xs tracking-[1.5px] px-6 h-[50px]"
+		class += " w-full text-xs tracking-[1.5px] px-6 h-12"
 	default:
 		class += " text-(length:--t-10) px-2.5 py-1.5"
 	}
@@ -61,7 +61,7 @@ func addToItineraryButtonClass(variant AddToItineraryVariant, added bool, full b
 	case full:
 		class += " border-wga-ink/25 text-faint-2"
 	case variant == AddToItineraryCompact:
-		class += " border-wga-accent text-wga-accent hover:opacity-70"
+		class += " border-wga-accent text-wga-accent hover:border-wga-ink hover:bg-wga-accent-tint"
 	default:
 		class += " border-control hover:border-wga-accent hover:text-wga-accent"
 	}

@@ -122,7 +122,7 @@ func TestTimelineBlockUsesTypedBlockAddControlForWorks(t *testing.T) {
 		t.Fatalf("render timeline block: %v", err)
 	}
 	rendered := output.String()
-	for _, expected := range []string{`h-[50px]`, "ADD TO AN ITINERARY +", `hx-select="unset"`} {
+	for _, expected := range []string{`h-12`, "ADD TO AN ITINERARY +", `hx-select="unset"`} {
 		if !strings.Contains(rendered, expected) {
 			t.Errorf("timeline work card missing typed block contract %q", expected)
 		}

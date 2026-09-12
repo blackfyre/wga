@@ -45,7 +45,7 @@ templ ArtworkBlock(aw dto.Artwork) {
 	</head>
 	<section class="container mx-auto px-4 pb-20 pt-10 md:px-0">
 		if aw.ShowBreadcrumbs {
-			<nav class="mb-8 overflow-x-auto whitespace-nowrap font-mono text-[10px] tracking-[1.5px] text-wga-ink/60" aria-label="Breadcrumb">
+			<nav class="mb-8 overflow-x-auto whitespace-nowrap font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60" aria-label="Breadcrumb">
 				if aw.Artist.Url != "" {
 					<a href="/artists" hx-get="/artists" hx-target={ aw.HxTarget } class="hover:text-wga-ink">ARTISTS</a>
 					<span class="mx-2" aria-hidden="true">/</span>
@@ -64,7 +64,7 @@ templ ArtworkBlock(aw dto.Artwork) {
 					<div class="mt-4 flex flex-wrap items-baseline justify-between gap-4 border-b border-wga-ink pb-2.5">
 						<span class="font-mono text-(length:--t-11) tracking-[1.5px]">THIS REPRODUCTION</span>
 						if aw.SourceURL != "" {
-							<a href={ aw.SourceURL } target="_blank" rel="noopener noreferrer" class="font-mono text-(length:--t-11) tracking-[1px] text-wga-accent transition-opacity hover:opacity-60">DOWNLOAD THE FULL FILE ↓</a>
+							<a href={ aw.SourceURL } target="_blank" rel="noopener noreferrer" class="wga-action-link font-mono text-(length:--t-11) tracking-[1px]">DOWNLOAD THE FULL FILE ↓</a>
 						}
 					</div>
 					if aw.ReproFile != "" {
@@ -75,11 +75,11 @@ templ ArtworkBlock(aw dto.Artwork) {
 				</figcaption>
 			</figure>
 			<article class="w-full shrink-0 md:w-[380px]">
-				<p class="font-mono text-[11px] tracking-[2px] text-wga-ink/60">03 — ARTWORK</p>
-				<h1 class="mt-4 text-[44px] font-semibold leading-[1.08] tracking-[-0.5px]">{ aw.Title }</h1>
+				<p class="font-mono text-(length:--t-11) tracking-[2px] text-wga-ink/60">03 — ARTWORK</p>
+				<h1 class="mt-4 text-(length:--t-44) font-semibold leading-[1.08] tracking-[-0.5px]">{ aw.Title }</h1>
 				if aw.Artist.FilingName != "" {
-					<p class="mt-4 font-mono text-[12px] tracking-[1px] text-wga-accent">
-						<a href={ templ.SafeURL(aw.Artist.Url) } hx-get={ aw.Artist.Url } hx-target={ aw.HxTarget } class="hover:opacity-70">
+					<p class="mt-4 font-mono text-(length:--t-12) tracking-[1px] text-wga-accent">
+						<a href={ templ.SafeURL(aw.Artist.Url) } hx-get={ aw.Artist.Url } hx-target={ aw.HxTarget } class="wga-action-link">
 							{ aw.Artist.FilingName }
 							if aw.Year != "" {
 								· { aw.Year }
@@ -92,7 +92,7 @@ templ ArtworkBlock(aw dto.Artwork) {
 					@components.MetaList(artworkMetaEntries(aw))
 				</div>
 				<div class="mt-7 flex flex-col gap-2.5">
-					<a href={ `/postcard/send?awid=` + aw.Id } class="flex h-[50px] w-full items-center justify-center bg-wga-accent-bg px-5 font-mono text-[11px] tracking-[1.5px] text-wga-inv-fg hover:opacity-85">SEND AS POSTCARD →</a>
+					<a href={ `/postcard/send?awid=` + aw.Id } class="wga-button wga-button-primary h-12 w-full px-5 font-mono text-(length:--t-11) tracking-[1.5px]">SEND AS POSTCARD →</a>
 					@components.AddToItineraryAction(aw.Id, components.AddToItineraryBlock)
 				</div>
 				@artworkPaletteBlock(aw)
@@ -103,15 +103,15 @@ templ ArtworkBlock(aw dto.Artwork) {
 		</div>
 		<div class="mt-14 flex flex-col gap-8 border-t border-wga-ink/15 pt-8 md:flex-row md:gap-16">
 			<div class="w-full shrink-0 md:w-[300px]">
-				<p class="font-mono text-[11px] tracking-[1.5px] text-wga-ink/60">COMMENTARY</p>
-				<p class="mt-3 font-mono text-[10px] leading-relaxed text-wga-ink/50">UNDERLINED TERMS ARE DEFINED IN THE GLOSSARY.</p>
+				<p class="font-mono text-(length:--t-11) tracking-[1.5px] text-wga-ink/60">COMMENTARY</p>
+				<p class="mt-3 font-mono text-(length:--t-10) leading-relaxed text-wga-ink/50">UNDERLINED TERMS ARE DEFINED IN THE GLOSSARY.</p>
 			</div>
 			if aw.HasCommentary {
-				<div class="content max-w-[620px] text-[16px] leading-[1.7]">
+				<div class="content max-w-[620px] text-(length:--t-16) leading-[1.7]">
 					@templ.Raw(aw.SourceComment)
 				</div>
 			} else {
-				<p class="max-w-[620px] text-[16px] leading-[1.7] text-wga-ink/70">Commentary is unavailable for this artwork.</p>
+				<p class="max-w-[620px] text-(length:--t-16) leading-[1.7] text-wga-ink/70">Commentary is unavailable for this artwork.</p>
 			}
 		</div>
 		if aw.CitationKey != "" {
@@ -133,7 +133,7 @@ templ artworkPaletteBlock(aw dto.Artwork) {
 				@components.PaletteBar(aw.Palette, true, "HOVER OR TAP A SWATCH FOR NAME, SHARE AND HEX. SAMPLED FROM THE IMAGE — INDICATIVE, NOT A PIGMENT ANALYSIS.")
 			</div>
 		} else {
-			<p class="mt-2 text-sm leading-relaxed text-wga-ink/70">Not recorded.</p>
+			<p class="mt-2 text-(length:--t-15) leading-relaxed text-wga-ink/70">Not recorded.</p>
 		}
 	</div>
 }
@@ -145,7 +145,7 @@ templ artworkRelatedBlock(aw dto.Artwork) {
 	if len(aw.Related.Bases) > 0 {
 		<section class="mt-14 border-t border-wga-ink/15 pt-5" aria-labelledby="related-works-heading">
 			<div class="mb-5 flex flex-wrap items-baseline justify-between gap-4">
-				<h2 id="related-works-heading" class="font-mono text-[11px] tracking-[1.5px]">{ aw.Related.Connection }</h2>
+				<h2 id="related-works-heading" class="font-mono text-(length:--t-11) tracking-[1.5px]">{ aw.Related.Connection }</h2>
 				<nav class="flex flex-wrap gap-1.5" aria-label="Related works basis">
 					for _, basis := range aw.Related.Bases {
 						if basis.Active {
@@ -161,14 +161,14 @@ templ artworkRelatedBlock(aw dto.Artwork) {
 			}
 			if aw.Related.Sparse {
 				<div class="mt-6 border-t border-wga-ink/15 pt-4">
-					<p class="max-w-[620px] text-sm leading-relaxed text-wga-ink/70">{ aw.Related.SparseNote }</p>
+					<p class="max-w-[620px] text-(length:--t-15) leading-relaxed text-wga-ink/70">{ aw.Related.SparseNote }</p>
 					if aw.Related.AlternativeURL != "" {
-						<a href={ templ.SafeURL(aw.Related.AlternativeURL) } hx-get={ aw.Related.AlternativeURL } hx-target={ aw.HxTarget } class="mt-3 inline-block font-mono text-[11px] tracking-[1px] text-wga-accent transition-opacity hover:opacity-60">TRY { aw.Related.Alternative } →</a>
+						<a href={ templ.SafeURL(aw.Related.AlternativeURL) } hx-get={ aw.Related.AlternativeURL } hx-target={ aw.HxTarget } class="wga-action-link mt-3 inline-block font-mono text-(length:--t-11) tracking-[1px]">TRY { aw.Related.Alternative } →</a>
 					}
 				</div>
 			}
 			if aw.Related.Holding != nil {
-				<a href={ templ.SafeURL(aw.Related.Holding.URL) } hx-get={ aw.Related.Holding.URL } hx-target={ aw.HxTarget } class="mt-6 inline-block font-mono text-[11px] tracking-[1px] text-wga-accent transition-opacity hover:opacity-60">{ aw.Related.Holding.Label }</a>
+				<a href={ templ.SafeURL(aw.Related.Holding.URL) } hx-get={ aw.Related.Holding.URL } hx-target={ aw.HxTarget } class="wga-action-link wga-trailing-action mt-6 font-mono text-(length:--t-11) tracking-[1px]">{ aw.Related.Holding.Label }</a>
 			}
 		</section>
 	}
@@ -178,11 +178,11 @@ templ artworkRelatedWorkGrid(works dto.ImageGrid) {
 	<ul class="grid grid-cols-2 gap-x-4 gap-y-9 md:grid-cols-3 md:gap-x-7 lg:grid-cols-4">
 		for _, work := range works {
 			<li>
-				<a href={ templ.SafeURL(work.Url) } class="block transition-opacity hover:opacity-70">
+				<a href={ templ.SafeURL(work.Url) } class="wga-record-card">
 					@components.Plate(dto.Plate{DisplayURL: work.Image, Alt: work.Title, Placeholder: work.Title, Aspect: "aspect-[4/5] mb-2.5"})
 					<span class="block text-sm font-semibold leading-tight">{ work.Title }</span>
 					if work.Metadata != "" {
-						<span class="mt-[3px] block font-mono text-[11px] leading-relaxed text-wga-ink/60">{ work.Metadata }</span>
+						<span class="mt-[3px] block font-mono text-(length:--t-11) leading-relaxed text-wga-ink/60">{ work.Metadata }</span>
 					}
 				</a>
 			</li>

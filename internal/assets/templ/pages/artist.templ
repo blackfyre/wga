@@ -66,7 +66,7 @@ templ ArtistRecordContent(view ArtistView) {
 	</head>
 	<section class="container mx-auto px-4 pb-20 pt-10 md:px-0">
 		if view.ShowBreadcrumbs {
-			<nav class="mb-8 font-mono text-[10px] tracking-[1.5px] text-wga-ink/60" aria-label="Breadcrumb">
+			<nav class="mb-8 font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60" aria-label="Breadcrumb">
 				<a href="/artists" hx-get="/artists" class="hover:text-wga-ink">ARTISTS</a>
 				<span class="mx-2" aria-hidden="true">/</span>
 				if view.Schools != "" {
@@ -78,9 +78,9 @@ templ ArtistRecordContent(view ArtistView) {
 		}
 		<article class="grid gap-8 md:grid-cols-[minmax(0,1fr)_200px]">
 			<div>
-				<p class="font-mono text-[11px] tracking-[2px] text-wga-ink/60">02 — ARTIST</p>
-				<h1 class="mt-3 text-[44px] font-semibold leading-[1.05] tracking-[-0.75px] md:text-[52px]">{ view.FilingName }</h1>
-				<p class="mt-4 font-mono text-[12px] tracking-[1px] text-wga-accent">{ view.LifeSummary }{ artistPeriodSuffix(view) }</p>
+				<p class="font-mono text-(length:--t-11) tracking-[2px] text-wga-ink/60">02 — ARTIST</p>
+				<h1 class="mt-3 text-(length:--t-44) font-semibold leading-[1.05] tracking-[-0.75px] md:text-(length:--t-52)">{ view.FilingName }</h1>
+				<p class="mt-4 font-mono text-(length:--t-12) tracking-[1px] text-wga-accent">{ view.LifeSummary }{ artistPeriodSuffix(view) }</p>
 			</div>
 			<figure>
 				@components.Plate(dto.Plate{DisplayURL: view.Portrait, Alt: view.FilingName, Placeholder: "PORTRAIT — " + view.FilingName, Aspect: "aspect-square"})
@@ -94,41 +94,41 @@ templ ArtistRecordContent(view ArtistView) {
 				}
 			</aside>
 			<div class="min-w-0 flex-1">
-				<p class="mb-3 font-mono text-[11px] tracking-[1.5px] text-wga-ink/60">BIOGRAPHY</p>
-				<div class="content max-w-[620px] text-[16px] leading-[1.7]">
+				<p class="mb-3 font-mono text-(length:--t-11) tracking-[1.5px] text-wga-ink/60">BIOGRAPHY</p>
+				<div class="content max-w-[620px] text-(length:--t-16) leading-[1.7]">
 					@templ.Raw(view.Bio)
 				</div>
 				if len(view.Selections) > 0 {
 					<section class="mt-11 max-w-[860px]" aria-labelledby="artist-selections">
-						<h2 id="artist-selections" class="mb-6 border-t border-wga-ink/15 pt-[18px] font-mono text-[11px] tracking-[1.5px]">CURATED SELECTIONS</h2>
+						<h2 id="artist-selections" class="mb-6 border-t border-wga-ink/15 pt-[18px] font-mono text-(length:--t-11) tracking-[1.5px]">CURATED SELECTIONS</h2>
 						for _, selection := range view.Selections {
 							<article class="mb-10 border-b border-wga-ink/15 pb-10">
 								<div class="mb-4 flex items-baseline justify-between gap-4 border-b border-wga-ink/15 pb-[10px]">
-									<h3 class="text-[22px] font-semibold leading-tight">{ selection.DisplayTitle }</h3>
-									<p class="font-mono text-[10px] tracking-[1px] text-wga-ink/60">{ selectionCounts(selection) }</p>
+									<h3 class="text-(length:--t-22) font-semibold leading-tight">{ selection.DisplayTitle }</h3>
+									<p class="font-mono text-(length:--t-10) tracking-[1px] text-wga-ink/60">{ selectionCounts(selection) }</p>
 								</div>
 								if selection.HasCommentary {
-									<div class="content max-w-[620px] text-[16px] leading-[1.7]">
+									<div class="content max-w-[620px] text-(length:--t-16) leading-[1.7]">
 										@templ.Raw(selection.Commentary)
 									</div>
 								} else {
-									<p class="max-w-[620px] text-[16px] leading-[1.7] text-wga-ink/70">Commentary is unavailable for this selection.</p>
+									<p class="max-w-[620px] text-(length:--t-16) leading-[1.7] text-wga-ink/70">Commentary is unavailable for this selection.</p>
 								}
 								if len(selection.Works) > 0 {
 									<div class="mt-6">
 										@components.PublicArtworkGrid(selection.Works)
 									</div>
 								}
-								<a href={ templ.URL(selection.URL) } hx-get={ selection.URL } class="mt-6 inline-block font-mono text-[11px] tracking-[1px] text-wga-accent transition-opacity hover:opacity-60">OPEN SELECTION →</a>
+								<a href={ templ.URL(selection.URL) } hx-get={ selection.URL } class="wga-action-link wga-trailing-action mt-6 font-mono text-(length:--t-11) tracking-[1px]">OPEN SELECTION →</a>
 							</article>
 						}
 					</section>
 				}
 				<section class="mt-11 max-w-[620px]">
 					<div class="mb-5 flex items-baseline justify-between border-t border-wga-ink/15 pt-[18px]">
-						<h2 class="font-mono text-[11px] tracking-[1.5px]">WORKS IN ARCHIVE</h2>
+						<h2 class="font-mono text-(length:--t-11) tracking-[1.5px]">WORKS IN ARCHIVE</h2>
 						if view.WorkCount > 0 {
-							<p class="font-mono text-[10px] tracking-[1px] text-wga-ink/60">{ artistWorksSummary(view) }</p>
+							<p class="font-mono text-(length:--t-10) tracking-[1px] text-wga-ink/60">{ artistWorksSummary(view) }</p>
 						}
 					</div>
 					if view.WorkCount == 0 {
@@ -138,7 +138,7 @@ templ ArtistRecordContent(view ArtistView) {
 					} else {
 						@artistArchiveWorkGrid(view.Works)
 						if view.WorkCount > len(view.Works) {
-							<a href={ templ.URL(view.WorksURL) } hx-get={ view.WorksURL } class="mt-8 inline-block font-mono text-[11px] tracking-[1px] text-wga-accent transition-opacity hover:opacity-60">FIND MORE BY { view.ShortName } IN THE ARTWORK SEARCH →</a>
+							<a href={ templ.URL(view.WorksURL) } hx-get={ view.WorksURL } class="wga-action-link wga-trailing-action mt-8 font-mono text-(length:--t-11) tracking-[1px]">FIND MORE BY { view.ShortName } IN THE ARTWORK SEARCH →</a>
 						}
 					}
 				</section>
@@ -193,11 +193,11 @@ templ artistArchiveWorkGrid(works dto.ImageGrid) {
 	<ul class="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-4 md:gap-x-6">
 		for _, work := range works {
 			<li>
-				<a href={ templ.SafeURL(work.Url) } class="block transition-opacity hover:opacity-70">
+				<a href={ templ.SafeURL(work.Url) } class="wga-record-card">
 					@components.Plate(dto.Plate{DisplayURL: work.Image, Alt: work.Title, Placeholder: work.Title, Aspect: "aspect-[4/5] mb-2.5"})
 					<span class="block text-sm font-semibold leading-tight">{ work.Title }</span>
 					if work.Metadata != "" {
-						<span class="mt-[3px] block font-mono text-[11px] leading-relaxed text-wga-ink/60">{ work.Metadata }</span>
+						<span class="mt-[3px] block font-mono text-(length:--t-11) leading-relaxed text-wga-ink/60">{ work.Metadata }</span>
 					}
 				</a>
 			</li>
@@ -213,7 +213,7 @@ templ ArtistBlock(a dto.Artist) {
 	</head>
 	<section class="container mx-auto px-4 pb-20 pt-10 md:px-0">
 		if a.ShowBreadcrumbs {
-			<nav class="mb-8 font-mono text-[10px] tracking-[1.5px] text-wga-ink/60" aria-label="Breadcrumb">
+			<nav class="mb-8 font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60" aria-label="Breadcrumb">
 				<a href="/artists" hx-get="/artists" hx-target={ a.HxTarget } class="hover:text-wga-ink">ARTISTS</a>
 				<span class="mx-2" aria-hidden="true">/</span>
 				if a.Schools != "" {
@@ -225,9 +225,9 @@ templ ArtistBlock(a dto.Artist) {
 		}
 		<article class="grid gap-8 md:grid-cols-[minmax(0,1fr)_200px]">
 			<div>
-				<p class="font-mono text-[11px] tracking-[2px] text-wga-ink/60">02 — ARTIST</p>
-				<h1 class="mt-3 text-[44px] font-semibold leading-[1.05] tracking-[-0.75px] md:text-[52px]">{ a.FilingName }</h1>
-				<p class="mt-4 font-mono text-[12px] tracking-[1px] text-wga-accent">{ a.BioExcerpt } · { a.Schools }</p>
+				<p class="font-mono text-(length:--t-11) tracking-[2px] text-wga-ink/60">02 — ARTIST</p>
+				<h1 class="mt-3 text-(length:--t-44) font-semibold leading-[1.05] tracking-[-0.75px] md:text-(length:--t-52)">{ a.FilingName }</h1>
+				<p class="mt-4 font-mono text-(length:--t-12) tracking-[1px] text-wga-accent">{ a.BioExcerpt } · { a.Schools }</p>
 			</div>
 			if a.Portrait != "" {
 				<figure class="aspect-square overflow-hidden border border-wga-ink/15 bg-wga-fill">
@@ -235,32 +235,32 @@ templ ArtistBlock(a dto.Artist) {
 				</figure>
 			} else {
 				<figure class="flex aspect-square items-end border border-wga-ink/15 bg-wga-fill p-3">
-					<figcaption class="font-mono text-[9px] tracking-[1px] text-wga-ink/40">PORTRAIT — { a.FilingName }</figcaption>
+					<figcaption class="font-mono text-(length:--t-10) tracking-[1px] text-muted">PORTRAIT — { a.FilingName }</figcaption>
 				</figure>
 			}
 		</article>
 		<div class="mt-10 flex flex-col gap-10 border-t border-wga-ink/15 pt-8 md:flex-row md:gap-16">
 			<aside class="w-full shrink-0 md:w-[300px]">
-				<p class="font-mono text-[10px] tracking-[1.5px] text-wga-ink/60">LIFE</p>
-				<p class="mt-2 text-sm leading-relaxed">{ a.BioExcerpt }</p>
+				<p class="font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60">LIFE</p>
+				<p class="mt-2 text-(length:--t-15) leading-relaxed">{ a.BioExcerpt }</p>
 				if a.Schools != "" {
-					<p class="mt-6 font-mono text-[10px] tracking-[1.5px] text-wga-ink/60">SCHOOLS</p>
-					<p class="mt-2 text-sm leading-relaxed">{ a.Schools }</p>
+					<p class="mt-6 font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60">SCHOOLS</p>
+					<p class="mt-2 text-(length:--t-15) leading-relaxed">{ a.Schools }</p>
 				}
 				if a.Profession != "" {
-					<p class="mt-6 font-mono text-[10px] tracking-[1.5px] text-wga-ink/60">PROFESSION</p>
-					<p class="mt-2 text-sm leading-relaxed">{ a.Profession }</p>
+					<p class="mt-6 font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60">PROFESSION</p>
+					<p class="mt-2 text-(length:--t-15) leading-relaxed">{ a.Profession }</p>
 				}
 			</aside>
 			<div class="min-w-0 flex-1">
-				<p class="mb-3 font-mono text-[11px] tracking-[1.5px] text-wga-ink/60">BIOGRAPHY</p>
-				<div class="content max-w-[620px] text-[16px] leading-[1.7]">
+				<p class="mb-3 font-mono text-(length:--t-11) tracking-[1.5px] text-wga-ink/60">BIOGRAPHY</p>
+				<div class="content max-w-[620px] text-(length:--t-16) leading-[1.7]">
 					@templ.Raw(a.Bio)
 				</div>
 				<section class="mt-11 max-w-[620px]">
 					<div class="mb-5 flex items-baseline justify-between border-t border-wga-ink/15 pt-[18px]">
-						<h2 class="font-mono text-[11px] tracking-[1.5px]">WORKS IN ARCHIVE</h2>
-						<p class="font-mono text-[10px] tracking-[1px] text-wga-ink/60">{ len(a.Works) } RECORDS</p>
+						<h2 class="font-mono text-(length:--t-11) tracking-[1.5px]">WORKS IN ARCHIVE</h2>
+						<p class="font-mono text-(length:--t-10) tracking-[1px] text-wga-ink/60">{ len(a.Works) } RECORDS</p>
 					</div>
 					@components.PublicArtworkGrid(a.Works)
 				</section>

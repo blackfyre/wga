@@ -43,9 +43,9 @@ templ HomePageContent(c HomePage) {
 		<section class="container mx-auto px-4 pb-20 pt-10 md:px-0" aria-labelledby="home-title">
 			<div class="flex flex-col items-start gap-10 pb-4 md:flex-row md:gap-16">
 				<div class="w-full min-w-0 flex-1 md:w-auto">
-					<p class="mb-4 font-mono text-[11px] tracking-[2px] text-wga-ink/60">00 — PROVIDING EXPERIENCE SINCE 1992</p>
-					<h1 id="home-title" class="mb-5 text-[34px] font-semibold leading-[1.08] tracking-[-1px] md:text-[52px]">Explore artists and artworks<br class="hidden md:inline"/>without losing the thread.</h1>
-					<p class="mb-8 max-w-[520px] text-[17px] leading-relaxed text-wga-ink/70">Paintings, sculpture and architecture from the 3rd century to the early 20th, with biographies, commentaries, side-by-side comparison and period music.</p>
+					<p class="mb-4 font-mono text-(length:--t-11) tracking-[2px] text-wga-ink/60">00 — PROVIDING EXPERIENCE SINCE 1992</p>
+					<h1 id="home-title" class="mb-5 text-(length:--t-34) font-semibold leading-[1.08] tracking-[-1px] md:text-(length:--t-52)">Explore artists and artworks <br class="hidden md:inline"/>without losing the thread.</h1>
+					<p class="mb-8 max-w-[520px] text-(length:--t-17) leading-relaxed text-wga-ink/70">Paintings, sculpture and architecture from the 3rd century to the early 20th, with biographies, commentaries, side-by-side comparison and period music.</p>
 					<nav class="flex flex-wrap gap-2.5" aria-label="Discover the collection">
 						<a href="/artists" class="wga-button wga-button-primary h-auto min-h-[50px] max-w-full whitespace-normal wrap-anywhere px-6.5 font-mono text-xs tracking-[1.5px]">BROWSE ARTISTS →</a>
 						<a href="/artworks" class="wga-button h-auto min-h-[50px] max-w-full whitespace-normal wrap-anywhere px-6.5 font-mono text-xs tracking-[1.5px]">BROWSE ARTWORKS →</a>
@@ -53,48 +53,48 @@ templ HomePageContent(c HomePage) {
 					</nav>
 				</div>
 				<aside class="w-full shrink-0 md:w-[300px]" aria-labelledby="work-of-the-day-title">
-					<h2 id="work-of-the-day-title" class="mb-3 font-mono text-[11px] tracking-[1.5px] text-wga-ink/60">WORK OF THE DAY</h2>
+					<h2 id="work-of-the-day-title" class="mb-3 font-mono text-(length:--t-11) tracking-[1.5px] text-wga-ink/60">WORK OF THE DAY</h2>
 					if c.FeaturedArtwork.URL != "" {
-						<a href={ templ.URL(c.FeaturedArtwork.URL) } class="block transition-opacity hover:opacity-70">
+						<a href={ templ.URL(c.FeaturedArtwork.URL) } class="wga-record-card">
 							<figure class="flex aspect-[39/44.5] items-end border border-wga-ink/15 bg-wga-fill p-3">
 								if c.FeaturedArtwork.Image != "" {
 									<img src={ c.FeaturedArtwork.Image } alt={ c.FeaturedArtwork.Title } class="h-full w-full object-cover"/>
 								} else {
-									<figcaption class="font-mono text-[9px] tracking-[1px] text-wga-ink/40">REPRODUCTION UNAVAILABLE</figcaption>
+									<figcaption class="font-mono text-(length:--t-10) tracking-[1px] text-muted">REPRODUCTION UNAVAILABLE</figcaption>
 								}
 							</figure>
-							<div class="mt-3"><span class="block text-[15px] font-semibold">{ c.FeaturedArtwork.Title }</span><span class="mt-[3px] block font-mono text-[11px] text-wga-ink/60">{ c.FeaturedArtwork.Artist }{ homeArtworkYear(c.FeaturedArtwork.Year) }</span></div>
+							<div class="mt-3"><span class="block text-(length:--t-15) font-semibold">{ c.FeaturedArtwork.Title }</span><span class="mt-[3px] block font-mono text-(length:--t-11) text-wga-ink/60">{ c.FeaturedArtwork.Artist }{ homeArtworkYear(c.FeaturedArtwork.Year) }</span></div>
 						</a>
 					} else {
-						<p class="border border-wga-ink/15 p-3 text-[15px] leading-relaxed text-wga-ink/70">Today’s featured work is not available. Browse the collection to find an artwork.</p>
+						<p class="border border-wga-ink/15 p-3 text-(length:--t-15) leading-relaxed text-wga-ink/70">Today’s featured work is not available. Browse the collection to find an artwork.</p>
 					}
 				</aside>
 			</div>
 		</section>
 		<section class="border-y border-wga-ink/15" aria-label="Collection counts">
 			<dl class="container mx-auto grid grid-cols-2 gap-6 px-4 py-7 md:grid-cols-4 md:gap-8 md:px-0">
-				<div class="flex flex-col"><dt class="order-2 mt-1.5 font-mono text-[10px] tracking-[1.5px] text-wga-ink/60">ARTWORKS</dt><dd class="order-1 text-[26px] font-semibold tracking-[-0.5px] md:text-[30px]">{ c.ArtworkCount }</dd></div>
-				<div class="flex flex-col"><dt class="order-2 mt-1.5 font-mono text-[10px] tracking-[1.5px] text-wga-ink/60">ARTISTS</dt><dd class="order-1 text-[26px] font-semibold tracking-[-0.5px] md:text-[30px]">{ c.ArtistCount }</dd></div>
-				<div class="flex flex-col"><dt class="order-2 mt-1.5 font-mono text-[10px] tracking-[1.5px] text-wga-ink/60">SCHOOLS</dt><dd class="order-1 text-[26px] font-semibold tracking-[-0.5px] md:text-[30px]">{ c.SchoolCount }</dd></div>
-				<div class="flex flex-col"><dt class="order-2 mt-1.5 font-mono text-[10px] tracking-[1.5px] text-wga-ink/60">PERIOD</dt><dd class="order-1 text-[26px] font-semibold tracking-[-0.5px] md:text-[30px]">3RD–19TH</dd></div>
+				<div class="flex flex-col"><dt class="order-2 mt-1.5 font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60">ARTWORKS</dt><dd class="order-1 text-(length:--t-26) font-semibold tracking-[-0.5px] md:text-(length:--t-30)">{ c.ArtworkCount }</dd></div>
+				<div class="flex flex-col"><dt class="order-2 mt-1.5 font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60">ARTISTS</dt><dd class="order-1 text-(length:--t-26) font-semibold tracking-[-0.5px] md:text-(length:--t-30)">{ c.ArtistCount }</dd></div>
+				<div class="flex flex-col"><dt class="order-2 mt-1.5 font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60">SCHOOLS</dt><dd class="order-1 text-(length:--t-26) font-semibold tracking-[-0.5px] md:text-(length:--t-30)">{ c.SchoolCount }</dd></div>
+				<div class="flex flex-col"><dt class="order-2 mt-1.5 font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60">PERIOD</dt><dd class="order-1 text-(length:--t-26) font-semibold tracking-[-0.5px] md:text-(length:--t-30)">3RD–19TH</dd></div>
 			</dl>
 		</section>
 		<section class="container mx-auto px-4 pt-12 md:px-0" aria-labelledby="recent-additions-title">
-			<div class="flex items-baseline justify-between border-b border-wga-ink pb-3"><h2 id="recent-additions-title" class="font-mono text-[11px] tracking-[1.5px]">RECENT ADDITIONS</h2><a href="/artworks" class="font-mono text-[11px] tracking-[1px] text-wga-accent">ALL WORKS →</a></div>
+			<div class="flex items-baseline justify-between border-b border-wga-ink pb-3"><h2 id="recent-additions-title" class="font-mono text-(length:--t-11) tracking-[1.5px]">RECENT ADDITIONS</h2><a href="/artworks" class="wga-action-link font-mono text-(length:--t-11) tracking-[1px]">ALL WORKS →</a></div>
 			if len(c.RecentArtworks) > 0 {
 				<ul id="recent-additions" class="grid grid-cols-2 gap-x-4 gap-y-9 pt-7 md:grid-cols-4 md:gap-x-7">
 					for _, artwork := range c.RecentArtworks {
 						<li>
-							<a href={ templ.URL(artwork.URL) } class="block transition-opacity hover:opacity-70">
+							<a href={ templ.URL(artwork.URL) } class="wga-record-card">
 								<figure class="mb-2.5 aspect-[4/5] overflow-hidden bg-wga-fill">
 									if artwork.Image != "" {
 										<img src={ artwork.Image } alt={ artwork.Title } loading="lazy" class="h-full w-full object-cover"/>
 									} else {
-										<figcaption class="p-3 font-mono text-[10px] tracking-[1px] text-wga-ink/60">REPRODUCTION UNAVAILABLE</figcaption>
+										<figcaption class="p-3 font-mono text-(length:--t-10) tracking-[1px] text-wga-ink/60">REPRODUCTION UNAVAILABLE</figcaption>
 									}
 								</figure>
 								<span class="block text-sm font-semibold leading-tight">{ artwork.Title }</span>
-								<span class="mt-[3px] block font-mono text-[11px] leading-relaxed text-wga-ink/60">{ artwork.Artist }{ homeArtworkYear(artwork.Year) }</span>
+								<span class="mt-[3px] block font-mono text-(length:--t-11) leading-relaxed text-wga-ink/60">{ artwork.Artist }{ homeArtworkYear(artwork.Year) }</span>
 							</a>
 						</li>
 					}
@@ -104,9 +104,9 @@ templ HomePageContent(c HomePage) {
 			}
 		</section>
 		<section class="container mx-auto grid grid-cols-1 gap-8 px-4 pb-16 pt-16 md:grid-cols-3 md:gap-12 md:px-0" aria-label="More ways to explore">
-			<section class="border-t border-wga-ink/15 pt-6"><p class="mb-3 font-mono text-[11px] tracking-[1.5px] text-wga-ink/60">SIDE BY SIDE</p><h2 class="mb-2 text-[22px] font-semibold">Compare two works side by side</h2><p class="mb-3.5 text-[15px] leading-relaxed text-wga-ink/70">Dual Mode opens two records at once — the same painter across decades, or two treatments of one subject.</p><a href="/dual-mode" class="font-mono text-[11px] tracking-[1px] text-wga-accent transition-opacity hover:opacity-60">OPEN DUAL MODE →</a></section>
-			<section class="border-t border-wga-ink/15 pt-6"><p class="mb-3 font-mono text-[11px] tracking-[1.5px] text-wga-ink/60">POSTCARD SERVICE</p><h2 class="mb-2 text-[22px] font-semibold">Send any work as a postcard</h2><p class="mb-3.5 text-[15px] leading-relaxed text-wga-ink/70">Send a work with a personal note. No account is needed and recipient addresses are not kept after delivery.</p><a href="/postcard" class="font-mono text-[11px] tracking-[1px] text-wga-accent transition-opacity hover:opacity-60">SEND A POSTCARD →</a></section>
-			<section class="border-t border-wga-ink/15 pt-6"><p class="mb-3 font-mono text-[11px] tracking-[1.5px] text-wga-ink/60">COMMUNITY</p><h2 class="mb-2 text-[22px] font-semibold">Help sustain the archive</h2><p class="mb-3.5 text-[15px] leading-relaxed text-wga-ink/70">Contributions, corrections and comments help keep the collection useful.</p><a href="/contributors" class="font-mono text-[11px] tracking-[1px] text-wga-accent transition-opacity hover:opacity-60">MEET CONTRIBUTORS →</a></section>
+			<section class="border-t border-wga-ink/15 pt-6"><p class="wga-section-label mb-3 text-wga-ink/60">SIDE BY SIDE</p><h2 class="wga-section-title mb-2">Compare two works side by side</h2><p class="mb-3.5 text-(length:--t-15) leading-relaxed text-wga-ink/70">Dual Mode opens two records at once — the same painter across decades, or two treatments of one subject.</p><a href="/dual-mode" class="wga-action-link wga-trailing-action font-mono text-(length:--t-11) tracking-[1px]">OPEN DUAL MODE →</a></section>
+			<section class="border-t border-wga-ink/15 pt-6"><p class="wga-section-label mb-3 text-wga-ink/60">POSTCARD SERVICE</p><h2 class="wga-section-title mb-2">Send any work as a postcard</h2><p class="mb-3.5 text-(length:--t-15) leading-relaxed text-wga-ink/70">Send a work with a personal note. No account is needed and recipient addresses are not kept after delivery.</p><a href="/postcard" class="wga-action-link wga-trailing-action font-mono text-(length:--t-11) tracking-[1px]">SEND A POSTCARD →</a></section>
+			<section class="border-t border-wga-ink/15 pt-6"><p class="wga-section-label mb-3 text-wga-ink/60">COMMUNITY</p><h2 class="wga-section-title mb-2">Help sustain the archive</h2><p class="mb-3.5 text-(length:--t-15) leading-relaxed text-wga-ink/70">Contributions, corrections and comments help keep the collection useful.</p><a href="/contributors" class="wga-action-link wga-trailing-action font-mono text-(length:--t-11) tracking-[1px]">MEET CONTRIBUTORS →</a></section>
 		</section>
 	</section>
 }

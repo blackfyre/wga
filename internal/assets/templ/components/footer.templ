@@ -11,11 +11,11 @@ templ Footer() {
 	<footer class="border-t border-wga-ink/15 pb-15 pt-10">
 		<div class="container mx-auto grid grid-cols-2 gap-[32px] px-4 text-sm lg:grid-cols-[1.6fr_1fr_1fr_1fr] md:px-0">
 			<div class="min-w-0">
-				<p class="mb-3 font-mono text-[11px] tracking-[1.5px]">WEB GALLERY OF ART</p>
-				<p class="max-w-full wrap-anywhere text-sm leading-relaxed text-wga-ink/70">A searchable archive of European fine art, decorative art and architecture, 3rd century to the early 20th. Open source, maintained by contributors.</p>
+				<p class="mb-3 font-mono text-(length:--t-11) tracking-[1.5px]">WEB GALLERY OF ART</p>
+				<p class="max-w-full wrap-anywhere text-(length:--t-15) leading-relaxed text-wga-ink/70">A searchable archive of European fine art, decorative art and architecture, 3rd century to the early 20th. Open source, maintained by contributors.</p>
 			</div>
 			<div class="min-w-0">
-				<p class="mb-3 font-mono text-[11px] tracking-[1.5px] text-wga-ink/60">BROWSE</p>
+				<p class="mb-3 font-mono text-(length:--t-11) tracking-[1.5px] text-wga-ink/60">BROWSE</p>
 				<ul class="space-y-1 wrap-anywhere text-sm leading-[2.1] text-wga-ink/70">
 					<li>
 						<a
@@ -86,7 +86,7 @@ templ Footer() {
 				</ul>
 			</div>
 			<div class="min-w-0">
-				<p class="mb-3 font-mono text-[11px] tracking-[1.5px] text-wga-ink/60">SERVICES</p>
+				<p class="mb-3 font-mono text-(length:--t-11) tracking-[1.5px] text-wga-ink/60">SERVICES</p>
 				<ul class="space-y-1 wrap-anywhere text-sm leading-[2.1] text-wga-ink/70">
 					<li>
 						<a
@@ -122,7 +122,7 @@ templ Footer() {
 				</ul>
 			</div>
 			<div class="min-w-0">
-				<p class="mb-3 font-mono text-[11px] tracking-[1.5px] text-wga-ink/60">ABOUT</p>
+				<p class="mb-3 font-mono text-(length:--t-11) tracking-[1.5px] text-wga-ink/60">ABOUT</p>
 				<ul class="space-y-1 wrap-anywhere text-sm leading-[2.1] text-wga-ink/70">
 					<li>
 						<a
@@ -180,7 +180,7 @@ templ Footer() {
 			</div>
 		</div>
 		<div class="container mx-auto mt-8 flex flex-wrap items-center justify-between gap-4 px-4 md:px-0">
-			<p class="min-w-0 font-mono text-[10px] tracking-[0.5px] text-wga-ink/50">© WEB GALLERY OF ART, CREATED BY EMIL KRÉN AND DANIEL MARX</p>
+			<p class="min-w-0 font-mono text-(length:--t-10) tracking-[0.5px] text-wga-ink/50">© WEB GALLERY OF ART, CREATED BY EMIL KRÉN AND DANIEL MARX</p>
 			@PreferencesControl()
 		</div>
 	</footer>
@@ -204,11 +204,11 @@ templ PreferencesControl() {
 			type="button"
 			data-wga-preferences-open
 			aria-haspopup="dialog"
-			class="flex min-h-[40px] shrink-0 cursor-pointer items-center gap-[10px] border border-wga-ink/25 px-[14px] py-[9px] font-mono text-[10px] tracking-[1.5px] text-wga-ink/60 transition-colors hover:border-wga-ink hover:text-wga-ink"
+			class="flex min-h-[40px] shrink-0 cursor-pointer items-center gap-[10px] border border-wga-ink/25 px-[14px] py-[9px] font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60 transition-colors hover:border-wga-ink hover:text-wga-ink"
 		>
 			<span data-wga-preferences-swatch aria-hidden="true" class="h-3 w-3 shrink-0 outline outline-wga-ink/25"></span>
 			<span>PREFERENCES</span>
-			<span data-wga-preferences-summary class="hidden text-[9px] text-wga-ink/50 md:inline"></span>
+			<span data-wga-preferences-summary class="hidden text-(length:--t-10) text-muted md:inline"></span>
 		</button>
 	</div>
 	@PreferencesPanel()
@@ -222,18 +222,18 @@ templ PreferencesPanel() {
 		class="wga-preferences bg-wga-bg p-0 text-wga-ink backdrop:bg-wga-ink/45"
 	>
 		<div class="sticky top-0 z-10 flex shrink-0 items-center justify-between gap-4 border-b border-wga-ink bg-wga-bg px-6 py-5">
-			<span class="font-mono text-[11px] tracking-[1.5px] text-wga-ink">PREFERENCES</span>
+			<span class="font-mono text-(length:--t-11) tracking-[1.5px] text-wga-ink">PREFERENCES</span>
 			<button
 				type="button"
 				data-wga-preferences-close
-				class="flex min-h-11 min-w-11 cursor-pointer items-center justify-center border border-wga-ink/25 px-3 py-2 font-mono text-[10px] tracking-[1.5px] text-wga-ink/60 transition-colors hover:bg-wga-fill"
+				class="flex min-h-11 min-w-11 cursor-pointer items-center justify-center border border-wga-ink/25 px-3 py-2 font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60 transition-colors hover:bg-wga-fill"
 			>CLOSE</button>
 		</div>
 		<div class="flex flex-col gap-8 p-6">
 			<section class="flex flex-col gap-3">
 				<div class="flex flex-col gap-1">
-					<h2 class="font-mono text-[10px] tracking-[1.5px] text-wga-ink/60">APPEARANCE</h2>
-					<p data-wga-scheme-explanation class="text-[13px]/[1.5] text-pretty text-wga-ink/75">Follows your system setting until you choose here.</p>
+					<h2 class="font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60">APPEARANCE</h2>
+					<p data-wga-scheme-explanation class="text-(length:--t-13)/[1.5] text-pretty text-wga-ink/75">Follows your system setting until you choose here.</p>
 				</div>
 				<div class="flex w-fit shrink-0 gap-px bg-wga-ink/20" role="group" aria-label="Colour scheme">
 					@SchemeSegment("light", "LIGHT")
@@ -242,13 +242,13 @@ templ PreferencesPanel() {
 			</section>
 			<section class="flex flex-col gap-3">
 				<div class="flex flex-col gap-1">
-					<h2 class="font-mono text-[10px] tracking-[1.5px] text-wga-ink/60">PALETTE</h2>
-					<p class="text-[13px]/[1.5] text-pretty text-wga-ink/75">Each palette is a light and dark pair. Choosing one keeps whichever half you are reading in.</p>
+					<h2 class="font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60">PALETTE</h2>
+					<p class="text-(length:--t-13)/[1.5] text-pretty text-wga-ink/75">Each palette is a light and dark pair. Choosing one keeps whichever half you are reading in.</p>
 				</div>
 				<div class="flex flex-col gap-[18px]" role="radiogroup" aria-label="Colour palette">
 					for _, group := range dto.PaletteGroups() {
 						<div class="flex flex-col gap-2">
-							<h3 class="font-mono text-[9px] tracking-[1.5px] text-wga-ink/60">{ group }</h3>
+							<h3 class="font-mono text-(length:--t-10) tracking-[1.5px] text-muted">{ group }</h3>
 							<div class="flex flex-col gap-px bg-wga-ink/15">
 								for _, option := range dto.PaletteOptions {
 									if option.Group == group {
@@ -262,12 +262,12 @@ templ PreferencesPanel() {
 			</section>
 			<section class="flex flex-col gap-3">
 				<div class="flex flex-col gap-1">
-					<h2 class="font-mono text-[10px] tracking-[1.5px] text-wga-ink/60">READING</h2>
-					<p class="text-[13px]/[1.5] text-pretty text-wga-ink/75">Bionic reading bolds the opening letters of each word in running text. Catalogue data and labels are left alone.</p>
+					<h2 class="font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60">READING</h2>
+					<p class="text-(length:--t-13)/[1.5] text-pretty text-wga-ink/75">Bionic reading bolds the opening letters of each word in running text. Catalogue data and labels are left alone.</p>
 				</div>
 				@BionicReadingToggle()
 			</section>
-			<p class="border-t border-wga-ink/15 pt-4 text-[12px]/[1.6] text-pretty text-wga-ink/60">Preferences are kept on this device only. Nothing here is sent to the archive.</p>
+			<p class="border-t border-wga-ink/15 pt-4 text-(length:--t-12)/[1.6] text-pretty text-wga-ink/60">Preferences are kept on this device only. Nothing here is sent to the archive.</p>
 		</div>
 	</dialog>
 }
@@ -279,7 +279,7 @@ templ SchemeSegment(value string, label string) {
 		type="button"
 		data-wga-scheme={ value }
 		aria-pressed="false"
-		class="flex min-h-[44px] cursor-pointer items-center bg-wga-bg px-5 font-mono text-[10px] tracking-[1.5px] text-wga-ink/75 transition-colors hover:text-wga-ink disabled:cursor-not-allowed disabled:opacity-40"
+		class="flex min-h-[44px] cursor-pointer items-center bg-wga-bg px-5 font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/75 transition-colors hover:text-wga-ink disabled:cursor-not-allowed disabled:opacity-40"
 	>{ label }</button>
 }
 
@@ -296,8 +296,8 @@ templ PaletteRow(option dto.PaletteOption) {
 	>
 		<span aria-hidden="true" class="h-[26px] w-[26px] shrink-0 outline outline-wga-ink/25" style={ dto.PaletteSwatchStyle(option.Key) }></span>
 		<span class="flex min-w-0 flex-col gap-[3px]">
-			<span data-wga-palette-name class="font-mono text-[11px] tracking-[1.5px] text-wga-ink">{ option.Label }</span>
-			<span class="text-[12px]/[1.45] text-pretty text-wga-ink/60">{ option.Desc }</span>
+			<span data-wga-palette-name class="font-mono text-(length:--t-11) tracking-[1.5px] text-wga-ink">{ option.Label }</span>
+			<span class="text-(length:--t-12)/[1.45] text-pretty text-wga-ink/60">{ option.Desc }</span>
 		</span>
 	</button>
 }
@@ -306,6 +306,6 @@ templ PaletteRow(option dto.PaletteOption) {
 // control the client reveals once it has initialised the prose transform.
 templ BionicReadingToggle() {
 	<div data-wga-bionic-control class="hidden items-center gap-2">
-		<button type="button" role="switch" aria-label="Bionic reading" aria-checked="false" data-wga-bionic-toggle class="border border-wga-ink/20 bg-wga-bg px-2 py-1 font-mono text-[10px] tracking-[1px] text-wga-ink/75 transition-colors hover:text-wga-ink">BIONIC</button>
+		<button type="button" role="switch" aria-label="Bionic reading" aria-checked="false" data-wga-bionic-toggle class="border border-wga-ink/20 bg-wga-bg px-2 py-1 font-mono text-(length:--t-10) tracking-[1px] text-wga-ink/75 transition-colors hover:text-wga-ink">BIONIC</button>
 	</div>
 }
