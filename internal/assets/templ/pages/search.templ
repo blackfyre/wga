@@ -56,7 +56,7 @@ templ SearchResults(v SearchView) {
 							<li><a href={ templ.URL(artist.Href) } hx-get={ artist.Href } class="wga-row-link flex items-baseline justify-between gap-4 border-b border-wga-ink/15 py-3.5"><span class="text-(length:--t-15) font-semibold">{ artist.Name }</span><span class="text-right font-mono text-(length:--t-11) text-wga-ink/60">{ artist.Dates }<br/>{ artist.School }</span></a></li>
 						}
 					</ul>
-					<a href={ templ.URL(searchIndexPath("/artists", v.Term)) } hx-get={ searchIndexPath("/artists", v.Term) } class="wga-action-link mt-4 inline-block font-mono text-(length:--t-11) tracking-[1px]">ALL MATCHING ARTISTS →</a>
+					<a href={ templ.URL(searchIndexPath("/artists", v.Term)) } hx-get={ searchIndexPath("/artists", v.Term) } class="wga-action-link wga-trailing-action mt-4 font-mono text-(length:--t-11) tracking-[1px]">ALL MATCHING ARTISTS →</a>
 				}
 			</div>
 			<div class="min-w-0 flex-1">
@@ -69,7 +69,7 @@ templ SearchResults(v SearchView) {
 							<li><a href={ templ.URL(work.Href) } hx-get={ work.Href } class="wga-row-link flex items-baseline justify-between gap-4 border-b border-wga-ink/15 py-3.5"><span class="text-(length:--t-15) font-semibold">{ work.Title }</span><span class="text-right font-mono text-(length:--t-11) text-wga-ink/60">{ work.Artist }</span></a></li>
 						}
 					</ul>
-					<a href={ templ.URL(searchIndexPath("/artworks", v.Term)) } hx-get={ searchIndexPath("/artworks", v.Term) } class="wga-action-link mt-4 inline-block font-mono text-(length:--t-11) tracking-[1px]">ALL MATCHING WORKS →</a>
+					<a href={ templ.URL(searchIndexPath("/artworks", v.Term)) } hx-get={ searchIndexPath("/artworks", v.Term) } class="wga-action-link wga-trailing-action mt-4 font-mono text-(length:--t-11) tracking-[1px]">ALL MATCHING WORKS →</a>
 				}
 			</div>
 		</div>

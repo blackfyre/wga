@@ -233,7 +233,7 @@ templ PreferencesPanel() {
 			<section class="flex flex-col gap-3">
 				<div class="flex flex-col gap-1">
 					<h2 class="font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60">APPEARANCE</h2>
-					<p data-wga-scheme-explanation class="text-(length:--t-13)/[1.5] text-pretty text-wga-ink/75">Follows your system setting until you choose here.</p>
+					<p data-wga-scheme-explanation class="text-(length:--t-15)/[1.5] text-pretty text-wga-ink/75">Follows your system setting until you choose here.</p>
 				</div>
 				<div class="flex w-fit shrink-0 gap-px bg-wga-ink/20" role="group" aria-label="Colour scheme">
 					@SchemeSegment("light", "LIGHT")
@@ -243,7 +243,7 @@ templ PreferencesPanel() {
 			<section class="flex flex-col gap-3">
 				<div class="flex flex-col gap-1">
 					<h2 class="font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60">PALETTE</h2>
-					<p class="text-(length:--t-13)/[1.5] text-pretty text-wga-ink/75">Each palette is a light and dark pair. Choosing one keeps whichever half you are reading in.</p>
+					<p class="text-(length:--t-15)/[1.5] text-pretty text-wga-ink/75">Each palette is a light and dark pair. Choosing one keeps whichever half you are reading in.</p>
 				</div>
 				<div class="flex flex-col gap-[18px]" role="radiogroup" aria-label="Colour palette">
 					for _, group := range dto.PaletteGroups() {
@@ -263,11 +263,11 @@ templ PreferencesPanel() {
 			<section class="flex flex-col gap-3">
 				<div class="flex flex-col gap-1">
 					<h2 class="font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60">READING</h2>
-					<p class="text-(length:--t-13)/[1.5] text-pretty text-wga-ink/75">Bionic reading bolds the opening letters of each word in running text. Catalogue data and labels are left alone.</p>
+					<p class="text-(length:--t-15)/[1.5] text-pretty text-wga-ink/75">Bionic reading bolds the opening letters of each word in running text. Catalogue data and labels are left alone.</p>
 				</div>
 				@BionicReadingToggle()
 			</section>
-			<p class="border-t border-wga-ink/15 pt-4 text-(length:--t-12)/[1.6] text-pretty text-wga-ink/60">Preferences are kept on this device only. Nothing here is sent to the archive.</p>
+			<p class="border-t border-wga-ink/15 pt-4 text-(length:--t-15)/[1.6] text-pretty text-wga-ink/60">Preferences are kept on this device only. Nothing here is sent to the archive.</p>
 		</div>
 	</dialog>
 }
