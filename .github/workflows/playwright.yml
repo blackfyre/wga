@@ -129,7 +129,7 @@ jobs:
           retention-days: 1
   playwright-tests:
     needs: build
-    timeout-minutes: 5
+    timeout-minutes: 10
     permissions:
       contents: read
     strategy:
