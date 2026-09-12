@@ -1,5 +1,4 @@
 const STORAGE_KEY = "wga-bionic";
-const COOKIE_NAME = "wga_bionic";
 const PROSE_SELECTOR = "p, [data-bionic]";
 const SKIP_SELECTOR =
 	"[data-bionic-mark], b, strong, em, i, mark, [data-bionic='off'], nav, footer, figure, [class~='font-mono'], code, pre, form, button, input, select, textarea";
@@ -94,13 +93,6 @@ function storedBionicReading(): boolean {
 		// Storage can be unavailable in private browsing modes.
 	}
 
-	const prefix = `${COOKIE_NAME}=`;
-	for (const item of document.cookie.split(";")) {
-		const cookie = item.trim();
-		if (cookie.startsWith(prefix)) {
-			return decodeURIComponent(cookie.slice(prefix.length)) === "on";
-		}
-	}
 	return false;
 }
 
@@ -137,7 +129,6 @@ export function setBionicReading(on: boolean, persist = true): void {
 		} catch {
 			// Storage can be unavailable in private browsing modes.
 		}
-		document.cookie = `${COOKIE_NAME}=${on ? "on" : "off"}; path=/; max-age=31536000; samesite=lax`;
 	}
 
 	document.documentElement.dataset.bionicReading = String(on);

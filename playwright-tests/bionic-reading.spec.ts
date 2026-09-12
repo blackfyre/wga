@@ -52,9 +52,11 @@ test.describe("bionic reading", () => {
 		expect(await page.evaluate(() => localStorage.getItem("wga-bionic"))).toBe(
 			"on",
 		);
-		expect(await page.evaluate(() => document.cookie)).toContain(
-			"wga_bionic=on",
-		);
+		expect(
+			(await page.context().cookies()).some(
+				({ name }) => name === "wga_bionic",
+			),
+		).toBe(false);
 		await page.reload();
 		await page.locator("[data-wga-preferences-open]").click();
 		await expect(toggle).toHaveAttribute("aria-checked", "true");
@@ -70,9 +72,11 @@ test.describe("bionic reading", () => {
 		expect(await page.evaluate(() => localStorage.getItem("wga-bionic"))).toBe(
 			"off",
 		);
-		expect(await page.evaluate(() => document.cookie)).toContain(
-			"wga_bionic=off",
-		);
+		expect(
+			(await page.context().cookies()).some(
+				({ name }) => name === "wga_bionic",
+			),
+		).toBe(false);
 	});
 
 	test("defaults off for missing, inaccessible, and invalid storage", async ({
@@ -90,34 +94,41 @@ test.describe("bionic reading", () => {
 		).toHaveAttribute("aria-checked", "false");
 	});
 
-	test("restores a cookie-only enabled preference after initialisation", async ({
+	test("ignores a cookie-only enabled preference after initialisation", async ({
 		page,
+		context,
 	}) => {
-		await page.addInitScript(() => {
-			localStorage.removeItem("wga-bionic");
-			document.cookie = "wga_bionic=on; path=/";
-		});
 		await page.goto("/");
+		await page.evaluate(() => localStorage.removeItem("wga-bionic"));
+		await context.addCookies([
+			{ name: "wga_bionic", value: "on", url: page.url() },
+		]);
+		await page.reload();
 
 		await expect(page.locator("html")).toHaveAttribute(
 			"data-bionic-reading",
-			"true",
+			"false",
 		);
 		await page.locator("[data-wga-preferences-open]").click();
 		await expect(
 			page.getByRole("switch", { name: "Bionic reading" }),
-		).toHaveAttribute("aria-checked", "true");
+		).toHaveAttribute("aria-checked", "false");
 		await expect(
 			page
 				.locator("main p:not(.font-mono)")
 				.first()
 				.locator("[data-bionic-mark]"),
-		).not.toHaveCount(0);
+		).toHaveCount(0);
 	});
 
-	test("restores a cookie-enabled preference when localStorage is blocked", async ({
+	test("ignores a cookie-enabled preference when localStorage is blocked", async ({
 		page,
+		context,
 	}) => {
+		await page.goto("/");
+		await context.addCookies([
+			{ name: "wga_bionic", value: "on", url: page.url() },
+		]);
 		await page.addInitScript(() => {
 			Object.defineProperty(window, "localStorage", {
 				value: {
@@ -129,24 +140,25 @@ test.describe("bionic reading", () => {
 					},
 				},
 			});
-			document.cookie = "wga_bionic=on; path=/";
 		});
-		await page.goto("/");
+		await page.reload();
+		// The injected storage methods deliberately throw during initialisation.
+		resetErrorCapture();
 
 		await expect(page.locator("html")).toHaveAttribute(
 			"data-bionic-reading",
-			"true",
+			"false",
 		);
 		await page.locator("[data-wga-preferences-open]").click();
 		await expect(
 			page.getByRole("switch", { name: "Bionic reading" }),
-		).toHaveAttribute("aria-checked", "true");
+		).toHaveAttribute("aria-checked", "false");
 		await expect(
 			page
 				.locator("main p:not(.font-mono)")
 				.first()
 				.locator("[data-bionic-mark]"),
-		).not.toHaveCount(0);
+		).toHaveCount(0);
 	});
 
 	test("limits the transformation to eligible prose", async ({ page }) => {
@@ -274,6 +286,8 @@ test.describe("bionic reading", () => {
 			});
 		});
 		await page.goto("/");
+		// The injected storage methods deliberately throw during initialisation.
+		resetErrorCapture();
 		await page.locator("[data-wga-preferences-open]").click();
 		const toggle = page.getByRole("switch", { name: "Bionic reading" });
 		await expect(toggle).toHaveAttribute("aria-checked", "false");

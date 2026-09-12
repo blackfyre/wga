@@ -181,7 +181,7 @@ templ Footer() {
 		</div>
 		<div class="container mx-auto mt-8 flex flex-wrap items-center justify-between gap-4 px-4 md:px-0">
 			<p class="min-w-0 font-mono text-[10px] tracking-[0.5px] text-wga-ink/50">© WEB GALLERY OF ART, CREATED BY EMIL KRÉN AND DANIEL MARX</p>
-			@PreferencesControl(utils.GetPreferences(ctx))
+			@PreferencesControl()
 		</div>
 	</footer>
 }
@@ -198,7 +198,7 @@ func footerPathActive(ctx context.Context, href string) bool {
 // trigger whose summary and split swatch state the active settings, plus the
 // native labelled dialog it opens. The dialog sits outside the hidden wrapper
 // so it can open in the top layer without inheriting aria-hidden.
-templ PreferencesControl(prefs dto.Preferences) {
+templ PreferencesControl() {
 	<div data-wga-preferences-control aria-hidden="true" class="hidden">
 		<button
 			type="button"
@@ -206,15 +206,15 @@ templ PreferencesControl(prefs dto.Preferences) {
 			aria-haspopup="dialog"
 			class="flex min-h-[40px] shrink-0 cursor-pointer items-center gap-[10px] border border-wga-ink/25 px-[14px] py-[9px] font-mono text-[10px] tracking-[1.5px] text-wga-ink/60 transition-colors hover:border-wga-ink hover:text-wga-ink"
 		>
-			<span data-wga-preferences-swatch aria-hidden="true" class="h-3 w-3 shrink-0 outline outline-wga-ink/25" style={ dto.PaletteSwatchStyle(prefs.Palette) }></span>
+			<span data-wga-preferences-swatch aria-hidden="true" class="h-3 w-3 shrink-0 outline outline-wga-ink/25"></span>
 			<span>PREFERENCES</span>
-			<span data-wga-preferences-summary class="hidden text-[9px] text-wga-ink/50 md:inline">{ dto.PreferencesSummary(prefs) }</span>
+			<span data-wga-preferences-summary class="hidden text-[9px] text-wga-ink/50 md:inline"></span>
 		</button>
 	</div>
-	@PreferencesPanel(prefs)
+	@PreferencesPanel()
 }
 
-templ PreferencesPanel(prefs dto.Preferences) {
+templ PreferencesPanel() {
 	<dialog
 		id="wga-preferences"
 		data-wga-preferences-panel
@@ -233,11 +233,11 @@ templ PreferencesPanel(prefs dto.Preferences) {
 			<section class="flex flex-col gap-3">
 				<div class="flex flex-col gap-1">
 					<h2 class="font-mono text-[10px] tracking-[1.5px] text-wga-ink/60">APPEARANCE</h2>
-					<p data-wga-scheme-explanation class="text-[13px]/[1.5] text-pretty text-wga-ink/75">{ schemeExplanation(prefs) }</p>
+					<p data-wga-scheme-explanation class="text-[13px]/[1.5] text-pretty text-wga-ink/75">Follows your system setting until you choose here.</p>
 				</div>
 				<div class="flex w-fit shrink-0 gap-px bg-wga-ink/20" role="group" aria-label="Colour scheme">
-					@SchemeSegment("light", "LIGHT", prefs)
-					@SchemeSegment("dark", "DARK", prefs)
+					@SchemeSegment("light", "LIGHT")
+					@SchemeSegment("dark", "DARK")
 				</div>
 			</section>
 			<section class="flex flex-col gap-3">
@@ -252,7 +252,7 @@ templ PreferencesPanel(prefs dto.Preferences) {
 							<div class="flex flex-col gap-px bg-wga-ink/15">
 								for _, option := range dto.PaletteOptions {
 									if option.Group == group {
-										@PaletteRow(option, prefs.Palette)
+										@PaletteRow(option)
 									}
 								}
 							</div>
@@ -265,7 +265,7 @@ templ PreferencesPanel(prefs dto.Preferences) {
 					<h2 class="font-mono text-[10px] tracking-[1.5px] text-wga-ink/60">READING</h2>
 					<p class="text-[13px]/[1.5] text-pretty text-wga-ink/75">Bionic reading bolds the opening letters of each word in running text. Catalogue data and labels are left alone.</p>
 				</div>
-				@BionicReadingToggle(prefs.Bionic)
+				@BionicReadingToggle()
 			</section>
 			<p class="border-t border-wga-ink/15 pt-4 text-[12px]/[1.6] text-pretty text-wga-ink/60">Preferences are kept on this device only. Nothing here is sent to the archive.</p>
 		</div>
@@ -274,85 +274,38 @@ templ PreferencesPanel(prefs dto.Preferences) {
 
 // SchemeSegment is one LIGHT/DARK choice. A dark-only palette disables LIGHT
 // with a reason rather than deselecting it.
-templ SchemeSegment(value string, label string, prefs dto.Preferences) {
+templ SchemeSegment(value string, label string) {
 	<button
 		type="button"
 		data-wga-scheme={ value }
-		aria-pressed={ boolAttr(schemePressed(value, prefs)) }
-		disabled?={ dto.DarkOnlyPalette(prefs.Palette) && value == "light" }
-		if dto.DarkOnlyPalette(prefs.Palette) && value == "light" {
-			title={ dto.PaletteLabel(prefs.Palette) + " is a dark-only palette" }
-		}
-		class={ "flex min-h-[44px] items-center px-5 font-mono text-[10px] tracking-[1.5px] transition-colors disabled:cursor-not-allowed disabled:opacity-40",
-			templ.KV("cursor-pointer bg-wga-accent-bg text-wga-inv-fg", schemePressed(value, prefs)),
-			templ.KV("cursor-pointer bg-wga-bg text-wga-ink/75 hover:text-wga-ink", !schemePressed(value, prefs)) }
+		aria-pressed="false"
+		class="flex min-h-[44px] cursor-pointer items-center bg-wga-bg px-5 font-mono text-[10px] tracking-[1.5px] text-wga-ink/75 transition-colors hover:text-wga-ink disabled:cursor-not-allowed disabled:opacity-40"
 	>{ label }</button>
 }
 
 // PaletteRow is one grouped provenance radio choice, identified by label plus a
 // split paper/ink swatch so colour is not its sole identifier.
-templ PaletteRow(option dto.PaletteOption, current string) {
+templ PaletteRow(option dto.PaletteOption) {
 	<button
 		type="button"
 		role="radio"
 		data-wga-palette={ option.Key }
 		data-wga-palette-label={ option.Label }
-		aria-checked={ boolAttr(paletteActive(option, current)) }
-		class={ "flex min-h-[44px] cursor-pointer items-center gap-[14px] px-4 py-[14px] text-left transition-colors",
-			templ.KV("bg-wga-accent-bg/10 shadow-[inset_3px_0_0_var(--color-primary)]", paletteActive(option, current)),
-			templ.KV("bg-wga-bg hover:bg-wga-surface-2", !paletteActive(option, current)) }
+		aria-checked="false"
+		class="flex min-h-[44px] cursor-pointer items-center gap-[14px] bg-wga-bg px-4 py-[14px] text-left transition-colors hover:bg-wga-surface-2"
 	>
 		<span aria-hidden="true" class="h-[26px] w-[26px] shrink-0 outline outline-wga-ink/25" style={ dto.PaletteSwatchStyle(option.Key) }></span>
 		<span class="flex min-w-0 flex-col gap-[3px]">
-			<span data-wga-palette-name class={ "font-mono text-[11px] tracking-[1.5px]", templ.KV("text-wga-accent", paletteActive(option, current)), templ.KV("text-wga-ink", !paletteActive(option, current)) }>{ option.Label }</span>
+			<span data-wga-palette-name class="font-mono text-[11px] tracking-[1.5px] text-wga-ink">{ option.Label }</span>
 			<span class="text-[12px]/[1.45] text-pretty text-wga-ink/60">{ option.Desc }</span>
 		</span>
-		if paletteActive(option, current) {
-			<span data-wga-palette-in-use class="ml-auto shrink-0 font-mono text-[9px] tracking-[1.5px] text-wga-accent">IN USE</span>
-		}
 	</button>
 }
 
 // BionicReadingToggle keeps the existing bionic-reading contract: a hidden
 // control the client reveals once it has initialised the prose transform.
-templ BionicReadingToggle(on bool) {
+templ BionicReadingToggle() {
 	<div data-wga-bionic-control class="hidden items-center gap-2">
-		if on {
-			<button type="button" role="switch" aria-label="Bionic reading" aria-checked="true" data-wga-bionic-toggle class="border border-wga-accent bg-wga-accent-bg px-2 py-1 font-mono text-[10px] tracking-[1px] text-wga-inv-fg transition-colors hover:text-wga-ink">BIONIC</button>
-		} else {
-			<button type="button" role="switch" aria-label="Bionic reading" aria-checked="false" data-wga-bionic-toggle class="border border-wga-ink/20 bg-wga-bg px-2 py-1 font-mono text-[10px] tracking-[1px] text-wga-ink/75 transition-colors hover:text-wga-ink">BIONIC</button>
-		}
+		<button type="button" role="switch" aria-label="Bionic reading" aria-checked="false" data-wga-bionic-toggle class="border border-wga-ink/20 bg-wga-bg px-2 py-1 font-mono text-[10px] tracking-[1px] text-wga-ink/75 transition-colors hover:text-wga-ink">BIONIC</button>
 	</div>
-}
-
-func boolAttr(v bool) string {
-	if v {
-		return "true"
-	}
-	return "false"
-}
-
-// paletteActive reports whether the palette row is the current selection. An
-// unset palette marks the default bone row, since that is what is served.
-func paletteActive(option dto.PaletteOption, current string) bool {
-	return current == option.Key || (current == "" && option.Key == dto.DefaultPaletteKey)
-}
-
-// schemePressed reports which scheme segment is active. A dark-only palette
-// always marks DARK; an unset scheme marks neither so the control does not lie
-// about a preference the server cannot see.
-func schemePressed(value string, prefs dto.Preferences) bool {
-	if dto.DarkOnlyPalette(prefs.Palette) {
-		return value == "dark"
-	}
-	return prefs.Scheme == value
-}
-
-// schemeExplanation states the appearance guidance honestly, including the
-// dark-only reason when LIGHT is unavailable.
-func schemeExplanation(prefs dto.Preferences) string {
-	if dto.DarkOnlyPalette(prefs.Palette) {
-		return dto.PaletteLabel(prefs.Palette) + " has no light build, so light is unavailable while it is chosen."
-	}
-	return "Follows your system setting until you choose here."
 }

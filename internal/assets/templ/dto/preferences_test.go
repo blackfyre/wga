@@ -53,76 +53,6 @@ func TestPaletteTableMatchesPaletteOptions(t *testing.T) {
 	}
 }
 
-func TestNormalizePalette(t *testing.T) {
-	tests := []struct {
-		input string
-		want  string
-	}{
-		{input: "bone", want: "bone"},
-		{input: "tokyo", want: "tokyo"},
-		{input: "neon", want: ""},
-		{input: "", want: ""},
-	}
-	for _, test := range tests {
-		if got := NormalizePalette(test.input); got != test.want {
-			t.Fatalf("NormalizePalette(%q) = %q, want %q", test.input, got, test.want)
-		}
-	}
-}
-
-func TestNormalizeScheme(t *testing.T) {
-	tests := []struct {
-		input string
-		want  string
-	}{
-		{input: "light", want: "light"},
-		{input: "dark", want: "dark"},
-		{input: "wga_light", want: "light"},
-		{input: "wga_dark", want: "dark"},
-		{input: "sepia", want: ""},
-		{input: "", want: ""},
-	}
-	for _, test := range tests {
-		if got := NormalizeScheme(test.input); got != test.want {
-			t.Fatalf("NormalizeScheme(%q) = %q, want %q", test.input, got, test.want)
-		}
-	}
-}
-
-func TestDarkOnlyPalette(t *testing.T) {
-	if !DarkOnlyPalette("baroque") || !DarkOnlyPalette("tokyo") {
-		t.Fatal("baroque and tokyo must be dark-only")
-	}
-	for _, option := range PaletteOptions {
-		if option.DarkOnly != DarkOnlyPalette(option.Key) {
-			t.Fatalf("DarkOnlyPalette(%q) = %t, want %t", option.Key, DarkOnlyPalette(option.Key), option.DarkOnly)
-		}
-	}
-	if DarkOnlyPalette("bone") {
-		t.Fatal("bone must not be dark-only")
-	}
-}
-
-func TestPreferencesSummary(t *testing.T) {
-	tests := []struct {
-		name  string
-		prefs Preferences
-		want  string
-	}{
-		{name: "default", prefs: Preferences{}, want: "BONE · LIGHT"},
-		{name: "dark scheme", prefs: Preferences{Palette: "bone", Scheme: "dark"}, want: "BONE · DARK"},
-		{name: "palette and bionic", prefs: Preferences{Palette: "verdigris", Scheme: "light", Bionic: true}, want: "VERDIGRIS · LIGHT · BIONIC"},
-		{name: "dark-only palette", prefs: Preferences{Palette: "baroque", Scheme: "light"}, want: "BAROQUE · DARK"},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			if got := PreferencesSummary(test.prefs); got != test.want {
-				t.Fatalf("PreferencesSummary() = %q, want %q", got, test.want)
-			}
-		})
-	}
-}
-
 func TestPaletteGroupsPreserveOrder(t *testing.T) {
 	got := PaletteGroups()
 	want := []string{"THIS ARCHIVE", "FROM THE COLLECTION", "BORROWED"}
@@ -149,9 +79,7 @@ func TestThemeResolverScriptContracts(t *testing.T) {
 	script := ThemeResolverScript()
 	for _, want := range []string{
 		`"wga-palette"`,
-		`"wga_palette"`,
 		`"wga-theme"`,
-		`"wga_theme"`,
 		`"wga_light"`,
 		`"wga_dark"`,
 		`"bone"`,
@@ -166,41 +94,25 @@ func TestThemeResolverScriptContracts(t *testing.T) {
 		}
 	}
 	// The corrected scheme contract must not introduce a separate scheme key.
-	for _, forbidden := range []string{`wga-scheme`, `wga_scheme`} {
+	for _, forbidden := range []string{`wga-scheme`, `wga_scheme`, `wga_palette`, `wga_theme`, `document.cookie`} {
 		if strings.Contains(script, forbidden) {
 			t.Errorf("resolver script must not reference %q", forbidden)
 		}
 	}
 }
 
-func TestThemeResolverScriptPaletteFallbackPrecedence(t *testing.T) {
+func TestThemeResolverScriptPaletteFallback(t *testing.T) {
 	script := ThemeResolverScript()
-
-	// An invalid local value is truthy, so a || short-circuit would skip the
-	// cookie and land on bone. The corrected resolver must validate the local
-	// palette before falling back to the cookie.
-	if strings.Contains(script, `readLocalStorage("wga-palette") || readCookie("wga_palette")`) {
-		t.Fatal("resolver must not short-circuit local to cookie with ||; invalid local values would skip the cookie")
-	}
-
 	local := strings.Index(script, `readLocalStorage("wga-palette")`)
-	cookie := strings.Index(script, `readCookie("wga_palette")`)
 	fallback := strings.Index(script, `palette = DEFAULT_PALETTE`)
-	if local < 0 || cookie < 0 || fallback < 0 {
-		t.Fatal("resolver must read local palette, then cookie, then default")
+	if local < 0 || fallback < 0 {
+		t.Fatal("resolver must read local palette before using the default")
 	}
-	if !(local < cookie && cookie < fallback) {
-		t.Fatalf("expected local < cookie < default resolution order, got local=%d cookie=%d default=%d", local, cookie, fallback)
+	if local >= fallback {
+		t.Fatalf("expected local < default resolution order, got local=%d default=%d", local, fallback)
 	}
-
-	// Each fallback is validity-guarded, so a valid cookie is selected before
-	// the bone default is ever considered.
-	for _, guarded := range []string{
-		"if (!Object.prototype.hasOwnProperty.call(PALETTES, palette)) {\n\t\tpalette = readCookie(\"wga_palette\");",
-		"if (!Object.prototype.hasOwnProperty.call(PALETTES, palette)) {\n\t\tpalette = DEFAULT_PALETTE;",
-	} {
-		if !strings.Contains(script, guarded) {
-			t.Errorf("resolver missing validity-guarded fallback %q", guarded)
-		}
+	guarded := "if (!Object.prototype.hasOwnProperty.call(PALETTES, palette)) {\n\t\tpalette = DEFAULT_PALETTE;"
+	if !strings.Contains(script, guarded) {
+		t.Errorf("resolver missing validity-guarded fallback %q", guarded)
 	}
 }

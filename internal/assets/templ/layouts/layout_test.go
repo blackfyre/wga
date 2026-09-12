@@ -185,9 +185,7 @@ func TestLayoutBaseAppliesThemeBeforeStylesheet(t *testing.T) {
 		`"wga_light"`,
 		`"wga_dark"`,
 		`"wga-palette"`,
-		`"wga_palette"`,
 		`"wga-theme"`,
-		`"wga_theme"`,
 		`"bone"`,
 		`"baroque":true`,
 		`"tokyo":true`,
@@ -197,6 +195,11 @@ func TestLayoutBaseAppliesThemeBeforeStylesheet(t *testing.T) {
 	} {
 		if !strings.Contains(rendered[script:stylesheet], expected) {
 			t.Fatalf("expected inline theme script to handle %q", expected)
+		}
+	}
+	for _, forbidden := range []string{`wga_palette`, `wga_theme`, `document.cookie`} {
+		if strings.Contains(rendered[script:stylesheet], forbidden) {
+			t.Fatalf("inline theme script must not reference %q", forbidden)
 		}
 	}
 }

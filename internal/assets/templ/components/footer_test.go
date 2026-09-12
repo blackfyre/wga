@@ -147,18 +147,18 @@ func TestFooterGroupsPaletteChoicesByProvenance(t *testing.T) {
 	}
 }
 
-func TestFooterMarksDefaultPaletteAndUnsetSchemeTruthfully(t *testing.T) {
+func TestFooterLeavesAppearanceControlsNeutralUntilJavaScriptInitialises(t *testing.T) {
 	var output bytes.Buffer
 	if err := Footer().Render(context.Background(), &output); err != nil {
 		t.Fatalf("render footer: %v", err)
 	}
 
 	rendered := output.String()
-	if !strings.Contains(rendered, `>BONE · LIGHT</span>`) {
-		t.Fatal("expected the trigger summary to state the default bone light combination")
+	if strings.Contains(rendered, `>BONE ·`) {
+		t.Fatal("server render must not project an appearance summary")
 	}
-	if !strings.Contains(rendered, `data-wga-palette="bone" data-wga-palette-label="BONE" aria-checked="true"`) {
-		t.Fatal("expected the default bone palette row to be marked in use")
+	if strings.Contains(rendered, `aria-checked="true"`) {
+		t.Fatal("server render must not select a palette")
 	}
 	for _, unset := range []string{
 		`data-wga-scheme="light" aria-pressed="false"`,
@@ -185,108 +185,56 @@ func TestFooterPaletteRowsCarryReconciliationTargets(t *testing.T) {
 			t.Fatal("expected palette rows to expose their label text target")
 		}
 	}
-	// The default bone row is active, so exactly one row carries the marker.
-	if count := strings.Count(rendered, `data-wga-palette-in-use`); count != 1 {
-		t.Fatalf("expected exactly one in-use marker, got %d", count)
+	if count := strings.Count(rendered, `data-wga-palette-in-use`); count != 0 {
+		t.Fatalf("expected JavaScript to add the in-use marker, got %d server markers", count)
 	}
 	if !strings.Contains(rendered, `data-wga-palette="bone"`) {
 		t.Fatal("expected the bone palette row to be present")
 	}
 }
 
-func TestFooterMarksPaletteSchemeAndDarkOnlyFromCookies(t *testing.T) {
-	tests := []struct {
-		name    string
-		cookies []*http.Cookie
-		expect  []string
-	}{
-		{
-			name:    "palette and scheme",
-			cookies: []*http.Cookie{{Name: "wga_palette", Value: "verdigris"}, {Name: "wga_theme", Value: "dark"}},
-			expect: []string{
-				`>VERDIGRIS · DARK</span>`,
-				`data-wga-palette="verdigris" data-wga-palette-label="VERDIGRIS" aria-checked="true"`,
-				`data-wga-scheme="dark" aria-pressed="true"`,
-			},
-		},
-		{
-			name:    "dark-only palette disables light",
-			cookies: []*http.Cookie{{Name: "wga_palette", Value: "baroque"}, {Name: "wga_theme", Value: "light"}},
-			expect: []string{
-				`>BAROQUE · DARK</span>`,
-				`data-wga-palette="baroque" data-wga-palette-label="BAROQUE" aria-checked="true"`,
-				`data-wga-scheme="light" aria-pressed="false" disabled title="BAROQUE is a dark-only palette"`,
-				`data-wga-scheme="dark" aria-pressed="true"`,
-				`BAROQUE has no light build, so light is unavailable while it is chosen.`,
-			},
-		},
-		{
-			name:    "bionic summary",
-			cookies: []*http.Cookie{{Name: "wga_bionic", Value: "on"}},
-			expect:  []string{`>BONE · LIGHT · BIONIC</span>`},
-		},
+func TestFooterIgnoresPaletteAndSchemeCookies(t *testing.T) {
+	request, err := http.NewRequest(http.MethodGet, "/", nil)
+	if err != nil {
+		t.Fatalf("create request: %v", err)
+	}
+	request.AddCookie(&http.Cookie{Name: "wga_palette", Value: "baroque"})
+	request.AddCookie(&http.Cookie{Name: "wga_theme", Value: "dark"})
+
+	var output bytes.Buffer
+	if err := Footer().Render(utils.ContextFromRequest(request), &output); err != nil {
+		t.Fatalf("render footer: %v", err)
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			request, err := http.NewRequest(http.MethodGet, "/", nil)
-			if err != nil {
-				t.Fatalf("create request: %v", err)
-			}
-			for _, cookie := range test.cookies {
-				request.AddCookie(cookie)
-			}
-
-			var output bytes.Buffer
-			if err := Footer().Render(utils.ContextFromRequest(request), &output); err != nil {
-				t.Fatalf("render footer: %v", err)
-			}
-
-			rendered := output.String()
-			for _, expected := range test.expect {
-				if !strings.Contains(rendered, expected) {
-					t.Errorf("expected footer contract %q", expected)
-				}
-			}
-		})
+	rendered := output.String()
+	for _, forbidden := range []string{`aria-checked="true"`, `aria-pressed="true"`, `BAROQUE · DARK`, `disabled title="BAROQUE is a dark-only palette"`} {
+		if strings.Contains(rendered, forbidden) {
+			t.Errorf("server render must ignore palette and scheme cookies; found %q", forbidden)
+		}
 	}
 }
 
-func TestFooterMarksBionicReadingFromRequestCookie(t *testing.T) {
-	tests := []struct {
-		name   string
-		cookie *http.Cookie
-		button string
-	}{
-		{name: "absent", button: `aria-checked="false" data-wga-bionic-toggle class="border border-wga-ink/20 bg-wga-bg`},
-		{name: "off", cookie: &http.Cookie{Name: "wga_bionic", Value: "off"}, button: `aria-checked="false" data-wga-bionic-toggle class="border border-wga-ink/20 bg-wga-bg`},
-		{name: "on", cookie: &http.Cookie{Name: "wga_bionic", Value: "on"}, button: `aria-checked="true" data-wga-bionic-toggle class="border border-wga-accent bg-wga-accent-bg`},
-		{name: "malformed", cookie: &http.Cookie{Name: "wga_bionic", Value: "enabled"}, button: `aria-checked="false" data-wga-bionic-toggle class="border border-wga-ink/20 bg-wga-bg`},
+func TestFooterLeavesBionicReadingNeutralWhenCookieIsPresent(t *testing.T) {
+	request, err := http.NewRequest(http.MethodGet, "/", nil)
+	if err != nil {
+		t.Fatalf("create request: %v", err)
+	}
+	request.AddCookie(&http.Cookie{Name: "wga_bionic", Value: "on"})
+
+	var output bytes.Buffer
+	if err := Footer().Render(utils.ContextFromRequest(request), &output); err != nil {
+		t.Fatalf("render footer: %v", err)
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			request, err := http.NewRequest(http.MethodGet, "/", nil)
-			if err != nil {
-				t.Fatalf("create request: %v", err)
-			}
-			if tt.cookie != nil {
-				request.AddCookie(tt.cookie)
-			}
-
-			var output bytes.Buffer
-			if err := Footer().Render(utils.ContextFromRequest(request), &output); err != nil {
-				t.Fatalf("render footer: %v", err)
-			}
-
-			rendered := output.String()
-			if !strings.Contains(rendered, `data-wga-bionic-control class="hidden`) {
-				t.Fatal("expected bionic control to remain hidden before JavaScript initialises")
-			}
-			if !strings.Contains(rendered, tt.button) {
-				t.Fatalf("expected bionic button %q", tt.button)
-			}
-		})
+	rendered := output.String()
+	if !strings.Contains(rendered, `data-wga-bionic-control class="hidden`) {
+		t.Fatal("expected bionic control to remain hidden before JavaScript initialises")
+	}
+	if !strings.Contains(rendered, `aria-checked="false" data-wga-bionic-toggle class="border border-wga-ink/20 bg-wga-bg`) {
+		t.Fatal("expected a neutral client-owned bionic toggle")
+	}
+	if strings.Contains(rendered, `aria-checked="true"`) {
+		t.Fatal("server render must ignore the legacy bionic cookie")
 	}
 }
 

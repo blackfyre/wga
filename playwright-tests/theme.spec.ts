@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { type BrowserContext, expect, test } from "@playwright/test";
 
 import {
 	expectNoPageErrors,
@@ -14,6 +14,19 @@ test.beforeEach(async ({ page }) => {
 test.afterEach(() => {
 	expectNoPageErrors();
 });
+
+async function addLegacyAppearanceCookies(
+	context: BrowserContext,
+	baseURL: string | undefined,
+	cookies: Array<{ name: string; value: string }>,
+): Promise<void> {
+	if (!baseURL) {
+		throw new Error("Playwright baseURL is required");
+	}
+	await context.addCookies(
+		cookies.map((cookie) => ({ ...cookie, url: baseURL })),
+	);
+}
 
 for (const colorScheme of ["light", "dark"] as const) {
 	test(`uses the browser ${colorScheme} preference by default`, async ({
@@ -79,11 +92,6 @@ test("switches and remembers the selected colour scheme", async ({ page }) => {
 	expect(await page.evaluate(() => localStorage.getItem("wga-theme"))).toBe(
 		"dark",
 	);
-	expect(await page.context().cookies()).toEqual(
-		expect.arrayContaining([
-			expect.objectContaining({ name: "wga_theme", value: "dark" }),
-		]),
-	);
 
 	await page.reload();
 	await expect(page.locator("html")).toHaveAttribute("data-palette", "bone");
@@ -109,8 +117,10 @@ test("normalises a legacy stored scheme into native root state", async ({
 	await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 });
 
-test("uses a cookie-only dark preference before the stylesheet loads", async ({
+test("ignores a cookie-only dark preference before the stylesheet loads", async ({
 	page,
+	context,
+	baseURL,
 }) => {
 	let appearanceAtStylesheetRequest = { palette: "", theme: "" };
 	await page.route("**/assets/css/style.css", async (route) => {
@@ -120,32 +130,34 @@ test("uses a cookie-only dark preference before the stylesheet loads", async ({
 		};
 		await route.continue();
 	});
-	await page.addInitScript(() => {
-		localStorage.removeItem("wga-theme");
-		document.cookie = "wga_theme=dark; path=/";
-	});
+	await addLegacyAppearanceCookies(context, baseURL, [
+		{ name: "wga_theme", value: "dark" },
+	]);
+	await page.addInitScript(() => localStorage.removeItem("wga-theme"));
 	await page.emulateMedia({ colorScheme: "light" });
 	await page.goto("/");
 
 	expect(appearanceAtStylesheetRequest).toEqual({
 		palette: "bone",
-		theme: "dark",
+		theme: "light",
 	});
-	await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 });
 
-test("uses a cookie-only light preference over a dark operating system", async ({
+test("ignores a cookie-only light preference and follows the operating system", async ({
 	page,
+	context,
+	baseURL,
 }) => {
-	await page.addInitScript(() => {
-		localStorage.removeItem("wga-theme");
-		document.cookie = "wga_theme=light; path=/";
-	});
+	await addLegacyAppearanceCookies(context, baseURL, [
+		{ name: "wga_theme", value: "light" },
+	]);
+	await page.addInitScript(() => localStorage.removeItem("wga-theme"));
 	await page.emulateMedia({ colorScheme: "dark" });
 	await page.goto("/");
 
 	await expect(page.locator("html")).toHaveAttribute("data-palette", "bone");
-	await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 	expect(
 		await page.evaluate(() => {
 			const application = window as unknown as {
@@ -153,19 +165,23 @@ test("uses a cookie-only light preference over a dark operating system", async (
 			};
 			return application.wga.theme.current();
 		}),
-	).toBe("light");
+	).toBe("dark");
 });
 
-test("uses a valid cookie when localStorage is unavailable", async ({
+test("uses operating-system defaults when localStorage is unavailable", async ({
 	page,
+	context,
+	baseURL,
 }) => {
+	await addLegacyAppearanceCookies(context, baseURL, [
+		{ name: "wga_theme", value: "dark" },
+	]);
 	await page.addInitScript(() => {
 		Object.defineProperty(window, "localStorage", {
 			get() {
 				throw new Error("storage unavailable");
 			},
 		});
-		document.cookie = "wga_theme=dark; path=/";
 	});
 	await page.emulateMedia({ colorScheme: "light" });
 	await page.goto("/");
@@ -173,7 +189,7 @@ test("uses a valid cookie when localStorage is unavailable", async ({
 	resetErrorCapture();
 
 	await expect(page.locator("html")).toHaveAttribute("data-palette", "bone");
-	await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 });
 
 test("returns to operating system tracking after clearing the preference", async ({
@@ -199,9 +215,6 @@ test("returns to operating system tracking after clearing the preference", async
 	expect(
 		await page.evaluate(() => localStorage.getItem("wga-theme")),
 	).toBeNull();
-	expect(await page.context().cookies()).not.toEqual(
-		expect.arrayContaining([expect.objectContaining({ name: "wga_theme" })]),
-	);
 
 	await page.emulateMedia({ colorScheme: "light" });
 	await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
@@ -243,29 +256,30 @@ test("changes palette without changing the explicit scheme", async ({
 	expect(await page.evaluate(() => localStorage.getItem("wga-palette"))).toBe(
 		"classic",
 	);
-	expect(await page.context().cookies()).toEqual(
-		expect.arrayContaining([
-			expect.objectContaining({ name: "wga_palette", value: "classic" }),
-		]),
-	);
 });
 
-test("restores a cookie-only palette independently from its scheme", async ({
+test("ignores cookie-only palette and scheme preferences", async ({
 	page,
+	context,
+	baseURL,
 }) => {
+	await addLegacyAppearanceCookies(context, baseURL, [
+		{ name: "wga_theme", value: "dark" },
+		{ name: "wga_palette", value: "classical" },
+	]);
 	await page.addInitScript(() => {
 		localStorage.removeItem("wga-theme");
 		localStorage.removeItem("wga-palette");
-		document.cookie = "wga_theme=dark; path=/";
-		document.cookie = "wga_palette=classical; path=/";
 	});
 	await page.goto("/");
 
+	await expect(page.locator("html")).toHaveAttribute("data-palette", "bone");
 	await expect(page.locator("html")).toHaveAttribute(
-		"data-palette",
-		"classical",
+		"data-theme",
+		await page.evaluate(() =>
+			matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light",
+		),
 	);
-	await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 	expect(
 		await page.evaluate(() => localStorage.getItem("wga-theme")),
 	).toBeNull();
@@ -309,12 +323,10 @@ test("keeps session palette and scheme choices when storage is blocked", async (
 
 	await expect(page.locator("html")).toHaveAttribute("data-palette", "classic");
 	await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
-	expect(await page.context().cookies()).toEqual(
-		expect.arrayContaining([
-			expect.objectContaining({ name: "wga_theme", value: "dark" }),
-			expect.objectContaining({ name: "wga_palette", value: "classic" }),
-		]),
+	const appearanceCookies = (await page.context().cookies()).filter(
+		({ name }) => ["wga_theme", "wga_palette"].includes(name),
 	);
+	expect(appearanceCookies).toEqual([]);
 });
 
 test("dark-only palettes preserve the stored light scheme", async ({
@@ -415,10 +427,8 @@ for (const palette of FIRST_PAINT_PALETTES) {
 			});
 			await page.addInitScript(
 				({ key, schemeValue }) => {
-					localStorage.removeItem("wga-palette");
-					localStorage.removeItem("wga-theme");
-					document.cookie = `wga_palette=${key}; path=/`;
-					document.cookie = `wga_theme=${schemeValue}; path=/`;
+					localStorage.setItem("wga-palette", key);
+					localStorage.setItem("wga-theme", schemeValue);
 				},
 				{ key: palette.key, schemeValue: scheme },
 			);
@@ -441,36 +451,10 @@ for (const palette of FIRST_PAINT_PALETTES) {
 	}
 }
 
-test("uses a cookie-only palette before the stylesheet", async ({ page }) => {
-	let appearanceAtStylesheetRequest = { palette: "", theme: "" };
-	await page.route("**/assets/css/style.css", async (route) => {
-		appearanceAtStylesheetRequest = {
-			palette: (await page.locator("html").getAttribute("data-palette")) ?? "",
-			theme: (await page.locator("html").getAttribute("data-theme")) ?? "",
-		};
-		await route.continue();
-	});
-	await page.addInitScript(() => {
-		localStorage.removeItem("wga-palette");
-		localStorage.removeItem("wga-theme");
-		document.cookie = "wga_palette=verdigris; path=/";
-	});
-	await page.emulateMedia({ colorScheme: "light" });
-	await page.goto("/");
-
-	expect(appearanceAtStylesheetRequest).toEqual({
-		palette: "verdigris",
-		theme: "light",
-	});
-	await expect(page.locator("html")).toHaveAttribute(
-		"data-palette",
-		"verdigris",
-	);
-	await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
-});
-
-test("falls back from an invalid stored palette to a valid palette cookie before the stylesheet", async ({
+test("ignores a cookie-only palette before the stylesheet", async ({
 	page,
+	context,
+	baseURL,
 }) => {
 	let appearanceAtStylesheetRequest = { palette: "", theme: "" };
 	await page.route("**/assets/css/style.css", async (route) => {
@@ -480,21 +464,51 @@ test("falls back from an invalid stored palette to a valid palette cookie before
 		};
 		await route.continue();
 	});
+	await addLegacyAppearanceCookies(context, baseURL, [
+		{ name: "wga_palette", value: "verdigris" },
+	]);
+	await page.addInitScript(() => {
+		localStorage.removeItem("wga-palette");
+		localStorage.removeItem("wga-theme");
+	});
+	await page.emulateMedia({ colorScheme: "light" });
+	await page.goto("/");
+
+	expect(appearanceAtStylesheetRequest).toEqual({
+		palette: "bone",
+		theme: "light",
+	});
+	await expect(page.locator("html")).toHaveAttribute("data-palette", "bone");
+	await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+});
+
+test("falls back from an invalid stored palette to bone before the stylesheet", async ({
+	page,
+	context,
+	baseURL,
+}) => {
+	let appearanceAtStylesheetRequest = { palette: "", theme: "" };
+	await page.route("**/assets/css/style.css", async (route) => {
+		appearanceAtStylesheetRequest = {
+			palette: (await page.locator("html").getAttribute("data-palette")) ?? "",
+			theme: (await page.locator("html").getAttribute("data-theme")) ?? "",
+		};
+		await route.continue();
+	});
+	await addLegacyAppearanceCookies(context, baseURL, [
+		{ name: "wga_palette", value: "classical" },
+	]);
 	await page.addInitScript(() => {
 		localStorage.setItem("wga-palette", "neon");
 		localStorage.removeItem("wga-theme");
-		document.cookie = "wga_palette=classical; path=/";
 	});
 	await page.emulateMedia({ colorScheme: "dark" });
 	await page.goto("/");
 
 	expect(appearanceAtStylesheetRequest).toEqual({
-		palette: "classical",
+		palette: "bone",
 		theme: "dark",
 	});
-	await expect(page.locator("html")).toHaveAttribute(
-		"data-palette",
-		"classical",
-	);
+	await expect(page.locator("html")).toHaveAttribute("data-palette", "bone");
 	await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 });

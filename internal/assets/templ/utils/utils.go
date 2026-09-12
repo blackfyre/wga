@@ -6,7 +6,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/utils/publicurl"
 )
 
@@ -40,12 +39,10 @@ var AlternateMarkdownURLKey ContextKey = "alternate:markdown:url"
 
 func ContextFromRequest(request *http.Request) context.Context {
 	if request == nil {
-		ctx := context.WithValue(context.Background(), preferencesContextKey{}, dto.Preferences{Palette: dto.DefaultPaletteKey})
-		return context.WithValue(ctx, requestPathContextKey{}, "")
+		return context.WithValue(context.Background(), requestPathContextKey{}, "")
 	}
 
-	ctx := context.WithValue(request.Context(), preferencesContextKey{}, readPreferences(request))
-	return context.WithValue(ctx, requestPathContextKey{}, request.URL.Path)
+	return context.WithValue(request.Context(), requestPathContextKey{}, request.URL.Path)
 }
 
 // RequestPath returns the request URL path captured for shared template rendering.
