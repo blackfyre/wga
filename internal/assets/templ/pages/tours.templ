@@ -61,7 +61,7 @@ templ ToursBlock(view dto.TourIndex) {
 			<ul>
 				for _, tour := range view.Original {
 					<li>
-						<a href={ templ.SafeURL("/tours/" + tour.Slug) } hx-get={ "/tours/" + tour.Slug } class="wga-record-card grid grid-cols-1 gap-1.5 border-b border-wga-ink/15 py-4 md:grid-cols-[1fr_2fr_1fr_1fr] md:items-baseline md:gap-4">
+						<a href={ templ.SafeURL("/tours/" + tour.Slug) } hx-get={ "/tours/" + tour.Slug } class="wga-row-link grid grid-cols-1 gap-1.5 border-b border-wga-ink/15 py-4 md:grid-cols-[1fr_2fr_1fr_1fr] md:items-baseline md:gap-4">
 							<span class="font-mono text-(length:--t-11) tracking-[1px] text-wga-ink/60">TOUR #{ tour.Number }</span>
 							<span class="min-w-0">
 								<span class="block font-semibold leading-tight">{ tour.Title }</span>
@@ -265,7 +265,7 @@ templ tourIndex(view dto.TourPage) {
 			for _, row := range view.IndexRows {
 				<li>
 					if row.TargetPath != "" {
-						<a href={ templ.SafeURL(row.TargetPath) } hx-get={ row.TargetPath } data-kbd-idx class="wga-record-card grid grid-cols-1 gap-1 border-b border-wga-ink/15 py-3.5 md:grid-cols-[1.5fr_0.8fr_2.4fr] md:items-baseline md:gap-4">
+						<a href={ templ.SafeURL(row.TargetPath) } hx-get={ row.TargetPath } data-kbd-idx class="wga-row-link grid grid-cols-1 gap-1 border-b border-wga-ink/15 py-3.5 md:grid-cols-[1.5fr_0.8fr_2.4fr] md:items-baseline md:gap-4">
 							<span class="font-semibold leading-tight">{ row.Name }</span>
 							<span class="font-mono text-(length:--t-11) text-wga-ink/60">{ row.Dates }</span>
 							<span class="text-sm leading-snug text-wga-ink/70">{ row.Note }</span>

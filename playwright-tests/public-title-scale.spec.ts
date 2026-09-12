@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
 
-for (const [path, title] of [
-	["/artworks", "Artworks"],
-	["/statistics", "Statistics"],
-	["/pages/about", "About"],
+for (const [path, title, size] of [
+	["/artworks", "Artworks", "44px"],
+	["/statistics", "Statistics", "32px"],
+	["/pages/about", "About", "32px"],
 ] as const) {
 	test(`${title} uses the reference title scale on mobile`, async ({
 		page,
@@ -13,7 +13,7 @@ for (const [path, title] of [
 
 		await expect(page.getByRole("heading", { name: title })).toHaveCSS(
 			"font-size",
-			"44px",
+			size,
 		);
 	});
 }

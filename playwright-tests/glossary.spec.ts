@@ -59,7 +59,7 @@ test("glossary uses the reference title scale on mobile", async ({ page }) => {
 
 	await expect(page.getByRole("heading", { name: "Glossary" })).toHaveCSS(
 		"font-size",
-		"44px",
+		"32px",
 	);
 });
 

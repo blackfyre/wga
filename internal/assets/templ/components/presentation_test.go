@@ -82,6 +82,20 @@ func TestWorkCardsAndRowsAreOrdinaryLinksWithoutViewerHook(t *testing.T) {
 	}
 }
 
+func TestPublicArtworkCardUsesSharedCardAndTrailingActionPrimitives(t *testing.T) {
+	image := dto.Image{Url: "/artists/artist/work", Image: "/images/work.jpg", Title: "Work", Artist: dto.Artist{Name: "Artist"}}
+	rendered := renderComponent(t, PublicArtworkCard(image))
+
+	for _, expected := range []string{`class="wga-record-card"`, "wga-action-link wga-trailing-action", "VIEW WORK →"} {
+		if !strings.Contains(rendered, expected) {
+			t.Errorf("public artwork card missing shared presentation contract %q", expected)
+		}
+	}
+	if strings.Contains(rendered, "hover:opacity-") {
+		t.Error("available public artwork card must not fade on hover")
+	}
+}
+
 func TestWorkCardUsesTypedBlockAddControl(t *testing.T) {
 	ctx := tmplUtils.WithItineraryProjection(context.Background(), "csrf-token", dto.ItineraryTrayView{}, nil)
 	var output bytes.Buffer

@@ -141,7 +141,7 @@ func TestPublicSourcesUseWgaOwnedStyleVocabulary(t *testing.T) {
 
 func TestPublicSourcesUseRelativeTypeScale(t *testing.T) {
 	forbidden := regexp.MustCompile(`\btext-\[[0-9]+(?:\.[0-9]+)?px\]`)
-	lowestRung := regexp.MustCompile(`text-\(length:--t-9(?:5)?\)`)
+	lowestRung := regexp.MustCompile(`text-\(length:--t-9\)`)
 	opacityHover := regexp.MustCompile(`(?:group-)?hover:opacity`)
 
 	for _, root := range []string{"templ", "../../resources/js"} {

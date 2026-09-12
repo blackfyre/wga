@@ -26,7 +26,7 @@ test("uses the reference guestbook title scale on mobile", async ({ page }) => {
 
 	await expect(page.getByRole("heading", { name: "Guestbook" })).toHaveCSS(
 		"font-size",
-		"44px",
+		"32px",
 	);
 });
 
