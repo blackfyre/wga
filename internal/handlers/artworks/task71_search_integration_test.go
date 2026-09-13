@@ -410,12 +410,12 @@ func TestTask71SortViewChangeRefreshesRailWithNondefaultState(t *testing.T) {
 			t.Fatalf("sort/view rail replacement status = %d", recorder.Code)
 		}
 		body := recorder.Body.String()
-		for _, expected := range []string{`id="artwork-filters"`, `name="sort" value="title"`, `name="dir" value="desc"`, `name="view" value="list"`} {
+		for _, expected := range []string{`id="artwork-filters"`, `name="dir" value="desc"`, `name="view" value="list"`} {
 			if !strings.Contains(body, expected) {
 				t.Errorf("sort/view rail replacement missing %s", expected)
 			}
 		}
-		if got := recorder.Header().Get("HX-Push-Url"); got != "/artworks?dir=desc&sort=title&view=list" {
+		if got := recorder.Header().Get("HX-Push-Url"); got != "/artworks?dir=desc&view=list" {
 			t.Errorf("sort/view push URL = %q, want canonical /artworks", got)
 		}
 		return nil

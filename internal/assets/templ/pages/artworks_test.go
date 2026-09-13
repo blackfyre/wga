@@ -39,24 +39,23 @@ func sampleArtworkSearchResults() ArtworkSearchResultsView {
 		ListUrl:     "/artworks?view=list",
 		ResetUrl:    "/artworks",
 		SortOptions: []ArtworkSortOption{
-			{Key: "catalogue", Label: "CATALOGUE", Href: "/artworks", Active: true},
-			{Key: "date", Label: "DATE", Href: "/artworks?sort=date"},
+			{Key: "title", Label: "TITLE", Direction: "A–Z", Href: "/artworks?dir=desc", Active: true},
 			{Key: "artist", Label: "ARTIST", Href: "/artworks?sort=artist"},
-			{Key: "title", Label: "TITLE", Href: "/artworks?sort=title"},
+			{Key: "date", Label: "DATE", Href: "/artworks?sort=date"},
 		},
-		SortDirLabel:  "↑ ARCHIVE ORDER",
-		SortToggleUrl: "/artworks?dir=desc",
 	}
 }
 
 func sampleArtworkSearchFacets() ArtworkSearchFacets {
 	return ArtworkSearchFacets{
-		Query:     ArtworkSearchFacet{Label: "TITLE OR ARTIST", Summary: "ANY", Open: true},
-		Technique: ArtworkSearchFacet{Label: "TECHNIQUE", Summary: "ANY"},
-		School:    ArtworkSearchFacet{Label: "SCHOOL", Summary: "ANY", Open: true},
-		Form:      ArtworkSearchFacet{Label: "FORM", Summary: "ANY"},
-		Type:      ArtworkSearchFacet{Label: "TYPE", Summary: "ANY"},
-		Period:    ArtworkSearchFacet{Label: "PERIOD", Summary: "ANY"},
+		Query:       ArtworkSearchFacet{Label: "TITLE OR ARTIST", Summary: "ANY", Open: true},
+		Technique:   ArtworkSearchFacet{Label: "TECHNIQUE", Summary: "ANY"},
+		School:      ArtworkSearchFacet{Label: "SCHOOL", Summary: "ANY", Open: true},
+		Form:        ArtworkSearchFacet{Label: "FORM", Summary: "ANY"},
+		SchoolMulti: ArtworkSearchMultiFacet{ArtworkSearchFacet: ArtworkSearchFacet{Label: "SCHOOL", Summary: "ANY", Open: true}, Name: "art_school"},
+		FormMulti:   ArtworkSearchMultiFacet{ArtworkSearchFacet: ArtworkSearchFacet{Label: "FORM", Summary: "ANY"}, Name: "art_form"},
+		Type:        ArtworkSearchFacet{Label: "TYPE", Summary: "ANY"},
+		Period:      ArtworkSearchFacet{Label: "PERIOD", Summary: "ANY"},
 		Collection: ArtworkSearchCollectionFacet{
 			Facet: ArtworkSearchFacet{Label: "COLLECTION", Summary: "ANY"},
 			Name:  "venue",
@@ -100,12 +99,10 @@ func sampleArtworkSearchView() ArtworkSearchView {
 			Type:        "search",
 			Placeholder: "e.g. oil on canvas",
 		},
-		SchoolGroup: dto.ChipGroup{Legend: "SCHOOL", Name: "art_school", Options: []dto.ChipOption{{Label: "ALL", Value: "", Checked: true}}},
-		FormGroup:   dto.ChipGroup{Legend: "FORM", Name: "art_form", Options: []dto.ChipOption{{Label: "ALL", Value: "", Checked: true}}},
 		TypeGroup:   dto.ChipGroup{Legend: "TYPE", Name: "art_type", Options: []dto.ChipOption{{Label: "ALL", Value: "", Checked: true}}},
 		PeriodGroup: dto.ChipGroup{Legend: "PERIOD", Name: "period", Note: "No values are recorded for this filter yet."},
 		Facets:      sampleArtworkSearchFacets(),
-		Sort:        "catalogue",
+		Sort:        "title",
 		Dir:         "asc",
 		ClearUrl:    "/artworks",
 		HxTarget:    "#artwork-search",
@@ -154,16 +151,16 @@ func TestArtworkMatchCount(t *testing.T) {
 func TestArtworkSearchResultsRendersSortCriteriaAndDirection(t *testing.T) {
 	rendered := renderArtworkSearchResults(t, sampleArtworkSearchResults())
 
-	for _, label := range []string{"CATALOGUE", "DATE", "ARTIST", "TITLE"} {
-		if !strings.Contains(rendered, ">"+label+"</a>") {
+	for _, label := range []string{"TITLE", "A–Z", "ARTIST", "DATE"} {
+		if !strings.Contains(rendered, label) {
 			t.Errorf("expected %s sort chip", label)
 		}
 	}
-	if !strings.Contains(rendered, "ARCHIVE ORDER") {
-		t.Error("expected the criterion-specific direction label, not an abstract ASC/DESC label")
+	if strings.Contains(rendered, "CATALOGUE") {
+		t.Error("obsolete catalogue sort must not be rendered")
 	}
-	if !strings.Contains(rendered, `aria-pressed="true"`) {
-		t.Error("expected the active sort criterion to carry aria-pressed")
+	if !strings.Contains(rendered, `aria-current="true"`) {
+		t.Error("expected the active sort criterion to carry aria-current")
 	}
 }
 
@@ -243,9 +240,39 @@ func TestArtworkFilterBlockRendersCatalogueFilters(t *testing.T) {
 	if !strings.Contains(rendered, `name="technique"`) {
 		t.Error("expected the technique search input")
 	}
-	for _, legend := range []string{"SCHOOL", "FORM", "TYPE", "PERIOD"} {
+	for _, legend := range []string{"TYPE", "PERIOD"} {
 		if !strings.Contains(rendered, `sr-only">`+legend+`</legend>`) {
 			t.Errorf("expected the embedded %s chip legend to be visually hidden", legend)
+		}
+	}
+}
+
+func TestArtworkFilterBlockRendersCountedMultiSelectFacets(t *testing.T) {
+	view := sampleArtworkSearchView()
+	view.Facets.SchoolMulti = ArtworkSearchMultiFacet{
+		ArtworkSearchFacet: ArtworkSearchFacet{Label: "SCHOOL", Summary: "DUTCH", Active: true, Open: true},
+		Name:               "art_school",
+		Options: []ArtworkSearchMultiOption{
+			{Label: "Dutch", Value: "dutch", Count: 12, Selected: true},
+			{Label: "Italian", Value: "italian", Count: 0, Disabled: true},
+		},
+		Total:       10,
+		ClearURL:    "/artworks?view=list",
+		ToggleURL:   "/artworks?art_school=dutch&school_all=1&view=list",
+		ToggleLabel: "SHOW ALL 10",
+	}
+	view.Facets.School = view.Facets.SchoolMulti.ArtworkSearchFacet
+	rendered := renderArtworkFilterBlock(t, view)
+
+	for _, expected := range []string{
+		`type="checkbox" name="art_school" value="dutch" checked`,
+		`type="checkbox" name="art_school" value="italian" disabled`,
+		">12</span>",
+		"SHOW ALL 10",
+		`hx-get="/artworks?view=list"`,
+	} {
+		if !strings.Contains(rendered, expected) {
+			t.Errorf("counted school facet missing %q", expected)
 		}
 	}
 }
@@ -308,10 +335,6 @@ func TestArtworkFilterBlockReopensActiveFacets(t *testing.T) {
 	view := sampleArtworkSearchView()
 	view.Facets.Form = ArtworkSearchFacet{Label: "FORM", Summary: "PAINTING", Active: true, Open: true}
 	view.Facets.Period = ArtworkSearchFacet{Label: "PERIOD", Summary: "BAROQUE", Active: true, Open: true}
-	view.FormGroup.Options = []dto.ChipOption{
-		{Label: "ALL", Value: "", Checked: false},
-		{Label: "Painting", Value: "painting", Checked: true},
-	}
 	view.PeriodGroup.Options = []dto.ChipOption{
 		{Label: "ALL", Value: "", Checked: false},
 		{Label: "Baroque", Value: "baroque", Checked: true},
@@ -526,11 +549,11 @@ func TestArtworkSortAndViewLinksTargetFullBlock(t *testing.T) {
 	if strings.Contains(rendered, "/artworks/results") {
 		t.Error("sort/view links must use the canonical /artworks path, not /artworks/results")
 	}
-	if got := strings.Count(rendered, `hx-target="#artwork-search"`); got != 7 {
-		t.Errorf("expected all 7 sort/view controls to target #artwork-search, got %d", got)
+	if got := strings.Count(rendered, `hx-target="#artwork-search"`); got != 5 {
+		t.Errorf("expected all 5 sort/view controls to target #artwork-search, got %d", got)
 	}
-	if got := strings.Count(rendered, `hx-select="#artwork-search"`); got != 7 {
-		t.Errorf("expected all 7 sort/view controls to select #artwork-search, got %d", got)
+	if got := strings.Count(rendered, `hx-select="#artwork-search"`); got != 5 {
+		t.Errorf("expected all 5 sort/view controls to select #artwork-search, got %d", got)
 	}
 	if strings.Contains(rendered, `hx-target="#artwork-search-results"`) {
 		t.Error("sort/view controls must not remain result-local")

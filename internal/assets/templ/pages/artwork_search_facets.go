@@ -12,6 +12,26 @@ type ArtworkSearchFacet struct {
 	Last    bool
 }
 
+// ArtworkSearchMultiOption is one counted checkbox value in a repeated facet.
+type ArtworkSearchMultiOption struct {
+	Label    string
+	Value    string
+	Count    int
+	Selected bool
+	Disabled bool
+}
+
+// ArtworkSearchMultiFacet is a bounded projection of a complete counted roster.
+type ArtworkSearchMultiFacet struct {
+	ArtworkSearchFacet
+	Name        string
+	Options     []ArtworkSearchMultiOption
+	Total       int
+	ClearURL    string
+	ToggleURL   string
+	ToggleLabel string
+}
+
 // ArtworkSearchCollectionOption is one counted collection holding. Options are
 // already ordered and bounded by the artwork-search query.
 type ArtworkSearchCollectionOption struct {
@@ -43,6 +63,8 @@ type ArtworkSearchFacets struct {
 	Technique   ArtworkSearchFacet
 	School      ArtworkSearchFacet
 	Form        ArtworkSearchFacet
+	SchoolMulti ArtworkSearchMultiFacet
+	FormMulti   ArtworkSearchMultiFacet
 	Type        ArtworkSearchFacet
 	Period      ArtworkSearchFacet
 	Collection  ArtworkSearchCollectionFacet

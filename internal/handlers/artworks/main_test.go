@@ -155,16 +155,15 @@ func TestBuildSortOptionsLabelsEachCriterion(t *testing.T) {
 	f := buildFilters(url.Values{})
 	options := buildSortOptions(f, nil)
 
-	if len(options) != 4 {
-		t.Fatalf("expected 4 sort options, got %d", len(options))
+	if len(options) != 3 {
+		t.Fatalf("expected 3 sort options, got %d", len(options))
 	}
 
-	wantKeys := []string{"catalogue", "date", "artist", "title"}
+	wantKeys := []string{"title", "artist", "date"}
 	wantLabels := map[string]string{
-		"catalogue": "CATALOGUE",
-		"date":      "DATE",
-		"artist":    "ARTIST",
-		"title":     "TITLE",
+		"date":   "DATE",
+		"artist": "ARTIST",
+		"title":  "TITLE",
 	}
 
 	for index, option := range options {
@@ -174,8 +173,14 @@ func TestBuildSortOptionsLabelsEachCriterion(t *testing.T) {
 		if option.Label != wantLabels[option.Key] {
 			t.Errorf("option %d label = %q, want %q", index, option.Label, wantLabels[option.Key])
 		}
-		if option.Active != (option.Key == "catalogue") {
-			t.Errorf("option %q active = %v, want only catalogue active", option.Key, option.Active)
+		if option.Active != (option.Key == "title") {
+			t.Errorf("option %q active = %v, want only title active", option.Key, option.Active)
+		}
+		if option.Active && option.Direction != "A–Z" {
+			t.Errorf("active option direction = %q, want A–Z", option.Direction)
+		}
+		if !option.Active && option.Direction != "" {
+			t.Errorf("inactive option %q exposes direction %q", option.Key, option.Direction)
 		}
 	}
 }
@@ -186,14 +191,12 @@ func TestSortDefaultDirectionIsCriterionSpecific(t *testing.T) {
 		dir  string
 		want string
 	}{
-		{sort: "catalogue", dir: "asc", want: "↑ ARCHIVE ORDER"},
-		{sort: "catalogue", dir: "desc", want: "↓ REVERSED"},
-		{sort: "date", dir: "asc", want: "↑ EARLIEST FIRST"},
-		{sort: "date", dir: "desc", want: "↓ LATEST FIRST"},
-		{sort: "artist", dir: "asc", want: "↑ A–Z"},
-		{sort: "artist", dir: "desc", want: "↓ Z–A"},
-		{sort: "title", dir: "asc", want: "↑ A–Z"},
-		{sort: "title", dir: "desc", want: "↓ Z–A"},
+		{sort: "date", dir: "asc", want: "EARLIEST"},
+		{sort: "date", dir: "desc", want: "LATEST"},
+		{sort: "artist", dir: "asc", want: "A–Z"},
+		{sort: "artist", dir: "desc", want: "Z–A"},
+		{sort: "title", dir: "asc", want: "A–Z"},
+		{sort: "title", dir: "desc", want: "Z–A"},
 	} {
 		t.Run(test.sort+"_"+test.dir, func(t *testing.T) {
 			f := buildFilters(url.Values{"sort": {test.sort}, "dir": {test.dir}})
@@ -210,12 +213,10 @@ func TestSortStringResolvesDeterministicOrder(t *testing.T) {
 		dir  string
 		want string
 	}{
-		{sort: "catalogue", dir: "asc", want: "+source_row,+id"},
-		{sort: "catalogue", dir: "desc", want: "-source_row,+id"},
 		{sort: "date", dir: "asc", want: "+date_start,+id"},
 		{sort: "date", dir: "desc", want: "-date_start,+id"},
-		{sort: "artist", dir: "asc", want: "+author.name,+id"},
-		{sort: "artist", dir: "desc", want: "-author.name,+id"},
+		{sort: "artist", dir: "asc", want: "+author.filing_name,+id"},
+		{sort: "artist", dir: "desc", want: "-author.filing_name,+id"},
 		{sort: "title", dir: "asc", want: "+title,+id"},
 		{sort: "title", dir: "desc", want: "-title,+id"},
 	} {
@@ -233,7 +234,6 @@ func TestSortPrefixOrderBy(t *testing.T) {
 		sort string
 		want string
 	}{
-		{sort: "catalogue", want: "(source_row = 0) ASC"},
 		{sort: "date", want: "(date_start = 0) ASC"},
 		{sort: "title", want: ""},
 		{sort: "artist", want: ""},
@@ -248,9 +248,9 @@ func TestSortPrefixOrderBy(t *testing.T) {
 }
 
 func TestBuildFiltersRejectsUnknownSort(t *testing.T) {
-	f := buildFilters(url.Values{"sort": {"nonsense"}, "dir": {"nonsense"}})
-	if f.Sort != "catalogue" {
-		t.Errorf("Sort = %q, want catalogue", f.Sort)
+	f := buildFilters(url.Values{"sort": {"catalogue"}, "dir": {"desc"}})
+	if f.Sort != "title" {
+		t.Errorf("Sort = %q, want title", f.Sort)
 	}
 	if f.SortDir != "asc" {
 		t.Errorf("SortDir = %q, want asc", f.SortDir)

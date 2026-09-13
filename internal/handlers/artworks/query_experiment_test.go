@@ -110,7 +110,7 @@ func TestCombinedArtworkPageMatchesSeparateQueries(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			f := tc.filter
-			f.Sort = sortCatalogue
+			f.Sort = sortTitle
 			f.SortDir = sortAsc
 			separateTotal, err := countArtworkRecords(app, &f)
 			if err != nil {
@@ -151,7 +151,7 @@ func TestCombinedArtworkPageProductionEquivalence(t *testing.T) {
 	for _, tc := range artworkExperimentCases() {
 		t.Run(tc.name, func(t *testing.T) {
 			f := tc.filter
-			f.Sort = sortCatalogue
+			f.Sort = sortTitle
 			f.SortDir = sortAsc
 			separateTotal, err := countArtworkRecords(app, &f)
 			if err != nil {
@@ -183,7 +183,7 @@ func BenchmarkArtworkListCountExperiment(b *testing.B) {
 
 	for _, tc := range artworkExperimentCases() {
 		f := tc.filter
-		f.Sort = sortCatalogue
+		f.Sort = sortTitle
 		f.SortDir = sortAsc
 		b.Run(tc.name+"/separate", func(b *testing.B) {
 			for range b.N {

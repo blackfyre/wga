@@ -364,8 +364,10 @@ func TestBuildArtworkSearchViewFiltersByExactArtistID(t *testing.T) {
 	if view.Results.ResetUrl != "/artworks" {
 		t.Errorf("reset URL = %q, want /artworks", view.Results.ResetUrl)
 	}
-	if !strings.Contains(view.Results.SortToggleUrl, "artist_id=artistone000001") {
-		t.Errorf("sort toggle URL = %q, want retained artist ID", view.Results.SortToggleUrl)
+	for _, option := range view.Results.SortOptions {
+		if !strings.Contains(option.Href, "artist_id=artistone000001") {
+			t.Errorf("sort option URL = %q, want retained artist ID", option.Href)
+		}
 	}
 	if view.Results.ResultCount != 2 {
 		t.Fatalf("result count = %d, want 2", view.Results.ResultCount)
@@ -502,7 +504,7 @@ func TestBuildArtworkSearchViewMissingSourceRowSortsLastBothDirections(t *testin
 	if err != nil {
 		t.Fatalf("build ascending view: %v", err)
 	}
-	assertTitles(t, asc, []string{"Real", "Orphan"})
+	assertTitles(t, asc, []string{"Orphan", "Real"})
 
 	desc, _, err := buildArtworkSearchView(app, neturl.Values{"dir": {"desc"}}, 1, 16)
 	if err != nil {
@@ -767,7 +769,7 @@ func TestArtworkPageCountUsesDistinctArtworkIDsAcrossMatchingAuthors(t *testing.
 	if err != nil {
 		t.Fatalf("find artworks: %v", err)
 	}
-	f := &filters{Query: "Artist", Sort: sortCatalogue, SortDir: sortAsc}
+	f := &filters{Query: "Artist", Sort: sortTitle, SortDir: sortAsc}
 	rows, err := listArtworkPageRowsForCollection(app, collection, f, 1, 0)
 	if err != nil {
 		t.Fatalf("list artwork page rows: %v", err)
@@ -890,7 +892,7 @@ func TestArtworkSearchMaximumPageClampsToCanonicalLastPage(t *testing.T) {
 	if len(result.view.Artworks) != 1 || result.view.Artworks[0].Title != "Charlie Work" {
 		t.Fatalf("last-page artworks = %#v, want Charlie Work", result.view.Artworks)
 	}
-	if result.canonical != "/artworks?page=2&sort=title" {
+	if result.canonical != "/artworks?page=2" {
 		t.Fatalf("canonical = %q, want final page", result.canonical)
 	}
 }

@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe.configure({ mode: "serial" });
 test.setTimeout(60000);
@@ -14,7 +14,26 @@ async function expectArtworkResults(page) {
 const artworkSearchForm = (page) => page.locator("#artwork-filters");
 
 async function chooseFilter(page, name, value) {
-	const input = page.locator(`[name='${name}'][value='${value}']`);
+	let input = page.locator(`[name='${name}'][value='${value}']`);
+	if (
+		(await input.count()) === 0 &&
+		["art_school", "art_form"].includes(name)
+	) {
+		const label = name === "art_school" ? "SCHOOL" : "FORM";
+		const disclosure = page
+			.locator("#artwork-filters > details")
+			.filter({ has: page.locator("summary", { hasText: label }) });
+		if (
+			!(await disclosure.evaluate(
+				(details: HTMLDetailsElement) => details.open,
+			))
+		) {
+			await disclosure.locator("summary").click();
+		}
+		await disclosure.getByRole("link", { name: /^SHOW ALL/ }).click();
+		input = page.locator(`[name='${name}'][value='${value}']`);
+		await expect(input).toHaveCount(1);
+	}
 	const facet = input.locator("xpath=ancestor::details[1]");
 	if (!(await facet.evaluate((details: HTMLDetailsElement) => details.open))) {
 		await facet.locator("summary").click();
@@ -23,28 +42,50 @@ async function chooseFilter(page, name, value) {
 	const response = page.waitForResponse(
 		(response) =>
 			new URL(response.url()).pathname === "/artworks" &&
-			new URL(response.url()).searchParams.get(name) === value,
+			new URL(response.url()).searchParams.getAll(name).includes(value),
 	);
 	await input.locator("..").click();
 	await response;
-	await expect(page).toHaveURL((url) => url.searchParams.get(name) === value);
+	await expect(page).toHaveURL((url) =>
+		url.searchParams.getAll(name).includes(value),
+	);
 	await expectArtworkResults(page);
 }
 
-test("active filter chip follows the selected radio", async ({ page }) => {
+test("school facet accepts repeated selections", async ({ page }) => {
 	await page.goto("/artworks");
-	const all = page.locator("[name='art_school'][value='']");
-	const school = page.locator("[name='art_school'][value='bohemian']");
+	await chooseFilter(page, "art_school", "bohemian");
+	const second = page
+		.locator("input[name='art_school']:not(:checked):not(:disabled)")
+		.first();
+	const secondValue = await second.getAttribute("value");
+	expect(secondValue).toBeTruthy();
+	await chooseFilter(page, "art_school", secondValue as string);
 
-	await expect(all).toBeChecked();
-	await school.check({ force: true });
-
-	await expect(school).toBeChecked();
-	await expect(all).not.toBeChecked();
-	await expect(school.locator("..")).toHaveCSS(
-		"background-color",
-		"rgb(0, 51, 102)",
+	await expect(page).toHaveURL(
+		(url) => url.searchParams.getAll("art_school").length === 2,
 	);
+	await expect(page.locator("input[name='art_school']:checked")).toHaveCount(2);
+	await expect(
+		page
+			.getByText("SCHOOL", { exact: true })
+			.locator("xpath=ancestor::details[1]")
+			.locator("summary"),
+	).toContainText("2 SELECTED");
+});
+
+test("active sort control toggles its named direction", async ({ page }) => {
+	await page.goto("/artworks");
+	const titleAscending = page.getByRole("link", { name: "TITLE A–Z" });
+	await titleAscending.click();
+	await expect(page).toHaveURL((url) => url.searchParams.get("dir") === "desc");
+	await page.getByRole("link", { name: "TITLE Z–A" }).click();
+	await expect(page).toHaveURL(
+		(url) => !url.searchParams.has("sort") && !url.searchParams.has("dir"),
+	);
+	await expect(
+		page.getByRole("link", { name: "Reverse sort direction" }),
+	).toHaveCount(0);
 });
 
 test("artwork search", async ({ page }) => {
@@ -118,7 +159,7 @@ test("reset clears the artwork search form", async ({ page }) => {
 
 	await expect(page).toHaveURL(/\/artworks$/);
 	await expect(form.getByRole("searchbox")).toHaveValue("");
-	await expect(page.locator("[name='art_school'][value='']")).toBeChecked();
+	await expect(page.locator("input[name='art_school']:checked")).toHaveCount(0);
 	await expect(page.locator("[name='year_from']")).toHaveValue("200");
 	await expect(page.locator("#search-result-container")).toContainText(
 		/works match/i,

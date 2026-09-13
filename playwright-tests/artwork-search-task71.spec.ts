@@ -150,9 +150,9 @@ for (const width of viewports) {
 			await expect(page).toHaveURL(
 				(url) => url.searchParams.get("view") === "list",
 			);
-			await page.getByRole("link", { name: "TITLE" }).click();
+			await page.getByRole("link", { name: "TITLE A–Z" }).click();
 			await expect(page).toHaveURL(
-				(url) => url.searchParams.get("sort") === "title",
+				(url) => url.searchParams.get("dir") === "desc",
 			);
 			const collection = await chooseCollection(page);
 			await collection.label.click();
@@ -160,7 +160,8 @@ for (const width of viewports) {
 				(url) =>
 					url.searchParams.get("venue") === collection.value &&
 					url.searchParams.get("view") === "list" &&
-					url.searchParams.get("sort") === "title" &&
+					url.searchParams.get("dir") === "desc" &&
+					!url.searchParams.has("sort") &&
 					url.searchParams.get("year_from") === "1600" &&
 					url.searchParams.get("year_to") === "1700",
 			);
@@ -169,26 +170,23 @@ for (const width of viewports) {
 			await expect(page.locator("input[name='year_to']")).toHaveValue("1700");
 		});
 
-		test("sort criterion exposes an explicit direction toggle and persists it", async ({
+		test("active sort criterion toggles its explicit direction", async ({
 			page,
 		}) => {
 			await openSearch(page);
-			const direction = page.getByRole("link", {
-				name: "Reverse sort direction",
-			});
-			await expect(direction).toHaveText("↑ ARCHIVE ORDER");
-			await expect(direction).toHaveAttribute("href", /dir=desc/);
-
-			await page.getByRole("link", { name: "TITLE" }).click();
-			await expect(page).toHaveURL(/sort=title/);
+			const titleAscending = page.getByRole("link", { name: "TITLE A–Z" });
+			await expect(titleAscending).toHaveAttribute("href", /dir=desc/);
+			await titleAscending.click();
+			await expect(page).toHaveURL(
+				(url) => url.searchParams.get("dir") === "desc",
+			);
+			await page.getByRole("link", { name: "TITLE Z–A" }).click();
+			await expect(page).toHaveURL(
+				(url) => !url.searchParams.has("sort") && !url.searchParams.has("dir"),
+			);
 			await expect(
 				page.getByRole("link", { name: "Reverse sort direction" }),
-			).toHaveText("↑ A–Z");
-			await page.getByRole("link", { name: "Reverse sort direction" }).click();
-			await expect(page).toHaveURL(/sort=title.*dir=desc|dir=desc.*sort=title/);
-			await expect(
-				page.getByRole("link", { name: "Reverse sort direction" }),
-			).toHaveText("↓ Z–A");
+			).toHaveCount(0);
 		});
 
 		test("unknown direct collection is an honest active empty result", async ({

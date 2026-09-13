@@ -188,8 +188,8 @@ func TestFiltersBuildFilterCombinesStoredFilters(t *testing.T) {
 	}).BuildFilter()
 
 	for _, condition := range []string{
-		"school.slug = {:art_school}",
-		"form.slug = {:art_form}",
+		"school.slug = {:art_school_0}",
+		"form.slug = {:art_form_0}",
 		"technique ~ {:technique}",
 	} {
 		if !strings.Contains(filterString, condition) {
@@ -198,9 +198,9 @@ func TestFiltersBuildFilterCombinesStoredFilters(t *testing.T) {
 	}
 
 	for key, want := range map[string]string{
-		"art_school": "dutch",
-		"art_form":   "painting",
-		"technique":  "oil",
+		"art_school_0": "dutch",
+		"art_form_0":   "painting",
+		"technique":    "oil",
 	} {
 		if got := params[key]; got != want {
 			t.Errorf("parameter %q = %q, want %q", key, got, want)
@@ -222,6 +222,35 @@ func TestBuildFiltersParsesCatalogueFilters(t *testing.T) {
 	}
 }
 
+func TestBuildFiltersNormalisesAndRoundTripsRepeatedFacets(t *testing.T) {
+	f := buildFilters(url.Values{
+		"art_school": {" dutch ", "italian", "dutch", ""},
+		"art_form":   {"painting", "sculpture"},
+	})
+
+	if got := strings.Join(f.SchoolValues, ","); got != "dutch,italian" {
+		t.Fatalf("school values = %q, want deduplicated request order", got)
+	}
+	if got := strings.Join(f.ArtFormValues, ","); got != "painting,sculpture" {
+		t.Fatalf("form values = %q, want request order", got)
+	}
+	path := f.BuildPath("/artworks")
+	if strings.Count(path, "art_school=") != 2 || strings.Count(path, "art_form=") != 2 {
+		t.Fatalf("repeated facet path = %q", path)
+	}
+	filter, params := f.BuildFilter()
+	if !strings.Contains(filter, "(school.slug = {:art_school_0} || school.slug = {:art_school_1})") ||
+		!strings.Contains(filter, "(form.slug = {:art_form_0} || form.slug = {:art_form_1})") {
+		t.Fatalf("repeated facet filter = %q", filter)
+	}
+	if params["art_school_0"] != "dutch" || params["art_school_1"] != "italian" || params["art_form_0"] != "painting" || params["art_form_1"] != "sculpture" {
+		t.Fatalf("repeated facet params = %#v", params)
+	}
+	if f.ActiveFilterCount() != 2 {
+		t.Fatalf("active count = %d, want each multi-select facet counted once", f.ActiveFilterCount())
+	}
+}
+
 func TestBuildFiltersRoundTripsPeriodAndVenue(t *testing.T) {
 	f := buildFilters(url.Values{
 		"period": {"baroque"},
@@ -240,7 +269,7 @@ func TestBuildFiltersRoundTripsPeriodAndVenue(t *testing.T) {
 }
 
 func TestFiltersPathOmitsDefaultSortAndDirection(t *testing.T) {
-	path := (&filters{Sort: "catalogue", SortDir: "asc"}).BuildPath("/artworks")
+	path := (&filters{Sort: "title", SortDir: "asc"}).BuildPath("/artworks")
 
 	if path != "/artworks" {
 		t.Errorf("path = %q, want /artworks (default sort and direction omitted)", path)
@@ -263,6 +292,15 @@ func TestForSortResetsPageAndDirection(t *testing.T) {
 
 	if next.Sort != "title" || next.SortDir != "asc" || next.Page != "" {
 		t.Errorf("forSort = %#v, want title/asc/empty-page", next)
+	}
+}
+
+func TestForSortReversesActiveCriterion(t *testing.T) {
+	f := buildFilters(url.Values{"sort": {"artist"}, "page": {"3"}})
+	next := f.forSort("artist")
+
+	if next.Sort != "artist" || next.SortDir != "desc" || next.Page != "" {
+		t.Fatalf("forSort = %#v, want active artist reversed with empty page", next)
 	}
 }
 

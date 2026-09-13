@@ -11,10 +11,11 @@ import (
 
 // ArtworkSortOption is one sort criterion link rendered in the results header.
 type ArtworkSortOption struct {
-	Key    string
-	Label  string
-	Href   string
-	Active bool
+	Key       string
+	Label     string
+	Direction string
+	Href      string
+	Active    bool
 }
 
 // ArtworkSearchDualMode carries the dual-pane search routing context so a
@@ -38,8 +39,6 @@ type ArtworkSearchResultsView struct {
 	ListUrl         string
 	ResetUrl        string
 	SortOptions     []ArtworkSortOption
-	SortDirLabel    string
-	SortToggleUrl   string
 	DualModeUrls    map[string]string
 	DualModeTarget  string
 	Pagination      string
@@ -51,8 +50,6 @@ type ArtworkSearchView struct {
 	TechniqueField        dto.Field
 	ArtistID              string
 	ArtistScopeFilingName string
-	SchoolGroup           dto.ChipGroup
-	FormGroup             dto.ChipGroup
 	TypeGroup             dto.ChipGroup
 	PeriodGroup           dto.ChipGroup
 	LocationGroup         dto.ChipGroup
@@ -108,7 +105,7 @@ templ ArtworkSeachFilterBlock(b ArtworkSearchView) {
 		if b.ArtistID != "" {
 			<input type="hidden" name="artist_id" value={ b.ArtistID }/>
 		}
-		if b.Sort != "catalogue" {
+		if b.Sort != "title" {
 			<input type="hidden" name="sort" value={ b.Sort }/>
 		}
 		if b.Dir != "asc" {
@@ -171,10 +168,10 @@ templ ArtworkSeachFilterBlock(b ArtworkSearchView) {
 			</label>
 		}
 		@artworkSearchFacet(b.Facets.School) {
-			@components.ChipGroup(artworkSearchChipGroup(b.SchoolGroup))
+			@artworkSearchMultiFacet(b.Facets.SchoolMulti)
 		}
 		@artworkSearchFacet(b.Facets.Form) {
-			@components.ChipGroup(artworkSearchChipGroup(b.FormGroup))
+			@artworkSearchMultiFacet(b.Facets.FormMulti)
 		}
 		@artworkSearchFacet(b.Facets.Type) {
 			@components.ChipGroup(artworkSearchChipGroup(b.TypeGroup))
@@ -220,6 +217,28 @@ templ ArtworkSeachFilterBlock(b ArtworkSearchView) {
 	</form>
 }
 
+templ artworkSearchMultiFacet(facet ArtworkSearchMultiFacet) {
+	<div class="border-t border-wga-ink/10">
+		for _, option := range facet.Options {
+			<label class={ "flex min-h-8 items-center justify-between gap-2.5 border-b border-wga-ink/10 py-1.5 text-sm leading-snug", templ.KV("cursor-pointer hover:text-wga-accent", !option.Disabled), templ.KV("cursor-not-allowed text-wga-ink/40", option.Disabled), templ.KV("font-semibold text-wga-ink", option.Selected) }>
+				<span class="flex min-w-0 items-center gap-2">
+					<input type="checkbox" name={ facet.Name } value={ option.Value } checked?={ option.Selected } disabled?={ option.Disabled } class="h-4 w-4 shrink-0 accent-wga-accent"/>
+					<span class="truncate">{ option.Label }</span>
+				</span>
+				<span class="shrink-0 font-mono text-(length:--t-10) tabular-nums text-wga-ink/60">{ option.Count }</span>
+			</label>
+		}
+	</div>
+	<div class="mt-2.5 flex items-center justify-between gap-3 font-mono text-(length:--t-10) tracking-[1px]">
+		if facet.Active {
+			<a href={ templ.SafeURL(facet.ClearURL) } hx-get={ facet.ClearURL } hx-target="#artwork-search" hx-select="#artwork-search" hx-swap="outerHTML" class="wga-action-link">CLEAR</a>
+		}
+		if facet.ToggleURL != "" {
+			<a href={ templ.SafeURL(facet.ToggleURL) } hx-get={ facet.ToggleURL } hx-target="#artwork-search" hx-select="#artwork-search" hx-swap="outerHTML" class="wga-action-link ml-auto">{ facet.ToggleLabel }</a>
+		}
+	</div>
+}
+
 func artworkSearchChipGroup(group dto.ChipGroup) dto.ChipGroup {
 	group.Inline = true
 	group.VisuallyHideLegend = true
@@ -237,18 +256,14 @@ templ ArtworkSortControl(r ArtworkSearchResultsView) {
 				hx-select="#artwork-search"
 				hx-swap="outerHTML"
 				class={ "border px-3.5 py-1.5 font-mono text-(length:--t-11) tracking-[1px] transition-colors", templ.KV("border-wga-accent bg-wga-accent-bg text-wga-inv-fg", option.Active), templ.KV("border-wga-ink/25 text-wga-ink/70 hover:border-wga-ink", !option.Active) }
-				aria-pressed={ fmt.Sprint(option.Active) }
-			>{ option.Label }</a>
+				aria-current={ fmt.Sprint(option.Active) }
+			>
+				{ option.Label }
+				if option.Direction != "" {
+					{ " " + option.Direction }
+				}
+			</a>
 		}
-		<a
-			href={ templ.SafeURL(r.SortToggleUrl) }
-			hx-get={ r.SortToggleUrl }
-			hx-target="#artwork-search"
-			hx-select="#artwork-search"
-			hx-swap="outerHTML"
-			aria-label="Reverse sort direction"
-			class="font-mono text-(length:--t-10) tracking-[1px] whitespace-nowrap px-2.5 py-1.5 border border-wga-ink/25 text-wga-ink/70 hover:border-wga-ink hover:text-wga-ink transition-colors"
-		>{ r.SortDirLabel }</a>
 	</div>
 }
 

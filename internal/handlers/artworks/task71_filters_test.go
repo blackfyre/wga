@@ -20,7 +20,7 @@ func TestTask71BuildFiltersCanonicalVenueState(t *testing.T) {
 		t.Fatalf("active filter count = %d, want venue plus year range", f.ActiveFilterCount())
 	}
 	path := f.BuildPath("/artworks")
-	for _, part := range []string{"venue=loc-paris", "venue_q=par", "year_from=1600", "year_to=1700", "sort=title", "dir=desc", "view=list", "page=3"} {
+	for _, part := range []string{"venue=loc-paris", "venue_q=par", "year_from=1600", "year_to=1700", "dir=desc", "view=list", "page=3"} {
 		if !strings.Contains(path, part) {
 			t.Errorf("canonical path %q missing %q", path, part)
 		}
@@ -77,13 +77,13 @@ func TestTask71SortAndViewLinksUseCanonicalPaths(t *testing.T) {
 			title = option.Href
 		}
 	}
-	for _, part := range []string{"q=milkmaid", "sort=title", "view=list"} {
+	for _, part := range []string{"q=milkmaid", "view=list"} {
 		if !strings.Contains(title, part) {
 			t.Errorf("title sort link %q missing %q", title, part)
 		}
 	}
 	if strings.Contains(title, "dir=") {
-		t.Errorf("title sort link %q must reset direction to the criterion default", title)
+		t.Errorf("active title sort link %q must reverse to canonical ascending direction", title)
 	}
 }
 

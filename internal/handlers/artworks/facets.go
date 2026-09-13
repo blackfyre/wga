@@ -16,8 +16,8 @@ const (
 
 func buildArtworkSearchFacets(
 	f *filters,
-	schoolGroup dto.ChipGroup,
-	formGroup dto.ChipGroup,
+	schoolFacet pages.ArtworkSearchMultiFacet,
+	formFacet pages.ArtworkSearchMultiFacet,
 	typeGroup dto.ChipGroup,
 	periodGroup dto.ChipGroup,
 	venueOptions venueFacetOptions,
@@ -56,10 +56,12 @@ func buildArtworkSearchFacets(
 			Active:  f.TechniqueString != "",
 			Open:    f.TechniqueString != "",
 		},
-		School: chipFacet("SCHOOL", schoolGroup, f.SchoolString, true),
-		Form:   chipFacet("FORM", formGroup, f.ArtFormString, false),
-		Type:   chipFacet("TYPE", typeGroup, f.ArtTypeString, false),
-		Period: chipFacet("PERIOD", periodGroup, f.PeriodString, false),
+		School:      schoolFacet.ArtworkSearchFacet,
+		Form:        formFacet.ArtworkSearchFacet,
+		SchoolMulti: schoolFacet,
+		FormMulti:   formFacet,
+		Type:        chipFacet("TYPE", typeGroup, f.ArtTypeString, false),
+		Period:      chipFacet("PERIOD", periodGroup, f.PeriodString, false),
 		Collection: pages.ArtworkSearchCollectionFacet{
 			Facet: pages.ArtworkSearchFacet{
 				Label:   "COLLECTION",

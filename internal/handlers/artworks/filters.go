@@ -2,6 +2,7 @@ package artworks
 
 import (
 	"cmp"
+	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
@@ -13,7 +14,9 @@ type filters struct {
 	Query           string
 	Title           string
 	SchoolString    string
+	SchoolValues    []string
 	ArtFormString   string
+	ArtFormValues   []string
 	ArtTypeString   string
 	ArtistString    string
 	ArtistID        string
@@ -33,6 +36,8 @@ type filters struct {
 	Sort           string
 	SortDir        string
 	Page           string
+	SchoolExpanded bool
+	FormExpanded   bool
 }
 
 // AnyFilterActive checks if any filter is active. Sort and view are presentation
@@ -49,8 +54,8 @@ func (f *filters) ActiveFilterCount() int {
 	active := []bool{
 		f.Query != "",
 		f.Title != "",
-		f.SchoolString != "",
-		f.ArtFormString != "",
+		len(f.schoolValues()) > 0,
+		len(f.formValues()) > 0,
 		f.ArtTypeString != "",
 		f.ArtistString != "",
 		f.ArtistID != "",
@@ -72,7 +77,7 @@ func (f *filters) ActiveFilterCount() int {
 
 // FingerPrint returns a unique fingerprint string based on the filter values.
 func (f *filters) FingerPrint() string {
-	return f.Query + ":" + f.Title + ":" + f.SchoolString + ":" + f.ArtFormString + ":" + f.ArtTypeString + ":" + f.ArtistString + ":" + f.ArtistID + ":" + f.TechniqueString + ":" + f.PeriodString + ":" + f.selectedVenue() + ":" + f.VenueQuery + ":" + f.YearFrom + ":" + f.YearTo + ":" + f.View + ":" + f.Sort + ":" + f.SortDir + ":" + f.Page
+	return f.Query + ":" + f.Title + ":" + strings.Join(f.schoolValues(), ",") + ":" + strings.Join(f.formValues(), ",") + ":" + f.ArtTypeString + ":" + f.ArtistString + ":" + f.ArtistID + ":" + f.TechniqueString + ":" + f.PeriodString + ":" + f.selectedVenue() + ":" + f.VenueQuery + ":" + f.YearFrom + ":" + f.YearTo + ":" + f.View + ":" + f.Sort + ":" + f.SortDir + ":" + f.Page
 }
 
 // BuildFilter builds the PocketBase filter string and parameters for the
@@ -91,14 +96,12 @@ func (f *filters) BuildFilter() (string, dbx.Params) {
 		params["title"] = f.Title
 	}
 
-	if f.SchoolString != "" {
-		filterString = filterString + " && school.slug = {:art_school}"
-		params["art_school"] = f.SchoolString
+	if values := f.schoolValues(); len(values) > 0 {
+		filterString += " && " + anyFacetFilter("school.slug", "art_school", values, params)
 	}
 
-	if f.ArtFormString != "" {
-		filterString = filterString + " && form.slug = {:art_form}"
-		params["art_form"] = f.ArtFormString
+	if values := f.formValues(); len(values) > 0 {
+		filterString += " && " + anyFacetFilter("form.slug", "art_form", values, params)
 	}
 
 	if f.ArtTypeString != "" {
@@ -168,12 +171,12 @@ func (f *filters) queryValues() url.Values {
 		values.Set("q", f.Query)
 	}
 
-	if f.SchoolString != "" {
-		values.Set("art_school", f.SchoolString)
+	for _, selected := range f.schoolValues() {
+		values.Add("art_school", selected)
 	}
 
-	if f.ArtFormString != "" {
-		values.Set("art_form", f.ArtFormString)
+	for _, selected := range f.formValues() {
+		values.Add("art_form", selected)
 	}
 
 	if f.ArtTypeString != "" {
@@ -214,7 +217,7 @@ func (f *filters) queryValues() url.Values {
 		values.Set("view", f.View)
 	}
 
-	if f.Sort != "" && f.Sort != sortCatalogue {
+	if f.Sort != "" && f.Sort != sortTitle {
 		values.Set("sort", f.Sort)
 	}
 
@@ -225,6 +228,12 @@ func (f *filters) queryValues() url.Values {
 	if f.Page != "" && f.Page != "1" {
 		values.Set("page", f.Page)
 	}
+	if f.SchoolExpanded {
+		values.Set("school_all", "1")
+	}
+	if f.FormExpanded {
+		values.Set("form_all", "1")
+	}
 
 	return values
 }
@@ -232,13 +241,12 @@ func (f *filters) queryValues() url.Values {
 func buildFilters(values url.Values) *filters {
 	yearFrom, yearTo := normalizeArtworkYearBounds(values.Get("year_from"), values.Get("year_to"))
 
-	sort := cmp.Or(strings.TrimSpace(values.Get("sort")), "")
-	if _, ok := artworkSortCriterionFor(sort); !ok {
-		sort = sortCatalogue
-	}
-
-	dir := cmp.Or(strings.TrimSpace(values.Get("dir")), "")
-	if dir != sortDesc {
+	sort := cmp.Or(strings.TrimSpace(values.Get("sort")), sortTitle)
+	_, validSort := artworkSortCriterionFor(sort)
+	rawDir := strings.TrimSpace(values.Get("dir"))
+	dir := cmp.Or(rawDir, sortAsc)
+	if !validSort || (dir != sortAsc && dir != sortDesc) {
+		sort = sortTitle
 		dir = sortAsc
 	}
 
@@ -252,8 +260,8 @@ func buildFilters(values url.Values) *filters {
 	f := &filters{
 		Query:           cmp.Or(values.Get("q"), ""),
 		Title:           cmp.Or(values.Get("title"), ""),
-		SchoolString:    cmp.Or(values.Get("art_school"), ""),
-		ArtFormString:   cmp.Or(values.Get("art_form"), ""),
+		SchoolValues:    normalizedRepeatedValues(values["art_school"]),
+		ArtFormValues:   normalizedRepeatedValues(values["art_form"]),
 		ArtTypeString:   cmp.Or(values.Get("art_type"), ""),
 		ArtistString:    cmp.Or(values.Get("artist"), ""),
 		ArtistID:        strings.TrimSpace(values.Get("artist_id")),
@@ -269,12 +277,64 @@ func buildFilters(values url.Values) *filters {
 		Sort:            sort,
 		SortDir:         dir,
 		Page:            cmp.Or(values.Get("page"), ""),
+		SchoolExpanded:  values.Get("school_all") == "1",
+		FormExpanded:    values.Get("form_all") == "1",
+	}
+	if len(f.SchoolValues) > 0 {
+		f.SchoolString = f.SchoolValues[0]
+	}
+	if len(f.ArtFormValues) > 0 {
+		f.ArtFormString = f.ArtFormValues[0]
 	}
 	if f.ArtistID != "" {
 		f.ArtistString = ""
 	}
 
 	return f
+}
+
+func normalizedRepeatedValues(values []string) []string {
+	seen := map[string]bool{}
+	normalized := make([]string, 0, len(values))
+	for _, value := range values {
+		value = strings.TrimSpace(value)
+		if value == "" || seen[value] {
+			continue
+		}
+		seen[value] = true
+		normalized = append(normalized, value)
+	}
+	return normalized
+}
+
+func (f *filters) schoolValues() []string {
+	if len(f.SchoolValues) > 0 {
+		return f.SchoolValues
+	}
+	if f.SchoolString != "" {
+		return []string{f.SchoolString}
+	}
+	return nil
+}
+
+func (f *filters) formValues() []string {
+	if len(f.ArtFormValues) > 0 {
+		return f.ArtFormValues
+	}
+	if f.ArtFormString != "" {
+		return []string{f.ArtFormString}
+	}
+	return nil
+}
+
+func anyFacetFilter(field string, parameter string, values []string, params dbx.Params) string {
+	conditions := make([]string, 0, len(values))
+	for index, value := range values {
+		key := fmt.Sprintf("%s_%d", parameter, index)
+		conditions = append(conditions, field+" = {:"+key+"}")
+		params[key] = value
+	}
+	return "(" + strings.Join(conditions, " || ") + ")"
 }
 
 func (f *filters) selectedVenue() string {

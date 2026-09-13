@@ -291,11 +291,23 @@ func buildArtworkSearchViewContext(ctx context.Context, app *pocketbase.PocketBa
 	if err != nil {
 		return pages.ArtworkSearchView{}, "", err
 	}
-	schoolGroup := buildChipGroup("SCHOOL", "art_school", artSchoolOptions, filters.SchoolString)
-	formGroup := buildChipGroup("FORM", "art_form", artFormOptions, filters.ArtFormString)
 	typeGroup := buildChipGroup("TYPE", "art_type", artTypeOptions, filters.ArtTypeString)
 	periodGroup := buildFilterGroup("PERIOD", "period", artPeriodOptions, filters.PeriodString)
 	collectionGroup := buildVenueChipGroup(venueOptions, filters.selectedVenue())
+	if err := checkpoint(ctx, "artworks.search.school_counts"); err != nil {
+		return pages.ArtworkSearchView{}, "", err
+	}
+	schoolFacet, err := buildCountedMultiFacet(app, filters, dualModeContext, schoolMultiFacet, artSchoolOptions)
+	if err != nil {
+		return pages.ArtworkSearchView{}, "", err
+	}
+	if err := checkpoint(ctx, "artworks.search.form_counts"); err != nil {
+		return pages.ArtworkSearchView{}, "", err
+	}
+	formFacet, err := buildCountedMultiFacet(app, filters, dualModeContext, formMultiFacet, artFormOptions)
+	if err != nil {
+		return pages.ArtworkSearchView{}, "", err
+	}
 
 	view := pages.ArtworkSearchView{
 		NameField: dto.Field{
@@ -316,12 +328,10 @@ func buildArtworkSearchViewContext(ctx context.Context, app *pocketbase.PocketBa
 		},
 		ArtistID:              filters.ArtistID,
 		ArtistScopeFilingName: artistScopeFilingName,
-		SchoolGroup:           schoolGroup,
-		FormGroup:             formGroup,
 		TypeGroup:             typeGroup,
 		PeriodGroup:           periodGroup,
 		LocationGroup:         collectionGroup,
-		Facets:                buildArtworkSearchFacets(filters, schoolGroup, formGroup, typeGroup, periodGroup, venueOptions),
+		Facets:                buildArtworkSearchFacets(filters, schoolFacet, formFacet, typeGroup, periodGroup, venueOptions),
 		Sort:                  filters.Sort,
 		Dir:                   filters.SortDir,
 		ClearUrl:              buildArtworkSearchClearPath(dualModeContext),
@@ -362,8 +372,6 @@ func buildArtworkSearchResults(app *pocketbase.PocketBase, filters *filters, dua
 		ListUrl:         buildArtworkSearchPath("/artworks", filters.forView("list"), dualModeContext),
 		ResetUrl:        buildArtworkSearchClearPath(dualModeContext),
 		SortOptions:     buildSortOptions(filters, dualModeContext),
-		SortDirLabel:    filters.sortDirLabel(),
-		SortToggleUrl:   buildArtworkSearchPath("/artworks", filters.forSortDir(flipSortDir(filters.SortDir)), dualModeContext),
 	}
 
 	if dualModeContext != nil {
