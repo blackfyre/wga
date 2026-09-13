@@ -8,6 +8,7 @@ package assets
 // rather than the git-ignored built output, so it runs in a clean checkout.
 
 import (
+	"bytes"
 	_ "embed"
 	"encoding/json"
 	"fmt"
@@ -136,6 +137,40 @@ func TestPublicSourcesUseWgaOwnedStyleVocabulary(t *testing.T) {
 		if err != nil {
 			t.Fatalf("scan public style consumers under %s: %v", root, err)
 		}
+	}
+}
+
+func TestPublicTemplAvoidsAmbiguousPointerOnlyControls(t *testing.T) {
+	nonNativeActivation := regexp.MustCompile(`(?is)<(?:div|span|li|figure)\b[^>]*(?:onclick|onkeydown|hx-on:click)\s*=`)
+	buttonRole := regexp.MustCompile(`(?is)<([a-z]+)\b[^>]*\brole="button"`)
+	glyphButton := regexp.MustCompile(`(?is)<button\b([^>]*)>\s*(?:✕|×|↑|↓|←|→|\?)\s*</button>`)
+
+	err := filepath.WalkDir("templ", func(path string, entry os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if entry.IsDir() || filepath.Ext(path) != ".templ" {
+			return nil
+		}
+		source, readErr := os.ReadFile(path)
+		if readErr != nil {
+			return readErr
+		}
+		if match := nonNativeActivation.Find(source); match != nil {
+			t.Errorf("%s retains non-native pointer activation %q", path, match)
+		}
+		if match := buttonRole.FindSubmatch(source); match != nil && !bytes.EqualFold(match[1], []byte("button")) {
+			t.Errorf("%s retains an ambiguous non-native button role %q", path, match[0])
+		}
+		for _, match := range glyphButton.FindAllSubmatch(source, -1) {
+			if !bytes.Contains(match[1], []byte(`aria-label=`)) {
+				t.Errorf("%s has a glyph-only button without an accessible name: %q", path, match[0])
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("scan public interaction contracts: %v", err)
 	}
 }
 

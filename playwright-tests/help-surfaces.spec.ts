@@ -141,7 +141,6 @@ test("keyboard help exposes the complete registry and accessible lifecycle", asy
 	}>;
 
 	const opener = page.getByRole("button", { name: "Keyboard shortcuts" });
-	await opener.focus();
 	await page.keyboard.press("?");
 	const dialog = page.getByRole("dialog", { name: "Moving without the mouse" });
 	await expect(dialog).toBeVisible();
@@ -169,6 +168,10 @@ test("keyboard help exposes the complete registry and accessible lifecycle", asy
 	await expect(dialog).toContainText("CTRL K");
 	await page.keyboard.press("Escape");
 	await expect(dialog).not.toBeVisible();
+	await expect(opener).toBeVisible();
+	await opener.click();
+	await expect(dialog).toBeVisible();
+	await page.keyboard.press("Escape");
 	await expect(opener).toBeFocused();
 });
 

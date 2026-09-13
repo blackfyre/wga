@@ -1,4 +1,4 @@
-import { type Page, expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 
 const waitForKeyboard = (page: Page) =>
 	page.waitForFunction(
@@ -10,6 +10,10 @@ test("opens keyboard help and command palette", async ({ page }) => {
 	await waitForKeyboard(page);
 
 	const helpButton = page.getByRole("button", { name: "Keyboard shortcuts" });
+	await page.keyboard.press("?");
+	await expect(page.locator("#keyboard-help")).toBeVisible();
+	await page.keyboard.press("Escape");
+	await expect(helpButton).toBeVisible();
 	await helpButton.click();
 	await expect(page.locator("#keyboard-help")).toBeVisible();
 	await expect(
@@ -38,8 +42,7 @@ test("centres keyboard dialogs on desktop", async ({ page }) => {
 
 	for (const { open, panel } of [
 		{
-			open: () =>
-				page.getByRole("button", { name: "Keyboard shortcuts" }).click(),
+			open: () => page.keyboard.press("?"),
 			panel: ".wga-kbd-help",
 		},
 		{

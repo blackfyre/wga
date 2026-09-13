@@ -154,6 +154,9 @@ func TestKeyboardLayerExposesHelpFromKeyboardBar(t *testing.T) {
 	if !strings.Contains(rendered, `? ALL KEYS`) {
 		t.Fatal("expected the keyboard bar help control")
 	}
+	if !strings.Contains(rendered, `aria-label="Keyboard shortcuts"`) {
+		t.Fatal("expected the keyboard bar help control to expose its purpose without relying on the question-mark glyph")
+	}
 }
 
 func keyboardPayload(t *testing.T, rendered string) []KeyboardScreen {

@@ -58,6 +58,22 @@ test.describe("reference destinations", () => {
 				expect(href).toMatch(/^#[\w-]+$/);
 				await expect(page.locator(href as string)).toHaveCount(1);
 			}
+
+			const firstLink = links.first();
+			const firstHref = await firstLink.getAttribute("href");
+			await firstLink.focus();
+			await expect(firstLink).toBeFocused();
+			const focus = await firstLink.evaluate((element) => {
+				const style = getComputedStyle(element);
+				return {
+					style: style.outlineStyle,
+					width: Number.parseFloat(style.outlineWidth),
+				};
+			});
+			expect(focus.style).not.toBe("none");
+			expect(focus.width).toBeGreaterThanOrEqual(2);
+			await page.keyboard.press("Enter");
+			expect(new URL(page.url()).hash).toBe(firstHref);
 		}
 	});
 
