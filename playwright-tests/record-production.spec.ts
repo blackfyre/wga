@@ -11,7 +11,7 @@ const unavailableSelectionPath =
 test.describe("production records without JavaScript", () => {
 	test.use({ javaScriptEnabled: false });
 
-	test("preserves supplied filing and short artist names with an ordinary holding link", async ({
+	test("preserves supplied names and exposes curated record navigation", async ({
 		page,
 	}) => {
 		await page.goto(artistPath);
@@ -21,10 +21,11 @@ test.describe("production records without JavaScript", () => {
 			page.locator("nav[aria-label='Breadcrumb'] a").last(),
 		).toHaveText("Benozzo Gozzoli");
 		await expect(
-			page.getByRole("link", {
-				name: /FIND MORE BY Benozzo Gozzoli IN THE ARTWORK SEARCH/,
-			}),
-		).toHaveAttribute("href", "/artworks?artist=GOZZOLI%2C+Benozzo");
+			page.getByRole("navigation", { name: "On this page" }),
+		).toBeVisible();
+		await expect(page.getByRole("link", { name: /FIND MORE BY/ })).toHaveCount(
+			0,
+		);
 	});
 
 	test("renders only evidence-backed artwork file facts", async ({ page }) => {
@@ -65,12 +66,7 @@ test("artist record scope remains visible through live artwork refinement", asyn
 	page,
 }) => {
 	const artistID = "r9fb82d431d2a5c";
-	await page.goto(artistPath);
-	await page
-		.getByRole("link", {
-			name: /FIND MORE BY Benozzo Gozzoli IN THE ARTWORK SEARCH/,
-		})
-		.click();
+	await page.goto(`/artworks?artist_id=${artistID}`);
 
 	const form = page.locator("#artwork-filters");
 	await expect(page).toHaveURL(

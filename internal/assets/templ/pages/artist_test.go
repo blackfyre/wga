@@ -141,6 +141,7 @@ func TestArtistRecordContentRendersWorksAndWiderRoute(t *testing.T) {
 		WorkCount:  5,
 		WorksURL:   "/artworks?artist_id=artistone000001",
 		Works:      dto.ImageGrid{{Id: "artwork12345678", Title: "A Painting", Url: "/artists/portrait-artist-artist/a-painting-artwork12345678", Image: "/api/files/artworks/artwork12345678/p.jpg", Metadata: "1610", Artist: dto.Artist{Name: "Portrait Artist"}}},
+		Citation:   components.Citation{Key: "wga-portrait", Title: "Artist, Portrait", URL: "https://gallery.example/artists/portrait"},
 	})
 
 	for _, expected := range []string{
@@ -164,6 +165,9 @@ func TestArtistRecordContentRendersWorksAndWiderRoute(t *testing.T) {
 		if strings.Contains(rendered, legacy) {
 			t.Errorf("artist archive works must not use the shared catalogue card %q", legacy)
 		}
+	}
+	if citation, onward := strings.Index(rendered, "CITE THIS RECORD — BIBTEX"), strings.Index(rendered, "FIND MORE BY Portrait"); citation < 0 || onward < citation {
+		t.Error("uncurated artist onward search action must follow the citation")
 	}
 }
 
@@ -268,6 +272,7 @@ func TestArtistRecordContentRendersSelectionPreviews(t *testing.T) {
 		Selections: []SelectionPreview{
 			{
 				URL:             "/artists/portrait-artist-artistone000001/selections/rselect00000001",
+				AnchorID:        "selection-rselect00000001",
 				DisplayTitle:    "Portrait Artist: Paintings",
 				SelectedCount:   2,
 				CataloguedCount: 5,
@@ -280,6 +285,7 @@ func TestArtistRecordContentRendersSelectionPreviews(t *testing.T) {
 					Artist: dto.Artist{Name: "Portrait Artist"},
 				}},
 			},
+			{URL: "/artists/portrait-artist-artistone000001/selections/rselect00000002", AnchorID: "selection-rselect00000002", DisplayTitle: "Portrait Artist: Drawings", SelectedCount: 1, CataloguedCount: 5},
 		},
 	})
 
@@ -291,6 +297,10 @@ func TestArtistRecordContentRendersSelectionPreviews(t *testing.T) {
 		"OPEN SELECTION",
 		`href="/artists/portrait-artist-artistone000001/selections/rselect00000001"`,
 		"A Painting",
+		"ON THIS PAGE",
+		`href="#biography"`,
+		`href="#selection-rselect00000001"`,
+		`href="#cite-this-record"`,
 	} {
 		if !strings.Contains(rendered, expected) {
 			t.Errorf("expected selection preview to contain %q", expected)
@@ -299,13 +309,17 @@ func TestArtistRecordContentRendersSelectionPreviews(t *testing.T) {
 	if !strings.Contains(rendered, `hx-get="/artists/portrait-artist-artistone000001/selections/rselect00000001"`) {
 		t.Error("expected OPEN SELECTION link to carry hx-get")
 	}
+	if !strings.Contains(rendered, `md:sticky md:top-6 md:max-h-[calc(100dvh-var(--wga-bottom-stack-height,0px)-3rem)] md:overflow-y-auto`) {
+		t.Error("curated artist rail must stay within the viewport above the measured bottom stack")
+	}
 }
 
 func TestArtistRecordContentRendersHonestMissingPreviewCommentary(t *testing.T) {
 	rendered := renderArtistRecord(t, ArtistView{
 		FilingName: "Portrait Artist",
 		Selections: []SelectionPreview{
-			{DisplayTitle: "Paintings", SelectedCount: 2, CataloguedCount: 5, HasCommentary: false},
+			{AnchorID: "selection-one", DisplayTitle: "Paintings", SelectedCount: 2, CataloguedCount: 5, HasCommentary: false},
+			{AnchorID: "selection-two", DisplayTitle: "Drawings", SelectedCount: 1, CataloguedCount: 5, HasCommentary: false},
 		},
 	})
 
@@ -314,11 +328,13 @@ func TestArtistRecordContentRendersHonestMissingPreviewCommentary(t *testing.T) 
 	}
 }
 
-func TestArtistRecordContentOmitsSelectionsWhenNone(t *testing.T) {
-	rendered := renderArtistRecord(t, ArtistView{FilingName: "Artist, Portrait", ShortName: "Portrait", WorkCount: 2})
+func TestArtistRecordContentOmitsSelectionsWhenFewerThanTwo(t *testing.T) {
+	rendered := renderArtistRecord(t, ArtistView{FilingName: "Artist, Portrait", ShortName: "Portrait", WorkCount: 2, Selections: []SelectionPreview{{AnchorID: "selection-one", DisplayTitle: "Only selection"}}})
 
-	if strings.Contains(rendered, "CURATED SELECTIONS") {
-		t.Error("expected no selections section without previews")
+	for _, unexpected := range []string{"CURATED SELECTIONS", "ON THIS PAGE", "Only selection"} {
+		if strings.Contains(rendered, unexpected) {
+			t.Errorf("single-selection record must omit %q", unexpected)
+		}
 	}
 }
 

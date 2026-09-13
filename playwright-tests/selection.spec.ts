@@ -1,4 +1,4 @@
-import { type Page, expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 
 // Embedded synthetic identities make this journey executable in a fresh default
 // application without an external producer database.
@@ -53,6 +53,22 @@ test.describe("selection journey without JavaScript", () => {
 			name: /OPEN SELECTION/,
 		});
 		await expect(openLink).toHaveAttribute("href", suppliedCommentaryPath);
+
+		const toc = page.getByRole("navigation", { name: "On this page" });
+		await expect(toc.getByRole("link", { name: "Biography" })).toHaveAttribute(
+			"href",
+			"#biography",
+		);
+		const selectionLink = toc.getByRole("link", {
+			name: /Synthetic selection with commentary · 2 works/,
+		});
+		await selectionLink.focus();
+		await expect(selectionLink).toBeFocused();
+		await page.keyboard.press("Enter");
+		expect(new URL(page.url()).hash).toMatch(/^#selection-/);
+		await expect(
+			toc.getByRole("link", { name: "Cite This Record" }),
+		).toHaveAttribute("href", "#cite-this-record");
 	});
 
 	test("selection preview opens the dedicated selection page", async ({
@@ -125,3 +141,48 @@ test.describe("selection journey without JavaScript", () => {
 		).toBeVisible();
 	});
 });
+
+for (const width of [390, 834, 1440]) {
+	test(`artist navigation rail composes with the measured stack at ${width}px`, async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width, height: 900 });
+		await page.goto(artistRecordPath);
+		const toc = page.getByRole("navigation", { name: "On this page" });
+		const rail = toc.locator("xpath=ancestor::aside");
+		await expect(rail).toHaveCSS(
+			"position",
+			width >= 834 ? "sticky" : "static",
+		);
+
+		await page.evaluate(() => {
+			const tray = document.createElement("div");
+			tray.className = "wga-bottom-stack-item";
+			tray.dataset.wgaBottomStackItem = "test";
+			tray.dataset.wgaBottomStackOrder = "10";
+			tray.style.cssText =
+				"position:fixed;inset-inline:0;height:88px;background:black";
+			document.body.append(tray);
+		});
+		await expect
+			.poll(() =>
+				page.evaluate(() =>
+					Number.parseFloat(
+						getComputedStyle(document.body).getPropertyValue(
+							"--wga-bottom-stack-height",
+						),
+					),
+				),
+			)
+			.toBeGreaterThanOrEqual(88);
+		if (width >= 834) {
+			const maxHeight = await rail.evaluate((element) =>
+				Number.parseFloat(getComputedStyle(element).maxHeight),
+			);
+			expect(maxHeight).toBeLessThanOrEqual(900 - 88 - 48);
+		}
+
+		await toc.getByRole("link", { name: "Cite This Record" }).click();
+		expect(new URL(page.url()).hash).toBe("#cite-this-record");
+	});
+}

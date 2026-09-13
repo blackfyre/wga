@@ -691,6 +691,7 @@ func buildSelectionPreviewsContext(ctx context.Context, app *pocketbase.PocketBa
 		commentary := sanitizeSelectionCommentary(selection.GetString("commentary"))
 		previews = append(previews, pages.SelectionPreview{
 			URL:             buildSelectionURL(slug, selection.Id),
+			AnchorID:        "selection-" + selection.Id,
 			DisplayTitle:    selection.GetString("display_title"),
 			SelectedCount:   len(works),
 			CataloguedCount: workCount,

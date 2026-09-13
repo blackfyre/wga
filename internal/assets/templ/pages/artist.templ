@@ -37,6 +37,7 @@ type ArtistView struct {
 // record. All URLs are complete and resolved by the owning handler.
 type SelectionPreview struct {
 	URL             string // stable /artists/{slug}-{id}/selections/{id} route
+	AnchorID        string // stable in-page target derived from the selection id
 	DisplayTitle    string
 	SelectedCount   int
 	CataloguedCount int
@@ -55,7 +56,7 @@ templ ArtistRecordPage(view ArtistView) {
 // main content area id so the shared body-level hx-select/hx-swap contract
 // replaces the whole content area, and pushes the canonical record URL.
 templ ArtistRecordBlock(view ArtistView) {
-	<main id="mc-area" class="wga-enter">
+	<main id="mc-area" class="wga-enter wga-bottom-stack-content">
 		@ArtistRecordContent(view)
 	</main>
 }
@@ -87,22 +88,36 @@ templ ArtistRecordContent(view ArtistView) {
 			</figure>
 		</article>
 		<div class="mt-10 flex flex-col gap-10 border-t border-wga-ink/15 pt-8 md:flex-row md:gap-16">
-			<aside class="w-full shrink-0 md:w-[300px]">
+			<aside class="w-full shrink-0 md:w-[300px] md:self-start md:sticky md:top-6 md:max-h-[calc(100dvh-var(--wga-bottom-stack-height,0px)-3rem)] md:overflow-y-auto">
 				@components.MetaList(artistMetaEntries(view))
 				if view.Music.PlayerURL != "" {
 					@components.MusicPeriodPlayerCard(view.Music.SongID, view.Music.Piece, view.Music.PlayerURL)
 				}
+				if hasCuratedSelections(view) {
+					<nav class="mt-7 border-t border-wga-ink/15 pt-5" aria-label="On this page">
+						<p class="mb-3 font-mono text-(length:--t-11) tracking-[1.5px] text-wga-ink/60">ON THIS PAGE</p>
+						<ul class="space-y-2 text-(length:--t-13) leading-snug">
+							<li><a href="#biography" class="hover:text-wga-accent">Biography</a></li>
+							for _, selection := range view.Selections {
+								<li><a href={ templ.SafeURL("#" + selection.AnchorID) } class="hover:text-wga-accent">{ selection.DisplayTitle } · { strconv.Itoa(len(selection.Works)) } works</a></li>
+							}
+							<li><a href="#cite-this-record" class="hover:text-wga-accent">Cite This Record</a></li>
+						</ul>
+					</nav>
+				}
 			</aside>
 			<div class="min-w-0 flex-1">
-				<p class="mb-3 font-mono text-(length:--t-11) tracking-[1.5px] text-wga-ink/60">BIOGRAPHY</p>
-				<div class="content max-w-[620px] text-(length:--t-16) leading-[1.7]">
-					@templ.Raw(view.Bio)
-				</div>
-				if len(view.Selections) > 0 {
+				<section id="biography" class="scroll-mt-6" aria-labelledby="biography-heading">
+					<h2 id="biography-heading" class="mb-3 font-mono text-(length:--t-11) tracking-[1.5px] text-wga-ink/60">BIOGRAPHY</h2>
+					<div class="content max-w-[620px] text-(length:--t-16) leading-[1.7]">
+						@templ.Raw(view.Bio)
+					</div>
+				</section>
+				if hasCuratedSelections(view) {
 					<section class="mt-11 max-w-[860px]" aria-labelledby="artist-selections">
 						<h2 id="artist-selections" class="mb-6 border-t border-wga-ink/15 pt-[18px] font-mono text-(length:--t-11) tracking-[1.5px]">CURATED SELECTIONS</h2>
 						for _, selection := range view.Selections {
-							<article class="mb-10 border-b border-wga-ink/15 pb-10">
+							<article id={ selection.AnchorID } class="mb-10 scroll-mt-6 border-b border-wga-ink/15 pb-10">
 								<div class="mb-4 flex items-baseline justify-between gap-4 border-b border-wga-ink/15 pb-[10px]">
 									<h3 class="text-(length:--t-22) font-semibold leading-tight">{ selection.DisplayTitle }</h3>
 									<p class="font-mono text-(length:--t-10) tracking-[1px] text-wga-ink/60">{ selectionCounts(selection) }</p>
@@ -137,14 +152,16 @@ templ ArtistRecordContent(view ArtistView) {
 						</div>
 					} else {
 						@artistArchiveWorkGrid(view.Works)
-						if view.WorkCount > len(view.Works) {
-							<a href={ templ.URL(view.WorksURL) } hx-get={ view.WorksURL } class="wga-action-link wga-trailing-action mt-8 font-mono text-(length:--t-11) tracking-[1px]">FIND MORE BY { view.ShortName } IN THE ARTWORK SEARCH →</a>
-						}
 					}
 				</section>
 			</div>
 		</div>
-		@components.CitationBlock(view.Citation)
+		<div id="cite-this-record" class="scroll-mt-6">
+			@components.CitationBlock(view.Citation)
+		</div>
+		if !hasCuratedSelections(view) && view.WorkCount > len(view.Works) {
+			<a href={ templ.URL(view.WorksURL) } hx-get={ view.WorksURL } class="wga-action-link wga-trailing-action mt-8 font-mono text-(length:--t-11) tracking-[1px]">FIND MORE BY { view.ShortName } IN THE ARTWORK SEARCH →</a>
+		}
 		@templ.Raw(view.Jsonld)
 	</section>
 }
@@ -166,6 +183,10 @@ func artistMetaEntries(view ArtistView) []components.MetaEntry {
 	}
 
 	return entries
+}
+
+func hasCuratedSelections(view ArtistView) bool {
+	return len(view.Selections) > 1
 }
 
 func artistPeriodSuffix(view ArtistView) string {
