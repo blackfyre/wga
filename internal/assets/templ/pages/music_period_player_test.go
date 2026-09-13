@@ -27,6 +27,8 @@ func TestMusicPeriodPlayerPageRendersNativeNoAutoplayControls(t *testing.T) {
 		`data-wga-music-piece="Sweelinck — Fantasia chromatica"`,
 		`data-wga-music-window="wga-period-music"`,
 		`controls`,
+		`controlslist="nodownload noremoteplayback"`,
+		`disableremoteplayback`,
 		`preload="metadata"`,
 		`src="/api/files/music_song/song1234567890a/fantasia.mp3"`,
 		"Sweelinck",

@@ -30,7 +30,7 @@ templ MusicPeriodPlayerPage(view MusicPeriodPlayerView) {
 				if view.Composer != "" {
 					<p class="mt-2 text-sm text-wga-ink/65">{ view.Composer }</p>
 				}
-				<audio class="mt-6 w-full" controls preload="metadata" src={ view.Source } data-wga-music-audio>
+				<audio class="mt-6 w-full" controls controlslist="nodownload noremoteplayback" disableremoteplayback preload="metadata" src={ view.Source } data-wga-music-audio>
 					<a href={ templ.SafeURL(view.Source) }>Open the audio recording</a>
 				</audio>
 				<p class="mt-4 text-(length:--t-15) leading-relaxed text-wga-ink/65">Playback starts only when you use the audio controls.</p>

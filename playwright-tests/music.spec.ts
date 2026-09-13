@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { type Page, expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import { transformSync } from "esbuild";
 
 const musicSource = readFileSync("resources/js/music.ts", "utf8");
@@ -236,6 +236,64 @@ test("keyboard Enter activates the named-window enhancement", async ({
 	expect(calls).toBe(1);
 });
 
+test("native player controls stay focused and constrained", async ({
+	page,
+}) => {
+	await page.route(
+		"https://wga.test/player?song=oneaaaaaaaaaaaa",
+		async (route) => {
+			await route.fulfill({
+				contentType: "text/html",
+				body: '<main data-wga-music-player data-wga-music-song="oneaaaaaaaaaaaa"><audio controls controlslist="nodownload noremoteplayback" disableremoteplayback data-wga-music-audio></audio></main>',
+			});
+		},
+	);
+	await page.goto("https://wga.test/player?song=oneaaaaaaaaaaaa");
+	await page.addScriptTag({ content: musicScript, type: "module" });
+
+	const audio = page.locator("audio");
+	await expect(audio).toHaveAttribute(
+		"controlslist",
+		"nodownload noremoteplayback",
+	);
+	expect(
+		await audio.evaluate((element: HTMLAudioElement) =>
+			element.controlsList.contains("nodownload"),
+		),
+	).toBe(true);
+	expect(
+		await audio.evaluate((element: HTMLAudioElement) =>
+			element.controlsList.contains("noremoteplayback"),
+		),
+	).toBe(true);
+	expect(
+		await audio.evaluate(
+			(element: HTMLAudioElement) => element.disableRemotePlayback,
+		),
+	).toBe(true);
+
+	await audio.focus();
+	await expect(audio).toBeFocused();
+	expect(
+		await audio.evaluate(
+			(element: HTMLAudioElement) => getComputedStyle(element).outlineStyle,
+		),
+	).not.toBe("none");
+
+	await audio.evaluate((element: HTMLAudioElement) => {
+		element.defaultPlaybackRate = 1.5;
+		element.playbackRate = 1.5;
+	});
+	await expect
+		.poll(() =>
+			audio.evaluate((element: HTMLAudioElement) => ({
+				defaultRate: element.defaultPlaybackRate,
+				rate: element.playbackRate,
+			})),
+		)
+		.toEqual({ defaultRate: 1, rate: 1 });
+});
+
 test("ordinary named link works with JavaScript disabled and player does not autoplay", async ({
 	browser,
 }) => {
@@ -250,7 +308,7 @@ test("ordinary named link works with JavaScript disabled and player does not aut
 	await context.route(/https:\/\/wga\.test\/player.*/, async (route) => {
 		await route.fulfill({
 			contentType: "text/html",
-			body: '<audio controls preload="metadata" src="/song.mp3"></audio>',
+			body: '<audio controls controlslist="nodownload noremoteplayback" disableremoteplayback preload="metadata" src="/song.mp3"></audio>',
 		});
 	});
 	await page.goto("https://wga.test/record");
@@ -260,6 +318,11 @@ test("ordinary named link works with JavaScript disabled and player does not aut
 	const popup = await popupPromise;
 	const audio = popup.locator("audio");
 	await expect(audio).toHaveAttribute("controls", "");
+	await expect(audio).toHaveAttribute(
+		"controlslist",
+		"nodownload noremoteplayback",
+	);
+	await expect(audio).toHaveAttribute("disableremoteplayback", "");
 	await expect(audio).not.toHaveAttribute("autoplay", "");
 	expect(
 		await audio.evaluate((element: HTMLAudioElement) => element.paused),

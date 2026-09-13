@@ -259,6 +259,23 @@ const notifyOpener = (message: PlayerMessage): void => {
 	window.opener.postMessage(message, window.location.origin);
 };
 
+const constrainNativeAudio = (audio: HTMLAudioElement): void => {
+	audio.controlsList.add("nodownload", "noremoteplayback");
+	audio.disableRemotePlayback = true;
+	audio.defaultPlaybackRate = 1;
+	if (audio.playbackRate !== 1) {
+		audio.playbackRate = 1;
+	}
+	audio.addEventListener("ratechange", () => {
+		if (audio.defaultPlaybackRate !== 1) {
+			audio.defaultPlaybackRate = 1;
+		}
+		if (audio.playbackRate !== 1) {
+			audio.playbackRate = 1;
+		}
+	});
+};
+
 const bindPlayerEvents = (player: HTMLElement): void => {
 	const audio = player.querySelector<HTMLAudioElement>(
 		"[data-wga-music-audio]",
@@ -266,6 +283,7 @@ const bindPlayerEvents = (player: HTMLElement): void => {
 	if (!audio) {
 		return;
 	}
+	constrainNativeAudio(audio);
 	const piece = player.dataset.wgaMusicSong || "";
 	let navigating = false;
 	audio.addEventListener("play", () =>
