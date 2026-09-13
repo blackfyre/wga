@@ -21,6 +21,7 @@ import (
 	"github.com/blackfyre/wga/internal/handlers/search"
 	"github.com/blackfyre/wga/internal/handlers/static"
 	"github.com/blackfyre/wga/internal/handlers/statistics"
+	"github.com/blackfyre/wga/internal/handlers/studyboard"
 	"github.com/blackfyre/wga/internal/handlers/timeline"
 	"github.com/blackfyre/wga/internal/handlers/tours"
 
@@ -72,6 +73,7 @@ func RegisterHandlers(app *pocketbase.PocketBase, environment config.Environment
 	licences.RegisterHandlers(app)
 	search.RegisterHandlers(app)
 	statistics.RegisterHandlers(app)
+	studyboard.RegisterHandlers(app)
 	tours.RegisterHandlers(app)
 	dual.RegisterHandlers(app)
 	timeline.RegisterHandlers(app)

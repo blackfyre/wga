@@ -30,6 +30,7 @@ import { initKeyboardNavigation } from "./keyboard";
 import logger from "./logger";
 import { initPeriodMusic } from "./music";
 import { closeMobileNavigation, syncNavigation } from "./public-shell";
+import { initialiseStudyBoard } from "./study-board";
 import { registerTourHelpers } from "./tours";
 import { viewerImageURL } from "./viewer";
 
@@ -788,6 +789,7 @@ const wgaInternal: wgaInternals = {
 				registerItineraryHelpers();
 				initPeriodMusic();
 				registerTourHelpers();
+				initialiseStudyBoard();
 				void maybeInitStatisticsCharts();
 			});
 			document.body.addEventListener("htmx:beforeSwap", (evt) => {
@@ -1102,6 +1104,7 @@ const wgaInternal: wgaInternals = {
 			registerItineraryHelpers();
 			initPeriodMusic();
 			registerTourHelpers();
+			initialiseStudyBoard();
 			initDualHorizontalScroll();
 			void maybeInitStatisticsCharts();
 

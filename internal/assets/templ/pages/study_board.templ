@@ -1,0 +1,69 @@
+package pages
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/blackfyre/wga/internal/assets/templ/components"
+	"github.com/blackfyre/wga/internal/assets/templ/layouts"
+)
+
+type StudyBoardWork struct {
+	ID    string
+	Title string
+}
+
+type StudyBoardView struct {
+	Works       []StudyBoardWork
+	IDs         []string
+	HasURLState bool
+	AtCapacity  bool
+}
+
+templ StudyBoardPage(view StudyBoardView) {
+	@layouts.LayoutMain() {
+		<section
+			id="study-board"
+			data-study-board
+			data-study-board-url-state={ studyBoardBool(view.HasURLState) }
+			data-study-board-ids={ strings.Join(view.IDs, ",") }
+			data-study-board-capacity={ studyBoardBool(view.AtCapacity) }
+			class="container mx-auto px-4 pb-20 pt-10 md:px-0 wga-enter"
+		>
+			@components.PageHead("14 — STUDY BOARD", "Study Board", "A temporary scratch workspace for comparing up to twelve artworks.")
+			<div class="mt-10 border-y border-wga-ink/15 py-6">
+				<p class="max-w-2xl text-(length:--t-15) leading-relaxed text-muted">This board has no account, title, narration, publication state, archive entry, server record, or scheduled expiry. Its ordered URL is the complete shareable state; this browser remembers the latest valid board for continuation.</p>
+				<div class="mt-5 flex flex-wrap items-center gap-3">
+					<button type="button" data-copy-study-board class="min-h-12 border border-control px-4 font-mono text-(length:--t-11) tracking-[1px]">COPY LINK</button>
+					<a href="/study-board" data-clear-study-board class="inline-flex min-h-12 items-center border border-control px-4 font-mono text-(length:--t-11) tracking-[1px]">CLEAR</a>
+					<p class="font-mono text-(length:--t-11) tracking-[1px] text-muted" aria-live="polite">{ len(view.Works) } / 12 WORKS</p>
+				</div>
+			</div>
+			if len(view.Works) == 0 {
+				<div class="py-12" data-study-board-empty>
+					<h2 class="text-(length:--t-24) font-semibold">The board is empty.</h2>
+					<p class="mt-2 text-(length:--t-15) text-muted">Add published artworks from the collection to begin a comparison.</p>
+				</div>
+			} else {
+				<section class="py-10" aria-labelledby="study-board-contents">
+					<h2 id="study-board-contents" class="font-mono text-(length:--t-11) tracking-[2px] text-muted">ORDERED CONTENTS</h2>
+					<ol class="mt-5 divide-y divide-wga-ink/15 border-y border-wga-ink/15">
+						for i, work := range view.Works {
+							<li class="flex gap-4 py-4" data-study-board-work={ work.ID }>
+								<span class="font-mono text-(length:--t-11) text-muted">{ fmt.Sprintf("%02d", i+1) }</span>
+								<span class="text-(length:--t-16) font-semibold">{ work.Title }</span>
+							</li>
+						}
+					</ol>
+				</section>
+			}
+		</section>
+	}
+}
+
+func studyBoardBool(value bool) string {
+	if value {
+		return "true"
+	}
+	return "false"
+}

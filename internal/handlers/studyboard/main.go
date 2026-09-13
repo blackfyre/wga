@@ -1,0 +1,77 @@
+package studyboard
+
+import (
+	"bytes"
+	"net/http"
+	"strings"
+
+	"github.com/blackfyre/wga/internal/assets/templ/pages"
+	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
+	"github.com/blackfyre/wga/internal/logging"
+	boardworkflow "github.com/blackfyre/wga/internal/studyboard"
+	"github.com/blackfyre/wga/internal/utils"
+	"github.com/pocketbase/pocketbase"
+	"github.com/pocketbase/pocketbase/core"
+)
+
+const route = "/study-board"
+
+// RegisterHandlers registers the anonymous Study Board page.
+func RegisterHandlers(app *pocketbase.PocketBase) {
+	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
+		se.Router.GET(route, func(c *core.RequestEvent) error {
+			query := c.Request.URL.Query()
+			raw := strings.Join(query["board"], ",")
+			board, err := boardworkflow.Resolve(app, raw)
+			if err != nil {
+				logging.RequestLogger(app, c).Error("Resolve Study Board", "error", err)
+				return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
+			}
+
+			ids := board.IDs()
+			canonical := canonicalPath(ids)
+			if !canonicalQuery(query, ids) && !utils.IsHtmxRequest(c) {
+				return c.Redirect(http.StatusFound, canonical)
+			}
+
+			ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, "Study Board")
+			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "A temporary, shareable workspace for comparing artworks.")
+			ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, tmplUtils.AssetUrl(canonical))
+			c.Response.Header().Set("HX-Push-Url", canonical)
+
+			view := pages.StudyBoardView{
+				Works:       make([]pages.StudyBoardWork, len(board.Works)),
+				IDs:         ids,
+				HasURLState: len(ids) > 0,
+				AtCapacity:  board.AtCapacity(),
+			}
+			for i, work := range board.Works {
+				view.Works[i] = pages.StudyBoardWork{ID: work.ID, Title: work.Title}
+			}
+
+			var buffer bytes.Buffer
+			if err := pages.StudyBoardPage(view).Render(ctx, &buffer); err != nil {
+				logging.RequestLogger(app, c).Error("Render Study Board", "error", err)
+				return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
+			}
+			return c.HTML(http.StatusOK, buffer.String())
+		})
+
+		return se.Next()
+	})
+}
+
+func canonicalPath(ids []string) string {
+	if len(ids) == 0 {
+		return route
+	}
+	return route + "?board=" + strings.Join(ids, ",")
+}
+
+func canonicalQuery(query map[string][]string, ids []string) bool {
+	if len(ids) == 0 {
+		return len(query) == 0
+	}
+	values, ok := query["board"]
+	return len(query) == 1 && ok && len(values) == 1 && values[0] == strings.Join(ids, ",")
+}
