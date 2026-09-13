@@ -13,6 +13,9 @@ templ WorkCard(work dto.Work) {
 	if work.ArtworkID != "" {
 		<div class="mt-2.5">@AddToItineraryAction(work.ArtworkID, AddToItineraryBlock)
 </div>
+		if work.StudyBoard {
+			<div class="mt-2.5">@AddToStudyBoardAction(work.ArtworkID, work.Title, work.ImageURL, AddToStudyBoardBlock)</div>
+		}
 	}
 }
 

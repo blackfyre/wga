@@ -27,7 +27,14 @@ templ InspirationContent(c dto.ImageGrid) {
 		</div>
 		if len(c) > 0 {
 			<section class="pt-10" aria-label="Shuffled artworks">
-				@components.PublicArtworkGrid(c)
+				<div class="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+					for _, work := range c {
+						<div>
+							@components.PublicArtworkCard(work)
+							<div class="mt-3">@components.AddToStudyBoardAction(work.Id, work.Title, work.Image, components.AddToStudyBoardBlock)</div>
+						</div>
+					}
+				</div>
 			</section>
 			<a href="/inspire" hx-get="/inspire" hx-target="#inspiration" hx-select="#inspiration" hx-swap="outerHTML" class="wga-button mt-10">ANOTHER SET</a>
 		} else {

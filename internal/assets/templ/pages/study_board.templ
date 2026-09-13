@@ -5,16 +5,12 @@ import (
 	"strings"
 
 	"github.com/blackfyre/wga/internal/assets/templ/components"
+	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/assets/templ/layouts"
 )
 
-type StudyBoardWork struct {
-	ID    string
-	Title string
-}
-
 type StudyBoardView struct {
-	Works       []StudyBoardWork
+	Works       []dto.StudyBoardWork
 	IDs         []string
 	HasURLState bool
 	AtCapacity  bool
@@ -34,7 +30,7 @@ templ StudyBoardPage(view StudyBoardView) {
 			<div class="mt-10 border-y border-wga-ink/15 py-6">
 				<p class="max-w-2xl text-(length:--t-15) leading-relaxed text-muted">This board has no account, title, narration, publication state, archive entry, server record, or scheduled expiry. Its ordered URL is the complete shareable state; this browser remembers the latest valid board for continuation.</p>
 				<div class="mt-5 flex flex-wrap items-center gap-3">
-					<button type="button" data-copy-study-board class="min-h-12 border border-control px-4 font-mono text-(length:--t-11) tracking-[1px]">COPY LINK</button>
+					<button type="button" data-copy-study-board aria-live="polite" class="min-h-12 border border-control px-4 font-mono text-(length:--t-11) tracking-[1px] transition-colors hover:border-wga-accent hover:bg-wga-accent-tint">COPY LINK</button>
 					<a href="/study-board" data-clear-study-board class="inline-flex min-h-12 items-center border border-control px-4 font-mono text-(length:--t-11) tracking-[1px]">CLEAR</a>
 					<p class="font-mono text-(length:--t-11) tracking-[1px] text-muted" aria-live="polite">{ len(view.Works) } / 12 WORKS</p>
 				</div>
@@ -45,13 +41,65 @@ templ StudyBoardPage(view StudyBoardView) {
 					<p class="mt-2 text-(length:--t-15) text-muted">Add published artworks from the collection to begin a comparison.</p>
 				</div>
 			} else {
-				<section class="py-10" aria-labelledby="study-board-contents">
-					<h2 id="study-board-contents" class="font-mono text-(length:--t-11) tracking-[2px] text-muted">ORDERED CONTENTS</h2>
-					<ol class="mt-5 divide-y divide-wga-ink/15 border-y border-wga-ink/15">
+				<div class="flex items-center gap-2 border-b border-wga-ink/15 py-5" role="group" aria-label="Study Board view">
+					<button type="button" data-study-board-view="matrix" aria-pressed="true" class="min-h-12 border border-wga-accent bg-wga-accent-bg px-4 font-mono text-(length:--t-11) tracking-[1px] text-wga-inv-fg">MATRIX</button>
+					<button type="button" data-study-board-view="board" aria-pressed="false" class="min-h-12 border border-control px-4 font-mono text-(length:--t-11) tracking-[1px] text-muted">BOARD</button>
+				</div>
+				<section class="overflow-x-auto py-10" data-study-board-panel="matrix" aria-labelledby="study-board-matrix">
+					<h2 id="study-board-matrix" class="sr-only">Metadata comparison matrix</h2>
+					<table class="w-full min-w-[720px] border-collapse text-left">
+						<thead>
+							<tr class="border-b border-wga-ink">
+								<th scope="col" class="w-36 p-3 font-mono text-(length:--t-10) tracking-[1.5px] text-muted">FIELD</th>
+								for i, work := range view.Works {
+									<th scope="col" class="min-w-44 p-3 align-top">
+						<a href={ templ.SafeURL(work.URL) } class="break-words text-(length:--t-14) font-semibold leading-tight">{ work.Title }</a>
+										@studyBoardControls(work.ID, i, len(view.Works))
+									</th>
+								}
+							</tr>
+						</thead>
+						<tbody>
+							for _, row := range studyBoardComparisonRows(view.Works) {
+								<tr class="border-b border-wga-ink/15">
+									<th scope="row" class="p-3 align-top font-mono text-(length:--t-10) tracking-[1px] text-muted">
+										{ row.Label }
+										if row.Same {
+											<span class="mt-1 block text-wga-accent">SAME</span>
+										}
+									</th>
+									for _, value := range row.Values {
+						<td class="p-3 align-top text-(length:--t-14) tabular-nums">
+											if value == "" {
+												<span class="text-faint">NOT RECORDED</span>
+											} else {
+												{ value }
+											}
+										</td>
+									}
+								</tr>
+							}
+						</tbody>
+					</table>
+				</section>
+				<section class="hidden py-10" data-study-board-panel="board" aria-labelledby="study-board-contents">
+					<h2 id="study-board-contents" class="sr-only">Ordered artwork board</h2>
+					<ol class="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 						for i, work := range view.Works {
-							<li class="flex gap-4 py-4" data-study-board-work={ work.ID }>
-								<span class="font-mono text-(length:--t-11) text-muted">{ fmt.Sprintf("%02d", i+1) }</span>
-								<span class="text-(length:--t-16) font-semibold">{ work.Title }</span>
+							<li class="min-w-0 border-t border-wga-ink/15 pt-3" data-study-board-work={ work.ID }>
+								<a href={ templ.SafeURL(work.URL) } class="wga-record-card">
+									<figure class="aspect-[4/5] border border-wga-ink/15 bg-wga-fill">
+										if work.ImageURL != "" {
+							<img src={ work.ImageURL } alt={ work.Title } width="320" height="400" loading="lazy" class="h-full w-full object-cover"/>
+										}
+									</figure>
+									<span class="mt-3 block font-mono text-(length:--t-10) text-muted">{ fmt.Sprintf("%02d", i+1) }</span>
+									<span class="block text-(length:--t-16) font-semibold">{ work.Title }</span>
+									if work.Artist != "" {
+										<span class="mt-1 block font-mono text-(length:--t-10) text-wga-accent">{ work.Artist }</span>
+									}
+								</a>
+								@studyBoardControls(work.ID, i, len(view.Works))
 							</li>
 						}
 					</ol>
@@ -59,6 +107,56 @@ templ StudyBoardPage(view StudyBoardView) {
 			}
 		</section>
 	}
+}
+
+templ studyBoardControls(id string, index int, count int) {
+	<div class="mt-3 flex flex-wrap gap-1.5" aria-label="Order controls">
+		<button type="button" data-study-board-move="earlier" data-study-board-work-id={ id } disabled?={ index == 0 } class="min-h-12 border border-control px-3 font-mono text-(length:--t-10) transition-colors hover:border-wga-accent hover:bg-wga-accent-tint disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-control disabled:hover:bg-transparent" aria-label="Move earlier">← EARLIER</button>
+		<button type="button" data-study-board-move="later" data-study-board-work-id={ id } disabled?={ index == count-1 } class="min-h-12 border border-control px-3 font-mono text-(length:--t-10) transition-colors hover:border-wga-accent hover:bg-wga-accent-tint disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-control disabled:hover:bg-transparent" aria-label="Move later">LATER →</button>
+		<button type="button" data-study-board-remove={ id } class="min-h-12 border border-control px-3 font-mono text-(length:--t-10) transition-colors hover:border-wga-accent hover:bg-wga-accent-tint">REMOVE</button>
+	</div>
+}
+
+type studyBoardComparisonRow struct {
+	Label  string
+	Values []string
+	Same   bool
+}
+
+func studyBoardComparisonRows(works []dto.StudyBoardWork) []studyBoardComparisonRow {
+	fields := []struct {
+		label string
+		value func(dto.StudyBoardWork) string
+	}{
+		{"DATE", func(work dto.StudyBoardWork) string { return work.Date }},
+		{"DIMENSIONS", func(work dto.StudyBoardWork) string { return work.Dimensions }},
+		{"MEDIUM", func(work dto.StudyBoardWork) string { return work.Medium }},
+		{"LOCATION", func(work dto.StudyBoardWork) string { return work.Location }},
+		{"SCHOOL", func(work dto.StudyBoardWork) string { return work.School }},
+		{"FORM", func(work dto.StudyBoardWork) string { return work.Form }},
+		{"TYPE", func(work dto.StudyBoardWork) string { return work.Type }},
+	}
+	rows := make([]studyBoardComparisonRow, 0, len(fields))
+	for _, field := range fields {
+		values := make([]string, len(works))
+		for i, work := range works {
+			values[i] = field.value(work)
+		}
+		rows = append(rows, studyBoardComparisonRow{Label: field.label, Values: values, Same: studyBoardValuesSame(values)})
+	}
+	return rows
+}
+
+func studyBoardValuesSame(values []string) bool {
+	if len(values) < 2 || values[0] == "" {
+		return false
+	}
+	for _, value := range values[1:] {
+		if value == "" || value != values[0] {
+			return false
+		}
+	}
+	return true
 }
 
 func studyBoardBool(value bool) string {

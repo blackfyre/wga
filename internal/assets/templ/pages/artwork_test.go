@@ -102,6 +102,8 @@ func TestArtworkBlockAddToItineraryUsesUnsetSentinel(t *testing.T) {
 		`hx-select="unset"`,
 		`name="artwork_id" value="` + artworkTestID + `"`,
 		"ADD TO AN ITINERARY +",
+		`data-study-board-add="` + artworkTestID + `"`,
+		"ADD TO STUDY BOARD +",
 	} {
 		if !strings.Contains(rendered, expected) {
 			t.Errorf("artwork add control does not contain %q", expected)

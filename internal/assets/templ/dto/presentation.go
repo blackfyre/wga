@@ -2,12 +2,13 @@ package dto
 
 // Work is the card and row projection used by public artwork lists.
 type Work struct {
-	URL       string
-	ImageURL  string
-	ArtworkID string
-	Title     string
-	Artist    string
-	Metadata  string
+	URL        string
+	ImageURL   string
+	ArtworkID  string
+	Title      string
+	Artist     string
+	Metadata   string
+	StudyBoard bool
 }
 
 // MetaEntry is one labelled value in a public record's metadata list.

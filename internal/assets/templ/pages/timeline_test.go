@@ -116,13 +116,14 @@ func TestTimelineBlockRendersSemanticChronology(t *testing.T) {
 func TestTimelineBlockUsesTypedBlockAddControlForWorks(t *testing.T) {
 	view := populatedTimelineView()
 	view.Works[0].ArtworkID = "aw0000000000001"
+	view.Works[0].StudyBoard = true
 	ctx := tmplUtils.WithItineraryProjection(context.Background(), "csrf-token", dto.ItineraryTrayView{}, nil)
 	var output bytes.Buffer
 	if err := TimelineBlock(view).Render(ctx, &output); err != nil {
 		t.Fatalf("render timeline block: %v", err)
 	}
 	rendered := output.String()
-	for _, expected := range []string{`h-12`, "ADD TO AN ITINERARY +", `hx-select="unset"`} {
+	for _, expected := range []string{`h-12`, "ADD TO AN ITINERARY +", `hx-select="unset"`, `data-study-board-add="aw0000000000001"`} {
 		if !strings.Contains(rendered, expected) {
 			t.Errorf("timeline work card missing typed block contract %q", expected)
 		}

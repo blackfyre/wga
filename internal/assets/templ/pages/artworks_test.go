@@ -167,6 +167,7 @@ func TestArtworkSearchResultsRendersSortCriteriaAndDirection(t *testing.T) {
 func TestArtworkSearchResultsRendersGridView(t *testing.T) {
 	view := sampleArtworkSearchResults()
 	view.Artworks = dto.ImageGrid{{
+		Id:        "work00000000001",
 		Url:       "/artworks/sample-work-123",
 		Thumb:     "/api/files/artworks/123/image.jpg",
 		Title:     "Sample Work",
@@ -181,12 +182,16 @@ func TestArtworkSearchResultsRendersGridView(t *testing.T) {
 	if !strings.Contains(rendered, `href="/artworks/sample-work-123"`) {
 		t.Error("expected the artwork record link")
 	}
+	if !strings.Contains(rendered, `data-study-board-add="work00000000001"`) {
+		t.Error("expected a separate Study Board grid action")
+	}
 }
 
 func TestArtworkSearchResultsRendersListView(t *testing.T) {
 	view := sampleArtworkSearchResults()
 	view.View = "list"
 	view.Artworks = dto.ImageGrid{{
+		Id:        "work00000000001",
 		Url:       "/artworks/sample-work-123",
 		Thumb:     "/api/files/artworks/123/image.jpg",
 		Title:     "Sample Work",
@@ -200,6 +205,9 @@ func TestArtworkSearchResultsRendersListView(t *testing.T) {
 	}
 	if !strings.Contains(rendered, `data-kbd-cols="1"`) {
 		t.Error("expected the single-column list container")
+	}
+	if !strings.Contains(rendered, `data-study-board-add="work00000000001"`) {
+		t.Error("expected a separate Study Board row action")
 	}
 }
 

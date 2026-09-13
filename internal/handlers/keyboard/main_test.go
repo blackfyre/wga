@@ -180,6 +180,9 @@ func TestSuggestionsWorkLabelUsesFilingNameAndLegacyURL(t *testing.T) {
 	if got := rows[0].Label; got != "Divergent Work · Filing, Name" {
 		t.Errorf("work label = %q, want %q", got, "Divergent Work · Filing, Name")
 	}
+	if rows[0].ArtworkID == "" || rows[0].Title != "Divergent Work" {
+		t.Errorf("work Study Board projection = %#v", rows[0])
+	}
 	if !strings.Contains(rows[0].Href, "legacy-name-") {
 		t.Errorf("work href = %q, want legacy-name-derived URL", rows[0].Href)
 	}

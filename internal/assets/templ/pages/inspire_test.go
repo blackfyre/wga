@@ -20,7 +20,7 @@ func renderInspiration(t *testing.T, content dto.ImageGrid) string {
 
 func TestInspirationRendersShuffledCollectionAndJourneyLinks(t *testing.T) {
 	rendered := renderInspiration(t, dto.ImageGrid{{
-		Title: "A Work", Image: "/art.jpg", Url: "/artists/artist-123/a-work-456", Artist: dto.Artist{Name: "An Artist"},
+		Id: "work00000000001", Title: "A Work", Image: "/art.jpg", Url: "/artists/artist-123/a-work-456", Artist: dto.Artist{Name: "An Artist"},
 	}})
 	for _, expected := range []string{
 		"07 — INSPIRATION",
@@ -38,6 +38,7 @@ func TestInspirationRendersShuffledCollectionAndJourneyLinks(t *testing.T) {
 		`href="/itineraries"`,
 		"journeys made by visitors",
 		`href="/artists/artist-123/a-work-456"`,
+		`data-study-board-add="work00000000001"`,
 	} {
 		if !strings.Contains(rendered, expected) {
 			t.Errorf("rendered inspiration does not contain %q", expected)

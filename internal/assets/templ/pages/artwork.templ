@@ -94,6 +94,7 @@ templ ArtworkBlock(aw dto.Artwork) {
 				<div class="mt-7 flex flex-col gap-2.5">
 					<a href={ `/postcard/send?awid=` + aw.Id } class="wga-button wga-button-primary h-12 w-full px-5 font-mono text-(length:--t-11) tracking-[1.5px]">SEND AS POSTCARD →</a>
 					@components.AddToItineraryAction(aw.Id, components.AddToItineraryBlock)
+					@components.AddToStudyBoardAction(aw.Id, aw.Title, aw.Image.Image, components.AddToStudyBoardBlock)
 				</div>
 				@artworkPaletteBlock(aw)
 				if aw.Music.Available {

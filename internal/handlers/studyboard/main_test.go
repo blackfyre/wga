@@ -189,3 +189,27 @@ func TestStudyBoardCollapsesRepeatedBoardValuesIntoOneCanonicalValue(t *testing.
 		t.Errorf("Location = %q, want one ordered board value", got)
 	}
 }
+
+func TestStudyBoardShelfResolvesPublishedWorksAndCanonicalOrder(t *testing.T) {
+	app, request := newStudyBoardRouteApp(t)
+	first := "work00000000001"
+	second := "work00000000002"
+	hidden := "hidden000000001"
+	saveArtwork(t, app, first, "First work", true)
+	saveArtwork(t, app, second, "Second work", true)
+	saveArtwork(t, app, hidden, "Hidden work", false)
+
+	recorder := request(shelfRoute+"?board="+second+","+hidden+","+first+","+second, false)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", recorder.Code)
+	}
+	body := recorder.Body.String()
+	for _, expected := range []string{`data-study-board-ids="` + second + `,` + first + `"`, "Second work · First work", "STUDY BOARD · 2 OF 12"} {
+		if !strings.Contains(body, expected) {
+			t.Errorf("shelf missing %q", expected)
+		}
+	}
+	if strings.Contains(body, "Hidden work") {
+		t.Fatal("shelf exposed unpublished work")
+	}
+}

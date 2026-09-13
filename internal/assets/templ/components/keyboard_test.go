@@ -141,6 +141,23 @@ func TestKeyboardHelpDocumentsTourPageTurns(t *testing.T) {
 	}
 }
 
+func TestKeyboardWorkSuggestionExposesSeparateStudyBoardAction(t *testing.T) {
+	var output bytes.Buffer
+	rows := []KeyboardSuggestion{{Kind: "WORK", Label: "Work · Artist", Href: "/work", ArtworkID: "work00000000001", Title: "Work"}}
+	if err := KeyboardSuggestionRows(rows).Render(context.Background(), &output); err != nil {
+		t.Fatalf("render suggestions: %v", err)
+	}
+	rendered := output.String()
+	for _, expected := range []string{`data-kbd-item="record"`, `data-kbd-href="/work"`, `data-study-board-add="work00000000001"`, "ADD TO STUDY BOARD +"} {
+		if !strings.Contains(rendered, expected) {
+			t.Errorf("work suggestion missing %q", expected)
+		}
+	}
+	if !strings.Contains(rendered, `</a><button`) {
+		t.Fatal("Study Board action must remain outside the suggestion record link")
+	}
+}
+
 func TestKeyboardLayerExposesHelpFromKeyboardBar(t *testing.T) {
 	var output bytes.Buffer
 	if err := KeyboardLayer().Render(context.Background(), &output); err != nil {

@@ -533,6 +533,7 @@ templ dualWorkPane(w DualWindow) {
 	<p class="font-mono text-(length:--t-10) tracking-[1px] text-faint mt-2.5">{ w.Work.SizeCaption }</p>
 	<div class="flex flex-wrap gap-2.5 mt-5 mb-7">
 		@components.AddToItineraryAction(w.Work.ArtworkID, components.AddToItineraryRow)
+		@components.AddToStudyBoardAction(w.Work.ArtworkID, w.Work.Title, w.Work.Image, components.AddToStudyBoardRow)
 		if w.Send.Href != "" {
 			<a href={ templ.URL(w.Send.Href) } hx-get={ w.Send.Href } hx-target="#dual-area" hx-select="#dual-area" hx-swap="outerHTML" class="wga-button wga-button-outline-primary font-mono text-(length:--t-11) tracking-[1.5px]">{ w.Send.Label }</a>
 		}
@@ -570,6 +571,7 @@ templ dualCardGrid(cards []DualCard, target string) {
 				if card.ArtworkID != "" {
 					<div class="mt-2.5">@components.AddToItineraryAction(card.ArtworkID, components.AddToItineraryBlock)
 </div>
+					<div class="mt-2.5">@components.AddToStudyBoardAction(card.ArtworkID, card.Title, card.Thumb, components.AddToStudyBoardBlock)</div>
 				}
 			</li>
 		}

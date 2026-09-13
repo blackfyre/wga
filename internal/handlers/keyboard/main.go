@@ -112,8 +112,10 @@ func suggestions(app *pocketbase.PocketBase, query string, limit int) ([]compone
 			continue
 		}
 		rows = append(rows, components.KeyboardSuggestion{
-			Kind:  "WORK",
-			Label: artwork.GetString("title") + " · " + artist.GetString("filing_name"),
+			Kind:      "WORK",
+			Label:     artwork.GetString("title") + " · " + artist.GetString("filing_name"),
+			ArtworkID: artwork.Id,
+			Title:     artwork.GetString("title"),
 			Href: url.GenerateFullArtworkUrl(url.ArtworkUrlDTO{
 				ArtistId: artist.Id, ArtistName: artist.GetString("name"), ArtworkId: artwork.Id, ArtworkTitle: artwork.GetString("title"),
 			}),

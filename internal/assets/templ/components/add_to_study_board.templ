@@ -1,0 +1,32 @@
+package components
+
+type AddToStudyBoardVariant string
+
+const (
+	AddToStudyBoardBlock AddToStudyBoardVariant = "block"
+	AddToStudyBoardRow   AddToStudyBoardVariant = "row"
+)
+
+// AddToStudyBoardAction is a browser-local action. Its published artwork
+// identity and display metadata come from the server; study-board.ts owns the
+// duplicate/capacity state and canonical transient URL.
+templ AddToStudyBoardAction(artworkID string, title string, imageURL string, variant AddToStudyBoardVariant) {
+	if artworkID != "" {
+		<button
+			type="button"
+			data-study-board-add={ artworkID }
+			data-study-board-title={ title }
+			data-study-board-image={ imageURL }
+			aria-live="polite"
+			class={ addToStudyBoardClass(variant) }
+		>ADD TO STUDY BOARD +</button>
+	}
+}
+
+func addToStudyBoardClass(variant AddToStudyBoardVariant) string {
+	class := "border border-control font-mono text-(length:--t-10) tracking-[1px] text-wga-ink/70 transition-colors hover:border-wga-accent hover:bg-wga-accent-tint"
+	if variant == AddToStudyBoardRow {
+		return class + " min-h-12 px-3.5 py-2"
+	}
+	return class + " block min-h-12 w-full px-4 py-2.5"
+}

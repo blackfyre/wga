@@ -459,6 +459,11 @@ func TestBuildWorksProjectsPageRows(t *testing.T) {
 	if len(works) != 2 {
 		t.Errorf("works length = %d, want 2 (one page)", len(works))
 	}
+	for i, work := range works {
+		if !work.StudyBoard {
+			t.Errorf("works[%d].StudyBoard = false, want eligible Timeline action", i)
+		}
+	}
 }
 
 func TestWorksRangeLabel(t *testing.T) {

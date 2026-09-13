@@ -1,0 +1,65 @@
+package components
+
+import (
+	"strconv"
+	"strings"
+
+	"github.com/blackfyre/wga/internal/assets/templ/dto"
+)
+
+// StudyBoardShelfMount is always present in the public layout. Browser-local
+// state fills it with StudyBoardShelf after resolving the remembered IDs.
+templ StudyBoardShelfMount() {
+	<div id="study-board-shelf"></div>
+}
+
+// StudyBoardShelf renders a server-validated fixed shelf fragment.
+templ StudyBoardShelf(works []dto.StudyBoardWork) {
+	<div data-study-board-shelf-content data-study-board-ids={ studyBoardShelfIDs(works) }>
+		if len(works) > 0 {
+			<div data-wga-bottom-stack-item="study-board" data-wga-bottom-stack-order="20" class="wga-bottom-stack-item fixed inset-x-0 z-[44] border-t border-wga-ink/20 bg-wga-bg" role="region" aria-label="Study Board">
+				<div class="container mx-auto flex items-center gap-4 px-5 py-3 md:gap-7 md:px-10">
+					<div class="min-w-0 flex-1">
+						<p class="font-mono text-(length:--t-10) tracking-[1.5px] text-muted">STUDY BOARD · { strconv.Itoa(len(works)) } OF 12</p>
+						<p class="mt-1 truncate text-(length:--t-13)" title={ studyBoardShelfNames(works) }>{ studyBoardShelfNames(works) }</p>
+						<div class="mt-2 flex items-center gap-1.5" aria-hidden="true">
+							for _, work := range works {
+								if work.ImageURL != "" {
+									<img src={ work.ImageURL } alt="" width="28" height="28" loading="lazy" class="h-7 w-7 border border-wga-ink/20 bg-wga-fill object-cover"/>
+								}
+							}
+						</div>
+					</div>
+					<div class="flex shrink-0 items-center gap-2">
+						<button type="button" data-clear-study-board-shelf class="px-1 py-2.5 font-mono text-(length:--t-11) tracking-[1.5px] text-muted transition-colors hover:text-wga-ink">CLEAR</button>
+						<a href={ templ.SafeURL(studyBoardShelfPath(works)) } data-open-study-board class="bg-wga-inv-bg px-4 py-2.5 font-mono text-(length:--t-11) tracking-[1.5px] text-wga-inv-fg transition-colors hover:bg-wga-accent-bg">OPEN BOARD →</a>
+					</div>
+				</div>
+			</div>
+		}
+	</div>
+}
+
+func studyBoardShelfIDs(works []dto.StudyBoardWork) string {
+	ids := make([]string, len(works))
+	for i, work := range works {
+		ids[i] = work.ID
+	}
+	return strings.Join(ids, ",")
+}
+
+func studyBoardShelfNames(works []dto.StudyBoardWork) string {
+	names := make([]string, len(works))
+	for i, work := range works {
+		names[i] = work.Title
+	}
+	return strings.Join(names, " · ")
+}
+
+func studyBoardShelfPath(works []dto.StudyBoardWork) string {
+	ids := studyBoardShelfIDs(works)
+	if ids == "" {
+		return "/study-board"
+	}
+	return "/study-board?board=" + ids
+}

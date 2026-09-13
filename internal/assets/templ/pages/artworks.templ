@@ -289,14 +289,17 @@ templ ArtworkSearchResults(r ArtworkSearchResultsView) {
 			} else {
 				<div class="mt-7 grid grid-cols-2 gap-x-4 gap-y-9 md:grid-cols-3 md:gap-x-7" data-kbd-list data-kbd-cols="2" data-kbd-cols-md="3" data-view="grid">
 					for index, artwork := range r.Artworks {
-						<a href={ templ.SafeURL(artwork.Url) } hx-get={ artwork.Url } data-kbd-idx={ strconv.Itoa(index) } data-kbd-href={ artwork.Url } class="wga-record-card">
-							@components.KeyboardCaret()
-							<figure class="mb-2.5 aspect-[4/5] border border-wga-ink/15 bg-wga-fill p-2.5">
-								<img src={ artwork.Thumb } alt={ artwork.Title } class="h-full w-full object-cover"/>
-							</figure>
-							<p class="text-sm font-semibold leading-tight">{ artwork.Title }</p>
-							<p class="mt-[3px] font-mono text-(length:--t-11) leading-relaxed text-wga-ink/60">{ artwork.Artist.FilingName }<br/>{ artwork.Technique }</p>
-						</a>
+						<article>
+							<a href={ templ.SafeURL(artwork.Url) } hx-get={ artwork.Url } data-kbd-idx={ strconv.Itoa(index) } data-kbd-href={ artwork.Url } class="wga-record-card">
+								@components.KeyboardCaret()
+								<figure class="mb-2.5 aspect-[4/5] border border-wga-ink/15 bg-wga-fill p-2.5">
+									<img src={ artwork.Thumb } alt={ artwork.Title } class="h-full w-full object-cover"/>
+								</figure>
+								<p class="text-sm font-semibold leading-tight">{ artwork.Title }</p>
+								<p class="mt-[3px] font-mono text-(length:--t-11) leading-relaxed text-wga-ink/60">{ artwork.Artist.FilingName }<br/>{ artwork.Technique }</p>
+							</a>
+							<div class="mt-2.5">@components.AddToStudyBoardAction(artwork.Id, artwork.Title, artwork.Thumb, components.AddToStudyBoardBlock)</div>
+						</article>
 					}
 				</div>
 			}
@@ -339,13 +342,14 @@ func artworkActiveCountLabel(count int) string {
 templ ArtworkSearchResultList(artworks dto.ImageGrid) {
 	<ul data-kbd-list data-kbd-cols="1" data-view="list">
 		for index, artwork := range artworks {
-			<li>
-				<a href={ templ.SafeURL(artwork.Url) } hx-get={ artwork.Url } data-kbd-idx={ strconv.Itoa(index) } data-kbd-href={ artwork.Url } class="flex items-center gap-4 border-b border-wga-ink/15 py-3.5 transition-colors hover:bg-wga-accent-bg/5">
+			<li class="flex items-center gap-3 border-b border-wga-ink/15">
+				<a href={ templ.SafeURL(artwork.Url) } hx-get={ artwork.Url } data-kbd-idx={ strconv.Itoa(index) } data-kbd-href={ artwork.Url } class="flex min-w-0 flex-1 items-center gap-4 py-3.5 transition-colors hover:bg-wga-accent-bg/5">
 					@components.KeyboardCaret()
 					<img src={ artwork.Thumb } alt={ artwork.Title } class="h-[54px] w-11 shrink-0 border border-wga-ink/15 bg-wga-fill object-cover"/>
 					<span class="min-w-0 flex-1"><span class="block text-(length:--t-15) font-semibold leading-tight">{ artwork.Title }</span><span class="mt-[3px] block font-mono text-(length:--t-11) text-wga-ink/60">{ artwork.Artist.FilingName }</span></span>
 					<span class="hidden shrink-0 font-mono text-(length:--t-11) text-wga-ink/70 md:block">{ artwork.Technique }</span>
 				</a>
+				@components.AddToStudyBoardAction(artwork.Id, artwork.Title, artwork.Thumb, components.AddToStudyBoardRow)
 			</li>
 		}
 	</ul>

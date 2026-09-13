@@ -385,12 +385,13 @@ func buildWorks(rows []artworkRow, from int, to int) []dto.Work {
 	works := make([]dto.Work, 0, len(rows))
 	for _, row := range rows {
 		works = append(works, dto.Work{
-			URL:       artworkURL(row),
-			ImageURL:  artworkImageURL(row),
-			ArtworkID: row.ID,
-			Title:     row.Title,
-			Artist:    row.ArtistName,
-			Metadata:  formatDateLabel(row.DateStart, row.DateEnd, row.IsCirca != 0, row.Qualifier),
+			URL:        artworkURL(row),
+			ImageURL:   artworkImageURL(row),
+			ArtworkID:  row.ID,
+			Title:      row.Title,
+			Artist:     row.ArtistName,
+			Metadata:   formatDateLabel(row.DateStart, row.DateEnd, row.IsCirca != 0, row.Qualifier),
+			StudyBoard: true,
 		})
 	}
 

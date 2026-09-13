@@ -68,6 +68,7 @@ test("restores, shares, canonicalises, and clears transient board state", async 
 		canonicalURL,
 	);
 
+	page.once("dialog", (dialog) => dialog.accept());
 	await page.getByRole("link", { name: "CLEAR", exact: true }).click();
 	await expect(page).toHaveURL(
 		(url) => url.pathname === "/study-board" && url.search === "",
@@ -76,4 +77,116 @@ test("restores, shares, canonicalises, and clears transient board state", async 
 	expect(
 		await page.evaluate((key) => window.localStorage.getItem(key), storageKey),
 	).toBeNull();
+});
+
+test("adds without record navigation, shows the fixed shelf, and reorders both views", async ({
+	page,
+}) => {
+	test.setTimeout(60000);
+	await page.goto("/artworks");
+	const actions = page.locator("[data-study-board-add]");
+	await expect(actions.first()).toBeVisible({ timeout: 30000 });
+	const first = await actions.nth(0).getAttribute("data-study-board-add");
+	const second = await actions.nth(1).getAttribute("data-study-board-add");
+	const secondTitle = await actions
+		.nth(1)
+		.getAttribute("data-study-board-title");
+	expect(first).toBeTruthy();
+	expect(second).toBeTruthy();
+	expect(secondTitle).toBeTruthy();
+
+	await actions.nth(0).click();
+	await expect(page).toHaveURL((url) => url.pathname === "/artworks");
+	await expect(page.getByRole("region", { name: "Study Board" })).toContainText(
+		"1 OF 12",
+	);
+	await expect
+		.poll(() =>
+			page.evaluate(() =>
+				Number.parseFloat(
+					document.body.style.getPropertyValue("--wga-bottom-stack-height"),
+				),
+			),
+		)
+		.toBeGreaterThan(0);
+	await expect(actions.nth(0)).toHaveText("ON STUDY BOARD ✓");
+	await expect(actions.nth(0)).not.toHaveClass(/hover:border-wga-accent/);
+	await expect(actions.nth(0)).not.toHaveClass(/hover:bg-wga-accent-tint/);
+
+	await page.keyboard.press("Control+k");
+	await page
+		.getByRole("searchbox", { name: "Search sections, artists and works" })
+		.fill(secondTitle ?? "");
+	const paletteAction = page.locator(
+		`#kbd-palette-records [data-study-board-add='${second}']`,
+	);
+	await expect(paletteAction).toHaveText("ADD TO STUDY BOARD +");
+	await page.keyboard.press("Tab");
+	await expect(paletteAction).toBeFocused();
+	await page.keyboard.press("Enter");
+	await expect(paletteAction).toHaveText("ON STUDY BOARD ✓");
+	await expect(page.getByRole("region", { name: "Study Board" })).toContainText(
+		"2 OF 12",
+	);
+	await page.keyboard.press("Escape");
+	await page.getByRole("link", { name: "OPEN BOARD →" }).click();
+	await expect(page).toHaveURL(
+		(url) => url.searchParams.get("board") === `${first},${second}`,
+	);
+
+	await expect(page.getByRole("button", { name: "MATRIX" })).toHaveAttribute(
+		"aria-pressed",
+		"true",
+	);
+	await page.getByRole("button", { name: "BOARD" }).click();
+	const board = page.locator("[data-study-board-panel='board']");
+	await expect(board).toBeVisible();
+	await board
+		.locator(`[data-study-board-work='${second}']`)
+		.getByRole("button", { name: "Move earlier" })
+		.click();
+	await expect(page).toHaveURL(
+		(url) => url.searchParams.get("board") === `${second},${first}`,
+	);
+
+	await page.getByRole("button", { name: "BOARD" }).click();
+	await page
+		.locator("[data-study-board-panel='board']")
+		.locator(`[data-study-board-work='${second}']`)
+		.getByRole("button", { name: "REMOVE" })
+		.click();
+	await expect(page).toHaveURL(
+		(url) => url.searchParams.get("board") === first,
+	);
+});
+
+test("reports capacity without mutating or navigating", async ({ page }) => {
+	test.setTimeout(60000);
+	await page.goto("/artworks");
+	const actions = page.locator("[data-study-board-add]");
+	await expect(actions.nth(12)).toBeVisible({ timeout: 30000 });
+	const ids = await actions.evaluateAll((buttons) =>
+		buttons.map(
+			(button) => (button as HTMLElement).dataset.studyBoardAdd ?? "",
+		),
+	);
+	expect(ids.length).toBeGreaterThan(12);
+	await page.evaluate(
+		([key, values]) => window.localStorage.setItem(key, values.join(",")),
+		[storageKey, ids.slice(0, 12)] as [string, string[]],
+	);
+	await page.reload();
+	const outside = page.locator(`[data-study-board-add='${ids[12]}']`);
+	await expect(outside).toHaveText("STUDY BOARD FULL");
+	await expect(outside).toBeDisabled();
+	const beforeURL = page.url();
+	const beforeState = await page.evaluate(
+		(key) => localStorage.getItem(key),
+		storageKey,
+	);
+	await outside.click({ force: true });
+	expect(page.url()).toBe(beforeURL);
+	expect(
+		await page.evaluate((key) => localStorage.getItem(key), storageKey),
+	).toBe(beforeState);
 });

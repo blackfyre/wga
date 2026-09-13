@@ -21,7 +21,7 @@ func TestDualWorkUsesTypedFullLabelRowAddControl(t *testing.T) {
 		t.Fatalf("render dual work pane: %v", err)
 	}
 	rendered := output.String()
-	for _, expected := range []string{`h-12`, `px-[22px]`, "ADD TO AN ITINERARY +", `hx-select="unset"`} {
+	for _, expected := range []string{`h-12`, `px-[22px]`, "ADD TO AN ITINERARY +", `hx-select="unset"`, `data-study-board-add="aw0000000000001"`} {
 		if !strings.Contains(rendered, expected) {
 			t.Errorf("dual work pane missing typed row contract %q", expected)
 		}
@@ -35,7 +35,7 @@ func TestDualCardGridUsesTypedBlockAddControl(t *testing.T) {
 		t.Fatalf("render dual card grid: %v", err)
 	}
 	rendered := output.String()
-	for _, expected := range []string{`h-12`, "ADD TO AN ITINERARY +", `hx-select="unset"`} {
+	for _, expected := range []string{`h-12`, "ADD TO AN ITINERARY +", `hx-select="unset"`, `data-study-board-add="aw0000000000001"`} {
 		if !strings.Contains(rendered, expected) {
 			t.Errorf("dual card grid missing typed block contract %q", expected)
 		}

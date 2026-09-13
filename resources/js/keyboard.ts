@@ -1,3 +1,5 @@
+import { refreshStudyBoardControls } from "./study-board";
+
 type Screen = {
 	key: string;
 	num: string;
@@ -297,6 +299,7 @@ const loadSuggestions = async (query: string, limit: number) => {
 		}
 		pick = 0;
 		paintPick();
+		refreshStudyBoardControls();
 	} catch (error) {
 		if (error instanceof DOMException && error.name === "AbortError") {
 			return;
