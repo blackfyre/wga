@@ -442,6 +442,22 @@ func TestArtworkBlockRendersCommentaryHonestly(t *testing.T) {
 	}
 }
 
+func TestArtworkBlockContainsLongBreadcrumbAndCommentaryAtNarrowWidths(t *testing.T) {
+	aw := sampleArtwork()
+	aw.ShowBreadcrumbs = true
+	aw.HasCommentary = true
+	aw.SourceComment = `<p>A source token that must remain contained.</p>`
+
+	rendered := renderArtworkBlock(t, aw, context.Background())
+	if !strings.Contains(rendered, `class="mb-8 break-words font-mono`) ||
+		!strings.Contains(rendered, `sm:overflow-x-auto sm:whitespace-nowrap`) {
+		t.Error("artwork breadcrumb must wrap on narrow screens before restoring the wider single-line trail")
+	}
+	if !strings.Contains(rendered, `class="content min-w-0 max-w-[620px] break-words`) {
+		t.Error("artwork commentary must shrink and break within the responsive record row")
+	}
+}
+
 func TestArtworkBlockRendersRelatedBasisControls(t *testing.T) {
 	rendered := renderArtworkBlock(t, relatedSampleArtwork(), context.Background())
 

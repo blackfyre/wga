@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"html"
 	"net/http"
 	neturl "net/url"
 	"path"
@@ -449,22 +448,23 @@ func populateArtworkSourceData(app *pocketbase.PocketBase, artwork *core.Record,
 	content.Music = buildArtworkMusic(app, artwork)
 }
 
-// artworkCommentaryHTML converts the raw source commentary to safe display HTML:
-// escaped text split into paragraphs on blank lines. The glossary annotation is
-// applied separately, after this conversion.
+// artworkCommentaryHTML converts the source commentary to safe display HTML.
+// Source-authored links and emphasis survive the shared biography policy, while
+// executable attributes and elements are removed. Plain-text line breaks are
+// promoted before sanitising so they retain their authored paragraph structure.
+// Glossary annotation is applied separately after this conversion.
 func artworkCommentaryHTML(sourceComment string) string {
 	if sourceComment == "" {
 		return ""
 	}
 
-	escaped := html.EscapeString(sourceComment)
-	paragraphs := strings.Split(escaped, "\n\n")
+	paragraphs := strings.Split(sourceComment, "\n\n")
 	for i, paragraph := range paragraphs {
 		paragraph = strings.TrimSpace(strings.ReplaceAll(paragraph, "\n", "<br/>"))
 		paragraphs[i] = "<p>" + paragraph + "</p>"
 	}
 
-	return strings.Join(paragraphs, "")
+	return bioSanitizer.Sanitize(strings.Join(paragraphs, ""))
 }
 
 // populateArtworkRelated resolves the active related-work basis and fills the

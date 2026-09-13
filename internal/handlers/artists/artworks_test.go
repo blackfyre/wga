@@ -288,8 +288,11 @@ func TestArtworkCommentaryHTML(t *testing.T) {
 	if got := artworkCommentaryHTML("One\n\nTwo"); got != "<p>One</p><p>Two</p>" {
 		t.Errorf("paragraphs = %q, want <p>One</p><p>Two</p>", got)
 	}
-	if got := artworkCommentaryHTML("<script>alert(1)</script>"); !strings.Contains(got, "&lt;script&gt;") {
-		t.Errorf("escaping = %q, want escaped script", got)
+	if got := artworkCommentaryHTML(`<a href="/work" onclick="alert(1)">Work</a>`); !strings.Contains(got, `<a href="/work" rel="nofollow">Work</a>`) || strings.Contains(got, "onclick") {
+		t.Errorf("safe link = %q, want retained link without executable attributes", got)
+	}
+	if got := artworkCommentaryHTML("<script>alert(1)</script>"); strings.Contains(got, "script") || strings.Contains(got, "alert") {
+		t.Errorf("script = %q, want executable markup and content removed", got)
 	}
 }
 
