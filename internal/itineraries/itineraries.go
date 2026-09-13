@@ -117,6 +117,14 @@ var (
 	ErrInvalidMove = errors.New("invalid stop move direction")
 	// ErrNotDraft is returned when a mutation targets a non-draft itinerary.
 	ErrNotDraft = errors.New("itinerary is not a draft")
+	// ErrNoReplacementStops is returned when a board resolves to no published works.
+	ErrNoReplacementStops = errors.New("itinerary replacement requires at least one published artwork")
+	// ErrReplacementStale is returned when the reviewed draft or board changed
+	// before the replacement was submitted.
+	ErrReplacementStale = errors.New("itinerary replacement confirmation is stale")
+	// ErrReplacementConfirmation is returned when destructive replacement was
+	// submitted without explicit confirmation.
+	ErrReplacementConfirmation = errors.New("itinerary replacement requires confirmation")
 	// ErrPublishRateLimit is returned when an owner exceeds the bounded
 	// publication budget within the rolling window.
 	ErrPublishRateLimit = errors.New("itinerary publication rate limit exceeded")

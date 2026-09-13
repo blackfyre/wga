@@ -230,6 +230,102 @@ func TestClearDraftRemovesStops(t *testing.T) {
 	}
 }
 
+func TestReplaceDraftRequiresReviewedConfirmationAndPreservesOrder(t *testing.T) {
+	app := installItinerarySchema(t)
+	owner := "owner-board-replace"
+	addStops(t, app, owner, 2)
+	existing, err := LoadStops(app, mustDraftID(t, app, owner))
+	if err != nil {
+		t.Fatalf("LoadStops: %v", err)
+	}
+	if err := SetNarration(app, owner, existing[0].Id, "Keep this until confirmed"); err != nil {
+		t.Fatalf("SetNarration: %v", err)
+	}
+
+	incoming := make([]string, 0, MaxStops+2)
+	for index := MaxStops + 1; index >= 1; index-- {
+		incoming = append(incoming, artworkID(index))
+	}
+	incoming = append(incoming, artworkID(MaxStops+1))
+	preview, err := PreviewReplacement(app, owner, incoming)
+	if err != nil {
+		t.Fatalf("PreviewReplacement: %v", err)
+	}
+	if preview.ExistingWorkCount != 2 || preview.NarrationCount != 1 || !preview.RequiresConfirm {
+		t.Fatalf("preview counts = %#v, want 2 works, 1 narration, confirmation", preview)
+	}
+	if preview.IncomingCount != MaxStops {
+		t.Fatalf("incoming count = %d, want %d", preview.IncomingCount, MaxStops)
+	}
+
+	if err := ReplaceDraft(app, owner, incoming, preview.Expectation, false); !errors.Is(err, ErrReplacementConfirmation) {
+		t.Fatalf("unconfirmed ReplaceDraft = %v, want ErrReplacementConfirmation", err)
+	}
+	unchanged, err := LoadStops(app, mustDraftID(t, app, owner))
+	if err != nil || len(unchanged) != 2 || unchanged[0].GetString("narration") == "" {
+		t.Fatalf("unconfirmed replacement mutated draft: %v %#v", err, unchanged)
+	}
+
+	if err := ReplaceDraft(app, owner, incoming, preview.Expectation, true); err != nil {
+		t.Fatalf("ReplaceDraft: %v", err)
+	}
+	replaced, err := LoadStops(app, mustDraftID(t, app, owner))
+	if err != nil {
+		t.Fatalf("LoadStops replaced: %v", err)
+	}
+	if len(replaced) != MaxStops {
+		t.Fatalf("replaced stops = %d, want %d", len(replaced), MaxStops)
+	}
+	for index, stop := range replaced {
+		if stop.GetString("artwork") != incoming[index] || stop.GetInt("position") != index || stop.GetString("narration") != "" {
+			t.Errorf("replacement stop %d = artwork %q position %d narration %q", index, stop.GetString("artwork"), stop.GetInt("position"), stop.GetString("narration"))
+		}
+	}
+}
+
+func TestReplaceDraftRejectsStaleReviewWithoutMutation(t *testing.T) {
+	app := installItinerarySchema(t)
+	owner := "owner-board-stale"
+	addStops(t, app, owner, 1)
+	preview, err := PreviewReplacement(app, owner, []string{artworkID(2), artworkID(3)})
+	if err != nil {
+		t.Fatalf("PreviewReplacement: %v", err)
+	}
+	stops, err := LoadStops(app, mustDraftID(t, app, owner))
+	if err != nil {
+		t.Fatalf("LoadStops: %v", err)
+	}
+	if err := SetNarration(app, owner, stops[0].Id, "Changed after review"); err != nil {
+		t.Fatalf("SetNarration: %v", err)
+	}
+
+	if err := ReplaceDraft(app, owner, preview.ArtworkIDs, preview.Expectation, true); !errors.Is(err, ErrReplacementStale) {
+		t.Fatalf("stale ReplaceDraft = %v, want ErrReplacementStale", err)
+	}
+	unchanged, err := LoadStops(app, mustDraftID(t, app, owner))
+	if err != nil || len(unchanged) != 1 || unchanged[0].GetString("narration") != "Changed after review" {
+		t.Fatalf("stale replacement mutated draft: %v %#v", err, unchanged)
+	}
+}
+
+func TestReplaceDraftCreatesAnEmptySessionDraftWithoutDestructiveConfirmation(t *testing.T) {
+	app := installItinerarySchema(t)
+	preview, err := PreviewReplacement(app, "owner-board-new", []string{artworkID(2), artworkID(1)})
+	if err != nil {
+		t.Fatalf("PreviewReplacement: %v", err)
+	}
+	if preview.RequiresConfirm || preview.ExistingWorkCount != 0 || preview.NarrationCount != 0 {
+		t.Fatalf("empty preview = %#v, want no destructive confirmation", preview)
+	}
+	if err := ReplaceDraft(app, "owner-board-new", preview.ArtworkIDs, preview.Expectation, false); err != nil {
+		t.Fatalf("ReplaceDraft: %v", err)
+	}
+	stops, err := LoadStops(app, mustDraftID(t, app, "owner-board-new"))
+	if err != nil || len(stops) != 2 || stops[0].GetString("artwork") != artworkID(2) {
+		t.Fatalf("created replacement draft: %v %#v", err, stops)
+	}
+}
+
 func TestPublishTransitionsAndConsumesDraft(t *testing.T) {
 	app := installItinerarySchema(t)
 	owner := "owner-publish"

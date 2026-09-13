@@ -190,3 +190,62 @@ test("reports capacity without mutating or navigating", async ({ page }) => {
 		await page.evaluate((key) => localStorage.getItem(key), storageKey),
 	).toBe(beforeState);
 });
+
+test("reviews narrated draft replacement and leaves the board unchanged", async ({
+	page,
+}) => {
+	test.setTimeout(60000);
+	const ids = await publishedArtworkIDs(page);
+	expect(ids).toHaveLength(2);
+	await page.evaluate(
+		([key, values]) => window.localStorage.setItem(key, values.join(",")),
+		[storageKey, ids] as [string, string[]],
+	);
+
+	await page.goto("/artworks");
+	await page
+		.locator("#artwork-search-results [data-view='grid'] a.wga-record-card")
+		.first()
+		.click();
+	await page
+		.getByRole("button", { name: "ADD TO AN ITINERARY +", exact: true })
+		.first()
+		.click();
+	await expect(page.locator("#itinerary-tray")).toContainText("1 OF 15");
+	await page.goto("/itineraries/new");
+	const narration = page.locator("[data-itinerary-narration]").first();
+	await expect(narration).toBeVisible();
+	const stopID = await narration.getAttribute("data-itinerary-narration");
+	const csrf = await page.locator("input[name='_csrf']").first().inputValue();
+	expect(stopID).toBeTruthy();
+	const saved = await page.evaluate(
+		async ({ stopID, csrf }) => {
+			const body = new URLSearchParams({
+				_csrf: csrf,
+				stop_id: stopID ?? "",
+				narration: "Existing browser narration",
+			});
+			return (
+				await fetch("/itineraries/draft/narration", {
+					method: "POST",
+					headers: { "Content-Type": "application/x-www-form-urlencoded" },
+					body,
+				})
+			).status;
+		},
+		{ stopID, csrf },
+	);
+	expect(saved).toBe(200);
+
+	await page.goto(`/study-board?board=${ids.join(",")}`);
+	await page.getByRole("link", { name: "MAKE ITINERARY →" }).click();
+	await expect(page.locator("[data-itinerary-board-import]")).toContainText(
+		"replace existing works (1) and discard narrated stops (1)",
+	);
+	await page.getByRole("button", { name: "REPLACE DRAFT" }).click();
+	await expect(page).toHaveURL((url) => url.pathname === "/itineraries/new");
+	await expect(page.locator("#itinerary-builder")).toContainText("2 / 15");
+	expect(
+		await page.evaluate((key) => window.localStorage.getItem(key), storageKey),
+	).toBe(ids.join(","));
+});

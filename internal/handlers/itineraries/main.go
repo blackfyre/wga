@@ -68,6 +68,9 @@ func RegisterHandlers(app *pocketbase.PocketBase, policy SecurityPolicy) error {
 		group.GET("/draft", func(c *core.RequestEvent) error {
 			return ctx.builderBlock(app, c)
 		})
+		group.GET("/draft/from-board", func(c *core.RequestEvent) error {
+			return ctx.boardImportPage(app, c)
+		})
 
 		group.GET("/published", func(c *core.RequestEvent) error {
 			return ctx.publishedConfirmation(app, c)
@@ -95,6 +98,9 @@ func RegisterHandlers(app *pocketbase.PocketBase, policy SecurityPolicy) error {
 
 		group.POST("/draft/clear", func(c *core.RequestEvent) error {
 			return ctx.clearDraft(app, c)
+		})
+		group.POST("/draft/from-board", func(c *core.RequestEvent) error {
+			return ctx.replaceDraftFromBoard(app, c)
 		})
 
 		group.POST("", func(c *core.RequestEvent) error {

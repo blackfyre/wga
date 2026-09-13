@@ -35,7 +35,7 @@ func TestStudyBoardPageRendersSevenFieldsBothViewsAndNativeControls(t *testing.T
 		t.Fatalf("render: %v", err)
 	}
 	rendered := output.String()
-	for _, expected := range []string{"MATRIX", "BOARD", "DATE", "DIMENSIONS", "MEDIUM", "LOCATION", "SCHOOL", "FORM", "TYPE", `data-study-board-move="earlier"`, `data-study-board-move="later"`, `data-study-board-remove="work00000000001"`} {
+	for _, expected := range []string{"MATRIX", "BOARD", "DATE", "DIMENSIONS", "MEDIUM", "LOCATION", "SCHOOL", "FORM", "TYPE", `data-study-board-move="earlier"`, `data-study-board-move="later"`, `data-study-board-remove="work00000000001"`, `href="/itineraries/draft/from-board?board=work00000000001,work00000000002"`, "MAKE ITINERARY →"} {
 		if !strings.Contains(rendered, expected) {
 			t.Errorf("page missing %q", expected)
 		}

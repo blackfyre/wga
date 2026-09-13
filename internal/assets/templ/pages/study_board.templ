@@ -32,6 +32,9 @@ templ StudyBoardPage(view StudyBoardView) {
 				<div class="mt-5 flex flex-wrap items-center gap-3">
 					<button type="button" data-copy-study-board aria-live="polite" class="min-h-12 border border-control px-4 font-mono text-(length:--t-11) tracking-[1px] transition-colors hover:border-wga-accent hover:bg-wga-accent-tint">COPY LINK</button>
 					<a href="/study-board" data-clear-study-board class="inline-flex min-h-12 items-center border border-control px-4 font-mono text-(length:--t-11) tracking-[1px]">CLEAR</a>
+					if len(view.Works) > 0 {
+						<a href={ templ.SafeURL("/itineraries/draft/from-board?board=" + strings.Join(view.IDs, ",")) } class="inline-flex min-h-12 items-center border border-wga-accent px-4 font-mono text-(length:--t-11) tracking-[1px] transition-colors hover:bg-wga-accent-tint">MAKE ITINERARY →</a>
+					}
 					<p class="font-mono text-(length:--t-11) tracking-[1px] text-muted" aria-live="polite">{ len(view.Works) } / 12 WORKS</p>
 				</div>
 			</div>

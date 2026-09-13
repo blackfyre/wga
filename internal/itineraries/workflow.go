@@ -1,8 +1,10 @@
 package itineraries
 
 import (
+	"crypto/sha256"
 	"database/sql"
 	"errors"
+	"fmt"
 	"math"
 	"strconv"
 	"strings"
@@ -21,6 +23,17 @@ const sentinelPosition = -1
 type Draft struct {
 	Record *core.Record
 	Stops  []*core.Record
+}
+
+// ReplacementPreview describes the exact draft and ordered published artworks
+// reviewed before a Study Board replaces the draft's stops.
+type ReplacementPreview struct {
+	ArtworkIDs        []string
+	IncomingCount     int
+	ExistingWorkCount int
+	NarrationCount    int
+	RequiresConfirm   bool
+	Expectation       string
 }
 
 // FindDraft returns the single session-owned draft for the owner digest, or
@@ -316,6 +329,127 @@ func ClearDraft(app core.App, owner string) error {
 
 		return touchDraft(txApp, draft)
 	})
+}
+
+// PreviewReplacement returns the work and narration counts that a visitor must
+// review before replacing an existing draft. Expectation binds that disclosure
+// to the current draft contents and ordered incoming works.
+func PreviewReplacement(app core.App, owner string, artworkIDs []string) (ReplacementPreview, error) {
+	return prepareReplacement(app, owner, artworkIDs)
+}
+
+// ReplaceDraft atomically replaces the session draft's stops with the ordered
+// published artworks reviewed in preview. Existing draft metadata is preserved;
+// replacing stops necessarily discards their narration.
+func ReplaceDraft(app core.App, owner string, artworkIDs []string, expectation string, confirmed bool) error {
+	return app.RunInTransaction(func(txApp core.App) error {
+		preview, err := prepareReplacement(txApp, owner, artworkIDs)
+		if err != nil {
+			return err
+		}
+		if expectation == "" || expectation != preview.Expectation {
+			return ErrReplacementStale
+		}
+		if preview.RequiresConfirm && !confirmed {
+			return ErrReplacementConfirmation
+		}
+
+		draft, err := EnsureDraft(txApp, owner)
+		if err != nil {
+			return err
+		}
+		stops, err := LoadStops(txApp, draft.Id)
+		if err != nil {
+			return err
+		}
+		for _, stop := range stops {
+			if err := txApp.Delete(stop); err != nil {
+				return err
+			}
+		}
+
+		collection, err := txApp.FindCollectionByNameOrId(CollectionItineraryStops)
+		if err != nil {
+			return err
+		}
+		for position, artworkID := range preview.ArtworkIDs {
+			artwork, err := findPublishedArtwork(txApp, artworkID)
+			if err != nil {
+				return err
+			}
+			stop := core.NewRecord(collection)
+			stop.Set("itinerary", draft.Id)
+			stop.Set("artwork", artworkID)
+			stop.Set("title", SanitiseText(artwork.GetString("title")))
+			stop.Set("position", position)
+			if err := txApp.Save(stop); err != nil {
+				return err
+			}
+		}
+
+		return touchDraft(txApp, draft)
+	})
+}
+
+func prepareReplacement(app core.App, owner string, artworkIDs []string) (ReplacementPreview, error) {
+	ids := uniqueReplacementIDs(artworkIDs)
+	if len(ids) == 0 {
+		return ReplacementPreview{}, ErrNoReplacementStops
+	}
+	for _, artworkID := range ids {
+		if _, err := findPublishedArtwork(app, artworkID); err != nil {
+			return ReplacementPreview{}, err
+		}
+	}
+
+	preview := ReplacementPreview{ArtworkIDs: ids, IncomingCount: len(ids)}
+	draft, err := FindDraft(app, owner)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return ReplacementPreview{}, err
+	}
+	state := strings.Builder{}
+	state.WriteString(strings.Join(ids, ","))
+	if draft == nil {
+		state.WriteString("|absent")
+	} else {
+		state.WriteString("|draft:")
+		state.WriteString(draft.Id)
+		stops, err := LoadStops(app, draft.Id)
+		if err != nil {
+			return ReplacementPreview{}, err
+		}
+		preview.ExistingWorkCount = len(stops)
+		for _, stop := range stops {
+			narration := strings.TrimSpace(stop.GetString("narration"))
+			if narration != "" {
+				preview.NarrationCount++
+			}
+			fmt.Fprintf(&state, "|%q:%q:%d:%q", stop.Id, stop.GetString("artwork"), stop.GetInt("position"), narration)
+		}
+	}
+	preview.RequiresConfirm = preview.ExistingWorkCount > 0 || preview.NarrationCount > 0
+	preview.Expectation = fmt.Sprintf("%x", sha256.Sum256([]byte(state.String())))
+	return preview, nil
+}
+
+func uniqueReplacementIDs(artworkIDs []string) []string {
+	ids := make([]string, 0, min(len(artworkIDs), MaxStops))
+	seen := make(map[string]struct{}, len(artworkIDs))
+	for _, artworkID := range artworkIDs {
+		artworkID = strings.TrimSpace(artworkID)
+		if artworkID == "" {
+			continue
+		}
+		if _, exists := seen[artworkID]; exists {
+			continue
+		}
+		seen[artworkID] = struct{}{}
+		ids = append(ids, artworkID)
+		if len(ids) == MaxStops {
+			break
+		}
+	}
+	return ids
 }
 
 // Meta holds the bounded, sanitised draft metadata. Listed is deliberately not

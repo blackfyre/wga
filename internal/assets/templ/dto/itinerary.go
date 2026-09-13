@@ -24,6 +24,19 @@ type ItineraryTrayView struct {
 	Thumbs     []string
 }
 
+// ItineraryBoardImportView describes the server-reviewed replacement of a
+// session draft with the ordered works from a transient Study Board.
+type ItineraryBoardImportView struct {
+	Board              string
+	CSRF               string
+	Expectation        string
+	IncomingCount      int
+	ExistingWorkCount  int
+	NarrationCount     int
+	RequiresConfirm    bool
+	ReplacementChanged bool
+}
+
 // ItineraryPickerWork is one addable published artwork in the builder picker.
 type ItineraryPickerWork struct {
 	ArtworkID string

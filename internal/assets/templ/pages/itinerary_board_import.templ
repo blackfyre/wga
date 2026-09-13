@@ -1,0 +1,49 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/blackfyre/wga/internal/assets/templ/components"
+	"github.com/blackfyre/wga/internal/assets/templ/dto"
+	"github.com/blackfyre/wga/internal/assets/templ/layouts"
+)
+
+templ ItineraryBoardImportPage(view dto.ItineraryBoardImportView) {
+	@layouts.LayoutMain() {
+		<section class="container mx-auto px-4 pb-20 pt-10 md:px-0" data-itinerary-board-import>
+			<nav class="mb-8 font-mono text-(length:--t-11) tracking-[1.5px] text-muted" aria-label="Breadcrumb">
+				<a href="/study-board" class="text-wga-accent">STUDY BOARD</a>&nbsp;&nbsp;/&nbsp;&nbsp;ITINERARY
+			</nav>
+			@components.PageHead("09 — ITINERARY", "Turn this board into an itinerary", "Review the ordered transfer before changing your session-owned draft.")
+			<div class="mt-10 max-w-2xl border-y border-wga-ink/15 py-7">
+				if view.ReplacementChanged {
+					<p class="mb-5 border border-wga-accent bg-wga-accent-tint p-4 text-(length:--t-15) leading-relaxed" role="alert">Your itinerary or Study Board changed after this replacement was reviewed. Review the current counts before continuing.</p>
+				}
+				<p class="text-(length:--t-17) leading-relaxed">{ fmt.Sprintf("%d ordered Study Board works will become the itinerary draft.", view.IncomingCount) }</p>
+				if view.RequiresConfirm {
+					<p class="mt-4 text-(length:--t-15) leading-relaxed text-muted">{ fmt.Sprintf("This will replace existing works (%d) and discard narrated stops (%d).", view.ExistingWorkCount, view.NarrationCount) }</p>
+					<p class="mt-3 text-(length:--t-15) font-semibold leading-relaxed">The existing draft content cannot be recovered after replacement.</p>
+				} else {
+					<p class="mt-4 text-(length:--t-15) leading-relaxed text-muted">Your itinerary draft is empty, so no existing works or narration will be discarded.</p>
+				}
+				<p class="mt-3 text-(length:--t-15) leading-relaxed text-muted">The Study Board remains unchanged.</p>
+				<form method="post" action="/itineraries/draft/from-board" class="mt-7 flex flex-wrap gap-3">
+					<input type="hidden" name="_csrf" value={ view.CSRF }/>
+					<input type="hidden" name="board" value={ view.Board }/>
+					<input type="hidden" name="expectation" value={ view.Expectation }/>
+					if view.RequiresConfirm {
+						<input type="hidden" name="confirm" value="replace"/>
+					}
+					<button type="submit" class="min-h-12 border border-wga-accent bg-wga-accent-bg px-5 font-mono text-(length:--t-11) tracking-[1px] text-wga-inv-fg transition-colors hover:bg-wga-accent">
+						if view.RequiresConfirm {
+							REPLACE DRAFT
+						} else {
+							CREATE ITINERARY
+						}
+					</button>
+					<a href={ templ.SafeURL("/study-board?board=" + view.Board) } class="inline-flex min-h-12 items-center border border-control px-5 font-mono text-(length:--t-11) tracking-[1px]">CANCEL</a>
+				</form>
+			</div>
+		</section>
+	}
+}
