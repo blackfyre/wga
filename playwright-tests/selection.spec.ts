@@ -5,10 +5,10 @@ import { expect, type Page, test } from "@playwright/test";
 const artistRecordPath = "/artists/synthetic-artist-02-2236bdd57f7492e";
 
 const suppliedCommentaryPath =
-	"/artists/synthetic-artist-02-2236bdd57f7492e/selections/ra01b4fda068382";
+	"/artists/synthetic-artist-02-2236bdd57f7492e/selections/5ef9746d522357d";
 
 const missingCommentaryPath =
-	"/artists/synthetic-artist-02-2236bdd57f7492e/selections/r71ee5b06e7865f";
+	"/artists/synthetic-artist-02-2236bdd57f7492e/selections/ff3b947b8303fbd";
 
 const suppliedCommentaryTitle = "Synthetic selection with commentary";
 const missingCommentaryTitle = "Synthetic selection without commentary";
@@ -107,8 +107,8 @@ test.describe("selection journey without JavaScript", () => {
 		await expect(
 			page.getByRole("heading", { name: "CITE THIS RECORD — BIBTEX" }),
 		).toBeVisible();
-		await expect(page.locator("pre#bibtex-wga-ra01b4fda068382")).toContainText(
-			"@online{wga-ra01b4fda068382,",
+		await expect(page.locator("pre#bibtex-wga-5ef9746d522357d")).toContainText(
+			"@online{wga-5ef9746d522357d,",
 		);
 
 		const holdingLink = page.getByRole("link", {

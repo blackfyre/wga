@@ -36,7 +36,7 @@ func TestSyntheticSeedMigrationImportsBaselineSchema(t *testing.T) {
 		"art_periods":    32,
 		"artists":        10,
 		"artworks":       27,
-		"art_selections": 10,
+		"art_selections": 12,
 		"glossary":       5,
 		"guestbook":      2,
 		"music_composer": 2,
@@ -187,6 +187,23 @@ func TestSyntheticSeedMigrationImportsBaselineSchema(t *testing.T) {
 	}
 	if got, want := selection.GetStringSlice("artworks"), []string{"2225c982be1af02", "38311d50a756d76", "4447a2dfa34f956", "9d6478c242f98b2"}; !slices.Equal(got, want) {
 		t.Fatalf("synthetic selection artwork order = %v, want %v", got, want)
+	}
+	commentarySelection, err := app.FindRecordById("art_selections", "5ef9746d522357d")
+	if err != nil {
+		t.Fatalf("find synthetic commentary selection: %v", err)
+	}
+	if got, want := commentarySelection.GetString("commentary"), "<p>Synthetic fixture commentary for browser coverage.</p>"; got != want {
+		t.Fatalf("synthetic commentary selection = %q, want %q", got, want)
+	}
+	if got, want := commentarySelection.GetStringSlice("artworks"), []string{"778ed0ab7a62b62", "5b71fb4c2c5fa71"}; !slices.Equal(got, want) {
+		t.Fatalf("synthetic commentary selection artwork order = %v, want %v", got, want)
+	}
+	missingCommentarySelection, err := app.FindRecordById("art_selections", "ff3b947b8303fbd")
+	if err != nil {
+		t.Fatalf("find synthetic missing-commentary selection: %v", err)
+	}
+	if got := missingCommentarySelection.GetString("commentary"); got != "" {
+		t.Fatalf("synthetic missing-commentary selection = %q, want empty", got)
 	}
 	for _, fieldName := range []string{"biography_image_width", "biography_image_height"} {
 		if _, ok := artists.Fields.GetByName(fieldName).(*core.NumberField); !ok {
