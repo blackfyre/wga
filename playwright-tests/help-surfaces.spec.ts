@@ -197,6 +197,25 @@ test("right-edge help surfaces remain contained at normal and enlarged text", as
 	}
 });
 
+test("prose glossary terms remain contained at tablet width", async ({
+	page,
+}) => {
+	await page.setViewportSize({ width: 834, height: 1112 });
+	await mountFixture(page);
+	await page.locator("#term").evaluate((element) => {
+		element.parentElement?.classList.add("content");
+	});
+	await page.locator("#term").focus();
+	const tooltip = page.locator("#term-tip");
+	await expect(tooltip).toBeVisible();
+	const box = await tooltip.boundingBox();
+	if (!box) {
+		throw new Error("Expected tablet glossary tooltip geometry");
+	}
+	expect(box.x).toBeGreaterThanOrEqual(0);
+	expect(box.x + box.width).toBeLessThanOrEqual(834);
+});
+
 test("shared help surfaces remain readable across themes, enlarged text, and reduced motion", async ({
 	page,
 }) => {

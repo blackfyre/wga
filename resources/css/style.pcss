@@ -2998,7 +2998,7 @@ a[href]:not(:where(
 	overflow-wrap: anywhere;
 }
 
-@media (max-width: 67.499rem) {
+@media (max-width: 44.999rem) {
 	.wga-term__tooltip,
 	.wga-help__tooltip {
 		position: fixed;
@@ -3013,6 +3013,16 @@ a[href]:not(:where(
 
 	.wga-help__tooltip {
 		top: 1rem;
+	}
+}
+
+@media (min-width: 45rem) and (max-width: 67.499rem) {
+	.content .wga-term__tooltip {
+		position: fixed;
+		left: 1rem;
+		right: 1rem;
+		bottom: 1rem;
+		width: auto;
 	}
 }
 
