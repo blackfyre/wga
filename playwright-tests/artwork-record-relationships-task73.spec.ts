@@ -1,4 +1,4 @@
-import { type Page, expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 
 const viewports = [390, 834, 1440];
 const basisLabels = ["BY ARTIST", "SAME COLLECTION", "SAME PERIOD"];
@@ -24,6 +24,10 @@ async function discoverArtworkPath(page: Page) {
 	for (const label of basisLabels) {
 		await expect(basis.getByRole("link", { name: label })).toHaveCount(1);
 	}
+	await expect(
+		page.locator("#mc-area").getByText("PALETTE", { exact: true }),
+	).toBeVisible();
+	await expect(page.locator("[data-wga-palette-bar]")).toBeVisible();
 	return candidate;
 }
 
@@ -90,7 +94,9 @@ test("basis navigation works as ordinary links without JavaScript", async ({
 	const context = await browser.newContext({ javaScriptEnabled: false });
 	const page = await context.newPage();
 	await page.goto(artworkPath);
-	const collection = page.getByRole("link", { name: "SAME COLLECTION" });
+	const collection = page
+		.getByRole("navigation", { name: "Related works basis" })
+		.getByRole("link", { name: "SAME COLLECTION" });
 	await expect(collection).toHaveAttribute(
 		"href",
 		`${artworkPath}?basis=collection`,
@@ -99,12 +105,14 @@ test("basis navigation works as ordinary links without JavaScript", async ({
 	await page.goto(href as string);
 	await expect(page).toHaveURL(`${artworkPath}?basis=collection`);
 	await expect(
-		page.getByRole("link", { name: "SAME COLLECTION" }),
+		page
+			.getByRole("navigation", { name: "Related works basis" })
+			.getByRole("link", { name: "SAME COLLECTION" }),
 	).toHaveAttribute("aria-current", "page");
 	await context.close();
 });
 
-test("palette similarity URLs fall back to the default related-work basis", async ({
+test("retired palette-basis URLs fall back to the default related works", async ({
 	page,
 }) => {
 	await page.goto(`${artworkPath}?basis=palette`);

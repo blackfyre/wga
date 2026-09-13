@@ -136,15 +136,16 @@ Attach one row for each published artwork original. This requirement does not
 apply to portraits.
 
 ```text
-release_id,collection,record_id,output_image_path,colour_palette,colour_signature,
+release_id,collection,record_id,output_image_path,colour_palette,
 colour_profile_version,colour_image_hash,published_original_sha256,
 profile_refers_to_published_original,result,evidence_timestamp_utc
 ```
 
 `colour_image_hash` must equal the SHA-256 of the published original bytes,
 and `profile_refers_to_published_original` must be true. The profile fields
-are the producer's palette, signature, and version values; do not create a
-portrait colour-profile requirement.
+are the producer's sampled palette and version values; a colour signature is
+not required because palette similarity is not a public relationship basis. Do
+not create a portrait colour-profile requirement.
 
 ## 7. Failures and remediation (attached report)
 

@@ -48,14 +48,14 @@ that outcome.
 
 ## Production data and external hand-off
 
-| Concern                   | Current owner                                                | Required release action                                                                         |
-| ------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
-| Synthetic seed            | `internal/utils/seed/`; embedded synthetic assets            | Retain only for development/test fixtures; remove it from release input selection.              |
-| Real source database      | `wga-src/out/production/wga-src.sqlite`                      | Define release version and validation contract.                                                 |
-| Real staged media         | `wga-src/out/production/storage`; `cmd/wga-thumbnail-stager` | Copy the complete storage tree before preseeded records are saved.                              |
-| Source-bundle manifest    | `wga-src/cmd/wga-source-bundle-manifest`                     | Consume `out/production/source-bundle-manifest.json`, format version 1, before release seeding. |
-| Thumbnail URL generation  | `internal/utils/url/main.go`                                 | Add the reference's missing named variants: 600 artwork fallback, 800, 1000, 1100, and 1600.    |
-| Artwork palette/signature | `wga-src/internal/importer/colour_profile.go`                | Carry verified real-data profile fields into WGA for palette display and similarity queries.    |
+| Concern                  | Current owner                                                | Required release action                                                                         |
+| ------------------------ | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| Synthetic seed           | `internal/utils/seed/`; embedded synthetic assets            | Retain only for development/test fixtures; remove it from release input selection.              |
+| Real source database     | `wga-src/out/production/wga-src.sqlite`                      | Define release version and validation contract.                                                 |
+| Real staged media        | `wga-src/out/production/storage`; `cmd/wga-thumbnail-stager` | Copy the complete storage tree before preseeded records are saved.                              |
+| Source-bundle manifest   | `wga-src/cmd/wga-source-bundle-manifest`                     | Consume `out/production/source-bundle-manifest.json`, format version 1, before release seeding. |
+| Thumbnail URL generation | `internal/utils/url/main.go`                                 | Add the reference's missing named variants: 600 artwork fallback, 800, 1000, 1100, and 1600.    |
+| Artwork sampled palette  | `wga-src/internal/importer/colour_profile.go`                | Carry verified real-data palette fields into WGA for the accessible artwork visualisation.      |
 
 ## Test ownership
 

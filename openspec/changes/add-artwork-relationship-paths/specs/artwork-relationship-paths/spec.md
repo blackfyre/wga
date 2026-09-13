@@ -49,7 +49,7 @@ The public artwork experience SHALL derive related artworks from shared canonica
 
 ### Requirement: Reference related-work bases
 
-The public artwork record SHALL expose exactly four visitor-selectable related-work bases: BY ARTIST, SAME COLLECTION, SIMILAR PALETTE, and SAME PERIOD. The active basis SHALL be represented in a shareable query parameter. Curator-managed subjects, series, techniques, original locations, and other canonical paths SHALL remain available to curation and data workflows but SHALL NOT create additional first-release public basis controls.
+The public artwork record SHALL expose exactly three visitor-selectable related-work bases: BY ARTIST, SAME COLLECTION, and SAME PERIOD. The active basis SHALL be represented in a shareable query parameter. Image-derived palette data SHALL remain available as an explanatory artwork visualisation but SHALL NOT create a related-work basis. Curator-managed subjects, series, techniques, original locations, and other canonical paths SHALL remain available to curation and data workflows but SHALL NOT create additional first-release public basis controls.
 
 #### Scenario: Visitor selects same collection
 
@@ -60,11 +60,6 @@ The public artwork record SHALL expose exactly four visitor-selectable related-w
 
 - **WHEN** a visitor selects SAME PERIOD
 - **THEN** the system renders published works by other artists catalogued within forty years, ordered by nearest date first.
-
-#### Scenario: Visitor selects similar palette
-
-- **WHEN** a visitor selects SIMILAR PALETTE for an artwork with a valid image colour profile
-- **THEN** the system ranks published works by the supported profile-distance calculation and excludes the current artwork and its own artist.
 
 ### Requirement: Sparse related-work results are honest
 

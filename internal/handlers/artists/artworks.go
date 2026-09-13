@@ -118,14 +118,14 @@ func processArtworkWithCheckpoint(c *core.RequestEvent, app *pocketbase.PocketBa
 	// Parse and normalise the related-work basis from the query, falling back to
 	// BY ARTIST for an absent, unsupported, or unknown value.
 	requestedBasis := c.Request.URL.Query().Get("basis")
-	basis := parseArtworkRelatedBasis(requestedBasis)
+	basis := repositories.ParseRelatedWorkBasis(requestedBasis)
 	canonicalURL := relatedWorkURL(expectedPageUrl, basis)
 
-	// Redirect to the correct URL if either slug is not correct or a previously
-	// shareable palette-similarity URL is requested.
+	// Redirect to the correct URL if either slug is not correct or a retired
+	// palette-basis URL is requested.
 	if artistSlug != expectedArtistSlug ||
 		artworkSlug != expectedArtworkSlug ||
-		requestedBasis == string(repositories.RelatedByPalette) {
+		requestedBasis == "palette" {
 		return c.Redirect(http.StatusMovedPermanently, canonicalURL)
 	}
 
@@ -667,17 +667,6 @@ func relatedWorkURL(baseURL string, basis repositories.RelatedWorkBasis) string 
 	}
 
 	return baseURL + "?basis=" + string(basis)
-}
-
-// parseArtworkRelatedBasis omits the expensive palette-similarity relation from
-// public artwork pages until it is re-enabled. Old shared URLs fall back to the
-// ordinary related-work view and are canonically redirected without the query.
-func parseArtworkRelatedBasis(raw string) repositories.RelatedWorkBasis {
-	if raw == string(repositories.RelatedByPalette) {
-		return repositories.DefaultRelatedWorkBasis
-	}
-
-	return repositories.ParseRelatedWorkBasis(raw)
 }
 
 // relatedWorkBases returns the available basis controls with labels and canonical

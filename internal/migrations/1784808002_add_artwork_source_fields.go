@@ -5,8 +5,8 @@ import (
 	m "github.com/pocketbase/pocketbase/migrations"
 )
 
-// artworkColourImageHashIndex lets the four-basis related-work resolver quickly
-// select published artworks that carry an image-derived colour profile.
+// artworkColourImageHashIndex supports source-backed palette provenance checks
+// for published artworks with an image-derived colour profile.
 const artworkColourImageHashIndex = "pbx_artwork_colour_image_hash"
 
 func init() {

@@ -3,9 +3,7 @@ package repositories
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
-	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -15,7 +13,7 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
-// RelatedWorkBasis is one of the four visitor-selectable related-work bases.
+// RelatedWorkBasis is one of the three visitor-selectable related-work bases.
 // The value doubles as the URL query value, so it must stay short and stable.
 type RelatedWorkBasis string
 
@@ -25,11 +23,8 @@ const (
 	// RelatedByCollection surfaces other published works sharing the artwork's
 	// canonical current-location (museum) relation.
 	RelatedByCollection RelatedWorkBasis = "collection"
-	// RelatedByPalette surfaces published works ranked by image-derived colour
-	// signature distance. Implemented in a later serial task.
-	RelatedByPalette RelatedWorkBasis = "palette"
 	// RelatedByPeriod surfaces other artists' published works catalogued within
-	// forty years of the artwork. Implemented in a later serial task.
+	// forty years of the artwork.
 	RelatedByPeriod RelatedWorkBasis = "period"
 )
 
@@ -42,25 +37,12 @@ const DefaultRelatedWorkBasis = RelatedByArtist
 const relatedWorksLimit = 4
 
 // relatedCandidatesLimit bounds the number of candidates any basis resolves
-// before the closest-date sample is selected. Palette candidates are ranked by
-// colour-signature distance before this limit is applied, so the eight-candidate
-// set is the eight nearest profiles rather than an id-ordered prefix.
+// before the closest-date sample is selected.
 const relatedCandidatesLimit = 8
 
 // relatedPeriodWindow is the inclusive year window around the artwork's known
 // creation date used by SAME PERIOD.
 const relatedPeriodWindow = 40
-
-// colourSignatureSpace is the only signature space the resolver treats as a
-// comparable producer colour profile. Signatures in any other space are ignored
-// rather than compared across incompatible histograms.
-const colourSignatureSpace = "oklab-hcl-12x3x4"
-
-// colourSignatureBinCount is the fixed number of histogram bins in the producer
-// colour signature: 12 hue * 3 chroma * 4 lightness chromatic bins plus 4
-// neutral lightness bins. The palette distance is expressed over exactly this
-// many parameter-bound bins in SQL rather than loading candidate records.
-const colourSignatureBinCount = 148
 
 // Related-work holding link keys. artist and venue match the artwork-search
 // query parameter names (venue is the canonical collection facet); period
@@ -71,18 +53,11 @@ const (
 	relatedHoldingPeriod = "period"
 )
 
-// colourSignature is the persisted producer colour signature: a fixed-space,
-// weighted histogram over the oklab-hcl bins.
-type colourSignature struct {
-	Space string `json:"space"`
-	Bins  []int  `json:"bins"`
-}
-
 // ParseRelatedWorkBasis normalises an arbitrary query value to a basis. Unknown
 // values fall back to the default so a malformed URL never breaks the record.
 func ParseRelatedWorkBasis(raw string) RelatedWorkBasis {
 	switch RelatedWorkBasis(raw) {
-	case RelatedByArtist, RelatedByCollection, RelatedByPalette, RelatedByPeriod:
+	case RelatedByArtist, RelatedByCollection, RelatedByPeriod:
 		return RelatedWorkBasis(raw)
 	default:
 		return DefaultRelatedWorkBasis
@@ -98,7 +73,7 @@ func (b RelatedWorkBasis) IsDefault() bool {
 // filterable related-work basis. QueryKey and QueryValue are the artwork-search
 // query parameter name and value that reproduce the holding; Count is the number
 // of published works the search returns for that filter, including the current
-// artwork. Palette similarity is ranking-only and exposes no holding.
+// artwork.
 type RelatedWorkHolding struct {
 	QueryKey   string
 	QueryValue string
@@ -115,7 +90,7 @@ type RelatedWorkResult struct {
 	Holding *RelatedWorkHolding
 }
 
-// RelatedWorkResolver is the bounded read-model for the four related-work bases.
+// RelatedWorkResolver is the bounded read-model for the three related-work bases.
 // It only ever returns published records and always excludes the current
 // artwork, so the projection is safe to render without further filtering.
 type RelatedWorkResolver struct {
@@ -176,8 +151,6 @@ func (r *RelatedWorkResolver) candidates(artwork *core.Record, basis RelatedWork
 	switch basis {
 	case RelatedByCollection:
 		return r.relatedByCollection(artwork)
-	case RelatedByPalette:
-		return r.relatedByPalette(artwork)
 	case RelatedByPeriod:
 		return r.relatedByPeriod(artwork)
 	default: // RelatedByArtist
@@ -265,77 +238,6 @@ func (r *RelatedWorkResolver) canonicalPublicMuseum(artwork *core.Record) (*core
 		return nil, nil
 	}
 	return location, nil
-}
-
-// relatedByPalette returns published works ranked by the squared Euclidean
-// distance between their persisted colour signatures and the current artwork's,
-// excluding the current artwork and every candidate that shares an author.
-// A missing or invalid current signature yields no result. The distance is
-// computed in SQL over the producer's fixed bin count and the nearest candidates
-// are returned before LIMIT, so the query never loads the full profiled
-// catalogue into memory.
-func (r *RelatedWorkResolver) relatedByPalette(artwork *core.Record) ([]*core.Record, error) {
-	current, ok := parseColourSignature(artwork)
-	if !ok || len(current.Bins) != colourSignatureBinCount {
-		return nil, nil
-	}
-	authorIDs := artwork.GetStringSlice("author")
-
-	query := r.app.RecordQuery(constants.CollectionArtworks)
-	query.AndWhere(dbx.NewExp("published = true"))
-	query.AndWhere(dbx.NewExp("Artworks.id != {:current_id}", dbx.Params{"current_id": artwork.Id}))
-	query.AndWhere(validColourSignatureFilter())
-	if len(authorIDs) > 0 {
-		query.AndWhere(noAuthorOverlapExp(authorIDs))
-	}
-	query.AndWhere(publishedAuthorFilter())
-	query.AndBind(colourSignatureBinsParams(current.Bins))
-	query.OrderBy(colourDistanceOrderExpr(), "title ASC", "id ASC")
-	query.Limit(relatedCandidatesLimit)
-
-	records := []*core.Record{}
-	if err := query.All(&records); err != nil {
-		return nil, err
-	}
-
-	return records, nil
-}
-
-// validColourSignatureFilter restricts candidates to producer colour signatures
-// in the expected space with the fixed bin count. Invalid or partial signatures
-// are excluded in SQL so the distance expression never evaluates a missing bin
-// as a NULL distance that would rank ahead of valid candidates.
-func validColourSignatureFilter() dbx.Expression {
-	return dbx.NewExp(
-		"json_extract(Artworks.colour_signature, '$.space') = {:space} AND json_array_length(json_extract(Artworks.colour_signature, '$.bins')) = {:bins}",
-		dbx.Params{"space": colourSignatureSpace, "bins": colourSignatureBinCount},
-	)
-}
-
-// colourSignatureBinsParams binds the current signature's bin values under
-// stable placeholder names so the distance expression can reference them.
-func colourSignatureBinsParams(bins []int) dbx.Params {
-	params := make(dbx.Params, len(bins))
-	for i, bin := range bins {
-		params["bin_"+strconv.Itoa(i)] = bin
-	}
-	return params
-}
-
-// colourDistanceOrderExpr builds the ORDER BY expression that ranks candidates
-// by squared Euclidean distance to the current signature. Each bin is extracted
-// via json_extract and compared against a bound parameter; the expression is
-// parenthesised so dbx passes it through unquoted.
-func colourDistanceOrderExpr() string {
-	terms := make([]string, 0, colourSignatureBinCount)
-	for i := 0; i < colourSignatureBinCount; i++ {
-		idx := strconv.Itoa(i)
-		terms = append(terms, fmt.Sprintf(
-			"(json_extract(Artworks.colour_signature, '$.bins[%s]') - {:bin_%s}) * (json_extract(Artworks.colour_signature, '$.bins[%s]') - {:bin_%s})",
-			idx, idx, idx, idx,
-		))
-	}
-	return "(" + strings.Join(terms, " + ") + ") ASC"
 }
 
 // relatedByPeriod returns published works by other artists whose known creation
@@ -454,7 +356,7 @@ func authorMembershipExp(authorIDs []string) dbx.Expression {
 
 // noAuthorOverlapExp builds a NOT EXISTS condition that matches artworks whose
 // author relation shares none of the supplied ids. It is the negation of
-// authorMembershipExp, used by the palette and period bases to exclude same-author
+// authorMembershipExp, used by the period basis to exclude same-author
 // candidates.
 func noAuthorOverlapExp(authorIDs []string) dbx.Expression {
 	params := dbx.Params{}
@@ -482,8 +384,7 @@ func publishedAuthorFilter() dbx.Expression {
 }
 
 // holding returns the counted artwork-search holding for the active basis, or
-// nil for palette (ranking-only) and for bases whose current artwork lacks a
-// usable filter value.
+// nil when the current artwork lacks a usable filter value.
 func (r *RelatedWorkResolver) holding(artwork *core.Record, basis RelatedWorkBasis) (*RelatedWorkHolding, error) {
 	switch basis {
 	case RelatedByCollection:
@@ -492,7 +393,7 @@ func (r *RelatedWorkResolver) holding(artwork *core.Record, basis RelatedWorkBas
 		return r.periodHolding(artwork)
 	case RelatedByArtist:
 		return r.artistHolding(artwork)
-	default: // RelatedByPalette
+	default:
 		return nil, nil
 	}
 }
@@ -611,25 +512,4 @@ func artistFilingNameExp(filingName string) dbx.Expression {
 func likeContains(value string) string {
 	replacer := strings.NewReplacer("\\", "\\\\", "%", "\\%", "_", "\\_")
 	return "%" + replacer.Replace(value) + "%"
-}
-
-// parseColourSignature reads the stored JSON signature and reports whether it is
-// a usable producer signature in the expected space. Stored JSON is treated as
-// untrusted: malformed values, missing bins, and other spaces are rejected
-// without error.
-func parseColourSignature(record *core.Record) (colourSignature, bool) {
-	data, err := json.Marshal(record.Get("colour_signature"))
-	if err != nil {
-		return colourSignature{}, false
-	}
-
-	var signature colourSignature
-	if err := json.Unmarshal(data, &signature); err != nil {
-		return colourSignature{}, false
-	}
-	if signature.Space != colourSignatureSpace || len(signature.Bins) == 0 {
-		return colourSignature{}, false
-	}
-
-	return signature, true
 }

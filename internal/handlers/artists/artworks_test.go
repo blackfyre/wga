@@ -155,15 +155,6 @@ func TestRelatedWorkURL(t *testing.T) {
 	}
 }
 
-func TestParseArtworkRelatedBasisOmitsPalette(t *testing.T) {
-	if got := parseArtworkRelatedBasis("palette"); got != repositories.DefaultRelatedWorkBasis {
-		t.Errorf("palette basis = %q, want %q", got, repositories.DefaultRelatedWorkBasis)
-	}
-	if got := parseArtworkRelatedBasis("period"); got != repositories.RelatedByPeriod {
-		t.Errorf("period basis = %q, want %q", got, repositories.RelatedByPeriod)
-	}
-}
-
 func TestRelatedWorkBases(t *testing.T) {
 	base := "/artists/durer-artistone000001/work-workone00000001"
 	bases := relatedWorkBases(base, repositories.RelatedByCollection)

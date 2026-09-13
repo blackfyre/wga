@@ -15,10 +15,10 @@
 
 ## 3. Public relationship paths
 
-- [ ] 3.1 Add a relationship-query workflow for the four public bases: primary/co-author, current museum, image-profile palette distance, and forty-year cross-artist date proximity.
-- [ ] 3.2 Update artwork detail DTOs, templates, and handlers to render the four-basis relation row, shareable active-basis state, and honest sparse-result treatment.
+- [ ] 3.1 Add a relationship-query workflow for the three public bases: primary/co-author, current museum, and forty-year cross-artist date proximity.
+- [ ] 3.2 Update artwork detail DTOs, templates, and handlers to render the three-basis relation row, shareable active-basis state, and honest sparse-result treatment.
 - [ ] 3.3 Replace application reads of the legacy `author` relation in artwork search, artist pages, artwork routes, URL generation, and JSON-LD with the primary-author and co-author relations.
-- [ ] 3.4 Add handler and template tests for all four public bases, their ordering/exclusions, shareable query state, and sparse-result alternatives.
+- [ ] 3.4 Add handler and template tests for all three public bases, their ordering/exclusions, shareable query state, and sparse-result alternatives.
 - [ ] 3.5 Add a regression test that private-collection classifications produce no public related-artwork path.
 
 ## 4. Verification and rollout

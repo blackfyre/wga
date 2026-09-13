@@ -78,10 +78,10 @@ type ColourSwatch struct {
 	Weight int
 }
 
-// RelatedWorkBasis is one of the four related-work basis controls.
+// RelatedWorkBasis is one of the three related-work basis controls.
 type RelatedWorkBasis struct {
-	Value  string // "artist", "collection", "palette", "period"
-	Label  string // "BY ARTIST", "SAME COLLECTION", "SIMILAR PALETTE", "SAME PERIOD"
+	Value  string // "artist", "collection", "period"
+	Label  string // "BY ARTIST", "SAME COLLECTION", "SAME PERIOD"
 	URL    string // canonical URL; the default basis omits the query parameter
 	Active bool
 }

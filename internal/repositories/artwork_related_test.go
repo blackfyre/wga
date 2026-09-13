@@ -58,7 +58,6 @@ func newArtworkRelatedTestApp(t *testing.T) *tests.TestApp {
 		&core.TextField{Name: "art_period_id"},
 		&core.BoolField{Name: "published"},
 		&core.NumberField{Name: "date_start"},
-		&core.JSONField{Name: "colour_signature"},
 	)
 	if err := app.Save(artworks); err != nil {
 		t.Fatalf("save artworks: %v", err)
@@ -97,8 +96,8 @@ func TestParseRelatedWorkBasis(t *testing.T) {
 	}{
 		{"artist", RelatedByArtist},
 		{"collection", RelatedByCollection},
-		{"palette", RelatedByPalette},
 		{"period", RelatedByPeriod},
+		{"palette", DefaultRelatedWorkBasis},
 		{"", DefaultRelatedWorkBasis},
 		{"unknown", DefaultRelatedWorkBasis},
 		{"ARTIST", DefaultRelatedWorkBasis},
@@ -297,12 +296,6 @@ func TestRelatedByCollectionEmptyWhenPublicNonMuseum(t *testing.T) {
 	}
 }
 
-func TestColourSignatureBinCountMatchesProducer(t *testing.T) {
-	if colourSignatureBinCount != 148 {
-		t.Fatalf("colourSignatureBinCount = %d, want the producer's 148 bins (12*3*4 chromatic + 4 neutral)", colourSignatureBinCount)
-	}
-}
-
 func TestRelatedBasesExcludeCandidateWithOnlyUnpublishedAuthor(t *testing.T) {
 	app := newArtworkRelatedTestApp(t)
 	saveRelatedRecord(t, app, constants.CollectionArtists, "artistone000001", map[string]any{
@@ -319,22 +312,20 @@ func TestRelatedBasesExcludeCandidateWithOnlyUnpublishedAuthor(t *testing.T) {
 		"title": "Current", "author": []string{"artistone000001"}, "published": true,
 		"current_location_id": []string{relatedID("loc", 1)},
 		"date_start":          1600,
-		"colour_signature":    colourSig(0, 0, 0),
 	})
 	// Published candidate whose only author is unpublished: shares the current
-	// collection, falls within the period window, and carries a valid signature,
-	// but must be excluded from every basis.
+	// collection and falls within the period window, but must be excluded from
+	// every basis.
 	saveRelatedRecord(t, app, constants.CollectionArtworks, relatedID("work", 1), map[string]any{
 		"title": "Unpublished Author Work", "author": []string{"artisttwo000001"}, "published": true,
 		"current_location_id": []string{relatedID("loc", 1)},
 		"date_start":          1610,
-		"colour_signature":    colourSig(1, 0, 0),
 	})
 
 	current := mustFindRecord(t, app, constants.CollectionArtworks, "current00000001")
 	resolver := NewRelatedWorkResolver(app)
 
-	for _, basis := range []RelatedWorkBasis{RelatedByCollection, RelatedByPalette, RelatedByPeriod} {
+	for _, basis := range []RelatedWorkBasis{RelatedByCollection, RelatedByPeriod} {
 		got, err := resolver.Resolve(current, basis)
 		if err != nil {
 			t.Fatalf("resolve %s: %v", basis, err)
@@ -398,15 +389,6 @@ func TestResolveDefaultsInvalidBasis(t *testing.T) {
 	assertRelatedTitles(t, got.Works, []string{"Alpha Work"})
 }
 
-// colourSig returns a producer-shaped colour signature in the expected space,
-// padded to the full producer bin count so the SQL distance ranking treats it as
-// a complete signature.
-func colourSig(bins ...int) map[string]any {
-	full := make([]int, colourSignatureBinCount)
-	copy(full, bins)
-	return map[string]any{"space": "oklab-hcl-12x3x4", "bins": full}
-}
-
 func saveRelatedWorkFull(t *testing.T, app *tests.TestApp, id string, title string, authors []string, published bool, extra map[string]any) {
 	t.Helper()
 	fields := map[string]any{"title": title, "author": authors, "published": published}
@@ -414,255 +396,6 @@ func saveRelatedWorkFull(t *testing.T, app *tests.TestApp, id string, title stri
 		fields[key] = value
 	}
 	saveRelatedRecord(t, app, constants.CollectionArtworks, id, fields)
-}
-
-func TestRelatedByPaletteDistanceDefinesCandidateSet(t *testing.T) {
-	app := newArtworkRelatedTestApp(t)
-	saveRelatedRecord(t, app, constants.CollectionArtists, "artistone000001", map[string]any{
-		"name": "Dürer", "slug": "durer", "published": true,
-	})
-	saveRelatedRecord(t, app, constants.CollectionArtists, "artisttwo000001", map[string]any{
-		"name": "Other", "slug": "other", "published": true,
-	})
-
-	saveRelatedWorkFull(t, app, "current00000001", "Current Work", []string{"artistone000001"}, true, map[string]any{
-		"colour_signature": colourSig(),
-	})
-
-	// Nine candidates whose id order does not match their distance order: the
-	// first candidate by id is the farthest, while the remaining eight carry
-	// increasing distances 1..8. Distance ranking must exclude work1 (distance
-	// 9^2) and keep work9 (distance 8^2), proving the candidate set is
-	// distance-ranked rather than id-ordered.
-	saveRelatedWorkFull(t, app, relatedID("work", 1), "Farthest First", []string{"artisttwo000001"}, true, map[string]any{
-		"colour_signature": colourSig(9),
-	})
-	for i := 2; i <= 9; i++ {
-		saveRelatedWorkFull(t, app, relatedID("work", i), fmt.Sprintf("Work %d", i), []string{"artisttwo000001"}, true, map[string]any{
-			"colour_signature": colourSig(i - 1),
-		})
-	}
-
-	current := mustFindRecord(t, app, constants.CollectionArtworks, "current00000001")
-	candidates, err := NewRelatedWorkResolver(app).relatedByPalette(current)
-	if err != nil {
-		t.Fatalf("relatedByPalette: %v", err)
-	}
-	if len(candidates) != relatedCandidatesLimit {
-		t.Fatalf("candidates = %d, want %d", len(candidates), relatedCandidatesLimit)
-	}
-
-	ids := make(map[string]bool, len(candidates))
-	for _, candidate := range candidates {
-		ids[candidate.Id] = true
-	}
-	if ids[relatedID("work", 1)] {
-		t.Error("farthest candidate (distance 81) must be excluded from the eight-candidate distance-ranked set")
-	}
-	if !ids[relatedID("work", 9)] {
-		t.Error("candidate with distance 64 must be retained in the eight-candidate distance-ranked set")
-	}
-}
-
-func TestRelatedByPaletteSelectsClosestDateFromDistanceSet(t *testing.T) {
-	app := newArtworkRelatedTestApp(t)
-	saveRelatedRecord(t, app, constants.CollectionArtists, "artistone000001", map[string]any{
-		"name": "Dürer", "slug": "durer", "published": true,
-	})
-	saveRelatedRecord(t, app, constants.CollectionArtists, "artisttwo000001", map[string]any{
-		"name": "Other", "slug": "other", "published": true,
-	})
-
-	saveRelatedWorkFull(t, app, "current00000001", "Current Work", []string{"artistone000001"}, true, map[string]any{
-		"colour_signature": colourSig(),
-		"date_start":       1600,
-	})
-
-	// Eight candidates within the palette cap, with dates that do not correlate
-	// with their colour distance. The closest-date selector must return the four
-	// nearest to 1600 regardless of distance.
-	saveRelatedWorkFull(t, app, relatedID("work", 1), "At Current", []string{"artisttwo000001"}, true, map[string]any{
-		"colour_signature": colourSig(8), "date_start": 1600,
-	})
-	saveRelatedWorkFull(t, app, relatedID("work", 2), "One Year Early", []string{"artisttwo000001"}, true, map[string]any{
-		"colour_signature": colourSig(1), "date_start": 1599,
-	})
-	saveRelatedWorkFull(t, app, relatedID("work", 3), "One Year Late", []string{"artisttwo000001"}, true, map[string]any{
-		"colour_signature": colourSig(7), "date_start": 1601,
-	})
-	saveRelatedWorkFull(t, app, relatedID("work", 4), "Five Years Early", []string{"artisttwo000001"}, true, map[string]any{
-		"colour_signature": colourSig(2), "date_start": 1595,
-	})
-	saveRelatedWorkFull(t, app, relatedID("work", 5), "Ten Years Late", []string{"artisttwo000001"}, true, map[string]any{
-		"colour_signature": colourSig(3), "date_start": 1610,
-	})
-	saveRelatedWorkFull(t, app, relatedID("work", 6), "Twenty Years Late", []string{"artisttwo000001"}, true, map[string]any{
-		"colour_signature": colourSig(4), "date_start": 1620,
-	})
-	saveRelatedWorkFull(t, app, relatedID("work", 7), "Thirty Years Late", []string{"artisttwo000001"}, true, map[string]any{
-		"colour_signature": colourSig(5), "date_start": 1630,
-	})
-	saveRelatedWorkFull(t, app, relatedID("work", 8), "No Date", []string{"artisttwo000001"}, true, map[string]any{
-		"colour_signature": colourSig(6),
-	})
-
-	current := mustFindRecord(t, app, constants.CollectionArtworks, "current00000001")
-	got, err := NewRelatedWorkResolver(app).Resolve(current, RelatedByPalette)
-	if err != nil {
-		t.Fatalf("resolve: %v", err)
-	}
-
-	// Closest to 1600: At Current (0), One Year Early (1), One Year Late (1),
-	// Five Years Early (5). Ties at distance 1 break to the earlier date first.
-	assertRelatedTitles(t, got.Works, []string{"At Current", "One Year Early", "One Year Late", "Five Years Early"})
-}
-
-func TestRelatedByPaletteDeterministicTieBreak(t *testing.T) {
-	app := newArtworkRelatedTestApp(t)
-	saveRelatedRecord(t, app, constants.CollectionArtists, "artistone000001", map[string]any{
-		"name": "Dürer", "slug": "durer", "published": true,
-	})
-	saveRelatedRecord(t, app, constants.CollectionArtists, "artisttwo000001", map[string]any{
-		"name": "Other", "slug": "other", "published": true,
-	})
-
-	saveRelatedWorkFull(t, app, "current00000001", "Current Work", []string{"artistone000001"}, true, map[string]any{
-		"colour_signature": colourSig(0, 0, 0),
-	})
-	// Equal distance; order falls back to title.
-	saveRelatedWorkFull(t, app, relatedID("work", 1), "Beta Equal", []string{"artisttwo000001"}, true, map[string]any{
-		"colour_signature": colourSig(1, 0, 0),
-	})
-	saveRelatedWorkFull(t, app, relatedID("work", 2), "Alpha Equal", []string{"artisttwo000001"}, true, map[string]any{
-		"colour_signature": colourSig(1, 0, 0),
-	})
-
-	current := mustFindRecord(t, app, constants.CollectionArtworks, "current00000001")
-	got, err := NewRelatedWorkResolver(app).Resolve(current, RelatedByPalette)
-	if err != nil {
-		t.Fatalf("resolve: %v", err)
-	}
-	assertRelatedTitles(t, got.Works, []string{"Alpha Equal", "Beta Equal"})
-}
-
-func TestRelatedByPaletteExcludesSelfAndSameAuthor(t *testing.T) {
-	app := newArtworkRelatedTestApp(t)
-	saveRelatedRecord(t, app, constants.CollectionArtists, "artistone000001", map[string]any{
-		"name": "Dürer", "slug": "durer", "published": true,
-	})
-	saveRelatedRecord(t, app, constants.CollectionArtists, "artisttwo000001", map[string]any{
-		"name": "Other", "slug": "other", "published": true,
-	})
-
-	saveRelatedWorkFull(t, app, "current00000001", "Current Work", []string{"artistone000001"}, true, map[string]any{
-		"colour_signature": colourSig(0, 0, 0),
-	})
-	// Same author as current: must be excluded even with a near signature.
-	saveRelatedWorkFull(t, app, relatedID("work", 1), "Same Author", []string{"artistone000001"}, true, map[string]any{
-		"colour_signature": colourSig(1, 0, 0),
-	})
-	// Different author: included.
-	saveRelatedWorkFull(t, app, relatedID("work", 2), "Other Author", []string{"artisttwo000001"}, true, map[string]any{
-		"colour_signature": colourSig(2, 0, 0),
-	})
-
-	current := mustFindRecord(t, app, constants.CollectionArtworks, "current00000001")
-	got, err := NewRelatedWorkResolver(app).Resolve(current, RelatedByPalette)
-	if err != nil {
-		t.Fatalf("resolve: %v", err)
-	}
-	assertRelatedTitles(t, got.Works, []string{"Other Author"})
-}
-
-func TestRelatedByPaletteExcludesUnpublished(t *testing.T) {
-	app := newArtworkRelatedTestApp(t)
-	saveRelatedRecord(t, app, constants.CollectionArtists, "artistone000001", map[string]any{
-		"name": "Dürer", "slug": "durer", "published": true,
-	})
-	saveRelatedRecord(t, app, constants.CollectionArtists, "artisttwo000001", map[string]any{
-		"name": "Other", "slug": "other", "published": true,
-	})
-
-	saveRelatedWorkFull(t, app, "current00000001", "Current Work", []string{"artistone000001"}, true, map[string]any{
-		"colour_signature": colourSig(0, 0, 0),
-	})
-	saveRelatedWorkFull(t, app, relatedID("work", 1), "Hidden Work", []string{"artisttwo000001"}, false, map[string]any{
-		"colour_signature": colourSig(1, 0, 0),
-	})
-
-	current := mustFindRecord(t, app, constants.CollectionArtworks, "current00000001")
-	got, err := NewRelatedWorkResolver(app).Resolve(current, RelatedByPalette)
-	if err != nil {
-		t.Fatalf("resolve: %v", err)
-	}
-	if len(got.Works) != 0 {
-		t.Fatalf("works = %d, want 0 (unpublished candidate)", len(got.Works))
-	}
-}
-
-func TestRelatedByPaletteNoResultForMissingOrInvalidSignature(t *testing.T) {
-	app := newArtworkRelatedTestApp(t)
-	saveRelatedRecord(t, app, constants.CollectionArtists, "artistone000001", map[string]any{
-		"name": "Dürer", "slug": "durer", "published": true,
-	})
-	saveRelatedRecord(t, app, constants.CollectionArtists, "artisttwo000001", map[string]any{
-		"name": "Other", "slug": "other", "published": true,
-	})
-
-	// Current without a signature.
-	saveRelatedWork(t, app, "current00000001", "No Signature", []string{"artistone000001"}, true)
-	// Current with an invalid signature shape.
-	saveRelatedWorkFull(t, app, "invalid00000001", "Bad Shape", []string{"artistone000001"}, true, map[string]any{
-		"colour_signature": map[string]any{"foo": "bar"},
-	})
-	// Current with a different space.
-	saveRelatedWorkFull(t, app, "wrongsp00000001", "Wrong Space", []string{"artistone000001"}, true, map[string]any{
-		"colour_signature": map[string]any{"space": "other-space", "bins": []int{1, 2, 3}},
-	})
-	// A valid candidate that must never be returned for an invalid current.
-	saveRelatedWorkFull(t, app, relatedID("work", 1), "Candidate", []string{"artisttwo000001"}, true, map[string]any{
-		"colour_signature": colourSig(1, 0, 0),
-	})
-
-	for _, id := range []string{"current00000001", "invalid00000001", "wrongsp00000001"} {
-		current := mustFindRecord(t, app, constants.CollectionArtworks, id)
-		got, err := NewRelatedWorkResolver(app).Resolve(current, RelatedByPalette)
-		if err != nil {
-			t.Fatalf("resolve %s: %v", id, err)
-		}
-		if len(got.Works) != 0 {
-			t.Errorf("works for %s = %d, want 0 (invalid/missing signature)", id, len(got.Works))
-		}
-	}
-}
-
-func TestRelatedByPaletteSkipsInvalidCandidateSignature(t *testing.T) {
-	app := newArtworkRelatedTestApp(t)
-	saveRelatedRecord(t, app, constants.CollectionArtists, "artistone000001", map[string]any{
-		"name": "Dürer", "slug": "durer", "published": true,
-	})
-	saveRelatedRecord(t, app, constants.CollectionArtists, "artisttwo000001", map[string]any{
-		"name": "Other", "slug": "other", "published": true,
-	})
-
-	saveRelatedWorkFull(t, app, "current00000001", "Current Work", []string{"artistone000001"}, true, map[string]any{
-		"colour_signature": colourSig(0, 0, 0),
-	})
-	// Candidate with an invalid signature must be skipped.
-	saveRelatedWorkFull(t, app, relatedID("work", 1), "Invalid Candidate", []string{"artisttwo000001"}, true, map[string]any{
-		"colour_signature": map[string]any{"space": "oklab-hcl-12x3x4"},
-	})
-	// Candidate with a valid signature must be returned.
-	saveRelatedWorkFull(t, app, relatedID("work", 2), "Valid Candidate", []string{"artisttwo000001"}, true, map[string]any{
-		"colour_signature": colourSig(1, 0, 0),
-	})
-
-	current := mustFindRecord(t, app, constants.CollectionArtworks, "current00000001")
-	got, err := NewRelatedWorkResolver(app).Resolve(current, RelatedByPalette)
-	if err != nil {
-		t.Fatalf("resolve: %v", err)
-	}
-	assertRelatedTitles(t, got.Works, []string{"Valid Candidate"})
 }
 
 func TestRelatedByPeriodReturnsCrossArtistWithinWindow(t *testing.T) {
@@ -1075,26 +808,13 @@ func TestRelatedHoldingPeriodCountAndNilForMissing(t *testing.T) {
 	}
 }
 
-func TestRelatedHoldingNilForPaletteAndUnusable(t *testing.T) {
+func TestRelatedHoldingNilForUnusableArtist(t *testing.T) {
 	app := newArtworkRelatedTestApp(t)
 	saveRelatedRecord(t, app, constants.CollectionArtists, "artistone000001", map[string]any{
 		"name": "Dürer", "slug": "durer", "published": true, "filing_name": "Dürer, Albrecht",
 	})
 
 	resolver := NewRelatedWorkResolver(app)
-
-	// Palette holding is always nil, even with a valid signature.
-	saveRelatedWorkFull(t, app, "current00000001", "Current Work", []string{"artistone000001"}, true, map[string]any{
-		"colour_signature": colourSig(),
-	})
-	paletteCurrent := mustFindRecord(t, app, constants.CollectionArtworks, "current00000001")
-	palette, err := resolver.Resolve(paletteCurrent, RelatedByPalette)
-	if err != nil {
-		t.Fatalf("resolve palette: %v", err)
-	}
-	if palette.Holding != nil {
-		t.Errorf("palette holding = %+v, want nil", palette.Holding)
-	}
 
 	// Artist with no author -> nil holding.
 	saveRelatedWork(t, app, "noauthor0000001", "No Author", []string{}, true)
