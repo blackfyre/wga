@@ -7,13 +7,15 @@ import (
 	"testing"
 
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
+	templUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
 )
 
 func renderArtworkSearchResults(t *testing.T, view ArtworkSearchResultsView) string {
 	t.Helper()
 
 	var output bytes.Buffer
-	if err := ArtworkSearchResults(view).Render(context.Background(), &output); err != nil {
+	ctx := templUtils.WithItineraryProjection(context.Background(), "test-csrf", dto.ItineraryTrayView{}, nil)
+	if err := ArtworkSearchResults(view).Render(ctx, &output); err != nil {
 		t.Fatalf("render artwork search results: %v", err)
 	}
 
@@ -172,6 +174,10 @@ func TestArtworkSearchResultsRendersGridView(t *testing.T) {
 		Thumb:     "/api/files/artworks/123/image.jpg",
 		Title:     "Sample Work",
 		Technique: "Oil on canvas",
+		Date:      "1600–1602",
+		School:    "Dutch",
+		Form:      "Painting",
+		Type:      "Fresco",
 		Artist:    dto.Artist{FilingName: "Artist, Sample", ShortName: "Sample"},
 	}}
 	rendered := renderArtworkSearchResults(t, view)
@@ -185,6 +191,14 @@ func TestArtworkSearchResultsRendersGridView(t *testing.T) {
 	if !strings.Contains(rendered, `data-study-board-add="work00000000001"`) {
 		t.Error("expected a separate Study Board grid action")
 	}
+	for _, expected := range []string{"Artist, Sample · 1600–1602", "Dutch · Fresco", "ADD TO ITINERARY +", `data-artwork-workspace-actions`} {
+		if !strings.Contains(rendered, expected) {
+			t.Errorf("grid result missing %q", expected)
+		}
+	}
+	if strings.Contains(rendered, "Oil on canvas") {
+		t.Error("grid result must not substitute technique for the required classification metadata")
+	}
 }
 
 func TestArtworkSearchResultsRendersListView(t *testing.T) {
@@ -196,6 +210,10 @@ func TestArtworkSearchResultsRendersListView(t *testing.T) {
 		Thumb:     "/api/files/artworks/123/image.jpg",
 		Title:     "Sample Work",
 		Technique: "Oil on canvas",
+		Date:      "1600–1602",
+		School:    "Dutch",
+		Form:      "Painting",
+		Type:      "Fresco",
 		Artist:    dto.Artist{FilingName: "Artist, Sample", ShortName: "Sample"},
 	}}
 	rendered := renderArtworkSearchResults(t, view)
@@ -208,6 +226,14 @@ func TestArtworkSearchResultsRendersListView(t *testing.T) {
 	}
 	if !strings.Contains(rendered, `data-study-board-add="work00000000001"`) {
 		t.Error("expected a separate Study Board row action")
+	}
+	for _, expected := range []string{"Artist, Sample · 1600–1602", "SCHOOL", "Dutch", "FORM", "Painting", "TYPE", "Fresco", "ADD TO ITINERARY +", "hidden w-28", "lg:block"} {
+		if !strings.Contains(rendered, expected) {
+			t.Errorf("list result missing %q", expected)
+		}
+	}
+	if strings.Contains(rendered, "Oil on canvas") {
+		t.Error("dense result must not substitute technique for school, form, or type")
 	}
 }
 

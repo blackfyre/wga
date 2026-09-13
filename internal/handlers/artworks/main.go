@@ -383,6 +383,18 @@ func buildArtworkSearchResults(app *pocketbase.PocketBase, filters *filters, dua
 	if err != nil {
 		return pages.ArtworkSearchResultsView{}, err
 	}
+	schoolsByArtwork, err := artworkRelationLabels(app, records, "school", constants.CollectionSchools)
+	if err != nil {
+		return pages.ArtworkSearchResultsView{}, err
+	}
+	formsByArtwork, err := artworkRelationLabels(app, records, "form", constants.CollectionArtForms)
+	if err != nil {
+		return pages.ArtworkSearchResultsView{}, err
+	}
+	typesByArtwork, err := artworkRelationLabels(app, records, "type", constants.CollectionArtTypes)
+	if err != nil {
+		return pages.ArtworkSearchResultsView{}, err
+	}
 
 	for _, v := range records {
 		artistIds := v.GetStringSlice("author")
@@ -414,6 +426,10 @@ func buildArtworkSearchResults(app *pocketbase.PocketBase, filters *filters, dua
 			Comment:   v.GetString("comment"),
 			Title:     v.GetString("title"),
 			Technique: v.GetString("technique"),
+			Date:      artworkSearchDate(v),
+			School:    schoolsByArtwork[v.Id],
+			Form:      formsByArtwork[v.Id],
+			Type:      typesByArtwork[v.Id],
 			Id:        v.GetString("id"),
 			Artist: dto.Artist{
 				Id:         artist.GetString("id"),
@@ -442,6 +458,70 @@ func buildArtworkSearchResults(app *pocketbase.PocketBase, filters *filters, dua
 	results.Pagination = string(pagination.Render())
 
 	return results, nil
+}
+
+func artworkRelationLabels(app core.App, artworks []*core.Record, field string, collection string) (map[string]string, error) {
+	seen := make(map[string]struct{})
+	ids := make([]string, 0)
+	for _, artwork := range artworks {
+		for _, id := range artwork.GetStringSlice(field) {
+			if _, exists := seen[id]; exists {
+				continue
+			}
+			seen[id] = struct{}{}
+			ids = append(ids, id)
+		}
+	}
+	if len(ids) == 0 {
+		return map[string]string{}, nil
+	}
+	records, err := app.FindRecordsByIds(collection, ids)
+	if err != nil {
+		return nil, err
+	}
+	labels := make(map[string]string, len(records))
+	for _, record := range records {
+		labels[record.Id] = strings.TrimSpace(record.GetString("name"))
+	}
+	byArtwork := make(map[string]string, len(artworks))
+	for _, artwork := range artworks {
+		values := make([]string, 0, len(artwork.GetStringSlice(field)))
+		for _, id := range artwork.GetStringSlice(field) {
+			if label := labels[id]; label != "" {
+				values = append(values, label)
+			}
+		}
+		byArtwork[artwork.Id] = strings.Join(values, ", ")
+	}
+	return byArtwork, nil
+}
+
+func artworkSearchDate(artwork *core.Record) string {
+	if timeframe := strings.TrimSpace(artwork.GetString("timeframe_text")); timeframe != "" {
+		return timeframe
+	}
+	start := artwork.GetInt("date_start")
+	if start <= 0 {
+		start = artwork.GetInt("year")
+	}
+	if start <= 0 {
+		return ""
+	}
+	end := artwork.GetInt("date_end")
+	if end <= 0 {
+		end = start
+	}
+	value := strconv.Itoa(start)
+	if end != start {
+		value += "–" + strconv.Itoa(end)
+	}
+	if qualifier := strings.TrimSpace(artwork.GetString("date_qualifier")); qualifier != "" {
+		return qualifier + " " + value
+	}
+	if artwork.GetBool("is_circa") {
+		return "circa " + value
+	}
+	return value
 }
 
 func artworkSearchPushURL(requestPath string, canonical string) string {

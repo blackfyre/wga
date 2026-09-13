@@ -3,6 +3,7 @@ package components
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -128,6 +129,32 @@ func TestAddToItineraryActionVariants(t *testing.T) {
 			label:     "ITINERARY IS FULL",
 			dimension: "h-12",
 		},
+		{
+			name:      "search block available",
+			variant:   AddToItinerarySearchBlock,
+			wrapper:   "w-full",
+			button:    base + " w-full text-xs tracking-[1.5px] px-6 h-12 border-control hover:border-wga-accent hover:bg-wga-accent-tint hover:text-wga-accent",
+			label:     "ADD TO ITINERARY +",
+			dimension: "h-12",
+		},
+		{
+			name:      "search block added",
+			variant:   AddToItinerarySearchBlock,
+			added:     true,
+			wrapper:   "w-full",
+			button:    base + " w-full text-xs tracking-[1.5px] px-6 h-12 border-wga-ink/20 bg-wga-ink/6 text-faint-2",
+			label:     "IN ITINERARY ✓",
+			dimension: "h-12",
+		},
+		{
+			name:      "search block full",
+			variant:   AddToItinerarySearchBlock,
+			full:      true,
+			wrapper:   "w-full",
+			button:    base + " w-full text-xs tracking-[1.5px] px-6 h-12 border-wga-ink/25 text-faint-2",
+			label:     "ITINERARY FULL",
+			dimension: "h-12",
+		},
 	}
 
 	for _, tc := range cases {
@@ -155,11 +182,23 @@ func TestAddToItineraryActionVariants(t *testing.T) {
 			}
 
 			if tc.added || tc.full {
-				if !strings.Contains(rendered, "disabled") {
+				if !strings.Contains(rendered, " disabled") {
 					t.Errorf("variant %s in added/full state must be disabled", tc.variant)
 				}
-			} else if strings.Contains(rendered, "disabled") {
+			} else if strings.Contains(rendered, " disabled") {
 				t.Errorf("available variant %s must not be disabled", tc.variant)
+			}
+			if tc.variant == AddToItinerarySearchBlock {
+				state := addToItineraryState(tc.added, tc.full)
+				for _, expected := range []string{
+					`data-itinerary-search-add="` + addTestArtworkID + `"`,
+					`data-itinerary-state="` + state + `"`,
+					`aria-disabled="` + fmt.Sprint(tc.added || tc.full) + `"`,
+				} {
+					if !strings.Contains(rendered, expected) {
+						t.Errorf("search variant state does not contain %q", expected)
+					}
+				}
 			}
 
 			if tc.dimension == "" {
@@ -177,7 +216,7 @@ func TestAddToItineraryActionVariants(t *testing.T) {
 // same ordinary POST fallback and HTMX contract with the unset sentinel and
 // never opts out of inherited swapping.
 func TestAddToItineraryActionFormContract(t *testing.T) {
-	for _, variant := range []AddToItineraryVariant{AddToItineraryCompact, AddToItineraryRow, AddToItineraryBlock} {
+	for _, variant := range []AddToItineraryVariant{AddToItineraryCompact, AddToItineraryRow, AddToItineraryBlock, AddToItinerarySearchBlock} {
 		t.Run(string(variant), func(t *testing.T) {
 			ctx := tmplUtils.WithItineraryProjection(context.Background(), "csrf-token", dto.ItineraryTrayView{}, map[string]bool{})
 			rendered := renderAddAction(t, ctx, variant)
@@ -189,6 +228,7 @@ func TestAddToItineraryActionFormContract(t *testing.T) {
 				`hx-target="#itinerary-tray"`,
 				`hx-swap="outerHTML"`,
 				`hx-select="unset"`,
+				`data-itinerary-add-form="` + addTestArtworkID + `"`,
 				`name="artwork_id" value="` + addTestArtworkID + `"`,
 				`name="_csrf" value="csrf-token"`,
 			} {

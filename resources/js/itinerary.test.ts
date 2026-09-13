@@ -1,8 +1,16 @@
 import { expect, test } from "bun:test";
 import {
+	itinerarySearchControlState,
 	registerItineraryHelpers,
 	registerItineraryKeyboard,
 } from "./itinerary";
+
+test("derives state-aware artwork-search itinerary controls", () => {
+	expect(itinerarySearchControlState("available", 2, 15, true)).toBe("added");
+	expect(itinerarySearchControlState("available", 15, 15, false)).toBe("full");
+	expect(itinerarySearchControlState("full", 14, 15, false)).toBe("available");
+	expect(itinerarySearchControlState("added", 15, 15, false)).toBe("added");
+});
 
 type KeyEvent = {
 	key: string;

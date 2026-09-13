@@ -309,9 +309,10 @@ func TestBuildArtworkSearchViewFiltersBySchoolFormAndTechnique(t *testing.T) {
 	saveSearchTaxonomy(t, app, "schools", "schoolitali0001", "italian", "Italian")
 	saveSearchTaxonomy(t, app, "art_forms", "formpaint000001", "painting", "Painting")
 	saveSearchTaxonomy(t, app, "art_forms", "formsculp000001", "sculpture", "Sculpture")
+	saveSearchTaxonomy(t, app, "art_types", "typefresco00001", "fresco", "Fresco")
 	saveSearchArtist(t, app, "artistone000001", "Artist One")
 
-	saveSearchArtwork(t, app, searchArtworkSeed{id: "workfresco00001", title: "Fresco Work", authors: []string{"artistone000001"}, form: "formpaint000001", school: "schooldutch0001", technique: "Fresco", year: 1600, published: true})
+	saveSearchArtwork(t, app, searchArtworkSeed{id: "workfresco00001", title: "Fresco Work", authors: []string{"artistone000001"}, form: "formpaint000001", typeSlug: "typefresco00001", school: "schooldutch0001", technique: "Fresco", year: 1600, dateStart: 1598, dateEnd: 1602, published: true})
 	saveSearchArtwork(t, app, searchArtworkSeed{id: "workoils0000001", title: "Oil Work", authors: []string{"artistone000001"}, form: "formsculp000001", school: "schoolitali0001", technique: "Oil on canvas", year: 1700, published: true})
 
 	view, canonical, err := buildArtworkSearchView(app, neturl.Values{"art_school": {"dutch"}, "art_form": {"painting"}, "technique": {"Fresco"}}, 1, 16)
@@ -326,6 +327,10 @@ func TestBuildArtworkSearchViewFiltersBySchoolFormAndTechnique(t *testing.T) {
 	}
 	if view.Results.Artworks[0].Title != "Fresco Work" {
 		t.Errorf("filtered artwork = %q, want Fresco Work", view.Results.Artworks[0].Title)
+	}
+	projected := view.Results.Artworks[0]
+	if projected.Artist.FilingName != "Artist One" || projected.Date != "1598–1602" || projected.School != "Dutch" || projected.Form != "Painting" || projected.Type != "Fresco" {
+		t.Errorf("result projection = %#v, want filing artist, date, school, form, and type", projected)
 	}
 }
 

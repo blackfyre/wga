@@ -20,6 +20,8 @@ import (
 templ ItineraryTray(tray dto.ItineraryTrayView, oob bool) {
 	<div
 		id="itinerary-tray"
+		data-itinerary-count={ strconv.Itoa(tray.Count) }
+		data-itinerary-capacity={ strconv.Itoa(itineraryworkflow.MaxStops) }
 		if oob {
 			hx-swap-oob="true"
 		}

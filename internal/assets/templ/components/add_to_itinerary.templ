@@ -1,6 +1,8 @@
 package components
 
 import (
+	"fmt"
+
 	"github.com/blackfyre/wga/internal/assets/templ/utils"
 	itineraryworkflow "github.com/blackfyre/wga/internal/itineraries"
 )
@@ -11,7 +13,7 @@ import (
 // The button is supplied as children so each presentation keeps its own label,
 // classes, and disabled semantics without duplicating the form boundary.
 templ addToItineraryForm(artworkID string, csrf string, formClass string) {
-	<form method="post" action="/itineraries/draft/add" class={ formClass } hx-post="/itineraries/draft/add" hx-target="#itinerary-tray" hx-swap="outerHTML" hx-select="unset">
+	<form method="post" action="/itineraries/draft/add" class={ formClass } hx-post="/itineraries/draft/add" hx-target="#itinerary-tray" hx-swap="outerHTML" hx-select="unset" data-itinerary-add-form={ artworkID }>
 		<input type="hidden" name="artwork_id" value={ artworkID }/>
 		<input type="hidden" name="_csrf" value={ csrf }/>
 		{ children... }
@@ -47,7 +49,21 @@ templ AddToItineraryAction(artworkID string, variant AddToItineraryVariant) {
 		{{ added := utils.GetItineraryAdded(ctx, artworkID) }}
 		{{ full := utils.GetItineraryTray(ctx).Count >= itineraryworkflow.MaxStops }}
 		@addToItineraryForm(artworkID, csrf, addToItineraryFormClass(normalized)) {
-			<button type="submit" disabled?={ added || full } class={ addToItineraryButtonClass(normalized, added, full) }>{ addToItineraryButtonLabel(normalized, added, full) }</button>
+			if normalized == AddToItinerarySearchBlock {
+				<button
+					type="submit"
+					disabled?={ added || full }
+					aria-disabled={ fmt.Sprint(added || full) }
+					class={ addToItineraryButtonClass(normalized, added, full) }
+					data-itinerary-search-add={ artworkID }
+					data-itinerary-state={ addToItineraryState(added, full) }
+					data-itinerary-label-available="ADD TO ITINERARY +"
+					data-itinerary-label-added="IN ITINERARY ✓"
+					data-itinerary-label-full="ITINERARY FULL"
+				>{ addToItineraryButtonLabel(normalized, added, full) }</button>
+			} else {
+				<button type="submit" disabled?={ added || full } class={ addToItineraryButtonClass(normalized, added, full) }>{ addToItineraryButtonLabel(normalized, added, full) }</button>
+			}
 		}
 	}
 }

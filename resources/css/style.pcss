@@ -1,6 +1,5 @@
 @charset "UTF-8";
 @import "tailwindcss";
-
 @import "animate.css";
 @import "../../node_modules/trix/dist/trix.css";
 @import "../../node_modules/vanilla-cookieconsent/dist/cookieconsent.css";
@@ -8,6 +7,18 @@
 @source "../../internal/assets/templ";
 @source "../../resources/js";
 @plugin "@tailwindcss/typography";
+
+.wga-search-skeleton {
+	display: none;
+}
+
+.wga-search-skeleton.htmx-request {
+	display: block;
+}
+
+.wga-search-skeleton.htmx-request + .wga-search-current {
+	display: none;
+}
 
 .wga-chip-choice:has(input:checked) {
 	border-color: var(--wga-accent-bg);

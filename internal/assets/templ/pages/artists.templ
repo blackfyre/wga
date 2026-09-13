@@ -71,7 +71,7 @@ templ ArtistsBlock(c ArtistsView) {
 	<head>
 		<title>{ utils.GetTitle(ctx) }</title>
 	</head>
-	<section id="artists" class="container mx-auto px-4 pb-20 pt-10 md:px-0 wga-enter">
+	<section id="artists" hx-indicator="#artist-search-skeleton" class="container mx-auto px-4 pb-20 pt-10 md:px-0 wga-enter">
 		@components.PageHead("01 — ARTIST INDEX", "Artists",
 			"Painters, sculptors and architects in the collection. Browse alphabetically, or filter by school and period.")
 		<nav class="mt-10 flex flex-wrap gap-[2px] border-b border-wga-ink/15 pb-5" aria-label="Filter artists by letter">
@@ -160,6 +160,8 @@ templ ArtistsBlock(c ArtistsView) {
 				<button type="submit" class="wga-button wga-button-primary mt-4 font-mono text-(length:--t-11) tracking-[1px]">APPLY FILTERS</button>
 			</noscript>
 		</form>
+		@components.SearchResultSkeleton("artist-search-skeleton", c.View)
+		<div class="wga-search-current">
 		<div class="flex items-baseline justify-between py-4 pb-7">
 			<p class="font-mono text-xs text-muted" aria-live="polite">
 				{ fmt.Sprintf("%d ARTISTS", c.Total) } { c.FilterNote }
@@ -285,6 +287,7 @@ templ ArtistsBlock(c ArtistsView) {
 		if c.Jsonld != "" {
 			@templ.Raw(c.Jsonld)
 		}
+		</div>
 	</section>
 }
 

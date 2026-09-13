@@ -109,6 +109,127 @@ test("search cards request portrait thumbnails", async ({ page }) => {
 	).toHaveAttribute("src", /thumb=500x0/);
 });
 
+test("grid results expose reference metadata and independent workspace actions", async ({
+	page,
+}) => {
+	await page.goto("/artworks?art_school=bohemian");
+	await expectArtworkResults(page);
+	const card = page
+		.locator("#artwork-search-results [data-view='grid'] article")
+		.first();
+	await expect(
+		card.locator('[data-artwork-result-meta="identity"]'),
+	).not.toHaveText("NOT RECORDED");
+	await expect(
+		card.locator('[data-artwork-result-meta="classification"]'),
+	).not.toHaveText("NOT RECORDED");
+	const actions = card.locator("[data-artwork-workspace-actions]");
+	await expect(actions.locator("button")).toHaveCount(2);
+
+	const itinerary = actions.locator("[data-itinerary-search-add]");
+	await expect(itinerary).toHaveText("ADD TO ITINERARY +");
+	await itinerary.hover();
+	await expect(itinerary).toHaveClass(/hover:bg-wga-accent-tint/);
+	await itinerary.focus();
+	const added = page.waitForResponse(
+		(response) => new URL(response.url()).pathname === "/itineraries/draft/add",
+	);
+	await itinerary.press("Enter");
+	expect((await added).ok()).toBe(true);
+	await expect(itinerary).toBeDisabled();
+	await expect(itinerary).toHaveText("IN ITINERARY ✓");
+	expect(new URL(page.url()).pathname).toBe("/artworks");
+	await expect(page.locator("#itinerary-tray")).toContainText("1 OF 15");
+	await itinerary.evaluate((button: HTMLButtonElement) => button.click());
+	await expect(page.locator("#itinerary-tray")).toContainText("1 OF 15");
+
+	const studyBoard = actions.locator("[data-study-board-add]");
+	await expect(studyBoard).toHaveText("ADD TO STUDY BOARD +");
+	await studyBoard.click();
+	await expect(studyBoard).toBeDisabled();
+	await expect(studyBoard).toHaveText("ON STUDY BOARD ✓");
+	expect(new URL(page.url()).pathname).toBe("/artworks");
+	await studyBoard.evaluate((button: HTMLButtonElement) => button.click());
+	expect(
+		await page.evaluate(
+			() => window.localStorage.getItem("wga-study-board")?.split(",").length,
+		),
+	).toBe(1);
+});
+
+test("dense results expose desktop columns and retain actions responsively", async ({
+	page,
+}) => {
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await page.goto("/artworks?art_school=bohemian&view=list");
+	const row = page
+		.locator("#artwork-search-results [data-view='list'] li")
+		.first();
+	for (const label of ["SCHOOL", "FORM", "TYPE"]) {
+		await expect(row.getByText(label, { exact: true })).toBeVisible();
+	}
+	await expect(
+		row.locator("[data-artwork-workspace-actions] button"),
+	).toHaveCount(2);
+
+	await page.setViewportSize({ width: 800, height: 900 });
+	for (const label of ["SCHOOL", "FORM", "TYPE"]) {
+		await expect(row.getByText(label, { exact: true })).toBeHidden();
+	}
+	await expect(row.locator("[data-artwork-workspace-actions]")).toBeVisible();
+});
+
+test("artwork and artist searches show nine inert placeholders across repeated swaps", async ({
+	page,
+}) => {
+	await page.goto("/artworks?art_school=bohemian");
+	await page.route(/\/artworks\?.*/, async (route) => {
+		await new Promise((resolve) => setTimeout(resolve, 700));
+		await route.continue();
+	});
+	const artworkSkeleton = page.locator("#artwork-search-skeleton");
+	const artworkCount = page.locator(
+		"#artwork-search-results p[aria-live='polite']",
+	);
+	const initialArtworkCount = await artworkCount.textContent();
+	await artworkSearchForm(page).getByRole("searchbox").fill("zzzzzz");
+	await expect(artworkSkeleton).toBeVisible();
+	await expect(artworkSkeleton).toHaveAttribute("aria-hidden", "true");
+	await expect(artworkSkeleton.locator(":scope > div > div")).toHaveCount(9);
+	await expect(
+		page.locator("#search-result-container .wga-search-current"),
+	).toBeHidden();
+	await expect(artworkSkeleton).toBeHidden({ timeout: 30000 });
+	await expect
+		.poll(() => artworkCount.textContent())
+		.not.toBe(initialArtworkCount);
+	const firstArtworkCount = await artworkCount.textContent();
+	await artworkSearchForm(page).getByRole("searchbox").fill("a");
+	await expect(artworkSkeleton).toBeVisible();
+	await expect(artworkSkeleton).toBeHidden({ timeout: 30000 });
+	await expect
+		.poll(() => artworkCount.textContent())
+		.not.toBe(firstArtworkCount);
+
+	await page.goto("/artists");
+	await page.route(/\/artists\?.*/, async (route) => {
+		await new Promise((resolve) => setTimeout(resolve, 700));
+		await route.continue();
+	});
+	const artistSkeleton = page.locator("#artist-search-skeleton");
+	const artistCount = page.locator("#artists p[aria-live='polite']");
+	const initialArtistCount = await artistCount.textContent();
+	await page.locator("#artist-filters").getByRole("searchbox").fill("zzzzzz");
+	await expect(artistSkeleton).toBeVisible();
+	await expect(artistSkeleton).toHaveAttribute("aria-hidden", "true");
+	await expect(artistSkeleton.locator(":scope > div > div")).toHaveCount(9);
+	await expect(page.locator("#artists .wga-search-current")).toBeHidden();
+	await expect(artistSkeleton).toBeHidden({ timeout: 30000 });
+	await expect
+		.poll(() => artistCount.textContent())
+		.not.toBe(initialArtistCount);
+});
+
 test("artform search", async ({ page }) => {
 	await page.goto("/artworks");
 	await chooseFilter(page, "art_form", "architecture");
@@ -172,10 +293,19 @@ test("artwork search form works without JavaScript", async ({ browser }) => {
 
 	await page.goto("/artworks");
 	const form = artworkSearchForm(page);
-	await form.getByRole("searchbox").fill("Synthetic Artwork 01-01");
+	await form.getByRole("searchbox").fill("a");
 	await form.getByRole("button", { name: "APPLY FILTERS" }).click();
 
-	await expect(page).toHaveURL(/\/artworks\?.*q=Synthetic\+Artwork\+01-01/);
+	await expect(page).toHaveURL(/\/artworks\?.*q=a/);
 	await expectArtworkResults(page);
+
+	await page.goto("/artists");
+	const artistForm = page.locator("#artist-filters");
+	await artistForm.getByRole("searchbox").fill("a");
+	await artistForm.getByRole("button", { name: "APPLY FILTERS" }).click();
+	await expect(page).toHaveURL(/\/artists\?.*q=a/);
+	await expect(page.locator("#artists .wga-search-current")).toContainText(
+		"ARTISTS",
+	);
 	await context.close();
 });

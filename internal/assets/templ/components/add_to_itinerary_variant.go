@@ -12,13 +12,15 @@ const (
 	AddToItineraryCompact AddToItineraryVariant = "compact"
 	AddToItineraryRow     AddToItineraryVariant = "row"
 	AddToItineraryBlock   AddToItineraryVariant = "block"
+	// AddToItinerarySearchBlock is the refreshed artwork-search block contract.
+	AddToItinerarySearchBlock AddToItineraryVariant = "search-block"
 )
 
 // normalizeAddToItineraryVariant collapses an unknown or empty variant to the
 // compact presentation so an invalid value never renders arbitrary markup.
 func normalizeAddToItineraryVariant(variant AddToItineraryVariant) AddToItineraryVariant {
 	switch variant {
-	case AddToItineraryCompact, AddToItineraryRow, AddToItineraryBlock:
+	case AddToItineraryCompact, AddToItineraryRow, AddToItineraryBlock, AddToItinerarySearchBlock:
 		return variant
 	default:
 		return AddToItineraryCompact
@@ -32,7 +34,7 @@ func addToItineraryFormClass(variant AddToItineraryVariant) string {
 	switch variant {
 	case AddToItineraryRow:
 		return "shrink-0"
-	case AddToItineraryBlock:
+	case AddToItineraryBlock, AddToItinerarySearchBlock:
 		return "w-full"
 	default:
 		return "shrink-0 self-center"
@@ -49,7 +51,7 @@ func addToItineraryButtonClass(variant AddToItineraryVariant, added bool, full b
 	switch variant {
 	case AddToItineraryRow:
 		class += " text-(length:--t-11) tracking-[1.5px] px-[22px] h-12"
-	case AddToItineraryBlock:
+	case AddToItineraryBlock, AddToItinerarySearchBlock:
 		class += " w-full text-xs tracking-[1.5px] px-6 h-12"
 	default:
 		class += " text-(length:--t-10) px-2.5 py-1.5"
@@ -77,13 +79,32 @@ func addToItineraryButtonLabel(variant AddToItineraryVariant, added bool, full b
 		if variant == AddToItineraryCompact {
 			return "ADDED ✓"
 		}
+		if variant == AddToItinerarySearchBlock {
+			return "IN ITINERARY ✓"
+		}
 		return "IN YOUR ITINERARY ✓"
 	}
 	if full {
+		if variant == AddToItinerarySearchBlock {
+			return "ITINERARY FULL"
+		}
 		return "ITINERARY IS FULL"
 	}
 	if variant == AddToItineraryCompact {
 		return "ADD"
 	}
+	if variant == AddToItinerarySearchBlock {
+		return "ADD TO ITINERARY +"
+	}
 	return "ADD TO AN ITINERARY +"
+}
+
+func addToItineraryState(added bool, full bool) string {
+	if added {
+		return "added"
+	}
+	if full {
+		return "full"
+	}
+	return "available"
 }

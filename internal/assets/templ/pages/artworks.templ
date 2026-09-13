@@ -3,6 +3,7 @@ package pages
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/blackfyre/wga/internal/assets/templ/components"
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
@@ -96,7 +97,7 @@ templ ArtworkSeachFilterBlock(b ArtworkSearchView) {
 		hx-target={ b.HxTarget }
 		hx-select={ b.HxTarget }
 		hx-swap="outerHTML"
-		hx-indicator="#artwork-search-indicator"
+		hx-indicator="inherit, #artwork-search-indicator"
 		hx-sync="this:replace"
 		method="GET"
 		hx-trigger="change, input changed delay:300ms"
@@ -289,16 +290,17 @@ templ ArtworkSearchResults(r ArtworkSearchResultsView) {
 			} else {
 				<div class="mt-7 grid grid-cols-2 gap-x-4 gap-y-9 md:grid-cols-3 md:gap-x-7" data-kbd-list data-kbd-cols="2" data-kbd-cols-md="3" data-view="grid">
 					for index, artwork := range r.Artworks {
-						<article>
+						<article class="flex min-w-0 flex-col">
 							<a href={ templ.SafeURL(artwork.Url) } hx-get={ artwork.Url } data-kbd-idx={ strconv.Itoa(index) } data-kbd-href={ artwork.Url } class="wga-record-card">
 								@components.KeyboardCaret()
 								<figure class="mb-2.5 aspect-[4/5] border border-wga-ink/15 bg-wga-fill p-2.5">
-									<img src={ artwork.Thumb } alt={ artwork.Title } class="h-full w-full object-cover"/>
+									<img src={ artwork.Thumb } alt={ artwork.Title } width="500" height="625" loading="lazy" class="h-full w-full object-cover"/>
 								</figure>
 								<p class="text-sm font-semibold leading-tight">{ artwork.Title }</p>
-								<p class="mt-[3px] font-mono text-(length:--t-11) leading-relaxed text-wga-ink/60">{ artwork.Artist.FilingName }<br/>{ artwork.Technique }</p>
+								<p class="mt-[3px] font-mono text-(length:--t-11) leading-relaxed text-muted" data-artwork-result-meta="identity">{ artworkSearchMetadata(artwork.Artist.FilingName, artwork.Date) }</p>
+								<p class="font-mono text-(length:--t-11) leading-relaxed text-muted" data-artwork-result-meta="classification">{ artworkSearchMetadata(artwork.School, artwork.Type) }</p>
 							</a>
-							<div class="mt-2.5">@components.AddToStudyBoardAction(artwork.Id, artwork.Title, artwork.Thumb, components.AddToStudyBoardBlock)</div>
+							@artworkSearchWorkspaceActions(artwork, false)
 						</article>
 					}
 				</div>
@@ -342,17 +344,46 @@ func artworkActiveCountLabel(count int) string {
 templ ArtworkSearchResultList(artworks dto.ImageGrid) {
 	<ul data-kbd-list data-kbd-cols="1" data-view="list">
 		for index, artwork := range artworks {
-			<li class="flex items-center gap-3 border-b border-wga-ink/15">
+			<li class="flex flex-col border-b border-wga-ink/15 lg:flex-row lg:items-stretch">
 				<a href={ templ.SafeURL(artwork.Url) } hx-get={ artwork.Url } data-kbd-idx={ strconv.Itoa(index) } data-kbd-href={ artwork.Url } class="flex min-w-0 flex-1 items-center gap-4 py-3.5 transition-colors hover:bg-wga-accent-bg/5">
 					@components.KeyboardCaret()
-					<img src={ artwork.Thumb } alt={ artwork.Title } class="h-[54px] w-11 shrink-0 border border-wga-ink/15 bg-wga-fill object-cover"/>
-					<span class="min-w-0 flex-1"><span class="block text-(length:--t-15) font-semibold leading-tight">{ artwork.Title }</span><span class="mt-[3px] block font-mono text-(length:--t-11) text-wga-ink/60">{ artwork.Artist.FilingName }</span></span>
-					<span class="hidden shrink-0 font-mono text-(length:--t-11) text-wga-ink/70 md:block">{ artwork.Technique }</span>
+					<img src={ artwork.Thumb } alt={ artwork.Title } width="44" height="54" loading="lazy" class="h-[54px] w-11 shrink-0 border border-wga-ink/15 bg-wga-fill object-cover"/>
+					<span class="min-w-0 flex-1"><span class="block text-(length:--t-15) font-semibold leading-tight">{ artwork.Title }</span><span class="mt-[3px] block font-mono text-(length:--t-11) text-muted" data-artwork-result-meta="identity">{ artworkSearchMetadata(artwork.Artist.FilingName, artwork.Date) }</span></span>
+					<span class="hidden w-28 shrink-0 font-mono text-(length:--t-10) text-muted lg:block"><span class="block text-faint">SCHOOL</span>{ artworkSearchValue(artwork.School) }</span>
+					<span class="hidden w-28 shrink-0 font-mono text-(length:--t-10) text-muted lg:block"><span class="block text-faint">FORM</span>{ artworkSearchValue(artwork.Form) }</span>
+					<span class="hidden w-28 shrink-0 font-mono text-(length:--t-10) text-muted lg:block"><span class="block text-faint">TYPE</span>{ artworkSearchValue(artwork.Type) }</span>
 				</a>
-				@components.AddToStudyBoardAction(artwork.Id, artwork.Title, artwork.Thumb, components.AddToStudyBoardRow)
+				@artworkSearchWorkspaceActions(artwork, true)
 			</li>
 		}
 	</ul>
+}
+
+templ artworkSearchWorkspaceActions(artwork dto.Image, dense bool) {
+	<div class={ "flex w-full shrink-0 flex-col gap-2 py-2.5", templ.KV("lg:w-52 lg:pl-3", dense) } data-artwork-workspace-actions>
+		@components.AddToItineraryAction(artwork.Id, components.AddToItinerarySearchBlock)
+		@components.AddToStudyBoardAction(artwork.Id, artwork.Title, artwork.Thumb, components.AddToStudyBoardBlock)
+	</div>
+}
+
+func artworkSearchMetadata(values ...string) string {
+	known := make([]string, 0, len(values))
+	for _, value := range values {
+		if value = strings.TrimSpace(value); value != "" {
+			known = append(known, value)
+		}
+	}
+	if len(known) == 0 {
+		return "NOT RECORDED"
+	}
+	return strings.Join(known, " · ")
+}
+
+func artworkSearchValue(value string) string {
+	if value = strings.TrimSpace(value); value == "" {
+		return "—"
+	}
+	return value
 }
 
 templ ArtworkSearchDualModeResultGrid(artworks dto.ImageGrid, dualModeUrls map[string]string, target string) {
@@ -373,7 +404,7 @@ templ ArtworkSearchDualModeResultGrid(artworks dto.ImageGrid, dualModeUrls map[s
 }
 
 templ ArtworkSearchBlock(s ArtworkSearchView) {
-	<section id="artwork-search" class="container mx-auto px-4 pb-20 pt-10 md:px-0 wga-enter">
+	<section id="artwork-search" hx-indicator="#artwork-search-skeleton" class="container mx-auto px-4 pb-20 pt-10 md:px-0 wga-enter">
 		<p class="mb-3 font-mono text-(length:--t-11) tracking-[2px] text-wga-ink/60">12 — ARTWORK SEARCH</p>
 		<h1 class="mb-3 text-(length:--t-44) font-semibold leading-tight tracking-[-0.5px]">Artworks</h1>
 		<p class="mb-11 max-w-[540px] text-base leading-relaxed text-wga-ink/70">Filter by title, school, form and technique — or narrow by period when you are working through a century rather than a name.</p>
@@ -382,7 +413,8 @@ templ ArtworkSearchBlock(s ArtworkSearchView) {
 				@ArtworkSeachFilterBlock(s)
 			</div>
 			<div class="w-full min-h-48" id="search-result-container">
-				@ArtworkSearchResults(s.Results)
+				@components.SearchResultSkeleton("artwork-search-skeleton", s.Results.View)
+				<div class="wga-search-current">@ArtworkSearchResults(s.Results)</div>
 			</div>
 		</div>
 	</section>
