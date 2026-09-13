@@ -1960,7 +1960,7 @@
 	.wga-toast-stack {
 		position: fixed;
 		right: 1rem;
-		bottom: 1rem;
+		bottom: calc(var(--wga-bottom-stack-height, 0px) + 1rem);
 		z-index: 50;
 		display: flex;
 		width: max-content;
@@ -1968,6 +1968,14 @@
 		flex-direction: column;
 		gap: 0.5rem;
 		background: transparent;
+	}
+
+	.wga-bottom-stack-content {
+		padding-bottom: var(--wga-bottom-stack-height, 0px);
+	}
+
+	.wga-bottom-stack-item {
+		bottom: var(--wga-bottom-stack-offset, 0px);
 	}
 
 	.wga-skeleton {
@@ -2316,6 +2324,10 @@ figure.hidden-caption {
 	overflow-y: auto;
 }
 
+#cc-main .cm--bottom {
+	bottom: var(--wga-bottom-stack-offset, 1rem);
+}
+
 #cc-main .cm__title,
 #cc-main .pm__title {
   font-family: var(--font-mono);
@@ -2362,21 +2374,24 @@ figure.hidden-caption {
 	max-width: min(42rem, calc(100vw - 32px));
 }
 
-@media (max-width: 44.999rem) {
-	#cc-main .cm--bottom {
-		bottom: 5rem;
-	}
-}
-
 @media (min-width: 45rem) {
 	#cc-main .cm--bottom.cm--left {
-		bottom: 2rem;
 		left: 2rem;
 	}
 
 	#cc-main .cm__btns {
 		flex-direction: row;
 		justify-content: flex-end;
+	}
+}
+
+body.wga-has-itinerary-tray {
+	--wga-bottom-stack-height: 7rem;
+}
+
+@media (min-width: 45rem) {
+	body.wga-has-itinerary-tray {
+		--wga-bottom-stack-height: 5rem;
 	}
 }
 

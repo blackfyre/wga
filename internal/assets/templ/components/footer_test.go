@@ -245,20 +245,37 @@ func TestFooterUsesReferenceColumnTiers(t *testing.T) {
 	}
 
 	rendered := output.String()
-	if !strings.Contains(rendered, `grid-cols-2 gap-[32px] px-4 text-sm lg:grid-cols-[1.6fr_1fr_1fr_1fr]`) {
+	if !strings.Contains(rendered, `grid-cols-2 gap-[32px] px-4 text-sm lg:grid-cols-[1.6fr_1fr_1fr_1fr_1fr]`) {
 		t.Fatal("expected two-column footer until the lg tier")
 	}
-	if strings.Contains(rendered, `md:grid-cols-[1.6fr_1fr_1fr_1fr]`) {
-		t.Fatal("footer must not switch to four columns at the md tier")
+	if strings.Contains(rendered, `md:grid-cols-[1.6fr_1fr_1fr_1fr_1fr]`) {
+		t.Fatal("footer must not switch to five columns at the md tier")
 	}
 	if !strings.Contains(rendered, `>BROWSE</p>`) {
 		t.Fatal("expected BROWSE footer heading")
 	}
-	if strings.Count(rendered, `class="min-w-0"`) != 4 {
+	if strings.Count(rendered, `class="min-w-0"`) != 5 {
 		t.Fatal("expected each footer grid item to be able to shrink")
 	}
-	if strings.Count(rendered, `wrap-anywhere`) != 4 {
+	if strings.Count(rendered, `wrap-anywhere`) != 5 {
 		t.Fatal("expected footer copy and link lists to wrap within their grid items")
+	}
+}
+
+func TestFooterExposesLabelledCommunityDestinations(t *testing.T) {
+	var output bytes.Buffer
+	if err := Footer().Render(context.Background(), &output); err != nil {
+		t.Fatalf("render footer: %v", err)
+	}
+	rendered := output.String()
+	for _, expected := range []string{
+		`>COMMUNITY</p>`,
+		`href="https://github.com/blackfyre/wga/" target="_blank" rel="noopener" aria-label="WGA on GitHub (opens in a new tab)"`,
+		`href="https://mastodon.social/@webgalleryofart" target="_blank" rel="noopener" aria-label="Web Gallery of Art on Mastodon (opens in a new tab)"`,
+	} {
+		if !strings.Contains(rendered, expected) {
+			t.Errorf("footer missing community contract %q", expected)
+		}
 	}
 }
 

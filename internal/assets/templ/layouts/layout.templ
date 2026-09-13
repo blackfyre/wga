@@ -74,16 +74,17 @@ templ LayoutBase(bodyClasses string, HtmxTargetArea string) {
 			@components.KeyboardLayer()
 			<a
 				href="https://github.com/blackfyre/wga/issues?q=sort%3Aupdated-desc+is%3Aissue+state%3Aopen+"
-				class="wga-feedback-anchor fixed right-4 bottom-4 z-50 bg-wga-inv-bg px-4.5 py-[13px] font-mono text-(length:--t-11) tracking-[1.5px] text-wga-inv-fg transition-colors hover:bg-wga-accent-bg md:right-8 md:bottom-8"
+				class="wga-feedback-anchor fixed right-4 z-50 bg-wga-inv-bg px-4.5 py-[13px] font-mono text-(length:--t-11) tracking-[1.5px] text-wga-inv-fg transition-colors hover:bg-wga-accent-bg md:right-8"
+				style="bottom: calc(var(--wga-bottom-stack-height, 0px) + 1rem)"
 			>FEEDBACK</a>
-			<div class={ toastContainerClass(utils.GetItineraryTray(ctx)) } id="toast-container"></div>
+			<div class="wga-toast-stack" id="toast-container"></div>
 			<script type="module" src="/assets/js/app.js"></script>
 		</body>
 	</html>
 }
 
 templ LayoutMain() {
-	@LayoutBase("min-h-screen", "") {
+	@LayoutBase(layoutBodyClass(utils.GetItineraryTray(ctx)), "") {
 		if utils.GetEnvironment(ctx) != "production" {
 			<section class="border-b border-wga-ink/15">
 				<div class="container mx-auto flex items-center gap-3 px-4 py-2.5 md:px-0">
@@ -93,7 +94,7 @@ templ LayoutMain() {
 			</section>
 		}
 		@components.TopNav()
-		<main id="mc-area" class={ itineraryMainClass(utils.GetItineraryTray(ctx)) }>
+		<main id="mc-area" class="wga-enter wga-bottom-stack-content">
 			{ children... }
 		</main>
 		@components.ItineraryTray(utils.GetItineraryTray(ctx), false)
@@ -101,25 +102,13 @@ templ LayoutMain() {
 	}
 }
 
-// itineraryMainClass reserves a bottom offset only while the itinerary tray is
-// non-empty, so the fixed tray never covers page content when it is hidden.
-func itineraryMainClass(tray dto.ItineraryTrayView) string {
+// layoutBodyClass provides a no-JavaScript fallback reservation. The client
+// replaces it with the measured shared-stack height when scripts are available.
+func layoutBodyClass(tray dto.ItineraryTrayView) string {
 	if tray.Count > 0 {
-		return "wga-enter pb-28 md:pb-20"
+		return "min-h-screen wga-has-itinerary-tray"
 	}
-
-	return "wga-enter"
-}
-
-// toastContainerClass lifts the fixed toast container clear of the itinerary
-// tray only while the tray is non-empty, mirroring itineraryMainClass so a
-// notification cannot render behind the bar.
-func toastContainerClass(tray dto.ItineraryTrayView) string {
-	if tray.Count > 0 {
-		return "wga-toast-stack bottom-28 md:bottom-20"
-	}
-
-	return "wga-toast-stack"
+	return "min-h-screen"
 }
 
 templ LayoutSlim() {

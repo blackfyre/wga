@@ -105,19 +105,22 @@ func TestLayoutMainReservesSpaceForTray(t *testing.T) {
 	tests := []struct {
 		name       string
 		tray       dto.ItineraryTrayView
+		bodyClass  string
 		mainClass  string
 		toastClass string
 	}{
 		{
 			name:       "non-empty tray reserves bottom space",
 			tray:       dto.ItineraryTrayView{Count: 1, BuilderURL: "/itineraries/new"},
-			mainClass:  `id="mc-area" class="wga-enter pb-28 md:pb-20"`,
-			toastClass: `class="wga-toast-stack bottom-28 md:bottom-20" id="toast-container"`,
+			bodyClass:  `body class="min-h-screen wga-has-itinerary-tray"`,
+			mainClass:  `id="mc-area" class="wga-enter wga-bottom-stack-content"`,
+			toastClass: `class="wga-toast-stack" id="toast-container"`,
 		},
 		{
 			name:       "empty tray reserves no bottom space",
 			tray:       dto.ItineraryTrayView{},
-			mainClass:  `id="mc-area" class="wga-enter"`,
+			bodyClass:  `body class="min-h-screen"`,
+			mainClass:  `id="mc-area" class="wga-enter wga-bottom-stack-content"`,
 			toastClass: `class="wga-toast-stack" id="toast-container"`,
 		},
 	}
@@ -131,6 +134,9 @@ func TestLayoutMainReservesSpaceForTray(t *testing.T) {
 			}
 
 			rendered := output.String()
+			if !strings.Contains(rendered, test.bodyClass) {
+				t.Errorf("expected body class %q", test.bodyClass)
+			}
 			if !strings.Contains(rendered, test.mainClass) {
 				t.Errorf("expected main class %q", test.mainClass)
 			}

@@ -22,6 +22,7 @@ import {
 	setBionicReading,
 	toggleBionicReading,
 } from "./bionic";
+import { initBottomStack } from "./bottom-stack";
 import { initCookieConsent } from "./cookieconsent";
 import { initDualHorizontalScroll } from "./dual";
 import { registerItineraryHelpers } from "./itinerary";
@@ -431,7 +432,7 @@ const deepMerge = (target: object, source: object): object => {
 	for (const key in source) {
 		if (key === "__proto__" || key === "constructor" || key === "prototype")
 			continue;
-		if (Object.prototype.hasOwnProperty.call(source, key)) {
+		if (Object.hasOwn(source, key)) {
 			// Check if the current key's value is an object and exists in the target
 			if (typeof source[key] === "object" && source[key] !== null) {
 				if (Array.isArray(source[key])) {
@@ -1271,6 +1272,7 @@ const wgaInternal: wgaInternals = {
 
 (() => {
 	logger.debug("Initializing WGA");
+	initBottomStack();
 	void initCookieConsent().catch((error) => {
 		logger.error("Failed to initialise Cookie Consent", error);
 	});

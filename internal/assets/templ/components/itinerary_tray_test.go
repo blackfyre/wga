@@ -64,7 +64,7 @@ func TestItineraryTrayOutOfBand(t *testing.T) {
 	}
 }
 
-func TestItineraryTraySyncsDynamicReservationTargets(t *testing.T) {
+func TestItineraryTrayRegistersWithMeasuredBottomStack(t *testing.T) {
 	var output bytes.Buffer
 	if err := ItineraryTray(dto.ItineraryTrayView{Count: 1, BuilderURL: "/itineraries/new"}, false).Render(context.Background(), &output); err != nil {
 		t.Fatalf("render tray: %v", err)
@@ -72,16 +72,12 @@ func TestItineraryTraySyncsDynamicReservationTargets(t *testing.T) {
 
 	rendered := output.String()
 	for _, expected := range []string{
-		`const hasContent = this.children.length > 0`,
-		`document.getElementById('mc-area')`,
-		`mcArea.classList.toggle('pb-28', hasContent)`,
-		`mcArea.classList.toggle('md:pb-20', hasContent)`,
-		`document.getElementById('toast-container')`,
-		`toastContainer.classList.toggle('bottom-28', hasContent)`,
-		`toastContainer.classList.toggle('md:bottom-20', hasContent)`,
+		`data-wga-bottom-stack-item="itinerary"`,
+		`data-wga-bottom-stack-order="10"`,
+		`wga-bottom-stack-item`,
 	} {
 		if !strings.Contains(rendered, expected) {
-			t.Errorf("after-settle handler missing dynamic reservation sync %q", expected)
+			t.Errorf("tray missing measured bottom-stack contract %q", expected)
 		}
 	}
 }
@@ -141,7 +137,7 @@ func TestItineraryTrayExactPresentationAndThumbnailOrder(t *testing.T) {
 	}
 	rendered := output.String()
 	for _, expected := range []string{
-		`class="fixed inset-x-0 bottom-0 z-[45] border-t border-wga-inv-fg/20 bg-wga-inv-bg animate-[wga-rise_240ms_cubic-bezier(0.22,0.61,0.36,1)]"`,
+		`class="wga-bottom-stack-item fixed inset-x-0 z-[45] border-t border-wga-inv-fg/20 bg-wga-inv-bg animate-[wga-rise_240ms_cubic-bezier(0.22,0.61,0.36,1)]"`,
 		`role="region" aria-label="Itinerary draft"`, `ITINERARY DRAFT · 2 OF 15`,
 		`class="h-7 w-7 border border-wga-inv-fg/25 bg-wga-inv-fg/10 object-cover"`,
 		`>CLEAR</button>`, `href="/itineraries/new"`, `>ARRANGE &amp; NARRATE →</a>`,
@@ -168,7 +164,7 @@ func TestItineraryTrayMapsReferenceShell(t *testing.T) {
 	}
 
 	rendered := output.String()
-	shell := `class="fixed inset-x-0 bottom-0 z-[45] border-t border-wga-inv-fg/20 bg-wga-inv-bg animate-[wga-rise_240ms_cubic-bezier(0.22,0.61,0.36,1)]"`
+	shell := `class="wga-bottom-stack-item fixed inset-x-0 z-[45] border-t border-wga-inv-fg/20 bg-wga-inv-bg animate-[wga-rise_240ms_cubic-bezier(0.22,0.61,0.36,1)]"`
 	if !strings.Contains(rendered, shell) {
 		t.Errorf("tray shell missing reference mapping %q", shell)
 	}

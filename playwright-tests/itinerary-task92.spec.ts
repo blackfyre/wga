@@ -57,10 +57,12 @@ test.describe("task 9.2 itinerary tray acceptance", () => {
 		await expect(
 			tray.getByRole("link", { name: "ARRANGE & NARRATE →", exact: true }),
 		).toBeVisible();
-		await expect(page.locator("#mc-area")).toHaveClass(/pb-28/);
-		await expect(page.locator("#mc-area")).toHaveClass(/md:pb-20/);
-		await expect(page.locator("#toast-container")).toHaveClass(/bottom-28/);
-		await expect(page.locator("#toast-container")).toHaveClass(/md:bottom-20/);
+		await expect(page.locator("#mc-area")).toHaveClass(
+			/wga-bottom-stack-content/,
+		);
+		await expect(page.locator("#toast-container")).toHaveClass(
+			/wga-toast-stack/,
+		);
 		await expect(page.getByRole("alert")).toBeVisible();
 		await assertToastAboveTray(page);
 
@@ -68,21 +70,17 @@ test.describe("task 9.2 itinerary tray acceptance", () => {
 		await expect(page.locator("#itinerary-tray")).toContainText(
 			"ITINERARY DRAFT · 1 OF 15",
 		);
-		await expect(page.locator("#mc-area")).toHaveClass(/pb-28/);
-		await expect(page.locator("#mc-area")).toHaveClass(/md:pb-20/);
-		await expect(page.locator("#toast-container")).toHaveClass(/bottom-28/);
-		await expect(page.locator("#toast-container")).toHaveClass(/md:bottom-20/);
+		await expect(page.locator("#mc-area")).toHaveClass(
+			/wga-bottom-stack-content/,
+		);
+		await expect(page.locator("#toast-container")).toHaveClass(
+			/wga-toast-stack/,
+		);
 
 		await page.goto("/artists");
 		page.once("dialog", (dialog) => dialog.accept());
 		await page.getByRole("button", { name: "CLEAR", exact: true }).click();
 		await expect(page.locator("#itinerary-tray")).toBeEmpty();
-		await expect(page.locator("#mc-area")).not.toHaveClass(/pb-28/);
-		await expect(page.locator("#mc-area")).not.toHaveClass(/md:pb-20/);
-		await expect(page.locator("#toast-container")).not.toHaveClass(/bottom-28/);
-		await expect(page.locator("#toast-container")).not.toHaveClass(
-			/md:bottom-20/,
-		);
 		await page.goto("/inspire");
 		await expect(page.locator("#itinerary-tray")).toBeEmpty();
 	});

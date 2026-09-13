@@ -14,22 +14,18 @@ import (
 // stops, with the reference CLEAR and ARRANGE & NARRATE actions. Set oob to
 // render the element as an HTMX out-of-band swap for mutation responses.
 //
-// The after-settle handler keeps #mc-area's pb-28 md:pb-20 bottom padding and
-// the fixed toast container's bottom-28 md:bottom-20 offset in step with the
-// swapped tray: a full-page render already computes both offsets server-side,
-// but an HTMX add/clear swaps only #itinerary-tray, so the sibling #mc-area
-// and #toast-container must be re-synced here or page content or a toast would
-// render behind the fixed bar.
+	// The shared bottom-stack observer measures the fixed region after full-page
+	// and HTMX out-of-band renders, then reserves the same exact height for page
+	// content, cookie notices, and toasts.
 templ ItineraryTray(tray dto.ItineraryTrayView, oob bool) {
 	<div
 		id="itinerary-tray"
 		if oob {
 			hx-swap-oob="true"
 		}
-		hx-on::after-settle="const hasContent = this.children.length > 0; const toastContainer = document.getElementById('toast-container'); if (toastContainer) { toastContainer.classList.toggle('bottom-28', hasContent); toastContainer.classList.toggle('md:bottom-20', hasContent); } const mcArea = document.getElementById('mc-area'); if (mcArea) { mcArea.classList.toggle('pb-28', hasContent); mcArea.classList.toggle('md:pb-20', hasContent); }"
 	>
 		if tray.Count > 0 {
-			<div class="fixed inset-x-0 bottom-0 z-[45] border-t border-wga-inv-fg/20 bg-wga-inv-bg animate-[wga-rise_240ms_cubic-bezier(0.22,0.61,0.36,1)]" role="region" aria-label="Itinerary draft">
+			<div data-wga-bottom-stack-item="itinerary" data-wga-bottom-stack-order="10" class="wga-bottom-stack-item fixed inset-x-0 z-[45] border-t border-wga-inv-fg/20 bg-wga-inv-bg animate-[wga-rise_240ms_cubic-bezier(0.22,0.61,0.36,1)]" role="region" aria-label="Itinerary draft">
 				<div class="container mx-auto flex items-center gap-4 px-5 py-3 md:gap-7 md:px-10 md:py-3.5">
 					<div class="min-w-0 flex-1">
 						<p class="mb-1.5 font-mono text-(length:--t-10) tracking-[1.5px] text-wga-inv-fg/60">ITINERARY DRAFT · { strconv.Itoa(tray.Count) } OF { strconv.Itoa(itineraryworkflow.MaxStops) }</p>

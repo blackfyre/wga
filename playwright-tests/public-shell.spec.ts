@@ -427,8 +427,9 @@ test.describe("shared public shell", () => {
 			0,
 		);
 		await expect(page.locator("#toast-container")).toHaveClass(/toast/);
-		await expect(page.locator("#toast-container")).not.toHaveClass(/bottom-28/);
-		await expect(page.locator("#mc-area")).not.toHaveClass(/pb-28/);
+		await expect(page.locator("#mc-area")).toHaveClass(
+			/wga-bottom-stack-content/,
+		);
 
 		// Public toast notifications stack in the shared container in order.
 		await page.evaluate(() => {
@@ -470,8 +471,12 @@ test.describe("shared public shell", () => {
 
 		// The non-empty tray reserves bottom clearance on both the main area
 		// and the fixed toast container, mirroring the server-side offsets.
-		await expect(page.locator("#mc-area")).toHaveClass(/pb-28/);
-		await expect(page.locator("#toast-container")).toHaveClass(/bottom-28/);
+		await expect(page.locator("#mc-area")).toHaveClass(
+			/wga-bottom-stack-content/,
+		);
+		await expect(page.locator("#toast-container")).toHaveClass(
+			/wga-toast-stack/,
+		);
 
 		const toasts = page.locator("#toast-container [role='alert']");
 		await expect(toasts).toHaveCount(1);

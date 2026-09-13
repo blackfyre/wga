@@ -9,7 +9,7 @@ import (
 
 templ Footer() {
 	<footer class="border-t border-wga-ink/15 pb-15 pt-10">
-		<div class="container mx-auto grid grid-cols-2 gap-[32px] px-4 text-sm lg:grid-cols-[1.6fr_1fr_1fr_1fr] md:px-0">
+		<div class="container mx-auto grid grid-cols-2 gap-[32px] px-4 text-sm lg:grid-cols-[1.6fr_1fr_1fr_1fr_1fr] md:px-0">
 			<div class="min-w-0">
 				<p class="mb-3 font-mono text-(length:--t-11) tracking-[1.5px]">WEB GALLERY OF ART</p>
 				<p class="max-w-full wrap-anywhere text-(length:--t-15) leading-relaxed text-wga-ink/70">A searchable archive of European fine art, decorative art and architecture, 3rd century to the early 20th. Open source, maintained by contributors.</p>
@@ -176,6 +176,13 @@ templ Footer() {
 					</li>
 					<li><a aria-hidden="true" class="hidden hover:text-wga-accent" data-cc="show-preferencesModal" data-wga-cookie-settings href="#" tabindex="-1">Cookie settings</a></li>
 					<li>Contact</li>
+				</ul>
+			</div>
+			<div class="min-w-0">
+				<p class="mb-3 font-mono text-(length:--t-11) tracking-[1.5px] text-wga-ink/60">COMMUNITY</p>
+				<ul class="space-y-1 wrap-anywhere text-sm leading-[2.1] text-wga-ink/70">
+					<li><a href="https://github.com/blackfyre/wga/" target="_blank" rel="noopener" aria-label="WGA on GitHub (opens in a new tab)" class="hover:text-wga-accent">GitHub</a></li>
+					<li><a href="https://mastodon.social/@webgalleryofart" target="_blank" rel="noopener" aria-label="Web Gallery of Art on Mastodon (opens in a new tab)" class="hover:text-wga-accent">Mastodon</a></li>
 				</ul>
 			</div>
 		</div>
