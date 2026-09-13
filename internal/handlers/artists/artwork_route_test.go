@@ -244,6 +244,9 @@ func TestArtworkRouteNeverRendersSourceClaimsAndKeepsFullFile(t *testing.T) {
 
 func TestArtworkRouteRendersRecordIdentityDateAndEvidenceBackedFile(t *testing.T) {
 	app, request := newArtworkRouteApp(t)
+	saveRecordRecord(t, app, constants.CollectionLocations, "locationone0001", map[string]any{
+		"name": "Mauritshuis, The Hague", "museum": true, "is_public": true,
+	})
 	artist, err := app.FindRecordById(constants.CollectionArtists, "artistone000001")
 	if err != nil {
 		t.Fatalf("find artist: %v", err)
@@ -262,6 +265,7 @@ func TestArtworkRouteRendersRecordIdentityDateAndEvidenceBackedFile(t *testing.T
 	artwork.Set("image_size_bytes", 1_400_000)
 	artwork.Set("date_start", 1900)
 	artwork.Set("year", 1900)
+	artwork.Set("current_location_id", "locationone0001")
 	if err := app.Save(artwork); err != nil {
 		t.Fatalf("save artwork evidence: %v", err)
 	}
@@ -274,8 +278,9 @@ func TestArtworkRouteRendersRecordIdentityDateAndEvidenceBackedFile(t *testing.T
 	for _, expected := range []string{
 		"Given",
 		"Surname, Given · 1900",
-		"1200 × 800 px · JPEG · 1.4 MB",
+		"1200 × 800 px · JPEG",
 		"DOWNLOAD THE FULL FILE",
+		"CURRENT LOCATION · Mauritshuis, The Hague",
 	} {
 		if !strings.Contains(body, expected) {
 			t.Errorf("expected response to contain %q", expected)
@@ -283,6 +288,9 @@ func TestArtworkRouteRendersRecordIdentityDateAndEvidenceBackedFile(t *testing.T
 	}
 	if strings.Contains(body, "Given, Surname") {
 		t.Error("artwork route must not reconstruct the artist filing name")
+	}
+	if strings.Contains(body, "1.4 MB") {
+		t.Error("artwork route must retain byte weight internally without displaying it")
 	}
 }
 

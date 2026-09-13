@@ -7,6 +7,7 @@ import (
 	"github.com/blackfyre/wga/internal/artworks"
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/config"
+	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/repositories"
 	apputils "github.com/blackfyre/wga/internal/utils"
 	"github.com/pocketbase/pocketbase"
@@ -52,6 +53,31 @@ func TestPopulateArtworkMetadataUsesDateEnd(t *testing.T) {
 	populateArtworkMetadata(nil, artwork, &content)
 	if content.Year != "1500" {
 		t.Errorf("year = %q, want legacy year 1500", content.Year)
+	}
+}
+
+func TestPopulateArtworkMetadataResolvesCurrentLocation(t *testing.T) {
+	app, _ := newArtworkRouteApp(t)
+	saveRecordRecord(t, app, constants.CollectionLocations, "locationone0001", map[string]any{
+		"name": "Mauritshuis, The Hague", "museum": true, "is_public": true,
+	})
+	artwork, err := app.FindRecordById(constants.CollectionArtworks, "workone00000001")
+	if err != nil {
+		t.Fatalf("find artwork: %v", err)
+	}
+	artwork.Set("current_location_id", "locationone0001")
+
+	content := dto.Artwork{}
+	populateArtworkMetadata(app, artwork, &content)
+	if content.CurrentLocation != "Mauritshuis, The Hague" {
+		t.Errorf("CurrentLocation = %q, want source-backed location", content.CurrentLocation)
+	}
+
+	artwork.Set("current_location_id", "missinglocation")
+	content = dto.Artwork{}
+	populateArtworkMetadata(app, artwork, &content)
+	if content.CurrentLocation != "" {
+		t.Errorf("missing current location = %q, want empty", content.CurrentLocation)
 	}
 }
 
@@ -327,10 +353,10 @@ func TestPopulateArtworkSourceDataUsesSourceComment(t *testing.T) {
 	}
 }
 
-// TestPopulateArtworkSourceDataAppendsFileWeight proves the reproduction FILE
-// summary gains the human-readable decimal-SI weight only when both the byte
-// count and a reproduction file are recorded, and never invents either.
-func TestPopulateArtworkSourceDataAppendsFileWeight(t *testing.T) {
+// TestPopulateArtworkSourceDataKeepsFileWeightInternal proves the exact byte
+// count remains available for integrity workflows without entering the public
+// reproduction summary.
+func TestPopulateArtworkSourceDataKeepsFileWeightInternal(t *testing.T) {
 	app := pocketbase.NewWithConfig(pocketbase.Config{DefaultDataDir: t.TempDir()})
 	if err := app.Bootstrap(); err != nil {
 		t.Fatalf("bootstrap: %v", err)
@@ -359,79 +385,8 @@ func TestPopulateArtworkSourceDataAppendsFileWeight(t *testing.T) {
 	if content.OriginalFileBytes != 1_400_000 {
 		t.Errorf("OriginalFileBytes = %d, want exact 1400000", content.OriginalFileBytes)
 	}
-	if content.ReproFile != "1,861 × 2,663 px · JPEG · 1.4 MB" {
-		t.Errorf("ReproFile = %q, want dimensions · format · 1.4 MB", content.ReproFile)
-	}
-
-	record.Set("image_size_bytes", 0)
-	content = dto.Artwork{ReproFile: "1,861 × 2,663 px · JPEG"}
-	populateArtworkSourceData(app, record, &content, config.EnvironmentDevelopment)
 	if content.ReproFile != "1,861 × 2,663 px · JPEG" {
-		t.Errorf("zero weight must not append a size, got %q", content.ReproFile)
-	}
-}
-
-// TestPopulateArtworkSourceDataAssemblesFileEvidenceIndependently proves the
-// reproduction FILE summary assembles dimensions, recognised format, and the
-// positive exact byte weight independently: a missing fact must never suppress
-// another factual field.
-func TestPopulateArtworkSourceDataAssemblesFileEvidenceIndependently(t *testing.T) {
-	app := pocketbase.NewWithConfig(pocketbase.Config{DefaultDataDir: t.TempDir()})
-	if err := app.Bootstrap(); err != nil {
-		t.Fatalf("bootstrap: %v", err)
-	}
-	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
-			t.Error(err)
-		}
-	})
-
-	collection := core.NewBaseCollection("Artworks")
-	collection.Fields.Add(&core.NumberField{Name: "image_size_bytes"})
-	record := core.NewRecord(collection)
-
-	for _, test := range []struct {
-		name    string
-		bytes   int
-		summary string
-		want    string
-	}{
-		{name: "weight only", bytes: 1_400_000, summary: "", want: "1.4 MB"},
-		{name: "format only", bytes: 1_400_000, summary: "JPEG", want: "JPEG · 1.4 MB"},
-		{name: "dimensions only", bytes: 1_400_000, summary: "1200 × 800 px", want: "1200 × 800 px · 1.4 MB"},
-		{name: "all facts", bytes: 1_400_000, summary: "1200 × 800 px · JPEG", want: "1200 × 800 px · JPEG · 1.4 MB"},
-		{name: "zero bytes adds nothing", bytes: 0, summary: "1200 × 800 px · JPEG", want: "1200 × 800 px · JPEG"},
-		{name: "absent all omits file", bytes: 0, summary: "", want: ""},
-	} {
-		t.Run(test.name, func(t *testing.T) {
-			record.Set("image_size_bytes", test.bytes)
-			content := dto.Artwork{ReproFile: test.summary}
-			populateArtworkSourceData(app, record, &content, config.EnvironmentDevelopment)
-			if content.OriginalFileBytes != test.bytes {
-				t.Errorf("OriginalFileBytes = %d, want exact %d", content.OriginalFileBytes, test.bytes)
-			}
-			if content.ReproFile != test.want {
-				t.Errorf("ReproFile = %q, want %q", content.ReproFile, test.want)
-			}
-		})
-	}
-}
-
-func TestFormatFileSize(t *testing.T) {
-	for _, test := range []struct {
-		bytes int
-		want  string
-	}{
-		{999, "999 B"},
-		{1_000, "1.0 kB"},
-		{1_400_000, "1.4 MB"},
-		{12_400_000, "12.4 MB"},
-		{987_654, "987.7 kB"},
-		{1_400_000_000, "1.4 GB"},
-	} {
-		if got := formatFileSize(test.bytes); got != test.want {
-			t.Errorf("formatFileSize(%d) = %q, want %q", test.bytes, got, test.want)
-		}
+		t.Errorf("public ReproFile must omit byte weight, got %q", content.ReproFile)
 	}
 }
 

@@ -20,14 +20,17 @@ type Artist struct {
 }
 
 type Artwork struct {
-	Id              string
-	Title           string
-	Comment         string
-	Technique       string
-	Year            string
-	Dimensions      string
-	ArtType         string
-	Location        string
+	Id         string
+	Title      string
+	Comment    string
+	Technique  string
+	Year       string
+	Dimensions string
+	ArtType    string
+	Location   string
+	// CurrentLocation is the source-backed present holding resolved from the
+	// artwork's current-location relation. It is empty when none is recorded.
+	CurrentLocation string
 	CitationKey     string
 	CitationTitle   string
 	CitationURL     string
@@ -36,11 +39,10 @@ type Artwork struct {
 	Url             string
 	HxTarget        string
 	ShowBreadcrumbs bool
-	// ReproFile is the truthful reproduction file summary: recorded dimensions,
-	// the filename-derived format, and the human-readable exact byte count in
-	// decimal SI. Independently absent facts are omitted. It is empty only when
-	// no supported reproduction evidence exists, so the artwork template never
-	// fabricates a file caption.
+	// ReproFile is the truthful public reproduction summary: recorded pixel
+	// dimensions and filename-derived format. Persisted byte weight remains an
+	// internal integrity fact and is not displayed. Independently absent facts
+	// are omitted, so the artwork template never fabricates a file caption.
 	ReproFile string
 	// SourceURL is the original artwork file URL (no thumbnail query), used only
 	// for the deliberate source-file download. Empty when the record has no

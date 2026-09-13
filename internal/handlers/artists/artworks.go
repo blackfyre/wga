@@ -357,6 +357,14 @@ func RenderArtworkContent(app *pocketbase.PocketBase, c *core.RequestEvent, artw
 
 func populateArtworkMetadata(app *pocketbase.PocketBase, artwork *core.Record, content *dto.Artwork) {
 	content.Location, content.Dimensions = artworkLocationAndDimensions(artwork.GetString("comment"))
+	if app != nil {
+		locationIDs := artwork.GetStringSlice("current_location_id")
+		if len(locationIDs) > 0 {
+			if location, err := app.FindRecordById(constants.CollectionLocations, locationIDs[0]); err == nil {
+				content.CurrentLocation = strings.TrimSpace(location.GetString("name"))
+			}
+		}
+	}
 	if content.Dimensions != "" {
 		content.Technique = strings.TrimSpace(strings.TrimSuffix(content.Technique, ", "+content.Dimensions))
 	}
@@ -392,7 +400,7 @@ func populateArtworkCitation(artwork *dto.Artwork) {
 }
 
 // artworkReproductionFile builds the truthful reproduction-file summary from
-// independently available source dimensions, image format, and file weight.
+// independently available source dimensions and image format.
 // Absent facts are omitted; it returns an empty string only when no supported
 // evidence exists, so the artwork record never fabricates a file caption.
 func artworkReproductionFile(artwork *core.Record) string {
@@ -425,48 +433,20 @@ func artworkImageFormat(filename string) string {
 	}
 }
 
-// populateArtworkSourceData fills the file weight, palette, commentary, and
-// music fields of the artwork DTO from the persisted record. Every value is
-// source-backed; absent values remain empty so presentation never invents
-// content. No reproduction source or licence claim is ever populated: the
-// records hold no such field, and the plate must not claim provenance the
-// archive cannot back. The environment parameter is retained only because
-// callers (including the release acceptance suite) pass it positionally.
+// populateArtworkSourceData retains the internal file weight and fills the
+// palette, commentary, and music fields of the artwork DTO from the persisted
+// record. Every value is source-backed; absent values remain empty so
+// presentation never invents content. No reproduction source or licence claim
+// is ever populated: the records hold no such field, and the plate must not
+// claim provenance the archive cannot back. The environment parameter is
+// retained only because callers (including the release acceptance suite) pass
+// it positionally.
 func populateArtworkSourceData(app *pocketbase.PocketBase, artwork *core.Record, content *dto.Artwork, _ config.Environment) {
 	content.OriginalFileBytes = artwork.GetInt("image_size_bytes")
-	if content.OriginalFileBytes > 0 {
-		if content.ReproFile == "" {
-			content.ReproFile = formatFileSize(content.OriginalFileBytes)
-		} else {
-			content.ReproFile += " · " + formatFileSize(content.OriginalFileBytes)
-		}
-	}
 	content.SourceComment = artworkCommentaryHTML(artwork.GetString("source_comment"))
 	content.HasCommentary = artwork.GetString("source_comment") != ""
 	content.Palette = artworks.Palette(artwork)
 	content.Music = buildArtworkMusic(app, artwork)
-}
-
-// formatFileSize renders a byte count in decimal SI units with one decimal
-// place, matching the accepted reference FILE presentation (e.g. "1.4 MB").
-// The exact byte count remains available in OriginalFileBytes.
-func formatFileSize(bytes int) string {
-	const (
-		kilobyte = 1_000
-		megabyte = 1_000_000
-		gigabyte = 1_000_000_000
-	)
-
-	switch {
-	case bytes >= gigabyte:
-		return fmt.Sprintf("%.1f GB", float64(bytes)/float64(gigabyte))
-	case bytes >= megabyte:
-		return fmt.Sprintf("%.1f MB", float64(bytes)/float64(megabyte))
-	case bytes >= kilobyte:
-		return fmt.Sprintf("%.1f kB", float64(bytes)/float64(kilobyte))
-	default:
-		return fmt.Sprintf("%d B", bytes)
-	}
 }
 
 // artworkCommentaryHTML converts the raw source commentary to safe display HTML:

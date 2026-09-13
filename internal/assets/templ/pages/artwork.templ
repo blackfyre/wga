@@ -61,10 +61,15 @@ templ ArtworkBlock(aw dto.Artwork) {
 			<figure class="w-full min-w-0 md:flex-1">
 				@components.Plate(dto.Plate{DisplayURL: aw.Image.Image, ZoomURL: aw.Image.Zoom, Alt: aw.Title, Label: "IMAGE — " + aw.Title, Placeholder: "IMAGE — " + aw.Title, Aspect: "", Contain: true})
 				<figcaption>
-					<div class="mt-4 flex flex-wrap items-baseline justify-between gap-4 border-b border-wga-ink pb-2.5">
+					<div class="mt-4 flex flex-wrap items-start justify-between gap-4 border-b border-wga-ink pb-2.5">
 						<span class="font-mono text-(length:--t-11) tracking-[1.5px]">THIS REPRODUCTION</span>
 						if aw.SourceURL != "" {
-							<a href={ aw.SourceURL } target="_blank" rel="noopener noreferrer" class="wga-action-link font-mono text-(length:--t-11) tracking-[1px]">DOWNLOAD THE FULL FILE ↓</a>
+							<div class="flex max-w-[70%] flex-col items-end gap-1 text-right">
+								<a href={ aw.SourceURL } target="_blank" rel="noopener noreferrer" class="wga-action-link font-mono text-(length:--t-11) tracking-[1px]">DOWNLOAD THE FULL FILE ↓</a>
+								if aw.CurrentLocation != "" {
+									<p class="font-mono text-(length:--t-10) leading-relaxed text-muted">CURRENT LOCATION · { aw.CurrentLocation }</p>
+								}
+							</div>
 						}
 					</div>
 					if aw.ReproFile != "" {
@@ -115,10 +120,10 @@ templ ArtworkBlock(aw dto.Artwork) {
 				<p class="max-w-[620px] text-(length:--t-16) leading-[1.7] text-wga-ink/70">Commentary is unavailable for this artwork.</p>
 			}
 		</div>
+		@artworkRelatedBlock(aw)
 		if aw.CitationKey != "" {
 			@components.CitationBlock(components.Citation{Key: aw.CitationKey, Title: aw.CitationTitle, URL: aw.CitationURL})
 		}
-		@artworkRelatedBlock(aw)
 	</section>
 	@templ.Raw(aw.Jsonld)
 }

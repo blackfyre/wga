@@ -33,11 +33,14 @@ test.describe("production records without JavaScript", () => {
 
 		const file = page.locator("figure dl");
 		await expect(file).toContainText("FILE");
-		await expect(file).toContainText(/\d+ × \d+ px · JPEG ·/);
+		await expect(file).toContainText(/\d+ × \d+ px · JPEG/);
+		await expect(file).not.toContainText(/\b\d+(?:\.\d+)? (?:kB|MB|GB)\b/);
 		await expect(file).not.toContainText(/SOURCE|LICENCE|LICENSE/);
+		const download = page.getByRole("link", { name: /DOWNLOAD THE FULL FILE/ });
+		await expect(download).toHaveAttribute("href", /\/api\/files\/artworks\//);
 		await expect(
-			page.getByRole("link", { name: /DOWNLOAD THE FULL FILE/ }),
-		).toHaveAttribute("href", /\/api\/files\/artworks\//);
+			download.locator("xpath=following-sibling::p[1]"),
+		).toContainText("CURRENT LOCATION ·");
 	});
 
 	test("keeps sourced and unavailable selection commentary honest", async ({

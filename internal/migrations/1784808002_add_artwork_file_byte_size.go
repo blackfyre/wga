@@ -19,11 +19,11 @@ func init() {
 }
 
 // addArtworkFileByteSize records the original staged image byte count on the
-// artworks collection for later evidence-backed FILE-weight presentation, and
-// raises the source-comment ceiling so the real producer commentary imports
-// without truncation or failure. The byte count is populated by the seed
-// importer from factual file data and is never inferred from name, extension,
-// or dimensions.
+// artworks collection for internal integrity and citation workflows, and raises
+// the source-comment ceiling so the real producer commentary imports without
+// truncation or failure. The byte count is populated by the seed importer from
+// factual file data and is never inferred from name, extension, or dimensions;
+// the public reproduction block deliberately does not display it.
 //
 // It shares the 1784808002 bootstrap timestamp and sorts before
 // "seed_synthetic_data" so both the field and the raised ceiling exist before

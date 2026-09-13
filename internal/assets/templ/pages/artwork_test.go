@@ -37,7 +37,7 @@ func sampleArtwork() dto.Artwork {
 			ShortName:  "Vermeer",
 			Url:        "/artists/johannes-vermeer-artist00000001",
 		},
-		ReproFile: "4,095 × 4,801 px · JPEG · 12.4 MB",
+		ReproFile: "4,095 × 4,801 px · JPEG",
 		SourceURL: "/api/files/artworks/" + artworkTestID + "/work.jpg",
 	}
 }
@@ -183,6 +183,7 @@ func TestArtworkBlockOmitsSourceControlsWithoutImage(t *testing.T) {
 	aw := sampleArtwork()
 	aw.SourceURL = ""
 	aw.ReproFile = ""
+	aw.CurrentLocation = "Mauritshuis, The Hague"
 
 	rendered := renderArtworkBlock(t, aw, context.Background())
 
@@ -191,6 +192,9 @@ func TestArtworkBlockOmitsSourceControlsWithoutImage(t *testing.T) {
 	}
 	if strings.Contains(rendered, `>FILE</dt>`) {
 		t.Error("FILE cell must be omitted without reproduction dimensions")
+	}
+	if strings.Contains(rendered, "CURRENT LOCATION ·") {
+		t.Error("current-location note must be omitted without its full-file link")
 	}
 }
 
@@ -548,10 +552,49 @@ func TestArtworkBlockOmitsHoldingWithoutState(t *testing.T) {
 	}
 }
 
-func TestArtworkBlockRendersReproductionFileWeight(t *testing.T) {
+func TestArtworkBlockRendersReproductionTypeAndPixelsWithoutWeight(t *testing.T) {
 	rendered := renderArtworkBlock(t, sampleArtwork(), context.Background())
 
-	if !strings.Contains(rendered, "4,095 × 4,801 px · JPEG · 12.4 MB") {
-		t.Error("artwork FILE cell must render dimensions, format, and decimal-SI weight")
+	if !strings.Contains(rendered, "4,095 × 4,801 px · JPEG") {
+		t.Error("artwork FILE cell must render pixel dimensions and format")
+	}
+	if strings.Contains(rendered, "12.4 MB") {
+		t.Error("artwork reproduction must not display file weight")
+	}
+}
+
+func TestArtworkBlockPlacesConditionalCurrentLocationUnderFullFileLink(t *testing.T) {
+	aw := sampleArtwork()
+	aw.CurrentLocation = "Mauritshuis, The Hague"
+	rendered := renderArtworkBlock(t, aw, context.Background())
+
+	download := strings.Index(rendered, "DOWNLOAD THE FULL FILE")
+	location := strings.Index(rendered, "CURRENT LOCATION · Mauritshuis, The Hague")
+	file := strings.Index(rendered, `>FILE</dt>`)
+	if download < 0 || location < 0 || file < 0 || !(download < location && location < file) {
+		t.Error("current location must appear directly after the full-file link and before file metadata")
+	}
+
+	aw.CurrentLocation = ""
+	rendered = renderArtworkBlock(t, aw, context.Background())
+	if strings.Contains(rendered, "CURRENT LOCATION ·") {
+		t.Error("current-location note must be omitted without source-backed location data")
+	}
+}
+
+func TestArtworkBlockPlacesCitationAfterDescriptionAndProvenance(t *testing.T) {
+	aw := relatedSampleArtwork()
+	aw.HasCommentary = true
+	aw.SourceComment = "<p>Source-backed description.</p>"
+	aw.CitationKey = "wga-work"
+	aw.CitationTitle = "A work"
+	aw.CitationURL = "https://gallery.example/work"
+	rendered := renderArtworkBlock(t, aw, context.Background())
+
+	description := strings.Index(rendered, "Source-backed description.")
+	provenance := strings.Index(rendered, "SAME COLLECTION")
+	citation := strings.Index(rendered, "CITE THIS RECORD — BIBTEX")
+	if description < 0 || provenance < 0 || citation < 0 || !(description < provenance && provenance < citation) {
+		t.Error("citation must follow the artwork description and provenance content")
 	}
 }
