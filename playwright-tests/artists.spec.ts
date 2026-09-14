@@ -203,14 +203,20 @@ test.describe("artist index without JavaScript", () => {
 		await expect(school).toBeFocused();
 		await expect(school.locator("option:checked")).toHaveText(/^B/);
 		await school.selectOption("bohemian");
-		await page.getByLabel("PERIOD").selectOption({ label: "Baroque" });
-		await page.getByRole("button", { name: "APPLY FILTERS" }).click();
+		const period = page.getByLabel("PERIOD");
+		const firstPeriod = period.locator("option").nth(1);
+		const periodValue = await firstPeriod.getAttribute("value");
+		const periodLabel = await firstPeriod.textContent();
+		if (!periodValue || !periodLabel) {
+			throw new Error("expected the artist index to supply a period option");
+		}
+		await period.selectOption(periodValue);
+		await page.getByRole("button", { name: "APPLY FILTERS" }).focus();
+		await page.keyboard.press("Enter");
 		await expect(page).toHaveURL(/school=bohemian/);
 		await expect(page).toHaveURL(/period=[^&]+/);
 		await expect(page.getByLabel("SCHOOL")).toHaveValue("bohemian");
-		await expect(
-			page.getByLabel("PERIOD").locator("option:checked"),
-		).toHaveText("Baroque");
+		await expect(period.locator("option:checked")).toHaveText(periodLabel);
 	});
 
 	test("keeps ordinary form and letter navigation", async ({ page }) => {

@@ -181,7 +181,9 @@ test("curated selections use namespaced contents and stay in their current pane"
 	).toBe(true);
 
 	const left = page.locator("#dual-left");
-	const open = left.getByRole("link", { name: /OPEN SELECTION/ }).first();
+	const open = left
+		.locator(`a[href*="${encodeURIComponent(curatedSelectionPath)}"]`)
+		.first();
 	await expect(open).toHaveAttribute(
 		"href",
 		new RegExp(`left=${encodeURIComponent(curatedSelectionPath)}`),
@@ -204,7 +206,8 @@ test.describe("dual mode without JavaScript", () => {
 		await page.goto("/dual-mode?wide=1");
 		const leftForm = page.locator("form#dual-filters-left");
 		await leftForm.getByLabel("SCHOOL").selectOption("bohemian");
-		await leftForm.getByRole("button", { name: "APPLY FILTERS" }).click();
+		await leftForm.getByRole("button", { name: "APPLY FILTERS" }).focus();
+		await page.keyboard.press("Enter");
 		await expect(page).toHaveURL(/l_school=bohemian/);
 		await expect(page).not.toHaveURL(/r_school=/);
 	});

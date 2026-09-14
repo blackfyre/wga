@@ -40,9 +40,11 @@ test.describe("without JavaScript", () => {
 			page.getByRole("textbox", { name: "RECIPIENT EMAIL 1" }),
 		).toBeVisible();
 		await expect(page.getByLabel(/MESSAGE/)).toBeVisible();
-		await page.getByRole("button", { name: "+ ADD ANOTHER RECIPIENT" }).click();
+		await page.getByRole("button", { name: "+ ADD ANOTHER RECIPIENT" }).focus();
+		await page.keyboard.press("Enter");
 		await expect(page.locator("[name='recipients[]']")).toHaveCount(2);
-		await page.getByRole("button", { name: "Remove recipient 2" }).click();
+		await page.getByRole("button", { name: "Remove recipient 2" }).focus();
+		await page.keyboard.press("Enter");
 		await expect(page.locator("[name='recipients[]']")).toHaveCount(1);
 
 		let reachedSenderName = false;
@@ -70,7 +72,8 @@ test.describe("without JavaScript", () => {
 			.getByRole("textbox", { name: "RECIPIENT EMAIL 1" })
 			.fill("recipient@example.test");
 		await page.getByLabel(/MESSAGE/).fill("A postcard message");
-		await page.getByRole("button", { name: "SEND POSTCARD →" }).click();
+		await page.getByRole("button", { name: "SEND POSTCARD →" }).focus();
+		await page.keyboard.press("Enter");
 		await expect(page.getByRole("alert")).toContainText("Complete the CAPTCHA");
 		await expect(page.getByLabel("YOUR NAME")).toHaveValue("Keyboard Sender");
 	});
