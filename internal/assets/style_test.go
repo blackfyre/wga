@@ -111,6 +111,23 @@ func readSource(t *testing.T) string {
 	return string(b)
 }
 
+func TestNativeSelectUsesPaletteRolesAndNativeScheme(t *testing.T) {
+	source := readSource(t)
+	for _, expected := range []string{
+		".wga-select-field {",
+		"min-height: 2.75rem;",
+		"color: var(--wga-ink);",
+		"background-color: var(--wga-bg);",
+		`.wga-select-field option {`,
+		`:root[data-theme="light"] .wga-select-field { color-scheme: light; }`,
+		`:root[data-theme="dark"] .wga-select-field { color-scheme: dark; }`,
+	} {
+		if !strings.Contains(source, expected) {
+			t.Fatalf("native select palette contract missing %q", expected)
+		}
+	}
+}
+
 func TestPublicSourcesUseWgaOwnedStyleVocabulary(t *testing.T) {
 	t.Helper()
 	forbidden := regexp.MustCompile(`(?:^|[\s"'=])((?:bg|text|border|outline|ring|shadow|stroke|fill|divide)-(?:base-(?:100|200|300|content)|primary(?:-content)?|secondary(?:-content)?|accent(?:-content)?|neutral(?:-content)?|info(?:-content)?|success(?:-content)?|warning(?:-content)?|error(?:-content)?)|btn(?:-(?:primary|secondary|outline|ghost|neutral|sm))?|badge(?:-(?:primary|secondary))?|card-(?:body|title|actions)|modal-(?:box|backdrop)|table-sm|input-bordered|select-bordered|link-primary|alert-(?:info|warning|error|success|horizontal)|skeleton|rounded-box|label-text)\b`)

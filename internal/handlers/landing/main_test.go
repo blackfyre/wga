@@ -21,6 +21,7 @@ func TestBuildHomePageUsesOnlyEligiblePublishedArtworks(t *testing.T) {
 	createLandingArtist(t, app, "artistalice0001", "Alice", "Alice, Filing", true)
 	createLandingArtist(t, app, "artistbob000001", "Bob", "Bob, Filing", false)
 	createLandingSchool(t, app)
+	createLandingSchoolNamed(t, app, "Italian", "italian")
 	createLandingArtwork(t, app, "artworkalpha001", "Alpha Work", "artistalice0001", true, "2026-01-01 00:00:00.000Z", "small.jpg", 500)
 	createLandingArtwork(t, app, "artworkbravo001", "Bravo Work", "artistalice0001", true, "2026-01-03 00:00:00.000Z", "large.jpg", 1200)
 	createLandingArtwork(t, app, "artworkhidden01", "Hidden Work", "artistalice0001", false, "2026-01-04 00:00:00.000Z", "hidden.jpg", 1200)
@@ -37,8 +38,8 @@ func TestBuildHomePageUsesOnlyEligiblePublishedArtworks(t *testing.T) {
 		t.Fatalf("build same-day home page: %v", err)
 	}
 
-	if page.ArtistCount != "1" || page.ArtworkCount != "3" || page.SchoolCount != "1" {
-		t.Errorf("counts = %q, %q, %q; want 1, 3, 1", page.ArtistCount, page.ArtworkCount, page.SchoolCount)
+	if page.ArtistCount != "1" || page.ArtworkCount != "3" || page.SchoolCount != "2" {
+		t.Errorf("counts = %q, %q, %q; want 1, 3, 2 including a school without holdings", page.ArtistCount, page.ArtworkCount, page.SchoolCount)
 	}
 	if page.FeaturedArtwork.Title != "Alpha Work" || secondPage.FeaturedArtwork != page.FeaturedArtwork {
 		t.Errorf("same-day featured artwork = %#v, %#v; want stable Alpha Work", page.FeaturedArtwork, secondPage.FeaturedArtwork)
@@ -313,6 +314,10 @@ func newLandingTestApp(t *testing.T) *pocketbase.PocketBase {
 	schools := core.NewBaseCollection("Schools")
 	schools.Id = "test_schools"
 	schools.MarkAsNew()
+	schools.Fields.Add(
+		&core.TextField{Id: "school_name", Name: "name", Required: true},
+		&core.TextField{Id: "school_slug", Name: "slug", Required: true},
+	)
 	if err := app.Save(schools); err != nil {
 		t.Fatalf("save schools collection: %v", err)
 	}
@@ -320,12 +325,19 @@ func newLandingTestApp(t *testing.T) *pocketbase.PocketBase {
 }
 
 func createLandingSchool(t *testing.T, app *pocketbase.PocketBase) {
+	createLandingSchoolNamed(t, app, "Dutch", "dutch")
+}
+
+func createLandingSchoolNamed(t *testing.T, app *pocketbase.PocketBase, name string, slug string) {
 	t.Helper()
 	collection, err := app.FindCollectionByNameOrId("schools")
 	if err != nil {
 		t.Fatalf("find schools collection: %v", err)
 	}
-	if err := app.Save(core.NewRecord(collection)); err != nil {
+	record := core.NewRecord(collection)
+	record.Set("name", name)
+	record.Set("slug", slug)
+	if err := app.Save(record); err != nil {
 		t.Fatalf("save school: %v", err)
 	}
 }

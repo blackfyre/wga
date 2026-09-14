@@ -61,6 +61,21 @@ type ChipGroup struct {
 	Options            []ChipOption
 }
 
+// SelectOption is one option in a native public filter select.
+type SelectOption struct {
+	Label    string
+	Value    string
+	Selected bool
+}
+
+// SelectField describes a labelled native public filter select.
+type SelectField struct {
+	ID      string
+	Name    string
+	Label   string
+	Options []SelectOption
+}
+
 // NavChip is a navigational filter link. HxTarget is an optional enhancement.
 type NavChip struct {
 	Label    string

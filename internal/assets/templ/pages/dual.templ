@@ -81,8 +81,8 @@ type DualIndexView struct {
 	Hidden       []DualHiddenField
 	Letters      []DualLetter
 	AllUrl       string
-	SchoolGroup  dto.ChipGroup
-	PeriodGroup  dto.ChipGroup
+	SchoolField  dto.SelectField
+	PeriodField  dto.SelectField
 	NameField    dto.Field
 	BornRange    dto.RangeField
 	HasBornRange bool
@@ -351,13 +351,15 @@ templ dualIndexPane(w DualWindow) {
 		for _, hidden := range w.Index.Hidden {
 			<input type="hidden" name={ hidden.Name } value={ hidden.Value }/>
 		}
-		@components.ChipGroup(w.Index.SchoolGroup)
+		<div class="py-5 border-b border-wga-ink/15">
+			@components.SelectField(w.Index.SchoolField)
+		</div>
 		<div class="flex items-end gap-6 py-5 border-b border-wga-ink/15">
 			<div class="flex-1 min-w-0">
 				@components.Field(w.Index.NameField)
 			</div>
 			<div class="flex-[1.1] min-w-0">
-				@components.ChipGroup(w.Index.PeriodGroup)
+				@components.SelectField(w.Index.PeriodField)
 			</div>
 		</div>
 		if w.Index.HasBornRange {

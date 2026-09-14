@@ -237,7 +237,7 @@ type artPeriod struct {
 }
 
 func loadSchools(app *pocketbase.PocketBase) ([]schoolRef, error) {
-	records, err := app.FindRecordsByFilter("schools", "", "+name", 0, 0)
+	records, err := repositories.ListArtistSchools(app)
 	if err != nil {
 		return nil, err
 	}
@@ -245,9 +245,9 @@ func loadSchools(app *pocketbase.PocketBase) ([]schoolRef, error) {
 	schools := make([]schoolRef, 0, len(records))
 	for _, record := range records {
 		schools = append(schools, schoolRef{
-			id:   record.Id,
-			slug: record.GetString("slug"),
-			name: record.GetString("name"),
+			id:   record.ID,
+			slug: record.Slug,
+			name: record.Name,
 		})
 	}
 
@@ -255,7 +255,7 @@ func loadSchools(app *pocketbase.PocketBase) ([]schoolRef, error) {
 }
 
 func loadArtPeriods(app *pocketbase.PocketBase) ([]artPeriod, error) {
-	records, err := app.FindRecordsByFilter("art_periods", "", "+start,+name", 0, 0)
+	records, err := repositories.ListArtistPeriods(app)
 	if err != nil {
 		return nil, err
 	}
@@ -263,10 +263,10 @@ func loadArtPeriods(app *pocketbase.PocketBase) ([]artPeriod, error) {
 	periods := make([]artPeriod, 0, len(records))
 	for _, record := range records {
 		periods = append(periods, artPeriod{
-			id:    record.Id,
-			name:  record.GetString("name"),
-			start: record.GetInt("start"),
-			end:   record.GetInt("end"),
+			id:    record.ID,
+			name:  record.Name,
+			start: record.Start,
+			end:   record.End,
 		})
 	}
 
@@ -579,26 +579,26 @@ func buildIndexLetters(selected string, available []string, query indexQuery) []
 	return letters
 }
 
-func buildSchoolOptions(schools []schoolRef, selected string) []dto.ChipOption {
-	options := []dto.ChipOption{{Label: "ALL", Value: "", Checked: selected == ""}}
+func buildSchoolOptions(schools []schoolRef, selected string) []dto.SelectOption {
+	options := []dto.SelectOption{{Label: "ALL SCHOOLS", Value: "", Selected: selected == ""}}
 	for _, school := range schools {
-		options = append(options, dto.ChipOption{
-			Label:   school.name,
-			Value:   school.slug,
-			Checked: selected == school.slug,
+		options = append(options, dto.SelectOption{
+			Label:    school.name,
+			Value:    school.slug,
+			Selected: selected == school.slug,
 		})
 	}
 
 	return options
 }
 
-func buildPeriodOptions(periods []artPeriod, selected string) []dto.ChipOption {
-	options := []dto.ChipOption{{Label: "ALL", Value: "", Checked: selected == ""}}
+func buildPeriodOptions(periods []artPeriod, selected string) []dto.SelectOption {
+	options := []dto.SelectOption{{Label: "ALL PERIODS", Value: "", Selected: selected == ""}}
 	for _, period := range periods {
-		options = append(options, dto.ChipOption{
-			Label:   period.name,
-			Value:   period.id,
-			Checked: selected == period.id,
+		options = append(options, dto.SelectOption{
+			Label:    period.name,
+			Value:    period.id,
+			Selected: selected == period.id,
 		})
 	}
 

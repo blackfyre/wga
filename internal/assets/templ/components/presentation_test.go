@@ -177,10 +177,13 @@ func TestDialogBodyProvidesTextualBackdropDismissalWithoutFloatingGlyph(t *testi
 
 func TestFieldProvidesLabelledTextAndBoundedNoteControls(t *testing.T) {
 	text := renderComponent(t, Field(dto.Field{ID: "search", Name: "q", Label: "Search the collection", Type: "search", Value: "Giotto", Required: true, MaxLength: 120, Error: "Enter at least two characters."}))
-	for _, expected := range []string{`<label for="search"`, "Search the collection</label>", `id="search"`, `name="q"`, `type="search"`, `value="Giotto"`, `maxlength="120"`, "required", `aria-describedby="search-description"`, `role="alert"`, "Enter at least two characters.", "text-(length:--t-11)", "text-muted", "text-(length:--t-15)", "border-b", "focus:ring-0"} {
+	for _, expected := range []string{`<label for="search"`, "Search the collection</label>", `id="search"`, `name="q"`, `type="search"`, `value="Giotto"`, `maxlength="120"`, "required", `aria-describedby="search-description"`, `role="alert"`, "Enter at least two characters.", "text-(length:--t-11)", "text-muted", "text-(length:--t-15)", "border-b"} {
 		if !strings.Contains(text, expected) {
 			t.Fatalf("field missing %s", expected)
 		}
+	}
+	if strings.Contains(text, "outline-none") || strings.Contains(text, "focus:ring-0") {
+		t.Fatal("public text field must retain the shared focus-visible outline")
 	}
 
 	note := renderComponent(t, Field(dto.Field{ID: "note", Name: "note", Label: "Curator note", Type: "textarea", Value: "A note", Required: true, MaxLength: 500, Rows: 6}))
@@ -196,6 +199,18 @@ func TestFieldProvidesLabelledTextAndBoundedNoteControls(t *testing.T) {
 	}
 	if !strings.Contains(text, `id="search-description"`) {
 		t.Fatal("described field must render the referenced description")
+	}
+}
+
+func TestSelectFieldUsesLabelledNativeControl(t *testing.T) {
+	rendered := renderComponent(t, SelectField(dto.SelectField{
+		ID: "school", Name: "school", Label: "SCHOOL",
+		Options: []dto.SelectOption{{Label: "ALL SCHOOLS", Selected: true}, {Label: "Dutch", Value: "dutch"}},
+	}))
+	for _, expected := range []string{`<label for="school"`, `<select id="school" name="school"`, "wga-select-field", `<option value="" selected>ALL SCHOOLS</option>`, `<option value="dutch">Dutch</option>`} {
+		if !strings.Contains(rendered, expected) {
+			t.Fatalf("native select missing %s", expected)
+		}
 	}
 }
 

@@ -36,8 +36,8 @@ type ArtistRow struct {
 // ArtistsView is the page-owned contract for the artist index.
 type ArtistsView struct {
 	Letters        []ArtistLetter
-	Schools        []dto.ChipOption
-	Periods        []dto.ChipOption
+	Schools        []dto.SelectOption
+	Periods        []dto.SelectOption
 	NameField      dto.Field
 	BornRange      dto.RangeField
 	HasBirthBounds bool
@@ -120,7 +120,9 @@ templ ArtistsBlock(c ArtistsView) {
 				<input type="hidden" name="sort" value={ c.Sort }/>
 			}
 			<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 py-5 border-b border-wga-ink/15">
-				@components.ChipGroup(dto.ChipGroup{Legend: "SCHOOL", Name: "school", Inline: true, Options: c.Schools})
+				<div class="min-w-0 flex-1 md:max-w-sm">
+					@components.SelectField(dto.SelectField{ID: "artist-school", Label: "SCHOOL", Name: "school", Options: c.Schools})
+				</div>
 				<div class="flex flex-wrap items-center gap-2 shrink-0">
 					<span class="font-mono text-(length:--t-11) tracking-[1px] text-muted mr-1.5">VIEW</span>
 					<a
@@ -148,7 +150,7 @@ templ ArtistsBlock(c ArtistsView) {
 					@components.Field(c.NameField)
 				</div>
 				<div class="flex-[1.4] min-w-0">
-					@components.ChipGroup(dto.ChipGroup{Legend: "PERIOD", Name: "period", Inline: true, Options: c.Periods})
+					@components.SelectField(dto.SelectField{ID: "artist-period", Label: "PERIOD", Name: "period", Options: c.Periods})
 				</div>
 				<div class="flex-1 min-w-0">
 					if c.HasBirthBounds {

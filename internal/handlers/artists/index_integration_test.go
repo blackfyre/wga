@@ -292,7 +292,7 @@ func TestBuildArtistIndexViewClearsUnknownSchool(t *testing.T) {
 		t.Errorf("canonical = %q, want /artists (unknown school dropped)", canonical)
 	}
 	for _, option := range view.Schools {
-		if option.Value != "" && option.Checked {
+		if option.Value != "" && option.Selected {
 			t.Errorf("no known school option should be checked after unknown-school normalisation, got %#v", option)
 		}
 	}

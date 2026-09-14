@@ -71,7 +71,15 @@ test("both panes default to the artist index with independent filters", async ({
 		const form = page.locator(`form#dual-filters-${side}`);
 		await expect(form).toHaveAttribute("action", "/dual-mode");
 		await expect(form).toHaveAttribute("method", "GET");
+		await expect(form.getByLabel("SCHOOL")).toHaveCount(1);
+		await expect(form.getByLabel("PERIOD")).toHaveCount(1);
 	}
+	await page
+		.locator("#dual-left")
+		.getByLabel("SCHOOL")
+		.selectOption("bohemian");
+	await expect(page).toHaveURL(/l_school=bohemian/);
+	await expect(page).not.toHaveURL(/r_school=/);
 });
 
 test("an artist and its work render as complete records with citations", async ({
@@ -143,6 +151,17 @@ test("dual share URL restores independent pane paths, sizes, and routing", async
 
 test.describe("dual mode without JavaScript", () => {
 	test.use({ javaScriptEnabled: false });
+
+	test("submits pane-prefixed native filters independently", async ({
+		page,
+	}) => {
+		await page.goto("/dual-mode?wide=1");
+		const leftForm = page.locator("form#dual-filters-left");
+		await leftForm.getByLabel("SCHOOL").selectOption("bohemian");
+		await leftForm.getByRole("button", { name: "APPLY FILTERS" }).click();
+		await expect(page).toHaveURL(/l_school=bohemian/);
+		await expect(page).not.toHaveURL(/r_school=/);
+	});
 
 	test("keeps ordinary index links and a GET filter form", async ({ page }) => {
 		await page.goto("/dual-mode");

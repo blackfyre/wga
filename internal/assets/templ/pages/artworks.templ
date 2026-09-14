@@ -145,7 +145,7 @@ templ ArtworkSeachFilterBlock(b ArtworkSearchView) {
 			<label class="block">
 				<span class="sr-only">{ b.NameField.Label }</span>
 				<input
-					class="w-full border-0 border-b border-wga-ink bg-transparent px-0 py-2 text-sm outline-none focus:ring-0"
+					class="w-full border-0 border-b border-wga-ink bg-transparent px-0 py-2 text-sm"
 					type="search"
 					id="artwork-query"
 					data-keyboard-page-search
@@ -159,7 +159,7 @@ templ ArtworkSeachFilterBlock(b ArtworkSearchView) {
 			<label class="block">
 				<span class="sr-only">{ b.TechniqueField.Label }</span>
 				<input
-					class="w-full border-0 border-b border-wga-ink bg-transparent px-0 py-2 text-sm outline-none focus:ring-0"
+					class="w-full border-0 border-b border-wga-ink bg-transparent px-0 py-2 text-sm"
 					type="search"
 					id="artwork-technique"
 					name="technique"
@@ -188,7 +188,7 @@ templ ArtworkSeachFilterBlock(b ArtworkSearchView) {
 					name={ b.Facets.Collection.QueryField.Name }
 					value={ b.Facets.Collection.QueryField.Value }
 					placeholder={ b.Facets.Collection.QueryField.Placeholder }
-					class="w-full border-0 border-b border-wga-ink/30 bg-transparent px-0 py-1.5 text-sm outline-none focus:ring-0"
+					class="w-full border-0 border-b border-wga-ink/30 bg-transparent px-0 py-1.5 text-sm"
 				/>
 			</label>
 			<div class="mt-3 max-h-[196px] overflow-y-auto overscroll-contain border-t border-wga-ink/10">

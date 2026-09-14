@@ -54,7 +54,7 @@ templ GlossaryBlock(view GlossaryView) {
 			}
 			<label class="w-full md:w-80">
 				<span class="sr-only">Search terms and definitions</span>
-				<input class="w-full border-0 border-b border-wga-ink bg-transparent px-0 py-2 text-sm outline-none focus:ring-0" type="search" name="q" value={ view.Query } placeholder="Search terms and definitions"/>
+				<input class="w-full border-0 border-b border-wga-ink bg-transparent px-0 py-2 text-sm" type="search" name="q" value={ view.Query } placeholder="Search terms and definitions"/>
 			</label>
 			<p class="font-mono text-xs tracking-[1px] text-wga-ink/60" aria-live="polite">{ len(view.Terms) } SHOWN</p>
 		</form>

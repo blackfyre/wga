@@ -35,8 +35,8 @@ func allLetters() []ArtistLetter {
 func sampleView() ArtistsView {
 	return ArtistsView{
 		Letters: allLetters(),
-		Schools: []dto.ChipOption{{Label: "ALL", Value: "", Checked: true}, {Label: "Dutch", Value: "dutch"}},
-		Periods: []dto.ChipOption{{Label: "ALL", Value: "", Checked: true}, {Label: "Baroque", Value: "periodbaroque"}},
+		Schools: []dto.SelectOption{{Label: "ALL SCHOOLS", Value: "", Selected: true}, {Label: "Dutch", Value: "dutch"}},
+		Periods: []dto.SelectOption{{Label: "ALL PERIODS", Value: "", Selected: true}, {Label: "Baroque", Value: "periodbaroque"}},
 		NameField: dto.Field{
 			ID:          "artist-name",
 			Name:        "q",
@@ -168,6 +168,18 @@ func TestArtistsBlockRendersLabelledRangeControl(t *testing.T) {
 	}
 	if !strings.Contains(rendered, `name="born_from"`) || !strings.Contains(rendered, `name="born_to"`) {
 		t.Error("expected born_from and born_to range inputs")
+	}
+}
+
+func TestArtistsBlockUsesNativeSchoolAndPeriodSelects(t *testing.T) {
+	rendered := renderArtistsBlock(t, sampleView())
+	for _, expected := range []string{`<select id="artist-school" name="school"`, `<select id="artist-period" name="period"`, "ALL SCHOOLS", "ALL PERIODS"} {
+		if !strings.Contains(rendered, expected) {
+			t.Fatalf("artist filters missing %s", expected)
+		}
+	}
+	if strings.Contains(rendered, `<input type="radio" name="school"`) || strings.Contains(rendered, `<input type="radio" name="period"`) {
+		t.Fatal("artist school and period filters must not render chip radios")
 	}
 }
 

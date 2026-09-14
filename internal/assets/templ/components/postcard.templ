@@ -39,7 +39,7 @@ templ PostcardEditor(p PostcardEditorDTO) {
 				<div>
 					<p class="font-mono text-(length:--t-10) tracking-[1px]">RECIPIENTS</p>
 					<div id="recipients-array" class="mt-2 space-y-2">
-						<label class="flex items-center gap-2 border border-wga-ink/30 px-3 py-1.5"><span class="sr-only">Recipient email</span><input type="text" class="min-w-0 grow bg-transparent py-1 text-sm outline-none" name="recipients[]" placeholder="friend@provider.tld" autocomplete="email" required/><button type="button" class="shrink-0 font-mono text-xs text-wga-ink/60 hover:text-wga-ink" title="Remove recipient" data-cloner-remove-me>REMOVE</button></label>
+						<label class="flex items-center gap-2 border border-wga-ink/30 px-3 py-1.5"><span class="sr-only">Recipient email</span><input type="text" class="min-w-0 grow bg-transparent py-1 text-sm" name="recipients[]" placeholder="friend@provider.tld" autocomplete="email" required/><button type="button" class="shrink-0 font-mono text-xs text-wga-ink/60 hover:text-wga-ink" title="Remove recipient" data-cloner-remove-me>REMOVE</button></label>
 					</div>
 					<button type="button" class="wga-action-link mt-3 font-mono text-(length:--t-10) tracking-[1px]" data-cloner-target="#recipients-array">ADD RECIPIENT +</button>
 				</div>

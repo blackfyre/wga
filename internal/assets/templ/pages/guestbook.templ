@@ -48,7 +48,7 @@ templ GuestbookBlock(v GuestbookView) {
 			<div class="min-w-0 flex-1 md:order-1">
 				<form hx-get="/guestbook" hx-target="#guestbook" hx-select="#guestbook" hx-swap="outerHTML" hx-trigger="change, input changed delay:300ms from:input[type=search]" class="mb-6">
 					<div class="flex items-center gap-3.5 pb-4.5">
-						<label class="min-w-0 flex-1"><span class="sr-only">Search entries</span><input type="search" name="q" value={ v.Query } placeholder="Search entries by name, place or text" class="w-full border-0 border-b border-wga-ink bg-transparent px-0 py-2 text-sm outline-none focus:ring-0"/></label>
+						<label class="min-w-0 flex-1"><span class="sr-only">Search entries</span><input type="search" name="q" value={ v.Query } placeholder="Search entries by name, place or text" class="w-full border-0 border-b border-wga-ink bg-transparent px-0 py-2 text-sm"/></label>
 						<p class="whitespace-nowrap font-mono text-(length:--t-11) text-wga-ink/60" aria-live="polite">{ strconv.Itoa(v.ScopeTotal) } FOUND</p>
 					</div>
 					<input type="hidden" name="year" value={ v.SelectedYear }/>
@@ -102,14 +102,14 @@ templ GuestbookEntryForm(v GuestbookFormView) {
 			<div class="mb-6 flex flex-col gap-5">
 				<label class="block">
 					<span class="mb-2 block font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60">NAME</span>
-					<input type="text" class="w-full border-0 border-b border-wga-ink bg-transparent px-0 py-2 text-(length:--t-15) outline-none focus:ring-0" placeholder="Your name" name="sender_name" autocomplete="name" id="sender_name" value={ v.Name } maxlength="100" aria-invalid={ invalidField(v.NameError) } aria-describedby={ errorID("sender_name", v.NameError) } required/>
+					<input type="text" class="w-full border-0 border-b border-wga-ink bg-transparent px-0 py-2 text-(length:--t-15)" placeholder="Your name" name="sender_name" autocomplete="name" id="sender_name" value={ v.Name } maxlength="100" aria-invalid={ invalidField(v.NameError) } aria-describedby={ errorID("sender_name", v.NameError) } required/>
 					if v.NameError != "" {
 						<span id="sender_name-error" class="mt-1 block text-sm text-wga-error">{ v.NameError }</span>
 					}
 				</label>
 				<label class="block">
 					<span class="mb-2 block font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60">LOCATION</span>
-					<input type="text" class="w-full border-0 border-b border-wga-ink bg-transparent px-0 py-2 text-(length:--t-15) outline-none focus:ring-0" placeholder="Your location" name="location" autocomplete="address-level2" id="location" value={ v.Location } maxlength="120" aria-invalid={ invalidField(v.LocationError) } aria-describedby={ errorID("location", v.LocationError) } required/>
+					<input type="text" class="w-full border-0 border-b border-wga-ink bg-transparent px-0 py-2 text-(length:--t-15)" placeholder="Your location" name="location" autocomplete="address-level2" id="location" value={ v.Location } maxlength="120" aria-invalid={ invalidField(v.LocationError) } aria-describedby={ errorID("location", v.LocationError) } required/>
 					if v.LocationError != "" {
 						<span id="location-error" class="mt-1 block text-sm text-wga-error">{ v.LocationError }</span>
 					}

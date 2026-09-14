@@ -88,13 +88,11 @@ func (r *LandingRepository) CountPublishedArtworks() (int, error) {
 }
 
 func (r *LandingRepository) CountSchools() (int, error) {
-	row := countRow{}
-	err := r.app.DB().NewQuery("SELECT COUNT(*) as c FROM Schools").One(&row)
+	schools, err := ListArtistSchools(r.app)
 	if err != nil {
 		return 0, err
 	}
-
-	return row.Count, nil
+	return len(schools), nil
 }
 
 func (r *LandingRepository) CountEligibleArtworks() (int, error) {

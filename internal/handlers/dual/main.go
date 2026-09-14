@@ -704,41 +704,34 @@ func loadDualReferenceContext(ctx context.Context, app core.App, checkpoint dual
 	if err := checkpoint(ctx, "dual.reference.schools"); err != nil {
 		return ref, err
 	}
-	schoolRecords, err := app.FindRecordsByFilter(constants.CollectionSchools, "", "+name", 0, 0)
+	schoolRecords, err := repositories.ListArtistSchools(app)
 	if err != nil {
 		return ref, err
 	}
 	ref.schoolSlugs = map[string]string{}
 	ref.schoolByID = map[string]string{}
 	for _, record := range schoolRecords {
-		slug := record.GetString("slug")
-		name := record.GetString("name")
-		if name == "" {
-			continue
-		}
-		ref.schoolByID[record.Id] = name
-		if slug != "" {
-			ref.schoolSlugs[slug] = name
-		}
+		ref.schoolByID[record.ID] = record.Name
+		ref.schoolSlugs[record.Slug] = record.Name
 	}
 
 	if err := checkpoint(ctx, "dual.reference.periods"); err != nil {
 		return ref, err
 	}
-	periodRecords, err := app.FindRecordsByFilter("art_periods", "", "+start,+name", 0, 0)
+	periodRecords, err := repositories.ListArtistPeriods(app)
 	if err != nil {
 		return ref, err
 	}
 	ref.periodByID = map[string]dualPeriod{}
 	for _, record := range periodRecords {
 		period := dualPeriod{
-			id:    record.Id,
-			name:  record.GetString("name"),
-			start: record.GetInt("start"),
-			end:   record.GetInt("end"),
+			id:    record.ID,
+			name:  record.Name,
+			start: record.Start,
+			end:   record.End,
 		}
 		ref.periods = append(ref.periods, period)
-		ref.periodByID[record.Id] = period
+		ref.periodByID[record.ID] = period
 	}
 
 	repo := repositories.NewArtistIndexRepository(app)
@@ -812,8 +805,8 @@ func buildDualIndexViewContext(ctx context.Context, app *pocketbase.PocketBase, 
 		Hidden:      state.hiddenFieldsFor(side),
 		Letters:     buildDualLetters(side, idx, state, availableLetters),
 		AllUrl:      state.withPaneIndex(side, idx.withLetter("")).path(),
-		SchoolGroup: buildDualSchoolGroup(side, idx, ref),
-		PeriodGroup: buildDualPeriodGroup(side, idx, ref),
+		SchoolField: buildDualSchoolField(side, idx, ref),
+		PeriodField: buildDualPeriodField(side, idx, ref),
 		NameField:   buildDualNameField(side, idx),
 		GridHref:    state.withPaneIndex(side, idx.withView(viewGrid)).path(),
 		ListHref:    state.withPaneIndex(side, idx.withView(viewList)).path(),
@@ -868,35 +861,46 @@ func buildDualLetters(side string, idx dualIndexState, state dualState, availabl
 	return letters
 }
 
-func buildDualSchoolGroup(side string, idx dualIndexState, ref dualReference) dto.ChipGroup {
-	options := []dto.ChipOption{{Label: "ALL", Value: "", Checked: idx.school == ""}}
+func buildDualSchoolField(side string, idx dualIndexState, ref dualReference) dto.SelectField {
+	options := []dto.SelectOption{{Label: "ALL SCHOOLS", Value: "", Selected: idx.school == ""}}
 
 	slugs := make([]string, 0, len(ref.schoolSlugs))
 	for slug := range ref.schoolSlugs {
 		slugs = append(slugs, slug)
 	}
-	sort.Strings(slugs)
+	sort.Slice(slugs, func(i, j int) bool {
+		left, right := strings.ToLower(ref.schoolSlugs[slugs[i]]), strings.ToLower(ref.schoolSlugs[slugs[j]])
+		if left == right {
+			return slugs[i] < slugs[j]
+		}
+		return left < right
+	})
 
 	for _, slug := range slugs {
-		options = append(options, dto.ChipOption{
-			Label:   ref.schoolSlugs[slug],
-			Value:   slug,
-			Checked: idx.school == slug,
+		options = append(options, dto.SelectOption{
+			Label:    ref.schoolSlugs[slug],
+			Value:    slug,
+			Selected: idx.school == slug,
 		})
 	}
 
-	return dto.ChipGroup{Legend: "SCHOOL", Name: dualPrefix(side) + "_school", Inline: true, Options: options}
+	return dto.SelectField{ID: dualPrefix(side) + "-school", Label: "SCHOOL", Name: dualPrefix(side) + "_school", Options: options}
 }
 
-func buildDualPeriodGroup(side string, idx dualIndexState, ref dualReference) dto.ChipGroup {
-	options := []dto.ChipOption{{Label: "ALL", Value: "", Checked: idx.period == ""}}
+func buildDualPeriodField(side string, idx dualIndexState, ref dualReference) dto.SelectField {
+	options := []dto.SelectOption{{Label: "ALL PERIODS", Value: "", Selected: idx.period == ""}}
 
 	ids := make([]string, 0, len(ref.periodByID))
 	for id := range ref.periodByID {
 		ids = append(ids, id)
 	}
 	sort.Slice(ids, func(a, b int) bool {
-		return ref.periodByID[ids[a]].start < ref.periodByID[ids[b]].start
+		left, right := ref.periodByID[ids[a]], ref.periodByID[ids[b]]
+		leftName, rightName := strings.ToLower(left.name), strings.ToLower(right.name)
+		if leftName == rightName {
+			return left.id < right.id
+		}
+		return leftName < rightName
 	})
 
 	for _, id := range ids {
@@ -904,14 +908,14 @@ func buildDualPeriodGroup(side string, idx dualIndexState, ref dualReference) dt
 		if period.name == "" {
 			continue
 		}
-		options = append(options, dto.ChipOption{
-			Label:   period.name,
-			Value:   id,
-			Checked: idx.period == id,
+		options = append(options, dto.SelectOption{
+			Label:    period.name,
+			Value:    id,
+			Selected: idx.period == id,
 		})
 	}
 
-	return dto.ChipGroup{Legend: "PERIOD", Name: dualPrefix(side) + "_period", Inline: true, Options: options}
+	return dto.SelectField{ID: dualPrefix(side) + "-period", Label: "PERIOD", Name: dualPrefix(side) + "_period", Options: options}
 }
 
 func buildDualNameField(side string, idx dualIndexState) dto.Field {

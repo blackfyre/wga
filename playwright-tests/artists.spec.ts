@@ -47,9 +47,7 @@ test("artist index combines name and school filters", async ({ page }) => {
 	);
 
 	// A school filter combines with the name query.
-	await page
-		.locator("form#artist-filters label", { hasText: "Bohemian" })
-		.click();
+	await page.getByLabel("SCHOOL").selectOption("bohemian");
 	await expect(page).toHaveURL(/school=bohemian/);
 	await expect(page).toHaveURL(/q=Artist\+04/);
 	await expect(page.locator("#artists")).toContainText("SYNTHETIC ARTIST 04");
@@ -143,9 +141,7 @@ test("artist index responds by keyboard and resets after HTMX swaps", async ({
 	await expect(page.locator("#artists li[data-kbd-caret]")).toHaveCount(1);
 
 	// A filter swap replaces #artists and clears the stale caret state.
-	await page
-		.locator("form#artist-filters label", { hasText: "Bohemian" })
-		.click();
+	await page.getByLabel("SCHOOL").selectOption("bohemian");
 	await expect(page.locator("#artists")).toContainText("SYNTHETIC ARTIST 04");
 	await expect(page.locator("#artists li[data-kbd-caret]")).toHaveCount(0);
 });
@@ -176,6 +172,10 @@ test("artist index honours dark theme and reduced motion", async ({ page }) => {
 	await page.goto("/artists");
 	await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 	await expect(page.locator("#artists h1")).toBeVisible();
+	const school = page.getByLabel("SCHOOL");
+	await expect(school).toHaveCSS("color-scheme", "dark");
+	await school.focus();
+	await expect(school).toBeFocused();
 });
 
 test("artist index reflows at 200% text (400% reflow) without overflow", async ({
@@ -193,6 +193,26 @@ test("artist index reflows at 200% text (400% reflow) without overflow", async (
 test.describe("artist index without JavaScript", () => {
 	test.use({ javaScriptEnabled: false });
 
+	test("submits native school and period controls as an ordinary GET form", async ({
+		page,
+	}) => {
+		await page.goto("/artists");
+		const school = page.getByLabel("SCHOOL");
+		await school.focus();
+		await page.keyboard.press("b");
+		await expect(school).toBeFocused();
+		await expect(school.locator("option:checked")).toHaveText(/^B/);
+		await school.selectOption("bohemian");
+		await page.getByLabel("PERIOD").selectOption({ label: "Baroque" });
+		await page.getByRole("button", { name: "APPLY FILTERS" }).click();
+		await expect(page).toHaveURL(/school=bohemian/);
+		await expect(page).toHaveURL(/period=[^&]+/);
+		await expect(page.getByLabel("SCHOOL")).toHaveValue("bohemian");
+		await expect(
+			page.getByLabel("PERIOD").locator("option:checked"),
+		).toHaveText("Baroque");
+	});
+
 	test("keeps ordinary form and letter navigation", async ({ page }) => {
 		await page.emulateMedia({ reducedMotion: "reduce" });
 		await page.goto("/artists");
@@ -202,6 +222,8 @@ test.describe("artist index without JavaScript", () => {
 			"action",
 			"/artists",
 		);
+		await expect(page.getByLabel("SCHOOL")).toHaveCount(1);
+		await expect(page.getByLabel("PERIOD")).toHaveCount(1);
 
 		await page
 			.locator("form#artist-filters input[type='search']")

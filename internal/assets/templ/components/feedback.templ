@@ -36,7 +36,7 @@ templ FeedbackForm(v FeedbackView) {
 				<span class="mb-2 block font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60">YOUR MESSAGE — <output id="feedback-chars">600</output> CHARACTERS LEFT</span>
 				<textarea class="min-h-[120px] w-full border border-wga-ink/30 bg-transparent p-3 text-(length:--t-15) leading-relaxed" id="feedback-message" maxlength="600" name="message" placeholder="e.g. the date given for this work is a decade too early." required hx-on:input="wga.feedback.countdown(this)"></textarea>
 			</label>
-			<label class="mb-5.5 block" for="feedback-email"><span class="mb-2 block font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60">EMAIL — OPTIONAL, ONLY IF YOU WANT A REPLY</span><input class="w-full border-0 border-b border-wga-ink bg-transparent px-0 py-2 text-(length:--t-15) outline-none focus:ring-0" id="feedback-email" name="sender_email" type="email" autocomplete="email" placeholder="you@example.com"/></label>
+			<label class="mb-5.5 block" for="feedback-email"><span class="mb-2 block font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60">EMAIL — OPTIONAL, ONLY IF YOU WANT A REPLY</span><input class="w-full border-0 border-b border-wga-ink bg-transparent px-0 py-2 text-(length:--t-15)" id="feedback-email" name="sender_email" type="email" autocomplete="email" placeholder="you@example.com"/></label>
 			<dl class="mb-5.5 border-t border-wga-ink/15 pt-3.5">
 				<div class="flex justify-between gap-4 py-[7px]">
 					<dt class="font-mono text-(length:--t-10) tracking-[1px] text-wga-ink/60">SENT WITH THIS REPORT</dt>

@@ -59,16 +59,16 @@ templ ItineraryMetaForm(view dto.ItineraryBuilderView) {
 		<div class="flex flex-col items-start gap-6 pb-7 md:flex-row md:gap-10">
 			<label class="w-full min-w-0 flex-1">
 				<span class="mb-2 block font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60">TITLE OF THE ITINERARY — 80 CHARACTER LIMIT</span>
-				<input form="itinerary-publish-form" type="text" name="title" value={ view.Title } maxlength="80" placeholder="e.g. Five rooms, one window" class="w-full border-0 border-b border-wga-ink bg-transparent px-0 py-2.5 text-(length:--t-17) outline-none focus:ring-0"/>
+				<input form="itinerary-publish-form" type="text" name="title" value={ view.Title } maxlength="80" placeholder="e.g. Five rooms, one window" class="w-full border-0 border-b border-wga-ink bg-transparent px-0 py-2.5 text-(length:--t-17)"/>
 			</label>
 			<label class="w-full shrink-0 md:w-[260px]">
 				<span class="mb-2 block font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60">SHOWN AS THE MAKER — OPTIONAL</span>
-				<input form="itinerary-publish-form" type="text" name="creator" value={ view.Creator } maxlength="40" placeholder="A name or Anon." class="w-full border-0 border-b border-wga-ink bg-transparent px-0 py-2.5 text-(length:--t-17) outline-none focus:ring-0"/>
+				<input form="itinerary-publish-form" type="text" name="creator" value={ view.Creator } maxlength="40" placeholder="A name or Anon." class="w-full border-0 border-b border-wga-ink bg-transparent px-0 py-2.5 text-(length:--t-17)"/>
 			</label>
 		</div>
 		<label class="block pb-7">
 			<span class="mb-2 block font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60">INTRODUCTION — 400 CHARACTER LIMIT</span>
-			<textarea form="itinerary-publish-form" name="intro" maxlength="400" placeholder="What holds these works together, and what you want a visitor to notice." class="min-h-20 w-full rounded-none border border-wga-ink/30 bg-transparent p-3 text-(length:--t-15) leading-relaxed outline-none focus:ring-0">{ view.Intro }</textarea>
+			<textarea form="itinerary-publish-form" name="intro" maxlength="400" placeholder="What holds these works together, and what you want a visitor to notice." class="min-h-20 w-full rounded-none border border-wga-ink/30 bg-transparent p-3 text-(length:--t-15) leading-relaxed">{ view.Intro }</textarea>
 		</label>
 	</div>
 }
@@ -89,7 +89,7 @@ templ ItineraryPicker(view dto.ItineraryBuilderView) {
 			<form method="get" action="/itineraries/new" hx-get="/itineraries/draft" hx-target="#itinerary-builder" hx-swap="outerHTML" hx-select="unset" hx-confirm="Discard unfinished title, introduction, maker, and narration?" class="mb-4 flex flex-wrap items-baseline justify-between gap-3">
 				<input type="hidden" name="picker" value="1"/>
 				<input type="hidden" name="stop" value={ strconv.Itoa(view.Selected) }/>
-				<label class="w-full md:w-[340px]"><span class="sr-only">Search works to add</span><input type="search" name="pq" value={ view.Query } placeholder="Search the collection by title or artist" class="w-full border-0 border-b border-wga-ink bg-transparent px-0 py-2 text-sm outline-none focus:ring-0"/></label>
+				<label class="w-full md:w-[340px]"><span class="sr-only">Search works to add</span><input type="search" name="pq" value={ view.Query } placeholder="Search the collection by title or artist" class="w-full border-0 border-b border-wga-ink bg-transparent px-0 py-2 text-sm"/></label>
 				<p class="font-mono text-(length:--t-10) tracking-[1px] text-wga-ink/40" aria-live="polite">{ strconv.Itoa(len(view.Picker)) + " SHOWN" }</p>
 				<button type="submit" class="wga-action-link font-mono text-(length:--t-10) tracking-[1px]">SEARCH</button>
 			</form>
@@ -215,7 +215,7 @@ templ ItineraryStopEditorPanel(view dto.ItineraryBuilderView, index int, stop dt
 				}
 				<label class="block">
 					<span class="mb-2 block font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60">YOUR NARRATION — 600 CHARACTER LIMIT</span>
-					<textarea form="itinerary-publish-form" data-itinerary-narration={ stop.ID } name={ "narration." + stop.ID } maxlength="600" placeholder="What should a visitor look at here, and why does it follow the work before it?" class="min-h-40 w-full rounded-none border border-wga-ink/30 bg-transparent p-3 text-(length:--t-15) leading-relaxed outline-none focus:ring-0">{ stop.Narration }</textarea>
+					<textarea form="itinerary-publish-form" data-itinerary-narration={ stop.ID } name={ "narration." + stop.ID } maxlength="600" placeholder="What should a visitor look at here, and why does it follow the work before it?" class="min-h-40 w-full rounded-none border border-wga-ink/30 bg-transparent p-3 text-(length:--t-15) leading-relaxed">{ stop.Narration }</textarea>
 				</label>
 				<div class="mt-2.5 flex justify-between gap-4">
 					<p class="font-mono text-(length:--t-10) tracking-[0.5px] text-wga-ink/40">

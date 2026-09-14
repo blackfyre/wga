@@ -1587,13 +1587,13 @@ func TestDualModeBlockRendersNoJavascriptControls(t *testing.T) {
 					SortHref:  "/dual-mode?l_sort=za",
 					SortLabel: "A–Z",
 					Letters:   []pages.DualLetter{{Label: "A", Href: "/dual-mode?l_letter=A", Enabled: true}},
-					SchoolGroup: dto.ChipGroup{
-						Legend: "SCHOOL", Name: "l_school", Inline: true,
-						Options: []dto.ChipOption{{Label: "ALL", Value: "", Checked: true}},
+					SchoolField: dto.SelectField{
+						ID: "l-school", Label: "SCHOOL", Name: "l_school",
+						Options: []dto.SelectOption{{Label: "ALL SCHOOLS", Value: "", Selected: true}},
 					},
-					PeriodGroup: dto.ChipGroup{
-						Legend: "PERIOD", Name: "l_period", Inline: true,
-						Options: []dto.ChipOption{{Label: "ALL", Value: "", Checked: true}},
+					PeriodField: dto.SelectField{
+						ID: "l-period", Label: "PERIOD", Name: "l_period",
+						Options: []dto.SelectOption{{Label: "ALL PERIODS", Value: "", Selected: true}},
 					},
 					NameField: dto.Field{ID: "l-name", Name: "l_q", Label: "NAME CONTAINS", Type: "search"},
 					Artists: []pages.DualArtistRow{

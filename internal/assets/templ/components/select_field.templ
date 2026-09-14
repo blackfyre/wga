@@ -1,0 +1,14 @@
+package components
+
+import "github.com/blackfyre/wga/internal/assets/templ/dto"
+
+templ SelectField(field dto.SelectField) {
+	<div class="grid gap-2">
+		<label for={ field.ID } class="font-mono text-(length:--t-11) tracking-[1px] text-muted">{ field.Label }</label>
+		<select id={ field.ID } name={ field.Name } class="wga-select-field w-full border-0 border-b border-wga-ink bg-wga-bg px-0 py-2.5 text-(length:--t-15)">
+			for _, option := range field.Options {
+				<option value={ option.Value } selected?={ option.Selected }>{ option.Label }</option>
+			}
+		</select>
+	</div>
+}

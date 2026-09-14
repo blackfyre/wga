@@ -1671,6 +1671,20 @@
 		color: var(--wga-action-ink-hover);
 	}
 
+	.wga-select-field {
+		min-height: 2.75rem;
+		color: var(--wga-ink);
+		background-color: var(--wga-bg);
+	}
+
+	.wga-select-field option {
+		color: var(--wga-ink);
+		background-color: var(--wga-bg);
+	}
+
+	:root[data-theme="light"] .wga-select-field { color-scheme: light; }
+	:root[data-theme="dark"] .wga-select-field { color-scheme: dark; }
+
 	.wga-trailing-action {
 		display: block;
 		text-align: right;
