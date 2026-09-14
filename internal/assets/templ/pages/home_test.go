@@ -52,7 +52,7 @@ func TestHomeRendersCollectionDiscoveryAndWorks(t *testing.T) {
 
 	for _, expected := range []string{
 		"Explore artists and artworks", "WORK OF THE DAY", "The Annunciation", "Fra Angelico · 1438",
-		"49,610", "4,012", "128", "ARTWORKS", "ARTISTS", "SCHOOLS", "3RD–19TH", "PERIOD",
+		"PROVIDING EXPERIENCE SINCE 1996", "49,610", "4,012", "128", "ARTWORKS", "ARTISTS", "SCHOOLS", "3RD–EARLY 20TH", "PERIOD",
 		"RECENT ADDITIONS", "ALL WORKS", "The Birth of Venus", "Sandro Botticelli · 1485",
 		"Compare two works side by side", "Send any work as a postcard", "Help sustain the archive",
 		`href="/artworks/annunciation"`, `href="/artworks/birth-of-venus"`,
@@ -63,6 +63,9 @@ func TestHomeRendersCollectionDiscoveryAndWorks(t *testing.T) {
 		if !strings.Contains(rendered, expected) {
 			t.Errorf("expected rendered home to contain %q\ngot: %s", expected, rendered)
 		}
+	}
+	if strings.Contains(rendered, "SINCE 1992") || strings.Contains(rendered, "3RD–19TH") {
+		t.Fatal("home page must not retain superseded chronology copy")
 	}
 
 	for _, route := range []string{"/artists", "/artworks", "/inspire"} {

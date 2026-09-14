@@ -28,9 +28,6 @@ templ MusicPeriodPlayerCard(songID string, piece string, playerURL string) {
 				<p class="text-(length:--t-15) leading-relaxed" data-wga-music-label>{ piece }</p>
 			</div>
 		</div>
-		<div class="mt-3 border border-wga-warning/50 bg-wga-warning/10 p-3 text-sm" role="status" data-wga-music-blocked hidden>
-			<p>The period-music player could not be opened. Allow pop-ups for this site, then try again.</p>
-			<button type="button" class="mt-2 font-mono text-(length:--t-10) tracking-[1px] underline" data-wga-music-dismiss>DISMISS</button>
-		</div>
+		<div class="mt-3 border border-wga-warning/50 bg-wga-warning/10 p-3 text-sm" role="status" aria-live="polite" aria-atomic="true" data-wga-music-blocked hidden></div>
 	</div>
 }

@@ -50,6 +50,14 @@ test.describe("home collection entry", () => {
 				),
 			).toBeVisible();
 			await expect(
+				page.getByText("00 — PROVIDING EXPERIENCE SINCE 1996", {
+					exact: true,
+				}),
+			).toBeVisible();
+			await expect(
+				page.getByRole("link", { name: "For agents · llms.txt" }),
+			).toHaveAttribute("href", "/llms.txt");
+			await expect(
 				page.locator("aside[aria-labelledby='work-of-the-day-title']"),
 			).toBeVisible();
 			await assertNoHorizontalOverflow(page);
@@ -67,7 +75,7 @@ test.describe("home collection entry", () => {
 				.filter({ hasText: label })
 				.locator("..")
 				.locator("dd");
-			await expect(count).toHaveText(/\d[\d,]*|3RD–19TH/);
+			await expect(count).toHaveText(/\d[\d,]*|3RD–EARLY 20TH/);
 		}
 
 		await expect(page.locator("#work-of-the-day-title")).toBeVisible();

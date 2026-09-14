@@ -67,6 +67,18 @@ func TestFooterRendersAboutDestinationsInReferenceOrder(t *testing.T) {
 	}
 }
 
+func TestFooterExposesTheAgentGuideToVisibleLinkExtractors(t *testing.T) {
+	var output bytes.Buffer
+	if err := Footer().Render(context.Background(), &output); err != nil {
+		t.Fatalf("render footer: %v", err)
+	}
+
+	rendered := output.String()
+	if !strings.Contains(rendered, `<a href="/llms.txt" type="text/markdown" class="hover:text-wga-accent">For agents · llms.txt</a>`) {
+		t.Fatal("footer must expose the agent guide as an ordinary visible link")
+	}
+}
+
 func TestFooterRetainsPreferenceAndConsentMounts(t *testing.T) {
 	var output bytes.Buffer
 	if err := Footer().Render(context.Background(), &output); err != nil {

@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 import { transformSync } from "esbuild";
 
 const musicSource = readFileSync("resources/js/music.ts", "utf8");
@@ -16,10 +16,7 @@ const cardMarkup = (piece: string, suffix: string) => `
 			data-wga-music-state="idle"
 			aria-label="Open ${piece} in the period music player"><span data-wga-music-control>▶</span></a>
 		<span data-wga-music-label>${piece}</span>
-		<div role="status" data-wga-music-blocked hidden>
-			<p>The period-music player could not be opened.</p>
-			<button type="button" data-wga-music-dismiss>Dismiss</button>
-		</div>
+		<div role="status" aria-live="polite" aria-atomic="true" data-wga-music-blocked hidden></div>
 	</div>`;
 
 const loadFixture = async (page: Page) => {
@@ -31,6 +28,29 @@ const loadFixture = async (page: Page) => {
 	});
 	await page.goto("https://wga.test/record");
 	await page.addScriptTag({ content: musicScript, type: "module" });
+};
+
+const installFakePlayerWindow = async (
+	page: Page,
+	exposeToTest = false,
+): Promise<void> => {
+	await page.evaluate((expose) => {
+		const frame = document.createElement("iframe");
+		document.body.append(frame);
+		const fakePlayer = frame.contentWindow;
+		if (!fakePlayer) {
+			throw new Error("Missing music player fixture window");
+		}
+		if (expose) {
+			Object.assign(window, { musicFakePlayer: fakePlayer });
+		}
+		window.open = (() => fakePlayer) as typeof window.open;
+	}, exposeToTest);
+};
+
+const expectClearedNotice = async (notice: Locator): Promise<void> => {
+	await expect(notice).toBeHidden();
+	await expect(notice).toBeEmpty();
 };
 
 test("reuses one fixed named player and synchronises honest card state", async ({
@@ -107,16 +127,7 @@ test("rejects same-origin player state from the wrong window", async ({
 	page,
 }) => {
 	await loadFixture(page);
-	await page.evaluate(() => {
-		const frame = document.createElement("iframe");
-		document.body.append(frame);
-		const fakePlayer = frame.contentWindow;
-		if (!fakePlayer) {
-			throw new Error("Missing music player fixture window");
-		}
-		Object.assign(window, { musicFakePlayer: fakePlayer });
-		window.open = (() => fakePlayer) as typeof window.open;
-	});
+	await installFakePlayerWindow(page, true);
 	await page.getByRole("link", { name: /Fantasia/ }).click();
 	await page.evaluate(() =>
 		window.dispatchEvent(
@@ -202,11 +213,22 @@ test("reports a blocked pop-up in a dismissible status notice", async ({
 	await page.evaluate(() => {
 		window.open = (() => null) as typeof window.open;
 	});
+	const blockedNotice = page.locator("[data-wga-music-blocked]").first();
+	await expectClearedNotice(blockedNotice);
 	await page.getByRole("link", { name: /Fantasia/ }).click();
-	await expect(page.getByRole("status")).toBeVisible();
-	await expect(page.getByRole("button", { name: "Dismiss" })).toBeFocused();
-	await page.getByRole("button", { name: "Dismiss" }).click();
-	await expect(page.getByRole("status")).toBeHidden();
+	await expect(blockedNotice).toBeVisible();
+	await expect(blockedNotice).toContainText(
+		"The period-music player could not be opened.",
+	);
+	await expect(page.getByRole("button", { name: "DISMISS" })).toBeFocused();
+	await page.getByRole("button", { name: "DISMISS" }).click();
+	await expectClearedNotice(blockedNotice);
+
+	await page.getByRole("link", { name: /Fantasia/ }).click();
+	await expect(blockedNotice).toBeVisible();
+	await installFakePlayerWindow(page);
+	await page.getByRole("link", { name: /Fantasia/ }).click();
+	await expectClearedNotice(blockedNotice);
 });
 
 test("keyboard Enter activates the named-window enhancement", async ({

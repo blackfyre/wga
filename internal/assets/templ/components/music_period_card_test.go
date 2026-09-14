@@ -22,6 +22,8 @@ func TestMusicPeriodPlayerCardRetainsOrdinaryNamedLinkFallback(t *testing.T) {
 		`data-wga-music-control`,
 		`data-wga-music-state="idle"`,
 		`role="status"`,
+		`aria-live="polite"`,
+		`aria-atomic="true"`,
 		`data-wga-music-blocked`,
 		`hidden`,
 	} {
@@ -36,5 +38,8 @@ func TestMusicPeriodPlayerCardRetainsOrdinaryNamedLinkFallback(t *testing.T) {
 	}
 	if strings.Contains(rendered, "aria-pressed") {
 		t.Error("ordinary fallback link must not use button-only aria-pressed state")
+	}
+	if strings.Contains(rendered, "could not be opened") || strings.Contains(rendered, "data-wga-music-dismiss") {
+		t.Error("dormant popup failure content must not ship in the initial HTML")
 	}
 }

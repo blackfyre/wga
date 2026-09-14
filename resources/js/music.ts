@@ -110,8 +110,23 @@ const showBlockedNotice = (card: HTMLAnchorElement): void => {
 	if (!notice) {
 		return;
 	}
+	const message = document.createElement("p");
+	message.textContent =
+		"The period-music player could not be opened. Allow pop-ups for this site, then try again.";
+	const dismiss = document.createElement("button");
+	dismiss.type = "button";
+	dismiss.className =
+		"mt-2 font-mono text-(length:--t-10) tracking-[1px] underline hover:text-wga-accent";
+	dismiss.dataset.wgaMusicDismiss = "";
+	dismiss.textContent = "DISMISS";
+	notice.replaceChildren(message, dismiss);
 	notice.hidden = false;
-	notice.querySelector<HTMLButtonElement>("[data-wga-music-dismiss]")?.focus();
+	dismiss.focus();
+};
+
+const clearBlockedNotice = (notice: HTMLElement): void => {
+	notice.hidden = true;
+	notice.replaceChildren();
 };
 
 export const validPlayerURL = (href: string): boolean => {
@@ -197,6 +212,13 @@ const handleCardActivation = (
 	if (!playerWindow || playerWindow.closed) {
 		playerWindow = null;
 		showBlockedNotice(card);
+		return;
+	}
+	const notice = card
+		.closest<HTMLElement>("[data-wga-music-card]")
+		?.querySelector<HTMLElement>("[data-wga-music-blocked]");
+	if (notice) {
+		clearBlockedNotice(notice);
 	}
 };
 
@@ -221,7 +243,7 @@ const bindCardEvents = (): void => {
 		);
 		const notice = dismiss?.closest<HTMLElement>("[data-wga-music-blocked]");
 		if (notice) {
-			notice.hidden = true;
+			clearBlockedNotice(notice);
 		}
 	});
 
