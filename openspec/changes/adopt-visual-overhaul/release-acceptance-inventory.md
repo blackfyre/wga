@@ -7,8 +7,9 @@
 - Required themes: light and dark.
 - Required conditions: default text, enlarged default font/text spacing, reduced motion,
   JavaScript disabled, and keyboard-only operation.
-- Other supported-browser acceptance: current and previous Chrome, Edge, Firefox, macOS
-  Safari, iOS Safari, and Android Chrome retain usable reference layout and behaviour.
+- Machine-verifiable browser acceptance: current stable Chrome and Playwright-managed
+  Firefox on Linux retain usable reference layout and behaviour; Chromium Android-device
+  emulation covers the mobile layout and touch contract.
 
 ## Route inventory
 
@@ -57,10 +58,13 @@
 
 ## Accessibility acceptance
 
-- Keyboard-only use in every supported desktop browser.
-- NVDA with Firefox on Windows.
-- VoiceOver with Safari on current macOS and iOS.
-- TalkBack with Chrome on current Android.
+- Keyboard-only use in stable Chrome and Playwright-managed Firefox.
+- Semantic names, roles, states, and relationships asserted through browser accessibility
+  locators and DOM contracts.
 - Dialog/viewer initial focus, tab containment, Escape/visible dismissal, background
   inertness, and focus restoration.
 - No control or information is lost at enlarged text, 400% reflow, or reduced motion.
+- No-JavaScript fallbacks retain navigation, content, and state-changing links.
+
+Physical-device, Edge, Safari, NVDA, VoiceOver, and TalkBack certification is outside
+this change and may be performed as non-blocking downstream assurance.

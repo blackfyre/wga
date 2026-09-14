@@ -236,13 +236,13 @@ templ ArtistsBlock(c ArtistsView) {
 			<ul class="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 md:gap-x-7" data-kbd-list data-kbd-cols="2" data-kbd-cols-md="3">
 				for index, artist := range c.Artists {
 					if artist.Available {
-						<li data-kbd-idx={ strconv.Itoa(navigableIndex(c.Artists, index)) } data-kbd-href={ artist.URL }>
+						<li class="min-w-0" data-kbd-idx={ strconv.Itoa(navigableIndex(c.Artists, index)) } data-kbd-href={ artist.URL }>
 							@components.KeyboardCaret()
-							<a href={ templ.URL(artist.URL) } hx-get={ artist.URL } class="wga-record-card">
+							<a href={ templ.URL(artist.URL) } hx-get={ artist.URL } class="wga-record-card min-w-0">
 								@components.Plate(dto.Plate{DisplayURL: artist.Thumb, Alt: "Portrait of " + artist.Name, Placeholder: "PORTRAIT — " + artist.Name, Aspect: "aspect-square mb-3.5", Contain: false})
 								<span class="mb-1 block text-(length:--t-17) font-semibold break-words">@ArtistName(artist.Name, c.NameQuery)
 </span>
-								<span class="block font-mono text-(length:--t-11) leading-relaxed text-muted">
+								<span class="block break-words font-mono text-(length:--t-11) leading-relaxed text-muted">
 									{ artist.Dates }
 									<br/>
 									{ schoolPeriod(artist.School, artist.Period) }
@@ -250,12 +250,12 @@ templ ArtistsBlock(c ArtistsView) {
 							</a>
 						</li>
 					} else {
-						<li class="opacity-50">
+						<li class="min-w-0 opacity-50">
 							<div class="block">
 								@components.Plate(dto.Plate{DisplayURL: artist.Thumb, Alt: "Portrait of " + artist.Name, Placeholder: "PORTRAIT — " + artist.Name, Aspect: "aspect-square mb-3.5", Contain: false})
 								<span class="mb-1 block text-(length:--t-17) font-semibold break-words">@ArtistName(artist.Name, c.NameQuery)
 </span>
-								<span class="block font-mono text-(length:--t-11) leading-relaxed text-muted">
+								<span class="block break-words font-mono text-(length:--t-11) leading-relaxed text-muted">
 									{ artist.Dates }
 									<br/>
 									{ schoolPeriod(artist.School, artist.Period) }

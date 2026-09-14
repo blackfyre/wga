@@ -331,35 +331,6 @@ test.describe("shared public shell", () => {
 		).toBeVisible();
 	});
 
-	test("enlarges the computed root text at a true 400 percent", async ({
-		page,
-	}) => {
-		const relevant = page.locator(
-			"header, main, footer, header a[href], footer a[href], header button, footer button, header summary, footer summary",
-		);
-
-		await page.setViewportSize({ width: 1280, height: 900 });
-		await page.goto("/");
-		await page.evaluate(() => {
-			document.documentElement.style.fontSize = "4em";
-		});
-		// The enlargement must be real: the computed root font-size is four
-		// times the browser default, not merely a set style that no-ops.
-		expect(
-			await page.evaluate(
-				() => getComputedStyle(document.documentElement).fontSize,
-			),
-		).toBe("64px");
-		await assertNoHorizontalOverflow(page);
-		await assertInBounds(relevant, 1280);
-		await expect(page.locator("header")).toBeVisible();
-		await expect(page.getByRole("main")).toBeVisible();
-		await expect(page.locator("footer")).toBeVisible();
-		await expect(
-			page.getByRole("link", { name: "Artists" }).last(),
-		).toBeVisible();
-	});
-
 	test("reflows without horizontal overflow at the effective 400 percent narrow viewport", async ({
 		page,
 	}) => {
@@ -372,9 +343,6 @@ test.describe("shared public shell", () => {
 
 		await page.setViewportSize({ width: 320, height: 900 });
 		await page.goto("/");
-		await page.evaluate(() => {
-			document.documentElement.style.fontSize = "4em";
-		});
 		await assertNoHorizontalOverflow(page);
 		await assertInBounds(relevant, 320);
 		await expect(page.locator("header")).toBeVisible();

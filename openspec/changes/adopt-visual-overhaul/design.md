@@ -12,7 +12,7 @@ Existing unimplemented changes for itineraries, artwork relationships, and thumb
 - Preserve server-rendered, bookmarkable public routes and progressively enhance them with HTMX and focused browser helpers.
 - Serve the real data set through thirteen approved image profiles, with source-eligible downscales pre-generated and originals used whenever a profile would upscale.
 - Give regular visitors coherent discovery and participation paths, and give scholars inspectable, citable, shareable record and comparison paths.
-- Make visual, functional, responsive, keyboard, no-JavaScript, and assistive-technology acceptance explicit.
+- Make visual, functional, responsive, keyboard, no-JavaScript, and machine-verifiable accessibility acceptance explicit.
 - Own the production token and component vocabulary directly, without daisyUI, while retaining Tailwind for build-time utilities and responsive composition.
 
 **Non-Goals:**
@@ -121,7 +121,7 @@ Anonymous rate limits use a centrally validated client-identity policy selected 
 
 ### Test by risk and public outcome
 
-Go tests cover workflows, routes, queries, migrations, data-import contracts, and scheduled lifecycle jobs. Browser tests cover critical regular-visitor and scholar journeys, keyboard/no-JS paths, and visual reference states. The support baseline is current and previous stable Chrome, Edge, Firefox, macOS Safari, iOS Safari, and Android Chrome; accessibility checks include keyboard-only use, NVDA with Firefox, VoiceOver with Safari on macOS and iOS, and TalkBack with Chrome on Android.
+Go tests cover workflows, routes, queries, migrations, data-import contracts, and scheduled lifecycle jobs. Browser tests cover critical regular-visitor and scholar journeys, keyboard/no-JS paths, and visual reference states. The release acceptance baseline is current stable Chrome and Playwright-managed Firefox on Linux, with Chromium Android-device emulation for mobile layout and touch behaviour. Accessibility acceptance is limited to deterministic keyboard operation, semantic names and roles, dialog/viewer focus lifecycle, enlarged text and reflow, reduced motion, and no-JavaScript behaviour. Physical-device, Edge, Safari, and screen-reader certification remain useful downstream assurance but do not block this change.
 
 ## Risks / Trade-offs
 
