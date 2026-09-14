@@ -44,6 +44,7 @@ templ LayoutBase(bodyClasses string, HtmxTargetArea string) {
 			for key, content := range utils.GetTwitterTags(ctx) {
 				<meta name={ key } content={ content }/>
 			}
+			<link rel="describedby" href="/llms.txt" type="text/markdown"/>
 			if utils.GetCanonicalUrl(ctx) != "" {
 				<link rel="canonical" href={ utils.GetCanonicalUrl(ctx) }/>
 			}

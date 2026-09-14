@@ -227,6 +227,24 @@ func TestLayoutBaseAppliesThemeBeforeStylesheet(t *testing.T) {
 	}
 }
 
+func TestLayoutBaseAdvertisesMarkdownResources(t *testing.T) {
+	ctx := utils.DecorateContext(context.Background(), utils.AlternateMarkdownURLKey, "/agents/artists/artistone000001.md")
+	var output bytes.Buffer
+	if err := LayoutBase("", "").Render(ctx, &output); err != nil {
+		t.Fatalf("render layout: %v", err)
+	}
+
+	rendered := output.String()
+	for _, expected := range []string{
+		`<link rel="describedby" href="/llms.txt" type="text/markdown">`,
+		`<link rel="alternate" type="text/markdown" href="/agents/artists/artistone000001.md">`,
+	} {
+		if count := strings.Count(rendered, expected); count != 1 {
+			t.Fatalf("head link %q count = %d, want 1", expected, count)
+		}
+	}
+}
+
 func TestLayoutBaseRendersTrustedHeadMarkupVerbatim(t *testing.T) {
 	const markup = `<script src="/assets/js/trusted.js"></script>`
 

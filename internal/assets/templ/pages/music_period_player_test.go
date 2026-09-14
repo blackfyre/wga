@@ -31,6 +31,7 @@ func TestMusicPeriodPlayerPageRendersNativeNoAutoplayControls(t *testing.T) {
 		`disableremoteplayback`,
 		`preload="metadata"`,
 		`src="/api/files/music_song/song1234567890a/fantasia.mp3"`,
+		`<link rel="describedby" href="/llms.txt" type="text/markdown">`,
 		"Sweelinck",
 		"Playback starts only when you use the audio controls.",
 	} {

@@ -322,7 +322,7 @@ func TestArtistRecordDoesNotAdvertiseUnavailableMarkdown(t *testing.T) {
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("status = %d, want 200", recorder.Code)
 	}
-	if strings.Contains(recorder.Header().Get("Link"), "text/markdown") || strings.Contains(recorder.Body.String(), `type="text/markdown"`) {
+	if strings.Contains(recorder.Header().Get("Link"), "text/markdown") || strings.Contains(recorder.Body.String(), `rel="alternate" type="text/markdown"`) {
 		t.Fatal("artist response advertised an unavailable Markdown resource")
 	}
 }
