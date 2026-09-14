@@ -15,7 +15,7 @@ This repository contains the code for the Web Gallery of Art project. The projec
 
 The project is built around the following active technologies and workflows:
 
-- [Go](https://go.dev/) 1.26.5 with [PocketBase](https://pocketbase.io) for the application server, data layer, hooks, and cron jobs
+- [Go](https://go.dev/) 1.27 with [PocketBase](https://pocketbase.io) for the application server, data layer, hooks, and cron jobs
 - [Templ](https://templ.guide/) for server-rendered UI fragments and page composition
 - [Bun](https://bun.sh/) scripts for frontend dependency management and asset builds
 - [PostCSS](https://postcss.org/) plus Tailwind tooling for stylesheet compilation
