@@ -2,7 +2,7 @@
 
 ### Requirement: Public presentation matches the complete release reference
 
-The system SHALL render all non-development public routes, shared surfaces, dialogs, error states, light/dark themes, typography, colour roles, square controls, and responsive tiers according to clean visual-overhaul reference commit `c09d13a5f80cdc8a980c07673bc26a4cf0e7b8cc`. Typography SHALL use the reference system-font stack without a webfont, SHALL use the complete 33-rung relative type scale rather than bare-pixel substitutes, and SHALL preserve the muted, faint, secondary-faint, control-border, and independent action-link hierarchy in both themes. The exact rem values SHALL be `--t-9:.6875`, `--t-95:.71875`, `--t-10:.75`, `--t-105:.78125`, `--t-11:.8125`, `--t-115:.84375`, `--t-12:.875`, `--t-125:.90625`, `--t-13:.9375`, `--t-135:.953125`, `--t-14:.96875`, `--t-15:1`, `--t-16:1.0625`, `--t-17:1.09375`, `--t-18:1.15625`, `--t-19:1.21875`, `--t-20:1.28125`, `--t-21:1.34375`, `--t-22:1.40625`, `--t-26:1.625`, `--t-27:1.6875`, `--t-28:1.75`, `--t-30:1.875`, `--t-32:2`, `--t-34:2.125`, `--t-36:2.25`, `--t-38:2.375`, `--t-40:2.5`, `--t-44:2.75`, `--t-46:2.875`, `--t-48:3`, `--t-52:3.25`, and `--t-56:3.5`. Shared composition SHALL use the reference eight-pixel spacing rhythm, 48px primary controls, two-rank section headers, and right-aligned directional calls to action.
+The system SHALL render all non-development public routes, shared surfaces, dialogs, error states, light/dark themes, typography, colour roles, square controls, and responsive tiers according to clean visual-overhaul reference commit `016cf6f0e93e88ce173bff3f9e8a09d854e52d35`. Typography SHALL use the reference system-font stack without a webfont, SHALL use the complete 33-rung relative type scale rather than bare-pixel substitutes, and SHALL preserve the muted, faint, secondary-faint, control-border, and independent action-link hierarchy in both themes. The exact rem values SHALL be `--t-9:.6875`, `--t-95:.71875`, `--t-10:.75`, `--t-105:.78125`, `--t-11:.8125`, `--t-115:.84375`, `--t-12:.875`, `--t-125:.90625`, `--t-13:.9375`, `--t-135:.953125`, `--t-14:.96875`, `--t-15:1`, `--t-16:1.0625`, `--t-17:1.09375`, `--t-18:1.15625`, `--t-19:1.21875`, `--t-20:1.28125`, `--t-21:1.34375`, `--t-22:1.40625`, `--t-26:1.625`, `--t-27:1.6875`, `--t-28:1.75`, `--t-30:1.875`, `--t-32:2`, `--t-34:2.125`, `--t-36:2.25`, `--t-38:2.375`, `--t-40:2.5`, `--t-44:2.75`, `--t-46:2.875`, `--t-48:3`, `--t-52:3.25`, and `--t-56:3.5`. Shared composition SHALL use the reference eight-pixel spacing rhythm, 48px primary controls, two-rank section headers, and right-aligned directional calls to action.
 
 #### Scenario: Reference viewport is rendered in Chrome
 
@@ -27,6 +27,20 @@ The system SHALL render artist headings, indexes, search results, citations, and
 
 - **WHEN** an artist appears in an index, result, citation, artwork label, breadcrumb, or sentence
 - **THEN** the surface uses the appropriate filing or short form consistently without reconstructing a name from display text.
+
+### Requirement: Artist indexes use scalable source-backed filters
+
+The system SHALL render SCHOOL and PERIOD as native select controls on the artist index and in each Dual Mode artist index. Both option lists SHALL be alphabetical and derived from shared source-backed vocabularies rather than separate hardcoded page lists. The school list SHALL include the complete approved vocabulary, including schools with no current holding, and the home-page school count SHALL derive from that same roster. Period options SHALL remain limited to periods authoritatively associated with artists until the broader art-period vocabulary has been reconciled to artist records.
+
+#### Scenario: Visitor opens artist filters
+
+- **WHEN** a visitor opens the artist index or either Dual Mode artist index
+- **THEN** SCHOOL and PERIOD each occupy one native select, support platform keyboard and type-ahead behaviour, remain legible in every supported palette, and preserve the selected values in the server-rendered URL state.
+
+#### Scenario: Approved school has no current holding
+
+- **WHEN** the shared school vocabulary contains a school with no matching published artist record
+- **THEN** the school remains available in the alphabetical select and the home-page school total remains consistent with the complete shared vocabulary.
 
 ### Requirement: Public preferences are available in the footer
 
@@ -68,7 +82,7 @@ The system SHALL provide the eleven reference palettes `bone`, `classic`, `verdi
 
 #### Scenario: Release verifies immutable palette literals
 
-- **WHEN** release verification compares WGA palette roles with clean reference commit `c09d13a5f80cdc8a980c07673bc26a4cf0e7b8cc`
+- **WHEN** release verification compares WGA palette roles with clean reference commit `016cf6f0e93e88ce173bff3f9e8a09d854e52d35`
 - **THEN** every token matches the immutable reference literal, and the known 53 contrast-floor exceptions are reported as explicit accepted exceptions rather than altering the external reference or substituting undeclared colours.
 
 #### Scenario: JavaScript is unavailable
@@ -106,7 +120,7 @@ The system SHALL use a labelled modal surface with deliberate initial focus, bac
 
 ### Requirement: Shared actions expose complete keyboard semantics
 
-The system SHALL use native links and buttons for visually interactive rows, cards, table-of-contents items, carousel controls, palette swatches, and dismissals. Any approved non-native exception SHALL provide equivalent focusability, Enter and Space activation, visible focus, role, state, and an accessible name. Glyph-only controls SHALL have accessible names, and suppressing a browser outline SHALL require a visible replacement focus style.
+The system SHALL use native links and buttons for visually interactive rows, cards, table-of-contents items, carousel controls, palette swatches, and dismissals. Any approved non-native exception SHALL provide equivalent focusability, Enter and Space activation, visible focus, role, state, and an accessible name. Glyph-only controls SHALL have accessible names. Public text, note, and select fields SHALL expose the palette-aware shared `:focus-visible` treatment; they SHALL NOT suppress the browser outline unless an equally visible replacement focus style is active.
 
 #### Scenario: Keyboard visitor traverses an interactive surface
 

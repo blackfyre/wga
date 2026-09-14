@@ -9,6 +9,11 @@ The system SHALL offer an applicable period-music card on supported collection r
 - **WHEN** a visitor activates a period-music card
 - **THEN** the application opens or reuses the named player window and hands it the selected piece without starting an additional player.
 
+#### Scenario: Recipient reads a postcard for a work with music
+
+- **WHEN** a valid postcard recipient page renders a published artwork associated with an eligible published piece
+- **THEN** the page may offer the work's ordinary period-music card without consulting a sender-controlled postcard preference or autoplaying it.
+
 #### Scenario: Visitor requests an unpublished song
 
 - **WHEN** a visitor requests a direct player route for a song or composer that is not published
