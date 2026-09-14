@@ -58,7 +58,7 @@ func viewPostcard(app core.App, c *core.RequestEvent) error {
 		return utils.NotFoundError(c)
 	}
 	artistFilingName := author.GetString("filing_name")
-	music := resolveRecipientMusic(app, postcard.GetBool("include_music"), artwork)
+	music := resolveRecipientMusic(app, artwork)
 	content := pages.PostcardView{
 		SenderName: postcard.GetString("sender_name"), Message: postcard.GetString("message"), Image: image,
 		Title: artwork.GetString("title"), Comment: artwork.GetString("comment"), Technique: artwork.GetString("technique"), ArtistFilingName: artistFilingName,
@@ -99,19 +99,10 @@ func viewPostcardLanding(c *core.RequestEvent) error {
 	return c.HTML(http.StatusOK, buf.String())
 }
 
-// resolveRecipientMusic returns a player-route card only when the postcard
-// opted into music and the artwork's author carries a deterministic period-song
-// match whose song and composer are both published. It never exposes unmatched
-// or unpublished media.
-func resolveRecipientMusic(app core.App, includeMusic bool, artwork *core.Record) components.MusicPeriodCard {
-	if !includeMusic {
-		return components.MusicPeriodCard{}
-	}
-	author := artwork.ExpandedOne("author")
-	if author == nil {
-		return components.MusicPeriodCard{}
-	}
-	song, err := repositories.NewArtistRecordRepository(app).MatchPeriodSong(author.GetInt("year_of_birth"))
+// resolveRecipientMusic derives the ordinary player-route card from the
+// published artwork. It never consults sender input or exposes unpublished media.
+func resolveRecipientMusic(app core.App, artwork *core.Record) components.MusicPeriodCard {
+	song, err := repositories.NewArtistRecordRepository(app).MatchPeriodSong(artwork.GetInt("date_start"))
 	if err != nil || song == nil {
 		return components.MusicPeriodCard{}
 	}

@@ -204,8 +204,8 @@ func logDelivery(app core.App, runID string, claim *ClaimedAttempt, outcome stri
 
 // renderMessage produces the notification email for one postcard recipient.
 func renderMessage(app core.App, postcard *core.Record, delivery *core.Record, messageID string, postcards config.Postcards, keyring config.PostcardTokenKeyring) (*mailer.Message, error) {
-	token, err := recoverRecipientToken(keyring, delivery.Id, delivery.GetString("view_token_envelope"), delivery.GetString("view_token_hash"))
-	if err != nil || delivery.GetString("recipient") == "" || !delivery.GetDateTime("view_expires_at").After(types.NowDateTime()) {
+	token, expiresAt, err := recoverPostcardRecipientToken(app, keyring, postcard, delivery)
+	if err != nil || delivery.GetString("recipient") == "" || !expiresAt.After(types.NowDateTime()) {
 		return nil, errors.New("postcard delivery is missing recipient access material")
 	}
 	data := map[string]any{
@@ -240,12 +240,10 @@ func renderMessage(app core.App, postcard *core.Record, delivery *core.Record, m
 				repository := repositories.NewArtistRecordRepository(app)
 				if artist, artistErr := repository.FindPublishedArtist(authors[0]); artistErr == nil {
 					data["ArtworkDetails"] = strings.TrimSpace(artist.GetString("filing_name") + " · " + artwork.GetString("date_text"))
-					if postcard.GetBool("include_music") {
-						if song, songErr := repository.MatchPeriodSong(artwork.GetInt("date_start")); songErr == nil && song != nil {
-							data["MusicAvailable"] = true
-							data["MusicPiece"] = song.Record.GetString("title")
-							data["MusicComposer"] = song.Composer
-						}
+					if song, songErr := repository.MatchPeriodSong(artwork.GetInt("date_start")); songErr == nil && song != nil {
+						data["MusicAvailable"] = true
+						data["MusicPiece"] = song.Record.GetString("title")
+						data["MusicComposer"] = song.Composer
 					}
 				}
 			}
@@ -366,7 +364,6 @@ func complete(app core.App, claim *ClaimedAttempt, now types.DateTime) error {
 		delivery.Set("sent_at", now)
 		delivery.Set("recipient", "purged:"+delivery.Id)
 		delivery.Set("recipient_purged_at", now)
-		delivery.Set("view_token_envelope", "")
 		if err := txApp.Save(delivery); err != nil {
 			return err
 		}
@@ -454,15 +451,20 @@ func updateOwnedAttempt(app core.App, claim *ClaimedAttempt, changes string, par
 // finalizePostcard applies the terminal parent status after every recipient delivery is resolved.
 func finalizePostcard(app core.App, postcardID string, now types.DateTime) error {
 	var totals struct {
-		Pending   int `db:"pending"`
-		Cancelled int `db:"cancelled"`
-		Failed    int `db:"failed"`
+		Pending    int `db:"pending"`
+		Cancelled  int `db:"cancelled"`
+		Failed     int `db:"failed"`
+		Unresolved int `db:"unresolved"`
 	}
 	if err := app.DB().NewQuery(`
 		SELECT
 			SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending,
 			SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled,
-			SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed
+			SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed,
+			(SELECT COUNT(*) FROM postcard_delivery_attempts a
+			 JOIN postcard_deliveries unresolved_delivery ON unresolved_delivery.id = a.delivery
+			 WHERE unresolved_delivery.postcard = {:postcard}
+			 AND a.status = 'dead_lettered' AND a.resolved_at = '') AS unresolved
 		FROM postcard_deliveries
 		WHERE postcard = {:postcard}
 	`).Bind(dbx.Params{"postcard": postcardID}).One(&totals); err != nil {
@@ -470,6 +472,14 @@ func finalizePostcard(app core.App, postcardID string, now types.DateTime) error
 	}
 	if totals.Pending != 0 {
 		return nil
+	}
+	if totals.Unresolved == 0 {
+		if _, err := app.DB().NewQuery(`
+			UPDATE postcard_deliveries SET view_token_envelope = ''
+			WHERE postcard = {:postcard} AND view_token_envelope != ''
+		`).Bind(dbx.Params{"postcard": postcardID}).Execute(); err != nil {
+			return err
+		}
 	}
 	postcard, err := app.FindRecordById(collectionPostcards, postcardID)
 	if err != nil {
@@ -600,7 +610,7 @@ func PurgeExpiredRecipientAccess(app core.App, now types.DateTime, limit int) (P
 		result, err = txApp.DB().NewQuery(`
 			UPDATE Postcards
 			SET sender_name = 'Anonymous', sender_email = 'purged@example.invalid', recipients = 'purged',
-				message = '<p>Expired postcard</p>', content_purged_at = {:now}
+				message = '<p>Expired postcard</p>', view_token_hash = '', view_expires_at = '', content_purged_at = {:now}
 			WHERE id IN (
 				SELECT id FROM Postcards
 				WHERE retention_until != '' AND retention_until <= {:now} AND content_purged_at = ''

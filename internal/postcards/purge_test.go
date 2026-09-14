@@ -108,7 +108,7 @@ func TestPurgeExpiredRecipientAccessReportsPerKindCounts(t *testing.T) {
 	steps := []struct {
 		access  int
 		content int
-	}{{1, 1}, {1, 0}, {1, 0}, {0, 0}}
+	}{{1, 1}, {0, 0}}
 	for _, step := range steps {
 		counts, err := PurgeExpiredRecipientAccess(app, types.NowDateTime(), 1)
 		if err != nil {

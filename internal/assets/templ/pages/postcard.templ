@@ -4,9 +4,13 @@ import (
 	"github.com/blackfyre/wga/internal/assets/templ/components"
 	"github.com/blackfyre/wga/internal/assets/templ/layouts"
 	"github.com/blackfyre/wga/internal/assets/templ/utils"
+	"strconv"
 )
 
-const PostcardMessageLimit = 300
+const (
+	PostcardMessageLimit  = 300
+	PostcardMaxRecipients = 5
+)
 
 type PostcardComposeView struct {
 	ImageID          string
@@ -16,30 +20,17 @@ type PostcardComposeView struct {
 	Technique        string
 	SenderName       string
 	SenderEmail      string
-	Recipient        string
 	Recipients       []string
 	Message          string
-	IncludeMusic     bool
-	MusicAvailable   bool
 	SiteKey          string
 	Error            string
 	SubmissionKey    string
 }
 
-func (v PostcardComposeView) RecipientAt(index int) string {
-	if index < len(v.Recipients) {
-		return v.Recipients[index]
-	}
-	if index == 0 {
-		return v.Recipient
-	}
-	return ""
-}
-
 type PostcardConfirmationView struct {
-	MaskedRecipient string
-	ViewURL         string
-	Expires         string
+	MaskedRecipients string
+	ViewURL          string
+	Expires          string
 }
 
 type PostcardView struct {
@@ -94,13 +85,25 @@ templ PostcardComposeBlock(v PostcardComposeView) {
 					<label class="block font-mono text-(length:--t-11) tracking-[1px]">YOUR NAME<input class="mt-2 w-full border-b border-wga-ink bg-transparent px-0 py-2 text-sm" name="sender_name" value={ v.SenderName } maxlength="120" required autocomplete="name"/></label>
 					<label class="block font-mono text-(length:--t-11) tracking-[1px]">YOUR EMAIL<input class="mt-2 w-full border-b border-wga-ink bg-transparent px-0 py-2 text-sm" type="email" name="sender_email" value={ v.SenderEmail } maxlength="254" required autocomplete="email"/></label>
 				</div>
-				<fieldset class="mb-5"><legend class="font-mono text-(length:--t-11) tracking-[1px]">RECIPIENT EMAILS</legend><p class="mt-2 text-(length:--t-15) text-wga-ink/60">Add up to five addresses.</p><input aria-label="RECIPIENT EMAIL 1" class="mt-2 w-full border-b border-wga-ink bg-transparent px-0 py-2 text-sm" type="email" name="recipients[]" value={ v.RecipientAt(0) } maxlength="254" required autocomplete="email"/><input aria-label="RECIPIENT EMAIL 2" class="mt-2 w-full border-b border-wga-ink bg-transparent px-0 py-2 text-sm" type="email" name="recipients[]" value={ v.RecipientAt(1) } maxlength="254" autocomplete="email"/><input aria-label="RECIPIENT EMAIL 3" class="mt-2 w-full border-b border-wga-ink bg-transparent px-0 py-2 text-sm" type="email" name="recipients[]" value={ v.RecipientAt(2) } maxlength="254" autocomplete="email"/><input aria-label="RECIPIENT EMAIL 4" class="mt-2 w-full border-b border-wga-ink bg-transparent px-0 py-2 text-sm" type="email" name="recipients[]" value={ v.RecipientAt(3) } maxlength="254" autocomplete="email"/><input aria-label="RECIPIENT EMAIL 5" class="mt-2 w-full border-b border-wga-ink bg-transparent px-0 py-2 text-sm" type="email" name="recipients[]" value={ v.RecipientAt(4) } maxlength="254" autocomplete="email"/></fieldset>
+				<fieldset class="mb-5 border-0 p-0">
+					<legend class="font-mono text-(length:--t-11) tracking-[1px]">RECIPIENT EMAIL — { strconv.Itoa(len(v.Recipients)) } OF { strconv.Itoa(PostcardMaxRecipients) }</legend>
+					<div class="mt-2 flex flex-col gap-2.5">
+						for index, recipient := range v.Recipients {
+							<div class="flex items-center gap-2.5">
+								<input aria-label={ "Recipient email " + strconv.Itoa(index+1) } class="min-w-0 flex-1 border-b border-wga-ink bg-transparent px-0 py-2 text-sm" type="email" name="recipients[]" value={ recipient } maxlength="254" required?={ index == 0 } autocomplete="email"/>
+								if len(v.Recipients) > 1 {
+									<button type="submit" name="remove_recipient" value={ strconv.Itoa(index) } formnovalidate aria-label={ "Remove recipient " + strconv.Itoa(index+1) } class="inline-flex h-[30px] w-[30px] shrink-0 items-center justify-center border border-wga-ink/30 bg-transparent font-mono text-(length:--t-15) text-wga-ink/60 hover:border-wga-ink hover:text-wga-ink">×</button>
+								}
+							</div>
+						}
+					</div>
+					if len(v.Recipients) < PostcardMaxRecipients {
+						<button type="submit" name="add_recipient" value="1" formnovalidate class="wga-action-link mt-3 font-mono text-(length:--t-11) tracking-[1px]">+ ADD ANOTHER RECIPIENT</button>
+					} else {
+						<p class="mt-3 font-mono text-(length:--t-11) tracking-[1px] text-wga-ink/60">FIVE RECIPIENTS IS THE LIMIT FOR ONE POSTCARD</p>
+					}
+				</fieldset>
 				<label class="mb-6 block font-mono text-(length:--t-11) tracking-[1px]">MESSAGE — 300 CHARACTERS AT MOST<textarea class="mt-2 min-h-[110px] w-full resize-y border border-wga-ink/30 bg-transparent p-3 font-sans text-(length:--t-15) leading-relaxed" name="message" maxlength="300" required>{ v.Message }</textarea></label>
-				if v.MusicAvailable {
-					<label class="mb-6 flex items-center gap-3 border-y border-wga-ink/15 py-3.5 text-sm"><input type="checkbox" name="include_music" value="true" checked?={ v.IncludeMusic }/><span>Include period music</span></label>
-				} else {
-					<p class="mb-6 border-y border-wga-ink/15 py-3.5 text-sm text-wga-ink/60">Period music is not available for this work.</p>
-				}
 				<label aria-hidden="true" class="hpt" for="name">Leave empty</label><input aria-hidden="true" class="hpt" tabindex="-1" autocomplete="off" id="name" name="name"/>
 				<label aria-hidden="true" class="hpt" for="email">Leave empty</label><input aria-hidden="true" class="hpt" tabindex="-1" autocomplete="off" id="email" name="email"/>
 				if v.SiteKey != "" {
@@ -135,8 +138,8 @@ templ PostcardConfirmationDialog(v PostcardConfirmationView) {
 templ PostcardConfirmationBlock(v PostcardConfirmationView) {
 	<section id="postcard-compose" role="status" aria-live="polite" class="container mx-auto max-w-[520px] px-4 pb-20 pt-10 md:px-0">
 		<p aria-hidden="true" class="mb-6 flex h-11 w-11 items-center justify-center border border-wga-accent font-mono text-lg text-wga-accent">✓</p>
-		<h1 id="postcard-confirmation-title" data-dialog-title tabindex="-1" class="mb-3 text-(length:--t-28) font-semibold">Postcard queued</h1>
-		<p class="mb-2 leading-relaxed">Delivery is being prepared for <span class="font-mono text-sm">{ v.MaskedRecipient }</span>.</p>
+		<h1 id="postcard-confirmation-title" data-dialog-title tabindex="-1" autofocus class="mb-3 text-(length:--t-28) font-semibold">Postcard queued</h1>
+		<p class="mb-2 leading-relaxed">Delivery is being prepared for <span class="font-mono text-sm">{ v.MaskedRecipients }</span>.</p>
 		<p class="mb-7 text-sm text-wga-ink/60">The private link remains valid until { v.Expires }.</p>
 		<a href={ templ.URL(v.ViewURL) } class="font-mono text-xs tracking-[1px] text-wga-accent">VIEW THE POSTCARD →</a>
 	</section>
@@ -173,10 +176,19 @@ templ PostcardBlock(p PostcardView) {
 		<article class="max-w-[700px] border border-wga-ink/15 bg-wga-bg">
 			<div class="aspect-video border-b border-wga-ink/15 bg-wga-fill"><img src={ p.Image } alt={ p.Title + " by " + p.ArtistFilingName } class="h-full w-full object-cover"/></div>
 			<div class="grid gap-8 p-6 md:grid-cols-[minmax(0,1fr)_220px]">
-				<div><p class="mb-3 font-mono text-(length:--t-10) tracking-[1px] text-wga-ink/60">FROM { p.SenderName }</p><div class="content text-(length:--t-17) leading-relaxed">@templ.Raw(p.Message)
-</div></div>
-				<div class="border-t border-wga-ink/15 pt-6 md:border-l md:border-t-0 md:pl-6 md:pt-0"><h2 class="text-(length:--t-15) font-semibold leading-tight">{ p.Title }</h2><p class="mt-1 font-mono text-(length:--t-11) leading-relaxed text-wga-ink/60">{ p.ArtistFilingName }<br/>{ p.Technique }</p><div class="content mt-4 text-(length:--t-15) leading-relaxed">@templ.Raw(p.Comment)
-</div></div>
+				<div>
+					<p class="mb-3 font-mono text-(length:--t-10) tracking-[1px] text-wga-ink/60">FROM { p.SenderName }</p>
+					<div class="content text-(length:--t-17) leading-relaxed">
+						@templ.Raw(p.Message)
+					</div>
+				</div>
+				<div class="border-t border-wga-ink/15 pt-6 md:border-l md:border-t-0 md:pl-6 md:pt-0">
+					<h2 class="text-(length:--t-15) font-semibold leading-tight">{ p.Title }</h2>
+					<p class="mt-1 font-mono text-(length:--t-11) leading-relaxed text-wga-ink/60">{ p.ArtistFilingName }<br/>{ p.Technique }</p>
+					<div class="content mt-4 text-(length:--t-15) leading-relaxed">
+						@templ.Raw(p.Comment)
+					</div>
+				</div>
 			</div>
 			if p.Music.PlayerURL != "" {
 				@components.MusicPeriodPlayerCard(p.Music.SongID, p.Music.Piece, p.Music.PlayerURL)

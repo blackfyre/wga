@@ -27,6 +27,16 @@ func TestRewrapTokenKeyBoundsSelectionAndPreservesDeliveryState(t *testing.T) {
 		t.Fatal(err)
 	}
 	deliveries := sortedDeliveries(t, app)
+	for _, delivery := range deliveries {
+		if delivery.GetString("view_token_envelope") != "" {
+			delivery.Set("status", "sent")
+			if err := app.Save(delivery); err != nil {
+				t.Fatal(err)
+			}
+			break
+		}
+	}
+	deliveries = sortedDeliveries(t, app)
 	before := make(map[string]map[string]string, len(deliveries))
 	for _, delivery := range deliveries {
 		before[delivery.Id] = deliveryState(delivery)
@@ -37,8 +47,8 @@ func TestRewrapTokenKeyBoundsSelectionAndPreservesDeliveryState(t *testing.T) {
 	if err != nil {
 		t.Fatalf("rewrap: %v", err)
 	}
-	if count != 2 {
-		t.Fatalf("rewrapped = %d, want 2", count)
+	if count != 1 {
+		t.Fatalf("rewrapped = %d, want 1 shared postcard envelope", count)
 	}
 
 	deliveries = sortedDeliveries(t, app)
@@ -48,26 +58,20 @@ func TestRewrapTokenKeyBoundsSelectionAndPreservesDeliveryState(t *testing.T) {
 				t.Fatalf("delivery %d field %s changed from %q to %q", index, field, value, got)
 			}
 		}
-		keyID, _, ok := recipientTokenEnvelopeParts(delivery.GetString("view_token_envelope"))
-		if !ok {
-			t.Fatalf("delivery %d has malformed envelope", index)
-		}
-		if index < 2 {
+		envelope := delivery.GetString("view_token_envelope")
+		if envelope != "" {
+			keyID, _, ok := recipientTokenEnvelopeParts(envelope)
+			if !ok {
+				t.Fatalf("delivery %d has malformed envelope", index)
+			}
 			if keyID != "new" {
 				t.Fatalf("delivery %d key = %q, want new", index, keyID)
 			}
-			if _, err := recoverRecipientToken(newOnly, delivery.Id, delivery.GetString("view_token_envelope"), delivery.GetString("view_token_hash")); err != nil {
+			if _, err := recoverRecipientToken(newOnly, delivery.Id, envelope, queuedPostcardHash(t, app, delivery)); err != nil {
 				t.Fatalf("new key could not open delivery %d: %v", index, err)
 			}
-			if _, err := openRecipientToken(oldOnly, delivery.Id, delivery.GetString("view_token_envelope")); err == nil {
+			if _, err := openRecipientToken(oldOnly, delivery.Id, envelope); err == nil {
 				t.Fatalf("old key opened rewrapped delivery %d", index)
-			}
-		} else {
-			if keyID != "old" {
-				t.Fatalf("bounded delivery key = %q, want old", keyID)
-			}
-			if _, err := recoverRecipientToken(oldOnly, delivery.Id, delivery.GetString("view_token_envelope"), delivery.GetString("view_token_hash")); err != nil {
-				t.Fatalf("old key could not open unselected delivery: %v", err)
 			}
 		}
 	}
@@ -89,7 +93,14 @@ func TestRewrapTokenKeyRollsBackWholeBatchOnCorruption(t *testing.T) {
 
 	if _, err := QueueWithAccess(app, oldOnly, QueueInput{
 		SenderName: "Sender", SenderEmail: "sender@example.test",
-		Recipients: []string{"first@example.test", "second@example.test"},
+		Recipients: []string{"first@example.test"},
+		Message:    "Hello", ImageID: artworkID,
+	}, types.NowDateTime()); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := QueueWithAccess(app, oldOnly, QueueInput{
+		SenderName: "Sender", SenderEmail: "sender@example.test",
+		Recipients: []string{"second@example.test"},
 		Message:    "Hello", ImageID: artworkID,
 	}, types.NowDateTime()); err != nil {
 		t.Fatal(err)
@@ -216,4 +227,13 @@ func deliveryMessageIDs(t *testing.T, app core.App) map[string]string {
 	}
 
 	return result
+}
+
+func queuedPostcardHash(t *testing.T, app core.App, delivery *core.Record) string {
+	t.Helper()
+	postcard, err := app.FindRecordById(collectionPostcards, delivery.GetString("postcard"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return postcard.GetString("view_token_hash")
 }

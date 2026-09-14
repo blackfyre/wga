@@ -13,7 +13,7 @@ import (
 
 func TestPostcardDialogsCarryHeaderRuleDismissal(t *testing.T) {
 	compose := renderPostcard(t, PostcardComposeDialog(PostcardComposeView{ImageID: "artwork-id", Image: "/image.jpg", Title: "Work", ArtistFilingName: "Artist, Filing"}))
-	confirmation := renderPostcard(t, PostcardConfirmationDialog(PostcardConfirmationView{MaskedRecipient: "r••••@example.test", ViewURL: "/postcard?token=opaque", Expires: "22 September 2026"}))
+	confirmation := renderPostcard(t, PostcardConfirmationDialog(PostcardConfirmationView{MaskedRecipients: "r••••@example.test", ViewURL: "/postcard?token=opaque", Expires: "22 September 2026"}))
 
 	for name, html := range map[string]string{"compose": compose, "confirmation": confirmation} {
 		for _, expected := range []string{`data-dialog-close`, `data-dialog-initial-focus`, `aria-label="Close"`, `method="dialog"`, `class="wga-dialog-backdrop`, `sticky top-0 z-10`, `min-h-11 min-w-11`, `border-b border-wga-ink`} {
@@ -29,7 +29,7 @@ func TestPostcardDialogsCarryHeaderRuleDismissal(t *testing.T) {
 
 func TestPostcardDialogsLabelVisibleHeadingsWithUniqueIDs(t *testing.T) {
 	compose := renderPostcard(t, PostcardComposeDialog(PostcardComposeView{ImageID: "artwork-id", Image: "/image.jpg", Title: "Work", ArtistFilingName: "Artist, Filing"}))
-	confirmation := renderPostcard(t, PostcardConfirmationDialog(PostcardConfirmationView{MaskedRecipient: "r••••@example.test", ViewURL: "/postcard?token=opaque", Expires: "22 September 2026"}))
+	confirmation := renderPostcard(t, PostcardConfirmationDialog(PostcardConfirmationView{MaskedRecipients: "r••••@example.test", ViewURL: "/postcard?token=opaque", Expires: "22 September 2026"}))
 
 	titleTag := regexp.MustCompile(`<h1[^>]*>`)
 	for name, tc := range map[string]struct {
@@ -70,17 +70,17 @@ func renderPostcard(t *testing.T, component templ.Component) string {
 
 func TestPostcardComposeAndConfirmationProgressivelyEnhance(t *testing.T) {
 	var compose bytes.Buffer
-	if err := PostcardComposePage(PostcardComposeView{ImageID: "artwork-id", Image: "/image.jpg", Title: "Work", ArtistFilingName: "Artist, Filing", MusicAvailable: true}).Render(context.Background(), &compose); err != nil {
+	if err := PostcardComposePage(PostcardComposeView{ImageID: "artwork-id", Image: "/image.jpg", Title: "Work", ArtistFilingName: "Artist, Filing", Recipients: []string{""}}).Render(context.Background(), &compose); err != nil {
 		t.Fatal(err)
 	}
 	html := compose.String()
-	for _, fragment := range []string{`action="/postcard"`, `method="post"`, `hx-post="/postcard"`, `name="recipients[]"`, `maxlength="300"`, `name="include_music"`, `name="name"`, `name="email"`, "Artist, Filing"} {
+	for _, fragment := range []string{`action="/postcard"`, `method="post"`, `hx-post="/postcard"`, `name="recipients[]"`, `name="add_recipient"`, `formnovalidate`, `maxlength="300"`, `name="name"`, `name="email"`, "Artist, Filing"} {
 		if !strings.Contains(html, fragment) {
 			t.Fatalf("compose missing %s", fragment)
 		}
 	}
 	var confirmation bytes.Buffer
-	if err := PostcardConfirmationPage(PostcardConfirmationView{MaskedRecipient: "r••••@example.test", ViewURL: "/postcard?token=opaque", Expires: "22 September 2026"}).Render(context.Background(), &confirmation); err != nil {
+	if err := PostcardConfirmationPage(PostcardConfirmationView{MaskedRecipients: "r••••@example.test, s••••@example.test", ViewURL: "/postcard?token=opaque", Expires: "22 September 2026"}).Render(context.Background(), &confirmation); err != nil {
 		t.Fatal(err)
 	}
 	output := confirmation.String()
@@ -89,21 +89,19 @@ func TestPostcardComposeAndConfirmationProgressivelyEnhance(t *testing.T) {
 	}
 }
 
-func TestPostcardComposerDisclosesMusicAvailability(t *testing.T) {
-	available := renderPostcard(t, PostcardComposeBlock(PostcardComposeView{ImageID: "artwork-id", Image: "/image.jpg", Title: "Work", ArtistFilingName: "Artist, Filing", MusicAvailable: true}))
-	if !strings.Contains(available, `name="include_music"`) {
-		t.Fatal("available music must be selectable")
-	}
-	unavailable := renderPostcard(t, PostcardComposeBlock(PostcardComposeView{ImageID: "artwork-id", Image: "/image.jpg", Title: "Work", ArtistFilingName: "Artist, Filing"}))
-	if strings.Contains(unavailable, `name="include_music"`) || !strings.Contains(unavailable, "Period music is not available for this work.") {
-		t.Fatal("unavailable music must be disclosed without a selectable control")
+func TestPostcardComposerHasNoSenderMusicDecision(t *testing.T) {
+	html := renderPostcard(t, PostcardComposeBlock(PostcardComposeView{ImageID: "artwork-id", Image: "/image.jpg", Title: "Work", ArtistFilingName: "Artist, Filing", Recipients: []string{""}}))
+	if strings.Contains(html, `name="include_music"`) || strings.Contains(html, "Period music is not available") {
+		t.Fatal("composer must not render a sender-controlled music decision")
 	}
 }
 
 func TestPostcardRecipientInstructionUsesProseFloor(t *testing.T) {
-	rendered := renderPostcard(t, PostcardComposeBlock(PostcardComposeView{ImageID: "artwork-id", Image: "/image.jpg", Title: "Work", ArtistFilingName: "Artist, Filing"}))
-	if !strings.Contains(rendered, `class="mt-2 text-(length:--t-15) text-wga-ink/60">Add up to five addresses.</p>`) {
-		t.Fatal("recipient instruction must use the public prose type floor")
+	rendered := renderPostcard(t, PostcardComposeBlock(PostcardComposeView{ImageID: "artwork-id", Image: "/image.jpg", Title: "Work", ArtistFilingName: "Artist, Filing", Recipients: []string{"one@example.test", ""}}))
+	for _, expected := range []string{"RECIPIENT EMAIL — 2 OF 5", `name="remove_recipient"`, "+ ADD ANOTHER RECIPIENT"} {
+		if !strings.Contains(rendered, expected) {
+			t.Fatalf("recipient row controls missing %q", expected)
+		}
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -24,17 +25,18 @@ import (
 )
 
 type postcardSubmission struct {
-	SenderName     string   `json:"sender_name" form:"sender_name"`
-	SenderEmail    string   `json:"sender_email" form:"sender_email"`
-	Recipient      string   `json:"recipient" form:"recipient"`
-	Recipients     []string `json:"recipients" form:"recipients[]"`
-	Message        string   `json:"message" form:"message"`
-	ImageID        string   `json:"image_id" form:"image_id"`
-	IncludeMusic   bool     `json:"include_music" form:"include_music"`
-	RecaptchaToken string   `json:"recaptcha_token" form:"g-recaptcha-response"`
-	HoneyPotName   string   `json:"honey_pot_name" form:"name"`
-	HoneyPotEmail  string   `json:"honey_pot_email" form:"email"`
-	SubmissionKey  string   `json:"submission_key" form:"submission_key"`
+	SenderName      string   `json:"sender_name" form:"sender_name"`
+	SenderEmail     string   `json:"sender_email" form:"sender_email"`
+	Recipient       string   `json:"recipient" form:"recipient"`
+	Recipients      []string `json:"recipients" form:"recipients[]"`
+	Message         string   `json:"message" form:"message"`
+	ImageID         string   `json:"image_id" form:"image_id"`
+	AddRecipient    string   `json:"add_recipient" form:"add_recipient"`
+	RemoveRecipient string   `json:"remove_recipient" form:"remove_recipient"`
+	RecaptchaToken  string   `json:"recaptcha_token" form:"g-recaptcha-response"`
+	HoneyPotName    string   `json:"honey_pot_name" form:"name"`
+	HoneyPotEmail   string   `json:"honey_pot_email" form:"email"`
+	SubmissionKey   string   `json:"submission_key" form:"submission_key"`
 }
 
 func savePostcard(app core.App, c *core.RequestEvent, policy *bluemonday.Policy, captcha config.Captcha, keyring config.PostcardTokenKeyring, verifier antiabuse.Verifier, limiter *submissionLimiter, resolver requesttrust.Resolver) error {
@@ -58,7 +60,20 @@ func savePostcard(app core.App, c *core.RequestEvent, policy *bluemonday.Policy,
 	if input.Recipient != "" {
 		recipients = append([]string{input.Recipient}, recipients...)
 	}
-	values := pages.PostcardComposeView{SenderName: input.SenderName, SenderEmail: input.SenderEmail, Recipient: input.Recipient, Recipients: recipients, Message: input.Message, IncludeMusic: input.IncludeMusic, SubmissionKey: input.SubmissionKey}
+	values := pages.PostcardComposeView{SenderName: input.SenderName, SenderEmail: input.SenderEmail, Recipients: recipientRows(recipients), Message: input.Message, SubmissionKey: input.SubmissionKey}
+	if input.AddRecipient != "" {
+		if len(values.Recipients) < pages.PostcardMaxRecipients {
+			values.Recipients = append(values.Recipients, "")
+		}
+		return renderForm(input.ImageID, values, "", http.StatusOK, app, c, captcha)
+	}
+	if input.RemoveRecipient != "" {
+		index, err := strconv.Atoi(input.RemoveRecipient)
+		if err == nil && index >= 0 && index < len(values.Recipients) && len(values.Recipients) > 1 {
+			values.Recipients = append(values.Recipients[:index], values.Recipients[index+1:]...)
+		}
+		return renderForm(input.ImageID, values, "", http.StatusOK, app, c, captcha)
+	}
 	nonEmptyRecipients := make([]string, 0, len(recipients))
 	for _, recipient := range recipients {
 		if strings.TrimSpace(recipient) != "" {
@@ -112,7 +127,7 @@ func savePostcard(app core.App, c *core.RequestEvent, policy *bluemonday.Policy,
 
 	result, err := postcardworkflow.QueueWithAccess(app, keyring, postcardworkflow.QueueInput{
 		SenderName: strings.TrimSpace(input.SenderName), SenderEmail: strings.TrimSpace(input.SenderEmail), Recipients: recipients,
-		Message: policy.Sanitize(input.Message), ImageID: input.ImageID, IncludeMusic: input.IncludeMusic,
+		Message: policy.Sanitize(input.Message), ImageID: input.ImageID,
 		CorrelationID: logging.RequestID(c),
 		SubmissionKey: input.SubmissionKey,
 	}, types.NowDateTime())
@@ -120,7 +135,16 @@ func savePostcard(app core.App, c *core.RequestEvent, policy *bluemonday.Policy,
 		outcome := "persistence_error"
 		status := http.StatusInternalServerError
 		message := "The postcard could not be queued. Please try again."
-		if errors.Is(err, postcardworkflow.ErrInvalidPostcard) || errors.Is(err, postcardworkflow.ErrArtworkUnavailable) || errors.Is(err, postcardworkflow.ErrNoRecipients) {
+		var invalidRecipients *postcardworkflow.InvalidRecipientsError
+		if errors.As(err, &invalidRecipients) {
+			outcome = "validation"
+			status = http.StatusUnprocessableEntity
+			message = "Check these recipient addresses: " + strings.Join(invalidRecipients.Addresses, ", ") + "."
+		} else if errors.Is(err, postcardworkflow.ErrTooManyRecipients) {
+			outcome = "validation"
+			status = http.StatusUnprocessableEntity
+			message = "One postcard can have no more than five recipients."
+		} else if errors.Is(err, postcardworkflow.ErrInvalidPostcard) || errors.Is(err, postcardworkflow.ErrArtworkUnavailable) || errors.Is(err, postcardworkflow.ErrNoRecipients) {
 			outcome = "validation"
 			status = http.StatusUnprocessableEntity
 			message = "Check the postcard details and selected artwork."
@@ -134,9 +158,9 @@ func savePostcard(app core.App, c *core.RequestEvent, policy *bluemonday.Policy,
 func renderQueuedPostcard(result *postcardworkflow.QueueResult, app core.App, c *core.RequestEvent) error {
 	access := result.Access[0]
 	confirmation := pages.PostcardConfirmationView{
-		MaskedRecipient: maskEmail(access.Recipient),
-		ViewURL:         "/postcard?token=" + access.Token,
-		Expires:         access.ExpiresAt.Time().UTC().Format("2 January 2006"),
+		MaskedRecipients: strings.Join(result.MaskedRecipients, ", "),
+		ViewURL:          "/postcard?token=" + access.Token,
+		Expires:          access.ExpiresAt.Time().UTC().Format("2 January 2006"),
 	}
 	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, "Postcard queued")
 	var buf bytes.Buffer
@@ -153,10 +177,12 @@ func renderQueuedPostcard(result *postcardworkflow.QueueResult, app core.App, c 
 	return c.HTML(http.StatusAccepted, buf.String())
 }
 
-func maskEmail(address string) string {
-	at := strings.LastIndex(address, "@")
-	if at <= 0 {
-		return "hidden recipient"
+func recipientRows(recipients []string) []string {
+	if len(recipients) == 0 {
+		return []string{""}
 	}
-	return string([]rune(address[:at])[0]) + "••••@" + address[at+1:]
+	if len(recipients) > pages.PostcardMaxRecipients {
+		return append([]string(nil), recipients[:pages.PostcardMaxRecipients]...)
+	}
+	return append([]string(nil), recipients...)
 }

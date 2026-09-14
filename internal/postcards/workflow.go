@@ -48,7 +48,18 @@ var (
 	ErrArtworkUnavailable = errors.New("postcard artwork is not published")
 	// ErrRecipientAccessDenied prevents token-shape, lookup, status, and expiry details leaking.
 	ErrRecipientAccessDenied = errors.New("postcard recipient access denied")
+	// ErrTooManyRecipients indicates that more than five unique recipients were submitted.
+	ErrTooManyRecipients = errors.New("postcard accepts at most five recipients")
 )
+
+// InvalidRecipientsError reports every non-empty address that failed validation.
+type InvalidRecipientsError struct {
+	Addresses []string
+}
+
+func (e *InvalidRecipientsError) Error() string {
+	return "one or more postcard recipients are invalid"
+}
 
 // QueueInput contains the content and recipients required to queue a postcard.
 type QueueInput struct {
@@ -58,7 +69,6 @@ type QueueInput struct {
 	Message       string
 	ImageID       string
 	NotifySender  bool
-	IncludeMusic  bool
 	CorrelationID string
 	SubmissionKey string
 }
@@ -73,10 +83,11 @@ type RecipientAccess struct {
 
 // QueueResult is the atomically persisted postcard and recipient access material.
 type QueueResult struct {
-	Postcard      *core.Record
-	Access        []RecipientAccess
-	SenderControl *SenderControlAccess
-	Duplicate     bool
+	Postcard         *core.Record
+	Access           []RecipientAccess
+	SenderControl    *SenderControlAccess
+	MaskedRecipients []string
+	Duplicate        bool
 }
 
 // RecoverSubmission returns the original outcome for an active submission key.
@@ -95,16 +106,36 @@ func RecoverSubmission(app core.App, keyring config.PostcardTokenKeyring, submis
 	if err != nil {
 		return nil, true, err
 	}
-	deliveries, err := app.FindRecordsByFilter(collectionDeliveries, "postcard = {:postcard}", "+id", 1, 0, map[string]any{"postcard": postcard.Id})
-	if err != nil || len(deliveries) != 1 {
+	deliveries, err := app.FindRecordsByFilter(collectionDeliveries, "postcard = {:postcard}", "+created,+id", 0, 0, map[string]any{"postcard": postcard.Id})
+	if err != nil || len(deliveries) == 0 {
 		return nil, true, ErrSenderControlUnavailable
 	}
-	delivery := deliveries[0]
-	token, err := recoverRecipientToken(keyring, delivery.Id, delivery.GetString("view_token_envelope"), delivery.GetString("view_token_hash"))
-	if err != nil {
-		return nil, true, ErrSenderControlUnavailable
+	sharedAccess := postcard.GetString("view_token_hash") != ""
+	var token string
+	var expiresAt types.DateTime
+	if sharedAccess {
+		token, expiresAt, err = recoverPostcardRecipientToken(app, keyring, postcard, deliveries[0])
+		if err != nil {
+			return nil, true, ErrSenderControlUnavailable
+		}
 	}
-	return &QueueResult{Postcard: postcard, Access: []RecipientAccess{{DeliveryID: delivery.Id, Recipient: delivery.GetString("recipient"), Token: token, ExpiresAt: delivery.GetDateTime("view_expires_at")}}, SenderControl: control, Duplicate: true}, true, nil
+	access := make([]RecipientAccess, 0, len(deliveries))
+	masked := make([]string, 0, len(deliveries))
+	for _, delivery := range deliveries {
+		if !sharedAccess {
+			token, expiresAt, err = recoverPostcardRecipientToken(app, keyring, postcard, delivery)
+			if err != nil {
+				return nil, true, ErrSenderControlUnavailable
+			}
+		}
+		access = append(access, RecipientAccess{DeliveryID: delivery.Id, Recipient: delivery.GetString("recipient"), Token: token, ExpiresAt: expiresAt})
+		mask := delivery.GetString("recipient_mask")
+		if mask == "" {
+			mask = MaskRecipient(delivery.GetString("recipient"))
+		}
+		masked = append(masked, mask)
+	}
+	return &QueueResult{Postcard: postcard, Access: access, MaskedRecipients: masked, SenderControl: control, Duplicate: true}, true, nil
 }
 
 // Queue atomically persists a postcard and its encrypted recipient access material.
@@ -132,7 +163,7 @@ func QueueWithAccess(app core.App, keyring config.PostcardTokenKeyring, input Qu
 		return nil, ErrNoRecipients
 	}
 	if len(recipients) > maxRecipients {
-		return nil, fmtInvalid("too many recipients")
+		return nil, ErrTooManyRecipients
 	}
 	if input.CorrelationID == "" {
 		input.CorrelationID = uuid.NewString()
@@ -168,12 +199,22 @@ func QueueWithAccess(app core.App, keyring config.PostcardTokenKeyring, input Qu
 		postcard.Set("correlation_id", input.CorrelationID)
 		postcard.Set("sender_name", input.SenderName)
 		postcard.Set("sender_email", input.SenderEmail)
-		postcard.Set("recipients", strings.Join(recipients, ","))
+		maskedRecipients := make([]string, 0, len(recipients))
+		for _, recipient := range recipients {
+			maskedRecipients = append(maskedRecipients, MaskRecipient(recipient))
+		}
+		postcard.Set("recipients", strings.Join(maskedRecipients, ","))
 		postcard.Set("message", input.Message)
 		postcard.Set("image_id", input.ImageID)
 		postcard.Set("notify_sender", input.NotifySender)
-		postcard.Set("include_music", input.IncludeMusic)
-		postcard.Set("retention_until", now.Add(RecipientTokenValidity))
+		expiresAt := now.Add(RecipientTokenValidity)
+		postcard.Set("retention_until", expiresAt)
+		sharedToken, err := newRecipientToken()
+		if err != nil {
+			return err
+		}
+		postcard.Set("view_token_hash", HashRecipientToken(sharedToken))
+		postcard.Set("view_expires_at", expiresAt)
 		postcard.Set("submission_key_hash", submissionKeyHash)
 		if err := txApp.Save(postcard); err != nil {
 			return err
@@ -214,28 +255,26 @@ func QueueWithAccess(app core.App, keyring config.PostcardTokenKeyring, input Qu
 		if err != nil {
 			return err
 		}
-		expiresAt := now.Add(RecipientTokenValidity)
-		for _, recipient := range recipients {
-			token, err := newRecipientToken()
-			if err != nil {
-				return err
-			}
+		for index, recipient := range recipients {
 			delivery := core.NewRecord(deliveries)
 			delivery.Set("postcard", postcard.Id)
 			delivery.Set("recipient", recipient)
+			delivery.Set("recipient_mask", maskedRecipients[index])
 			delivery.Set("status", "pending")
 			delivery.Set("view_expires_at", expiresAt)
 			if err := txApp.Save(delivery); err != nil {
 				return err
 			}
-			envelope, err := sealRecipientToken(keyring, delivery.Id, token)
-			if err != nil {
-				return err
-			}
-			delivery.Set("view_token_envelope", envelope)
-			delivery.Set("view_token_hash", HashRecipientToken(token))
-			if err := txApp.Save(delivery); err != nil {
-				return err
+			if index == 0 {
+				envelope, err := sealRecipientToken(keyring, delivery.Id, sharedToken)
+				if err != nil {
+					return err
+				}
+				delivery.Set("view_token_envelope", envelope)
+				delivery.Set("view_token_hash", HashRecipientToken(sharedToken))
+				if err := txApp.Save(delivery); err != nil {
+					return err
+				}
 			}
 
 			messageID := uuid.NewString()
@@ -252,8 +291,9 @@ func QueueWithAccess(app core.App, keyring config.PostcardTokenKeyring, input Qu
 			if err := txApp.Save(attempt); err != nil {
 				return err
 			}
-			result.Access = append(result.Access, RecipientAccess{DeliveryID: delivery.Id, Recipient: recipient, Token: token, ExpiresAt: expiresAt})
+			result.Access = append(result.Access, RecipientAccess{DeliveryID: delivery.Id, Recipient: recipient, Token: sharedToken, ExpiresAt: expiresAt})
 		}
+		result.MaskedRecipients = maskedRecipients
 		return nil
 	})
 	if err != nil {
@@ -330,6 +370,26 @@ func HashRecipientToken(token string) string {
 	return hex.EncodeToString(digest[:])
 }
 
+func recoverPostcardRecipientToken(app core.App, keyring config.PostcardTokenKeyring, postcard *core.Record, delivery *core.Record) (string, types.DateTime, error) {
+	sharedHash := postcard.GetString("view_token_hash")
+	if sharedHash == "" {
+		token, err := recoverRecipientToken(keyring, delivery.Id, delivery.GetString("view_token_envelope"), delivery.GetString("view_token_hash"))
+		return token, delivery.GetDateTime("view_expires_at"), err
+	}
+	owner := delivery
+	if owner.GetString("view_token_envelope") == "" {
+		var err error
+		owner, err = app.FindFirstRecordByFilter(collectionDeliveries,
+			"postcard = {:postcard} && view_token_envelope != ''",
+			map[string]any{"postcard": postcard.Id})
+		if err != nil {
+			return "", types.DateTime{}, errInvalidRecipientTokenEnvelope
+		}
+	}
+	token, err := recoverRecipientToken(keyring, owner.Id, owner.GetString("view_token_envelope"), sharedHash)
+	return token, postcard.GetDateTime("view_expires_at"), err
+}
+
 // RecipientView is the authorised recipient delivery and postcard record pair.
 type RecipientView struct {
 	Delivery *core.Record
@@ -341,13 +401,25 @@ func FindRecipientView(app core.App, token string, now types.DateTime) (*Recipie
 	if !ValidRecipientToken(token) {
 		return nil, ErrRecipientAccessDenied
 	}
+	postcard, err := app.FindFirstRecordByFilter(collectionPostcards,
+		"view_token_hash = {:hash} && view_expires_at > {:now} && status != 'cancelled'",
+		map[string]any{"hash": HashRecipientToken(token), "now": now})
+	if err == nil {
+		if _, deliveryErr := app.FindFirstRecordByFilter(collectionDeliveries,
+			"postcard = {:postcard} && status != 'cancelled'",
+			map[string]any{"postcard": postcard.Id}); deliveryErr != nil {
+			return nil, ErrRecipientAccessDenied
+		}
+		return &RecipientView{Postcard: postcard}, nil
+	}
+	// Preserve already-issued per-delivery URLs created before the shared-link migration.
 	delivery, err := app.FindFirstRecordByFilter(collectionDeliveries,
 		"view_token_hash = {:hash} && view_expires_at > {:now} && status != 'cancelled'",
 		map[string]any{"hash": HashRecipientToken(token), "now": now})
 	if err != nil {
 		return nil, ErrRecipientAccessDenied
 	}
-	postcard, err := app.FindRecordById(collectionPostcards, delivery.GetString("postcard"))
+	postcard, err = app.FindRecordById(collectionPostcards, delivery.GetString("postcard"))
 	if err != nil || postcard.GetString("status") == "cancelled" {
 		return nil, ErrRecipientAccessDenied
 	}
@@ -481,7 +553,6 @@ func ResolveAttempt(app core.App, attemptID string, code string, summary string)
 		}
 		delivery.Set("recipient", "purged:"+delivery.Id)
 		delivery.Set("recipient_purged_at", now)
-		delivery.Set("view_token_envelope", "")
 		if code == "closed_without_replay" {
 			delivery.Set("status", "cancelled")
 			delivery.Set("cancelled_at", now)
@@ -547,15 +618,21 @@ func ReplayAttempt(app core.App, attemptID string) (*core.Record, error) {
 func normaliseRecipients(recipients []string) ([]string, error) {
 	unique := make(map[string]struct{}, len(recipients))
 	normalised := make([]string, 0, len(recipients))
+	invalid := make([]string, 0)
 	for _, recipient := range recipients {
 		trimmed := strings.TrimSpace(recipient)
+		if trimmed == "" {
+			continue
+		}
 		parsed, err := mail.ParseAddress(trimmed)
 		if err != nil || parsed.Address == "" || parsed.Address != trimmed || len(trimmed) > 254 {
-			return nil, errors.New("postcard recipient must be a valid email address")
+			invalid = append(invalid, trimmed)
+			continue
 		}
 		at := strings.LastIndex(parsed.Address, "@")
 		if at <= 0 || at == len(parsed.Address)-1 {
-			return nil, errors.New("postcard recipient must be a valid email address")
+			invalid = append(invalid, trimmed)
+			continue
 		}
 		address := parsed.Address[:at+1] + strings.ToLower(parsed.Address[at+1:])
 		if _, exists := unique[address]; exists {
@@ -564,5 +641,19 @@ func normaliseRecipients(recipients []string) ([]string, error) {
 		unique[address] = struct{}{}
 		normalised = append(normalised, address)
 	}
+	if len(invalid) != 0 {
+		return nil, &InvalidRecipientsError{Addresses: invalid}
+	}
 	return normalised, nil
+}
+
+// MaskRecipient retains enough context for sender-facing status without storing
+// or rendering a complete recipient address outside pending delivery work.
+func MaskRecipient(address string) string {
+	at := strings.LastIndex(address, "@")
+	local := []rune(address[:max(at, 0)])
+	if at <= 0 || at == len(address)-1 || len(local) == 0 {
+		return "recipient"
+	}
+	return string(local[0]) + "••••@" + address[at+1:]
 }

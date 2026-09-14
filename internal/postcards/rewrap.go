@@ -49,8 +49,7 @@ func RewrapTokenKey(app core.App, keyring config.PostcardTokenKeyring, sourceKey
 		}
 		err := txApp.DB().NewQuery(`
 			SELECT id FROM postcard_deliveries
-			WHERE status = 'pending'
-			AND substr(view_token_envelope, 1, length({:prefix})) = {:prefix}
+			WHERE substr(view_token_envelope, 1, length({:prefix})) = {:prefix}
 			ORDER BY id
 			LIMIT {:limit}
 		`).Bind(dbx.Params{
@@ -72,12 +71,11 @@ func RewrapTokenKey(app core.App, keyring config.PostcardTokenKeyring, sourceKey
 				return errTokenRewrapFailed
 			}
 
-			token, err := recoverRecipientToken(
-				keyring,
-				delivery.Id,
-				delivery.GetString("view_token_envelope"),
-				delivery.GetString("view_token_hash"),
-			)
+			postcard, err := txApp.FindRecordById(collectionPostcards, delivery.GetString("postcard"))
+			if err != nil {
+				return errTokenRewrapFailed
+			}
+			token, _, err := recoverPostcardRecipientToken(txApp, keyring, postcard, delivery)
 			if err != nil {
 				return errTokenRewrapFailed
 			}

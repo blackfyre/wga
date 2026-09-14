@@ -2,7 +2,6 @@ package postcards
 
 import (
 	"errors"
-	"strings"
 
 	"github.com/blackfyre/wga/internal/config"
 	"github.com/pocketbase/pocketbase/core"
@@ -44,17 +43,13 @@ func SenderStatusForControl(app core.App, control *SenderControl) (*SenderStatus
 	}
 	status := &SenderStatus{PostcardID: control.Postcard.Id, State: control.Postcard.GetString("status"), Deliveries: make([]SenderDeliveryStatus, 0, len(deliveries))}
 	for _, delivery := range deliveries {
-		status.Deliveries = append(status.Deliveries, SenderDeliveryStatus{Recipient: maskSenderRecipient(delivery.GetString("recipient")), State: delivery.GetString("status")})
+		maskedRecipient := delivery.GetString("recipient_mask")
+		if maskedRecipient == "" {
+			maskedRecipient = MaskRecipient(delivery.GetString("recipient"))
+		}
+		status.Deliveries = append(status.Deliveries, SenderDeliveryStatus{Recipient: maskedRecipient, State: delivery.GetString("status")})
 	}
 	return status, nil
-}
-
-func maskSenderRecipient(value string) string {
-	at := strings.LastIndex(value, "@")
-	if at <= 0 || at == len(value)-1 || strings.HasPrefix(value, "purged:") {
-		return "recipient"
-	}
-	return string([]rune(value[:at])[0]) + "••••@" + value[at+1:]
 }
 
 // FindSenderControl authorises a sender request by its presented bearer token.

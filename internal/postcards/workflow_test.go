@@ -35,7 +35,7 @@ func TestQueueNormalisesRecipientsAndCreatesAttempts(t *testing.T) {
 	if err != nil {
 		t.Fatalf("queue postcard: %v", err)
 	}
-	if got, want := postcard.GetString("recipients"), "First@example.test,first@example.test,second@example.test"; got != want {
+	if got, want := postcard.GetString("recipients"), "F••••@example.test,f••••@example.test,s••••@example.test"; got != want {
 		t.Fatalf("recipients = %q, want %q", got, want)
 	}
 	if postcard.GetString("correlation_id") == "" {
@@ -540,6 +540,9 @@ func TestQueueWithAccessCreatesBoundedOpaqueRecipientMessage(t *testing.T) {
 	if got := delivery.GetString("view_token_hash"); got != HashRecipientToken(result.Access[0].Token) {
 		t.Fatalf("token hash = %q", got)
 	}
+	if got := result.Postcard.GetString("view_token_hash"); got != HashRecipientToken(result.Access[0].Token) {
+		t.Fatalf("shared postcard token hash = %q", got)
+	}
 	envelope := delivery.GetString("view_token_envelope")
 	if envelope == "" || strings.Contains(envelope, result.Access[0].Token) {
 		t.Fatal("durable envelope is empty or contains the plaintext token")
@@ -563,6 +566,57 @@ func TestQueueWithAccessCreatesBoundedOpaqueRecipientMessage(t *testing.T) {
 	}
 	if attempt.GetString("deduplication_key") != attempt.GetString("message_id") {
 		t.Fatal("deduplication key is not the stable message id")
+	}
+}
+
+func TestQueueWithAccessUsesOneSharedTokenAndOneEnvelope(t *testing.T) {
+	app := testutils.NewTestApp(t)
+	artworkID := installPostcardSchema(t, app)
+	result, err := QueueWithAccess(app, postcardTestKeyring(t), QueueInput{
+		SenderName: "Sender", SenderEmail: "sender@example.test",
+		Recipients: []string{"first@example.test", "", "second@example.test", "first@example.test"},
+		Message:    "Hello", ImageID: artworkID,
+	}, types.NowDateTime())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Access) != 2 || result.Access[0].Token != result.Access[1].Token {
+		t.Fatalf("recipient access did not share one token: %#v", result.Access)
+	}
+	if got, want := result.MaskedRecipients, []string{"f••••@example.test", "s••••@example.test"}; fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Fatalf("masked recipients = %v, want %v", got, want)
+	}
+	deliveries := sortedDeliveries(t, app)
+	envelopes := 0
+	for _, delivery := range deliveries {
+		if delivery.GetString("view_token_envelope") != "" {
+			envelopes++
+		}
+	}
+	if envelopes != 1 {
+		t.Fatalf("shared token envelopes = %d, want 1", envelopes)
+	}
+	if strings.Contains(result.Postcard.GetString("recipients"), "first@example.test") || strings.Contains(result.Postcard.GetString("recipients"), "second@example.test") {
+		t.Fatal("postcard retained a plaintext recipient address")
+	}
+}
+
+func TestQueueWithAccessRejectsOverLimitWithoutPersistence(t *testing.T) {
+	app := testutils.NewTestApp(t)
+	artworkID := installPostcardSchema(t, app)
+	_, err := QueueWithAccess(app, postcardTestKeyring(t), QueueInput{
+		SenderName: "Sender", SenderEmail: "sender@example.test",
+		Recipients: []string{"one@example.test", "two@example.test", "three@example.test", "four@example.test", "five@example.test", "six@example.test"},
+		Message:    "Hello", ImageID: artworkID,
+	}, types.NowDateTime())
+	if !errors.Is(err, ErrTooManyRecipients) {
+		t.Fatalf("error = %v, want recipient limit", err)
+	}
+	for _, collection := range []string{collectionPostcards, collectionDeliveries, collectionDeliveryAttempts} {
+		records, findErr := app.FindRecordsByFilter(collection, "", "", 0, 0)
+		if findErr != nil || len(records) != 0 {
+			t.Fatalf("%s records=%d error=%v, want none", collection, len(records), findErr)
+		}
 	}
 }
 
@@ -593,6 +647,61 @@ func TestQueueWithAccessReusesSubmissionIntent(t *testing.T) {
 		records, err := app.FindRecordsByFilter(collection, "", "", 0, 0)
 		if err != nil || len(records) != 1 {
 			t.Fatalf("%s records = %d, err=%v", collection, len(records), err)
+		}
+	}
+}
+
+func TestRecoverSubmissionPreservesLegacyPerDeliveryTokens(t *testing.T) {
+	app := testutils.NewTestApp(t)
+	artworkID := installPostcardSchema(t, app)
+	keyring := postcardTestKeyring(t)
+	submissionKey, err := newRecipientToken()
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := QueueWithAccess(app, keyring, QueueInput{
+		SenderName: "Sender", SenderEmail: "sender@example.test",
+		Recipients: []string{"first@example.test", "second@example.test"},
+		Message:    "Hello", ImageID: artworkID, SubmissionKey: submissionKey,
+	}, types.NowDateTime())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	result.Postcard.Set("view_token_hash", "")
+	result.Postcard.Set("view_expires_at", "")
+	if err := app.Save(result.Postcard); err != nil {
+		t.Fatal(err)
+	}
+	deliveries := sortedDeliveries(t, app)
+	legacyTokens := make(map[string]string, len(deliveries))
+	for _, delivery := range deliveries {
+		token, tokenErr := newRecipientToken()
+		if tokenErr != nil {
+			t.Fatal(tokenErr)
+		}
+		envelope, envelopeErr := sealRecipientToken(keyring, delivery.Id, token)
+		if envelopeErr != nil {
+			t.Fatal(envelopeErr)
+		}
+		delivery.Set("view_token_hash", HashRecipientToken(token))
+		delivery.Set("view_token_envelope", envelope)
+		if err := app.Save(delivery); err != nil {
+			t.Fatal(err)
+		}
+		legacyTokens[delivery.Id] = token
+	}
+
+	recovered, found, err := RecoverSubmission(app, keyring, submissionKey, types.NowDateTime())
+	if err != nil || !found {
+		t.Fatalf("recover submission found=%t err=%v", found, err)
+	}
+	if len(recovered.Access) != len(deliveries) {
+		t.Fatalf("access records = %d, want %d", len(recovered.Access), len(deliveries))
+	}
+	for _, access := range recovered.Access {
+		if got := access.Token; got != legacyTokens[access.DeliveryID] {
+			t.Fatalf("delivery %s token = %q, want its legacy token", access.DeliveryID, got)
 		}
 	}
 }
@@ -849,6 +958,55 @@ func TestProcessDueSendsOnceAndPurgesDirectIdentifiers(t *testing.T) {
 	postcard, _ := app.FindRecordById(collectionPostcards, result.Postcard.Id)
 	if !strings.HasSuffix(postcard.GetString("sender_email"), "@invalid.test") || postcard.GetString("sender_email_purged_at") == "" || postcard.GetString("recipients") != "purged" {
 		t.Fatal("sender email was not purged after terminal delivery")
+	}
+}
+
+func TestMultiRecipientDeliverySharesURLAndRetainsEnvelopeUntilResolved(t *testing.T) {
+	app := testutils.NewTestApp(t)
+	artworkID := installPostcardSchema(t, app)
+	result, err := QueueWithAccess(app, postcardTestKeyring(t), QueueInput{
+		SenderName: "Sender", SenderEmail: "sender@example.test",
+		Recipients: []string{"first@example.test", "second@example.test"},
+		Message:    "Hello", ImageID: artworkID,
+	}, types.NowDateTime())
+	if err != nil {
+		t.Fatal(err)
+	}
+	transport := &recordingMailer{}
+	first, err := claimDue(app, types.NowDateTime())
+	if err != nil || first == nil {
+		t.Fatalf("claim first: claim=%v err=%v", first, err)
+	}
+	if err := deliver(app, transport, postcardTestConfig(t), postcardTestKeyring(t), first, "run-first"); err != nil {
+		t.Fatal(err)
+	}
+	deliveries := sortedDeliveries(t, app)
+	envelopePresent := false
+	for _, delivery := range deliveries {
+		envelopePresent = envelopePresent || delivery.GetString("view_token_envelope") != ""
+	}
+	if !envelopePresent {
+		t.Fatal("shared token envelope was purged while another delivery remained pending")
+	}
+	second, err := claimDue(app, types.NowDateTime())
+	if err != nil || second == nil {
+		t.Fatalf("claim second: claim=%v err=%v", second, err)
+	}
+	if err := deliver(app, transport, postcardTestConfig(t), postcardTestKeyring(t), second, "run-second"); err != nil {
+		t.Fatal(err)
+	}
+	if len(transport.messages) != 2 {
+		t.Fatalf("messages = %d, want 2", len(transport.messages))
+	}
+	for _, message := range transport.messages {
+		if !strings.Contains(message.HTML, "token="+result.Access[0].Token) {
+			t.Fatal("delivery did not use the shared postcard URL")
+		}
+	}
+	for _, delivery := range sortedDeliveries(t, app) {
+		if delivery.GetString("view_token_envelope") != "" {
+			t.Fatal("shared token envelope remained after every delivery resolved")
+		}
 	}
 }
 
@@ -1197,6 +1355,8 @@ func installPostcardSchema(t *testing.T, app core.App) string {
 		&core.DateField{Name: "sender_email_purged_at"},
 		&core.DateField{Name: "content_purged_at"},
 		&core.TextField{Name: "submission_key_hash"},
+		&core.TextField{Name: "view_token_hash"},
+		&core.DateField{Name: "view_expires_at"},
 	)
 	if err := app.Save(postcards); err != nil {
 		t.Fatalf("create postcards collection: %v", err)
@@ -1222,6 +1382,7 @@ func installPostcardSchema(t *testing.T, app core.App) string {
 	deliveries.Fields.Add(
 		&core.RelationField{Name: "postcard", CollectionId: postcards.Id, Required: true},
 		&core.TextField{Name: "recipient", Required: true},
+		&core.TextField{Name: "recipient_mask"},
 		&core.SelectField{Name: "status", Values: []string{"pending", "sent", "cancelled", "failed"}, MaxSelect: 1, Required: true},
 		&core.DateField{Name: "failed_at"},
 		&core.DateField{Name: "sent_at"},

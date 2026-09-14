@@ -41,6 +41,7 @@ func renderForm(artworkID string, values pages.PostcardComposeView, formError st
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 	values.ImageID = artworkID
+	values.Recipients = recipientRows(values.Recipients)
 	values.Title = record.GetString("title")
 	values.Technique = record.GetString("technique")
 	values.SiteKey = captcha.SiteKey()
@@ -51,7 +52,6 @@ func renderForm(artworkID string, values pages.PostcardComposeView, formError st
 		return utils.NotFoundError(c)
 	}
 	values.ArtistFilingName = author.GetString("filing_name")
-	values.MusicAvailable = resolveRecipientMusic(app, true, record).SongID != ""
 	if image := record.GetString("image"); image != "" {
 		values.Image = asseturl.GenerateArtworkImageURL(record, asseturl.DeliveryProfilePostcardSmallDualPlate, "")
 	} else {

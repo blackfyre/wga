@@ -252,6 +252,48 @@ func TestSavePostcardUsesResolvedIdentityForCaptcha(t *testing.T) {
 	}
 }
 
+func TestSavePostcardRecipientRowActionsUseExistingEndpoint(t *testing.T) {
+	app := testutils.NewTestApp(t)
+	artworkID := installComposeArtwork(t, app, "Work")
+	resolver := requesttrust.New(requesttrust.SourceDirect)
+	for _, test := range []struct {
+		name       string
+		action     url.Values
+		htmx       bool
+		wantRows   int
+		wantValues []string
+	}{
+		{name: "ordinary add", action: url.Values{"add_recipient": {"1"}, "recipients[]": {"first@example.test"}}, wantRows: 2, wantValues: []string{"first@example.test"}},
+		{name: "htmx remove", action: url.Values{"remove_recipient": {"0"}, "recipients[]": {"first@example.test", "second@example.test"}}, htmx: true, wantRows: 1, wantValues: []string{"second@example.test"}},
+		{name: "retain final row", action: url.Values{"remove_recipient": {"0"}, "recipients[]": {"first@example.test"}}, wantRows: 1, wantValues: []string{"first@example.test"}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			test.action.Set("image_id", artworkID)
+			request := httptest.NewRequest(http.MethodPost, "/postcard", strings.NewReader(test.action.Encode()))
+			request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			if test.htmx {
+				request.Header.Set("HX-Request", "true")
+			}
+			recorder := httptest.NewRecorder()
+			event := &core.RequestEvent{App: app, Event: router.Event{Request: request, Response: recorder}}
+			if err := savePostcard(app, event, bluemonday.NewPolicy(), config.Captcha{}, config.PostcardTokenKeyring{}, nil, newSubmissionLimiter(3, 10*time.Minute), resolver); err != nil {
+				t.Fatal(err)
+			}
+			if recorder.Code != http.StatusOK || strings.Count(recorder.Body.String(), `name="recipients[]"`) != test.wantRows {
+				t.Fatalf("status=%d rows=%d, want 200/%d", recorder.Code, strings.Count(recorder.Body.String(), `name="recipients[]"`), test.wantRows)
+			}
+			for _, value := range test.wantValues {
+				if !strings.Contains(recorder.Body.String(), `value="`+value+`"`) {
+					t.Fatalf("response did not retain %q", value)
+				}
+			}
+			if !test.htmx && !strings.Contains(recorder.Body.String(), "<!doctype html>") {
+				t.Fatal("ordinary row action did not render a complete page")
+			}
+		})
+	}
+}
+
 func TestSavePostcardKeysRateLimitByResolvedIdentity(t *testing.T) {
 	app := testutils.NewTestApp(t)
 	resolver := requesttrust.Resolver(func(*http.Request) (string, bool) {
