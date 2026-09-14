@@ -323,6 +323,28 @@ func TestReadLLMsDoesNotParseCatalogueManifest(t *testing.T) {
 	}
 }
 
+func TestRenderLLMsUsesStructuredDiscoveryAndResourceGuidance(t *testing.T) {
+	want := `# Web Gallery of Art
+
+> A searchable archive of European painting, sculpture, decorative arts and architecture from the third century to the early twentieth century.
+
+The [canonical Web Gallery of Art](https://gallery.example/) is authoritative. Generated Markdown files are bounded, session-independent alternate representations of published catalogue records.
+
+To retrieve Markdown, take the record ID after the final hyphen in a canonical artist or artwork URL. Use the artist ID in the pattern https://gallery.example/agents/artists/{id}.md or the artwork ID in https://gallery.example/agents/artworks/{id}.md.
+
+This document does not contain or provide a bulk export of the catalogue. Artwork reproductions may carry rights belonging to the holding institution; do not infer a reuse licence from their availability.
+
+## Discovery
+
+- [Canonical sitemap](https://gallery.example/sitemap.xml): Discover current published artist and artwork records.
+- [About and terms of use](https://gallery.example/pages/about): Read about the collection, attribution and usage conditions.
+`
+
+	if got := string(renderLLMs("https://gallery.example")); got != want {
+		t.Fatalf("renderLLMs() =\n%s\nwant:\n%s", got, want)
+	}
+}
+
 func TestPublishPrunesStaleGeneratedRecords(t *testing.T) {
 	app := newPublicationTestApp(t)
 	artist := createPublicationRecord(t, app, constants.CollectionArtists, publicationArtist("Jane Doe", "jane-doe", true))

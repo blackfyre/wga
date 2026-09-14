@@ -441,18 +441,19 @@ func plainText(value string) string {
 func renderLLMs(baseURL string) []byte {
 	return []byte(fmt.Sprintf(`# Web Gallery of Art
 
-The canonical Web Gallery of Art catalogue is available at <%s/>.
+> A searchable archive of European painting, sculpture, decorative arts and architecture from the third century to the early twentieth century.
+
+The [canonical Web Gallery of Art](%s/) is authoritative. Generated Markdown files are bounded, session-independent alternate representations of published catalogue records.
+
+To retrieve Markdown, take the record ID after the final hyphen in a canonical artist or artwork URL. Use the artist ID in the pattern %s/agents/artists/{id}.md or the artwork ID in %s/agents/artworks/{id}.md.
+
+This document does not contain or provide a bulk export of the catalogue. Artwork reproductions may carry rights belonging to the holding institution; do not infer a reuse licence from their availability.
 
 ## Discovery
 
-- Sitemap: <%s/sitemap.xml>
-- Artist Markdown: %s/agents/artists/{id}.md
-- Artwork Markdown: %s/agents/artworks/{id}.md
-
-## Usage
-
-Use the sitemap to discover current canonical records, then request the corresponding generated Markdown resource. These representations contain bounded public catalogue fields and canonical links; this document does not embed the complete catalogue.
-`, baseURL, baseURL, baseURL, baseURL))
+- [Canonical sitemap](%s/sitemap.xml): Discover current published artist and artwork records.
+- [About and terms of use](%s/pages/about): Read about the collection, attribution and usage conditions.
+`, baseURL, baseURL, baseURL, baseURL, baseURL))
 }
 
 func validatePublication(staging string, expected map[string]struct{}) error {
