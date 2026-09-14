@@ -21,7 +21,7 @@ import (
 // is routed to (hx-target/hx-select), which is what makes the two sides
 // independent.
 
-// DualLink is a link that is also a state: image-size chips, routing toggles.
+// DualLink is a link that is also a state, such as a routing toggle.
 type DualLink struct {
 	Label    string
 	Href     string
@@ -107,22 +107,51 @@ type DualArtistRecord struct {
 	Bio        string
 	Heading    string
 	Works      []DualCard
+	Selections []DualSelectionPreview
 	Music      components.MusicPeriodCard
 	Citation   components.Citation
 }
 
+// DualSelectionPreview mirrors one source-backed curated selection preview on
+// the standalone artist record while resolving navigation through Dual Mode.
+type DualSelectionPreview struct {
+	AnchorID        string
+	DisplayTitle    string
+	SelectedCount   int
+	CataloguedCount int
+	Commentary      string
+	HasCommentary   bool
+	Works           []DualCard
+	Href            string
+}
+
+// DualSelectionRecord is a complete curated selection rendered inside its
+// originating pane. Selection navigation is always pane-local.
+type DualSelectionRecord struct {
+	ArtistFilingName string
+	ArtistShortName  string
+	ArtistHref       string
+	DisplayTitle     string
+	Context          string
+	Commentary       string
+	HasCommentary    bool
+	Works            []DualCard
+	WorkCount        int
+	HoldingNote      string
+	Siblings         []DualLink
+	Citation         components.Citation
+}
+
 // DualWorkRecord is a complete artwork record inside a window. Image is the
-// study image at the window's selected size; Zoom is the deliberate 2000px
-// viewer rendition.
+// fixed 1100px-or-original plate; Zoom is the deliberate 2000px viewer.
 type DualWorkRecord struct {
 	Title       string
 	Byline      string
 	ArtistHref  string
 	Image       string
 	Zoom        string
-	PlateClass  string
-	Sizes       []DualLink
-	SizeCaption string
+	SourceURL   string
+	CurrentLocation string
 	Meta        []components.MetaEntry
 	Palette     []dto.ColourSwatch
 	Comment     string
@@ -147,6 +176,7 @@ type DualWindow struct {
 	Send         DualLink
 	Index        DualIndexView
 	Artist       DualArtistRecord
+	Selection    DualSelectionRecord
 	Work         DualWorkRecord
 }
 
@@ -230,7 +260,7 @@ templ dualBar(v DualModeView) {
 		<div class="flex items-center gap-3">
 			<span class="w-[26px] h-[26px] border-[1.5px] border-wga-ink flex items-center justify-center font-mono text-(length:--t-10) font-bold">WGA</span>
 			<span class="font-mono text-(length:--t-11) tracking-[2px]">09 — DUAL MODE</span>
-			@components.HelpTip("DUAL MODE", "Two copies of the collection, running independently either side of the divide. Each window keeps its own record, its own history and its own image size, and shows everything the single-window page shows.")
+			@components.HelpTip("DUAL MODE", "Two copies of the collection, running independently either side of the divide. Each window keeps its own record, its own history and its own answer to where its links open, and shows everything the single-window page shows.")
 		</div>
 		<div class="flex items-center gap-[18px]">
 			<a href={ templ.URL(v.SwapHref) } hx-get={ v.SwapHref } hx-target="#dual-area" hx-select="#dual-area" hx-swap="outerHTML" class="wga-action-link font-mono text-(length:--t-11) tracking-[1px]">⇄ SWAP WINDOWS</a>
@@ -296,6 +326,8 @@ templ DualWindowPane(w DualWindow) {
 			switch w.View {
 				case "artist":
 					@dualArtistPane(w)
+				case "selection":
+					@dualSelectionPane(w)
 				case "work":
 					@dualWorkPane(w)
 				default:
@@ -477,12 +509,26 @@ templ dualArtistPane(w DualWindow) {
 	<div class="wga-pane-split flex items-start gap-7 mb-7">
 		<aside class="wga-pane-aside w-[270px] shrink-0">
 			@components.MetaList(w.Artist.Meta)
+			if len(w.Artist.Selections) > 0 {
+				<nav class="mt-7 border-t border-wga-ink/15 pt-5" aria-label="On this page">
+					<p class="mb-3 font-mono text-(length:--t-11) tracking-[1.5px] text-muted">ON THIS PAGE</p>
+					<ul class="space-y-2 text-(length:--t-13) leading-snug">
+						<li><a href={ templ.SafeURL("#dual-" + w.Key + "-biography") } class="hover:text-wga-accent">Biography</a></li>
+						for _, selection := range w.Artist.Selections {
+							// The contents count reports the representative works shown in
+							// this preview; the group itself reports the complete selected count.
+							<li><a href={ templ.SafeURL("#" + selection.AnchorID) } class="hover:text-wga-accent">{ selection.DisplayTitle } · { strconv.Itoa(len(selection.Works)) } works</a></li>
+						}
+						<li><a href={ templ.SafeURL("#dual-" + w.Key + "-citation") } class="hover:text-wga-accent">Cite This Record</a></li>
+					</ul>
+				</nav>
+			}
 			if w.Artist.Music.PlayerURL != "" {
 				@components.MusicPeriodPlayerCard(w.Artist.Music.SongID, w.Artist.Music.Piece, w.Artist.Music.PlayerURL)
 			}
 		</aside>
 		<div class="flex-1 min-w-0">
-			<h3 class="font-mono text-(length:--t-11) tracking-[1.5px] text-muted mb-3">BIOGRAPHY</h3>
+			<h3 id={ "dual-" + w.Key + "-biography" } class="scroll-mt-6 font-mono text-(length:--t-11) tracking-[1.5px] text-muted mb-3">BIOGRAPHY</h3>
 			<div class="content max-w-[620px] text-(length:--t-15) leading-[1.7]">
 				@templ.Raw(w.Artist.Bio)
 			</div>
@@ -494,8 +540,64 @@ templ dualArtistPane(w DualWindow) {
 			<a href={ templ.URL(w.Send.Href) } hx-get={ w.Send.Href } hx-target="#dual-area" hx-select="#dual-area" hx-swap="outerHTML" class="wga-action-link font-mono text-(length:--t-10) tracking-[1px]">{ w.Send.Label }</a>
 		}
 	</div>
-	@dualCardGrid(w.Artist.Works, w.TargetSel)
-	@components.CitationBlock(w.Artist.Citation)
+	if len(w.Artist.Selections) > 0 {
+		for _, selection := range w.Artist.Selections {
+			<article id={ selection.AnchorID } class="mb-8 scroll-mt-6 border-b border-wga-ink/15 pb-8">
+				<div class="mb-4 flex items-baseline justify-between gap-4 border-b border-wga-ink/15 pb-2.5">
+					<h4 class="text-(length:--t-22) font-semibold leading-tight">{ selection.DisplayTitle }</h4>
+					<p class="font-mono text-(length:--t-10) tracking-[1px] text-muted">{ strconv.Itoa(selection.SelectedCount) } SELECTED · { strconv.Itoa(selection.CataloguedCount) } CATALOGUED</p>
+				</div>
+				if selection.HasCommentary {
+					<div class="content max-w-[620px] text-(length:--t-15) leading-[1.7]">@templ.Raw(selection.Commentary)</div>
+				} else {
+					<p class="max-w-[620px] text-(length:--t-15) leading-[1.7] text-wga-ink/70">Commentary is unavailable for this selection.</p>
+				}
+				if len(selection.Works) > 0 {
+					<div class="mt-6">@dualCardGrid(selection.Works, w.TargetSel)</div>
+				}
+				<a href={ templ.URL(selection.Href) } hx-get={ selection.Href } hx-target={ w.SelfSel } hx-select={ w.SelfSel } hx-swap="outerHTML" class="wga-action-link wga-trailing-action mt-6 font-mono text-(length:--t-11) tracking-[1px]">OPEN SELECTION →</a>
+			</article>
+		}
+	} else {
+		@dualCardGrid(w.Artist.Works, w.TargetSel)
+	}
+	<div id={ "dual-" + w.Key + "-citation" } class="scroll-mt-6">@components.CitationBlock(w.Artist.Citation)</div>
+}
+
+templ dualSelectionPane(w DualWindow) {
+	<p class="font-mono text-(length:--t-11) tracking-[2px] text-muted mb-2.5">21 — SELECTION</p>
+	<h2 class="text-(length:--t-30) font-semibold tracking-[-0.5px] leading-[1.12]">{ w.Selection.DisplayTitle }</h2>
+	<a href={ templ.URL(w.Selection.ArtistHref) } hx-get={ w.Selection.ArtistHref } hx-target={ w.SelfSel } hx-select={ w.SelfSel } hx-swap="outerHTML" class="wga-action-link mt-2 block font-mono text-(length:--t-12) tracking-[1px]">{ w.Selection.ArtistFilingName } →</a>
+	if w.Selection.Context != "" {
+		<p class="mt-5 max-w-[56ch] text-(length:--t-17) leading-[1.6] text-pretty">{ w.Selection.Context }</p>
+	}
+	<section class="mt-8 border-t border-wga-ink/15 pt-5" aria-label="Selection commentary">
+		<h3 class="font-mono text-(length:--t-11) tracking-[1.5px]">COMMENTARY</h3>
+		if w.Selection.HasCommentary {
+			<div class="content mt-4 max-w-[620px] text-(length:--t-15) leading-[1.7]">@templ.Raw(w.Selection.Commentary)</div>
+		} else {
+			<p class="mt-4 max-w-[620px] text-(length:--t-15) leading-[1.7] text-wga-ink/70">Commentary is unavailable for this selection.</p>
+		}
+	</section>
+	<div class="mt-9 mb-4 flex items-baseline justify-between gap-4 border-t border-wga-ink/15 pt-4">
+		<h3 class="font-mono text-(length:--t-11) tracking-[1.5px]">SELECTED WORKS</h3>
+		<p class="font-mono text-(length:--t-10) tracking-[1px] text-muted">{ strconv.Itoa(w.Selection.WorkCount) } RECORDS</p>
+	</div>
+	@dualCardGrid(w.Selection.Works, w.TargetSel)
+	if w.Selection.HoldingNote != "" {
+		<p class="mt-4 max-w-[64ch] font-mono text-(length:--t-10) leading-loose text-muted">{ w.Selection.HoldingNote }</p>
+	}
+	if len(w.Selection.Siblings) > 0 {
+		<div class="mt-8 border-t border-wga-ink/15 pt-4">
+			<h3 class="mb-3 font-mono text-(length:--t-11) tracking-[1.5px]">OTHER SELECTIONS — { w.Selection.ArtistShortName }</h3>
+			<div class="flex flex-wrap gap-2.5">
+				for _, sibling := range w.Selection.Siblings {
+					<a href={ templ.URL(sibling.Href) } hx-get={ sibling.Href } hx-target={ w.SelfSel } hx-select={ w.SelfSel } hx-swap="outerHTML" class="wga-button wga-button-outline-primary font-mono text-(length:--t-10) tracking-[1px]">{ sibling.Label }</a>
+				}
+			</div>
+		</div>
+	}
+	@components.CitationBlock(w.Selection.Citation)
 }
 
 templ dualWorkPane(w DualWindow) {
@@ -504,35 +606,30 @@ templ dualWorkPane(w DualWindow) {
 	if w.Work.Byline != "" {
 		<a href={ templ.URL(w.Work.ArtistHref) } hx-get={ w.Work.ArtistHref } hx-target={ w.TargetSel } hx-select={ w.TargetSel } hx-swap="outerHTML" class="wga-action-link mt-2 mb-5 block font-mono text-(length:--t-12) tracking-[1px]">{ w.Work.Byline }</a>
 	}
-	<figure class={ "bg-wga-fill border border-wga-ink/15 flex items-center justify-center p-4", w.Work.PlateClass }>
+	<figure class="relative h-[460px] bg-wga-fill border border-wga-ink/15 flex items-center justify-center p-4">
 		if w.Work.Image != "" {
-			<a href={ templ.SafeURL(w.Work.Zoom) } data-viewer class="block h-full w-full" aria-label={ "View larger image of " + w.Work.Title }>
+			<a href={ templ.SafeURL(w.Work.Zoom) } data-viewer class="relative block h-full w-full" aria-label={ "View larger image of " + w.Work.Title }>
 				<img src={ w.Work.Image } alt={ w.Work.Title } data-zoom-url={ w.Work.Zoom } class="h-full w-full object-contain"/>
+				@components.ZoomHint()
 			</a>
 		} else {
 			<figcaption class="font-mono text-(length:--t-10) tracking-[1px] text-faint-2 uppercase text-center">IMAGE — { w.Work.Title }</figcaption>
 		}
 	</figure>
-	<div class="flex items-center justify-between gap-4 mt-3">
-		<div class="flex items-center gap-1.5">
-			<span class="font-mono text-(length:--t-11) tracking-[1px] text-muted mr-1">IMAGE SIZE</span>
-			for _, size := range w.Work.Sizes {
-				<a
-					href={ templ.URL(size.Href) }
-					hx-get={ size.Href }
-					hx-target={ w.SelfSel }
-					hx-select={ w.SelfSel }
-					hx-swap="outerHTML"
-					aria-current={ dualAriaCurrent(size.Selected) }
-					class={ "font-mono text-(length:--t-10) tracking-[1px] px-2.5 py-[5px] border transition-colors",
-						templ.KV("bg-wga-accent-bg border-wga-accent text-wga-bg", size.Selected),
-						templ.KV("border-control text-wga-ink/70 hover:border-wga-accent hover:text-wga-accent", !size.Selected) }
-				>{ size.Label }</a>
-			}
-			@components.HelpTip("STUDY IMAGE", "Image size is per window, so one side can hold a detail at full size while the other stays small. The reproduction is served at the source width when the selected size would upscale it.")
+	<div class="flex items-start justify-between gap-4 mt-3.5">
+		<div class="flex items-center gap-2">
+			<span class="font-mono text-(length:--t-11) tracking-[1.5px]">THIS REPRODUCTION</span>
+			@components.HelpTip("THIS REPRODUCTION", "The plate opens in the viewer for zooming and panning. This comparison uses one 1100-pixel plate, or the original file when a thumbnail would upscale it.")
 		</div>
+		if w.Work.SourceURL != "" {
+			<div class="flex max-w-[60%] flex-col items-end gap-1 text-right">
+				<a href={ templ.SafeURL(w.Work.SourceURL) } target="_blank" rel="noopener noreferrer" class="wga-action-link font-mono text-(length:--t-11) tracking-[1px]">DOWNLOAD THE FULL FILE ↓</a>
+				if w.Work.CurrentLocation != "" {
+					<p class="font-mono text-(length:--t-10) leading-relaxed text-muted">CURRENT LOCATION · { w.Work.CurrentLocation }</p>
+				}
+			</div>
+		}
 	</div>
-	<p class="font-mono text-(length:--t-10) tracking-[1px] text-faint mt-2.5">{ w.Work.SizeCaption }</p>
 	<div class="flex flex-wrap gap-2.5 mt-5 mb-7">
 		@components.AddToItineraryAction(w.Work.ArtworkID, components.AddToItineraryRow)
 		@components.AddToStudyBoardAction(w.Work.ArtworkID, w.Work.Title, w.Work.Image, components.AddToStudyBoardRow)

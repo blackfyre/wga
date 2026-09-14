@@ -10,6 +10,9 @@ import { expect, type Page, test } from "@playwright/test";
 const artistOnePath = "/artists/synthetic-artist-01-ad32608c6e36b2e";
 const artistOneArtworkPath =
 	"/artists/synthetic-artist-01-ad32608c6e36b2e/synthetic-artwork-01-01-2225c982be1af02";
+const curatedArtistPath = "/artists/synthetic-artist-02-2236bdd57f7492e";
+const curatedSelectionPath =
+	"/artists/synthetic-artist-02-2236bdd57f7492e/selections/5ef9746d522357d";
 
 async function settleEntryAnimation(page: Page) {
 	await expect(page.locator("main#mc-area")).toHaveCSS("transform", "none");
@@ -102,7 +105,10 @@ test("an artist and its work render as complete records with citations", async (
 			name: "Synthetic Artwork 01-01",
 		}),
 	).toBeVisible();
-	await expect(page.locator("#dual-right")).toContainText("IMAGE SIZE");
+	await expect(page.locator("#dual-right")).toContainText("THIS REPRODUCTION");
+	await expect(page.locator("#dual-right")).toContainText("CLICK TO ZOOM");
+	await expect(page.locator("#dual-right")).toContainText("ACCESSED");
+	await expect(page.locator("#dual-right")).not.toContainText("IMAGE SIZE");
 	await expect(page.locator("#dual-right")).toContainText("CITE THIS RECORD");
 });
 
@@ -128,12 +134,13 @@ test("each pane keeps its own routing toggle and the bar swaps windows", async (
 	).toHaveAttribute("href", /^\/dual-mode/);
 });
 
-test("dual share URL restores independent pane paths, sizes, and routing", async ({
+test("dual share URL restores independent pane paths and routing while retiring sizes", async ({
 	page,
 }) => {
 	const url = `/dual-mode?wide=1&left=${encodeURIComponent(artistOnePath)}&right=${encodeURIComponent(artistOneArtworkPath)}&l_size=small&r_size=large&left_render_to=left`;
 	await page.goto(url);
 	await expect(page).toHaveURL(/wide=1/);
+	await expect(page).not.toHaveURL(/(?:l|r)_size=/);
 	await expect(page.locator("#dual-left")).toContainText("SYNTHETIC ARTIST 01");
 	await expect(page.locator("#dual-right")).toContainText(
 		"Synthetic Artwork 01-01",
@@ -147,6 +154,45 @@ test("dual share URL restores independent pane paths, sizes, and routing", async
 	await expect(page.locator("#dual-right")).toContainText(
 		"Synthetic Artwork 01-01",
 	);
+});
+
+test("curated selections use namespaced contents and stay in their current pane", async ({
+	page,
+}) => {
+	await page.goto(
+		`/dual-mode?wide=1&left=${encodeURIComponent(curatedArtistPath)}&right=${encodeURIComponent(curatedArtistPath)}`,
+	);
+	for (const side of ["left", "right"]) {
+		const pane = page.locator(`#dual-${side}`);
+		const contents = pane.getByRole("navigation", { name: "On this page" });
+		await expect(contents).toBeVisible();
+		await expect(
+			contents.getByRole("link", { name: "Biography" }),
+		).toHaveAttribute("href", `#dual-${side}-biography`);
+		await expect(
+			contents.getByRole("link", { name: "Cite This Record" }),
+		).toHaveAttribute("href", `#dual-${side}-citation`);
+	}
+	expect(
+		await page.locator("[id]").evaluateAll((elements) => {
+			const ids = elements.map((element) => element.id).filter(Boolean);
+			return ids.length === new Set(ids).size;
+		}),
+	).toBe(true);
+
+	const left = page.locator("#dual-left");
+	const open = left.getByRole("link", { name: /OPEN SELECTION/ }).first();
+	await expect(open).toHaveAttribute(
+		"href",
+		new RegExp(`left=${encodeURIComponent(curatedSelectionPath)}`),
+	);
+	await open.focus();
+	await page.keyboard.press("Enter");
+	await expect(left).toContainText("21 — SELECTION");
+	await expect(left).toContainText("SELECTED WORKS");
+	await expect(left).toContainText("OTHER SELECTIONS");
+	await expect(left).toContainText("CITE THIS RECORD — BIBTEX");
+	await expect(page.locator("#dual-right")).toContainText("BIOGRAPHY");
 });
 
 test.describe("dual mode without JavaScript", () => {
@@ -195,6 +241,21 @@ test.describe("dual mode without JavaScript", () => {
 			}),
 		).toBeVisible();
 	});
+
+	test("opens a curated selection in the same pane through ordinary links", async ({
+		page,
+	}) => {
+		await page.goto(
+			`/dual-mode?wide=1&left=${encodeURIComponent(curatedArtistPath)}`,
+		);
+		const left = page.locator("#dual-left");
+		const open = left.getByRole("link", { name: /OPEN SELECTION/ }).first();
+		await expect(open).toHaveAttribute("href", /left=/);
+		await settleEntryAnimation(page);
+		await open.click();
+		await expect(page).toHaveURL(/left=.*selections/);
+		await expect(left).toContainText("21 — SELECTION");
+	});
 });
 
 for (const width of [390, 834, 1440]) {
@@ -219,7 +280,7 @@ test("dual pane route target changes preserve the opposite pane through history"
 		name: "Synthetic Artwork 01-01",
 	});
 	await expect(oppositeHeading).toBeVisible();
-	await expect(opposite).toContainText("IMAGE SIZE");
+	await expect(opposite).toContainText("THIS REPRODUCTION");
 	const initialURL = page.url();
 	const target = page.locator("#dual-left a[aria-current]").first();
 	const targetHref = await target.getAttribute("href");
@@ -230,9 +291,9 @@ test("dual pane route target changes preserve the opposite pane through history"
 		`right=${encodeURIComponent(artistOneArtworkPath)}`,
 	);
 	await expect(oppositeHeading).toBeVisible();
-	await expect(opposite).toContainText("IMAGE SIZE");
+	await expect(opposite).toContainText("THIS REPRODUCTION");
 	await page.goBack();
 	await expect(page).toHaveURL(initialURL);
 	await expect(oppositeHeading).toBeVisible();
-	await expect(opposite).toContainText("IMAGE SIZE");
+	await expect(opposite).toContainText("THIS REPRODUCTION");
 });

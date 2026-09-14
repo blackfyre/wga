@@ -35,11 +35,8 @@ const (
 	dualLookupLimit             = 20
 	dualLookupMinimumQueryRunes = 2
 
-	dualIndexPageSize = 30
-
-	sizeSmall  = "small"
-	sizeMedium = "medium"
-	sizeLarge  = "large"
+	dualIndexPageSize             = 30
+	dualSelectionPreviewWorkLimit = 4
 
 	viewGrid = "grid"
 	viewList = "list"
@@ -58,9 +55,10 @@ const dualArtistIdentityFilter = "filing_name != '' && short_name != ''"
 
 // panePathDto describes a parsed pane content path.
 type panePathDto struct {
-	Kind    string // "default" | "artist" | "artwork"
-	Id      string
-	RelPath string
+	Kind     string // "default" | "artist" | "selection" | "artwork"
+	Id       string
+	ArtistID string
+	RelPath  string
 }
 
 // dualState is the parsed, canonical dual-mode route state.
@@ -75,7 +73,6 @@ type dualPaneState struct {
 	path     string         // canonical record path; "" = artist index
 	renderTo string         // absolute pane name content links open in ("left" | "right")
 	index    dualIndexState // remembered index/filter state for back navigation
-	size     string         // study-image size for the work view
 }
 
 // dualIndexState is the artist-index filter/view/sort state of one window.
@@ -167,6 +164,13 @@ func renderDualModePageWithCheckpoint(app *pocketbase.PocketBase, c *core.Reques
 	}
 	state.left.path = leftPath
 	state.right.path = rightPath
+	// Image-size state was retired with the single fixed 1100px Dual Mode plate.
+	// Canonicalise ordinary document requests with a redirect; HTMX requests keep
+	// their fragment response and receive the same canonical URL via HX-Push-Url.
+	query := c.Request.URL.Query()
+	if !utils.IsHtmxRequest(c) && (query.Has("l_size") || query.Has("r_size")) {
+		return c.Redirect(http.StatusMovedPermanently, state.path())
+	}
 
 	if err := checkpoint(c.Request.Context(), "dual.left.window"); err != nil {
 		return dualCancellationError(c, err)
@@ -291,6 +295,26 @@ func buildWindowContext(ctx context.Context, app *pocketbase.PocketBase, side st
 		window.Send = dualSendLink(side, pane, state, window.OtherLabel)
 		return window, nil
 
+	case "selection":
+		record, artistPath, buildErr := buildDualSelectionRecordContext(ctx, app, side, pane, state, checkpoint)
+		if buildErr != nil {
+			if errors.Is(buildErr, sql.ErrNoRows) {
+				return buildIndexWindowContext(ctx, app, side, pane, state, ref, window, checkpoint)
+			}
+			return window, buildErr
+		}
+		artistHref := state.withPanePath(side, artistPath).path()
+		window.View = "selection"
+		window.Selection = record
+		window.Crumb = []pages.DualCrumb{
+			{Label: "ARTISTS", Href: window.IndexHref},
+			{Label: record.ArtistShortName, Href: artistHref},
+			{Label: record.DisplayTitle},
+		}
+		window.BackHref = artistHref
+		window.Send = dualSendLink(side, pane, state, window.OtherLabel)
+		return window, nil
+
 	case "artwork":
 		record, artistName, artistPath, buildErr := buildDualWorkRecordContext(ctx, app, side, pane, state, ref, checkpoint)
 		if buildErr != nil {
@@ -355,7 +379,6 @@ func parseDualPane(values neturl.Values, side string, prefix string) dualPaneSta
 		path:     parseDualPath(values.Get(side)),
 		renderTo: resolvePaneTarget(side, values.Get(side+"_render_to")),
 		index:    parseDualIndex(values, prefix),
-		size:     parseDualSize(values.Get(prefix + "_size")),
 	}
 }
 
@@ -429,15 +452,6 @@ func parseDualBornYear(raw string) int {
 	}
 
 	return value
-}
-
-func parseDualSize(raw string) string {
-	switch strings.TrimSpace(raw) {
-	case sizeSmall, sizeLarge:
-		return strings.TrimSpace(raw)
-	default:
-		return sizeMedium
-	}
 }
 
 // normalize clamps born years to the published range and drops unknown
@@ -527,9 +541,6 @@ func (p dualPaneState) addParams(side string, prefix string, add func(string, st
 		add(side+"_render_to", p.renderTo)
 	}
 	p.index.addParams(prefix, add)
-	if p.size != sizeMedium {
-		add(prefix+"_size", p.size)
-	}
 }
 
 func (i dualIndexState) addParams(prefix string, add func(string, string)) {
@@ -618,16 +629,6 @@ func (s dualState) withPaneIndex(side string, idx dualIndexState) dualState {
 	return next
 }
 
-func (s dualState) withPaneSize(side string, size string) dualState {
-	next := s
-	if side == "left" {
-		next.left.size = size
-	} else {
-		next.right.size = size
-	}
-	return next
-}
-
 func (s dualState) withWide(wide bool) dualState {
 	next := s
 	next.wide = wide
@@ -640,8 +641,8 @@ func (s dualState) swapped() dualState {
 
 func (s dualState) reset() dualState {
 	return dualState{
-		left:  dualPaneState{renderTo: "right", index: dualIndexState{view: viewList, sort: sortAZ}, size: sizeMedium},
-		right: dualPaneState{renderTo: "left", index: dualIndexState{view: viewList, sort: sortAZ}, size: sizeMedium},
+		left:  dualPaneState{renderTo: "right", index: dualIndexState{view: viewList, sort: sortAZ}},
+		right: dualPaneState{renderTo: "left", index: dualIndexState{view: viewList, sort: sortAZ}},
 		wide:  s.wide,
 	}
 }
@@ -1005,6 +1006,30 @@ func resolvePaneCanonicalPathContext(ctx context.Context, app core.App, pane dua
 
 		return urlutils.GenerateArtistUrlFromRecord(artist), nil
 
+	case "selection":
+		if err := checkpoint(ctx, "dual.resolve.selection_artist"); err != nil {
+			return "", err
+		}
+		artist, err := findPublishedArtist(app, parsed.ArtistID)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return "", nil
+			}
+			return "", err
+		}
+		if err := checkpoint(ctx, "dual.resolve.selection"); err != nil {
+			return "", err
+		}
+		selection, err := repositories.NewArtistSelectionsRepository(app).FindPublishedSelection(artist.Id, parsed.Id)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return "", nil
+			}
+			return "", err
+		}
+
+		return dualSelectionPath(artist, selection), nil
+
 	case "artwork":
 		if err := checkpoint(ctx, "dual.resolve.work"); err != nil {
 			return "", err
@@ -1116,6 +1141,17 @@ func buildDualArtistRecordContext(ctx context.Context, app *pocketbase.PocketBas
 		return pages.DualArtistRecord{}, err
 	}
 	aliases := dualResolveAliases(app, artist.GetStringSlice("also_known_as"))
+	if err := checkpoint(ctx, "dual.window.artist.selections"); err != nil {
+		return pages.DualArtistRecord{}, err
+	}
+	selections, err := buildDualSelectionPreviews(ctx, app, side, pane, state, artist, workCount, checkpoint)
+	if err != nil {
+		return pages.DualArtistRecord{}, err
+	}
+	heading := dualWorksHeading(workCount, len(works))
+	if len(selections) > 0 {
+		heading = "CURATED SELECTIONS"
+	}
 	if err := checkpoint(ctx, "dual.window.artist.projection"); err != nil {
 		return pages.DualArtistRecord{}, err
 	}
@@ -1127,13 +1163,15 @@ func buildDualArtistRecordContext(ctx context.Context, app *pocketbase.PocketBas
 		Portrait:   urlutils.GenerateArtistPortraitImageURL(artist, urlutils.DeliveryProfilePortraitRecordAndWorkFallback, ""),
 		Meta:       dualArtistMeta(schoolNames, period, artist.GetString("profession"), aliases),
 		Bio:        bio,
-		Heading:    dualWorksHeading(workCount, len(works)),
+		Heading:    heading,
 		Works:      buildDualWorkCards(side, pane, state, artist, works),
+		Selections: selections,
 		Music:      buildDualMusic(periodSong),
 		Citation: components.Citation{
 			Key:   "wga-" + artist.GetString("slug"),
 			Title: artist.GetString("filing_name"),
 			URL:   utils.AssetUrl("/artists/" + expectedSlug),
+			DOMID: "dual-" + side + "-artist-" + artist.Id,
 		},
 	}
 
@@ -1177,23 +1215,18 @@ func buildDualWorkRecordContext(ctx context.Context, app *pocketbase.PocketBase,
 	}
 	comment := dualAnnotatedHTML(work.GetString("comment"), glossaryEntries)
 
-	image := urlutils.GenerateArtworkImageURL(work, dualSizeProfile(pane.size), "")
+	image := urlutils.GenerateArtworkImageURL(work, urlutils.DeliveryProfileDualMediumPlate, "")
 	zoom := urlutils.GenerateArtworkImageURL(work, urlutils.DeliveryProfileViewer, "")
+	if err := checkpoint(ctx, "dual.window.work.current_location"); err != nil {
+		return pages.DualWorkRecord{}, "", "", err
+	}
+	currentLocation := dualCurrentLocation(app, work)
 
 	byline := artist.GetString("filing_name")
 	if year > 0 {
 		byline = byline + " · " + strconv.Itoa(year)
 	}
 	byline = byline + " →"
-
-	sizes := []pages.DualLink{}
-	for _, size := range []string{sizeSmall, sizeMedium, sizeLarge} {
-		sizes = append(sizes, pages.DualLink{
-			Label:    strconv.Itoa(dualSizeWidth(size)),
-			Href:     state.withPaneSize(side, size).path(),
-			Selected: pane.size == size,
-		})
-	}
 
 	if err := checkpoint(ctx, "dual.window.work.art_type"); err != nil {
 		return pages.DualWorkRecord{}, "", "", err
@@ -1207,22 +1240,22 @@ func buildDualWorkRecordContext(ctx context.Context, app *pocketbase.PocketBase,
 	}
 
 	record := pages.DualWorkRecord{
-		Title:       work.GetString("title"),
-		Byline:      byline,
-		ArtistHref:  state.withPanePath(pane.renderTo, artistPath).path(),
-		Image:       image,
-		Zoom:        zoom,
-		PlateClass:  dualSizePlateClass(pane.size),
-		Sizes:       sizes,
-		SizeCaption: fmt.Sprintf("REPRODUCTION AT %dPX WIDE", dualSizeWidth(pane.size)),
-		Meta:        dualWorkMeta(technique, dimensions, artType, location),
-		Palette:     artworks.Palette(work),
-		Comment:     comment,
-		ArtworkID:   work.Id,
+		Title:           work.GetString("title"),
+		Byline:          byline,
+		ArtistHref:      state.withPanePath(pane.renderTo, artistPath).path(),
+		Image:           image,
+		Zoom:            zoom,
+		SourceURL:       urlutils.GenerateArtworkSourceURL(work),
+		CurrentLocation: currentLocation,
+		Meta:            dualWorkMeta(technique, dimensions, artType, location),
+		Palette:         artworks.Palette(work),
+		Comment:         comment,
+		ArtworkID:       work.Id,
 		Citation: components.Citation{
 			Key:   "wga-" + utils.Slugify(work.GetString("title")),
 			Title: work.GetString("title") + " by " + artist.GetString("filing_name"),
 			URL:   utils.AssetUrl(artistPath + "/" + utils.Slugify(work.GetString("title")) + "-" + work.Id),
+			DOMID: "dual-" + side + "-artwork-" + work.Id,
 		},
 	}
 
@@ -1266,6 +1299,140 @@ func buildDualWorkCards(side string, pane dualPaneState, state dualState, artist
 	}
 
 	return cards
+}
+
+func buildDualSelectionPreviews(ctx context.Context, app core.App, side string, pane dualPaneState, state dualState, artist *core.Record, workCount int, checkpoint dualCheckpoint) ([]pages.DualSelectionPreview, error) {
+	repo := repositories.NewArtistSelectionsRepository(app)
+	if err := checkpoint(ctx, "dual.window.artist.selection_count"); err != nil {
+		return nil, err
+	}
+	count, err := repo.CountPublishedSelections(artist.Id)
+	if err != nil || count <= 1 {
+		return nil, err
+	}
+
+	if err := checkpoint(ctx, "dual.window.artist.selection_list"); err != nil {
+		return nil, err
+	}
+	selections, err := repo.ListPublishedSelections(artist.Id, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	previews := make([]pages.DualSelectionPreview, 0, len(selections))
+	for _, selection := range selections {
+		if err := checkpoint(ctx, "dual.window.artist.selection_works"); err != nil {
+			return nil, err
+		}
+		works, listErr := repo.ListSelectionArtworks(artist.Id, selection)
+		if listErr != nil {
+			return nil, listErr
+		}
+		previewWorks := works
+		if len(previewWorks) > dualSelectionPreviewWorkLimit {
+			previewWorks = previewWorks[:dualSelectionPreviewWorkLimit]
+		}
+		commentary := dualAnnotatedHTML(selection.GetString("commentary"), nil)
+		previews = append(previews, pages.DualSelectionPreview{
+			AnchorID:        "dual-" + side + "-selection-" + selection.Id,
+			DisplayTitle:    selection.GetString("display_title"),
+			SelectedCount:   len(works),
+			CataloguedCount: workCount,
+			Commentary:      commentary,
+			HasCommentary:   commentary != "",
+			Works:           buildDualWorkCards(side, pane, state, artist, previewWorks),
+			Href:            state.withPanePath(side, dualSelectionPath(artist, selection)).path(),
+		})
+	}
+
+	return previews, nil
+}
+
+func buildDualSelectionRecordContext(ctx context.Context, app core.App, side string, pane dualPaneState, state dualState, checkpoint dualCheckpoint) (pages.DualSelectionRecord, string, error) {
+	parsed, _ := parsePanePath(pane.path)
+	if err := checkpoint(ctx, "dual.window.selection.artist"); err != nil {
+		return pages.DualSelectionRecord{}, "", err
+	}
+	artist, err := findPublishedArtist(app, parsed.ArtistID)
+	if err != nil {
+		return pages.DualSelectionRecord{}, "", err
+	}
+	repo := repositories.NewArtistSelectionsRepository(app)
+	if err := checkpoint(ctx, "dual.window.selection.lookup"); err != nil {
+		return pages.DualSelectionRecord{}, "", err
+	}
+	selection, err := repo.FindPublishedSelection(artist.Id, parsed.Id)
+	if err != nil {
+		return pages.DualSelectionRecord{}, "", err
+	}
+	if err := checkpoint(ctx, "dual.window.selection.works"); err != nil {
+		return pages.DualSelectionRecord{}, "", err
+	}
+	works, err := repo.ListSelectionArtworks(artist.Id, selection)
+	if err != nil {
+		return pages.DualSelectionRecord{}, "", err
+	}
+	if err := checkpoint(ctx, "dual.window.selection.siblings"); err != nil {
+		return pages.DualSelectionRecord{}, "", err
+	}
+	all, err := repo.ListPublishedSelections(artist.Id, 0)
+	if err != nil {
+		return pages.DualSelectionRecord{}, "", err
+	}
+	if err := checkpoint(ctx, "dual.window.selection.work_count"); err != nil {
+		return pages.DualSelectionRecord{}, "", err
+	}
+	workCount, err := repositories.NewArtistRecordRepository(app).CountPublishedWorks(artist.Id)
+	if err != nil {
+		return pages.DualSelectionRecord{}, "", err
+	}
+	artistPath := urlutils.GenerateArtistUrlFromRecord(artist)
+	siblings := make([]pages.DualLink, 0, len(all)-1)
+	for _, sibling := range all {
+		if sibling.Id == selection.Id {
+			continue
+		}
+		siblings = append(siblings, pages.DualLink{
+			Label: sibling.GetString("display_title"),
+			Href:  state.withPanePath(side, dualSelectionPath(artist, sibling)).path(),
+		})
+	}
+	commentary := dualAnnotatedHTML(selection.GetString("commentary"), nil)
+	return pages.DualSelectionRecord{
+		ArtistFilingName: artist.GetString("filing_name"),
+		ArtistShortName:  artist.GetString("short_name"),
+		ArtistHref:       state.withPanePath(side, artistPath).path(),
+		DisplayTitle:     selection.GetString("display_title"),
+		Context:          selection.GetString("context"),
+		Commentary:       commentary,
+		HasCommentary:    commentary != "",
+		Works:            buildDualWorkCards(side, pane, state, artist, works),
+		WorkCount:        len(works),
+		HoldingNote:      fmt.Sprintf("%d selected from %d catalogued works by %s.", len(works), workCount, artist.GetString("short_name")),
+		Siblings:         siblings,
+		Citation: components.Citation{
+			Key:   "wga-" + selection.Id,
+			Title: selection.GetString("display_title") + " (selection)",
+			URL:   utils.AssetUrl(dualSelectionPath(artist, selection)),
+			DOMID: "dual-" + side + "-selection-" + selection.Id,
+		},
+	}, artistPath, nil
+}
+
+func dualSelectionPath(artist *core.Record, selection *core.Record) string {
+	return urlutils.GenerateArtistUrlFromRecord(artist) + "/selections/" + selection.Id
+}
+
+func dualCurrentLocation(app core.App, work *core.Record) string {
+	ids := work.GetStringSlice("current_location_id")
+	if len(ids) == 0 {
+		return ""
+	}
+	location, err := app.FindRecordById(constants.CollectionLocations, ids[0])
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(location.GetString("name"))
 }
 
 // ---------------------------------------------------------------------------
@@ -1466,39 +1633,6 @@ func dualWorkMeta(technique string, dimensions string, artType string, location 
 	return entries
 }
 
-func dualSizeProfile(size string) urlutils.DeliveryProfile {
-	switch size {
-	case sizeSmall:
-		return urlutils.DeliveryProfilePostcardSmallDualPlate
-	case sizeLarge:
-		return urlutils.DeliveryProfileDualLargePlate
-	default:
-		return urlutils.DeliveryProfileDualMediumPlate
-	}
-}
-
-func dualSizeWidth(size string) int {
-	switch size {
-	case sizeSmall:
-		return 700
-	case sizeLarge:
-		return 1600
-	default:
-		return 1100
-	}
-}
-
-func dualSizePlateClass(size string) string {
-	switch size {
-	case sizeSmall:
-		return "h-[300px]"
-	case sizeLarge:
-		return "h-[680px]"
-	default:
-		return "h-[460px]"
-	}
-}
-
 func dualPrefix(side string) string {
 	if side == "right" {
 		return "r"
@@ -1582,6 +1716,13 @@ func parsePanePath(raw string) (panePathDto, error) {
 			Kind:    "artist",
 			Id:      utils.ExtractIdFromString(parts[1]),
 			RelPath: normalized,
+		}, nil
+	case len(parts) == 4 && parts[0] == "artists" && parts[2] == "selections":
+		return panePathDto{
+			Kind:     "selection",
+			Id:       utils.ExtractIdFromString(parts[3]),
+			ArtistID: utils.ExtractIdFromString(parts[1]),
+			RelPath:  normalized,
 		}, nil
 	case len(parts) == 3 && parts[0] == "artists":
 		return panePathDto{

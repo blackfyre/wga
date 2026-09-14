@@ -54,9 +54,6 @@ func TestParseDualStateDefaults(t *testing.T) {
 	if state.left.renderTo != "right" || state.right.renderTo != "left" {
 		t.Fatalf("default link routing should target the other pane, got %q/%q", state.left.renderTo, state.right.renderTo)
 	}
-	if state.left.size != sizeMedium || state.right.size != sizeMedium {
-		t.Fatal("both panes should default to the medium study image")
-	}
 	if state.left.index.view != viewList || state.left.index.sort != sortAZ {
 		t.Fatalf("default index state = %+v", state.left.index)
 	}
@@ -81,9 +78,6 @@ func TestParseDualStateReadsFullState(t *testing.T) {
 	if state.left.renderTo != "left" || state.right.renderTo != "left" {
 		t.Fatalf("renderTo = %q/%q", state.left.renderTo, state.right.renderTo)
 	}
-	if state.left.size != sizeLarge || state.right.size != sizeSmall {
-		t.Fatalf("sizes = %q/%q", state.left.size, state.right.size)
-	}
 	idx := state.left.index
 	if idx.letter != "B" || idx.school != "dutch" || idx.query != "van" || idx.bornFrom != 1600 || idx.bornTo != 1700 || idx.view != viewGrid || idx.sort != sortBirth {
 		t.Fatalf("left index = %+v", idx)
@@ -99,6 +93,7 @@ func TestParseDualPath(t *testing.T) {
 		{input: "  ", want: ""},
 		{input: "default", want: ""},
 		{input: "/artists/example-123", want: "/artists/example-123"},
+		{input: "/artists/example-123/selections/selection-456", want: "/artists/example-123/selections/selection-456"},
 		{input: "artists/example-123", want: "/artists/example-123"},
 		{input: "/artists/example-123/artwork-777", want: "/artists/example-123/artwork-777"},
 		{input: "/artworks/artwork-777", want: "/artworks/artwork-777"},
@@ -152,24 +147,6 @@ func TestParseDualBornYearReordersInvertedRange(t *testing.T) {
 	}
 }
 
-func TestParseDualSize(t *testing.T) {
-	if got := parseDualSize("small"); got != sizeSmall {
-		t.Fatalf("small = %q", got)
-	}
-	if got := parseDualSize("large"); got != sizeLarge {
-		t.Fatalf("large = %q", got)
-	}
-	if got := parseDualSize("medium"); got != sizeMedium {
-		t.Fatalf("medium = %q", got)
-	}
-	if got := parseDualSize("huge"); got != sizeMedium {
-		t.Fatalf("invalid size should fall back to medium, got %q", got)
-	}
-	if got := parseDualSize(""); got != sizeMedium {
-		t.Fatalf("empty size should fall back to medium, got %q", got)
-	}
-}
-
 // ---------------------------------------------------------------------------
 // Serialization and canonicalisation
 // ---------------------------------------------------------------------------
@@ -184,12 +161,10 @@ func TestDualStatePathOmitsDefaults(t *testing.T) {
 			path:     "/artists/aaa-bbb",
 			renderTo: "right",
 			index:    dualIndexState{view: viewList, sort: sortAZ},
-			size:     sizeMedium,
 		},
 		right: dualPaneState{
 			renderTo: "left",
 			index:    dualIndexState{view: viewList, sort: sortAZ},
-			size:     sizeMedium,
 		},
 	}
 
@@ -202,7 +177,6 @@ func TestDualStatePathIsOrderedAndCanonical(t *testing.T) {
 			path:     "/artists/aaa-bbb",
 			renderTo: "right",
 			index:    dualIndexState{view: viewList, sort: sortAZ},
-			size:     sizeMedium,
 		},
 		right: dualPaneState{
 			renderTo: "left",
@@ -211,11 +185,10 @@ func TestDualStatePathIsOrderedAndCanonical(t *testing.T) {
 				view:   viewGrid,
 				sort:   sortAZ,
 			},
-			size: sizeLarge,
 		},
 	}
 
-	assertDualPath(t, state.path(), "/dual-mode?left=%2Fartists%2Faaa-bbb&r_letter=A&r_view=grid&r_size=large")
+	assertDualPath(t, state.path(), "/dual-mode?left=%2Fartists%2Faaa-bbb&r_letter=A&r_view=grid")
 }
 
 func TestDualStatePathRoundTrip(t *testing.T) {
@@ -253,11 +226,11 @@ func TestDualStateIgnoresInvalidInput(t *testing.T) {
 func TestDualStateMutationsAreIndependent(t *testing.T) {
 	base := parseDualState(neturl.Values{})
 
-	leftChanged := base.withPanePath("left", "/artists/left-123").withPaneSize("left", sizeLarge)
-	if leftChanged.left.path != "/artists/left-123" || leftChanged.left.size != sizeLarge {
+	leftChanged := base.withPanePath("left", "/artists/left-123")
+	if leftChanged.left.path != "/artists/left-123" {
 		t.Fatalf("left mutation not applied: %+v", leftChanged.left)
 	}
-	if leftChanged.right.path != "" || leftChanged.right.size != sizeMedium {
+	if leftChanged.right.path != "" {
 		t.Fatal("left mutation leaked into the right pane")
 	}
 
@@ -276,13 +249,11 @@ func TestDualStateSwapCarriesFullState(t *testing.T) {
 			path:     "/artists/left-123",
 			renderTo: "left",
 			index:    dualIndexState{letter: "A", view: viewGrid, sort: sortAZ},
-			size:     sizeLarge,
 		},
 		right: dualPaneState{
 			path:     "/artists/right-456",
 			renderTo: "right",
 			index:    dualIndexState{view: viewList, sort: sortAZ},
-			size:     sizeSmall,
 		},
 		wide: true,
 	}
@@ -299,8 +270,8 @@ func TestDualStateSwapCarriesFullState(t *testing.T) {
 
 func TestDualStateResetReturnsBothToIndex(t *testing.T) {
 	state := dualState{
-		left:  dualPaneState{path: "/artists/left-123", renderTo: "left", index: dualIndexState{letter: "A"}, size: sizeLarge},
-		right: dualPaneState{path: "/artists/right-456", renderTo: "right", index: dualIndexState{view: viewGrid}, size: sizeSmall},
+		left:  dualPaneState{path: "/artists/left-123", renderTo: "left", index: dualIndexState{letter: "A"}},
+		right: dualPaneState{path: "/artists/right-456", renderTo: "right", index: dualIndexState{view: viewGrid}},
 		wide:  true,
 	}
 
@@ -392,13 +363,11 @@ func TestHiddenFieldsExcludeVisibleFilters(t *testing.T) {
 			path:     "/artists/left-123",
 			renderTo: "right",
 			index:    dualIndexState{school: "dutch", letter: "A", view: viewList, sort: sortAZ},
-			size:     sizeMedium,
 		},
 		right: dualPaneState{
 			path:     "/artists/right-456",
 			renderTo: "right",
 			index:    dualIndexState{period: "p1", view: viewGrid, sort: sortAZ},
-			size:     sizeSmall,
 		},
 		wide: true,
 	}
@@ -414,7 +383,7 @@ func TestHiddenFieldsExcludeVisibleFilters(t *testing.T) {
 			t.Errorf("visible filter %q should not be a hidden field", visible)
 		}
 	}
-	for _, preserved := range []string{"left", "l_letter", "right", "right_render_to", "r_period", "r_view", "r_size", "wide"} {
+	for _, preserved := range []string{"left", "l_letter", "right", "right_render_to", "r_period", "r_view", "wide"} {
 		if !names[preserved] {
 			t.Errorf("state param %q should be preserved as a hidden field", preserved)
 		}
@@ -427,7 +396,7 @@ func TestHiddenFieldsExcludeVisibleFilters(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// Image sizes
+// Artwork metadata
 // ---------------------------------------------------------------------------
 
 func TestDualArtworkLocationAndDimensions(t *testing.T) {
@@ -442,38 +411,6 @@ func TestDualArtworkLocationAndDimensions(t *testing.T) {
 
 	if got := dualTrimDimensions("Oil on canvas, 363 x 437 cm", "363 x 437 cm"); got != "Oil on canvas" {
 		t.Fatalf("trim dimensions = %q", got)
-	}
-}
-
-func TestDualSizeMappings(t *testing.T) {
-	if got := dualSizeWidth(sizeSmall); got != 700 {
-		t.Fatalf("small width = %d, want 700", got)
-	}
-	if got := dualSizeWidth(sizeMedium); got != 1100 {
-		t.Fatalf("medium width = %d, want 1100", got)
-	}
-	if got := dualSizeWidth(sizeLarge); got != 1600 {
-		t.Fatalf("large width = %d, want 1600", got)
-	}
-
-	if got := dualSizeProfile(sizeSmall); got != "700x0" {
-		t.Fatalf("small profile = %q, want 700x0", got)
-	}
-	if got := dualSizeProfile(sizeMedium); got != "1100x0" {
-		t.Fatalf("medium profile = %q, want 1100x0", got)
-	}
-	if got := dualSizeProfile(sizeLarge); got != "1600x0" {
-		t.Fatalf("large profile = %q, want 1600x0", got)
-	}
-
-	if got := dualSizePlateClass(sizeSmall); got != "h-[300px]" {
-		t.Fatalf("small plate class = %q", got)
-	}
-	if got := dualSizePlateClass(sizeMedium); got != "h-[460px]" {
-		t.Fatalf("medium plate class = %q", got)
-	}
-	if got := dualSizePlateClass(sizeLarge); got != "h-[680px]" {
-		t.Fatalf("large plate class = %q", got)
 	}
 }
 
@@ -597,21 +534,14 @@ func TestDualIndexTableUsesAccessibleScrollRegion(t *testing.T) {
 	}
 }
 
-func TestDualModeBlockSelectionsUseAriaCurrentNotPressed(t *testing.T) {
+func TestDualModeBlockRoutingUsesAriaCurrentNotPressed(t *testing.T) {
 	view := pages.DualModeView{
 		Windows: [2]pages.DualWindow{
 			{
 				Key: "right", Tag: "R", Label: "RIGHT", View: "work",
 				SelfSel: "#dual-right", TargetSel: "#dual-left", OtherLabel: "LEFT WINDOW",
 				RoutesToSelf: true,
-				Work: pages.DualWorkRecord{
-					Title: "A Work",
-					Sizes: []pages.DualLink{
-						{Label: "700", Href: "/dual-mode?r_size=small"},
-						{Label: "1100", Href: "/dual-mode", Selected: true},
-						{Label: "1600", Href: "/dual-mode?r_size=large"},
-					},
-				},
+				Work:         pages.DualWorkRecord{Title: "A Work"},
 			},
 			{Key: "left", Tag: "L", Label: "LEFT", View: "index", SelfSel: "#dual-left", TargetSel: "#dual-left", OtherLabel: "RIGHT WINDOW"},
 		},
@@ -621,7 +551,7 @@ func TestDualModeBlockSelectionsUseAriaCurrentNotPressed(t *testing.T) {
 	markup := renderDualBlock(t, view)
 
 	if strings.Contains(markup, "aria-pressed") {
-		t.Error("routing and image-size links must not use aria-pressed")
+		t.Error("routing links must not use aria-pressed")
 	}
 	if !strings.Contains(markup, `aria-current="true"`) {
 		t.Error("selected links should be marked with aria-current")
@@ -641,6 +571,7 @@ func TestParsePanePath(t *testing.T) {
 	}{
 		{name: "default", input: "default", want: panePathDto{Kind: "default", RelPath: "default"}},
 		{name: "artist", input: "/artists/example-123", want: panePathDto{Kind: "artist", Id: "123", RelPath: "/artists/example-123"}},
+		{name: "artist selection", input: "/artists/example-123/selections/selection-456", want: panePathDto{Kind: "selection", Id: "456", ArtistID: "123", RelPath: "/artists/example-123/selections/selection-456"}},
 		{name: "artist artwork", input: "/artists/example-123/artwork-777", want: panePathDto{Kind: "artwork", Id: "777", RelPath: "/artists/example-123/artwork-777"}},
 		{name: "legacy artwork", input: "/artists/example-123/artworks/artwork-777", want: panePathDto{Kind: "artwork", Id: "777", RelPath: "/artists/example-123/artworks/artwork-777"}},
 		{name: "artworks route", input: "/artworks/artwork-777", want: panePathDto{Kind: "artwork", Id: "777", RelPath: "/artworks/artwork-777"}},
@@ -789,6 +720,9 @@ func newDualTestApp(t *testing.T) *pocketbase.PocketBase {
 	saveDualCollection(t, app, "art_types",
 		&core.TextField{Name: "name", Required: true},
 	)
+	saveDualCollection(t, app, "locations",
+		&core.TextField{Name: "name", Required: true},
+	)
 
 	artists := core.NewBaseCollection("Artists")
 	artists.Id = "artists"
@@ -825,6 +759,16 @@ func newDualTestApp(t *testing.T) *pocketbase.PocketBase {
 		&core.NumberField{Name: "image_width"},
 		&core.NumberField{Name: "year"},
 		&core.RelationField{Name: "type", CollectionId: "art_types", MinSelect: 0, MaxSelect: 10},
+		&core.RelationField{Name: "current_location_id", CollectionId: "locations", MinSelect: 0, MaxSelect: 1},
+	)
+	saveDualCollection(t, app, "art_selections",
+		&core.RelationField{Name: "artist", CollectionId: "artists", MinSelect: 1, MaxSelect: 1},
+		&core.TextField{Name: "title", Required: true},
+		&core.TextField{Name: "context"},
+		&core.TextField{Name: "display_title", Required: true},
+		&core.EditorField{Name: "commentary"},
+		&core.RelationField{Name: "artworks", CollectionId: "artworks", MinSelect: 1, MaxSelect: 1000},
+		&core.BoolField{Name: "published"},
 	)
 	saveDualCollection(t, app, "glossary",
 		&core.TextField{Name: "expression", Required: true},
@@ -952,33 +896,8 @@ func TestBuildDualWorkRecordImageRenditionAndCitation(t *testing.T) {
 		t.Fatalf("citation URL should be canonical artwork URL, got %q", record.Citation.URL)
 	}
 
-	// Large size renders the 1600 profile.
-	largePane := pane
-	largePane.size = sizeLarge
-	largeRecord, _, _, err := buildDualWorkRecord(app, "right", largePane, state, ref)
-	if err != nil {
-		t.Fatalf("build large work record: %v", err)
-	}
-	if !strings.Contains(largeRecord.Image, "thumb=1600x0") {
-		t.Fatalf("large image should use 1600x0 profile, got %q", largeRecord.Image)
-	}
-	if largeRecord.PlateClass != "h-[680px]" {
-		t.Fatalf("large plate class = %q", largeRecord.PlateClass)
-	}
-
-	// The smallest study choice hands off to the 700px profile while the
-	// deliberate viewer remains independently fixed at 2000px.
-	smallPane := pane
-	smallPane.size = sizeSmall
-	smallRecord, _, _, err := buildDualWorkRecord(app, "right", smallPane, state, ref)
-	if err != nil {
-		t.Fatalf("build small work record: %v", err)
-	}
-	if !strings.Contains(smallRecord.Image, "thumb=700x0") {
-		t.Fatalf("small image should use 700x0 profile, got %q", smallRecord.Image)
-	}
-	if !strings.Contains(smallRecord.Zoom, "thumb=2000x0") {
-		t.Fatalf("small viewer should use 2000x0 profile, got %q", smallRecord.Zoom)
+	if record.SourceURL == "" || strings.Contains(record.SourceURL, "thumb=") {
+		t.Fatalf("source download should use the original file, got %q", record.SourceURL)
 	}
 }
 
@@ -1049,6 +968,121 @@ func TestBuildDualArtistRecordCitationIsCanonical(t *testing.T) {
 	}
 	if len(record.Works) == 0 || record.Works[0].Title != "The Night Watch" {
 		t.Fatalf("artist works grid should include the published work, got %+v", record.Works)
+	}
+}
+
+func TestBuildDualArtistAndSelectionRecordsStayPaneLocal(t *testing.T) {
+	app := newDualTestApp(t)
+	seedDualArtistAndWork(t, app)
+	saveDualRecord(t, app, "art_selections", "selectionone001", map[string]any{
+		"artist": "artistone000001", "title": "Paintings", "display_title": "Paintings", "context": "A focused lede.",
+		"commentary": "<p>First selection commentary.</p>", "artworks": []string{"artworkone00001"}, "published": true,
+	})
+	saveDualRecord(t, app, "art_selections", "selectiontwo001", map[string]any{
+		"artist": "artistone000001", "title": "Drawings", "display_title": "Drawings",
+		"commentary": "<p>Second selection commentary.</p>", "artworks": []string{"artworkone00001"}, "published": true,
+	})
+
+	ref, err := loadDualReference(app)
+	if err != nil {
+		t.Fatalf("load reference: %v", err)
+	}
+	state := parseDualState(neturl.Values{})
+	state.left.path = "/artists/rembrandt-artistone000001"
+	state.left.renderTo = "right"
+	record, err := buildDualArtistRecord(app, "left", state.left, state, ref)
+	if err != nil {
+		t.Fatalf("build artist record: %v", err)
+	}
+	if len(record.Selections) != 2 {
+		t.Fatalf("selection previews = %d, want 2", len(record.Selections))
+	}
+	if record.Heading != "CURATED SELECTIONS" {
+		t.Fatalf("curated heading = %q", record.Heading)
+	}
+	preview := record.Selections[1]
+	if preview.DisplayTitle != "Paintings" || preview.SelectedCount != 1 || preview.CataloguedCount != 1 {
+		t.Fatalf("selection preview = %+v", preview)
+	}
+	if !strings.Contains(preview.Href, "left=%2Fartists%2Frembrandt-artistone000001%2Fselections%2Fselectionone001") {
+		t.Fatalf("selection preview must stay in left pane, got %q", preview.Href)
+	}
+	if preview.AnchorID != "dual-left-selection-selectionone001" {
+		t.Fatalf("selection anchor = %q", preview.AnchorID)
+	}
+
+	state.left.path = "/artists/rembrandt-artistone000001/selections/selectionone001"
+	window, err := buildWindow(app, "left", state.left, state, ref)
+	if err != nil {
+		t.Fatalf("build selection window: %v", err)
+	}
+	if window.View != "selection" || window.Selection.Context != "A focused lede." || window.Selection.WorkCount != 1 {
+		t.Fatalf("selection window = %+v", window.Selection)
+	}
+	if !strings.Contains(window.Selection.ArtistHref, "left=%2Fartists%2Frembrandt-artistone000001") {
+		t.Fatalf("artist navigation must stay in left pane, got %q", window.Selection.ArtistHref)
+	}
+	if len(window.Selection.Siblings) != 1 || !strings.Contains(window.Selection.Siblings[0].Href, "left=%2Fartists%2Frembrandt-artistone000001%2Fselections%2Fselectiontwo001") {
+		t.Fatalf("sibling navigation must stay in left pane, got %+v", window.Selection.Siblings)
+	}
+	if len(window.Selection.Works) != 1 || !strings.Contains(window.Selection.Works[0].Href, "right=%2Fartists%2Frembrandt-artistone000001") {
+		t.Fatalf("selected artwork should honour cross-pane content routing, got %+v", window.Selection.Works)
+	}
+	if window.Selection.Citation.DOMID != "dual-left-selection-selectionone001" || strings.Contains(window.Selection.Citation.URL, "/dual-mode") {
+		t.Fatalf("selection citation = %+v", window.Selection.Citation)
+	}
+}
+
+func TestBuildDualWorkRecordIncludesCurrentLocationAndFixedPlate(t *testing.T) {
+	app := newDualTestApp(t)
+	seedDualArtistAndWork(t, app)
+	saveDualRecord(t, app, "locations", "locationone0001", map[string]any{"name": "Mauritshuis, The Hague"})
+	work, err := app.FindRecordById("artworks", "artworkone00001")
+	if err != nil {
+		t.Fatalf("find work: %v", err)
+	}
+	work.Set("current_location_id", "locationone0001")
+	if err := app.Save(work); err != nil {
+		t.Fatalf("save work location: %v", err)
+	}
+
+	ref, err := loadDualReference(app)
+	if err != nil {
+		t.Fatalf("load reference: %v", err)
+	}
+	state := parseDualState(neturl.Values{})
+	pane := state.left
+	pane.path = "/artists/rembrandt-artistone000001/the-night-watch-artworkone00001"
+	record, _, _, err := buildDualWorkRecord(app, "left", pane, state, ref)
+	if err != nil {
+		t.Fatalf("build work record: %v", err)
+	}
+	if record.CurrentLocation != "Mauritshuis, The Hague" {
+		t.Fatalf("current location = %q", record.CurrentLocation)
+	}
+	if !strings.Contains(record.Image, "thumb=1100x0") || !strings.Contains(record.Zoom, "thumb=2000x0") {
+		t.Fatalf("fixed plate/viewer URLs = %q / %q", record.Image, record.Zoom)
+	}
+	if record.SourceURL == "" || strings.Contains(record.SourceURL, "thumb=") {
+		t.Fatalf("source URL = %q", record.SourceURL)
+	}
+}
+
+func TestRetiredDualImageSizeParametersAreRemoved(t *testing.T) {
+	state := parseDualState(mustParseQuery(t, "left=/artists/example-123&right_render_to=right&l_size=large&r_size=small&wide=1"))
+	assertDualPath(t, state.path(), "/dual-mode?wide=1&left=%2Fartists%2Fexample-123&right_render_to=right")
+}
+
+func TestRetiredDualImageSizeDocumentURLRedirectsCanonically(t *testing.T) {
+	app := newDualTestApp(t)
+	seedDualArtistAndWork(t, app)
+	requested := "/dual-mode?wide=1&left=" + neturl.QueryEscape("/artists/rembrandt-artistone000001") + "&l_size=large&r_size=small"
+	recorder := serveDualRequests(t, app, []recordRequest{{path: requested}})[0]
+	if recorder.Code != http.StatusMovedPermanently {
+		t.Fatalf("status = %d, want 301", recorder.Code)
+	}
+	if got := recorder.Header().Get("Location"); got != "/dual-mode?wide=1&left=%2Fartists%2Frembrandt-artistone000001" {
+		t.Fatalf("Location = %q", got)
 	}
 }
 
@@ -1463,7 +1497,7 @@ func TestBuildDualWorkRecordSanitisesComment(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 // TestParseDualStateReadsBothPanesIndependently proves each pane carries its own
-// full index/filter/view/sort/size state, so the two windows never share state.
+// full index/filter/view/sort state, so the two windows never share state.
 func TestParseDualStateReadsBothPanesIndependently(t *testing.T) {
 	state := parseDualState(mustParseQuery(t,
 		"l_letter=B&l_school=dutch&l_view=grid&l_sort=za&l_size=large&"+
@@ -1473,17 +1507,10 @@ func TestParseDualStateReadsBothPanesIndependently(t *testing.T) {
 	if left.letter != "B" || left.school != "dutch" || left.view != viewGrid || left.sort != sortZA || left.period != "" {
 		t.Fatalf("left index = %+v", left)
 	}
-	if state.left.size != sizeLarge {
-		t.Fatalf("left size = %q, want large", state.left.size)
-	}
-
 	right := state.right.index
 	if right.letter != "M" || right.school != "italian" || right.period != "p1" || right.query != "vermeer" ||
 		right.bornFrom != 1500 || right.bornTo != 1600 || right.view != viewList || right.sort != sortBirth {
 		t.Fatalf("right index = %+v", right)
-	}
-	if state.right.size != sizeSmall {
-		t.Fatalf("right size = %q, want small", state.right.size)
 	}
 }
 
@@ -1497,7 +1524,7 @@ func TestDualStatePathSerializesWideOverride(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// Filter/view/sort/image/link-target transitions
+// Filter/view/sort/link-target transitions
 // ---------------------------------------------------------------------------
 
 // TestDualIndexTransitionsProduceCanonicalURLs verifies every per-pane transition
@@ -1512,7 +1539,6 @@ func TestDualIndexTransitionsProduceCanonicalURLs(t *testing.T) {
 	assertDualPath(t, state.withPaneIndex("left", dualIndexState{bornFrom: 1600, bornTo: 1700, view: viewList, sort: sortAZ}).path(), "/dual-mode?l_born_from=1600&l_born_to=1700")
 	assertDualPath(t, state.withPaneIndex("left", state.left.index.withView(viewGrid)).path(), "/dual-mode?l_view=grid")
 	assertDualPath(t, state.withPaneIndex("left", state.left.index.withSort(sortZA)).path(), "/dual-mode?l_sort=za")
-	assertDualPath(t, state.withPaneSize("left", sizeLarge).path(), "/dual-mode?l_size=large")
 	assertDualPath(t, state.withPaneRenderTo("left", "left").path(), "/dual-mode?left_render_to=left")
 }
 
@@ -1520,8 +1546,8 @@ func TestDualIndexTransitionsProduceCanonicalURLs(t *testing.T) {
 // never rewrites the other pane's record state.
 func TestDualIndexTransitionPreservesOtherPane(t *testing.T) {
 	base := dualState{
-		left:  dualPaneState{renderTo: "right", index: dualIndexState{view: viewList, sort: sortAZ}, size: sizeMedium},
-		right: dualPaneState{path: "/artists/right-456", renderTo: "left", index: dualIndexState{view: viewList, sort: sortAZ}, size: sizeMedium},
+		left:  dualPaneState{renderTo: "right", index: dualIndexState{view: viewList, sort: sortAZ}},
+		right: dualPaneState{path: "/artists/right-456", renderTo: "left", index: dualIndexState{view: viewList, sort: sortAZ}},
 	}
 
 	changed := base.withPaneIndex("left", base.left.index.withView(viewGrid))
@@ -1612,12 +1638,6 @@ func TestDualModeBlockRendersNoJavascriptControls(t *testing.T) {
 					Title:      "A Work",
 					Byline:     "An Artist, 1600 →",
 					ArtistHref: "/dual-mode?left=%2Fartists%2Fan-artist-artistid000001",
-					Sizes: []pages.DualLink{
-						{Label: "700", Href: "/dual-mode?r_size=small"},
-						{Label: "1100", Href: "/dual-mode", Selected: true},
-						{Label: "1600", Href: "/dual-mode?r_size=large"},
-					},
-					SizeCaption: "REPRODUCTION AT 1100PX WIDE",
 				},
 				Send: pages.DualLink{Label: "SEND TO LEFT WINDOW →", Href: "/dual-mode?left=%2Fartists%2Fan-artist-artistid000001"},
 			},
@@ -1647,7 +1667,6 @@ func TestDualModeBlockRendersNoJavascriptControls(t *testing.T) {
 		`<a href="/dual-mode?l_view=grid"`,
 		`<a href="/dual-mode?l_sort=za"`,
 		`<a href="/dual-mode?left_render_to=left"`,
-		`<a href="/dual-mode?r_size=small"`,
 		`<a href="/dual-mode?right=%2Fartists%2Fan-artist-artistid000001"`,
 		`<a href="/artists"`,
 		`<a href="/dual-mode?wide=1"`,
