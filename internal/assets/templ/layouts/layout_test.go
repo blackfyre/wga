@@ -65,20 +65,37 @@ func TestLayoutMainShowsNonProductionBuildInfo(t *testing.T) {
 		t.Fatalf("render main layout: %v", err)
 	}
 
-	if !strings.Contains(output.String(), "STAGING") || !strings.Contains(output.String(), "DEVELOPMENT BUILD — NOT FOR PUBLIC USE. CONTRIBUTE ON GITHUB.") {
+	rendered := output.String()
+	if !strings.Contains(rendered, "STAGING") || !strings.Contains(rendered, "DEVELOPMENT BUILD — NOT FOR PUBLIC USE. CONTRIBUTE ON GITHUB.") {
 		t.Fatal("expected non-production build information")
+	}
+	if strings.Contains(rendered, "AN OPEN ARCHIVE, KEPT RUNNING BY VOLUNTEERS AND DONATIONS.") {
+		t.Fatal("non-production must retain the build notice instead of the production support callout")
 	}
 }
 
-func TestLayoutMainHidesBuildInfoInProduction(t *testing.T) {
+func TestLayoutMainShowsSupportCalloutInProduction(t *testing.T) {
 	ctx := utils.DecorateContext(context.Background(), utils.EnvironmentKey, "production")
 	var output bytes.Buffer
 	if err := LayoutMain().Render(ctx, &output); err != nil {
 		t.Fatalf("render main layout: %v", err)
 	}
 
-	if strings.Contains(output.String(), ">STAGING<") {
+	rendered := output.String()
+	if strings.Contains(rendered, ">STAGING<") || strings.Contains(rendered, "DEVELOPMENT BUILD — NOT FOR PUBLIC USE") {
 		t.Fatal("did not expect production build information")
+	}
+	for _, expected := range []string{
+		`<aside class="bg-wga-accent-bg text-wga-inv-fg" aria-label="Support the archive">`,
+		`<div class="mx-auto w-full max-w-[1240px] px-5 md:px-7 lg:px-10">`,
+		`>SUPPORT<`,
+		`AN OPEN ARCHIVE, KEPT RUNNING BY VOLUNTEERS AND DONATIONS.`,
+		`href="https://github.com/sponsors/blackfyre"`,
+		`>SPONSOR THE PROJECT →</a>`,
+	} {
+		if !strings.Contains(rendered, expected) {
+			t.Fatalf("expected production support callout %q", expected)
+		}
 	}
 }
 

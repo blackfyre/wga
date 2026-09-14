@@ -17,7 +17,7 @@ templ TopNav() {
 						aria-current="page"
 					}
 				>
-					<span class="flex h-[34px] w-[34px] shrink-0 items-center justify-center bg-wga-accent-bg font-mono text-(length:--t-11) font-bold tracking-[0.5px] text-wga-inv-fg">WGA</span>
+					@LogoMark()
 					<span>
 						<span class="block font-mono text-(length:--t-11) tracking-[2.5px]">WEB GALLERY OF ART</span>
 						<span class="mt-[3px] block font-mono text-(length:--t-10) tracking-[1px] text-wga-ink/60">EUROPEAN ART, 3RD CENTURY – EARLY 20TH</span>
@@ -44,7 +44,7 @@ templ TopNav() {
 						aria-current="page"
 					}
 				>
-					<span class="flex h-[34px] w-[34px] shrink-0 items-center justify-center bg-wga-accent-bg font-mono text-(length:--t-11) font-bold tracking-[0.5px] text-wga-inv-fg">WGA</span>
+					@LogoMark()
 					<span>
 						<span class="block font-mono text-(length:--t-11) tracking-[2.5px]">WEB GALLERY OF ART</span>
 						<span class="mt-[3px] block font-mono text-(length:--t-10) tracking-[1px] text-wga-ink/60">EUROPEAN ART, 3RD CENTURY – EARLY 20TH</span>
@@ -67,6 +67,13 @@ templ TopNav() {
 			@MoreNavigation("group relative shrink-0", "absolute right-0 z-[60] mt-1.5 min-w-[196px] border border-wga-ink bg-wga-bg py-[5px]")
 		</nav>
 	</header>
+}
+
+templ LogoMark() {
+	<svg viewBox="0 0 44 44" width="44" height="44" role="img" aria-label="WGA" class="block h-11 w-11 shrink-0">
+		<rect width="44" height="44" fill="var(--wga-accent-bg)"></rect>
+		<text x="22" y="22" text-anchor="middle" dominant-baseline="central" textLength="31" lengthAdjust="spacing" fill="var(--wga-inv-fg)" font-family="var(--font-mono)" font-size="14" font-weight="700">WGA</text>
+	</svg>
 }
 
 templ navLinks(classes string) {

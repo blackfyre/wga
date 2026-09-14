@@ -85,7 +85,9 @@ templ LayoutBase(bodyClasses string, HtmxTargetArea string) {
 
 templ LayoutMain() {
 	@LayoutBase(layoutBodyClass(utils.GetItineraryTray(ctx)), "") {
-		if utils.GetEnvironment(ctx) != "production" {
+		if utils.GetEnvironment(ctx) == "production" {
+			@components.SupportBanner()
+		} else {
 			<section class="border-b border-wga-ink/15">
 				<div class="container mx-auto flex items-center gap-3 px-4 py-2.5 md:px-0">
 					<span class="bg-wga-accent-bg px-2 py-1 font-mono text-(length:--t-10) tracking-[1.5px] text-wga-inv-fg">STAGING</span>

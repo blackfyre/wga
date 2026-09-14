@@ -157,6 +157,21 @@ func TestTopNavDoesNotExposeKeyboardHelp(t *testing.T) {
 	}
 }
 
+func TestTopNavUsesReferenceLogoMark(t *testing.T) {
+	var output bytes.Buffer
+	if err := TopNav().Render(context.Background(), &output); err != nil {
+		t.Fatalf("render top navigation: %v", err)
+	}
+
+	rendered := output.String()
+	if count := strings.Count(rendered, `viewBox="0 0 44 44" width="44" height="44" role="img" aria-label="WGA"`); count != 2 {
+		t.Fatalf("44px WGA logo count = %d, want mobile and desktop marks", count)
+	}
+	if strings.Contains(rendered, `h-[34px] w-[34px]`) {
+		t.Fatal("legacy 34px masthead mark must not remain")
+	}
+}
+
 func TestTopNavSearchButtonsUseSharedActionRole(t *testing.T) {
 	var output bytes.Buffer
 	if err := TopNav().Render(context.Background(), &output); err != nil {

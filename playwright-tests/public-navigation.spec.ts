@@ -81,16 +81,38 @@ test("navigation matches the prototype type scale", async ({ page }) => {
 		"font-size",
 		"12px",
 	);
+	const logo = page.getByRole("img", { name: "WGA" }).last();
+	await expect(logo).toBeVisible();
+	const logoBox = await logo.boundingBox();
+	if (!logoBox) {
+		throw new Error("Expected desktop WGA logo geometry");
+	}
+	expect(logoBox.width).toBe(44);
+	expect(logoBox.height).toBe(44);
 });
 
 test("desktop header matches the prototype baseline", async ({ page }) => {
 	await page.setViewportSize({ width: 1440, height: 900 });
 	await page.goto("/");
 
-	const bottom = await page
+	const height = await page
 		.locator("header")
-		.evaluate((element) => element.getBoundingClientRect().bottom);
-	expect(Math.abs(bottom - 158.5)).toBeLessThanOrEqual(1);
+		.evaluate((element) => element.getBoundingClientRect().height);
+	expect(Math.abs(height - 115)).toBeLessThanOrEqual(1);
+});
+
+test("non-production retains the development callout", async ({ page }) => {
+	await page.goto("/");
+	await expect(page.getByText("STAGING", { exact: true })).toBeVisible();
+	await expect(
+		page.getByText(
+			"DEVELOPMENT BUILD — NOT FOR PUBLIC USE. CONTRIBUTE ON GITHUB.",
+			{ exact: true },
+		),
+	).toBeVisible();
+	await expect(
+		page.getByRole("complementary", { name: "Support the archive" }),
+	).toHaveCount(0);
 });
 
 test("desktop header controls share the search baseline", async ({ page }) => {

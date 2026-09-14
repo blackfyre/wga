@@ -1,0 +1,19 @@
+package components
+
+// SupportBanner is the production-only callout above the shared masthead.
+templ SupportBanner() {
+	<aside class="bg-wga-accent-bg text-wga-inv-fg" aria-label="Support the archive">
+		<div class="mx-auto w-full max-w-[1240px] px-5 md:px-7 lg:px-10">
+			<div class="flex flex-wrap items-center gap-x-4 gap-y-2 py-[9px] font-mono text-(length:--t-10) tracking-[1.5px]">
+				<span class="shrink-0 border border-wga-inv-fg/45 px-2 py-[3px]">SUPPORT</span>
+				<span class="text-wga-inv-fg/78">AN OPEN ARCHIVE, KEPT RUNNING BY VOLUNTEERS AND DONATIONS.</span>
+				<a
+					href="https://github.com/sponsors/blackfyre"
+					target="_blank"
+					rel="noopener"
+					class="whitespace-nowrap border-b border-wga-inv-fg/50 pb-px text-inherit transition-colors hover:border-current"
+				>SPONSOR THE PROJECT →</a>
+			</div>
+		</div>
+	</aside>
+}
