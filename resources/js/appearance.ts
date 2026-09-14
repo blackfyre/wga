@@ -221,6 +221,23 @@ function markPreferencesSummary(scheme: Scheme, palette: Palette): void {
 	}
 }
 
+function syncThemeColor(): void {
+	const meta = document.querySelector<HTMLMetaElement>(
+		'meta[name="theme-color"][data-wga-theme-color]',
+	);
+	const colour = window
+		.getComputedStyle(document.documentElement)
+		.getPropertyValue("--wga-bg")
+		.trim();
+	if (meta && colour) {
+		meta.content = colour;
+		meta.removeAttribute("media");
+		document
+			.querySelector('meta[name="theme-color"][data-wga-theme-color-fallback]')
+			?.remove();
+	}
+}
+
 function revealControls(): void {
 	for (const control of document.querySelectorAll<HTMLElement>(
 		"[data-wga-preferences-control], [data-wga-theme-toggle]",
@@ -258,6 +275,7 @@ export function reconcileAppearancePreferences(): void {
 	const palette = currentPalette();
 	document.documentElement.dataset.palette = palette;
 	document.documentElement.dataset.theme = effectiveScheme(scheme, palette);
+	syncThemeColor();
 	markSchemeControls(scheme, palette);
 	markPaletteControls(palette);
 	markSchemeExplanation(palette);

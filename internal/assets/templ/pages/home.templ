@@ -36,9 +36,9 @@ templ HomePageWrapped(c HomePage) {
 }
 
 templ HomePageContent(c HomePage) {
-	<head>
+	if utils.IsHTMXRequest(ctx) {
 		<title>{ utils.GetTitle(ctx) }</title>
-	</head>
+	}
 	<section class="home-page">
 		<section class="container mx-auto px-4 pb-20 pt-10 md:px-0" aria-labelledby="home-title">
 			<div class="flex flex-col items-start gap-10 pb-4 md:flex-row md:gap-16">

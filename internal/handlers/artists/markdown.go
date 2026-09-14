@@ -24,7 +24,7 @@ func generatedMarkdownAvailable(app core.App, path string, canonicalPath string)
 }
 
 func advertiseMarkdown(c *core.RequestEvent, path string) {
-	c.Response.Header().Set("Link", fmt.Sprintf("<%s>; rel=\"alternate\"; type=\"%s\"", utils.AssetUrl(path), markdownMediaType))
+	c.Response.Header().Add("Link", fmt.Sprintf("<%s>; rel=\"alternate\"; type=\"%s\"", utils.AssetUrl(path), markdownMediaType))
 }
 
 func decorateMarkdownAlternate(ctx context.Context, path string) context.Context {

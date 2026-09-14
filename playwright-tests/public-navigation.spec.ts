@@ -42,6 +42,7 @@ test("footer links navigate through real HTMX requests", async ({ page }) => {
 
 	await expect(page).toHaveURL(/\/artists$/);
 	await expect(page.getByRole("heading", { name: "Artists" })).toBeVisible();
+	await expect(page).toHaveTitle("Artists - WGA");
 	expect(htmxRequests.some((url) => new URL(url).pathname === "/artists")).toBe(
 		true,
 	);

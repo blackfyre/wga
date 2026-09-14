@@ -105,6 +105,20 @@ test("switches and remembers the selected colour scheme", async ({ page }) => {
 	);
 });
 
+test("keeps the browser theme colour aligned with the active palette", async ({
+	page,
+}) => {
+	await page.emulateMedia({ colorScheme: "light" });
+	await page.goto("/");
+	const themeColour = page.locator('meta[name="theme-color"]');
+	await expect(themeColour).toHaveCount(1);
+	await expect(themeColour).toHaveAttribute("content", "#F4F2ED");
+
+	await page.locator("[data-wga-preferences-open]").click();
+	await page.locator('[data-wga-scheme="dark"]').click();
+	await expect(themeColour).toHaveAttribute("content", "#1A1814");
+});
+
 test("normalises a legacy stored scheme into native root state", async ({
 	page,
 }) => {

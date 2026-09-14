@@ -56,15 +56,15 @@ templ ArtistRecordPage(view ArtistView) {
 // main content area id so the shared body-level hx-select/hx-swap contract
 // replaces the whole content area, and pushes the canonical record URL.
 templ ArtistRecordBlock(view ArtistView) {
+	if utils.IsHTMXRequest(ctx) {
+		<title>{ utils.GetTitle(ctx) }</title>
+	}
 	<main id="mc-area" class="wga-enter wga-bottom-stack-content">
 		@ArtistRecordContent(view)
 	</main>
 }
 
 templ ArtistRecordContent(view ArtistView) {
-	<head>
-		<title>{ utils.GetTitle(ctx) }</title>
-	</head>
 	<section class="container mx-auto px-4 pb-20 pt-10 md:px-0">
 		if view.ShowBreadcrumbs {
 			<nav class="mb-8 font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60" aria-label="Breadcrumb">
@@ -229,9 +229,6 @@ templ artistArchiveWorkGrid(works dto.ImageGrid) {
 // ArtistBlock remains for the Dual Mode pane adapter, which still consumes the
 // shared dto.Artist record DTO until Dual Mode records are rebuilt.
 templ ArtistBlock(a dto.Artist) {
-	<head>
-		<title>{ utils.GetTitle(ctx) }</title>
-	</head>
 	<section class="container mx-auto px-4 pb-20 pt-10 md:px-0">
 		if a.ShowBreadcrumbs {
 			<nav class="mb-8 font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60" aria-label="Breadcrumb">

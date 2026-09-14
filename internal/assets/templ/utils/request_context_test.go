@@ -32,6 +32,18 @@ func TestContextFromRequestPreservesRequestContext(t *testing.T) {
 	}
 }
 
+func TestContextFromRequestRecordsHTMXRequests(t *testing.T) {
+	request := httptest.NewRequest(http.MethodGet, "/artists", nil)
+	if templutils.IsHTMXRequest(templutils.ContextFromRequest(request)) {
+		t.Fatal("ordinary request must not be marked as HTMX")
+	}
+
+	request.Header.Set("HX-Request", "true")
+	if !templutils.IsHTMXRequest(templutils.ContextFromRequest(request)) {
+		t.Fatal("HTMX request must be recorded in the render context")
+	}
+}
+
 func TestIsPathActiveChoosesTheLongestOwningDestination(t *testing.T) {
 	destinations := []string{"/", "/artworks", "/artworks/search", "/itineraries", "/itineraries/new"}
 	tests := []struct {

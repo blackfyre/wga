@@ -245,6 +245,32 @@ func TestLayoutBaseAdvertisesMarkdownResources(t *testing.T) {
 	}
 }
 
+func TestLayoutBaseRendersCompleteDocumentMetadata(t *testing.T) {
+	var output bytes.Buffer
+	if err := LayoutBase("", "").Render(context.Background(), &output); err != nil {
+		t.Fatalf("render layout: %v", err)
+	}
+
+	rendered := output.String()
+	for _, expected := range []string{
+		`<html lang="en">`,
+		`<meta name="description" content="Explore European artists and artworks from the 3rd century to the early 20th in the Web Gallery of Art.">`,
+		`<meta property="og:title" content="Web Gallery of Art">`,
+		`<meta property="og:type" content="website">`,
+		`<meta property="og:site_name" content="Web Gallery of Art">`,
+		`<meta name="twitter:title" content="Web Gallery of Art">`,
+		`<meta name="theme-color" content="#f4f2ed" media="(prefers-color-scheme: light)" data-wga-theme-color>`,
+		`<meta name="theme-color" content="#1a1814" media="(prefers-color-scheme: dark)" data-wga-theme-color-fallback>`,
+	} {
+		if !strings.Contains(rendered, expected) {
+			t.Errorf("expected document metadata %q", expected)
+		}
+	}
+	if strings.Contains(rendered, `<meta name="og:`) {
+		t.Error("Open Graph metadata must use the property attribute")
+	}
+}
+
 func TestLayoutBaseRendersTrustedHeadMarkupVerbatim(t *testing.T) {
 	const markup = `<script src="/assets/js/trusted.js"></script>`
 
@@ -278,9 +304,9 @@ func TestLayoutBaseOmitsTrustedHeadMarkupWhenEmpty(t *testing.T) {
 	}
 
 	rendered := output.String()
-	// The theme-colour element is the last static head element; an empty trusted
+	// The browser-config element is the last static head element; an empty trusted
 	// fragment must leave the closing head tag directly adjacent to it.
-	if !strings.Contains(rendered, `<meta name="theme-color" content="#013365"></head>`) {
+	if !strings.Contains(rendered, `<meta name="msapplication-config" content="/assets/browserconfig.xml"></head>`) {
 		t.Fatal("empty trusted markup must not inject content before </head>")
 	}
 }

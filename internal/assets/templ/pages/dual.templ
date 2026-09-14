@@ -187,9 +187,9 @@ templ DualModePage(v DualModeView) {
 }
 
 templ DualModeBlock(v DualModeView) {
-	<head>
+	if utils.IsHTMXRequest(ctx) {
 		<title>{ utils.GetTitle(ctx) }</title>
-	</head>
+	}
 	<section id="dual-area" class="wga-dual" data-wide?={ v.ForceWide } aria-label="Dual mode">
 		@dualNarrow(v)
 		@dualBar(v)

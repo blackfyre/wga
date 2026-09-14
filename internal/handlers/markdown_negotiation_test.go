@@ -89,6 +89,36 @@ func TestMarkdownNegotiationCombinesAcceptFieldLines(t *testing.T) {
 	}
 }
 
+func TestAdvertiseAgentDescriptionTargetsHTMLDocuments(t *testing.T) {
+	tests := []struct {
+		name   string
+		method string
+		path   string
+		accept string
+		want   bool
+	}{
+		{name: "HTML GET", method: http.MethodGet, path: "/artists", accept: "text/html", want: true},
+		{name: "HTML HEAD", method: http.MethodHead, path: "/artists", accept: "text/html", want: true},
+		{name: "Markdown preference", method: http.MethodGet, path: "/artists/name-id", accept: "text/markdown, text/html"},
+		{name: "technical boundary", method: http.MethodGet, path: "/llms.txt", accept: "text/html"},
+		{name: "mutation", method: http.MethodPost, path: "/artists", accept: "text/html"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			request := httptest.NewRequest(test.method, test.path, nil)
+			request.Header.Set("Accept", test.accept)
+			recorder := httptest.NewRecorder()
+			event := &core.RequestEvent{Event: router.Event{Request: request, Response: recorder}}
+
+			advertiseAgentDescription(event)
+
+			if got := strings.Contains(recorder.Header().Get("Link"), agentDescriptionLink); got != test.want {
+				t.Fatalf("describedby advertised = %t, want %t; Link = %q", got, test.want, recorder.Header().Get("Link"))
+			}
+		})
+	}
+}
+
 func TestMarkdownNegotiationAcceptsPublicCoauthorRoute(t *testing.T) {
 	requested := "/artists/second-author-artisttwo000001/shared-work-workone00000001"
 	event, recorder := markdownNegotiationEvent(requested, "text/markdown")

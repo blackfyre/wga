@@ -31,6 +31,7 @@ func TestMusicPeriodPlayerPageRendersNativeNoAutoplayControls(t *testing.T) {
 		`disableremoteplayback`,
 		`preload="metadata"`,
 		`src="/api/files/music_song/song1234567890a/fantasia.mp3"`,
+		`<meta name="description" content="Listen to Sweelinck — Fantasia chromatica in the Web Gallery of Art period-music player.">`,
 		`<link rel="describedby" href="/llms.txt" type="text/markdown">`,
 		"Sweelinck",
 		"Playback starts only when you use the audio controls.",

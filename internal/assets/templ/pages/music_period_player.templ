@@ -15,6 +15,9 @@ templ MusicPeriodPlayerPage(view MusicPeriodPlayerView) {
 			<meta charset="utf-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
 			<title>{ view.Piece } — Period music</title>
+			<meta name="description" content={ "Listen to " + view.Piece + " in the Web Gallery of Art period-music player." }/>
+			<meta name="theme-color" content="#f4f2ed" media="(prefers-color-scheme: light)" data-wga-theme-color/>
+			<meta name="theme-color" content="#1a1814" media="(prefers-color-scheme: dark)" data-wga-theme-color-fallback/>
 			<link rel="describedby" href="/llms.txt" type="text/markdown"/>
 			<link rel="stylesheet" href="/assets/css/style.css"/>
 		</head>

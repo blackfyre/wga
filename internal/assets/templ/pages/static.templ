@@ -3,7 +3,6 @@ package pages
 import (
 	"github.com/blackfyre/wga/internal/assets/templ/components"
 	"github.com/blackfyre/wga/internal/assets/templ/layouts"
-	"github.com/blackfyre/wga/internal/assets/templ/utils"
 )
 
 type StaticPageDTO struct {
@@ -21,9 +20,6 @@ type StaticPageTOCItem struct {
 
 templ StaticPage(sp StaticPageDTO) {
 	@layouts.LayoutMain() {
-		<head>
-			<title>{ utils.GetTitle(ctx) }</title>
-		</head>
 		@StaticPageBlock(sp)
 	}
 }

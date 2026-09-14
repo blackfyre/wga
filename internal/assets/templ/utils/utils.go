@@ -18,6 +18,9 @@ type ContextKey string
 type trustedHeadMarkupContextKey struct{}
 
 type requestPathContextKey struct{}
+type htmxRequestContextKey struct{}
+
+const defaultDescription = "Explore European artists and artworks from the 3rd century to the early 20th in the Web Gallery of Art."
 
 var TitleKey ContextKey = "title"
 var DescriptionKey ContextKey = "description"
@@ -28,12 +31,14 @@ var OgImageKey ContextKey = "og:image"
 var OgUrlKey ContextKey = "og:url"
 var OgTypeKey ContextKey = "og:type"
 var OgSiteNameKey ContextKey = "og:site_name"
+var OgImageAltKey ContextKey = "og:image:alt"
 var TwitterCardKey ContextKey = "twitter:card"
 var TwitterSiteKey ContextKey = "twitter:site"
 var TwitterCreatorKey ContextKey = "twitter:creator"
 var TwitterTitleKey ContextKey = "twitter:title"
 var TwitterDescriptionKey ContextKey = "twitter:description"
 var TwitterImageKey ContextKey = "twitter:image"
+var TwitterImageAltKey ContextKey = "twitter:image:alt"
 var CanonicalUrlKey ContextKey = "canonical:url"
 var AlternateMarkdownURLKey ContextKey = "alternate:markdown:url"
 
@@ -42,7 +47,14 @@ func ContextFromRequest(request *http.Request) context.Context {
 		return context.WithValue(context.Background(), requestPathContextKey{}, "")
 	}
 
-	return context.WithValue(request.Context(), requestPathContextKey{}, request.URL.Path)
+	ctx := context.WithValue(request.Context(), requestPathContextKey{}, request.URL.Path)
+	return context.WithValue(ctx, htmxRequestContextKey{}, request.Header.Get("HX-Request") == "true")
+}
+
+// IsHTMXRequest reports whether the render context belongs to an HTMX request.
+func IsHTMXRequest(c context.Context) bool {
+	value, _ := c.Value(htmxRequestContextKey{}).(bool)
+	return value
 }
 
 // RequestPath returns the request URL path captured for shared template rendering.
@@ -139,7 +151,7 @@ func AssetUrl(path string) string {
 // If the title is found, it returns the title as a string.
 // If the title is not found, it returns an empty string.
 func GetTitle(c context.Context) string {
-	if v, ok := c.Value(TitleKey).(string); ok {
+	if v, ok := c.Value(TitleKey).(string); ok && strings.TrimSpace(v) != "" {
 		return v + " - WGA"
 	}
 
@@ -171,11 +183,11 @@ func GetAlternateMarkdownURL(c context.Context) string {
 // If the value is found and is of type string, it is returned.
 // Otherwise, an empty string is returned.
 func GetDescription(c context.Context) string {
-	if v, ok := c.Value(DescriptionKey).(string); ok {
+	if v, ok := c.Value(DescriptionKey).(string); ok && strings.TrimSpace(v) != "" {
 		return v
 	}
 
-	return ""
+	return defaultDescription
 }
 
 // GetEnvironment returns the environment value from the given context.
@@ -189,33 +201,47 @@ func GetEnvironment(c context.Context) string {
 }
 
 func GetOpenGraphTags(c context.Context) map[string]string {
-	ogTags := make(map[string]string)
+	ogTags := map[string]string{
+		"og:title":       GetTitle(c),
+		"og:description": GetDescription(c),
+		"og:type":        "website",
+		"og:site_name":   "Web Gallery of Art",
+	}
 
-	if v, ok := c.Value(OgTitleKey).(string); ok {
+	if v, ok := c.Value(OgTitleKey).(string); ok && strings.TrimSpace(v) != "" {
 		ogTags["og:title"] = v
 	}
 
-	if v, ok := c.Value(OgDescriptionKey).(string); ok {
+	if v, ok := c.Value(OgDescriptionKey).(string); ok && strings.TrimSpace(v) != "" {
 		ogTags["og:description"] = v
 	}
 
-	if v, ok := c.Value(OgImageKey).(string); ok {
+	if v, ok := c.Value(OgImageKey).(string); ok && strings.TrimSpace(v) != "" {
 		ogTags["og:image"] = v
+		ogTags["og:image:alt"] = GetTitle(c)
 	} else {
 		ogTags["og:image"] = AssetUrl("/assets/images/smo_cover_1080x1080.png")
+		ogTags["og:image:alt"] = "Web Gallery of Art"
+		ogTags["og:image:width"] = "1080"
+		ogTags["og:image:height"] = "1080"
+	}
+	if v, ok := c.Value(OgImageAltKey).(string); ok && v != "" {
+		ogTags["og:image:alt"] = v
 	}
 
-	if v, ok := c.Value(OgUrlKey).(string); ok {
+	if v, ok := c.Value(OgUrlKey).(string); ok && strings.TrimSpace(v) != "" {
 		ogTags["og:url"] = v
+	} else if canonical := GetCanonicalUrl(c); canonical != "" {
+		ogTags["og:url"] = canonical
 	}
 
-	if v, ok := c.Value(OgTypeKey).(string); ok {
+	if v, ok := c.Value(OgTypeKey).(string); ok && strings.TrimSpace(v) != "" {
 		ogTags["og:type"] = v
 	} else {
 		ogTags["og:type"] = "website"
 	}
 
-	if v, ok := c.Value(OgSiteNameKey).(string); ok {
+	if v, ok := c.Value(OgSiteNameKey).(string); ok && strings.TrimSpace(v) != "" {
 		ogTags["og:site_name"] = v
 	}
 
@@ -223,7 +249,10 @@ func GetOpenGraphTags(c context.Context) map[string]string {
 }
 
 func GetTwitterTags(c context.Context) map[string]string {
-	twitterTags := make(map[string]string)
+	twitterTags := map[string]string{
+		"twitter:title":       GetTitle(c),
+		"twitter:description": GetDescription(c),
+	}
 
 	if v, ok := c.Value(TwitterCardKey).(string); ok {
 		twitterTags["twitter:card"] = v
@@ -239,18 +268,23 @@ func GetTwitterTags(c context.Context) map[string]string {
 		twitterTags["twitter:creator"] = v
 	}
 
-	if v, ok := c.Value(TwitterTitleKey).(string); ok {
+	if v, ok := c.Value(TwitterTitleKey).(string); ok && strings.TrimSpace(v) != "" {
 		twitterTags["twitter:title"] = v
 	}
 
-	if v, ok := c.Value(TwitterDescriptionKey).(string); ok {
+	if v, ok := c.Value(TwitterDescriptionKey).(string); ok && strings.TrimSpace(v) != "" {
 		twitterTags["twitter:description"] = v
 	}
 
-	if v, ok := c.Value(TwitterImageKey).(string); ok {
+	if v, ok := c.Value(TwitterImageKey).(string); ok && strings.TrimSpace(v) != "" {
 		twitterTags["twitter:image"] = v
+		twitterTags["twitter:image:alt"] = GetTitle(c)
 	} else {
 		twitterTags["twitter:image"] = AssetUrl("/assets/images/smo_cover_1080x1080.png")
+		twitterTags["twitter:image:alt"] = "Web Gallery of Art"
+	}
+	if v, ok := c.Value(TwitterImageAltKey).(string); ok && v != "" {
+		twitterTags["twitter:image:alt"] = v
 	}
 
 	return twitterTags

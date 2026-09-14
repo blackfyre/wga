@@ -3,8 +3,12 @@ package pages
 import (
 	"bytes"
 	"context"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
+
+	templutils "github.com/blackfyre/wga/internal/assets/templ/utils"
 )
 
 func renderHome(t *testing.T, content HomePage) string {
@@ -16,6 +20,27 @@ func renderHome(t *testing.T, content HomePage) string {
 	}
 
 	return output.String()
+}
+
+func TestHomeUsesOnlyTheSharedHeadAndReturnsAnHTMXTitle(t *testing.T) {
+	var full bytes.Buffer
+	if err := HomePageWrapped(HomePage{}).Render(context.Background(), &full); err != nil {
+		t.Fatalf("render full home page: %v", err)
+	}
+	if count := strings.Count(full.String(), "<head>"); count != 1 {
+		t.Fatalf("full document head count = %d, want 1", count)
+	}
+
+	request := httptest.NewRequest(http.MethodGet, "/", nil)
+	request.Header.Set("HX-Request", "true")
+	ctx := templutils.DecorateContext(templutils.ContextFromRequest(request), templutils.TitleKey, "Home")
+	var fragment bytes.Buffer
+	if err := HomePageContent(HomePage{}).Render(ctx, &fragment); err != nil {
+		t.Fatalf("render HTMX home fragment: %v", err)
+	}
+	if strings.Contains(fragment.String(), "<head>") || !strings.Contains(fragment.String(), "<title>Home - WGA</title>") {
+		t.Fatalf("HTMX fragment must carry a root title without a nested head: %s", fragment.String())
+	}
 }
 
 func TestHomeRendersCollectionDiscoveryAndWorks(t *testing.T) {

@@ -28,7 +28,7 @@ func getHtmxDefaultArea(target string) string {
 
 templ LayoutBase(bodyClasses string, HtmxTargetArea string) {
 	<!DOCTYPE html>
-	<html>
+	<html lang="en">
 		<head>
 			<meta charset="utf-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -39,7 +39,7 @@ templ LayoutBase(bodyClasses string, HtmxTargetArea string) {
 			<meta name="sentry-release" content={ observability.BrowserConfig().Release }/>
 			<meta name="htmx-config" content={ htmxDefaults() }/>
 			for key, content := range utils.GetOpenGraphTags(ctx) {
-				<meta name={ key } content={ content }/>
+				<meta property={ key } content={ content }/>
 			}
 			for key, content := range utils.GetTwitterTags(ctx) {
 				<meta name={ key } content={ content }/>
@@ -51,6 +51,8 @@ templ LayoutBase(bodyClasses string, HtmxTargetArea string) {
 			if utils.GetAlternateMarkdownURL(ctx) != "" {
 				<link rel="alternate" type="text/markdown" href={ utils.GetAlternateMarkdownURL(ctx) }/>
 			}
+			<meta name="theme-color" content="#f4f2ed" media="(prefers-color-scheme: light)" data-wga-theme-color/>
+			<meta name="theme-color" content="#1a1814" media="(prefers-color-scheme: dark)" data-wga-theme-color-fallback/>
 			@templ.Raw(dto.ThemeResolverScript())
 			<link rel="stylesheet" href="/assets/css/style.css"/>
 			<link rel="apple-touch-icon" sizes="180x180" href="/assets/images/apple-touch-icon.png"/>
@@ -61,7 +63,6 @@ templ LayoutBase(bodyClasses string, HtmxTargetArea string) {
 			<link rel="shortcut icon" href="/assets/images/favicon.ico"/>
 			<meta name="msapplication-TileColor" content="#013365"/>
 			<meta name="msapplication-config" content="/assets/browserconfig.xml"/>
-			<meta name="theme-color" content="#013365"/>
 			if trustedHeadMarkup := utils.GetTrustedHeadMarkup(ctx); trustedHeadMarkup != "" {
 				@templ.Raw(trustedHeadMarkup)
 			}

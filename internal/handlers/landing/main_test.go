@@ -252,7 +252,7 @@ func TestHomeRouteRendersMetadataForAnEmptyEligibleDataset(t *testing.T) {
 		}{
 			{name: "title", fragments: []string{"<title>", "Web Gallery of Art | Explore artists and artworks - WGA"}},
 			{name: "description", fragments: []string{`<meta name="description"`, "Explore artists, artworks, and side-by-side comparisons in the Web Gallery of Art."}},
-			{name: "Open Graph URL", fragments: []string{`<meta name="og:url"`, "https://gallery.example/"}},
+			{name: "Open Graph URL", fragments: []string{`<meta property="og:url"`, "https://gallery.example/"}},
 			{name: "canonical", fragments: []string{`<link rel="canonical"`, "https://gallery.example/"}},
 		} {
 			for _, fragment := range expected.fragments {

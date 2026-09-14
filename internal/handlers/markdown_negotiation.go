@@ -13,16 +13,29 @@ import (
 )
 
 const markdownMediaType = "text/markdown"
+const agentDescriptionLink = `</llms.txt>; rel="describedby"; type="text/markdown"`
 
 type generatedResourceReader func(core.App, string) (agentcontent.Resource, error)
 
 func registerMarkdownNegotiationMiddleware(app core.App) {
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 		se.Router.BindFunc(func(e *core.RequestEvent) error {
+			advertiseAgentDescription(e)
 			return negotiateGeneratedMarkdown(app, e, agentcontent.LookupCurrent, e.Next)
 		})
 		return se.Next()
 	})
+}
+
+func advertiseAgentDescription(e *core.RequestEvent) {
+	if e == nil || e.Request == nil || (e.Request.Method != http.MethodGet && e.Request.Method != http.MethodHead) {
+		return
+	}
+	accept := strings.Join(e.Request.Header.Values("Accept"), ",")
+	if !acceptsHTML(accept) || prefersMarkdown(accept) || isTrustedHeadMarkupBoundary(e.Request.URL.Path) {
+		return
+	}
+	e.Response.Header().Add("Link", agentDescriptionLink)
 }
 
 // negotiateGeneratedMarkdown redirects only canonical, currently published

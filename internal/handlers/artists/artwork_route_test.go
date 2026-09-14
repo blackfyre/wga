@@ -308,7 +308,7 @@ func TestArtworkRouteRendersCountedHoldingAndFullHTMXParity(t *testing.T) {
 	if withoutMarkdown.Code != http.StatusOK {
 		t.Fatalf("status = %d, want 200", withoutMarkdown.Code)
 	}
-	if strings.Contains(withoutMarkdown.Header().Get("Link"), "text/markdown") || strings.Contains(withoutMarkdown.Body.String(), `rel="alternate" type="text/markdown"`) {
+	if strings.Contains(withoutMarkdown.Header().Get("Link"), `rel="alternate"`) || strings.Contains(withoutMarkdown.Body.String(), `rel="alternate" type="text/markdown"`) {
 		t.Fatal("artwork response advertised an unavailable Markdown resource")
 	}
 	publishGeneratedMarkdownFixture(t, app, "agents/artworks/workone00000001.md", "https://gallery.example"+path, []string{path})

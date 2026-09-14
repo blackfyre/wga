@@ -68,9 +68,9 @@ templ ArtistsPage(c ArtistsView) {
 }
 
 templ ArtistsBlock(c ArtistsView) {
-	<head>
+	if utils.IsHTMXRequest(ctx) {
 		<title>{ utils.GetTitle(ctx) }</title>
-	</head>
+	}
 	<section id="artists" hx-indicator="#artist-search-skeleton" class="container mx-auto px-4 pb-20 pt-10 md:px-0 wga-enter">
 		@components.PageHead("01 — ARTIST INDEX", "Artists",
 			"Painters, sculptors and architects in the collection. Browse alphabetically, or filter by school and period.")

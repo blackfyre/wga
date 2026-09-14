@@ -220,11 +220,14 @@ func processArtworkWithCheckpoint(c *core.RequestEvent, app *pocketbase.PocketBa
 	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", content.Title, content.FilingName))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, aw.GetString("comment"))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, utils.AssetUrl(canonicalURL))
+	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgTypeKey, "article")
 	markdownAvailable := generatedMarkdownAvailable(app, markdownPath, expectedPageUrl)
 	if markdownAvailable {
 		ctx = decorateMarkdownAlternate(ctx, markdownPath)
 	}
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgImageKey, utils.AssetUrl(content.Image.Image))
+	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgImageAltKey, content.Title)
+	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.TwitterImageAltKey, content.Title)
 
 	c.Response.Header().Set("HX-Push-Url", canonicalURL)
 	if markdownAvailable {
