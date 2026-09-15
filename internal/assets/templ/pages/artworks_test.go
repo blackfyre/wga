@@ -172,7 +172,7 @@ func TestArtworkSearchResultsRendersGridView(t *testing.T) {
 		Id:        "work00000000001",
 		Url:       "/artworks/sample-work-123",
 		Thumb:     "/api/files/artworks/123/image.jpg",
-		Title:     "Sample Work",
+		Title:     `"From Darkness, the Light". Allegory of the Hungarian Academy of Sciences`,
 		Technique: "Oil on canvas",
 		Date:      "1600–1602",
 		School:    "Dutch",
@@ -194,6 +194,17 @@ func TestArtworkSearchResultsRendersGridView(t *testing.T) {
 	for _, expected := range []string{"Artist, Sample · 1600–1602", "Dutch · Fresco", "ADD TO ITINERARY +", `data-artwork-workspace-actions`} {
 		if !strings.Contains(rendered, expected) {
 			t.Errorf("grid result missing %q", expected)
+		}
+	}
+	for _, expected := range []string{
+		`title="&#34;From Darkness, the Light&#34;. Allegory of the Hungarian Academy of Sciences"`,
+		`line-clamp-2 min-h-[2.6em] break-words`,
+		`line-clamp-2 min-h-[3.2em] break-words`,
+		`min-h-[1.6em] overflow-hidden text-ellipsis whitespace-nowrap`,
+		`class="mt-auto flex w-full shrink-0 flex-col`,
+	} {
+		if !strings.Contains(rendered, expected) {
+			t.Errorf("grid result missing alignment contract %q", expected)
 		}
 	}
 	if strings.Contains(rendered, "Oil on canvas") {

@@ -172,6 +172,68 @@ test("grid results expose reference metadata and independent workspace actions",
 	).toBe(1);
 });
 
+test("grid cards reserve catalogue lines and bottom-align workspace actions", async ({
+	page,
+}) => {
+	const longTitle =
+		'"From Darkness, the Light". Allegory of the Hungarian Academy of Sciences';
+	const longIdentity =
+		"COLENBRANDER, Theodoor Christiaan Adriaan · circa 1895–1905";
+
+	for (const viewport of [
+		{ width: 390, height: 844 },
+		{ width: 834, height: 900 },
+		{ width: 1440, height: 1000 },
+	]) {
+		await page.setViewportSize(viewport);
+		await page.goto("/artworks");
+		await expectArtworkResults(page);
+
+		const grid = page.locator("#artwork-search-results [data-view='grid']");
+		const cards = grid.locator("article");
+		const columns = await grid.evaluate(
+			(element) =>
+				getComputedStyle(element).gridTemplateColumns.split(" ").length,
+		);
+		expect(await cards.count()).toBeGreaterThanOrEqual(columns);
+
+		const first = cards.first();
+		const title = first.locator("p[title]");
+		await title.evaluate((element, value) => {
+			element.textContent = value;
+			element.setAttribute("title", value);
+		}, longTitle);
+		await first
+			.locator('[data-artwork-result-meta="identity"]')
+			.evaluate((element, value) => {
+				element.textContent = value;
+			}, longIdentity);
+
+		await expect(title).toHaveText(longTitle);
+		await expect(title).toHaveAttribute("title", longTitle);
+		await expect(title).toHaveCSS("-webkit-line-clamp", "2");
+		await expect(
+			first.locator('[data-artwork-result-meta="identity"]'),
+		).toHaveCSS("-webkit-line-clamp", "2");
+		await expect(
+			first.locator('[data-artwork-result-meta="classification"]'),
+		).toHaveCSS("white-space", "nowrap");
+
+		const actionTops = await cards
+			.locator("[data-artwork-workspace-actions]")
+			.evaluateAll(
+				(actions, count) =>
+					actions
+						.slice(0, count)
+						.map((action) => action.getBoundingClientRect().top),
+				columns,
+			);
+		expect(
+			Math.max(...actionTops) - Math.min(...actionTops),
+		).toBeLessThanOrEqual(1);
+	}
+});
+
 test("dense results expose desktop columns and retain actions responsively", async ({
 	page,
 }) => {
