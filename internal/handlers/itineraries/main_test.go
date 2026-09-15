@@ -13,6 +13,7 @@ import (
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
+	"golang.org/x/net/html"
 )
 
 const testArtworkID = "aw0000000000001"
@@ -136,13 +137,13 @@ func TestHtmxMutationsReturnFragmentAndOobTargets(t *testing.T) {
 		t.Fatalf("add status = %d, want 200", add.Code)
 	}
 	body := add.Body.String()
-	if !strings.Contains(body, `<div id="itinerary-tray"`) {
+	if !hasHTMLTagAttributes(body, "div", map[string]string{"id": "itinerary-tray"}) {
 		t.Error("add response must target the tray as the primary swap")
 	}
-	if strings.Contains(body, `id="itinerary-tray" hx-swap-oob`) {
+	if hasHTMLTagAttributes(body, "div", map[string]string{"id": "itinerary-tray", "hx-swap-oob": "true"}) {
 		t.Error("add tray must not be OOB; it is the primary target")
 	}
-	if !strings.Contains(body, `<section id="itinerary-builder" hx-swap-oob="true"`) {
+	if !hasHTMLTagAttributes(body, "section", map[string]string{"id": "itinerary-builder", "hx-swap-oob": "true"}) {
 		t.Error("add response must refresh the builder block OOB")
 	}
 
@@ -152,14 +153,46 @@ func TestHtmxMutationsReturnFragmentAndOobTargets(t *testing.T) {
 		t.Fatalf("clear status = %d, want 200", clear.Code)
 	}
 	body = clear.Body.String()
-	if !strings.Contains(body, `<section id="itinerary-builder"`) {
+	if !hasHTMLTagAttributes(body, "section", map[string]string{"id": "itinerary-builder"}) {
 		t.Error("clear response must target the builder as the primary swap")
 	}
-	if strings.Contains(body, `id="itinerary-builder" hx-swap-oob`) {
+	if hasHTMLTagAttributes(body, "section", map[string]string{"id": "itinerary-builder", "hx-swap-oob": "true"}) {
 		t.Error("clear builder must not be OOB; it is the primary target")
 	}
-	if !strings.Contains(body, `<div id="itinerary-tray" hx-swap-oob="true"`) {
+	if !hasHTMLTagAttributes(body, "div", map[string]string{"id": "itinerary-tray", "data-itinerary-count": "0", "hx-swap-oob": "true"}) {
 		t.Error("clear response must empty the tray OOB")
+	}
+}
+
+func hasHTMLTagAttributes(markup string, wantTag string, wantAttributes map[string]string) bool {
+	tokenizer := html.NewTokenizer(strings.NewReader(markup))
+	for {
+		switch tokenizer.Next() {
+		case html.ErrorToken:
+			return false
+		case html.StartTagToken, html.SelfClosingTagToken:
+			tag, hasAttributes := tokenizer.TagName()
+			if string(tag) != wantTag || !hasAttributes {
+				continue
+			}
+
+			attributes := make(map[string]string)
+			for hasAttributes {
+				key, value, more := tokenizer.TagAttr()
+				attributes[string(key)] = string(value)
+				hasAttributes = more
+			}
+			matches := true
+			for key, value := range wantAttributes {
+				if attributes[key] != value {
+					matches = false
+					break
+				}
+			}
+			if matches {
+				return true
+			}
+		}
 	}
 }
 
