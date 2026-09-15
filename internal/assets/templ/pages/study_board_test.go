@@ -43,4 +43,14 @@ func TestStudyBoardPageRendersSevenFieldsBothViewsAndNativeControls(t *testing.T
 	if got := strings.Count(rendered, ">SAME</span>"); got != 2 {
 		t.Errorf("SAME markers = %d, want 2 for known equal Date and Type only", got)
 	}
+	for _, expected := range []string{
+		`data-study-board-view="matrix" aria-pressed="true" class="border border-wga-accent bg-wga-accent-bg px-[13px] py-1.5`,
+		`data-study-board-view="board" aria-pressed="false" class="border border-control px-[13px] py-1.5`,
+		`px-1.5 py-1`,
+		`px-2 py-[5px]`,
+	} {
+		if !strings.Contains(rendered, expected) {
+			t.Errorf("page missing compact control rank %q", expected)
+		}
+	}
 }

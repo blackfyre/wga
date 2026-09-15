@@ -25,6 +25,34 @@ func TestAddToStudyBoardActionCarriesPublishedProjectionOutsideLinks(t *testing.
 	}
 }
 
+func TestAddToStudyBoardActionUsesReferenceRanks(t *testing.T) {
+	for _, test := range []struct {
+		name      string
+		variant   AddToStudyBoardVariant
+		expected  string
+		forbidden string
+	}{
+		{"block", AddToStudyBoardBlock, "block min-h-12 w-full px-4 py-2.5", "leading-[17px]"},
+		{"row", AddToStudyBoardRow, "min-h-12 px-3.5 py-2", "leading-[17px]"},
+		{"card", AddToStudyBoardCard, "px-2.5 py-[7px] leading-[17px]", "min-h-12"},
+		{"compact", AddToStudyBoardCompact, "px-2.5 py-[7px] leading-[17px]", "min-h-12"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			var output bytes.Buffer
+			if err := AddToStudyBoardAction("work00000000001", "Work", "/image.jpg", test.variant).Render(context.Background(), &output); err != nil {
+				t.Fatalf("render action: %v", err)
+			}
+			rendered := output.String()
+			if !strings.Contains(rendered, test.expected) {
+				t.Errorf("action missing rank %q", test.expected)
+			}
+			if strings.Contains(rendered, test.forbidden) {
+				t.Errorf("action unexpectedly contains %q", test.forbidden)
+			}
+		})
+	}
+}
+
 func TestStudyBoardShelfRegistersAboveItineraryInMeasuredStack(t *testing.T) {
 	works := []dto.StudyBoardWork{{ID: "one", Title: "First", ImageURL: "/first.jpg"}, {ID: "two", Title: "Second", ImageURL: "/second.jpg"}}
 	var output bytes.Buffer

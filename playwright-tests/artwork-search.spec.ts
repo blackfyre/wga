@@ -74,6 +74,18 @@ test("school facet accepts repeated selections", async ({ page }) => {
 	).toContainText("2 SELECTED");
 });
 
+test("sort and view controls use the compact reference rank", async ({
+	page,
+}) => {
+	await page.goto("/artworks");
+	const titleAscending = page.getByRole("link", { name: "TITLE A–Z" });
+	await expect(titleAscending).toHaveCSS("height", "32px");
+	await expect(page.getByRole("link", { name: "GRID", exact: true })).toHaveCSS(
+		"height",
+		"32px",
+	);
+});
+
 test("active sort control toggles its named direction", async ({ page }) => {
 	await page.goto("/artworks");
 	const titleAscending = page.getByRole("link", { name: "TITLE A–Z" });
@@ -125,6 +137,9 @@ test("grid results expose reference metadata and independent workspace actions",
 	).not.toHaveText("NOT RECORDED");
 	const actions = card.locator("[data-artwork-workspace-actions]");
 	await expect(actions.locator("button")).toHaveCount(2);
+	for (const action of await actions.locator("button").all()) {
+		await expect(action).toHaveCSS("height", "33px");
+	}
 
 	const itinerary = actions.locator("[data-itinerary-search-add]");
 	await expect(itinerary).toHaveText("ADD TO ITINERARY +");

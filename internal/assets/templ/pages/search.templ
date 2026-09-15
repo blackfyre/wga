@@ -35,7 +35,7 @@ templ SearchPage(v SearchView) {
 			<h1 class="mb-3 text-(length:--t-28) font-semibold leading-tight tracking-[-0.5px] md:text-(length:--t-40)">Results for { searchLabel(v.Term) }</h1>
 			<form action="/search" hx-get="/search/results" hx-target="#global-search-results" hx-swap="outerHTML" hx-trigger="input changed delay:300ms from:input[type=search]" class="mb-8 max-w-xl">
 				<label><span class="sr-only">Search collection</span><input class="w-full border-0 border-b border-wga-ink bg-transparent px-0 py-2 text-base" name="q" value={ v.Term } type="search" placeholder="Search artist, title, school"/></label>
-				<noscript><button type="submit" class="wga-button wga-button-primary mt-4 font-mono text-(length:--t-11) tracking-[1.5px]">SEARCH</button></noscript>
+				<noscript><button type="submit" class="wga-button wga-button-primary wga-button-sm mt-4 font-mono text-(length:--t-11) tracking-[1.5px]">SEARCH</button></noscript>
 			</form>
 			@SearchResults(v)
 		</section>

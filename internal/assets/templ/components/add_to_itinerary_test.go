@@ -38,8 +38,8 @@ func renderAddButton(t *testing.T, ctx context.Context, variant string) string {
 
 // TestAddToItineraryActionVariants table-tests the accepted reference
 // presentation for every typed variant across the available, added, and full
-// states: exact wrapper/button classes, the shared 48px row/block dimension,
-// the compact short labels versus row/block full labels, and the
+// states: exact wrapper/button classes, the 33px compact/card rank, the shared
+// 48px row/block dimension, the compact short labels versus full labels, and the
 // shared disabled semantics.
 func TestAddToItineraryActionVariants(t *testing.T) {
 	base := "font-mono tracking-[1px] border transition-colors"
@@ -58,7 +58,7 @@ func TestAddToItineraryActionVariants(t *testing.T) {
 			name:    "compact available",
 			variant: AddToItineraryCompact,
 			wrapper: "shrink-0 self-center",
-			button:  base + " text-(length:--t-10) px-2.5 py-1.5 border-wga-accent text-wga-accent hover:border-wga-ink hover:bg-wga-accent-tint",
+			button:  base + " text-(length:--t-10) leading-[17px] px-2.5 py-[7px] border-wga-accent text-wga-accent hover:border-wga-ink hover:bg-wga-accent-tint",
 			label:   "ADD",
 		},
 		{
@@ -66,7 +66,7 @@ func TestAddToItineraryActionVariants(t *testing.T) {
 			variant: AddToItineraryCompact,
 			added:   true,
 			wrapper: "shrink-0 self-center",
-			button:  base + " text-(length:--t-10) px-2.5 py-1.5 border-wga-ink/20 bg-wga-ink/6 text-faint-2",
+			button:  base + " text-(length:--t-10) leading-[17px] px-2.5 py-[7px] border-wga-ink/20 bg-wga-ink/6 text-faint-2",
 			label:   "ADDED ✓",
 		},
 		{
@@ -74,7 +74,30 @@ func TestAddToItineraryActionVariants(t *testing.T) {
 			variant: AddToItineraryCompact,
 			full:    true,
 			wrapper: "shrink-0 self-center",
-			button:  base + " text-(length:--t-10) px-2.5 py-1.5 border-wga-ink/25 text-faint-2",
+			button:  base + " text-(length:--t-10) leading-[17px] px-2.5 py-[7px] border-wga-ink/25 text-faint-2",
+			label:   "ITINERARY IS FULL",
+		},
+		{
+			name:    "card available",
+			variant: AddToItineraryCard,
+			wrapper: "w-full",
+			button:  base + " w-full text-(length:--t-10) leading-[17px] px-2.5 py-[7px] border-control hover:border-wga-accent hover:bg-wga-accent-tint hover:text-wga-accent",
+			label:   "ADD TO AN ITINERARY +",
+		},
+		{
+			name:    "card added",
+			variant: AddToItineraryCard,
+			added:   true,
+			wrapper: "w-full",
+			button:  base + " w-full text-(length:--t-10) leading-[17px] px-2.5 py-[7px] border-wga-ink/20 bg-wga-ink/6 text-faint-2",
+			label:   "IN YOUR ITINERARY ✓",
+		},
+		{
+			name:    "card full",
+			variant: AddToItineraryCard,
+			full:    true,
+			wrapper: "w-full",
+			button:  base + " w-full text-(length:--t-10) leading-[17px] px-2.5 py-[7px] border-wga-ink/25 text-faint-2",
 			label:   "ITINERARY IS FULL",
 		},
 		{
@@ -130,30 +153,27 @@ func TestAddToItineraryActionVariants(t *testing.T) {
 			dimension: "h-12",
 		},
 		{
-			name:      "search block available",
-			variant:   AddToItinerarySearchBlock,
-			wrapper:   "w-full",
-			button:    base + " w-full text-xs tracking-[1.5px] px-6 h-12 border-control hover:border-wga-accent hover:bg-wga-accent-tint hover:text-wga-accent",
-			label:     "ADD TO ITINERARY +",
-			dimension: "h-12",
+			name:    "search block available",
+			variant: AddToItinerarySearchBlock,
+			wrapper: "w-full",
+			button:  base + " w-full text-(length:--t-10) leading-[17px] px-2.5 py-[7px] border-control hover:border-wga-accent hover:bg-wga-accent-tint hover:text-wga-accent",
+			label:   "ADD TO ITINERARY +",
 		},
 		{
-			name:      "search block added",
-			variant:   AddToItinerarySearchBlock,
-			added:     true,
-			wrapper:   "w-full",
-			button:    base + " w-full text-xs tracking-[1.5px] px-6 h-12 border-wga-ink/20 bg-wga-ink/6 text-faint-2",
-			label:     "IN ITINERARY ✓",
-			dimension: "h-12",
+			name:    "search block added",
+			variant: AddToItinerarySearchBlock,
+			added:   true,
+			wrapper: "w-full",
+			button:  base + " w-full text-(length:--t-10) leading-[17px] px-2.5 py-[7px] border-wga-ink/20 bg-wga-ink/6 text-faint-2",
+			label:   "IN ITINERARY ✓",
 		},
 		{
-			name:      "search block full",
-			variant:   AddToItinerarySearchBlock,
-			full:      true,
-			wrapper:   "w-full",
-			button:    base + " w-full text-xs tracking-[1.5px] px-6 h-12 border-wga-ink/25 text-faint-2",
-			label:     "ITINERARY FULL",
-			dimension: "h-12",
+			name:    "search block full",
+			variant: AddToItinerarySearchBlock,
+			full:    true,
+			wrapper: "w-full",
+			button:  base + " w-full text-(length:--t-10) leading-[17px] px-2.5 py-[7px] border-wga-ink/25 text-faint-2",
+			label:   "ITINERARY FULL",
 		},
 	}
 
@@ -203,7 +223,7 @@ func TestAddToItineraryActionVariants(t *testing.T) {
 
 			if tc.dimension == "" {
 				if strings.Contains(rendered, " h-12") {
-					t.Errorf("compact variant %s must not carry fixed row/block heights", tc.variant)
+					t.Errorf("compact/card variant %s must not carry fixed row/block heights", tc.variant)
 				}
 			} else if !strings.Contains(rendered, tc.dimension) {
 				t.Errorf("variant %s missing dimension %q", tc.variant, tc.dimension)
@@ -216,7 +236,7 @@ func TestAddToItineraryActionVariants(t *testing.T) {
 // same ordinary POST fallback and HTMX contract with the unset sentinel and
 // never opts out of inherited swapping.
 func TestAddToItineraryActionFormContract(t *testing.T) {
-	for _, variant := range []AddToItineraryVariant{AddToItineraryCompact, AddToItineraryRow, AddToItineraryBlock, AddToItinerarySearchBlock} {
+	for _, variant := range []AddToItineraryVariant{AddToItineraryCompact, AddToItineraryCard, AddToItineraryRow, AddToItineraryBlock, AddToItinerarySearchBlock} {
 		t.Run(string(variant), func(t *testing.T) {
 			ctx := tmplUtils.WithItineraryProjection(context.Background(), "csrf-token", dto.ItineraryTrayView{}, map[string]bool{})
 			rendered := renderAddAction(t, ctx, variant)
@@ -247,7 +267,7 @@ func TestAddToItineraryActionFormContract(t *testing.T) {
 // TestAddToItineraryActionAnonymousRendersNothing proves a cookie-less request
 // with no projected session renders an empty control rather than a broken form.
 func TestAddToItineraryActionAnonymousRendersNothing(t *testing.T) {
-	for _, variant := range []AddToItineraryVariant{AddToItineraryCompact, AddToItineraryRow, AddToItineraryBlock} {
+	for _, variant := range []AddToItineraryVariant{AddToItineraryCompact, AddToItineraryCard, AddToItineraryRow, AddToItineraryBlock, AddToItinerarySearchBlock} {
 		var output bytes.Buffer
 		if err := AddToItineraryAction(addTestArtworkID, variant).Render(context.Background(), &output); err != nil {
 			t.Fatalf("render anonymous typed add action: %v", err)
@@ -266,7 +286,7 @@ func TestAddToItineraryActionNormalisesInvalidVariant(t *testing.T) {
 
 	for _, expected := range []string{
 		`class="shrink-0 self-center"`,
-		"text-(length:--t-10) px-2.5 py-1.5",
+		"text-(length:--t-10) leading-[17px] px-2.5 py-[7px]",
 		">ADD</button>",
 	} {
 		if !strings.Contains(rendered, expected) {

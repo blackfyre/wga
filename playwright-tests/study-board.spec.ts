@@ -134,17 +134,25 @@ test("adds without record navigation, shows the fixed shelf, and reorders both v
 		(url) => url.searchParams.get("board") === `${first},${second}`,
 	);
 
-	await expect(page.getByRole("button", { name: "MATRIX" })).toHaveAttribute(
-		"aria-pressed",
-		"true",
-	);
-	await page.getByRole("button", { name: "BOARD" }).click();
+	const matrixView = page.getByRole("button", { name: "MATRIX" });
+	const boardView = page.getByRole("button", { name: "BOARD" });
+	await expect(matrixView).toHaveCSS("height", "32px");
+	await expect(boardView).toHaveCSS("height", "32px");
+	await expect(matrixView).toHaveAttribute("aria-pressed", "true");
+	await expect(
+		page
+			.locator("[data-study-board-panel='matrix']")
+			.getByRole("button", { name: "Move earlier" })
+			.last(),
+	).toHaveCSS("height", "23px");
+	await boardView.click();
 	const board = page.locator("[data-study-board-panel='board']");
 	await expect(board).toBeVisible();
-	await board
+	const moveEarlier = board
 		.locator(`[data-study-board-work='${second}']`)
-		.getByRole("button", { name: "Move earlier" })
-		.click();
+		.getByRole("button", { name: "Move earlier" });
+	await expect(moveEarlier).toHaveCSS("height", "25px");
+	await moveEarlier.click();
 	await expect(page).toHaveURL(
 		(url) => url.searchParams.get("board") === `${second},${first}`,
 	);

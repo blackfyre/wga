@@ -28,17 +28,20 @@ func TestDualWorkUsesTypedFullLabelRowAddControl(t *testing.T) {
 	}
 }
 
-func TestDualCardGridUsesTypedBlockAddControl(t *testing.T) {
+func TestDualCardGridUsesCompactCardAddControls(t *testing.T) {
 	ctx := tmplUtils.WithItineraryProjection(context.Background(), "csrf-token", dto.ItineraryTrayView{}, nil)
 	var output bytes.Buffer
 	if err := dualCardGrid([]DualCard{{ArtworkID: "aw0000000000001", Title: "Work", Href: "/work"}}, "#dual-left").Render(ctx, &output); err != nil {
 		t.Fatalf("render dual card grid: %v", err)
 	}
 	rendered := output.String()
-	for _, expected := range []string{`h-12`, "ADD TO AN ITINERARY +", `hx-select="unset"`, `data-study-board-add="aw0000000000001"`} {
+	for _, expected := range []string{`leading-[17px] px-2.5 py-[7px]`, "ADD TO AN ITINERARY +", `hx-select="unset"`, `data-study-board-add="aw0000000000001"`} {
 		if !strings.Contains(rendered, expected) {
-			t.Errorf("dual card grid missing typed block contract %q", expected)
+			t.Errorf("dual card grid missing compact card contract %q", expected)
 		}
+	}
+	if strings.Contains(rendered, `h-12`) {
+		t.Error("dual card actions must not use the full record-action height")
 	}
 }
 

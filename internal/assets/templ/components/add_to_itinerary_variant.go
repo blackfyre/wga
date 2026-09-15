@@ -1,8 +1,8 @@
 package components
 
 // AddToItineraryVariant is the validated presentation variant for the typed
-// shared itinerary add control. Compact is the small primary-edged chip used
-// in dense lists, while Row and Block use the shared 48px primary-control rank.
+// shared itinerary add control. Compact and Card use the 33px action-chip rank,
+// while Row and Block use the shared 48px primary-control rank.
 // Call sites pass the matching typed constant; an
 // unknown or empty value is normalised to Compact so it never produces
 // arbitrary markup.
@@ -10,6 +10,7 @@ type AddToItineraryVariant string
 
 const (
 	AddToItineraryCompact AddToItineraryVariant = "compact"
+	AddToItineraryCard    AddToItineraryVariant = "card"
 	AddToItineraryRow     AddToItineraryVariant = "row"
 	AddToItineraryBlock   AddToItineraryVariant = "block"
 	// AddToItinerarySearchBlock is the refreshed artwork-search block contract.
@@ -20,7 +21,7 @@ const (
 // compact presentation so an invalid value never renders arbitrary markup.
 func normalizeAddToItineraryVariant(variant AddToItineraryVariant) AddToItineraryVariant {
 	switch variant {
-	case AddToItineraryCompact, AddToItineraryRow, AddToItineraryBlock, AddToItinerarySearchBlock:
+	case AddToItineraryCompact, AddToItineraryCard, AddToItineraryRow, AddToItineraryBlock, AddToItinerarySearchBlock:
 		return variant
 	default:
 		return AddToItineraryCompact
@@ -34,7 +35,7 @@ func addToItineraryFormClass(variant AddToItineraryVariant) string {
 	switch variant {
 	case AddToItineraryRow:
 		return "shrink-0"
-	case AddToItineraryBlock, AddToItinerarySearchBlock:
+	case AddToItineraryCard, AddToItineraryBlock, AddToItinerarySearchBlock:
 		return "w-full"
 	default:
 		return "shrink-0 self-center"
@@ -42,8 +43,9 @@ func addToItineraryFormClass(variant AddToItineraryVariant) string {
 }
 
 // addToItineraryButtonClass builds the reference button class for the typed
-// variant and state. Compact is a small chip; row and block share the 48px
-// primary-control height. Added, full, and available states each
+// variant and state. Compact, Card, and SearchBlock use the reference 33px
+// action-chip rank; Row and Block share the 48px primary-control height.
+// Added, full, and available states each
 // carry their own border/role treatment.
 func addToItineraryButtonClass(variant AddToItineraryVariant, added bool, full bool) string {
 	class := "font-mono tracking-[1px] border transition-colors"
@@ -51,10 +53,12 @@ func addToItineraryButtonClass(variant AddToItineraryVariant, added bool, full b
 	switch variant {
 	case AddToItineraryRow:
 		class += " text-(length:--t-11) tracking-[1.5px] px-[22px] h-12"
-	case AddToItineraryBlock, AddToItinerarySearchBlock:
+	case AddToItineraryBlock:
 		class += " w-full text-xs tracking-[1.5px] px-6 h-12"
+	case AddToItineraryCard, AddToItinerarySearchBlock:
+		class += " w-full text-(length:--t-10) leading-[17px] px-2.5 py-[7px]"
 	default:
-		class += " text-(length:--t-10) px-2.5 py-1.5"
+		class += " text-(length:--t-10) leading-[17px] px-2.5 py-[7px]"
 	}
 
 	switch {

@@ -256,7 +256,7 @@ templ ArtworkSortControl(r ArtworkSearchResultsView) {
 				hx-target="#artwork-search"
 				hx-select="#artwork-search"
 				hx-swap="outerHTML"
-				class={ "border px-3.5 py-1.5 font-mono text-(length:--t-11) tracking-[1px] transition-colors", templ.KV("border-wga-accent bg-wga-accent-bg text-wga-inv-fg", option.Active), templ.KV("border-wga-ink/25 text-wga-ink/70 hover:border-wga-ink", !option.Active) }
+				class={ "border px-[13px] py-1.5 font-mono text-(length:--t-11) leading-[18px] tracking-[1px] transition-colors", templ.KV("border-wga-accent bg-wga-accent-bg text-wga-inv-fg", option.Active), templ.KV("border-wga-ink/25 text-wga-ink/70 hover:border-wga-ink", !option.Active) }
 				aria-current={ fmt.Sprint(option.Active) }
 			>
 				{ option.Label }
@@ -277,8 +277,8 @@ templ ArtworkSearchResults(r ArtworkSearchResultsView) {
 			<div class="flex flex-col items-start gap-3 md:flex-row md:items-center md:gap-5">
 				@ArtworkSortControl(r)
 				<div class="flex items-center gap-2">
-					<a href={ templ.SafeURL(r.GridUrl) } hx-get={ r.GridUrl } hx-target="#artwork-search" hx-select="#artwork-search" hx-swap="outerHTML" class={ "border px-3.5 py-1.5 font-mono text-(length:--t-11) tracking-[1px] transition-colors", templ.KV("border-wga-accent bg-wga-accent-bg text-wga-inv-fg", r.View == "grid"), templ.KV("border-wga-ink/25 text-wga-ink/70 hover:border-wga-ink", r.View != "grid") } aria-pressed={ fmt.Sprint(r.View == "grid") }>GRID</a>
-					<a href={ templ.SafeURL(r.ListUrl) } hx-get={ r.ListUrl } hx-target="#artwork-search" hx-select="#artwork-search" hx-swap="outerHTML" class={ "border px-3.5 py-1.5 font-mono text-(length:--t-11) tracking-[1px] transition-colors", templ.KV("border-wga-accent bg-wga-accent-bg text-wga-inv-fg", r.View == "list"), templ.KV("border-wga-ink/25 text-wga-ink/70 hover:border-wga-ink", r.View != "list") } aria-pressed={ fmt.Sprint(r.View == "list") }>LIST</a>
+					<a href={ templ.SafeURL(r.GridUrl) } hx-get={ r.GridUrl } hx-target="#artwork-search" hx-select="#artwork-search" hx-swap="outerHTML" class={ "border px-[13px] py-1.5 font-mono text-(length:--t-11) leading-[18px] tracking-[1px] transition-colors", templ.KV("border-wga-accent bg-wga-accent-bg text-wga-inv-fg", r.View == "grid"), templ.KV("border-wga-ink/25 text-wga-ink/70 hover:border-wga-ink", r.View != "grid") } aria-pressed={ fmt.Sprint(r.View == "grid") }>GRID</a>
+					<a href={ templ.SafeURL(r.ListUrl) } hx-get={ r.ListUrl } hx-target="#artwork-search" hx-select="#artwork-search" hx-swap="outerHTML" class={ "border px-[13px] py-1.5 font-mono text-(length:--t-11) leading-[18px] tracking-[1px] transition-colors", templ.KV("border-wga-accent bg-wga-accent-bg text-wga-inv-fg", r.View == "list"), templ.KV("border-wga-ink/25 text-wga-ink/70 hover:border-wga-ink", r.View != "list") } aria-pressed={ fmt.Sprint(r.View == "list") }>LIST</a>
 				</div>
 			</div>
 		</div>
@@ -362,7 +362,7 @@ templ ArtworkSearchResultList(artworks dto.ImageGrid) {
 templ artworkSearchWorkspaceActions(artwork dto.Image, dense bool) {
 	<div class={ "flex w-full shrink-0 flex-col gap-2 py-2.5", templ.KV("lg:w-52 lg:pl-3", dense) } data-artwork-workspace-actions>
 		@components.AddToItineraryAction(artwork.Id, components.AddToItinerarySearchBlock)
-		@components.AddToStudyBoardAction(artwork.Id, artwork.Title, artwork.Thumb, components.AddToStudyBoardBlock)
+		@components.AddToStudyBoardAction(artwork.Id, artwork.Title, artwork.Thumb, components.AddToStudyBoardCard)
 	</div>
 }
 

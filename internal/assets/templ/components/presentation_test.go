@@ -96,7 +96,7 @@ func TestPublicArtworkCardUsesSharedCardAndTrailingActionPrimitives(t *testing.T
 	}
 }
 
-func TestWorkCardUsesTypedBlockAddControl(t *testing.T) {
+func TestWorkCardUsesCompactCardAddControl(t *testing.T) {
 	ctx := tmplUtils.WithItineraryProjection(context.Background(), "csrf-token", dto.ItineraryTrayView{}, nil)
 	var output bytes.Buffer
 	work := dto.Work{ArtworkID: "aw0000000000001", URL: "/artworks/work", Title: "Work"}
@@ -104,10 +104,13 @@ func TestWorkCardUsesTypedBlockAddControl(t *testing.T) {
 		t.Fatalf("render work card: %v", err)
 	}
 	rendered := output.String()
-	for _, expected := range []string{`h-12`, `w-full`, "ADD TO AN ITINERARY +", `hx-select="unset"`} {
+	for _, expected := range []string{`leading-[17px] px-2.5 py-[7px]`, `w-full`, "ADD TO AN ITINERARY +", `hx-select="unset"`} {
 		if !strings.Contains(rendered, expected) {
-			t.Errorf("work card missing typed block contract %q", expected)
+			t.Errorf("work card missing compact card contract %q", expected)
 		}
+	}
+	if strings.Contains(rendered, `h-12`) {
+		t.Error("work card action must not use the full record-action height")
 	}
 }
 

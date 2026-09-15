@@ -113,7 +113,7 @@ func TestTimelineBlockRendersSemanticChronology(t *testing.T) {
 	}
 }
 
-func TestTimelineBlockUsesTypedBlockAddControlForWorks(t *testing.T) {
+func TestTimelineBlockUsesCompactCardAddControlsForWorks(t *testing.T) {
 	view := populatedTimelineView()
 	view.Works[0].ArtworkID = "aw0000000000001"
 	view.Works[0].StudyBoard = true
@@ -123,10 +123,13 @@ func TestTimelineBlockUsesTypedBlockAddControlForWorks(t *testing.T) {
 		t.Fatalf("render timeline block: %v", err)
 	}
 	rendered := output.String()
-	for _, expected := range []string{`h-12`, "ADD TO AN ITINERARY +", `hx-select="unset"`, `data-study-board-add="aw0000000000001"`} {
+	for _, expected := range []string{`leading-[17px] px-2.5 py-[7px]`, "ADD TO AN ITINERARY +", `hx-select="unset"`, `data-study-board-add="aw0000000000001"`} {
 		if !strings.Contains(rendered, expected) {
-			t.Errorf("timeline work card missing typed block contract %q", expected)
+			t.Errorf("timeline work card missing compact card contract %q", expected)
 		}
+	}
+	if strings.Contains(rendered, `h-12`) {
+		t.Error("timeline card actions must not use the full record-action height")
 	}
 }
 

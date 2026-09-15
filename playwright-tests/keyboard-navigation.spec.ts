@@ -407,6 +407,15 @@ test("platform keycaps follow the visitor platform after HTMX settlement", async
 }) => {
 	await page.goto("/");
 	await waitForKeyboard(page);
+	await expect(
+		page
+			.getByRole("button", { name: "SEARCH", exact: true })
+			.filter({ visible: true }),
+	).toHaveCSS("height", "34px");
+	await expect(page.getByRole("button", { name: "Open Go to" })).toHaveCSS(
+		"height",
+		"29px",
+	);
 	await expect(page.locator("[data-kbd-modifier]").first()).toHaveText(
 		"CTRL K",
 	);

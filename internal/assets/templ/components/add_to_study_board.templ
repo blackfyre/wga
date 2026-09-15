@@ -3,8 +3,10 @@ package components
 type AddToStudyBoardVariant string
 
 const (
-	AddToStudyBoardBlock AddToStudyBoardVariant = "block"
-	AddToStudyBoardRow   AddToStudyBoardVariant = "row"
+	AddToStudyBoardBlock   AddToStudyBoardVariant = "block"
+	AddToStudyBoardCard    AddToStudyBoardVariant = "card"
+	AddToStudyBoardCompact AddToStudyBoardVariant = "compact"
+	AddToStudyBoardRow     AddToStudyBoardVariant = "row"
 )
 
 // AddToStudyBoardAction is a browser-local action. Its published artwork
@@ -25,8 +27,14 @@ templ AddToStudyBoardAction(artworkID string, title string, imageURL string, var
 
 func addToStudyBoardClass(variant AddToStudyBoardVariant) string {
 	class := "border border-control font-mono text-(length:--t-10) tracking-[1px] text-wga-ink/70 transition-colors hover:border-wga-accent hover:bg-wga-accent-tint"
-	if variant == AddToStudyBoardRow {
+	switch variant {
+	case AddToStudyBoardRow:
 		return class + " min-h-12 px-3.5 py-2"
+	case AddToStudyBoardCard:
+		return class + " block w-full px-2.5 py-[7px] leading-[17px]"
+	case AddToStudyBoardCompact:
+		return class + " px-2.5 py-[7px] leading-[17px]"
+	default:
+		return class + " block min-h-12 w-full px-4 py-2.5"
 	}
-	return class + " block min-h-12 w-full px-4 py-2.5"
 }

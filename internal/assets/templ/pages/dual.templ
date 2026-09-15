@@ -668,9 +668,9 @@ templ dualCardGrid(cards []DualCard, target string) {
 					<span class="block font-mono text-(length:--t-11) text-muted mt-[3px]">{ card.Meta }</span>
 				</a>
 				if card.ArtworkID != "" {
-					<div class="mt-2.5">@components.AddToItineraryAction(card.ArtworkID, components.AddToItineraryBlock)
+					<div class="mt-2.5">@components.AddToItineraryAction(card.ArtworkID, components.AddToItineraryCard)
 </div>
-					<div class="mt-2.5">@components.AddToStudyBoardAction(card.ArtworkID, card.Title, card.Thumb, components.AddToStudyBoardBlock)</div>
+					<div class="mt-2.5">@components.AddToStudyBoardAction(card.ArtworkID, card.Title, card.Thumb, components.AddToStudyBoardCard)</div>
 				}
 			</li>
 		}

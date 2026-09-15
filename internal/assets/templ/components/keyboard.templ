@@ -96,7 +96,7 @@ templ KeyboardSuggestionRows(rows []KeyboardSuggestion) {
 		if row.ArtworkID != "" {
 			<div data-kbd-item="record" data-kbd-href={ row.Href } class="wga-kbd-row">
 				<a href={ templ.URL(row.Href) } class="flex min-w-0 flex-1 items-center gap-3"><span class="w-16 shrink-0 font-mono text-(length:--t-10) tracking-[1px] text-wga-ink/60">{ row.Kind }</span><span class="min-w-0 flex-1 truncate">{ row.Label }</span></a>
-				@AddToStudyBoardAction(row.ArtworkID, row.Title, "", AddToStudyBoardRow)
+				@AddToStudyBoardAction(row.ArtworkID, row.Title, "", AddToStudyBoardCompact)
 			</div>
 		} else {
 			<a href={ templ.URL(row.Href) } data-kbd-item="record" data-kbd-href={ row.Href } class="wga-kbd-row"><span class="w-16 shrink-0 font-mono text-(length:--t-10) tracking-[1px] text-wga-ink/60">{ row.Kind }</span><span class="min-w-0 flex-1 truncate">{ row.Label }</span></a>

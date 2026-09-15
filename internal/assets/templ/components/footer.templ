@@ -235,7 +235,7 @@ templ PreferencesPanel() {
 			<button
 				type="button"
 				data-wga-preferences-close
-				class="flex min-h-11 min-w-11 cursor-pointer items-center justify-center border border-wga-ink/25 px-3 py-2 font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60 transition-colors hover:bg-wga-fill"
+				class="flex min-h-[36px] min-w-11 cursor-pointer items-center justify-center border border-wga-ink/25 px-3 py-2 font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60 transition-colors hover:bg-wga-fill"
 			>CLOSE</button>
 		</div>
 		<div class="flex flex-col gap-8 p-6">
@@ -315,6 +315,6 @@ templ PaletteRow(option dto.PaletteOption) {
 // control the client reveals once it has initialised the prose transform.
 templ BionicReadingToggle() {
 	<div data-wga-bionic-control class="hidden items-center gap-2">
-		<button type="button" role="switch" aria-label="Bionic reading" aria-checked="false" data-wga-bionic-toggle class="border border-wga-ink/20 bg-wga-bg px-2 py-1 font-mono text-(length:--t-10) tracking-[1px] text-wga-ink/75 transition-colors hover:text-wga-ink">BIONIC</button>
+		<button type="button" role="switch" aria-label="Bionic reading" aria-checked="false" data-wga-bionic-toggle class="border border-wga-ink/20 bg-wga-bg flex min-h-[44px] items-center px-5 font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/75 transition-colors hover:text-wga-ink">BIONIC</button>
 	</div>
 }

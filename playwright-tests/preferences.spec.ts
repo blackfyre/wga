@@ -43,6 +43,14 @@ test("trigger summary states palette, effective scheme, and bionic reading", asy
 }) => {
 	await page.goto("/");
 	await openPreferences(page);
+	await expect(page.locator("[data-wga-preferences-close]")).toHaveCSS(
+		"height",
+		"36px",
+	);
+	await expect(page.getByRole("switch", { name: "Bionic reading" })).toHaveCSS(
+		"height",
+		"44px",
+	);
 
 	await page.locator('[data-wga-palette="verdigris"]').click();
 	await page.locator('[data-wga-scheme="dark"]').click();

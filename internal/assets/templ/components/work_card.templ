@@ -11,10 +11,10 @@ templ WorkCard(work dto.Work) {
 		}
 	</a>
 	if work.ArtworkID != "" {
-		<div class="mt-2.5">@AddToItineraryAction(work.ArtworkID, AddToItineraryBlock)
+		<div class="mt-2.5">@AddToItineraryAction(work.ArtworkID, AddToItineraryCard)
 </div>
 		if work.StudyBoard {
-			<div class="mt-2.5">@AddToStudyBoardAction(work.ArtworkID, work.Title, work.ImageURL, AddToStudyBoardBlock)</div>
+			<div class="mt-2.5">@AddToStudyBoardAction(work.ArtworkID, work.Title, work.ImageURL, AddToStudyBoardCard)</div>
 		}
 	}
 }
