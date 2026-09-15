@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -150,6 +151,25 @@ func TestDiscoverVendoredBrowserPackagesIgnoresPackageSelfDeclaration(t *testing
 	}
 	if len(components) != 0 {
 		t.Fatalf("vendored components = %#v, want package self declaration ignored", components)
+	}
+}
+
+func TestReadDOMPurifyLicenceMaterialIncludesBothAlternatives(t *testing.T) {
+	root := t.TempDir()
+	for name, content := range map[string]string{
+		"LICENSE":     "Apache License Version 2.0",
+		"LICENSE-MPL": "Mozilla Public License Version 2.0",
+	} {
+		if err := os.WriteFile(filepath.Join(root, name), []byte(content), 0o644); err != nil {
+			t.Fatalf("write %s: %v", name, err)
+		}
+	}
+	material, err := readDOMPurifyLicenceMaterial(root)
+	if err != nil {
+		t.Fatalf("read DOMPurify licence material: %v", err)
+	}
+	if got := licenceExpression(material); got != "Apache-2.0 OR MPL-2.0" {
+		t.Fatalf("licence expression = %q, want both alternatives", got)
 	}
 }
 

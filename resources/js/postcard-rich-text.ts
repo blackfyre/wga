@@ -72,6 +72,7 @@ function textBoundary(
 }
 
 type SelectionAnchor = {
+	blockIndex: number;
 	blockText: string;
 	start: number;
 	end: number;
@@ -125,7 +126,9 @@ function mount(root: HTMLElement): void {
 				: node.parentElement;
 		const block = element?.closest<HTMLElement>("p, li");
 		if (!block || !surface.contains(block)) return;
+		const blocks = Array.from(surface.querySelectorAll<HTMLElement>("p, li"));
 		anchor = {
+			blockIndex: blocks.indexOf(block),
 			blockText: block.textContent ?? "",
 			start: textOffset(block, range.startContainer, range.startOffset),
 			end: textOffset(block, range.endContainer, range.endOffset),
@@ -135,6 +138,7 @@ function mount(root: HTMLElement): void {
 		if (!anchor) return null;
 		const blocks = Array.from(surface.querySelectorAll<HTMLElement>("p, li"));
 		const block =
+			blocks.at(anchor.blockIndex) ??
 			blocks.find((candidate) => candidate.textContent === anchor?.blockText) ??
 			blocks.at(-1);
 		if (!block) return null;

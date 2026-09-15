@@ -532,6 +532,9 @@ func readLicenceMaterial(component component) (string, error) {
 		return string(content), nil
 	}
 	root := componentRoot(component)
+	if component.Ecosystem == "npm" && component.Name == "dompurify" {
+		return readDOMPurifyLicenceMaterial(root)
+	}
 	for _, name := range []string{"LICENSE", "LICENSE.md", "LICENSE.txt", "LICENCE", "LICENCE.md", "LICENCE.txt", "COPYING"} {
 		path := filepath.Join(root, name)
 		content, err := os.ReadFile(path)
@@ -540,6 +543,18 @@ func readLicenceMaterial(component component) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("find licence text for %s", componentKey(component))
+}
+
+func readDOMPurifyLicenceMaterial(root string) (string, error) {
+	parts := make([]string, 0, 2)
+	for _, name := range []string{"LICENSE", "LICENSE-MPL"} {
+		content, err := os.ReadFile(filepath.Join(root, name))
+		if err != nil {
+			return "", fmt.Errorf("read DOMPurify %s: %w", name, err)
+		}
+		parts = append(parts, strings.TrimSpace(string(content)))
+	}
+	return strings.Join(parts, "\n\n-------------------------------------------------------------------------------\n\n"), nil
 }
 
 func readNotice(component component) (string, error) {
