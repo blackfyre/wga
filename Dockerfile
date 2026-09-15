@@ -1,4 +1,4 @@
-ARG GO_VERSION=1.27
+ARG GO_VERSION=1.27.1
 FROM oven/bun:alpine AS bun-builder
 
 ARG RAILWAY_GIT_COMMIT_SHA

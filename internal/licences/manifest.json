@@ -421,10 +421,10 @@
     {
       "ecosystem": "golang",
       "name": "github.com/klauspost/compress",
-      "version": "v1.19.2",
-      "source_url": "https://pkg.go.dev/github.com/klauspost/compress@v1.19.2",
-      "purl": "pkg:golang/github.com/klauspost/compress@v1.19.2",
-      "integrity": "h1:hMRETovs/pu/dVWN7zIT1PGG8t509MwT6bO7XSi26R8=",
+      "version": "v1.20.0",
+      "source_url": "https://pkg.go.dev/github.com/klauspost/compress@v1.20.0",
+      "purl": "pkg:golang/github.com/klauspost/compress@v1.20.0",
+      "integrity": "h1:a3C1ke2ohxFymNlb2HWAHjDeKCI90scRskErZkR0ezA=",
       "targets": [
         "binary"
       ],
@@ -435,7 +435,7 @@
         "notice": "",
         "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
       },
-      "source_evidence": "https://pkg.go.dev/github.com/klauspost/compress@v1.19.2"
+      "source_evidence": "https://pkg.go.dev/github.com/klauspost/compress@v1.20.0"
     },
     {
       "ecosystem": "golang",
@@ -563,10 +563,10 @@
     {
       "ecosystem": "golang",
       "name": "github.com/pocketbase/pocketbase",
-      "version": "v0.40.1",
-      "source_url": "https://pkg.go.dev/github.com/pocketbase/pocketbase@v0.40.1",
-      "purl": "pkg:golang/github.com/pocketbase/pocketbase@v0.40.1",
-      "integrity": "h1:JS+Kr75bY67IPKhKgcIypn2kKc0Zd4yDGAZ4nkhuQEc=",
+      "version": "v0.40.4",
+      "source_url": "https://pkg.go.dev/github.com/pocketbase/pocketbase@v0.40.4",
+      "purl": "pkg:golang/github.com/pocketbase/pocketbase@v0.40.4",
+      "integrity": "h1:0SvSUreR3NhUMCs9LchE59oEG53efZ3cKiMGyAGBN9U=",
       "targets": [
         "binary"
       ],
@@ -595,7 +595,7 @@
         "notice": "",
         "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
       },
-      "source_evidence": "https://pkg.go.dev/github.com/pocketbase/pocketbase@v0.40.1"
+      "source_evidence": "https://pkg.go.dev/github.com/pocketbase/pocketbase@v0.40.4"
     },
     {
       "ecosystem": "golang",
@@ -906,10 +906,10 @@
     {
       "ecosystem": "golang",
       "name": "golang.org/x/crypto",
-      "version": "v0.55.0",
-      "source_url": "https://pkg.go.dev/golang.org/x/crypto@v0.55.0",
-      "purl": "pkg:golang/golang.org/x/crypto@v0.55.0",
-      "integrity": "h1:+KWHjbgOaAQ66dh/YlkZKHlz9ZUlq61AFirAR9ntP8M=",
+      "version": "v0.57.0",
+      "source_url": "https://pkg.go.dev/golang.org/x/crypto@v0.57.0",
+      "purl": "pkg:golang/golang.org/x/crypto@v0.57.0",
+      "integrity": "h1:3ZVCjf8Ggz7zneR/EHRVx68Ctf+2pmIMP2UFhh9cC6M=",
       "targets": [
         "binary"
       ],
@@ -922,15 +922,15 @@
         "notice": "",
         "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
       },
-      "source_evidence": "https://pkg.go.dev/golang.org/x/crypto@v0.55.0"
+      "source_evidence": "https://pkg.go.dev/golang.org/x/crypto@v0.57.0"
     },
     {
       "ecosystem": "golang",
       "name": "golang.org/x/image",
-      "version": "v0.45.0",
-      "source_url": "https://pkg.go.dev/golang.org/x/image@v0.45.0",
-      "purl": "pkg:golang/golang.org/x/image@v0.45.0",
-      "integrity": "h1:FMb1nTbH5H9vF55SriQHgFw5GnNL9Jg6L25BwXKzhB0=",
+      "version": "v0.46.0",
+      "source_url": "https://pkg.go.dev/golang.org/x/image@v0.46.0",
+      "purl": "pkg:golang/golang.org/x/image@v0.46.0",
+      "integrity": "h1:b1+oYj0Jbp6K5MDT4i4/eZpYlk3V8SJhhDKh6LBHAyQ=",
       "targets": [
         "binary"
       ],
@@ -941,15 +941,15 @@
         "notice": "",
         "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
       },
-      "source_evidence": "https://pkg.go.dev/golang.org/x/image@v0.45.0"
+      "source_evidence": "https://pkg.go.dev/golang.org/x/image@v0.46.0"
     },
     {
       "ecosystem": "golang",
       "name": "golang.org/x/net",
-      "version": "v0.58.0",
-      "source_url": "https://pkg.go.dev/golang.org/x/net@v0.58.0",
-      "purl": "pkg:golang/golang.org/x/net@v0.58.0",
-      "integrity": "h1:ynWG7rqYi4ccpTEuPZ2QGWHktVEM9DMCj9yzDE0Q7To=",
+      "version": "v0.59.0",
+      "source_url": "https://pkg.go.dev/golang.org/x/net@v0.59.0",
+      "purl": "pkg:golang/golang.org/x/net@v0.59.0",
+      "integrity": "h1:5zfYln+w5XCxwrnMMJPufRgNoXEaGxl0wo5GqPXyues=",
       "targets": [
         "binary"
       ],
@@ -962,15 +962,15 @@
         "notice": "",
         "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
       },
-      "source_evidence": "https://pkg.go.dev/golang.org/x/net@v0.58.0"
+      "source_evidence": "https://pkg.go.dev/golang.org/x/net@v0.59.0"
     },
     {
       "ecosystem": "golang",
       "name": "golang.org/x/oauth2",
-      "version": "v0.36.0",
-      "source_url": "https://pkg.go.dev/golang.org/x/oauth2@v0.36.0",
-      "purl": "pkg:golang/golang.org/x/oauth2@v0.36.0",
-      "integrity": "h1:peZ/1z27fi9hUOFCAZaHyrpWG5lwe0RJEEEeH0ThlIs=",
+      "version": "v0.37.0",
+      "source_url": "https://pkg.go.dev/golang.org/x/oauth2@v0.37.0",
+      "purl": "pkg:golang/golang.org/x/oauth2@v0.37.0",
+      "integrity": "h1:JUlcxA8oAtauLfiH8FX2/FkAWHAdi0QtGCGc+hofE98=",
       "targets": [
         "binary"
       ],
@@ -981,15 +981,15 @@
         "notice": "",
         "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
       },
-      "source_evidence": "https://pkg.go.dev/golang.org/x/oauth2@v0.36.0"
+      "source_evidence": "https://pkg.go.dev/golang.org/x/oauth2@v0.37.0"
     },
     {
       "ecosystem": "golang",
       "name": "golang.org/x/sync",
-      "version": "v0.22.0",
-      "source_url": "https://pkg.go.dev/golang.org/x/sync@v0.22.0",
-      "purl": "pkg:golang/golang.org/x/sync@v0.22.0",
-      "integrity": "h1:SZjpbeLmrCk4xhRSZFNZW5gFUeCeFgjekvI/+gfScek=",
+      "version": "v0.23.0",
+      "source_url": "https://pkg.go.dev/golang.org/x/sync@v0.23.0",
+      "purl": "pkg:golang/golang.org/x/sync@v0.23.0",
+      "integrity": "h1:KameEIfc1IkluZyXWLn39Wd4tURc6GbCiISGiZm2bQk=",
       "targets": [
         "binary"
       ],
@@ -1000,15 +1000,15 @@
         "notice": "",
         "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
       },
-      "source_evidence": "https://pkg.go.dev/golang.org/x/sync@v0.22.0"
+      "source_evidence": "https://pkg.go.dev/golang.org/x/sync@v0.23.0"
     },
     {
       "ecosystem": "golang",
       "name": "golang.org/x/sys",
-      "version": "v0.47.0",
-      "source_url": "https://pkg.go.dev/golang.org/x/sys@v0.47.0",
-      "purl": "pkg:golang/golang.org/x/sys@v0.47.0",
-      "integrity": "h1:o7XGOvZQCADBQQ4Y7VNq2dRWQR7JmOUW8Kxx4ZsNgWs=",
+      "version": "v0.48.0",
+      "source_url": "https://pkg.go.dev/golang.org/x/sys@v0.48.0",
+      "purl": "pkg:golang/golang.org/x/sys@v0.48.0",
+      "integrity": "h1:bbX/i/6MgT9BVLM9RT1thmxL04yeTAhbEz4SyadbXoo=",
       "targets": [
         "binary"
       ],
@@ -1019,15 +1019,15 @@
         "notice": "",
         "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
       },
-      "source_evidence": "https://pkg.go.dev/golang.org/x/sys@v0.47.0"
+      "source_evidence": "https://pkg.go.dev/golang.org/x/sys@v0.48.0"
     },
     {
       "ecosystem": "golang",
       "name": "golang.org/x/text",
-      "version": "v0.41.0",
-      "source_url": "https://pkg.go.dev/golang.org/x/text@v0.41.0",
-      "purl": "pkg:golang/golang.org/x/text@v0.41.0",
-      "integrity": "h1:vz/seA0lnX87Othu2f/0L24RcgrXD9/YFTSuGjj3rH8=",
+      "version": "v0.42.0",
+      "source_url": "https://pkg.go.dev/golang.org/x/text@v0.42.0",
+      "purl": "pkg:golang/golang.org/x/text@v0.42.0",
+      "integrity": "h1:JbOZXgfeCPU9gacVtYliJqOhD+zhrEqK4LfdpmlUZqI=",
       "targets": [
         "binary"
       ],
@@ -1038,15 +1038,15 @@
         "notice": "",
         "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
       },
-      "source_evidence": "https://pkg.go.dev/golang.org/x/text@v0.41.0"
+      "source_evidence": "https://pkg.go.dev/golang.org/x/text@v0.42.0"
     },
     {
       "ecosystem": "golang",
       "name": "google.golang.org/genproto/googleapis/api",
-      "version": "v0.0.0-20260819154853-08b0e4226688",
-      "source_url": "https://pkg.go.dev/google.golang.org/genproto/googleapis/api@v0.0.0-20260819154853-08b0e4226688",
-      "purl": "pkg:golang/google.golang.org/genproto/googleapis/api@v0.0.0-20260819154853-08b0e4226688",
-      "integrity": "h1:ax2KzoSRIZU/M0cIxri3pKxy99vniH1PVxWC6si/eZI=",
+      "version": "v0.0.0-20260911204522-f61a6ca850bd",
+      "source_url": "https://pkg.go.dev/google.golang.org/genproto/googleapis/api@v0.0.0-20260911204522-f61a6ca850bd",
+      "purl": "pkg:golang/google.golang.org/genproto/googleapis/api@v0.0.0-20260911204522-f61a6ca850bd",
+      "integrity": "h1:jgCQeWccunvocKNK2RjhQHNiSjSeMMuBpQ/5pbP+2lA=",
       "targets": [
         "binary"
       ],
@@ -1059,15 +1059,15 @@
         "notice": "",
         "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
       },
-      "source_evidence": "https://pkg.go.dev/google.golang.org/genproto/googleapis/api@v0.0.0-20260819154853-08b0e4226688"
+      "source_evidence": "https://pkg.go.dev/google.golang.org/genproto/googleapis/api@v0.0.0-20260911204522-f61a6ca850bd"
     },
     {
       "ecosystem": "golang",
       "name": "google.golang.org/genproto/googleapis/rpc",
-      "version": "v0.0.0-20260819154853-08b0e4226688",
-      "source_url": "https://pkg.go.dev/google.golang.org/genproto/googleapis/rpc@v0.0.0-20260819154853-08b0e4226688",
-      "purl": "pkg:golang/google.golang.org/genproto/googleapis/rpc@v0.0.0-20260819154853-08b0e4226688",
-      "integrity": "h1:cYNAzI2sUwhmCcoj9TxvihSrqsxt6uIkj3rDRhSDmW4=",
+      "version": "v0.0.0-20260911204522-f61a6ca850bd",
+      "source_url": "https://pkg.go.dev/google.golang.org/genproto/googleapis/rpc@v0.0.0-20260911204522-f61a6ca850bd",
+      "purl": "pkg:golang/google.golang.org/genproto/googleapis/rpc@v0.0.0-20260911204522-f61a6ca850bd",
+      "integrity": "h1:29LZPNIJg+GEmJwZXruJJRwqy/wnWAYZXDtROToV/aQ=",
       "targets": [
         "binary"
       ],
@@ -1080,15 +1080,15 @@
         "notice": "",
         "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
       },
-      "source_evidence": "https://pkg.go.dev/google.golang.org/genproto/googleapis/rpc@v0.0.0-20260819154853-08b0e4226688"
+      "source_evidence": "https://pkg.go.dev/google.golang.org/genproto/googleapis/rpc@v0.0.0-20260911204522-f61a6ca850bd"
     },
     {
       "ecosystem": "golang",
       "name": "google.golang.org/grpc",
-      "version": "v1.83.1",
-      "source_url": "https://pkg.go.dev/google.golang.org/grpc@v1.83.1",
-      "purl": "pkg:golang/google.golang.org/grpc@v1.83.1",
-      "integrity": "h1:HIO0+BEtBP6soyqvqC8sNUjZ7bTs+0hFQuFF+RAy++Y=",
+      "version": "v1.83.2",
+      "source_url": "https://pkg.go.dev/google.golang.org/grpc@v1.83.2",
+      "purl": "pkg:golang/google.golang.org/grpc@v1.83.2",
+      "integrity": "h1:EManeRomTObA0BU7I8vXgg/78uE5MJ9M8B39EX2WscU=",
       "targets": [
         "binary"
       ],
@@ -1104,7 +1104,7 @@
         "notice": "",
         "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
       },
-      "source_evidence": "https://pkg.go.dev/google.golang.org/grpc@v1.83.1"
+      "source_evidence": "https://pkg.go.dev/google.golang.org/grpc@v1.83.2"
     },
     {
       "ecosystem": "golang",
@@ -1128,10 +1128,10 @@
     {
       "ecosystem": "golang",
       "name": "modernc.org/libc",
-      "version": "v1.75.6",
-      "source_url": "https://pkg.go.dev/modernc.org/libc@v1.75.6",
-      "purl": "pkg:golang/modernc.org/libc@v1.75.6",
-      "integrity": "h1:yKk8qo+Di4gkmvRboK8ocCqH22FiUCR6jRy2OwtCRus=",
+      "version": "v1.75.7",
+      "source_url": "https://pkg.go.dev/modernc.org/libc@v1.75.7",
+      "purl": "pkg:golang/modernc.org/libc@v1.75.7",
+      "integrity": "h1:o3DTP9/0p9pKmY2WCKQaySW6wIiZhNM7wc2lUoyhfew=",
       "targets": [
         "binary"
       ],
@@ -1148,7 +1148,7 @@
         "notice": "",
         "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
       },
-      "source_evidence": "https://pkg.go.dev/modernc.org/libc@v1.75.6"
+      "source_evidence": "https://pkg.go.dev/modernc.org/libc@v1.75.7"
     },
     {
       "ecosystem": "golang",
@@ -1195,10 +1195,10 @@
     {
       "ecosystem": "golang",
       "name": "modernc.org/sqlite",
-      "version": "v1.57.0",
-      "source_url": "https://pkg.go.dev/modernc.org/sqlite@v1.57.0",
-      "purl": "pkg:golang/modernc.org/sqlite@v1.57.0",
-      "integrity": "h1:qNQP6xnx5M0ISNtlnxoOX0+cD5bJ0/gr9aMmndFczzg=",
+      "version": "v1.58.0",
+      "source_url": "https://pkg.go.dev/modernc.org/sqlite@v1.58.0",
+      "purl": "pkg:golang/modernc.org/sqlite@v1.58.0",
+      "integrity": "h1:38u40/bwkfM7f0Myhosl+SEMltSDxnGdQf8o6Kjmys0=",
       "targets": [
         "binary"
       ],
@@ -1212,7 +1212,7 @@
         "notice": "",
         "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
       },
-      "source_evidence": "https://pkg.go.dev/modernc.org/sqlite@v1.57.0"
+      "source_evidence": "https://pkg.go.dev/modernc.org/sqlite@v1.58.0"
     },
     {
       "ecosystem": "npm",
@@ -1236,10 +1236,10 @@
     {
       "ecosystem": "npm",
       "name": "@sentry/browser-utils",
-      "version": "10.72.0",
-      "source_url": "https://www.npmjs.com/package/@sentry/browser-utils/v/10.72.0",
-      "purl": "pkg:npm/%40sentry/browser-utils@10.72.0",
-      "integrity": "sha512-aZyogxXnNgDRupNscB8VEZdJbhbIk0+LiXrg5Fl82foGlcc5I22GdxORSb/JHwkeMFttZmvh1/OMwSPzAmE94Q==",
+      "version": "10.74.0",
+      "source_url": "https://www.npmjs.com/package/@sentry/browser-utils/v/10.74.0",
+      "purl": "pkg:npm/%40sentry/browser-utils@10.74.0",
+      "integrity": "sha512-/Rh3WH4i2nStdOqHpaWocbpSMFPjKhlxKQgp9vkJBSolqjJzXlIpLYXOrldZHHZLG1iDoX3PFBQkNDYcPXCg0A==",
       "targets": [
         "browser"
       ],
@@ -1252,15 +1252,15 @@
         "notice": "",
         "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
       },
-      "source_evidence": "https://www.npmjs.com/package/@sentry/browser-utils/v/10.72.0"
+      "source_evidence": "https://www.npmjs.com/package/@sentry/browser-utils/v/10.74.0"
     },
     {
       "ecosystem": "npm",
       "name": "@sentry/browser",
-      "version": "10.72.0",
-      "source_url": "https://www.npmjs.com/package/@sentry/browser/v/10.72.0",
-      "purl": "pkg:npm/%40sentry/browser@10.72.0",
-      "integrity": "sha512-pbXHaovq/rRO5wsHz6Yey6SBPJLrbi7kCaYlSr6+v4bB4UoIL5dFB65BcQ7XD3BzZDNNvl6jTe68a1/sUMb5oA==",
+      "version": "10.74.0",
+      "source_url": "https://www.npmjs.com/package/@sentry/browser/v/10.74.0",
+      "purl": "pkg:npm/%40sentry/browser@10.74.0",
+      "integrity": "sha512-U6Zn+YcAgnR7bXZmpjMxivptPSsOeDKV+SlSqbJZqViOaCcZSG/vJiQr50UrdTccCwiU1LnwuOOoclJOvW+cLQ==",
       "targets": [
         "browser"
       ],
@@ -1275,7 +1275,7 @@
         "notice": "",
         "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
       },
-      "source_evidence": "https://www.npmjs.com/package/@sentry/browser/v/10.72.0"
+      "source_evidence": "https://www.npmjs.com/package/@sentry/browser/v/10.74.0"
     },
     {
       "ecosystem": "npm",
@@ -1299,10 +1299,10 @@
     {
       "ecosystem": "npm",
       "name": "@sentry/core",
-      "version": "10.72.0",
-      "source_url": "https://www.npmjs.com/package/@sentry/core/v/10.72.0",
-      "purl": "pkg:npm/%40sentry/core@10.72.0",
-      "integrity": "sha512-UJMHZfbjP4qk+g4AQhZmzosMdICC2D9p0/hLrm1LofPsp+WBfcSnv9jsY1a9TfmpS4WCAmTx8nANYTIXifcBjA==",
+      "version": "10.74.0",
+      "source_url": "https://www.npmjs.com/package/@sentry/core/v/10.74.0",
+      "purl": "pkg:npm/%40sentry/core@10.74.0",
+      "integrity": "sha512-u9rY8vcZfktccwm6LznfCZlqP5C9A+p76r4/pFS1grqpuTO0m21Cl8rosnlESrDGP/Xd9tfr91rWYk0jPH8jeQ==",
       "targets": [
         "browser"
       ],
@@ -1315,7 +1315,7 @@
         "notice": "",
         "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
       },
-      "source_evidence": "https://www.npmjs.com/package/@sentry/core/v/10.72.0"
+      "source_evidence": "https://www.npmjs.com/package/@sentry/core/v/10.74.0"
     },
     {
       "ecosystem": "npm",
@@ -1475,10 +1475,10 @@
     {
       "ecosystem": "npm",
       "name": "viewerjs",
-      "version": "1.12.0",
-      "source_url": "https://www.npmjs.com/package/viewerjs/v/1.12.0",
-      "purl": "pkg:npm/viewerjs@1.12.0",
-      "integrity": "sha512-eQrV7FvqXj2Ysavd9LINI6bFAvXtw5YbdlMtdIo6Bmrv25hEOBeXoOX9E7cJwYuFAOPFzmppFvDn02QNHB120w==",
+      "version": "1.14.0",
+      "source_url": "https://www.npmjs.com/package/viewerjs/v/1.14.0",
+      "purl": "pkg:npm/viewerjs@1.14.0",
+      "integrity": "sha512-eFtTGjK9p1idAiax6yz9JLe5zNlmRfG/YEdGCVYeSD+p5lozmp32D8yGu+AhmYDW+o3CkMO9aDtjxpljtB/Ymg==",
       "targets": [
         "browser"
       ],
@@ -1489,7 +1489,7 @@
         "notice": "",
         "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
       },
-      "source_evidence": "https://www.npmjs.com/package/viewerjs/v/1.12.0"
+      "source_evidence": "https://www.npmjs.com/package/viewerjs/v/1.14.0"
     }
   ]
 }

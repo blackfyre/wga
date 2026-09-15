@@ -51,7 +51,8 @@ func FlushLogs(t testing.TB, app *tests.TestApp) {
 	if !ok {
 		t.Fatalf("expected BatchHandler, got %T", app.Logger().Handler())
 	}
-	if err := handler.WriteAll(context.Background()); err != nil {
+	ctx := context.WithValue(context.Background(), logger.BlockKey, true)
+	if err := handler.WriteAll(ctx); err != nil {
 		t.Fatalf("write logs: %v", err)
 	}
 }
