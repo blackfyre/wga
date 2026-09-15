@@ -1,0 +1,60 @@
+name: Technical problem
+description: Report something on the website that is broken or behaves unexpectedly
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a technical problem.
+
+        **This issue will be public. Do not include email addresses or other personal information.**
+  - type: input
+    id: affected-page
+    attributes:
+      label: Affected page
+      description: Paste the URL where the problem occurred.
+      placeholder: https://www.wga.hu/...
+    validations:
+      required: true
+  - type: textarea
+    id: observed-behaviour
+    attributes:
+      label: What happened?
+      description: Describe what you observed, including any error message.
+    validations:
+      required: true
+  - type: textarea
+    id: expected-behaviour
+    attributes:
+      label: What did you expect?
+      description: Describe what you expected to happen instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: List the shortest sequence of steps that reliably shows the problem.
+      placeholder: |
+        1. Open ...
+        2. Select ...
+        3. See ...
+    validations:
+      required: true
+  - type: textarea
+    id: browser-device
+    attributes:
+      label: Browser and device
+      description: Include the browser, operating system, and device type or model where relevant.
+      placeholder: Firefox 142 on Windows 11, desktop
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy
+      options:
+        - label: I have not included personal or private information.
+          required: true

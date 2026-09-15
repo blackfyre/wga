@@ -1,0 +1,30 @@
+name: General feedback
+description: Share feedback that does not fit the other report types
+title: "[Feedback]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping improve the Web Gallery of Art.
+
+        **This issue will be public. Do not include email addresses or other personal information.**
+  - type: textarea
+    id: message
+    attributes:
+      label: Your feedback
+      description: Tell us what you noticed or what you would like us to know.
+    validations:
+      required: true
+  - type: input
+    id: affected-page
+    attributes:
+      label: Relevant page
+      description: If your feedback concerns a particular page, paste its URL here.
+      placeholder: https://www.wga.hu/...
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy
+      options:
+        - label: I have not included personal or private information.
+          required: true

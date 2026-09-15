@@ -1,0 +1,46 @@
+name: Collection correction
+description: Report inaccurate or incomplete artwork or artist information
+title: "[Correction]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping improve the collection record.
+
+        **This issue will be public. Do not include email addresses or other personal information.**
+  - type: input
+    id: affected-page
+    attributes:
+      label: Affected page
+      description: Paste the URL of the artwork, artist, or other collection page.
+      placeholder: https://www.wga.hu/...
+    validations:
+      required: true
+  - type: textarea
+    id: current-information
+    attributes:
+      label: Current information
+      description: Quote or describe the information that appears to be incorrect or incomplete.
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-correction
+    attributes:
+      label: Proposed correction
+      description: Describe what the record should say instead.
+    validations:
+      required: true
+  - type: textarea
+    id: sources
+    attributes:
+      label: Supporting sources
+      description: Provide links or citations that support the correction.
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy
+      options:
+        - label: I have not included personal or private information.
+          required: true

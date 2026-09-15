@@ -1,0 +1,38 @@
+name: Suggestion
+description: Suggest an improvement to the website or collection experience
+title: "[Suggestion]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting an improvement.
+
+        **This issue will be public. Do not include email addresses or other personal information.**
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this address?
+      description: Describe the need or difficulty behind your suggestion.
+    validations:
+      required: true
+  - type: textarea
+    id: desired-outcome
+    attributes:
+      label: Desired outcome
+      description: Describe what a successful improvement would let visitors do or understand.
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed solution
+      description: If you have a particular approach in mind, describe it here.
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy
+      options:
+        - label: I have not included personal or private information.
+          required: true

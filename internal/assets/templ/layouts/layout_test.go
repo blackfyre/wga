@@ -99,17 +99,17 @@ func TestLayoutMainShowsSupportCalloutInProduction(t *testing.T) {
 	}
 }
 
-func TestLayoutFeedbackLinksToGitHubIssues(t *testing.T) {
+func TestLayoutFeedbackLinksToGitHubIssueChooser(t *testing.T) {
 	var output bytes.Buffer
 	if err := LayoutMain().Render(context.Background(), &output); err != nil {
 		t.Fatalf("render main layout: %v", err)
 	}
 
 	rendered := output.String()
-	const feedbackURL = `https://github.com/blackfyre/wga/issues?q=sort%3Aupdated-desc+is%3Aissue+state%3Aopen+`
+	const feedbackURL = `https://github.com/blackfyre/wga/issues/new/choose`
 	feedback := rendered[strings.Index(rendered, `href="`+feedbackURL):]
 	if !strings.Contains(feedback, `href="`+feedbackURL+`"`) {
-		t.Fatalf("expected feedback link to GitHub issues: %s", feedbackURL)
+		t.Fatalf("expected feedback link to GitHub issue chooser: %s", feedbackURL)
 	}
 	for _, attribute := range []string{`hx-get=`, `hx-on:click=`, `hx-target=`, `hx-select=`, `hx-swap=`} {
 		if strings.Contains(feedback, attribute) {
