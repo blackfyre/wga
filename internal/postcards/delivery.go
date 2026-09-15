@@ -208,10 +208,11 @@ func renderMessage(app core.App, postcard *core.Record, delivery *core.Record, m
 	if err != nil || delivery.GetString("recipient") == "" || !expiresAt.After(types.NowDateTime()) {
 		return nil, errors.New("postcard delivery is missing recipient access material")
 	}
+	postcardMessage := SanitiseMessage(postcard.GetString("message"))
 	data := map[string]any{
 		"SenderName":        postcard.GetString("sender_name"),
 		"SenderNameUpper":   strings.ToUpper(postcard.GetString("sender_name")),
-		"Message":           postcard.GetString("message"),
+		"Message":           postcardMessage.TrustedHTML(),
 		"PickUpUrl":         postcards.PublicURL.Resolve("/postcard?token=" + token),
 		"Title":             "A postcard is waiting for you",
 		"LogoUrl":           postcards.PublicURL.Resolve("/assets/images/logo.png"),

@@ -399,7 +399,7 @@ func TestRenderMessageIncludesDeliveryHeader(t *testing.T) {
 	app := testutils.NewTestApp(t)
 	postcard := core.NewRecord(core.NewBaseCollection("Postcards"))
 	postcard.Set("sender_name", "sender")
-	postcard.Set("message", `<script>alert("unsafe")</script>`)
+	postcard.Set("message", `<p onclick="alert('unsafe')">Hello <b style="color:red">there</b>.</p><script>alert("unsafe")</script>`)
 	delivery := core.NewRecord(core.NewBaseCollection("Deliveries"))
 	delivery.Id = "delivery-record-123"
 	delivery.Set("recipient", "recipient@example.test")
@@ -425,8 +425,11 @@ func TestRenderMessageIncludesDeliveryHeader(t *testing.T) {
 	if got := message.Headers["Message-ID"]; got != "<postcard-delivery-123@wga.invalid>" {
 		t.Fatalf("message id = %q, want %q", got, "<postcard-delivery-123@wga.invalid>")
 	}
-	if strings.Contains(message.HTML, `<script>alert("unsafe")</script>`) || !strings.Contains(message.HTML, `&lt;script&gt;alert(&#34;unsafe&#34;)&lt;/script&gt;`) {
-		t.Fatalf("sender message was not escaped: %s", message.HTML)
+	if strings.Contains(message.HTML, "<script") || strings.Contains(message.HTML, "onclick=\"alert") || strings.Contains(message.HTML, "style=\"color:red\"") {
+		t.Fatalf("sender message was not sanitised: %s", message.HTML)
+	}
+	if !strings.Contains(message.HTML, `<p>Hello <b>there</b>.</p>`) {
+		t.Fatalf("sender formatting was not preserved: %s", message.HTML)
 	}
 	if !strings.Contains(message.HTML, "postcard?token="+token) {
 		t.Fatal("email does not contain the recipient pickup URL")

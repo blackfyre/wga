@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/blackfyre/wga/internal/antiabuse"
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
@@ -19,7 +18,6 @@ import (
 	"github.com/blackfyre/wga/internal/requesttrust"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/blackfyre/wga/internal/validation"
-	"github.com/microcosm-cc/bluemonday"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/types"
 )
@@ -39,7 +37,7 @@ type postcardSubmission struct {
 	SubmissionKey   string   `json:"submission_key" form:"submission_key"`
 }
 
-func savePostcard(app core.App, c *core.RequestEvent, policy *bluemonday.Policy, captcha config.Captcha, keyring config.PostcardTokenKeyring, verifier antiabuse.Verifier, limiter *submissionLimiter, resolver requesttrust.Resolver) error {
+func savePostcard(app core.App, c *core.RequestEvent, captcha config.Captcha, keyring config.PostcardTokenKeyring, verifier antiabuse.Verifier, limiter *submissionLimiter, resolver requesttrust.Resolver) error {
 	logger := logging.RequestLogger(app, c)
 
 	clientID, ok := "", false
@@ -56,6 +54,8 @@ func savePostcard(app core.App, c *core.RequestEvent, policy *bluemonday.Policy,
 		logger.Warn("Postcard submission rejected", "event", "postcard.submission.rejected", "outcome", "invalid_payload")
 		return utils.BadRequestError(c)
 	}
+	message := postcardworkflow.SanitiseMessage(input.Message)
+	input.Message = message.HTML()
 	recipients := input.Recipients
 	if input.Recipient != "" {
 		recipients = append([]string{input.Recipient}, recipients...)
@@ -100,8 +100,7 @@ func savePostcard(app core.App, c *core.RequestEvent, policy *bluemonday.Policy,
 			return renderQueuedPostcard(recovered, app, c)
 		}
 	}
-	plainMessage := strings.TrimSpace(bluemonday.StrictPolicy().Sanitize(input.Message))
-	if strings.TrimSpace(input.SenderName) == "" || strings.TrimSpace(input.SenderEmail) == "" || len(recipients) == 0 || plainMessage == "" || utf8.RuneCountInString(plainMessage) > pages.PostcardMessageLimit {
+	if strings.TrimSpace(input.SenderName) == "" || strings.TrimSpace(input.SenderEmail) == "" || len(recipients) == 0 || message.Text() == "" || message.RuneCount() > postcardworkflow.MessageLimit {
 		logger.Warn("Postcard submission rejected", "event", "postcard.submission.rejected", "outcome", "validation")
 		return renderForm(input.ImageID, values, "Check the required fields and keep the message within 300 characters.", http.StatusUnprocessableEntity, app, c, captcha)
 	}
@@ -127,7 +126,7 @@ func savePostcard(app core.App, c *core.RequestEvent, policy *bluemonday.Policy,
 
 	result, err := postcardworkflow.QueueWithAccess(app, keyring, postcardworkflow.QueueInput{
 		SenderName: strings.TrimSpace(input.SenderName), SenderEmail: strings.TrimSpace(input.SenderEmail), Recipients: recipients,
-		Message: policy.Sanitize(input.Message), ImageID: input.ImageID,
+		Message: message.HTML(), ImageID: input.ImageID,
 		CorrelationID: logging.RequestID(c),
 		SubmissionKey: input.SubmissionKey,
 	}, types.NowDateTime())

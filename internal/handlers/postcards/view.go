@@ -59,8 +59,9 @@ func viewPostcard(app core.App, c *core.RequestEvent) error {
 	}
 	artistFilingName := author.GetString("filing_name")
 	music := resolveRecipientMusic(app, artwork)
+	message := postcardworkflow.SanitiseMessage(postcard.GetString("message"))
 	content := pages.PostcardView{
-		SenderName: postcard.GetString("sender_name"), Message: postcard.GetString("message"), Image: image,
+		SenderName: postcard.GetString("sender_name"), Message: message.HTML(), Image: image,
 		Title: artwork.GetString("title"), Comment: artwork.GetString("comment"), Technique: artwork.GetString("technique"), ArtistFilingName: artistFilingName,
 		Music: music,
 	}
