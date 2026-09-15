@@ -866,11 +866,16 @@ func loadGuestbookEntries(db *sql.DB) ([]sourceGuestbookEntry, error) {
 }
 
 func loadMusicTracks(db *sql.DB) ([]sourceMusicTrack, error) {
-	rows, err := db.Query(`
-		SELECT id, title, period, composer, COALESCE(local_path, ''), COALESCE(art_period_id, '')
-		FROM music_tracks
-		ORDER BY track_order
-	`)
+	hasArtPeriod, err := hasColumn(db, "music_tracks", "art_period_id")
+	if err != nil {
+		return nil, err
+	}
+
+	selects := []string{"id", "title", "period", "composer", "COALESCE(local_path, '')"}
+	if hasArtPeriod {
+		selects = append(selects, "COALESCE(art_period_id, '')")
+	}
+	rows, err := db.Query("SELECT " + strings.Join(selects, ", ") + " FROM music_tracks ORDER BY track_order")
 	if err != nil {
 		return nil, fmt.Errorf("read music tracks: %w", err)
 	}
@@ -879,7 +884,11 @@ func loadMusicTracks(db *sql.DB) ([]sourceMusicTrack, error) {
 	items := []sourceMusicTrack{}
 	for rows.Next() {
 		item := sourceMusicTrack{}
-		if err := rows.Scan(&item.ID, &item.Title, &item.Period, &item.Composer, &item.LocalPath, &item.ArtPeriodID); err != nil {
+		dest := []any{&item.ID, &item.Title, &item.Period, &item.Composer, &item.LocalPath}
+		if hasArtPeriod {
+			dest = append(dest, &item.ArtPeriodID)
+		}
+		if err := rows.Scan(dest...); err != nil {
 			return nil, fmt.Errorf("scan music tracks: %w", err)
 		}
 		items = append(items, item)

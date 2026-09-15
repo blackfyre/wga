@@ -191,6 +191,34 @@ func TestLoadArtworksAbsentOptionalColumnsAreZero(t *testing.T) {
 	}
 }
 
+func TestLoadMusicTracksAbsentOptionalArtPeriodIsEmpty(t *testing.T) {
+	db := openCollectionDataTestDB(t)
+	if _, err := db.Exec(`
+		CREATE TABLE music_tracks (
+			id TEXT PRIMARY KEY,
+			title TEXT,
+			period TEXT,
+			composer TEXT,
+			local_path TEXT,
+			track_order INTEGER
+		);
+		INSERT INTO music_tracks VALUES ('track', 'Track', '17th century', 'Composer', 'music/track.mp3', 1);
+	`); err != nil {
+		t.Fatalf("create music track: %v", err)
+	}
+
+	tracks, err := loadMusicTracks(db)
+	if err != nil {
+		t.Fatalf("load music tracks: %v", err)
+	}
+	if len(tracks) != 1 {
+		t.Fatalf("music track count = %d, want 1", len(tracks))
+	}
+	if tracks[0].ArtPeriodID != "" {
+		t.Fatalf("art_period_id = %q, want empty", tracks[0].ArtPeriodID)
+	}
+}
+
 func TestValidateSourceRelationsRejectsUnknownLocationAndPeriod(t *testing.T) {
 	base := sourceArtwork{ID: "rwork000000001", AuthorID: "rartist00000001", FormID: "rform000000001"}
 	artists := []sourceArtist{{ID: "rartist00000001"}}
