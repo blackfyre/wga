@@ -1,4 +1,3 @@
-import Trix from "trix";
 import Viewer from "viewerjs";
 import "htmx.org";
 import htmx from "htmx.org";
@@ -29,6 +28,7 @@ import { registerItineraryHelpers } from "./itinerary";
 import { initKeyboardNavigation } from "./keyboard";
 import logger from "./logger";
 import { initPeriodMusic } from "./music";
+import { initPostcardRichText } from "./postcard-rich-text";
 import { closeMobileNavigation, syncNavigation } from "./public-shell";
 import { initialiseStudyBoard } from "./study-board";
 import { registerTourHelpers } from "./tours";
@@ -859,28 +859,6 @@ const wgaInternal: wgaInternals = {
 			});
 		},
 		() => {
-			logger.debug("Setting up Trix event listeners");
-			// Trix initialization
-			document.addEventListener("trix-before-initialize", () => {
-				Trix.config.toolbar.getDefaultHTML = () => {
-					return `
-        <div class="trix-button-row">
-          <span class="trix-button-group trix-button-group--text-tools" data-trix-button-group="text-tools">
-            <button type="button" class="trix-button trix-button--icon trix-button--icon-bold" data-trix-attribute="bold" data-trix-key="b" title="Bold" tabindex="-1">Bold</button>
-            <button type="button" class="trix-button trix-button--icon trix-button--icon-italic" data-trix-attribute="italic" data-trix-key="i" title="Italic" tabindex="-1">Italic</button>
-            <button type="button" class="trix-button trix-button--icon trix-button--icon-strike" data-trix-attribute="strike" title="Strike" tabindex="-1">Strike</button>
-          </span>
-    
-          <span class="trix-button-group trix-button-group--block-tools" data-trix-button-group="block-tools">
-            <button type="button" class="trix-button trix-button--icon trix-button--icon-heading-1" data-trix-attribute="heading1" title="Heading 1" tabindex="-1">Heading 1</button>
-            <button type="button" class="trix-button trix-button--icon trix-button--icon-quote" data-trix-attribute="quote" title="Quote" tabindex="-1">Quote</button>
-          </span>
-    
-        </div>`;
-				}; // Change `Trix.config` if you need
-			});
-		},
-		() => {
 			logger.debug("Setting up jumpToTop event listener");
 			// Back to top button
 			const jumpToTop = document.querySelector(".jump.back-to-top");
@@ -1282,6 +1260,7 @@ const wgaInternal: wgaInternals = {
 	initKeyboardNavigation();
 	initialiseAppearancePreferences();
 	initBionicReading();
+	initPostcardRichText();
 	syncNavigation();
 	document.addEventListener("click", closeMobileNavigation);
 	document.addEventListener("htmx:afterSettle", syncNavigation);

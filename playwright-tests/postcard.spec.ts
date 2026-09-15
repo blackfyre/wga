@@ -88,12 +88,26 @@ test("CAPTCHA rejection swaps an actionable composer error", async ({
 	await page
 		.getByRole("textbox", { name: "RECIPIENT EMAIL 1" })
 		.fill("recipient@example.test");
-	await page.getByLabel(/MESSAGE/).fill("A postcard message");
+	const message = page.locator("[data-rte-surface]");
+	await expect(message).toBeVisible();
+	await expect(page.locator("textarea[name='message']")).toBeHidden();
+	await message.fill("A postcard message");
+	await message.selectText();
+	await page.getByRole("button", { name: "Bold" }).click();
+	await expect(page.locator("textarea[name='message']")).toHaveValue(
+		/<p><b>A postcard message<\/b><\/p>/,
+	);
 	await page.getByRole("button", { name: "SEND POSTCARD →" }).click();
 	await expect(page.locator("#postcard-compose")).toContainText(
 		"Complete the CAPTCHA",
 	);
 	await expect(page.getByLabel("YOUR NAME")).toHaveValue("Playwright Sender");
+	await expect(page.locator("[data-rte-surface]")).toContainText(
+		"A postcard message",
+	);
+	await expect(page.locator("[data-rte-surface] b")).toHaveText(
+		"A postcard message",
+	);
 });
 
 for (const viewport of [
@@ -169,9 +183,10 @@ test("send postcard", async ({ page, request }) => {
 		.fill("playwright.tester@local.host"); // this is the postcard sender's email
 	await page.locator("[name='recipients[]']").nth(0).fill(recipients[0]);
 	await page.locator("[name='recipients[]']").nth(1).fill(recipients[1]);
-	await page
-		.locator("textarea[name='message']")
-		.fill("I am testing your site.");
+	const message = page.locator("[data-rte-surface]");
+	await message.fill("I am testing your site.");
+	await message.selectText();
+	await page.getByRole("button", { name: "Italic" }).click();
 	// The CI handler skips remote verification but still requires a token.
 	await page.locator("#postcard_create").evaluate((form) => {
 		const token = document.createElement("input");
@@ -227,6 +242,7 @@ test("send postcard", async ({ page, request }) => {
 			expect(message.Subject).toBe(subject);
 			expect(message.HTML).toContain("FROM PLAYWRIGHT TESTER");
 			expect(message.HTML).toContain("A postcard is waiting for you");
+			expect(message.HTML).toContain("<i>I am testing your site.</i>");
 			const postcardLink = message.HTML.match(
 				/<a\b[^>]*\bhref=["']([^"']+)["'][^>]*>\s*OPEN YOUR POSTCARD(?:&nbsp;|\s)*&rarr;\s*<\/a>/i,
 			)?.[1];
@@ -242,6 +258,9 @@ test("send postcard", async ({ page, request }) => {
 		await page.goto(`${postcardURL.pathname}${postcardURL.search}`);
 		await expect(page.locator("#postcard-view")).toContainText(
 			"I am testing your site",
+		);
+		await expect(page.locator("#postcard-view i")).toHaveText(
+			"I am testing your site.",
 		);
 	} finally {
 		if (messageIDs.length > 0) {

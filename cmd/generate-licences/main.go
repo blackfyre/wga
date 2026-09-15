@@ -297,6 +297,9 @@ func discoverBrowserComponents(metafilePath string) ([]component, error) {
 	}
 	includedBundledComponents := []vendoredComponent{}
 	for _, bundled := range bundledComponents {
+		if bundled.Parent == bundled.Component.Name {
+			continue
+		}
 		if edges[bundled.Parent] == nil {
 			edges[bundled.Parent] = map[string]struct{}{}
 		}
@@ -366,6 +369,9 @@ func discoverVendoredBrowserPackages(inputs map[string]browserInput, emittedInpu
 				continue
 			}
 			name := strings.ToLower(string(match[1]))
+			if parent == name {
+				continue
+			}
 			version := string(match[2])
 			licenceSource := "https://github.com/cure53/DOMPurify/blob/" + version + "/LICENSE"
 			if !bytes.Contains(content, []byte(strings.TrimPrefix(licenceSource, "https://"))) {
