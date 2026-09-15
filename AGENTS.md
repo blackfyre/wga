@@ -27,14 +27,14 @@
 - Use Go 1.26.5 (`go.mod`/`mise.toml`), Bun, and Templ. `devenv shell` is the documented development environment; `mise` pins the same toolchain and exposes equivalent tasks as `mise run <task>`.
 - Create `.env` from `.env.example` (`mise run app:init-env`). `godotenv.Load()` reads the default `.env` from the process working directory: `code:run` uses the repository root, while `app:run` changes into `dist/`.
 - `wga_data` is likewise relative to the process working directory. `app:run` uses `dist/wga_data`; clear the data directory used by the launcher rather than assuming root `wga_data` is the active one.
-- `mise run dev` brings up the Podman Compose Mailpit and Garage services, then starts JS/CSS/Templ watchers, but not the application server. Start it separately with `code:run`, or use `app:build` followed by `app:run`.
+- `mise run dev` brings up the Podman Compose Mailpit and Garage services, then starts JS/CSS/Templ watchers, but not the application server. Start it separately with `code:run`; concurrent worktrees can select distinct listeners with `mise run code:run --port <port>`. Alternatively, use `app:build` followed by `app:run`.
 - `app:build` runs `bun install`, `bun run build`, `templ generate`, `go mod tidy`, then builds `dist/wga`. The embedded synthetic-data migration initialises a fresh data directory on first server start if not configured otherwise. `seed:images` is registered only when `WGA_ENV=development`.
 
 ## Verification and workflow
 
 - Backend CI order is `go mod tidy`, `go vet ./...`, then `go test ./... -cover`. For a focused check, use commands such as `go test ./internal/handlers/dual -run '^TestResolvePaneTarget$'`.
 - `mise run check` runs the local Go pre-commit checks (`go vet` and `golangci-lint`), not the test suite. `.pre-commit-config.yaml` is generated; do not edit it.
-- Playwright has no active `webServer` setting. Before `bunx playwright test` (or one spec such as `bunx playwright test playwright-tests/artwork-search.spec.ts`), start the app and set `WGA_PROTOCOL`, `WGA_HOSTNAME`, and a reachable `MAILPIT_URL`; the postcard spec queries the Mailpit API.
+- Playwright has no active `webServer` setting. `mise run test:playwright [--port <port>] [args...]` rebuilds browser assets and Templ output, installs the matching Chromium binary, starts WGA with an isolated temporary data directory, forwards optional arguments to Playwright, and stops the server on exit; use distinct ports for concurrent worktrees. It refuses to run when its selected WGA address is already occupied. For direct `bunx playwright test` use, start the app and set `WGA_PROTOCOL`, `WGA_HOSTNAME`, and a reachable `MAILPIT_URL`; the postcard spec queries the Mailpit API.
 - The full Go suite includes a mail-send test that skips only when no `sendmail` executable is available.
 - `biome.json` configures JS/TS tabs, double quotes, and import organisation. The Playwright CI workflow also runs Prettier on changed JS and Markdown files.
 - PR titles must use one of the Conventional Commit types enforced by `.github/workflows/pr-validation.yml`: `feat`, `fix`, `docs`, `test`, `ci`, `refactor`, `perf`, `chore`, `revert`, or `build`.
@@ -49,6 +49,7 @@
 - Objective verification remains stronger evidence than either model family: runtime behaviour; compiler/type checker; database constraints; static analysis; automated tests; source inspection; then model judgement.
 
 <!-- workshop:start -->
+
 ## Workshop workflow
 
 ### Source of truth
@@ -114,4 +115,5 @@ Hard budget: at most two subagent calls for one task, including the final review
 - Do not restate the full spec or task before acting.
 - Never claim a check passed unless it was actually run or the user explicitly accepted a non-executed verification plan.
 - Final task reports should normally contain: what changed, verification performed, review outcome, and any unresolved issue.
+
 <!-- workshop:end -->

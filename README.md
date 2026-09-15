@@ -135,7 +135,9 @@ Start the local asset watchers and services with Mise:
 mise run dev
 ```
 
-`mise run dev` brings up the Podman Compose Mailpit and Garage services, then starts the frontend and template watchers. Mailpit exposes SMTP on port 1025 and its HTTP API on port 8025; Playwright reads `MAILPIT_URL` to query captured messages. Garage exposes S3-compatible storage on port 3900. In another terminal, start the application with `mise run code:run`, or run `mise run app:build` followed by `mise run app:run`. `mise run app:reset` brings up and waits for Garage while rebuilding and replacing `dist/wga_data`.
+`mise run dev` brings up the Podman Compose Mailpit and Garage services, then starts the frontend and template watchers. Mailpit exposes SMTP on port 1025 and its HTTP API on port 8025; Playwright reads `MAILPIT_URL` to query captured messages. Garage exposes S3-compatible storage on port 3900. In another terminal, start the application with `mise run code:run`; use `mise run code:run --port <port>` to give concurrent worktrees distinct listeners. Alternatively, run `mise run app:build` followed by `mise run app:run`. `mise run app:reset` brings up and waits for Garage while rebuilding and replacing `dist/wga_data`.
+
+Run browser tests against a self-contained temporary WGA instance with `mise run test:playwright [--port <port>] [Playwright arguments...]`. The task rebuilds browser assets and templates, forwards the selected port through `WGA_HOSTNAME`, and stops its server on exit.
 
 For the manual production data hand-off, including validation of the paired
 SQLite/storage bundle before startup, see [Release data provisioning](docs/release-data-provisioning.md).

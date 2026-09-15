@@ -110,7 +110,101 @@ run = "cp .env.example .env"
 
 [tasks."code:run"]
 description = "Run the application in development mode without building."
-run = "go run ./cmd/wga --dev"
+usage = '''
+flag "--port <port>" default="8090" help="HTTP port for this WGA instance"
+'''
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+
+port={{ usage.port | quote }}
+if [[ ! "$port" =~ ^[0-9]+$ ]] || (( port < 1 || port > 65535 )); then
+  echo "Port must be an integer between 1 and 65535." >&2
+  exit 1
+fi
+
+export WGA_HOSTNAME="localhost:${port}"
+exec go run ./cmd/wga serve --http "0.0.0.0:${port}"
+'''
+
+[tasks."test:playwright"]
+description = "Build current browser assets and run Playwright against an isolated temporary WGA server."
+usage = '''
+flag "--port <port>" default="8090" help="HTTP port for the temporary WGA instance"
+arg "[args]" var=#true help="Arguments passed to Playwright (for example, a spec path or --project flag)"
+'''
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+
+port={{ usage.port | quote }}
+if [[ ! "$port" =~ ^[0-9]+$ ]] || (( port < 1 || port > 65535 )); then
+  echo "Port must be an integer between 1 and 65535." >&2
+  exit 1
+fi
+
+export WGA_HOSTNAME="localhost:${port}"
+server_pid=""
+server_bin="$(mktemp "${TMPDIR:-/tmp}/wga-playwright-server.XXXXXX")"
+data_dir="$(mktemp -d "${TMPDIR:-/tmp}/wga-playwright-data.XXXXXX")"
+server_log="$(mktemp "${TMPDIR:-/tmp}/wga-playwright-server-${port}.XXXXXX.log")"
+
+cleanup() {
+  status=$?
+  trap - EXIT INT TERM
+  if [[ -n "$server_pid" ]] && kill -0 "$server_pid" 2>/dev/null; then
+    kill "$server_pid" 2>/dev/null || true
+  fi
+  if [[ -n "$server_pid" ]]; then
+    wait "$server_pid" 2>/dev/null || true
+  fi
+  rm -f "$server_bin"
+  rm -rf "$data_dir"
+  if (( status == 0 )); then
+    rm -f "$server_log"
+  else
+    echo "WGA server log retained at $server_log" >&2
+  fi
+  exit "$status"
+}
+trap cleanup EXIT INT TERM
+
+if curl --fail --silent --max-time 2 "${WGA_PROTOCOL}://${WGA_HOSTNAME}/" >/dev/null 2>&1; then
+  echo "A server is already listening at ${WGA_PROTOCOL}://${WGA_HOSTNAME}; stop it before running this task." >&2
+  exit 1
+fi
+
+bun run build
+templ generate
+bunx playwright install chromium
+go build -o "$server_bin" ./cmd/wga
+
+"$server_bin" serve --dir "$data_dir" --http "0.0.0.0:${port}" >"$server_log" 2>&1 &
+server_pid=$!
+
+for _ in $(seq 1 60); do
+  if curl --fail --silent --max-time 2 "${WGA_PROTOCOL}://${WGA_HOSTNAME}/" >/dev/null; then
+    break
+  fi
+  if ! kill -0 "$server_pid" 2>/dev/null; then
+    wait "$server_pid" || true
+    echo "WGA exited before becoming ready. Log: $server_log" >&2
+    exit 1
+  fi
+  sleep 0.5
+done
+
+if ! curl --fail --silent --max-time 2 "${WGA_PROTOCOL}://${WGA_HOSTNAME}/" >/dev/null; then
+  echo "WGA did not become ready. Log: $server_log" >&2
+  exit 1
+fi
+
+{% if usage.args | length == 0 %}
+bunx playwright test
+{% else %}
+bunx playwright test{% for arg in usage.args %} {{ arg | quote }}{% endfor %}
+{% endif %}
+'''
 
 # Run this before commits; Mise does not install Git hooks itself.
 [tasks."check:govet"]

@@ -18,7 +18,8 @@ The main project tasks are:
 
 - `mise run app:build` to install frontend dependencies, build assets, regenerate templates, and compile `dist/wga`
 - `mise run app:run` to launch the built server from `dist/`
-- `mise run code:run` to run the application directly with `go run ./cmd/wga --dev`
+- `mise run code:run [--port <port>]` to run the application directly from source, with an optional worktree-specific listener
+- `mise run test:playwright [--port <port>] [Playwright arguments...]` to rebuild browser sources and run Playwright against a self-cleaning, isolated WGA server
 
 The server entrypoint is `cmd/wga/main.go`. Application code lives under `internal/`, frontend source files live under `resources/`, and browser tests live in `playwright-tests/`.
 
@@ -39,7 +40,7 @@ Run the relevant automated checks before opening a PR:
 
 ```bash
 go test ./... -cover
-bunx playwright test
+mise run test:playwright
 ```
 
 When working on frontend assets, use the existing watch scripts as needed:
@@ -57,7 +58,7 @@ Repository docs should follow code and configuration truth. If a command in docs
 
 Before editing repo docs, read [docs/documentation-maintenance.md](docs/documentation-maintenance.md). It lists the current source of truth files and the checklist for validating path, command, and environment wording.
 
-Use the same canonical workflow terms across contributor docs: `mise run dev`, `mise run app:build`, `mise run app:run`, `mise run code:run`, `go test ./... -cover`, and `bunx playwright test`.
+Use the same canonical workflow terms across contributor docs: `mise run dev`, `mise run app:build`, `mise run app:run`, `mise run code:run`, `go test ./... -cover`, and `mise run test:playwright`.
 
 If docs conflict with code or config, the source of truth is the executable repo state described in that checklist.
 
