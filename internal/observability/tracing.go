@@ -203,7 +203,7 @@ func (t Tracer) intercept(e *core.RequestEvent, next func() error, responseStatu
 
 	ctx := t.propagator.Extract(e.Request.Context(), propagation.HeaderCarrier(e.Request.Header))
 	route := requestRoute(e.Request)
-	method := strings.ToUpper(e.Request.Method)
+	method := requestMethod(e.Request.Method)
 	ctx, span := t.tracer.Start(ctx, method+" "+route, trace.WithSpanKind(trace.SpanKindServer))
 	e.Request = e.Request.WithContext(ctx)
 
@@ -221,6 +221,24 @@ func (t Tracer) intercept(e *core.RequestEvent, next func() error, responseStatu
 	}()
 
 	return next()
+}
+
+func requestMethod(method string) string {
+	method = strings.ToUpper(method)
+	switch method {
+	case http.MethodConnect,
+		http.MethodDelete,
+		http.MethodGet,
+		http.MethodHead,
+		http.MethodOptions,
+		http.MethodPatch,
+		http.MethodPost,
+		http.MethodPut,
+		http.MethodTrace:
+		return method
+	default:
+		return "_OTHER"
+	}
 }
 
 func requestRoute(request *http.Request) string {

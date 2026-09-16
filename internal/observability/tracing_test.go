@@ -154,6 +154,19 @@ func TestAlwaysSampleOverridesRemoteUnsampledParent(t *testing.T) {
 	}
 }
 
+func TestRequestMethodIsBounded(t *testing.T) {
+	tests := map[string]string{
+		"get":               http.MethodGet,
+		http.MethodPost:     http.MethodPost,
+		"CLIENT-CONTROLLED": "_OTHER",
+	}
+	for method, want := range tests {
+		if got := requestMethod(method); got != want {
+			t.Errorf("requestMethod(%q) = %q, want %q", method, got, want)
+		}
+	}
+}
+
 func TestTracerIntercept(t *testing.T) {
 	recorder := tracetest.NewSpanRecorder()
 	provider := sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(recorder))
