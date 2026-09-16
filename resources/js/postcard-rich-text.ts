@@ -38,12 +38,6 @@ function sanitiseToFragment(html: string): DocumentFragment {
 	}) as DocumentFragment;
 }
 
-function plainTextParagraph(text: string): string {
-	const paragraph = document.createElement("p");
-	paragraph.textContent = text;
-	return paragraph.outerHTML;
-}
-
 function textOffset(
 	block: HTMLElement,
 	container: Node,
@@ -99,9 +93,10 @@ function selectionBoundary(
 		offset < container.childNodes.length ? container.childNodes[offset] : null;
 	const child = atEnd ? (before ?? after) : (after ?? before);
 	const useEnd = child === before;
-	const node = child ? edgeTextNode(child, useEnd) : null;
-	if (!node) return null;
-	return { node, offset: useEnd ? (node.nodeValue?.length ?? 0) : 0 };
+	if (!child) return { node: container, offset };
+	const node = edgeTextNode(child, useEnd);
+	if (node) return { node, offset: useEnd ? (node.nodeValue?.length ?? 0) : 0 };
+	return { node: child, offset: useEnd ? child.childNodes.length : 0 };
 }
 
 function normalise(surface: HTMLElement): void {
@@ -130,10 +125,7 @@ function mount(root: HTMLElement): void {
 		blockTag: "P",
 		sanitizeToDOMFragment: (html) => sanitiseToFragment(html),
 	});
-	const initial = source.value.trim().startsWith("<")
-		? source.value
-		: plainTextParagraph(source.value);
-	editor.setHTML(initial);
+	editor.setHTML(source.value);
 	surface.hidden = false;
 	toolbar.hidden = false;
 	source.hidden = true;
@@ -188,13 +180,17 @@ function mount(root: HTMLElement): void {
 			) ??
 			blocks.at(-1);
 		if (!startBlock || !endBlock) return null;
-		const start = textBoundary(startBlock, anchor.start);
-		if (!start) return null;
-		const end = textBoundary(endBlock, anchor.end);
+		const start = textBoundary(startBlock, anchor.start) ?? {
+			node: startBlock,
+			offset: 0,
+		};
+		const end = textBoundary(endBlock, anchor.end) ?? {
+			node: endBlock,
+			offset: 0,
+		};
 		const range = document.createRange();
 		range.setStart(start.node, start.offset);
-		if (end) range.setEnd(end.node, end.offset);
-		else range.collapse(true);
+		range.setEnd(end.node, end.offset);
 		return range;
 	};
 	const reflectState = () => {
@@ -228,12 +224,6 @@ function mount(root: HTMLElement): void {
 		const range = restoreSelection();
 		if (!range) return;
 		const active = editor.hasFormat(formatTag[command]);
-		if (
-			(command === "bold" || command === "italic") &&
-			!active &&
-			range.collapsed
-		)
-			return;
 		try {
 			editor.setSelection(range);
 			toggleCommand[command](editor, active);

@@ -93,14 +93,23 @@ test("CAPTCHA rejection swaps an actionable composer error", async ({
 	const message = page.locator("[data-rte-surface]");
 	await expect(message).toBeVisible();
 	await expect(page.locator("textarea[name='message']")).toBeHidden();
-	await message.fill("A postcard message");
-	await message.selectText();
+	await message.fill("Hello world");
+	await message.evaluate((surface) => {
+		const text = surface.querySelector("p")?.firstChild;
+		if (!(text instanceof Text)) throw new Error("Message text node not found");
+		const range = document.createRange();
+		range.setStart(text, 6);
+		range.setEnd(text, 11);
+		const selection = window.getSelection();
+		selection?.removeAllRanges();
+		selection?.addRange(range);
+	});
 	await expect
 		.poll(() => message.evaluate(() => window.getSelection()?.toString()))
-		.toBe("A postcard message");
+		.toBe("world");
 	await page.getByRole("button", { name: "Bold" }).click();
 	await expect(page.locator("textarea[name='message']")).toHaveValue(
-		/<p><b>A postcard message<\/b><\/p>/,
+		/<p>Hello <b>world<\/b><\/p>/,
 	);
 	await page.locator("[name='g-recaptcha-response']").evaluate((element) => {
 		(element as HTMLInputElement).value = "";
@@ -110,12 +119,25 @@ test("CAPTCHA rejection swaps an actionable composer error", async ({
 		"Complete the CAPTCHA",
 	);
 	await expect(page.getByLabel("YOUR NAME")).toHaveValue("Playwright Sender");
-	await expect(page.locator("[data-rte-surface]")).toContainText(
-		"A postcard message",
-	);
-	await expect(page.locator("[data-rte-surface] b")).toHaveText(
-		"A postcard message",
-	);
+	await expect(page.locator("[data-rte-surface]")).toContainText("Hello world");
+	await expect(page.locator("[data-rte-surface] b")).toHaveText("world");
+});
+
+test("toolbar formats an empty caret and starts a list", async ({ page }) => {
+	await page.goto(`/postcard/send?awid=${syntheticArtworkID}`);
+	const message = page.locator("[data-rte-surface]");
+	const source = page.locator("textarea[name='message']");
+
+	await message.click();
+	await page.getByRole("button", { name: "Bold" }).click();
+	await page.keyboard.type("Fresh text");
+	await expect(source).toHaveValue(/<p><b>Fresh text<\/b>(?:<br>)?<\/p>/);
+
+	await page.reload();
+	await message.click();
+	await page.getByRole("button", { name: "Bulleted list" }).click();
+	await page.keyboard.type("First item");
+	await expect(source).toHaveValue(/<ul><li>First item<\/li><\/ul>/);
 });
 
 for (const viewport of [

@@ -21,12 +21,12 @@ func TestSanitiseMessageAllowsOnlyPostcardFormatting(t *testing.T) {
 }
 
 func TestSanitiseMessageCountsVisibleUnicodeText(t *testing.T) {
-	message := SanitiseMessage("<p>Árvíz <b>😀</b></p>")
-	if message.Text() != "Árvíz 😀" {
-		t.Fatalf("text = %q, want %q", message.Text(), "Árvíz 😀")
+	message := SanitiseMessage("<p>Árvíz <b>😀</b> &amp; tea</p>")
+	if message.Text() != "Árvíz 😀 & tea" {
+		t.Fatalf("text = %q, want %q", message.Text(), "Árvíz 😀 & tea")
 	}
-	if got := message.RuneCount(); got != 7 {
-		t.Fatalf("rune count = %d, want 7", got)
+	if got := message.RuneCount(); got != 13 {
+		t.Fatalf("rune count = %d, want 13", got)
 	}
 }
 

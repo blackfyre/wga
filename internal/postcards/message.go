@@ -1,6 +1,7 @@
 package postcards
 
 import (
+	"html"
 	"html/template"
 	"strings"
 	"unicode/utf8"
@@ -29,9 +30,9 @@ var postcardMessagePolicy = func() *bluemonday.Policy {
 // SanitiseMessage applies the postcard rich-text contract without allowing any
 // element attributes. It is safe to call again when reading persisted content.
 func SanitiseMessage(raw string) Message {
-	html := strings.TrimSpace(postcardMessagePolicy.Sanitize(raw))
-	text := strings.TrimSpace(bluemonday.StrictPolicy().Sanitize(html))
-	return Message{html: html, text: text}
+	sanitisedHTML := strings.TrimSpace(postcardMessagePolicy.Sanitize(raw))
+	text := strings.TrimSpace(html.UnescapeString(bluemonday.StrictPolicy().Sanitize(sanitisedHTML)))
+	return Message{html: sanitisedHTML, text: text}
 }
 
 // HTML returns the sanitised markup for persistence or a separately guarded
