@@ -1,6 +1,8 @@
-# Project Dependency Maintenance
+## Purpose
 
-## Requirements
+Keeps WGA's supported dependency graphs, build toolchains, compliance evidence, and generated artefacts aligned with the versions shipped by the application.
+
+## ADDED Requirements
 
 ### Requirement: Current supported dependency graphs
 WGA SHALL resolve every root Go and Bun dependency to its latest supported release, subject to the module ecosystem's major-version compatibility rules.
