@@ -16,9 +16,11 @@ Non-goals include caching arbitrary SQL results, replacing Sentry or structured 
 ## Capabilities
 
 ### New Capabilities
+
 - `configured-otel-observability`: Optional endpoint-driven OTLP traces and metrics, safe cache/query/capacity instrumentation, and a bounded Railway collector pipeline.
 
 ### Modified Capabilities
+
 - `development-otel-tracing`: Replace environment-driven enablement and the hard-coded local endpoint with explicit collector configuration while retaining safe request spans, local Jaeger compatibility, propagation, and bounded shutdown.
 
 ## Impact

@@ -7,12 +7,14 @@ The existing `development-otel-tracing` specification explicitly prohibits stagi
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Make collector endpoint presence the sole telemetry enablement switch in every environment.
 - Produce enough traces and metrics to distinguish slow repository work, cache reuse or cold loads, and public-read saturation.
 - Keep instrumentation vendor-neutral, low-cardinality, redaction-safe, bounded under collector failure, and testable without a live collector.
 - Supply a single-replica Railway collector pipeline over private networking with bounded memory and backend-neutral export.
 
 **Non-Goals:**
+
 - Cache arbitrary SQL results or alter the authoritative cache invalidation model.
 - Capture raw SQL, query parameters, visitor input, catalogue identifiers, client identity, request bodies, or unrestricted errors.
 - Replace Sentry, structured JSON logs, Railway platform metrics, or query-plan optimisation.
