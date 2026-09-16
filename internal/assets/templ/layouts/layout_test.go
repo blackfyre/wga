@@ -174,7 +174,7 @@ func TestLayoutMainRetainsSharedMounts(t *testing.T) {
 	for _, expected := range []string{
 		`id="mc-area"`,
 		`<dialog id="d" aria-label="Dialog" aria-modal="true"`,
-		`href="https://github.com/blackfyre/wga/issues?q=sort%3Aupdated-desc+is%3Aissue+state%3Aopen+"`,
+		`href="https://github.com/blackfyre/wga/issues/new/choose"`,
 		`wga-feedback-anchor`,
 		`id="toast-container"`,
 		`id="keyboard-palette"`,

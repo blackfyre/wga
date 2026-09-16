@@ -314,6 +314,8 @@ func validateQueueInput(input *QueueInput) error {
 	input.SenderEmail = strings.TrimSpace(input.SenderEmail)
 	input.ImageID = strings.TrimSpace(input.ImageID)
 	input.SubmissionKey = strings.TrimSpace(input.SubmissionKey)
+	message := SanitiseMessage(input.Message)
+	input.Message = message.HTML()
 	if input.SenderName == "" || strings.ContainsAny(input.SenderName, "\r\n") || utf8.RuneCountInString(input.SenderName) > maxSenderNameRunes {
 		return fmtInvalid("invalid sender name")
 	}
@@ -321,7 +323,7 @@ func validateQueueInput(input *QueueInput) error {
 	if err != nil || parsed.Address != input.SenderEmail || len(input.SenderEmail) > 254 {
 		return fmtInvalid("invalid sender email")
 	}
-	if input.ImageID == "" || strings.TrimSpace(input.Message) == "" || len(input.Message) > maxMessageBytes {
+	if input.ImageID == "" || message.Text() == "" || message.RuneCount() > MessageLimit || len(input.Message) > maxMessageBytes {
 		return fmtInvalid("invalid postcard content")
 	}
 	return nil

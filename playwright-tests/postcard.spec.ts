@@ -39,7 +39,7 @@ test.describe("without JavaScript", () => {
 		await expect(
 			page.getByRole("textbox", { name: "RECIPIENT EMAIL 1" }),
 		).toBeVisible();
-		await expect(page.getByLabel(/MESSAGE/)).toBeVisible();
+		await expect(page.locator("textarea[name='message']")).toBeVisible();
 		await page.getByRole("button", { name: "+ ADD ANOTHER RECIPIENT" }).focus();
 		await page.keyboard.press("Enter");
 		await expect(page.locator("[name='recipients[]']")).toHaveCount(2);
@@ -71,10 +71,12 @@ test.describe("without JavaScript", () => {
 		await page
 			.getByRole("textbox", { name: "RECIPIENT EMAIL 1" })
 			.fill("recipient@example.test");
-		await page.getByLabel(/MESSAGE/).fill("A postcard message");
+		await page.locator("textarea[name='message']").fill("   ");
 		await page.getByRole("button", { name: "SEND POSTCARD →" }).focus();
 		await page.keyboard.press("Enter");
-		await expect(page.getByRole("alert")).toContainText("Complete the CAPTCHA");
+		await expect(page.getByRole("alert")).toContainText(
+			"Check the required fields",
+		);
 		await expect(page.getByLabel("YOUR NAME")).toHaveValue("Keyboard Sender");
 	});
 });
@@ -88,12 +90,94 @@ test("CAPTCHA rejection swaps an actionable composer error", async ({
 	await page
 		.getByRole("textbox", { name: "RECIPIENT EMAIL 1" })
 		.fill("recipient@example.test");
-	await page.getByLabel(/MESSAGE/).fill("A postcard message");
+	const message = page.locator("[data-rte-surface]");
+	await expect(message).toBeVisible();
+	await expect(page.locator("textarea[name='message']")).toBeHidden();
+	await message.fill("Hello world");
+	await message.evaluate((surface) => {
+		const text = surface.querySelector("p")?.firstChild;
+		if (!(text instanceof Text)) throw new Error("Message text node not found");
+		const range = document.createRange();
+		range.setStart(text, 6);
+		range.setEnd(text, 11);
+		const selection = window.getSelection();
+		selection?.removeAllRanges();
+		selection?.addRange(range);
+	});
+	await expect
+		.poll(() => message.evaluate(() => window.getSelection()?.toString()))
+		.toBe("world");
+	await page.getByRole("button", { name: "Bold" }).click();
+	await expect(page.locator("textarea[name='message']")).toHaveValue(
+		/<p>Hello <b>world<\/b><\/p>/,
+	);
+	await page.locator("[name='g-recaptcha-response']").evaluate((element) => {
+		(element as HTMLInputElement).value = "";
+	});
 	await page.getByRole("button", { name: "SEND POSTCARD →" }).click();
 	await expect(page.locator("#postcard-compose")).toContainText(
 		"Complete the CAPTCHA",
 	);
 	await expect(page.getByLabel("YOUR NAME")).toHaveValue("Playwright Sender");
+	await expect(page.locator("[data-rte-surface]")).toContainText("Hello world");
+	await expect(page.locator("[data-rte-surface] b")).toHaveText("world");
+});
+
+test("toolbar formats an empty caret and starts a list", async ({ page }) => {
+	await page.goto(`/postcard/send?awid=${syntheticArtworkID}`);
+	const message = page.locator("[data-rte-surface]");
+	const source = page.locator("textarea[name='message']");
+
+	await message.click();
+	await page.getByRole("button", { name: "Bold" }).click();
+	await page.keyboard.type("Fresh text");
+	await expect(source).toHaveValue(/<p><b>Fresh text<\/b>(?:<br>)?<\/p>/);
+
+	await page.reload();
+	await message.click();
+	await page.getByRole("button", { name: "Bulleted list" }).click();
+	await page.keyboard.type("First item");
+	await expect(source).toHaveValue(/<ul><li>First item<\/li><\/ul>/);
+});
+
+test("editor preserves soft breaks and announces an empty message", async ({
+	page,
+}) => {
+	await page.goto(`/postcard/send?awid=${syntheticArtworkID}`);
+	const message = page.locator("[data-rte-surface]");
+	const source = page.locator("textarea[name='message']");
+
+	await page.getByRole("button", { name: "ADD ANOTHER RECIPIENT" }).click();
+	await expect(page.getByLabel("Recipient email 2")).toBeVisible();
+	await page.reload();
+
+	await message.fill("First line");
+	await message.press("Shift+Enter");
+	await message.pressSequentially("Second line");
+	await expect(source).toHaveValue(
+		/<p>First line<\/p><p>Second line(?:<br>)?<\/p>/,
+	);
+
+	await page.reload();
+	await page.getByLabel("YOUR NAME").fill("Playwright Sender");
+	await page.getByLabel("YOUR EMAIL").fill("sender@example.com");
+	await page.getByLabel("Recipient email 1").fill("recipient@example.com");
+	await page.getByRole("button", { name: "SEND POSTCARD" }).click();
+	await expect(message).toHaveAttribute("aria-invalid", "true");
+	await expect(page.locator("[data-rte-count]")).toHaveText("Enter a message");
+});
+
+test.describe("without JavaScript message limit", () => {
+	test.use({ javaScriptEnabled: false });
+
+	test("leaves visible Unicode length enforcement to the server", async ({
+		page,
+	}) => {
+		await page.goto(`/postcard/send?awid=${syntheticArtworkID}`);
+		await expect(page.locator("textarea[name='message']")).not.toHaveAttribute(
+			"maxlength",
+		);
+	});
 });
 
 for (const viewport of [
@@ -169,9 +253,10 @@ test("send postcard", async ({ page, request }) => {
 		.fill("playwright.tester@local.host"); // this is the postcard sender's email
 	await page.locator("[name='recipients[]']").nth(0).fill(recipients[0]);
 	await page.locator("[name='recipients[]']").nth(1).fill(recipients[1]);
-	await page
-		.locator("textarea[name='message']")
-		.fill("I am testing your site.");
+	const message = page.locator("[data-rte-surface]");
+	await message.fill("I am testing your site.");
+	await message.selectText();
+	await page.getByRole("button", { name: "Italic" }).click();
 	// The CI handler skips remote verification but still requires a token.
 	await page.locator("#postcard_create").evaluate((form) => {
 		const token = document.createElement("input");
@@ -227,6 +312,7 @@ test("send postcard", async ({ page, request }) => {
 			expect(message.Subject).toBe(subject);
 			expect(message.HTML).toContain("FROM PLAYWRIGHT TESTER");
 			expect(message.HTML).toContain("A postcard is waiting for you");
+			expect(message.HTML).toContain("<i>I am testing your site.</i>");
 			const postcardLink = message.HTML.match(
 				/<a\b[^>]*\bhref=["']([^"']+)["'][^>]*>\s*OPEN YOUR POSTCARD(?:&nbsp;|\s)*&rarr;\s*<\/a>/i,
 			)?.[1];
@@ -242,6 +328,9 @@ test("send postcard", async ({ page, request }) => {
 		await page.goto(`${postcardURL.pathname}${postcardURL.search}`);
 		await expect(page.locator("#postcard-view")).toContainText(
 			"I am testing your site",
+		);
+		await expect(page.locator("#postcard-view i")).toHaveText(
+			"I am testing your site.",
 		);
 	} finally {
 		if (messageIDs.length > 0) {

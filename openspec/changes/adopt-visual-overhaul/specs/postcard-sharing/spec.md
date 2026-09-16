@@ -2,12 +2,27 @@
 
 ### Requirement: Visitor can send a work as a postcard
 
-The system SHALL let an unauthenticated visitor compose one postcard for a published artwork with between one and five recipient addresses, a message, sender details, validation, and abuse protection. The system SHALL normalise and deduplicate recipient addresses and SHALL enforce the five-address limit server-side. The compose form SHALL support adding and removing recipient rows through the existing submission endpoint with or without JavaScript, SHALL retain at least one row, and SHALL NOT offer or accept a sender-controlled period-music inclusion setting.
+The system SHALL let an unauthenticated visitor compose one postcard for a published artwork with between one and five recipient addresses, a message, sender details, validation, and abuse protection. The message field SHALL progressively enhance from an ordinary textarea to a Squire editor offering only bold, italic, bulleted-list, and numbered-list formatting, and Squire SHALL replace the existing Trix editor and dependency. The system SHALL normalise and deduplicate recipient addresses and SHALL enforce the five-address limit server-side. The compose form SHALL support adding and removing recipient rows through the existing submission endpoint with or without JavaScript, SHALL retain at least one row, and SHALL NOT offer or accept a sender-controlled period-music inclusion setting.
 
 #### Scenario: Visitor submits a valid postcard
 
 - **WHEN** a visitor submits a valid postcard form without triggering abuse protection
 - **THEN** the system persists one postcard and independently retryable delivery work for every unique accepted address before initiating any recipient delivery.
+
+#### Scenario: Visitor formats a postcard message
+
+- **WHEN** a JavaScript-enabled visitor applies supported formatting and submits a message
+- **THEN** the browser and server independently sanitise the markup to `p`, `b`, `i`, `ul`, `ol`, and `li` elements without attributes, count the 300-character limit against visible Unicode text rather than markup, and preserve the safe formatting on recipient-page and email rendering.
+
+#### Scenario: Visitor composes without JavaScript
+
+- **WHEN** JavaScript or the rich-text dependency is unavailable
+- **THEN** the visitor can enter and submit the same required message through an ordinary labelled textarea without seeing non-functional formatting controls.
+
+#### Scenario: Invalid rich-text submission returns to the form
+
+- **WHEN** a submission containing markup fails any validation or abuse check
+- **THEN** the server re-renders only sanitised supported markup, the enhanced editor restores that safe value after an ordinary or HTMX response, and no untrusted element or attribute becomes active DOM.
 
 #### Scenario: Visitor changes the recipient rows
 

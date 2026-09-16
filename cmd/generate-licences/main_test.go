@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -112,8 +113,8 @@ func TestDiscoverBrowserComponentsReadsOnlyEmittedPackages(t *testing.T) {
 }
 
 func TestDiscoverVendoredBrowserPackages(t *testing.T) {
-	inputPath := t.TempDir() + "/node_modules/trix/dist/trix.esm.min.js"
-	if err := os.MkdirAll(strings.TrimSuffix(inputPath, "/trix.esm.min.js"), 0o755); err != nil {
+	inputPath := t.TempDir() + "/node_modules/example-editor/dist/editor.min.js"
+	if err := os.MkdirAll(strings.TrimSuffix(inputPath, "/editor.min.js"), 0o755); err != nil {
 		t.Fatalf("create vendored fixture directory: %v", err)
 	}
 	fixture := "/*! @license DOMPurify 3.2.7 | https://github.com/cure53/DOMPurify/blob/3.2.7/LICENSE */"
@@ -127,8 +128,48 @@ func TestDiscoverVendoredBrowserPackages(t *testing.T) {
 	if err != nil {
 		t.Fatalf("discover vendored packages: %v", err)
 	}
-	if len(components) != 1 || components[0].Parent != "trix" || components[0].Component.Name != "dompurify" || components[0].Component.Version != "3.2.7" || components[0].Component.Integrity != "" || components[0].Component.SourceEvidence != "https://github.com/cure53/DOMPurify/blob/3.2.7/LICENSE" {
+	if len(components) != 1 || components[0].Parent != "example-editor" || components[0].Component.Name != "dompurify" || components[0].Component.Version != "3.2.7" || components[0].Component.Integrity != "" || components[0].Component.SourceEvidence != "https://github.com/cure53/DOMPurify/blob/3.2.7/LICENSE" {
 		t.Fatalf("vendored components = %#v, want DOMPurify 3.2.7", components)
+	}
+}
+
+func TestDiscoverVendoredBrowserPackagesIgnoresPackageSelfDeclaration(t *testing.T) {
+	inputPath := t.TempDir() + "/node_modules/dompurify/dist/purify.js"
+	if err := os.MkdirAll(strings.TrimSuffix(inputPath, "/purify.js"), 0o755); err != nil {
+		t.Fatalf("create package fixture directory: %v", err)
+	}
+	fixture := "/*! @license DOMPurify 3.4.15 | https://github.com/cure53/DOMPurify/blob/3.4.15/LICENSE */"
+	if err := os.WriteFile(inputPath, []byte(fixture), 0o644); err != nil {
+		t.Fatalf("write package fixture: %v", err)
+	}
+	components, err := discoverVendoredBrowserPackages(
+		map[string]browserInput{inputPath: {}},
+		map[string]struct{}{inputPath: {}},
+	)
+	if err != nil {
+		t.Fatalf("discover vendored packages: %v", err)
+	}
+	if len(components) != 0 {
+		t.Fatalf("vendored components = %#v, want package self declaration ignored", components)
+	}
+}
+
+func TestReadDOMPurifyLicenceMaterialIncludesBothAlternatives(t *testing.T) {
+	root := t.TempDir()
+	for name, content := range map[string]string{
+		"LICENSE":     "Apache License Version 2.0",
+		"LICENSE-MPL": "Mozilla Public License Version 2.0",
+	} {
+		if err := os.WriteFile(filepath.Join(root, name), []byte(content), 0o644); err != nil {
+			t.Fatalf("write %s: %v", name, err)
+		}
+	}
+	material, err := readDOMPurifyLicenceMaterial(root)
+	if err != nil {
+		t.Fatalf("read DOMPurify licence material: %v", err)
+	}
+	if got := licenceExpression(material); got != "Apache-2.0 OR MPL-2.0" {
+		t.Fatalf("licence expression = %q, want both alternatives", got)
 	}
 }
 
@@ -250,9 +291,9 @@ func TestNewSBOMLinksVendoredPackageByPURL(t *testing.T) {
 		},
 		{
 			Ecosystem:    "npm",
-			Name:         "trix",
+			Name:         "example-editor",
 			Version:      "2.1.16",
-			PURL:         "pkg:npm/trix@2.1.16",
+			PURL:         "pkg:npm/example-editor@2.1.16",
 			Targets:      []string{"browser"},
 			Dependencies: []string{"pkg:npm/dompurify@3.2.7"},
 			Licence:      licence{ID: "MIT"},
@@ -261,12 +302,12 @@ func TestNewSBOMLinksVendoredPackageByPURL(t *testing.T) {
 
 	document := newSBOM("1.0.0", components)
 	for _, dependency := range document.Dependencies {
-		if dependency.Ref == "pkg:npm/trix@2.1.16" {
+		if dependency.Ref == "pkg:npm/example-editor@2.1.16" {
 			if len(dependency.DependsOn) != 1 || dependency.DependsOn[0] != "pkg:npm/dompurify@3.2.7" {
-				t.Fatalf("Trix dependencies = %v", dependency.DependsOn)
+				t.Fatalf("example editor dependencies = %v", dependency.DependsOn)
 			}
 			return
 		}
 	}
-	t.Fatal("missing Trix dependency record")
+	t.Fatal("missing example editor dependency record")
 }

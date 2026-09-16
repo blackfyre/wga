@@ -103,7 +103,22 @@ templ PostcardComposeBlock(v PostcardComposeView) {
 						<p class="mt-3 font-mono text-(length:--t-11) tracking-[1px] text-wga-ink/60">FIVE RECIPIENTS IS THE LIMIT FOR ONE POSTCARD</p>
 					}
 				</fieldset>
-				<label class="mb-6 block font-mono text-(length:--t-11) tracking-[1px]">MESSAGE — 300 CHARACTERS AT MOST<textarea class="mt-2 min-h-[110px] w-full resize-y border border-wga-ink/30 bg-transparent p-3 font-sans text-(length:--t-15) leading-relaxed" name="message" maxlength="300" required>{ v.Message }</textarea></label>
+				<div class="mb-6" data-wga-rte data-rte-limit={ strconv.Itoa(PostcardMessageLimit) }>
+					<div class="mb-2 flex items-baseline justify-between gap-4 font-mono text-(length:--t-11) tracking-[1px]">
+						<label id="message-label" for="message">MESSAGE — 300 CHARACTERS AT MOST</label>
+						<span id="message-count" data-rte-count aria-live="polite" class="shrink-0 text-wga-ink/60">300 characters remaining</span>
+					</div>
+					<div class="border border-wga-ink/30 bg-transparent focus-within:border-wga-accent">
+						<div role="toolbar" aria-label="Message formatting" data-rte-toolbar hidden class="flex gap-0.5 border-b border-wga-ink/30 p-1.5">
+							@postcardFormatButton("bold", "Bold", "B", "font-bold")
+							@postcardFormatButton("italic", "Italic", "I", "italic")
+							@postcardFormatButton("ul", "Bulleted list", "•", "")
+							@postcardFormatButton("ol", "Numbered list", "1.", "")
+						</div>
+						<div data-rte-surface data-bionic="off" hidden role="textbox" aria-multiline="true" aria-required="true" aria-labelledby="message-label" aria-describedby="message-count" data-placeholder="Write a short note…" class="wga-rte relative min-h-[110px] p-3 font-sans text-(length:--t-15) leading-relaxed"></div>
+						<textarea id="message" data-rte-source class="min-h-[110px] w-full resize-y border-0 bg-transparent p-3 font-sans text-(length:--t-15) leading-relaxed" name="message" required aria-describedby="message-count" placeholder="Write a short note…">{ v.Message }</textarea>
+					</div>
+				</div>
 				<label aria-hidden="true" class="hpt" for="name">Leave empty</label><input aria-hidden="true" class="hpt" tabindex="-1" autocomplete="off" id="name" name="name"/>
 				<label aria-hidden="true" class="hpt" for="email">Leave empty</label><input aria-hidden="true" class="hpt" tabindex="-1" autocomplete="off" id="email" name="email"/>
 				if v.SiteKey != "" {
@@ -116,6 +131,10 @@ templ PostcardComposeBlock(v PostcardComposeView) {
 			</form>
 		</div>
 	</section>
+}
+
+templ postcardFormatButton(command string, label string, glyph string, extra string) {
+	<button type="button" data-rte-cmd={ command } aria-label={ label } aria-pressed="false" class={ "inline-flex min-h-11 min-w-11 items-center justify-center border border-transparent bg-transparent font-mono text-(length:--t-13) leading-none text-wga-ink/60 hover:border-wga-ink/30 hover:text-wga-ink aria-pressed:border-wga-ink/30 aria-pressed:text-wga-ink", extra }>{ glyph }</button>
 }
 
 templ PostcardConfirmationPage(v PostcardConfirmationView) {
@@ -178,7 +197,7 @@ templ PostcardBlock(p PostcardView) {
 			<div class="grid gap-8 p-6 md:grid-cols-[minmax(0,1fr)_220px]">
 				<div>
 					<p class="mb-3 font-mono text-(length:--t-10) tracking-[1px] text-wga-ink/60">FROM { p.SenderName }</p>
-					<div class="content text-(length:--t-17) leading-relaxed">
+					<div class="wga-rte text-(length:--t-17) leading-relaxed" hx-disable>
 						@templ.Raw(p.Message)
 					</div>
 				</div>

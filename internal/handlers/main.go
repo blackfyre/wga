@@ -28,7 +28,6 @@ import (
 	"github.com/blackfyre/wga/internal/handlers/postcards"
 	"github.com/blackfyre/wga/internal/requestprotection"
 	"github.com/blackfyre/wga/internal/requesttrust"
-	"github.com/microcosm-cc/bluemonday"
 	"github.com/pocketbase/pocketbase"
 )
 
@@ -43,8 +42,6 @@ import (
 func RegisterHandlers(app *pocketbase.PocketBase, environment config.Environment, captcha config.Captcha, postcardKeyring config.PostcardTokenKeyring, contributorReader contributorworkflow.Reader, captchaVerifier antiabuse.Verifier, itineraryPolicy itineraryhandlers.SecurityPolicy, authenticateOrigin requesttrust.OriginAuthenticator, clientIdentity requesttrust.Resolver, publicURL config.PublicURL, publicReadPolicy *requestprotection.Policy) error {
 
 	app.Logger().Debug("Registering route handlers...")
-	p := bluemonday.NewPolicy()
-
 	if err := registerProtectedReadMiddleware(app, environment, publicURL.String(), authenticateOrigin, clientIdentity, publicReadPolicy); err != nil {
 		return err
 	}
@@ -64,7 +61,7 @@ func RegisterHandlers(app *pocketbase.PocketBase, environment config.Environment
 	health.RegisterHandlers(app)
 	keyboard.RegisterHandlers(app)
 	artists.RegisterHandlers(app, environment)
-	postcards.RegisterPostcardHandlers(app, p, captcha, postcardKeyring, captchaVerifier, clientIdentity)
+	postcards.RegisterPostcardHandlers(app, captcha, postcardKeyring, captchaVerifier, clientIdentity)
 	contributorhandlers.RegisterHandlers(app, contributorReader)
 	static.RegisterHandlers(app, environment)
 	artworks.RegisterArtworksHandlers(app)

@@ -1,12 +1,26 @@
 @charset "UTF-8";
 @import "tailwindcss";
 @import "animate.css";
-@import "../../node_modules/trix/dist/trix.css";
 @import "../../node_modules/vanilla-cookieconsent/dist/cookieconsent.css";
 @import "../../node_modules/viewerjs/dist/viewer.css";
 @source "../../internal/assets/templ";
 @source "../../resources/js";
 @plugin "@tailwindcss/typography";
+
+.wga-rte > p { margin: 0 0 0.6em; }
+.wga-rte > p:last-child { margin-bottom: 0; }
+.wga-rte ul,
+.wga-rte ol { margin: 0 0 0.6em; padding-left: 1.4em; }
+.wga-rte ul { list-style: disc; }
+.wga-rte ol { list-style: decimal; }
+.wga-rte li { margin: 0 0 0.25em; }
+.wga-rte b { font-weight: 600; }
+.wga-rte[data-rte-empty]::before {
+	position: absolute;
+	color: color-mix(in srgb, var(--wga-ink) 50%, transparent);
+	content: attr(data-placeholder);
+	pointer-events: none;
+}
 
 .wga-search-skeleton {
 	display: none;

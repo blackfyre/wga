@@ -17,7 +17,6 @@ import (
 	"github.com/blackfyre/wga/internal/logging"
 	"github.com/blackfyre/wga/internal/requesttrust"
 	"github.com/blackfyre/wga/internal/testutils"
-	"github.com/microcosm-cc/bluemonday"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/router"
 )
@@ -51,7 +50,7 @@ func TestSavePostcardDoesNotLogSubmittedForm(t *testing.T) {
 	}
 	logging.SetRequestID(event, "request-123")
 
-	_ = savePostcard(app, event, bluemonday.NewPolicy(), config.Captcha{}, config.PostcardTokenKeyring{}, nil, newSubmissionLimiter(3, 10*time.Minute), requesttrust.New(requesttrust.SourceDirect))
+	_ = savePostcard(app, event, config.Captcha{}, config.PostcardTokenKeyring{}, nil, newSubmissionLimiter(3, 10*time.Minute), requesttrust.New(requesttrust.SourceDirect))
 
 	testutils.FlushLogs(t, app)
 	entry := testutils.LogWithEvent(captured(), "postcard.submission.rejected")
@@ -127,7 +126,7 @@ func TestSavePostcardCaptchaFailuresDoNotPersist(t *testing.T) {
 			event.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 			limiter := newSubmissionLimiter(3, 10*time.Minute)
-			_ = savePostcard(app, event, bluemonday.NewPolicy(), protectedCaptcha(t), config.PostcardTokenKeyring{}, test.verifier, limiter, requesttrust.New(requesttrust.SourceDirect))
+			_ = savePostcard(app, event, protectedCaptcha(t), config.PostcardTokenKeyring{}, test.verifier, limiter, requesttrust.New(requesttrust.SourceDirect))
 			if recorder.Code != test.wantCode {
 				t.Fatalf("status = %d, want %d", recorder.Code, test.wantCode)
 			}
@@ -199,7 +198,7 @@ func TestSavePostcardFailsClosedWithoutTrustedIdentity(t *testing.T) {
 	}
 	event.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	_ = savePostcard(app, event, bluemonday.NewPolicy(), protectedCaptcha(t), config.PostcardTokenKeyring{}, verifier, newSubmissionLimiter(3, 10*time.Minute), resolver)
+	_ = savePostcard(app, event, protectedCaptcha(t), config.PostcardTokenKeyring{}, verifier, newSubmissionLimiter(3, 10*time.Minute), resolver)
 	if recorder.Code != http.StatusBadRequest {
 		t.Fatalf("status = %d, want 400 (fail closed)", recorder.Code)
 	}
@@ -246,7 +245,7 @@ func TestSavePostcardUsesResolvedIdentityForCaptcha(t *testing.T) {
 	event.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	event.Request.RemoteAddr = "198.51.100.7:54321"
 
-	_ = savePostcard(app, event, bluemonday.NewPolicy(), protectedCaptcha(t), config.PostcardTokenKeyring{}, verifier, newSubmissionLimiter(3, 10*time.Minute), resolver)
+	_ = savePostcard(app, event, protectedCaptcha(t), config.PostcardTokenKeyring{}, verifier, newSubmissionLimiter(3, 10*time.Minute), resolver)
 	if capturedIP != "203.0.113.99" {
 		t.Errorf("captcha received %q, want resolved identity 203.0.113.99", capturedIP)
 	}
@@ -276,7 +275,7 @@ func TestSavePostcardRecipientRowActionsUseExistingEndpoint(t *testing.T) {
 			}
 			recorder := httptest.NewRecorder()
 			event := &core.RequestEvent{App: app, Event: router.Event{Request: request, Response: recorder}}
-			if err := savePostcard(app, event, bluemonday.NewPolicy(), config.Captcha{}, config.PostcardTokenKeyring{}, nil, newSubmissionLimiter(3, 10*time.Minute), resolver); err != nil {
+			if err := savePostcard(app, event, config.Captcha{}, config.PostcardTokenKeyring{}, nil, newSubmissionLimiter(3, 10*time.Minute), resolver); err != nil {
 				t.Fatal(err)
 			}
 			if recorder.Code != http.StatusOK || strings.Count(recorder.Body.String(), `name="recipients[]"`) != test.wantRows {
@@ -291,6 +290,39 @@ func TestSavePostcardRecipientRowActionsUseExistingEndpoint(t *testing.T) {
 				t.Fatal("ordinary row action did not render a complete page")
 			}
 		})
+	}
+}
+
+func TestSavePostcardSanitisesMessageBeforeValidationRedisplay(t *testing.T) {
+	app := testutils.NewTestApp(t)
+	artworkID := installComposeArtwork(t, app, "Work")
+	form := url.Values{
+		"sender_name":          {""},
+		"sender_email":         {"sender@example.test"},
+		"recipients[]":         {"recipient@example.test"},
+		"message":              {`<p onclick="alert(1)">Hello <b style="color:red">there</b>.</p><script>alert(2)</script>`},
+		"image_id":             {artworkID},
+		"g-recaptcha-response": {"dev"},
+	}
+	request := httptest.NewRequest(http.MethodPost, "/postcard", strings.NewReader(form.Encode()))
+	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	recorder := httptest.NewRecorder()
+	event := &core.RequestEvent{App: app, Event: router.Event{Request: request, Response: recorder}}
+
+	if err := savePostcard(app, event, config.Captcha{}, config.PostcardTokenKeyring{}, nil, newSubmissionLimiter(3, 10*time.Minute), requesttrust.New(requesttrust.SourceDirect)); err != nil {
+		t.Fatal(err)
+	}
+	if recorder.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("status = %d, want %d", recorder.Code, http.StatusUnprocessableEntity)
+	}
+	body := recorder.Body.String()
+	for _, forbidden := range []string{"onclick=\"alert", "style=\"color:red\"", "alert(2)"} {
+		if strings.Contains(body, forbidden) {
+			t.Fatalf("redisplayed form contains %q: %s", forbidden, body)
+		}
+	}
+	if !strings.Contains(body, `&lt;p&gt;Hello &lt;b&gt;there&lt;/b&gt;.&lt;/p&gt;`) {
+		t.Fatalf("redisplayed form did not retain safe formatting: %s", body)
 	}
 }
 
@@ -318,7 +350,7 @@ func TestSavePostcardKeysRateLimitByResolvedIdentity(t *testing.T) {
 	event.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	event.Request.RemoteAddr = "198.51.100.7:54321"
 
-	_ = savePostcard(app, event, bluemonday.NewPolicy(), config.Captcha{}, config.PostcardTokenKeyring{}, nil, limiter, resolver)
+	_ = savePostcard(app, event, config.Captcha{}, config.PostcardTokenKeyring{}, nil, limiter, resolver)
 
 	if _, ok := limiter.windows["203.0.113.99"]; !ok {
 		t.Error("rate limiter was not keyed by the resolved identity")
