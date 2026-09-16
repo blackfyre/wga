@@ -116,7 +116,7 @@ templ PostcardComposeBlock(v PostcardComposeView) {
 							@postcardFormatButton("ol", "Numbered list", "1.", "")
 						</div>
 						<div data-rte-surface data-bionic="off" hidden role="textbox" aria-multiline="true" aria-required="true" aria-labelledby="message-label" aria-describedby="message-count" data-placeholder="Write a short note…" class="wga-rte relative min-h-[110px] p-3 font-sans text-(length:--t-15) leading-relaxed"></div>
-						<textarea id="message" data-rte-source class="min-h-[110px] w-full resize-y border-0 bg-transparent p-3 font-sans text-(length:--t-15) leading-relaxed" name="message" maxlength="300" required aria-describedby="message-count" placeholder="Write a short note…">{ v.Message }</textarea>
+						<textarea id="message" data-rte-source class="min-h-[110px] w-full resize-y border-0 bg-transparent p-3 font-sans text-(length:--t-15) leading-relaxed" name="message" required aria-describedby="message-count" placeholder="Write a short note…">{ v.Message }</textarea>
 					</div>
 				</div>
 				<label aria-hidden="true" class="hpt" for="name">Leave empty</label><input aria-hidden="true" class="hpt" tabindex="-1" autocomplete="off" id="name" name="name"/>

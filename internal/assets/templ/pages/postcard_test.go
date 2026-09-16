@@ -74,10 +74,14 @@ func TestPostcardComposeAndConfirmationProgressivelyEnhance(t *testing.T) {
 		t.Fatal(err)
 	}
 	html := compose.String()
-	for _, fragment := range []string{`action="/postcard"`, `method="post"`, `hx-post="/postcard"`, `name="recipients[]"`, `name="add_recipient"`, `formnovalidate`, `maxlength="300"`, `name="message"`, `data-wga-rte`, `data-rte-surface`, `data-rte-toolbar hidden`, `aria-label="Message formatting"`, `aria-live="polite"`, `name="name"`, `name="email"`, "Artist, Filing"} {
+	for _, fragment := range []string{`action="/postcard"`, `method="post"`, `hx-post="/postcard"`, `name="recipients[]"`, `name="add_recipient"`, `formnovalidate`, `name="message"`, `data-wga-rte`, `data-rte-surface`, `data-rte-toolbar hidden`, `aria-label="Message formatting"`, `aria-live="polite"`, `name="name"`, `name="email"`, "Artist, Filing"} {
 		if !strings.Contains(html, fragment) {
 			t.Fatalf("compose missing %s", fragment)
 		}
+	}
+	messageTag := regexp.MustCompile(`<textarea[^>]*name="message"[^>]*>`).FindString(html)
+	if strings.Contains(messageTag, "maxlength") {
+		t.Fatal("message fallback must leave visible Unicode length enforcement to the server")
 	}
 	if strings.Contains(html, "trix-editor") {
 		t.Fatal("compose still renders the retired Trix editor")

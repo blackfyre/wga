@@ -140,6 +140,46 @@ test("toolbar formats an empty caret and starts a list", async ({ page }) => {
 	await expect(source).toHaveValue(/<ul><li>First item<\/li><\/ul>/);
 });
 
+test("editor preserves soft breaks and announces an empty message", async ({
+	page,
+}) => {
+	await page.goto(`/postcard/send?awid=${syntheticArtworkID}`);
+	const message = page.locator("[data-rte-surface]");
+	const source = page.locator("textarea[name='message']");
+
+	await page.getByRole("button", { name: "ADD ANOTHER RECIPIENT" }).click();
+	await expect(page.getByLabel("Recipient email 2")).toBeVisible();
+	await page.reload();
+
+	await message.fill("First line");
+	await message.press("Shift+Enter");
+	await message.pressSequentially("Second line");
+	await expect(source).toHaveValue(
+		/<p>First line<\/p><p>Second line(?:<br>)?<\/p>/,
+	);
+
+	await page.reload();
+	await page.getByLabel("YOUR NAME").fill("Playwright Sender");
+	await page.getByLabel("YOUR EMAIL").fill("sender@example.com");
+	await page.getByLabel("Recipient email 1").fill("recipient@example.com");
+	await page.getByRole("button", { name: "SEND POSTCARD" }).click();
+	await expect(message).toHaveAttribute("aria-invalid", "true");
+	await expect(page.locator("[data-rte-count]")).toHaveText("Enter a message");
+});
+
+test.describe("without JavaScript message limit", () => {
+	test.use({ javaScriptEnabled: false });
+
+	test("leaves visible Unicode length enforcement to the server", async ({
+		page,
+	}) => {
+		await page.goto(`/postcard/send?awid=${syntheticArtworkID}`);
+		await expect(page.locator("textarea[name='message']")).not.toHaveAttribute(
+			"maxlength",
+		);
+	});
+});
+
 for (const viewport of [
 	{ width: 390, height: 844 },
 	{ width: 834, height: 900 },

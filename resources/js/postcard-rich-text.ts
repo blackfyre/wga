@@ -209,10 +209,29 @@ function mount(root: HTMLElement): void {
 		source.value = editor.getHTML();
 		const count = Array.from(surface.textContent ?? "").length;
 		const remaining = limit - count;
-		counter.textContent = `${remaining} ${remaining === 1 ? "character" : "characters"} remaining`;
-		counter.classList.toggle("text-wga-error", remaining < 0);
+		const remainsInvalid =
+			surface.getAttribute("aria-invalid") === "true" &&
+			(count === 0 || count > limit);
+		if (remainsInvalid) {
+			counter.textContent =
+				count === 0
+					? "Enter a message"
+					: `${count - limit} ${count - limit === 1 ? "character" : "characters"} over the limit`;
+		} else {
+			surface.removeAttribute("aria-invalid");
+			counter.textContent = `${remaining} ${remaining === 1 ? "character" : "characters"} remaining`;
+		}
+		counter.classList.toggle("text-wga-error", remainsInvalid || remaining < 0);
 		surface.toggleAttribute("data-rte-empty", count === 0);
 		reflectState();
+	};
+	const onKeyDown = (event: KeyboardEvent) => {
+		if (event.key !== "Enter" || !event.shiftKey) return;
+		event.preventDefault();
+		event.stopImmediatePropagation();
+		editor.splitBlock(false);
+		sync();
+		rememberSelection();
 	};
 	const onToolbarMouseDown = (event: MouseEvent) => event.preventDefault();
 	const onToolbarClick = (event: MouseEvent) => {
@@ -234,40 +253,70 @@ function mount(root: HTMLElement): void {
 		rememberSelection();
 		sync();
 	};
-	const onSubmit = (event: SubmitEvent) => {
+	const validate = (): boolean => {
 		sync();
+		const count = Array.from(surface.textContent ?? "").length;
+		if (count > 0 && count <= limit) return true;
+		surface.setAttribute("aria-invalid", "true");
+		counter.textContent =
+			count === 0
+				? "Enter a message"
+				: `${count - limit} ${count - limit === 1 ? "character" : "characters"} over the limit`;
+		counter.classList.add("text-wga-error");
+		surface.focus();
+		return false;
+	};
+	const bypassesValidation = (event: Event): boolean => {
+		const triggeringEvent = (
+			event as CustomEvent<{
+				requestConfig?: { triggeringEvent?: Event };
+			}>
+		).detail?.requestConfig?.triggeringEvent;
+		const submitter =
+			triggeringEvent instanceof SubmitEvent
+				? triggeringEvent.submitter
+				: triggeringEvent instanceof MouseEvent
+					? triggeringEvent.target
+					: null;
+		return submitter instanceof HTMLButtonElement && submitter.formNoValidate;
+	};
+	const onSubmit = (event: SubmitEvent) => {
 		if (
 			event.submitter instanceof HTMLButtonElement &&
 			event.submitter.formNoValidate
 		)
 			return;
-		const count = Array.from(surface.textContent ?? "").length;
-		if (count > 0 && count <= limit) return;
-		event.preventDefault();
-		surface.focus();
+		if (!validate()) event.preventDefault();
+	};
+	const onBeforeRequest = (event: Event) => {
+		if (!bypassesValidation(event) && !validate()) event.preventDefault();
 	};
 
 	editor.addEventListener("input", sync);
 	editor.addEventListener("pathChange", reflectState);
 	editor.addEventListener("select", reflectState);
+	surface.addEventListener("keydown", onKeyDown, true);
 	document.addEventListener("selectionchange", rememberSelection);
 	surface.addEventListener("keyup", rememberSelection);
 	surface.addEventListener("mouseup", rememberSelection);
 	toolbar.addEventListener("mousedown", onToolbarMouseDown);
 	toolbar.addEventListener("click", onToolbarClick);
-	form.addEventListener("submit", onSubmit);
+	form.addEventListener("submit", onSubmit, true);
+	form.addEventListener("htmx:beforeRequest", onBeforeRequest);
 	sync();
 
 	mounted.set(root, () => {
 		editor.removeEventListener("input", sync);
 		editor.removeEventListener("pathChange", reflectState);
 		editor.removeEventListener("select", reflectState);
+		surface.removeEventListener("keydown", onKeyDown, true);
 		document.removeEventListener("selectionchange", rememberSelection);
 		surface.removeEventListener("keyup", rememberSelection);
 		surface.removeEventListener("mouseup", rememberSelection);
 		toolbar.removeEventListener("mousedown", onToolbarMouseDown);
 		toolbar.removeEventListener("click", onToolbarClick);
-		form.removeEventListener("submit", onSubmit);
+		form.removeEventListener("submit", onSubmit, true);
+		form.removeEventListener("htmx:beforeRequest", onBeforeRequest);
 		editor.destroy();
 		mounted.delete(root);
 	});
