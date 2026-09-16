@@ -2,10 +2,12 @@ package observability
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -23,6 +25,7 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
 	"go.opentelemetry.io/otel/trace"
+	"google.golang.org/grpc/credentials"
 )
 
 const (
@@ -54,21 +57,9 @@ func ConfigureTracing(settings config.OpenTelemetry, environment config.Environm
 	}
 
 	ctx := context.Background()
-	traceExporter, err := otlptracegrpc.New(ctx,
-		otlptracegrpc.WithEndpointURL(settings.Endpoint()),
-		otlptracegrpc.WithTimeout(telemetryExportTimeout),
-	)
+	traceExporter, metricExporter, err := newOTLPExporters(ctx, settings.Endpoint())
 	if err != nil {
-		return Tracer{}, fmt.Errorf("initialise OpenTelemetry trace exporter: %w", err)
-	}
-
-	metricExporter, err := otlpmetricgrpc.New(ctx,
-		otlpmetricgrpc.WithEndpointURL(settings.Endpoint()),
-		otlpmetricgrpc.WithTimeout(telemetryExportTimeout),
-	)
-	if err != nil {
-		_ = traceExporter.Shutdown(ctx)
-		return Tracer{}, fmt.Errorf("initialise OpenTelemetry metric exporter: %w", err)
+		return Tracer{}, err
 	}
 
 	res := resource.NewWithAttributes(
@@ -78,6 +69,7 @@ func ConfigureTracing(settings config.OpenTelemetry, environment config.Environm
 		semconv.DeploymentEnvironmentNameKey.String(string(environment)),
 	)
 	traceProvider := sdktrace.NewTracerProvider(
+		sdktrace.WithSampler(tailSamplingHeadSampler()),
 		sdktrace.WithBatcher(traceExporter,
 			sdktrace.WithMaxQueueSize(telemetrySpanQueueSize),
 			sdktrace.WithExportTimeout(telemetryExportTimeout),
@@ -106,6 +98,49 @@ func ConfigureTracing(settings config.OpenTelemetry, environment config.Environm
 		"environment", environment,
 	)
 	return runtime, nil
+}
+
+func tailSamplingHeadSampler() sdktrace.Sampler {
+	return sdktrace.AlwaysSample()
+}
+
+func newOTLPExporters(ctx context.Context, endpoint string) (sdktrace.SpanExporter, sdkmetric.Exporter, error) {
+	parsedEndpoint, err := url.Parse(endpoint)
+	if err != nil {
+		return nil, nil, fmt.Errorf("parse OpenTelemetry collector endpoint: %w", err)
+	}
+
+	traceOptions := []otlptracegrpc.Option{
+		otlptracegrpc.WithEndpointURL(endpoint),
+		otlptracegrpc.WithHeaders(map[string]string{}),
+		otlptracegrpc.WithTimeout(telemetryExportTimeout),
+	}
+	metricOptions := []otlpmetricgrpc.Option{
+		otlpmetricgrpc.WithEndpointURL(endpoint),
+		otlpmetricgrpc.WithHeaders(map[string]string{}),
+		otlpmetricgrpc.WithTimeout(telemetryExportTimeout),
+	}
+	if parsedEndpoint.Scheme == "http" {
+		traceOptions = append(traceOptions, otlptracegrpc.WithInsecure())
+		metricOptions = append(metricOptions, otlpmetricgrpc.WithInsecure())
+	} else {
+		transportCredentials := credentials.NewTLS(&tls.Config{MinVersion: tls.VersionTLS12})
+		traceOptions = append(traceOptions, otlptracegrpc.WithTLSCredentials(transportCredentials))
+		metricOptions = append(metricOptions, otlpmetricgrpc.WithTLSCredentials(transportCredentials))
+	}
+
+	traceExporter, err := otlptracegrpc.New(ctx, traceOptions...)
+	if err != nil {
+		return nil, nil, fmt.Errorf("initialise OpenTelemetry trace exporter: %w", err)
+	}
+
+	metricExporter, err := otlpmetricgrpc.New(ctx, metricOptions...)
+	if err != nil {
+		_ = traceExporter.Shutdown(ctx)
+		return nil, nil, fmt.Errorf("initialise OpenTelemetry metric exporter: %w", err)
+	}
+
+	return traceExporter, metricExporter, nil
 }
 
 func shutdownConcurrently(ctx context.Context, shutdowns ...func(context.Context) error) error {
@@ -168,13 +203,14 @@ func (t Tracer) intercept(e *core.RequestEvent, next func() error, responseStatu
 
 	ctx := t.propagator.Extract(e.Request.Context(), propagation.HeaderCarrier(e.Request.Header))
 	route := requestRoute(e.Request)
-	ctx, span := t.tracer.Start(ctx, e.Request.Method+" "+route, trace.WithSpanKind(trace.SpanKindServer))
+	method := strings.ToUpper(e.Request.Method)
+	ctx, span := t.tracer.Start(ctx, method+" "+route, trace.WithSpanKind(trace.SpanKindServer))
 	e.Request = e.Request.WithContext(ctx)
 
 	defer func() {
 		status := responseStatus()
 		span.SetAttributes(
-			semconv.HTTPRequestMethodKey.String(e.Request.Method),
+			semconv.HTTPRequestMethodKey.String(method),
 			semconv.HTTPRouteKey.String(route),
 			semconv.HTTPResponseStatusCode(status),
 		)

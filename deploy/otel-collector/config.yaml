@@ -53,7 +53,7 @@ exporters:
     headers:
       Authorization: ${env:OTEL_BACKEND_AUTHORIZATION}
     tls:
-      insecure: ${env:OTEL_BACKEND_OTLP_INSECURE:-false}
+      insecure: false
     timeout: 5s
     sending_queue:
       enabled: true

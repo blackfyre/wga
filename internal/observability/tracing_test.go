@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"testing"
 
@@ -16,7 +17,22 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
+	"go.opentelemetry.io/otel/trace"
+	collectortracepb "go.opentelemetry.io/proto/otlp/collector/trace/v1"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
+
+type metadataTraceServer struct {
+	collectortracepb.UnimplementedTraceServiceServer
+	metadata chan metadata.MD
+}
+
+func (s *metadataTraceServer) Export(ctx context.Context, _ *collectortracepb.ExportTraceServiceRequest) (*collectortracepb.ExportTraceServiceResponse, error) {
+	md, _ := metadata.FromIncomingContext(ctx)
+	s.metadata <- md
+	return &collectortracepb.ExportTraceServiceResponse{}, nil
+}
 
 func TestConfigureTracingDisabledWithoutEndpoint(t *testing.T) {
 	tracer, err := ConfigureTracing(config.OpenTelemetry{}, config.EnvironmentProduction, slog.New(slog.NewTextHandler(io.Discard, nil)))
@@ -82,6 +98,62 @@ func TestShutdownConcurrentlyAttemptsEveryProvider(t *testing.T) {
 	}
 }
 
+func TestOTLPExportersIgnoreAmbientCredentials(t *testing.T) {
+	t.Setenv("OTEL_EXPORTER_OTLP_HEADERS", "Authorization=secret")
+	t.Setenv("OTEL_EXPORTER_OTLP_CERTIFICATE", "/missing/ambient-ca.pem")
+	t.Setenv("OTEL_EXPORTER_OTLP_CLIENT_CERTIFICATE", "/missing/ambient-client.pem")
+	t.Setenv("OTEL_EXPORTER_OTLP_CLIENT_KEY", "/missing/ambient-client-key.pem")
+
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen for OTLP: %v", err)
+	}
+	server := grpc.NewServer()
+	receiver := &metadataTraceServer{metadata: make(chan metadata.MD, 1)}
+	collectortracepb.RegisterTraceServiceServer(server, receiver)
+	go func() { _ = server.Serve(listener) }()
+	t.Cleanup(func() {
+		server.Stop()
+		_ = listener.Close()
+	})
+
+	traceExporter, metricExporter, err := newOTLPExporters(t.Context(), "http://"+listener.Addr().String())
+	if err != nil {
+		t.Fatalf("initialise exporters with ambient credentials: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := traceExporter.Shutdown(context.Background()); err != nil {
+			t.Errorf("shutdown trace exporter: %v", err)
+		}
+		if err := metricExporter.Shutdown(context.Background()); err != nil {
+			t.Errorf("shutdown metric exporter: %v", err)
+		}
+	})
+
+	span := tracetest.SpanStub{Name: "ambient-credentials-test"}.Snapshot()
+	if err := traceExporter.ExportSpans(t.Context(), []sdktrace.ReadOnlySpan{span}); err != nil {
+		t.Fatalf("export span: %v", err)
+	}
+	if got := (<-receiver.metadata).Get("authorization"); len(got) != 0 {
+		t.Fatalf("exported ambient authorization header: %q", got)
+	}
+}
+
+func TestAlwaysSampleOverridesRemoteUnsampledParent(t *testing.T) {
+	parent := trace.NewSpanContext(trace.SpanContextConfig{
+		TraceID:    trace.TraceID{1},
+		SpanID:     trace.SpanID{1},
+		TraceFlags: 0,
+		Remote:     true,
+	})
+	result := tailSamplingHeadSampler().ShouldSample(sdktrace.SamplingParameters{
+		ParentContext: trace.ContextWithRemoteSpanContext(t.Context(), parent),
+	})
+	if result.Decision != sdktrace.RecordAndSample {
+		t.Fatalf("sampling decision = %v, want RecordAndSample", result.Decision)
+	}
+}
+
 func TestTracerIntercept(t *testing.T) {
 	recorder := tracetest.NewSpanRecorder()
 	provider := sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(recorder))
@@ -97,7 +169,7 @@ func TestTracerIntercept(t *testing.T) {
 		propagator: propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}),
 	}
 	event := monitorRequestEvent(t, "/artists/example?token=secret")
-	event.Request.Method = http.MethodGet
+	event.Request.Method = "get"
 	event.Request.Pattern = "GET /artists/{artist}"
 	event.Request.Header.Set("traceparent", "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01")
 	requestError := errors.New("unexpected request failure")

@@ -18,7 +18,6 @@ Configure these variables on the collector service:
 | ------------------------------------ | ---------------------------------------------------------------------------------------------- |
 | `OTEL_BACKEND_OTLP_ENDPOINT`         | Final backend's OTLP/gRPC host and port.                                                       |
 | `OTEL_BACKEND_AUTHORIZATION`         | Complete backend authorisation header value, such as `Bearer …`; store it as a Railway secret. |
-| `OTEL_BACKEND_OTLP_INSECURE`         | Optional; defaults to `false`. Use `true` only for a trusted private cleartext backend.        |
 | `OTEL_TAIL_SAMPLING_SLOW_REQUEST_MS` | Optional slow-trace threshold; defaults to `2000`.                                             |
 | `OTEL_TAIL_SAMPLING_PERCENTAGE`      | Optional percentage of otherwise healthy traces retained; defaults to `5`.                     |
 
