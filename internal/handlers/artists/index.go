@@ -427,7 +427,7 @@ func buildArtistIndexViewContext(ctx context.Context, app *pocketbase.PocketBase
 		periodByName[period.id] = period
 	}
 
-	repo := repositories.NewArtistIndexRepository(app)
+	repo := repositories.NewArtistIndexRepositoryWithContext(ctx, app)
 	if err := checkpoint(ctx, "artists.search.birth_bounds"); err != nil {
 		return pages.ArtistsView{}, "", err
 	}

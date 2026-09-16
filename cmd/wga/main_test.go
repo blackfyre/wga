@@ -59,6 +59,7 @@ func TestServerConfigForRequiresPostcardTokenKeyring(t *testing.T) {
 
 	values["WGA_POSTCARD_TOKEN_KEYS"] = `{"primary":"` + base64.RawURLEncoding.EncodeToString(bytes.Repeat([]byte{0x61}, 32)) + `"}`
 	values["WGA_POSTCARD_TOKEN_ACTIVE_KEY_ID"] = "primary"
+	values["OTEL_EXPORTER_OTLP_ENDPOINT"] = "http://localhost:4317"
 	runtimeConfig = config.LoadFrom(func(key string) string { return values[key] })
 	server, err := serverConfigFor(runtimeConfig)
 	if err != nil {
@@ -67,12 +68,20 @@ func TestServerConfigForRequiresPostcardTokenKeyring(t *testing.T) {
 	if server.Postcards.TokenKeyring().ActiveKeyID() != "primary" {
 		t.Fatal("validated token keyring was not carried into server postcard settings")
 	}
+	if got := server.OpenTelemetry.Endpoint(); got != "http://localhost:4317" {
+		t.Fatalf("OpenTelemetry endpoint = %q", got)
+	}
 }
 
 func TestServerConfigForJoinsServerAndTokenKeyringErrors(t *testing.T) {
-	runtimeConfig := config.LoadFrom(func(string) string { return "" })
+	runtimeConfig := config.LoadFrom(func(key string) string {
+		if key == "OTEL_EXPORTER_OTLP_ENDPOINT" {
+			return "not-an-endpoint"
+		}
+		return ""
+	})
 	_, err := serverConfigFor(runtimeConfig)
-	if err == nil || !strings.Contains(err.Error(), "WGA_ENV") || !strings.Contains(err.Error(), "WGA_POSTCARD_TOKEN_KEYS") {
+	if err == nil || !strings.Contains(err.Error(), "WGA_ENV") || !strings.Contains(err.Error(), "WGA_POSTCARD_TOKEN_KEYS") || !strings.Contains(err.Error(), "OTEL_EXPORTER_OTLP_ENDPOINT") {
 		t.Fatalf("joined server configuration error = %v", err)
 	}
 }

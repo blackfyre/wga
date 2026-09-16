@@ -1,6 +1,9 @@
 package repositories
 
 import (
+	"context"
+
+	"github.com/blackfyre/wga/internal/observability"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/pocketbase/pocketbase/core"
 )
@@ -19,7 +22,13 @@ type CollectionHolding struct {
 // LoadCollectionHoldings returns the application-scoped counted location
 // projection. Counts match the artwork-search eligibility predicate.
 func LoadCollectionHoldings(app core.App) ([]CollectionHolding, error) {
-	return collectionHoldingsWithLoader(app, func() ([]CollectionHolding, error) {
+	return LoadCollectionHoldingsContext(context.Background(), app)
+}
+
+// LoadCollectionHoldingsContext returns the holdings projection while linking
+// a cold authoritative load to the caller's trace.
+func LoadCollectionHoldingsContext(ctx context.Context, app core.App) ([]CollectionHolding, error) {
+	return collectionHoldingsWithLoaderContext(ctx, app, func() ([]CollectionHolding, error) {
 		rows := []CollectionHolding{}
 		err := app.DB().NewQuery(`
 			SELECT
@@ -41,11 +50,17 @@ func LoadCollectionHoldings(app core.App) ([]CollectionHolding, error) {
 }
 
 func collectionHoldingsWithLoader(app core.App, load func() ([]CollectionHolding, error)) ([]CollectionHolding, error) {
-	return utils.GetOrLoadCachedValue(app, collectionHoldingsCacheKey, 0, load)
+	return collectionHoldingsWithLoaderContext(context.Background(), app, load)
+}
+
+func collectionHoldingsWithLoaderContext(ctx context.Context, app core.App, load func() ([]CollectionHolding, error)) ([]CollectionHolding, error) {
+	return utils.GetOrLoadInstrumentedCachedValue(ctx, app, collectionHoldingsCacheKey, 0, utils.CacheCollectionHoldings, func() ([]CollectionHolding, error) {
+		return observability.ObserveOperation(ctx, observability.OperationCollectionHoldingsLoad, load)
+	})
 }
 
 // InvalidateCollectionHoldings advances the projection generation so the next
 // lookup observes current persisted locations, artworks, and first authors.
 func InvalidateCollectionHoldings(app core.App) {
-	utils.DeleteCachedValue(app, collectionHoldingsCacheKey)
+	utils.DeleteInstrumentedCachedValue(context.Background(), app, collectionHoldingsCacheKey, utils.CacheCollectionHoldings)
 }

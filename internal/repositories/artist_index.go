@@ -1,11 +1,13 @@
 package repositories
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"sort"
 	"strings"
 
+	"github.com/blackfyre/wga/internal/observability"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
@@ -83,12 +85,20 @@ type IndexedArtist struct {
 // ArtistIndexRepository is the bounded read-model for the public artist index.
 type ArtistIndexRepository struct {
 	app                    core.App
+	ctx                    context.Context
 	loadArtistAvailability func() (artistAvailabilitySet, error)
 }
 
 func NewArtistIndexRepository(app core.App) *ArtistIndexRepository {
+	return NewArtistIndexRepositoryWithContext(context.Background(), app)
+}
+
+// NewArtistIndexRepositoryWithContext links material cold projection loads to
+// the caller's trace while preserving application-scoped cache reuse.
+func NewArtistIndexRepositoryWithContext(ctx context.Context, app core.App) *ArtistIndexRepository {
 	return &ArtistIndexRepository{
 		app: app,
+		ctx: ctx,
 		loadArtistAvailability: func() (artistAvailabilitySet, error) {
 			return loadPublishedArtworkAuthorIDs(app)
 		},
@@ -98,7 +108,7 @@ func NewArtistIndexRepository(app core.App) *ArtistIndexRepository {
 // InvalidateArtistAvailability advances the projection generation so the next
 // lookup observes current persisted artwork relations.
 func InvalidateArtistAvailability(app core.App) {
-	utils.DeleteCachedValue(app, artistAvailabilityCacheKey)
+	utils.DeleteInstrumentedCachedValue(context.Background(), app, artistAvailabilityCacheKey, utils.CacheArtistAvailability)
 }
 
 // CountArtists returns the number of published artists matching the filter.
@@ -326,13 +336,19 @@ func filingLetterExpression(letter string) dbx.Expression {
 // generation performs the catalogue-wide expansion once; bounded artist pages
 // then resolve availability by intersecting their records with this set.
 func (r *ArtistIndexRepository) publishedArtworkAuthorIDs() (artistAvailabilitySet, error) {
+	ctx := r.ctx
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	load := r.loadArtistAvailability
 	if load == nil {
 		load = func() (artistAvailabilitySet, error) {
 			return loadPublishedArtworkAuthorIDs(r.app)
 		}
 	}
-	return utils.GetOrLoadCachedValue(r.app, artistAvailabilityCacheKey, 0, load)
+	return utils.GetOrLoadInstrumentedCachedValue(ctx, r.app, artistAvailabilityCacheKey, 0, utils.CacheArtistAvailability, func() (artistAvailabilitySet, error) {
+		return observability.ObserveOperation(ctx, observability.OperationArtistAvailabilityLoad, load)
+	})
 }
 
 func loadPublishedArtworkAuthorIDs(app core.App) (artistAvailabilitySet, error) {

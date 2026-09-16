@@ -90,28 +90,32 @@ func newPolicy(mode config.ProtectionMode, rates *RateLimiter, capacity *Capacit
 // request and returns any capacity slot before returning.
 func (p *Policy) Admit(ctx context.Context, profile Profile, identity string, resolved bool) Admission {
 	if p == nil || p.mode == config.ProtectionModeOff {
-		return newAdmission(config.ProtectionModeOff, profile, DecisionOff, 0, 0, nil, false, 0)
+		admission := newAdmission(config.ProtectionModeOff, profile, DecisionOff, 0, 0, nil, false, 0)
+		if p != nil {
+			return p.instrument(ctx, admission)
+		}
+		return admission
 	}
 	if !profile.Protected() {
-		return newAdmission(p.mode, profile, DecisionBypass, 0, 0, p.capacity, false, p.retryAfter)
+		return p.instrument(ctx, newAdmission(p.mode, profile, DecisionBypass, 0, 0, p.capacity, false, p.retryAfter))
 	}
 
 	limit := p.rates.limit(profile)
 	if !resolved || identity == "" {
-		return p.result(profile, DecisionIdentityReject, http.StatusForbidden, limit, nil)
+		return p.instrument(ctx, p.result(profile, DecisionIdentityReject, http.StatusForbidden, limit, nil))
 	}
 	if !p.rates.AllowResolved(identity, true, profile) {
-		return p.result(profile, DecisionClientRate, http.StatusTooManyRequests, limit, nil)
+		return p.instrument(ctx, p.result(profile, DecisionClientRate, http.StatusTooManyRequests, limit, nil))
 	}
 	if p.mode == config.ProtectionModeObserve {
-		return p.observeCapacity(profile, limit)
+		return p.instrument(ctx, p.observeCapacity(ctx, profile, limit))
 	}
 
 	lease, acquired := p.capacity.TryAcquire(ctx)
 	if !acquired {
-		return p.result(profile, DecisionGlobalCapacity, http.StatusServiceUnavailable, limit, nil)
+		return p.instrument(ctx, p.result(profile, DecisionGlobalCapacity, http.StatusServiceUnavailable, limit, nil))
 	}
-	return newAdmission(p.mode, profile, DecisionAllow, 0, limit, p.capacity, false, p.retryAfter).withLease(lease)
+	return p.instrument(ctx, newAdmission(p.mode, profile, DecisionAllow, 0, limit, p.capacity, false, p.retryAfter).withLease(lease))
 }
 
 // IngressDecision creates privacy-safe structured fields for a terminal host or
@@ -120,10 +124,10 @@ func (p *Policy) IngressDecision(profile Profile, decision Decision, status int)
 	if p == nil {
 		return newAdmission(config.ProtectionModeOff, profile, decision, status, 0, nil, true, 0)
 	}
-	return newAdmission(p.mode, profile, decision, status, p.rates.limit(profile), p.capacity, true, p.retryAfter)
+	return p.instrument(context.Background(), newAdmission(p.mode, profile, decision, status, p.rates.limit(profile), p.capacity, true, p.retryAfter))
 }
 
-func (p *Policy) observeCapacity(profile Profile, limit int) Admission {
+func (p *Policy) observeCapacity(ctx context.Context, profile Profile, limit int) Admission {
 	used := int(p.observed.Add(1))
 	capacityMax := p.capacity.Capacity()
 	decision := DecisionAllow
@@ -146,10 +150,25 @@ func (p *Policy) observeCapacity(profile Profile, limit int) Admission {
 		retryAfter:   p.retryAfter,
 		release: func() {
 			once.Do(func() {
-				p.observed.Add(-1)
+				current := int(p.observed.Add(-1))
+				recordAdmissionCapacity(ctx, current, capacityMax)
 			})
 		},
 	}
+}
+
+func (p *Policy) instrument(ctx context.Context, admission Admission) Admission {
+	recordAdmissionDecision(ctx, admission.profile, admission.decision, admission.status)
+	recordAdmissionCapacity(ctx, admission.capacityUsed, admission.capacityMax)
+	if admission.lease != nil {
+		once := &sync.Once{}
+		admission.release = func() {
+			once.Do(func() {
+				recordAdmissionCapacity(ctx, p.capacity.InUse(), p.capacity.Capacity())
+			})
+		}
+	}
+	return admission
 }
 
 func (p *Policy) result(profile Profile, decision Decision, status int, limit int, lease *CapacityLease) Admission {

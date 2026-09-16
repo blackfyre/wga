@@ -735,7 +735,7 @@ func loadDualReferenceContext(ctx context.Context, app core.App, checkpoint dual
 		ref.periodByID[record.ID] = period
 	}
 
-	repo := repositories.NewArtistIndexRepository(app)
+	repo := repositories.NewArtistIndexRepositoryWithContext(ctx, app)
 	if err := checkpoint(ctx, "dual.reference.birth_bounds"); err != nil {
 		return ref, err
 	}
@@ -771,7 +771,7 @@ func buildDualIndexViewContext(ctx context.Context, app *pocketbase.PocketBase, 
 		}
 	}
 
-	repo := repositories.NewArtistIndexRepository(app)
+	repo := repositories.NewArtistIndexRepositoryWithContext(ctx, app)
 	filter := idx.repositoryFilter(periodStart, periodEnd)
 
 	if err := checkpoint(ctx, "dual.window.index.count"); err != nil {

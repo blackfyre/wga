@@ -1,6 +1,7 @@
 package artworks
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -343,7 +344,11 @@ type venueFacetOptions struct {
 // projection in memory. VenueQuery changes only the collection choices; it never
 // enters the artwork result predicate or a holding's own count.
 func getVenueOptions(app *pocketbase.PocketBase, venueQuery string, selectedVenue string) (venueFacetOptions, error) {
-	holdings, err := repositories.LoadCollectionHoldings(app)
+	return getVenueOptionsContext(context.Background(), app, venueQuery, selectedVenue)
+}
+
+func getVenueOptionsContext(ctx context.Context, app *pocketbase.PocketBase, venueQuery string, selectedVenue string) (venueFacetOptions, error) {
+	holdings, err := repositories.LoadCollectionHoldingsContext(ctx, app)
 	if err != nil {
 		return venueFacetOptions{}, err
 	}

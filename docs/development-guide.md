@@ -26,6 +26,10 @@ Load deployment configuration through `internal/config`. Feature code must not r
 
 Configuration is resolved at process startup. Required settings must fail validation before the application serves traffic or starts scheduled work. Keep secrets out of errors, debug output, and logs.
 
+OpenTelemetry export is controlled solely by the optional `OTEL_EXPORTER_OTLP_ENDPOINT` setting. There is no separate enable flag and `WGA_ENV` does not enable telemetry: an absent endpoint leaves exporters and telemetry middleware disabled in every environment. The value must be an absolute OTLP/gRPC `http` or `https` URL without credentials, query parameters, or fragments. Cleartext `http` is accepted only for localhost, loopback or private IP addresses, and `*.railway.internal`; external endpoints require `https`.
+
+For local Jaeger, start the documented service and set `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4317` in `.env` before starting WGA. On Railway, configure WGA with the collector service's private `railway.internal` endpoint. Backend endpoints, authentication headers, and credentials belong only on the collector service, never in WGA configuration.
+
 Postcard delivery requires `WGA_POSTCARD_TOKEN_KEYS`, a secret JSON object mapping key IDs to unpadded Base64URL-encoded 32-byte keys, and `WGA_POSTCARD_TOKEN_ACTIVE_KEY_ID`, which names the key used for new envelopes. Generate each key independently with `python3 -c 'import base64, secrets; print(base64.urlsafe_b64encode(secrets.token_bytes(32)).rstrip(b"=").decode())'`, then inject the resulting value through the deployment secret mechanism rather than committing it to `.env.example`. Server startup rejects a missing or invalid keyring; errors, logs, and operator commands must not print keys, bearer tokens, or token envelopes.
 
 Rotate postcard token keys in this order:
@@ -65,6 +69,8 @@ When a feature stores personal data, define its purpose and retention outcome. R
 Use Conventional Commit types for commits and pull-request titles. Keep documentation aligned with the executable configuration and CI workflow; task plans, review notes, and historical summaries are not a substitute for current guidance.
 
 Use `docs/bot-protection-runbook.md` for the Cloudflare and Railway request-protection rollout, origin-secret rotation, cache verification, privacy-safe evidence, and rollback procedure.
+
+Use `docs/observability-runbook.md` for the private Railway collector service, backend-owned credentials, UAT and production rollout, health and signal verification, and endpoint-removal rollback.
 
 ## Licence notices and SBOM
 

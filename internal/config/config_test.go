@@ -54,6 +54,51 @@ func TestServerSentryConfiguration(t *testing.T) {
 	}
 }
 
+func TestServerOpenTelemetryConfiguration(t *testing.T) {
+	tests := []struct {
+		name     string
+		endpoint string
+		want     string
+		wantErr  string
+	}{
+		{name: "omitted endpoint disables telemetry"},
+		{name: "local HTTP collector", endpoint: "http://localhost:4317", want: "http://localhost:4317"},
+		{name: "loopback HTTP collector", endpoint: "http://127.0.0.1:4317", want: "http://127.0.0.1:4317"},
+		{name: "Railway private HTTP collector", endpoint: "http://otel-collector.railway.internal:4317", want: "http://otel-collector.railway.internal:4317"},
+		{name: "external HTTPS collector", endpoint: "https://otel.example.com:4317", want: "https://otel.example.com:4317"},
+		{name: "malformed endpoint", endpoint: "not-an-endpoint", wantErr: "OTEL_EXPORTER_OTLP_ENDPOINT"},
+		{name: "unsupported scheme", endpoint: "ftp://otel.example.com:4317", wantErr: "OTEL_EXPORTER_OTLP_ENDPOINT"},
+		{name: "external cleartext endpoint", endpoint: "http://otel.example.com:4317", wantErr: "must use https"},
+		{name: "endpoint credentials", endpoint: "https://user:secret@otel.example.com:4317", wantErr: "without credentials"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			values := validValues()
+			values["OTEL_EXPORTER_OTLP_ENDPOINT"] = test.endpoint
+			server, err := LoadFrom(lookup(values)).Server()
+			if test.wantErr != "" {
+				if err == nil || !strings.Contains(err.Error(), test.wantErr) {
+					t.Fatalf("expected error containing %q, got %v", test.wantErr, err)
+				}
+				if strings.Contains(err.Error(), "user:secret") {
+					t.Fatalf("configuration error exposed endpoint credentials: %v", err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected server configuration error: %v", err)
+			}
+			if got := server.OpenTelemetry.Endpoint(); got != test.want {
+				t.Fatalf("OpenTelemetry endpoint = %q, want %q", got, test.want)
+			}
+			if got := server.OpenTelemetry.Enabled(); got != (test.want != "") {
+				t.Fatalf("OpenTelemetry enabled = %t, want %t", got, test.want != "")
+			}
+		})
+	}
+}
+
 func TestServerCaptchaPolicy(t *testing.T) {
 	tests := []struct {
 		name           string

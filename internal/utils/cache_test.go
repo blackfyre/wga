@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"context"
 	"errors"
 	"sync/atomic"
 	"testing"
@@ -8,6 +9,9 @@ import (
 	"time"
 
 	"github.com/pocketbase/pocketbase"
+	"go.opentelemetry.io/otel"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 )
 
 func TestGetCachedValueReturnsTypedValue(t *testing.T) {
@@ -325,4 +329,171 @@ func TestGetOrLoadCachedValueLoadsUnrelatedKeysIndependently(t *testing.T) {
 			t.Fatalf("loaded keys = %v, want both unrelated keys", seen)
 		}
 	})
+}
+
+func TestInstrumentedCacheRecordsBoundedOutcomes(t *testing.T) {
+	reader := sdkmetric.NewManualReader()
+	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
+	previousProvider := otel.GetMeterProvider()
+	otel.SetMeterProvider(provider)
+	t.Cleanup(func() {
+		otel.SetMeterProvider(previousProvider)
+		if err := provider.Shutdown(context.Background()); err != nil {
+			t.Errorf("shutdown metric provider: %v", err)
+		}
+	})
+
+	ctx := context.Background()
+	app := pocketbase.NewWithConfig(pocketbase.Config{DefaultDataDir: "./wga_data"})
+	const cacheName = CacheCollectionHoldings
+
+	value, err := GetOrLoadInstrumentedCachedValue(ctx, app, "cache:test:metrics", time.Hour, cacheName, func() (string, error) {
+		return "loaded", nil
+	})
+	if err != nil || value != "loaded" {
+		t.Fatalf("cold load = (%q, %v), want (loaded, nil)", value, err)
+	}
+	if _, err := GetOrLoadInstrumentedCachedValue(ctx, app, "cache:test:metrics", time.Hour, cacheName, func() (string, error) {
+		return "unexpected", nil
+	}); err != nil {
+		t.Fatalf("cache hit: %v", err)
+	}
+
+	synctest.Test(t, func(t *testing.T) {
+		started := make(chan struct{})
+		release := make(chan struct{})
+		results := make(chan error, 2)
+		var loads atomic.Int32
+		for range 2 {
+			go func() {
+				_, loadErr := GetOrLoadInstrumentedCachedValue(ctx, app, "cache:test:metrics:shared", time.Hour, cacheName, func() (string, error) {
+					if loads.Add(1) == 1 {
+						close(started)
+					}
+					<-release
+					return "shared", nil
+				})
+				results <- loadErr
+			}()
+		}
+		<-started
+		synctest.Wait()
+		close(release)
+		for range 2 {
+			if loadErr := <-results; loadErr != nil {
+				t.Fatalf("shared load: %v", loadErr)
+			}
+		}
+		if got := loads.Load(); got != 1 {
+			t.Fatalf("shared loader calls = %d, want 1", got)
+		}
+	})
+
+	wantErr := errors.New("load failed")
+	if _, err := GetOrLoadInstrumentedCachedValue(ctx, app, "cache:test:metrics:failure", time.Hour, cacheName, func() (string, error) {
+		return "", wantErr
+	}); !errors.Is(err, wantErr) {
+		t.Fatalf("failed load error = %v, want %v", err, wantErr)
+	}
+	DeleteInstrumentedCachedValue(ctx, app, "cache:test:metrics", cacheName)
+
+	var metrics metricdata.ResourceMetrics
+	if err := reader.Collect(ctx, &metrics); err != nil {
+		t.Fatalf("collect cache metrics: %v", err)
+	}
+
+	requestCounts := cacheRequestMetricCounts(t, metrics)
+	for outcome, want := range map[string]int64{
+		"hit":          1,
+		"miss":         2,
+		"shared":       1,
+		"load_failure": 1,
+	} {
+		if got := requestCounts[outcome]; got != want {
+			t.Errorf("cache request outcome %q = %d, want %d", outcome, got, want)
+		}
+	}
+	assertCacheMetricPointCount(t, metrics, "wga.cache.load.duration", 3)
+	assertCacheMetricPointCount(t, metrics, "wga.cache.invalidations", 1)
+}
+
+func TestInstrumentedCacheIsNoOpWithoutMetricReader(t *testing.T) {
+	provider := sdkmetric.NewMeterProvider()
+	previousProvider := otel.GetMeterProvider()
+	otel.SetMeterProvider(provider)
+	t.Cleanup(func() {
+		otel.SetMeterProvider(previousProvider)
+		if err := provider.Shutdown(context.Background()); err != nil {
+			t.Errorf("shutdown metric provider: %v", err)
+		}
+	})
+
+	app := pocketbase.NewWithConfig(pocketbase.Config{DefaultDataDir: "./wga_data"})
+	value, err := GetOrLoadInstrumentedCachedValue(context.Background(), app, "cache:test:no-reader", time.Hour, CacheArtistAvailability, func() (string, error) {
+		return "loaded", nil
+	})
+	if err != nil || value != "loaded" {
+		t.Fatalf("disabled telemetry load = (%q, %v), want (loaded, nil)", value, err)
+	}
+}
+
+func cacheRequestMetricCounts(t *testing.T, metrics metricdata.ResourceMetrics) map[string]int64 {
+	t.Helper()
+	counts := make(map[string]int64)
+	for _, scope := range metrics.ScopeMetrics {
+		for _, candidate := range scope.Metrics {
+			if candidate.Name != "wga.cache.requests" {
+				continue
+			}
+			sum, ok := candidate.Data.(metricdata.Sum[int64])
+			if !ok {
+				t.Fatalf("cache request metric data type = %T", candidate.Data)
+			}
+			for _, point := range sum.DataPoints {
+				name, outcome := "", ""
+				for _, attr := range point.Attributes.ToSlice() {
+					switch string(attr.Key) {
+					case "wga.cache.name":
+						name = attr.Value.AsString()
+					case "wga.cache.outcome":
+						outcome = attr.Value.AsString()
+					}
+				}
+				if name != "collection_holdings" {
+					t.Errorf("cache metric name = %q, want collection_holdings", name)
+				}
+				counts[outcome] += point.Value
+			}
+		}
+	}
+	return counts
+}
+
+func assertCacheMetricPointCount(t *testing.T, metrics metricdata.ResourceMetrics, metricName string, want int) {
+	t.Helper()
+	for _, scope := range metrics.ScopeMetrics {
+		for _, candidate := range scope.Metrics {
+			if candidate.Name != metricName {
+				continue
+			}
+			switch data := candidate.Data.(type) {
+			case metricdata.Sum[int64]:
+				if len(data.DataPoints) != want {
+					t.Errorf("%s points = %d, want %d", metricName, len(data.DataPoints), want)
+				}
+			case metricdata.Histogram[float64]:
+				var count uint64
+				for _, point := range data.DataPoints {
+					count += point.Count
+				}
+				if count != uint64(want) {
+					t.Errorf("%s count = %d, want %d", metricName, count, want)
+				}
+			default:
+				t.Fatalf("%s data type = %T", metricName, candidate.Data)
+			}
+			return
+		}
+	}
+	t.Errorf("metric %q is absent", metricName)
 }
