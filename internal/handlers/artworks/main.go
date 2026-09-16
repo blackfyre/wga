@@ -287,7 +287,7 @@ func buildArtworkSearchViewContext(ctx context.Context, app *pocketbase.PocketBa
 	if err := checkpoint(ctx, "artworks.search.venues"); err != nil {
 		return pages.ArtworkSearchView{}, "", err
 	}
-	venueOptions, err := getVenueOptions(app, filters.VenueQuery, filters.selectedVenue())
+	venueOptions, err := getVenueOptionsContext(ctx, app, filters.VenueQuery, filters.selectedVenue())
 	if err != nil {
 		return pages.ArtworkSearchView{}, "", err
 	}

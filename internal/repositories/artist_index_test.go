@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"strings"
 	"testing"
 	"time"
@@ -8,6 +9,9 @@ import (
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tests"
+	"go.opentelemetry.io/otel"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 )
 
 func newArtistIndexTestApp(t *testing.T) *tests.TestApp {
@@ -313,6 +317,55 @@ func TestArtistIndexRepositoryPublishedArtworkAuthorIDsProjection(t *testing.T) 
 			t.Error("unpublished artwork conferred availability")
 		}
 	})
+}
+
+func TestArtistAvailabilityColdLoadCreatesOneStableOperationSpan(t *testing.T) {
+	spanRecorder := tracetest.NewSpanRecorder()
+	provider := sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(spanRecorder))
+	previousProvider := otel.GetTracerProvider()
+	otel.SetTracerProvider(provider)
+	t.Cleanup(func() {
+		otel.SetTracerProvider(previousProvider)
+		if err := provider.Shutdown(context.Background()); err != nil {
+			t.Errorf("shutdown trace provider: %v", err)
+		}
+	})
+
+	app := newArtistIndexTestApp(t)
+	loads := 0
+	repo := &ArtistIndexRepository{
+		app: app,
+		ctx: context.Background(),
+		loadArtistAvailability: func() (artistAvailabilitySet, error) {
+			loads++
+			return artistAvailabilitySet{"private-artist-id": {}}, nil
+		},
+	}
+	for range 2 {
+		available, err := repo.publishedArtworkAuthorIDs()
+		if err != nil {
+			t.Fatalf("load artist availability: %v", err)
+		}
+		if _, ok := available["private-artist-id"]; !ok {
+			t.Fatal("artist availability result is incomplete")
+		}
+	}
+	if loads != 1 {
+		t.Fatalf("artist availability loads = %d, want one cold load", loads)
+	}
+
+	spans := spanRecorder.Ended()
+	if len(spans) != 1 {
+		t.Fatalf("artist availability spans = %d, want 1", len(spans))
+	}
+	if got := spans[0].Name(); got != "wga.repository.artist_availability.load" {
+		t.Errorf("artist availability span name = %q", got)
+	}
+	for _, attr := range spans[0].Attributes() {
+		if attr.Value.AsString() == "private-artist-id" {
+			t.Errorf("artist identifier leaked through attribute %q", attr.Key)
+		}
+	}
 }
 
 func TestArtistIndexAvailabilityInvalidationDuringLoadDoesNotRestoreStaleProjection(t *testing.T) {

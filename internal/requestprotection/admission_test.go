@@ -10,6 +10,9 @@ import (
 	"time"
 
 	"github.com/blackfyre/wga/internal/config"
+	"go.opentelemetry.io/otel"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 )
 
 func TestPolicyOffBypassesState(t *testing.T) {
@@ -144,6 +147,119 @@ func TestAdmissionFieldsAreStableAndPrivate(t *testing.T) {
 	if admission.RetryAfter() != 5*time.Second {
 		t.Fatalf("retry interval = %s; want 5s", admission.RetryAfter())
 	}
+}
+
+func TestAdmissionMetricsAreBoundedAndTrackCapacityTransitions(t *testing.T) {
+	reader := sdkmetric.NewManualReader()
+	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
+	previousProvider := otel.GetMeterProvider()
+	otel.SetMeterProvider(provider)
+	t.Cleanup(func() {
+		otel.SetMeterProvider(previousProvider)
+		if err := provider.Shutdown(context.Background()); err != nil {
+			t.Errorf("shutdown metric provider: %v", err)
+		}
+	})
+
+	ctx := context.Background()
+	enforced := testPolicy(t, config.ProtectionModeEnforce, 1, 1)
+	allowed := enforced.Admit(ctx, ProfileDetail, "sensitive-client-a", true)
+	capacityRejected := enforced.Admit(ctx, ProfileDetail, "sensitive-client-b", true)
+	assertEnforcedRejection(t, capacityRejected, DecisionGlobalCapacity, http.StatusServiceUnavailable)
+	allowed.Release()
+	rateRejected := enforced.Admit(ctx, ProfileDetail, "sensitive-client-b", true)
+	assertEnforcedRejection(t, rateRejected, DecisionClientRate, http.StatusTooManyRequests)
+
+	observed := testPolicy(t, config.ProtectionModeObserve, 2, 1)
+	observedFirst := observed.Admit(ctx, ProfileDetail, "sensitive-client-c", true)
+	observedSecond := observed.Admit(ctx, ProfileDetail, "sensitive-client-d", true)
+	if observedSecond.Decision() != DecisionGlobalCapacity || !observedSecond.WouldReject() {
+		t.Fatalf("observe-mode capacity decision = %q, would reject %t", observedSecond.Decision(), observedSecond.WouldReject())
+	}
+	observedFirst.Release()
+	observedSecond.Release()
+
+	var metrics metricdata.ResourceMetrics
+	if err := reader.Collect(ctx, &metrics); err != nil {
+		t.Fatalf("collect admission metrics: %v", err)
+	}
+	decisions := admissionMetricCounts(t, metrics)
+	for key, want := range map[string]int64{
+		"allow/0":             2,
+		"global_capacity/503": 2,
+		"client_rate/429":     1,
+	} {
+		if got := decisions[key]; got != want {
+			t.Errorf("admission metric %q = %d, want %d", key, got, want)
+		}
+	}
+	assertAdmissionGauge(t, metrics, "wga.request_protection.capacity.current", 0)
+	assertAdmissionGauge(t, metrics, "wga.request_protection.capacity.configured", 1)
+}
+
+func admissionMetricCounts(t *testing.T, metrics metricdata.ResourceMetrics) map[string]int64 {
+	t.Helper()
+	counts := make(map[string]int64)
+	for _, scope := range metrics.ScopeMetrics {
+		for _, candidate := range scope.Metrics {
+			if candidate.Name != "wga.request_protection.admissions" {
+				continue
+			}
+			sum, ok := candidate.Data.(metricdata.Sum[int64])
+			if !ok {
+				t.Fatalf("admission metric data type = %T", candidate.Data)
+			}
+			for _, point := range sum.DataPoints {
+				profile, decision, status := "", "", int64(-1)
+				for _, attr := range point.Attributes.ToSlice() {
+					switch string(attr.Key) {
+					case "wga.request_protection.profile":
+						profile = attr.Value.AsString()
+					case "wga.request_protection.decision":
+						decision = attr.Value.AsString()
+					case "http.response.status_code":
+						status = attr.Value.AsInt64()
+					default:
+						t.Errorf("admission metric has unexpected attribute %q", attr.Key)
+					}
+				}
+				if profile != "detail" {
+					t.Errorf("admission metric profile = %q, want detail", profile)
+				}
+				counts[fmt.Sprintf("%s/%d", decision, status)] += point.Value
+			}
+		}
+	}
+	formatted := fmt.Sprint(counts)
+	for _, forbidden := range []string{"sensitive-client", "record-slug", "/artists/"} {
+		if strings.Contains(formatted, forbidden) {
+			t.Errorf("admission metrics expose %q: %s", forbidden, formatted)
+		}
+	}
+	return counts
+}
+
+func assertAdmissionGauge(t *testing.T, metrics metricdata.ResourceMetrics, name string, want int64) {
+	t.Helper()
+	for _, scope := range metrics.ScopeMetrics {
+		for _, candidate := range scope.Metrics {
+			if candidate.Name != name {
+				continue
+			}
+			gauge, ok := candidate.Data.(metricdata.Gauge[int64])
+			if !ok {
+				t.Fatalf("%s data type = %T", name, candidate.Data)
+			}
+			if len(gauge.DataPoints) != 1 {
+				t.Fatalf("%s points = %d, want 1 bounded profile", name, len(gauge.DataPoints))
+			}
+			if got := gauge.DataPoints[0].Value; got != want {
+				t.Errorf("%s = %d, want %d", name, got, want)
+			}
+			return
+		}
+	}
+	t.Errorf("metric %q is absent", name)
 }
 
 func TestNewPolicyRejectsInvalidSettings(t *testing.T) {

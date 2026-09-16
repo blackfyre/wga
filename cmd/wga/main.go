@@ -73,7 +73,7 @@ func main() {
 	if capability == commandNeedsServer {
 		utils.ConfigurePublicURL(serverConfig.PublicURL)
 		logging.RegisterRequestIDMiddleware(app)
-		tracer, err = observability.ConfigureTracing(serverConfig.Environment, app.Logger())
+		tracer, err = observability.ConfigureTracing(serverConfig.OpenTelemetry, serverConfig.Environment, app.Logger())
 		if err != nil {
 			log.Fatal(err)
 		}

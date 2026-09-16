@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"net/mail"
 	"net/url"
 	"os"
@@ -214,6 +215,24 @@ type Sentry struct {
 	browserDSN Secret
 }
 
+// OpenTelemetry contains the optional OTLP collector configuration.
+type OpenTelemetry struct {
+	endpoint url.URL
+}
+
+// Enabled reports whether an OTLP collector endpoint is configured.
+func (o OpenTelemetry) Enabled() bool {
+	return o.endpoint.Scheme != "" && o.endpoint.Host != ""
+}
+
+// Endpoint returns the configured absolute OTLP collector endpoint.
+func (o OpenTelemetry) Endpoint() string {
+	if !o.Enabled() {
+		return ""
+	}
+	return o.endpoint.String()
+}
+
 // DSN returns the configured server Sentry DSN.
 func (s Sentry) DSN() string {
 	return s.dsn.Value()
@@ -338,6 +357,7 @@ type Server struct {
 	Postcards               Postcards
 	Captcha                 Captcha
 	Sentry                  Sentry
+	OpenTelemetry           OpenTelemetry
 }
 
 // Sitemap returns the sitemap settings derived from the server settings.
@@ -404,6 +424,7 @@ type Config struct {
 	postcardTokenKeyring parsed[PostcardTokenKeyring]
 	captcha              Captcha
 	sentry               parsed[Sentry]
+	openTelemetry        parsed[OpenTelemetry]
 	migrations           Migrations
 }
 
@@ -443,6 +464,7 @@ func LoadFrom(lookup Lookup) Config {
 		lookup("WGA_SENTRY_DSN"),
 		lookup("WGA_SENTRY_BROWSER_DSN"),
 	)
+	openTelemetry := parseOpenTelemetry(lookup("OTEL_EXPORTER_OTLP_ENDPOINT"))
 	captcha := Captcha{
 		secret:  Secret{value: lookup("WGA_RECAPTCHA_SECRET")},
 		siteKey: lookup("WGA_RECAPTCHA_SITE_KEY"),
@@ -460,6 +482,7 @@ func LoadFrom(lookup Lookup) Config {
 		postcardTokenKeyring: postcardTokenKeyring,
 		captcha:              captcha,
 		sentry:               sentryConfig,
+		openTelemetry:        openTelemetry,
 		migrations: Migrations{
 			publicURL:      publicURL,
 			storage:        storage,
@@ -486,6 +509,7 @@ func (c Config) Server() (Server, error) {
 		Postcards:               c.postcards.value,
 		Captcha:                 c.captcha,
 		Sentry:                  c.sentry.value,
+		OpenTelemetry:           c.openTelemetry.value,
 	}
 
 	senderErr := c.sender.err
@@ -524,10 +548,35 @@ func (c Config) Server() (Server, error) {
 		c.requestProtection.err,
 		c.postcards.err,
 		c.sentry.err,
+		c.openTelemetry.err,
 		senderErr,
 		captchaErr,
 		protectionTrustErr,
 	)
+}
+
+func parseOpenTelemetry(value string) parsed[OpenTelemetry] {
+	if value == "" {
+		return parsed[OpenTelemetry]{}
+	}
+
+	endpoint, err := parseAbsoluteURL("OTEL_EXPORTER_OTLP_ENDPOINT", value)
+	if err != nil || (endpoint.Scheme != "http" && endpoint.Scheme != "https") || endpoint.User != nil || endpoint.RawQuery != "" || endpoint.Fragment != "" {
+		return parsed[OpenTelemetry]{err: fmt.Errorf("OTEL_EXPORTER_OTLP_ENDPOINT must be an absolute http or https URL without credentials, query, or fragment")}
+	}
+	if endpoint.Scheme == "http" && !isPrivateOpenTelemetryHost(endpoint.Hostname()) {
+		return parsed[OpenTelemetry]{err: fmt.Errorf("OTEL_EXPORTER_OTLP_ENDPOINT must use https outside localhost, loopback, or Railway private networking")}
+	}
+
+	return parsed[OpenTelemetry]{value: OpenTelemetry{endpoint: endpoint}}
+}
+
+func isPrivateOpenTelemetryHost(host string) bool {
+	if strings.EqualFold(host, "localhost") || strings.HasSuffix(strings.ToLower(host), ".railway.internal") {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && (ip.IsLoopback() || ip.IsPrivate())
 }
 
 // parseCloudflareOriginSecrets validates current and staged rotation secrets.

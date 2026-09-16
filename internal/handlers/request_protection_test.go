@@ -19,6 +19,9 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tests"
 	"github.com/pocketbase/pocketbase/tools/router"
+	"go.opentelemetry.io/otel"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 )
 
 const protectionTestSecret = "configured-origin-secret"
@@ -323,6 +326,7 @@ func TestProtectedReadMiddlewareLogsStablePrivateDecisions(t *testing.T) {
 
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
+			metricReader := installProtectionMetricReader(t)
 			test.headers["X-Forwarded-For"] = forwardedIP
 			test.headers["X-Real-IP"] = forwardedIP
 			var captured func() []*core.Log
@@ -424,6 +428,7 @@ func TestProtectedReadMiddlewareLogsStablePrivateDecisions(t *testing.T) {
 							t.Errorf("structured fields exposed %q: %s", sensitive, formatted)
 						}
 					}
+					assertProtectionAdmissionMetric(t, metricReader, "detail", string(test.decision), logStatus)
 				},
 			}
 
@@ -537,6 +542,7 @@ func TestCancellationTelemetryRecordsOnlyProfileAndStage(t *testing.T) {
 		querySecret    = "request-query-secret"
 	)
 	var captured func() []*core.Log
+	metricReader := installProtectionMetricReader(t)
 
 	scenario := tests.ApiScenario{
 		Name:           "cancelled protected detail",
@@ -586,10 +592,95 @@ func TestCancellationTelemetryRecordsOnlyProfileAndStage(t *testing.T) {
 					t.Errorf("structured fields exposed %q: %s", sensitive, formatted)
 				}
 			}
+			assertProtectionAdmissionMetric(t, metricReader, "detail", string(requestprotection.DecisionAllow), 0)
+			assertProtectionCapacityMetric(t, metricReader, 0)
 		},
 	}
 
 	scenario.Test(t)
+}
+
+func installProtectionMetricReader(t *testing.T) *sdkmetric.ManualReader {
+	t.Helper()
+	reader := sdkmetric.NewManualReader()
+	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
+	previousProvider := otel.GetMeterProvider()
+	otel.SetMeterProvider(provider)
+	t.Cleanup(func() {
+		otel.SetMeterProvider(previousProvider)
+		if err := provider.Shutdown(context.Background()); err != nil {
+			t.Errorf("shutdown metric provider: %v", err)
+		}
+	})
+	return reader
+}
+
+func collectProtectionMetrics(t testing.TB, reader *sdkmetric.ManualReader) metricdata.ResourceMetrics {
+	t.Helper()
+	var metrics metricdata.ResourceMetrics
+	if err := reader.Collect(context.Background(), &metrics); err != nil {
+		t.Fatalf("collect request-protection metrics: %v", err)
+	}
+	return metrics
+}
+
+func assertProtectionAdmissionMetric(t testing.TB, reader *sdkmetric.ManualReader, profile string, decision string, status int) {
+	t.Helper()
+	metrics := collectProtectionMetrics(t, reader)
+	for _, scope := range metrics.ScopeMetrics {
+		for _, candidate := range scope.Metrics {
+			if candidate.Name != "wga.request_protection.admissions" {
+				continue
+			}
+			sum, ok := candidate.Data.(metricdata.Sum[int64])
+			if !ok {
+				t.Fatalf("admission metric data type = %T", candidate.Data)
+			}
+			for _, point := range sum.DataPoints {
+				attributes := map[string]string{}
+				for _, attr := range point.Attributes.ToSlice() {
+					attributes[string(attr.Key)] = attr.Value.Emit()
+				}
+				if attributes["wga.request_protection.profile"] == profile &&
+					attributes["wga.request_protection.decision"] == decision &&
+					attributes["http.response.status_code"] == fmt.Sprint(status) && point.Value >= 1 {
+					formatted := fmt.Sprint(attributes)
+					for _, forbidden := range []string{"198.51.100", "private-record-slug", "/artists/"} {
+						if strings.Contains(formatted, forbidden) {
+							t.Errorf("admission metric exposed %q: %s", forbidden, formatted)
+						}
+					}
+					return
+				}
+			}
+		}
+	}
+	t.Errorf("admission metric profile=%q decision=%q status=%d is absent", profile, decision, status)
+}
+
+func assertProtectionCapacityMetric(t testing.TB, reader *sdkmetric.ManualReader, current int64) {
+	t.Helper()
+	metrics := collectProtectionMetrics(t, reader)
+	for _, scope := range metrics.ScopeMetrics {
+		for _, candidate := range scope.Metrics {
+			if candidate.Name != "wga.request_protection.capacity.current" {
+				continue
+			}
+			gauge, ok := candidate.Data.(metricdata.Gauge[int64])
+			if !ok {
+				t.Fatalf("capacity metric data type = %T", candidate.Data)
+			}
+			for _, point := range gauge.DataPoints {
+				if point.Attributes.Len() != 0 {
+					t.Errorf("global capacity metric has attributes: %v", point.Attributes.ToSlice())
+				}
+				if point.Value == current {
+					return
+				}
+			}
+		}
+	}
+	t.Errorf("global capacity metric current=%d is absent", current)
 }
 
 func trustedProtectionHeaders(identity string, secret string) map[string]string {

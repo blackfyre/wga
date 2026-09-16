@@ -1,0 +1,78 @@
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:${env:PORT:-13133}
+    path: /status
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 384
+    spike_limit_mib: 96
+  tail_sampling:
+    decision_wait: 10s
+    num_traces: 10000
+    expected_new_traces_per_sec: 100
+    decision_cache:
+      sampled_cache_size: 20000
+      non_sampled_cache_size: 20000
+    policies:
+      - name: server-errors
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+      - name: capacity-rejections
+        type: numeric_attribute
+        numeric_attribute:
+          key: http.response.status_code
+          min_value: 503
+          max_value: 503
+      - name: slow-requests
+        type: latency
+        latency:
+          threshold_ms: ${env:OTEL_TAIL_SAMPLING_SLOW_REQUEST_MS:-2000}
+      - name: healthy-sample
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: ${env:OTEL_TAIL_SAMPLING_PERCENTAGE:-5}
+  batch:
+    timeout: 5s
+    send_batch_size: 512
+    send_batch_max_size: 1024
+
+exporters:
+  otlp/backend:
+    endpoint: ${env:OTEL_BACKEND_OTLP_ENDPOINT}
+    headers:
+      Authorization: ${env:OTEL_BACKEND_AUTHORIZATION}
+    tls:
+      insecure: false
+    timeout: 5s
+    sending_queue:
+      enabled: true
+      num_consumers: 2
+      queue_size: 512
+    retry_on_failure:
+      enabled: true
+      initial_interval: 1s
+      max_interval: 10s
+      max_elapsed_time: 60s
+
+service:
+  extensions: [health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, tail_sampling, batch]
+      exporters: [otlp/backend]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp/backend]
