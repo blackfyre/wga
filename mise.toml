@@ -144,6 +144,9 @@ if [[ ! "$port" =~ ^[0-9]+$ ]] || (( port < 1 || port > 65535 )); then
 fi
 
 export WGA_HOSTNAME="localhost:${port}"
+# Browser specifications use the embedded deterministic fixture even when a
+# developer's .env points normal application runs at a production seed.
+export WGA_SEED_SQLITE_PATH=""
 server_pid=""
 server_bin="$(mktemp "${TMPDIR:-/tmp}/wga-playwright-server.XXXXXX")"
 data_dir="$(mktemp -d "${TMPDIR:-/tmp}/wga-playwright-data.XXXXXX")"

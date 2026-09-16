@@ -72,11 +72,37 @@ function textBoundary(
 }
 
 type SelectionAnchor = {
-	blockIndex: number;
-	blockText: string;
+	startBlockIndex: number;
+	startBlockText: string;
+	endBlockIndex: number;
+	endBlockText: string;
 	start: number;
 	end: number;
 };
+
+function edgeTextNode(node: Node, atEnd: boolean): Text | null {
+	let edge = node;
+	while (edge.hasChildNodes()) {
+		edge = atEnd ? (edge.lastChild as Node) : (edge.firstChild as Node);
+	}
+	return edge instanceof Text ? edge : null;
+}
+
+function selectionBoundary(
+	container: Node,
+	offset: number,
+	atEnd: boolean,
+): { node: Node; offset: number } | null {
+	if (container.nodeType === Node.TEXT_NODE) return { node: container, offset };
+	const before = offset > 0 ? container.childNodes[offset - 1] : null;
+	const after =
+		offset < container.childNodes.length ? container.childNodes[offset] : null;
+	const child = atEnd ? (before ?? after) : (after ?? before);
+	const useEnd = child === before;
+	const node = child ? edgeTextNode(child, useEnd) : null;
+	if (!node) return null;
+	return { node, offset: useEnd ? (node.nodeValue?.length ?? 0) : 0 };
+}
 
 function normalise(surface: HTMLElement): void {
 	for (const list of surface.querySelectorAll("ul, ol")) {
@@ -118,33 +144,53 @@ function mount(root: HTMLElement): void {
 		const selection = window.getSelection();
 		if (!selection?.rangeCount) return;
 		const range = selection.getRangeAt(0);
-		const node = range.commonAncestorContainer;
-		if (node !== surface && !surface.contains(node)) return;
-		const element =
-			node.nodeType === Node.ELEMENT_NODE
-				? (node as HTMLElement)
-				: node.parentElement;
-		const block = element?.closest<HTMLElement>("p, li");
-		if (!block || !surface.contains(block)) return;
+		anchor = null;
+		const start = selectionBoundary(
+			range.startContainer,
+			range.startOffset,
+			false,
+		);
+		const end = selectionBoundary(range.endContainer, range.endOffset, true);
+		const startBlock = start?.node.parentElement?.closest<HTMLElement>("p, li");
+		const endBlock = end?.node.parentElement?.closest<HTMLElement>("p, li");
+		if (
+			!start ||
+			!end ||
+			!startBlock ||
+			!endBlock ||
+			!surface.contains(startBlock) ||
+			!surface.contains(endBlock)
+		)
+			return;
 		const blocks = Array.from(surface.querySelectorAll<HTMLElement>("p, li"));
 		anchor = {
-			blockIndex: blocks.indexOf(block),
-			blockText: block.textContent ?? "",
-			start: textOffset(block, range.startContainer, range.startOffset),
-			end: textOffset(block, range.endContainer, range.endOffset),
+			startBlockIndex: blocks.indexOf(startBlock),
+			startBlockText: startBlock.textContent ?? "",
+			endBlockIndex: blocks.indexOf(endBlock),
+			endBlockText: endBlock.textContent ?? "",
+			start: textOffset(startBlock, start.node, start.offset),
+			end: textOffset(endBlock, end.node, end.offset),
 		};
 	};
 	const restoreSelection = (): Range | null => {
 		if (!anchor) return null;
 		const blocks = Array.from(surface.querySelectorAll<HTMLElement>("p, li"));
-		const block =
-			blocks.at(anchor.blockIndex) ??
-			blocks.find((candidate) => candidate.textContent === anchor?.blockText) ??
+		const startBlock =
+			blocks.at(anchor.startBlockIndex) ??
+			blocks.find(
+				(candidate) => candidate.textContent === anchor?.startBlockText,
+			) ??
 			blocks.at(-1);
-		if (!block) return null;
-		const start = textBoundary(block, anchor.start);
+		const endBlock =
+			blocks.at(anchor.endBlockIndex) ??
+			blocks.find(
+				(candidate) => candidate.textContent === anchor?.endBlockText,
+			) ??
+			blocks.at(-1);
+		if (!startBlock || !endBlock) return null;
+		const start = textBoundary(startBlock, anchor.start);
 		if (!start) return null;
-		const end = textBoundary(block, anchor.end);
+		const end = textBoundary(endBlock, anchor.end);
 		const range = document.createRange();
 		range.setStart(start.node, start.offset);
 		if (end) range.setEnd(end.node, end.offset);

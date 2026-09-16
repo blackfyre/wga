@@ -39,7 +39,7 @@ test.describe("without JavaScript", () => {
 		await expect(
 			page.getByRole("textbox", { name: "RECIPIENT EMAIL 1" }),
 		).toBeVisible();
-		await expect(page.getByLabel(/MESSAGE/)).toBeVisible();
+		await expect(page.locator("textarea[name='message']")).toBeVisible();
 		await page.getByRole("button", { name: "+ ADD ANOTHER RECIPIENT" }).focus();
 		await page.keyboard.press("Enter");
 		await expect(page.locator("[name='recipients[]']")).toHaveCount(2);
@@ -71,10 +71,12 @@ test.describe("without JavaScript", () => {
 		await page
 			.getByRole("textbox", { name: "RECIPIENT EMAIL 1" })
 			.fill("recipient@example.test");
-		await page.getByLabel(/MESSAGE/).fill("A postcard message");
+		await page.locator("textarea[name='message']").fill("   ");
 		await page.getByRole("button", { name: "SEND POSTCARD →" }).focus();
 		await page.keyboard.press("Enter");
-		await expect(page.getByRole("alert")).toContainText("Complete the CAPTCHA");
+		await expect(page.getByRole("alert")).toContainText(
+			"Check the required fields",
+		);
 		await expect(page.getByLabel("YOUR NAME")).toHaveValue("Keyboard Sender");
 	});
 });
@@ -93,10 +95,16 @@ test("CAPTCHA rejection swaps an actionable composer error", async ({
 	await expect(page.locator("textarea[name='message']")).toBeHidden();
 	await message.fill("A postcard message");
 	await message.selectText();
+	await expect
+		.poll(() => message.evaluate(() => window.getSelection()?.toString()))
+		.toBe("A postcard message");
 	await page.getByRole("button", { name: "Bold" }).click();
 	await expect(page.locator("textarea[name='message']")).toHaveValue(
 		/<p><b>A postcard message<\/b><\/p>/,
 	);
+	await page.locator("[name='g-recaptcha-response']").evaluate((element) => {
+		(element as HTMLInputElement).value = "";
+	});
 	await page.getByRole("button", { name: "SEND POSTCARD →" }).click();
 	await expect(page.locator("#postcard-compose")).toContainText(
 		"Complete the CAPTCHA",
