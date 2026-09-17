@@ -3,6 +3,7 @@ package utils
 import (
 	"context"
 	"errors"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"testing/synctest"
@@ -12,6 +13,8 @@ import (
 	"go.opentelemetry.io/otel"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 )
 
 func TestGetCachedValueReturnsTypedValue(t *testing.T) {
@@ -334,16 +337,24 @@ func TestGetOrLoadCachedValueLoadsUnrelatedKeysIndependently(t *testing.T) {
 func TestInstrumentedCacheRecordsBoundedOutcomes(t *testing.T) {
 	reader := sdkmetric.NewManualReader()
 	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
+	traceExporter := tracetest.NewInMemoryExporter()
+	traceProvider := sdktrace.NewTracerProvider(sdktrace.WithSyncer(traceExporter))
 	previousProvider := otel.GetMeterProvider()
+	previousTraceProvider := otel.GetTracerProvider()
 	otel.SetMeterProvider(provider)
+	otel.SetTracerProvider(traceProvider)
 	t.Cleanup(func() {
 		otel.SetMeterProvider(previousProvider)
+		otel.SetTracerProvider(previousTraceProvider)
 		if err := provider.Shutdown(context.Background()); err != nil {
 			t.Errorf("shutdown metric provider: %v", err)
 		}
+		if err := traceProvider.Shutdown(context.Background()); err != nil {
+			t.Errorf("shutdown trace provider: %v", err)
+		}
 	})
 
-	ctx := context.Background()
+	ctx, span := traceProvider.Tracer("cache-test").Start(context.Background(), "request")
 	app := pocketbase.NewWithConfig(pocketbase.Config{DefaultDataDir: "./wga_data"})
 	const cacheName = CacheCollectionHoldings
 
@@ -396,6 +407,12 @@ func TestInstrumentedCacheRecordsBoundedOutcomes(t *testing.T) {
 		t.Fatalf("failed load error = %v, want %v", err, wantErr)
 	}
 	DeleteInstrumentedCachedValue(ctx, app, "cache:test:metrics", cacheName)
+	if _, err := GetOrLoadInstrumentedCachedValue(ctx, app, "private:cache:key", time.Hour, CacheName(255), func() (string, error) {
+		return "unobserved", nil
+	}); err != nil {
+		t.Fatalf("unknown cache load: %v", err)
+	}
+	span.End()
 
 	var metrics metricdata.ResourceMetrics
 	if err := reader.Collect(ctx, &metrics); err != nil {
@@ -415,6 +432,33 @@ func TestInstrumentedCacheRecordsBoundedOutcomes(t *testing.T) {
 	}
 	assertCacheMetricPointCount(t, metrics, "wga.cache.load.duration", 3)
 	assertCacheMetricPointCount(t, metrics, "wga.cache.invalidations", 1)
+
+	spans := traceExporter.GetSpans()
+	if len(spans) != 1 {
+		t.Fatalf("trace span count = %d, want 1 request span", len(spans))
+	}
+	eventCounts := map[string]int{}
+	for _, event := range spans[0].Events {
+		if event.Name != "wga.cache.request" {
+			t.Fatalf("event name = %q", event.Name)
+		}
+		attributes := map[string]string{}
+		for _, attr := range event.Attributes {
+			attributes[string(attr.Key)] = attr.Value.AsString()
+			if strings.Contains(attr.Value.AsString(), "cache:test") || strings.Contains(attr.Value.AsString(), "private:cache:key") {
+				t.Fatalf("cache event exposes storage key: %q", attr.Value.AsString())
+			}
+		}
+		if attributes["wga.cache.name"] != "collection_holdings" {
+			t.Fatalf("cache event name = %q", attributes["wga.cache.name"])
+		}
+		eventCounts[attributes["wga.cache.outcome"]]++
+	}
+	for outcome, want := range map[string]int{"hit": 1, "miss": 2, "shared": 1, "failure": 1} {
+		if got := eventCounts[outcome]; got != want {
+			t.Errorf("cache event outcome %q = %d, want %d", outcome, got, want)
+		}
+	}
 }
 
 func TestInstrumentedCacheIsNoOpWithoutMetricReader(t *testing.T) {

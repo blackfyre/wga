@@ -368,6 +368,71 @@ func TestArtistAvailabilityColdLoadCreatesOneStableOperationSpan(t *testing.T) {
 	}
 }
 
+func TestArtistIndexContextOperationsCreateBoundedChildSpans(t *testing.T) {
+	spanRecorder := tracetest.NewSpanRecorder()
+	provider := sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(spanRecorder))
+	previousProvider := otel.GetTracerProvider()
+	otel.SetTracerProvider(provider)
+	t.Cleanup(func() {
+		otel.SetTracerProvider(previousProvider)
+		if err := provider.Shutdown(context.Background()); err != nil {
+			t.Errorf("shutdown trace provider: %v", err)
+		}
+	})
+
+	app := newArtistIndexTestApp(t)
+	saveArtistIndexArtist(t, app, artistIndexArtistSeed{id: "privartist00001", name: "Private Artist", published: true})
+	saveArtistIndexArtwork(t, app, "privatework0001", []string{"privartist00001"}, true)
+
+	ctx, parent := provider.Tracer("artist-index-test").Start(t.Context(), "request")
+	parentID := parent.SpanContext().SpanID()
+	repo := NewArtistIndexRepositoryWithContext(ctx, app)
+	filter := ArtistIndexFilter{Query: "Private", Limit: 10}
+	if _, err := repo.CountArtists(filter); err != nil {
+		t.Fatalf("count artists: %v", err)
+	}
+	if _, err := repo.ListArtists(filter); err != nil {
+		t.Fatalf("list artists: %v", err)
+	}
+	parent.End()
+
+	wantNames := map[string]bool{
+		"wga.repository.artist_index.count": false,
+		"wga.repository.artist_index.list":  false,
+	}
+	for _, span := range spanRecorder.Ended() {
+		if _, ok := wantNames[span.Name()]; !ok {
+			continue
+		}
+		wantNames[span.Name()] = true
+		if span.Parent().SpanID() != parentID {
+			t.Errorf("%s parent = %s, want %s", span.Name(), span.Parent().SpanID(), parentID)
+		}
+		for _, attr := range span.Attributes() {
+			if strings.Contains(attr.Value.AsString(), "Private") || strings.Contains(attr.Value.AsString(), "privartist00001") {
+				t.Errorf("%s leaked private value through %q", span.Name(), attr.Key)
+			}
+		}
+	}
+	for name, found := range wantNames {
+		if !found {
+			t.Errorf("missing span %q", name)
+		}
+	}
+
+	spansBeforeCompatibilityCalls := len(spanRecorder.Ended())
+	compatibilityRepo := NewArtistIndexRepository(app)
+	if _, err := compatibilityRepo.CountArtists(ArtistIndexFilter{}); err != nil {
+		t.Fatalf("context-free count artists: %v", err)
+	}
+	if _, err := compatibilityRepo.ListArtists(ArtistIndexFilter{Limit: 10}); err != nil {
+		t.Fatalf("context-free list artists: %v", err)
+	}
+	if got := len(spanRecorder.Ended()); got != spansBeforeCompatibilityCalls {
+		t.Fatalf("context-free calls created %d spans, want none", got-spansBeforeCompatibilityCalls)
+	}
+}
+
 func TestArtistIndexAvailabilityInvalidationDuringLoadDoesNotRestoreStaleProjection(t *testing.T) {
 	app := newArtistIndexTestApp(t)
 	started := make(chan struct{})

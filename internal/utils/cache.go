@@ -10,6 +10,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var errCachedValueLoaderPanicked = errors.New("cached value loader panicked")
@@ -212,6 +213,13 @@ func recordCacheRequest(ctx context.Context, cacheName CacheName, outcome cacheO
 	if !ok {
 		return
 	}
+	span := trace.SpanFromContext(ctx)
+	if span.IsRecording() {
+		span.AddEvent("wga.cache.request", trace.WithAttributes(
+			attribute.String("wga.cache.name", name),
+			attribute.String("wga.cache.outcome", outcome.eventValue()),
+		))
+	}
 	counter, err := otel.Meter(cacheInstrumentationName).Int64Counter(
 		"wga.cache.requests",
 		metric.WithDescription("Cache requests by bounded outcome."),
@@ -224,6 +232,13 @@ func recordCacheRequest(ctx context.Context, cacheName CacheName, outcome cacheO
 		attribute.String("wga.cache.name", name),
 		attribute.String("wga.cache.outcome", string(outcome)),
 	))
+}
+
+func (outcome cacheOutcome) eventValue() string {
+	if outcome == cacheOutcomeLoadFailure {
+		return "failure"
+	}
+	return string(outcome)
 }
 
 func recordCacheLoadDuration(ctx context.Context, cacheName CacheName, outcome string, duration time.Duration) {
