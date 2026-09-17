@@ -30,6 +30,7 @@ type CacheName uint8
 const (
 	CacheCollectionHoldings CacheName = iota + 1
 	CacheArtistAvailability
+	CacheDualModeReference
 )
 
 type cacheOutcome string
@@ -122,7 +123,11 @@ func GetOrLoadInstrumentedCachedValue[T any](ctx context.Context, app core.App, 
 	if loading := state.loading; loading != nil && loading.generation == generation {
 		state.mu.Unlock()
 		recordCacheRequest(ctx, cacheName, cacheOutcomeShared)
-		<-loading.done
+		select {
+		case <-loading.done:
+		case <-ctx.Done():
+			return zero, context.Cause(ctx)
+		}
 		if loading.err != nil {
 			return zero, loading.err
 		}
@@ -203,6 +208,8 @@ func (name CacheName) telemetryValue() (string, bool) {
 		return "collection_holdings", true
 	case CacheArtistAvailability:
 		return "artist_availability", true
+	case CacheDualModeReference:
+		return "dual_mode_reference", true
 	default:
 		return "", false
 	}

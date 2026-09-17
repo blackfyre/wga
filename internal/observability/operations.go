@@ -29,6 +29,10 @@ type Workflow uint8
 const (
 	WorkflowArtworkSearchResults Workflow = iota + 1
 	WorkflowArtworkSearchFacets
+	WorkflowArtworkSearchOptions
+	WorkflowArtworkSearchVenues
+	WorkflowArtworkSearchSchoolCounts
+	WorkflowArtworkSearchFormCounts
 	WorkflowDualReference
 	WorkflowDualLeftPane
 	WorkflowDualRightPane
@@ -104,6 +108,14 @@ func (workflow Workflow) telemetryValue() (string, bool) {
 		return "wga.workflow.artwork_search.results", true
 	case WorkflowArtworkSearchFacets:
 		return "wga.workflow.artwork_search.facets", true
+	case WorkflowArtworkSearchOptions:
+		return "wga.workflow.artwork_search.options", true
+	case WorkflowArtworkSearchVenues:
+		return "wga.workflow.artwork_search.venues", true
+	case WorkflowArtworkSearchSchoolCounts:
+		return "wga.workflow.artwork_search.school_counts", true
+	case WorkflowArtworkSearchFormCounts:
+		return "wga.workflow.artwork_search.form_counts", true
 	case WorkflowDualReference:
 		return "wga.workflow.dual.reference", true
 	case WorkflowDualLeftPane:

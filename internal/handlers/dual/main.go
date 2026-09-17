@@ -712,29 +712,25 @@ func loadDualReference(app core.App) (dualReference, error) {
 func loadDualReferenceContext(ctx context.Context, app core.App, checkpoint dualCheckpoint) (dualReference, error) {
 	var ref dualReference
 
-	if err := checkpoint(ctx, "dual.reference.schools"); err != nil {
-		return ref, err
+	for _, stage := range []string{"dual.reference.schools", "dual.reference.periods", "dual.reference.birth_bounds"} {
+		if err := checkpoint(ctx, stage); err != nil {
+			return ref, err
+		}
 	}
-	schoolRecords, err := repositories.ListArtistSchools(app)
+	projection, err := repositories.NewDualModeReferenceRepositoryWithContext(ctx, app).Load()
 	if err != nil {
 		return ref, err
 	}
+
 	ref.schoolSlugs = map[string]string{}
 	ref.schoolByID = map[string]string{}
-	for _, record := range schoolRecords {
+	for _, record := range projection.Schools {
 		ref.schoolByID[record.ID] = record.Name
 		ref.schoolSlugs[record.Slug] = record.Name
 	}
 
-	if err := checkpoint(ctx, "dual.reference.periods"); err != nil {
-		return ref, err
-	}
-	periodRecords, err := repositories.ListArtistPeriods(app)
-	if err != nil {
-		return ref, err
-	}
 	ref.periodByID = map[string]dualPeriod{}
-	for _, record := range periodRecords {
+	for _, record := range projection.Periods {
 		period := dualPeriod{
 			id:    record.ID,
 			name:  record.Name,
@@ -745,14 +741,8 @@ func loadDualReferenceContext(ctx context.Context, app core.App, checkpoint dual
 		ref.periodByID[record.ID] = period
 	}
 
-	repo := repositories.NewArtistIndexRepositoryWithContext(ctx, app)
-	if err := checkpoint(ctx, "dual.reference.birth_bounds"); err != nil {
-		return ref, err
-	}
-	ref.bornMin, ref.bornMax, err = repo.BirthYearBounds()
-	if err != nil {
-		return ref, err
-	}
+	ref.bornMin = projection.BornMin
+	ref.bornMax = projection.BornMax
 
 	return ref, nil
 }

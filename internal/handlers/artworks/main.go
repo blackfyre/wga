@@ -156,6 +156,13 @@ type artworkSearchResultsContext struct {
 	canonical       string
 }
 
+type artworkSearchFilterOptions struct {
+	forms   map[string]string
+	types   map[string]string
+	schools map[string]string
+	periods facetOptions
+}
+
 func buildArtworkSearchResultsViewContext(ctx context.Context, app *pocketbase.PocketBase, values neturl.Values, page int, limit int, checkpoint artworkSearchCheckpoint) (result artworkSearchResultsContext, err error) {
 	ctx, finish := observability.StartWorkflow(ctx, observability.WorkflowArtworkSearchResults)
 	defer func() { finish(err) }()
@@ -263,55 +270,40 @@ func buildArtworkSearchViewContext(ctx context.Context, app *pocketbase.PocketBa
 		return pages.ArtworkSearchView{}, "", err
 	}
 
-	if err := checkpoint(ctx, "artworks.search.forms"); err != nil {
-		return pages.ArtworkSearchView{}, "", err
-	}
-	artFormOptions, err := getArtFormOptions(app)
+	options, err := loadArtworkSearchFilterOptions(ctx, app, checkpoint)
 	if err != nil {
 		return pages.ArtworkSearchView{}, "", err
 	}
-	if err := checkpoint(ctx, "artworks.search.types"); err != nil {
+	venueCtx, finishVenues := observability.StartWorkflow(ctx, observability.WorkflowArtworkSearchVenues)
+	if err := checkpoint(venueCtx, "artworks.search.venues"); err != nil {
+		finishVenues(err)
 		return pages.ArtworkSearchView{}, "", err
 	}
-	artTypeOptions, err := getArtTypesOptions(app)
+	venueOptions, err := getVenueOptionsContext(venueCtx, app, filters.VenueQuery, filters.selectedVenue())
+	finishVenues(err)
 	if err != nil {
 		return pages.ArtworkSearchView{}, "", err
 	}
-	if err := checkpoint(ctx, "artworks.search.schools"); err != nil {
-		return pages.ArtworkSearchView{}, "", err
-	}
-	artSchoolOptions, err := getArtSchoolOptions(app)
-	if err != nil {
-		return pages.ArtworkSearchView{}, "", err
-	}
-	if err := checkpoint(ctx, "artworks.search.periods"); err != nil {
-		return pages.ArtworkSearchView{}, "", err
-	}
-	artPeriodOptions, err := getArtPeriodOptions(app)
-	if err != nil {
-		return pages.ArtworkSearchView{}, "", err
-	}
-	if err := checkpoint(ctx, "artworks.search.venues"); err != nil {
-		return pages.ArtworkSearchView{}, "", err
-	}
-	venueOptions, err := getVenueOptionsContext(ctx, app, filters.VenueQuery, filters.selectedVenue())
-	if err != nil {
-		return pages.ArtworkSearchView{}, "", err
-	}
-	typeGroup := buildChipGroup("TYPE", "art_type", artTypeOptions, filters.ArtTypeString)
-	periodGroup := buildFilterGroup("PERIOD", "period", artPeriodOptions, filters.PeriodString)
+	typeGroup := buildChipGroup("TYPE", "art_type", options.types, filters.ArtTypeString)
+	periodGroup := buildFilterGroup("PERIOD", "period", options.periods, filters.PeriodString)
 	collectionGroup := buildVenueChipGroup(venueOptions, filters.selectedVenue())
-	if err := checkpoint(ctx, "artworks.search.school_counts"); err != nil {
+	schoolCtx, finishSchoolCounts := observability.StartWorkflow(ctx, observability.WorkflowArtworkSearchSchoolCounts)
+	if err := checkpoint(schoolCtx, "artworks.search.school_counts"); err != nil {
+		finishSchoolCounts(err)
 		return pages.ArtworkSearchView{}, "", err
 	}
-	schoolFacet, err := buildCountedMultiFacet(app, filters, dualModeContext, schoolMultiFacet, artSchoolOptions)
+	schoolFacet, err := buildCountedMultiFacet(app, filters, dualModeContext, schoolMultiFacet, options.schools)
+	finishSchoolCounts(err)
 	if err != nil {
 		return pages.ArtworkSearchView{}, "", err
 	}
-	if err := checkpoint(ctx, "artworks.search.form_counts"); err != nil {
+	formCtx, finishFormCounts := observability.StartWorkflow(ctx, observability.WorkflowArtworkSearchFormCounts)
+	if err := checkpoint(formCtx, "artworks.search.form_counts"); err != nil {
+		finishFormCounts(err)
 		return pages.ArtworkSearchView{}, "", err
 	}
-	formFacet, err := buildCountedMultiFacet(app, filters, dualModeContext, formMultiFacet, artFormOptions)
+	formFacet, err := buildCountedMultiFacet(app, filters, dualModeContext, formMultiFacet, options.forms)
+	finishFormCounts(err)
 	if err != nil {
 		return pages.ArtworkSearchView{}, "", err
 	}
@@ -348,6 +340,35 @@ func buildArtworkSearchViewContext(ctx context.Context, app *pocketbase.PocketBa
 	}
 
 	return view, resultsContext.canonical, nil
+}
+
+func loadArtworkSearchFilterOptions(ctx context.Context, app *pocketbase.PocketBase, checkpoint artworkSearchCheckpoint) (options artworkSearchFilterOptions, err error) {
+	ctx, finish := observability.StartWorkflow(ctx, observability.WorkflowArtworkSearchOptions)
+	defer func() { finish(err) }()
+
+	if err = checkpoint(ctx, "artworks.search.forms"); err != nil {
+		return options, err
+	}
+	if options.forms, err = getArtFormOptions(app); err != nil {
+		return options, err
+	}
+	if err = checkpoint(ctx, "artworks.search.types"); err != nil {
+		return options, err
+	}
+	if options.types, err = getArtTypesOptions(app); err != nil {
+		return options, err
+	}
+	if err = checkpoint(ctx, "artworks.search.schools"); err != nil {
+		return options, err
+	}
+	if options.schools, err = getArtSchoolOptions(app); err != nil {
+		return options, err
+	}
+	if err = checkpoint(ctx, "artworks.search.periods"); err != nil {
+		return options, err
+	}
+	options.periods, err = getArtPeriodOptions(app)
+	return options, err
 }
 
 func resolveArtworkSearchArtistScope(ctx context.Context, app *pocketbase.PocketBase, artistID string, checkpoint artworkSearchCheckpoint) (string, error) {

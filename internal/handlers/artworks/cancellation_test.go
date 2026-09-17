@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 
@@ -108,6 +109,26 @@ func TestArtworkSearchResultsHandlerSkipsFacetStages(t *testing.T) {
 	}
 	if got := recorder.Header().Get("HX-Push-Url"); got != "/artworks/results?q=Result" {
 		t.Fatalf("HX-Push-Url = %q, want results URL", got)
+	}
+}
+
+func TestArtworkSearchFacetCancellationStopsLaterStages(t *testing.T) {
+	app := newArtworkSearchApp(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	stages := []string{}
+	checkpoint := func(ctx context.Context, stage string) error {
+		stages = append(stages, stage)
+		if stage == "artworks.search.school_counts" {
+			cancel()
+		}
+		return requestprotection.Checkpoint(ctx, stage)
+	}
+
+	if _, _, err := buildArtworkSearchViewContext(ctx, app, url.Values{}, 1, artworkSearchPageSize, checkpoint); !errors.Is(err, context.Canceled) {
+		t.Fatalf("buildArtworkSearchViewContext() error = %v, want context.Canceled", err)
+	}
+	if slices.Contains(stages, "artworks.search.form_counts") {
+		t.Fatalf("cancellation started later facet stage: %v", stages)
 	}
 }
 

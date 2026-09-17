@@ -27,6 +27,7 @@ import (
 	"go.opentelemetry.io/otel"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // workID returns a deterministic 15-character artwork record id for a short tag.
@@ -237,26 +238,60 @@ func TestArtworkSearchTraceHasBoundedWorkflowHierarchy(t *testing.T) {
 	parent.End()
 
 	want := map[string]int{
-		"wga.workflow.artwork_search.results": 0,
-		"wga.workflow.artwork_search.facets":  0,
+		"wga.workflow.artwork_search.results":       0,
+		"wga.workflow.artwork_search.facets":        0,
+		"wga.workflow.artwork_search.options":       0,
+		"wga.workflow.artwork_search.venues":        0,
+		"wga.workflow.artwork_search.school_counts": 0,
+		"wga.workflow.artwork_search.form_counts":   0,
 	}
-	for _, span := range spanRecorder.Ended() {
+	spans := spanRecorder.Ended()
+	var facetsID trace.SpanID
+	for _, span := range spans {
+		if span.Name() == "wga.workflow.artwork_search.facets" {
+			facetsID = span.SpanContext().SpanID()
+		}
+	}
+	if !facetsID.IsValid() {
+		t.Fatal("facet parent span is missing")
+	}
+	for _, span := range spans {
 		if _, ok := want[span.Name()]; ok {
 			want[span.Name()]++
-			if span.Parent().SpanID() != parentID {
-				t.Errorf("%s parent = %s, want request span %s", span.Name(), span.Parent().SpanID(), parentID)
+			wantParent := parentID
+			if strings.HasPrefix(span.Name(), "wga.workflow.artwork_search.") && span.Name() != "wga.workflow.artwork_search.results" && span.Name() != "wga.workflow.artwork_search.facets" {
+				wantParent = facetsID
+			}
+			if span.Parent().SpanID() != wantParent {
+				t.Errorf("%s parent = %s, want %s", span.Name(), span.Parent().SpanID(), wantParent)
 			}
 		}
+		telemetryText := []string{span.Name(), span.Status().Description}
 		for _, attr := range span.Attributes() {
-			value := attr.Value.AsString()
-			if strings.Contains(value, "visitor-private-term") || strings.Contains(value, "artistone000001") || strings.Contains(value, "Private Work") {
-				t.Errorf("%s leaked private value through %q", span.Name(), attr.Key)
+			telemetryText = append(telemetryText, string(attr.Key), attr.Value.AsString())
+		}
+		joined := strings.Join(telemetryText, " ")
+		for _, forbidden := range []string{"visitor-private-term", "artistone000001", "Private Work", "SELECT ", "FROM artworks"} {
+			if strings.Contains(joined, forbidden) {
+				t.Errorf("%s leaked forbidden telemetry text %q", span.Name(), forbidden)
 			}
 		}
 	}
 	for name, count := range want {
 		if count != 1 {
 			t.Errorf("span %q count = %d, want 1", name, count)
+		}
+	}
+
+	spansBeforeResultsOnly := len(spanRecorder.Ended())
+	resultsCtx, resultsParent := provider.Tracer("artwork-search-test").Start(t.Context(), "GET /artworks/results")
+	if _, err := buildArtworkSearchResultsViewContext(resultsCtx, app, neturl.Values{}, 1, 16, requestprotection.Checkpoint); err != nil {
+		t.Fatalf("build results-only view: %v", err)
+	}
+	resultsParent.End()
+	for _, span := range spanRecorder.Ended()[spansBeforeResultsOnly:] {
+		if span.Name() == "wga.workflow.artwork_search.facets" || span.Name() == "wga.workflow.artwork_search.options" || span.Name() == "wga.workflow.artwork_search.venues" || span.Name() == "wga.workflow.artwork_search.school_counts" || span.Name() == "wga.workflow.artwork_search.form_counts" {
+			t.Errorf("results-only trace contains facet stage %q", span.Name())
 		}
 	}
 }

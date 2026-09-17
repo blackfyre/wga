@@ -8,4 +8,5 @@ func RegisterHooks(app core.App) {
 	guestbookYearsCacheHook(app)
 	artworkCatalogueCacheHook(app)
 	collectionHoldingsCacheHook(app)
+	dualModeReferenceCacheHook(app)
 }

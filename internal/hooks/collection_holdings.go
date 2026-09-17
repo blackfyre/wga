@@ -20,6 +20,7 @@ func collectionHoldingsCacheHook(app core.App) {
 		repositories.AdvanceArtworkCatalogueRevision(e.App)
 		repositories.InvalidateCollectionHoldings(e.App)
 		repositories.InvalidateArtistAvailability(e.App)
+		repositories.InvalidateDualModeReference(e.App)
 		return e.Next()
 	}
 	app.OnRecordAfterCreateSuccess(constants.CollectionArtists).BindFunc(invalidateArtistProjections)

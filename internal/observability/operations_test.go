@@ -77,6 +77,24 @@ func TestStartWorkflowUsesAllowListedTelemetry(t *testing.T) {
 	assertSpanExcludesText(t, span, "/artists/secret")
 }
 
+func TestArtworkFacetWorkflowsHaveStableNames(t *testing.T) {
+	tests := map[Workflow]string{
+		WorkflowArtworkSearchOptions:      "wga.workflow.artwork_search.options",
+		WorkflowArtworkSearchVenues:       "wga.workflow.artwork_search.venues",
+		WorkflowArtworkSearchSchoolCounts: "wga.workflow.artwork_search.school_counts",
+		WorkflowArtworkSearchFormCounts:   "wga.workflow.artwork_search.form_counts",
+	}
+	for workflow, want := range tests {
+		got, ok := workflow.telemetryValue()
+		if !ok || got != want {
+			t.Errorf("workflow %d = (%q, %t), want (%q, true)", workflow, got, ok, want)
+		}
+	}
+	if got, ok := Workflow(255).telemetryValue(); ok || got != "" {
+		t.Fatalf("unknown workflow = (%q, %t), want telemetry no-op", got, ok)
+	}
+}
+
 func assertSpanExcludesText(t *testing.T, span tracetest.SpanStub, forbidden string) {
 	t.Helper()
 	values := []string{span.Name, span.Status.Description}

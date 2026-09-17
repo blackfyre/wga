@@ -11,11 +11,14 @@ import (
 	"reflect"
 	"slices"
 	"strings"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	"github.com/blackfyre/wga/internal/requestprotection"
+	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
@@ -1250,6 +1253,69 @@ func TestDualModeTraceHasBoundedWorkflowStages(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestDualModeReferenceIsReusedAcrossRequests(t *testing.T) {
+	app := newDualTestApp(t)
+	seedDualArtistAndWork(t, app)
+
+	var first dualReference
+	firstQueries, err := countDualQueries(app, func() error {
+		var loadErr error
+		first, loadErr = loadDualReferenceContext(t.Context(), app, requestprotection.Checkpoint)
+		return loadErr
+	})
+	if err != nil {
+		t.Fatalf("cold reference load: %v", err)
+	}
+	if firstQueries == 0 {
+		t.Fatal("cold reference load issued no queries")
+	}
+
+	var second dualReference
+	secondQueries, err := countDualQueries(app, func() error {
+		var loadErr error
+		second, loadErr = loadDualReference(app)
+		return loadErr
+	})
+	if err != nil {
+		t.Fatalf("cached reference load: %v", err)
+	}
+	if secondQueries != 0 {
+		t.Fatalf("cached reference queries = %d, want 0", secondQueries)
+	}
+	if !reflect.DeepEqual(first, second) {
+		t.Fatalf("cached reference changed:\nfirst: %#v\nsecond: %#v", first, second)
+	}
+}
+
+func countDualQueries(app *pocketbase.PocketBase, run func() error) (int, error) {
+	concurrent, ok := app.ConcurrentDB().(*dbx.DB)
+	if !ok {
+		return 0, errors.New("unexpected concurrent database type")
+	}
+	nonconcurrent, _ := app.NonconcurrentDB().(*dbx.DB)
+	var count atomic.Int64
+	queryLog := func(context.Context, time.Duration, string, *sql.Rows, error) { count.Add(1) }
+	execLog := func(context.Context, time.Duration, string, sql.Result, error) { count.Add(1) }
+	concurrent.QueryLogFunc = queryLog
+	concurrent.ExecLogFunc = execLog
+	if nonconcurrent != nil {
+		nonconcurrent.QueryLogFunc = queryLog
+		nonconcurrent.ExecLogFunc = execLog
+	}
+	defer func() {
+		concurrent.QueryLogFunc = nil
+		concurrent.ExecLogFunc = nil
+		if nonconcurrent != nil {
+			nonconcurrent.QueryLogFunc = nil
+			nonconcurrent.ExecLogFunc = nil
+		}
+	}()
+	if err := run(); err != nil {
+		return 0, err
+	}
+	return int(count.Load()), nil
 }
 
 func TestDualModeCancellationStopsSubsequentWindowAndRenderStages(t *testing.T) {
