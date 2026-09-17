@@ -17,6 +17,7 @@ import (
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
 	"github.com/blackfyre/wga/internal/constants"
+	"github.com/blackfyre/wga/internal/observability"
 	"github.com/blackfyre/wga/internal/repositories"
 	"github.com/blackfyre/wga/internal/requestprotection"
 	"github.com/blackfyre/wga/internal/utils"
@@ -155,7 +156,10 @@ type artworkSearchResultsContext struct {
 	canonical       string
 }
 
-func buildArtworkSearchResultsViewContext(ctx context.Context, app *pocketbase.PocketBase, values neturl.Values, page int, limit int, checkpoint artworkSearchCheckpoint) (artworkSearchResultsContext, error) {
+func buildArtworkSearchResultsViewContext(ctx context.Context, app *pocketbase.PocketBase, values neturl.Values, page int, limit int, checkpoint artworkSearchCheckpoint) (result artworkSearchResultsContext, err error) {
+	ctx, finish := observability.StartWorkflow(ctx, observability.WorkflowArtworkSearchResults)
+	defer func() { finish(err) }()
+
 	filters := buildFilters(values)
 	dualModeContext := getDualModeSearchContext(values)
 
@@ -244,11 +248,14 @@ func artworkSearchPageOffset(page int, limit int) int {
 	return (page - 1) * limit
 }
 
-func buildArtworkSearchViewContext(ctx context.Context, app *pocketbase.PocketBase, values neturl.Values, page int, limit int, checkpoint artworkSearchCheckpoint) (pages.ArtworkSearchView, string, error) {
+func buildArtworkSearchViewContext(ctx context.Context, app *pocketbase.PocketBase, values neturl.Values, page int, limit int, checkpoint artworkSearchCheckpoint) (view pages.ArtworkSearchView, canonical string, err error) {
 	resultsContext, err := buildArtworkSearchResultsViewContext(ctx, app, values, page, limit, checkpoint)
 	if err != nil {
 		return pages.ArtworkSearchView{}, "", err
 	}
+	ctx, finish := observability.StartWorkflow(ctx, observability.WorkflowArtworkSearchFacets)
+	defer func() { finish(err) }()
+
 	filters := resultsContext.filters
 	dualModeContext := resultsContext.dualModeContext
 	artistScopeFilingName, err := resolveArtworkSearchArtistScope(ctx, app, filters.ArtistID, checkpoint)
@@ -309,7 +316,7 @@ func buildArtworkSearchViewContext(ctx context.Context, app *pocketbase.PocketBa
 		return pages.ArtworkSearchView{}, "", err
 	}
 
-	view := pages.ArtworkSearchView{
+	view = pages.ArtworkSearchView{
 		NameField: dto.Field{
 			ID:          "artwork-query",
 			Name:        "q",

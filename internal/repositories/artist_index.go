@@ -11,6 +11,7 @@ import (
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // publishedArtistIdentity is the SQL predicate a published artist must satisfy
@@ -113,6 +114,15 @@ func InvalidateArtistAvailability(app core.App) {
 
 // CountArtists returns the number of published artists matching the filter.
 func (r *ArtistIndexRepository) CountArtists(filter ArtistIndexFilter) (int, error) {
+	if r.ctx == nil || !trace.SpanFromContext(r.ctx).IsRecording() {
+		return r.countArtists(filter)
+	}
+	return observability.ObserveOperation(r.ctx, observability.OperationArtistIndexCount, func() (int, error) {
+		return r.countArtists(filter)
+	})
+}
+
+func (r *ArtistIndexRepository) countArtists(filter ArtistIndexFilter) (int, error) {
 	present, err := artistsIdentityFieldsPresent(r.app)
 	if err != nil {
 		return 0, err
@@ -139,6 +149,15 @@ func (r *ArtistIndexRepository) CountArtists(filter ArtistIndexFilter) (int, err
 // order. Availability is intersected from the application-scoped published-work
 // projection and is skipped entirely for an empty page.
 func (r *ArtistIndexRepository) ListArtists(filter ArtistIndexFilter) ([]IndexedArtist, error) {
+	if r.ctx == nil || !trace.SpanFromContext(r.ctx).IsRecording() {
+		return r.listArtists(filter)
+	}
+	return observability.ObserveOperation(r.ctx, observability.OperationArtistIndexList, func() ([]IndexedArtist, error) {
+		return r.listArtists(filter)
+	})
+}
+
+func (r *ArtistIndexRepository) listArtists(filter ArtistIndexFilter) ([]IndexedArtist, error) {
 	present, err := artistsIdentityFieldsPresent(r.app)
 	if err != nil {
 		return nil, err
