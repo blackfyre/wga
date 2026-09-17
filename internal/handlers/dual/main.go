@@ -20,6 +20,7 @@ import (
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
 	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/errs"
+	"github.com/blackfyre/wga/internal/observability"
 	"github.com/blackfyre/wga/internal/repositories"
 	"github.com/blackfyre/wga/internal/requestprotection"
 	"github.com/blackfyre/wga/internal/utils"
@@ -125,7 +126,9 @@ func renderDualModePageWithCheckpoint(app *pocketbase.PocketBase, c *core.Reques
 	if err := checkpoint(c.Request.Context(), "dual.reference"); err != nil {
 		return dualCancellationError(c, err)
 	}
-	ref, err := loadDualReferenceContext(c.Request.Context(), app, checkpoint)
+	referenceCtx, finishReference := observability.StartWorkflow(c.Request.Context(), observability.WorkflowDualReference)
+	ref, err := loadDualReferenceContext(referenceCtx, app, checkpoint)
+	finishReference(err)
 	if err != nil {
 		if requestprotection.IsCancellation(err) {
 			return err
@@ -175,7 +178,9 @@ func renderDualModePageWithCheckpoint(app *pocketbase.PocketBase, c *core.Reques
 	if err := checkpoint(c.Request.Context(), "dual.left.window"); err != nil {
 		return dualCancellationError(c, err)
 	}
-	leftWindow, err := buildWindowContext(c.Request.Context(), app, "left", state.left, state, ref, checkpoint)
+	leftCtx, finishLeft := observability.StartWorkflow(c.Request.Context(), observability.WorkflowDualLeftPane)
+	leftWindow, err := buildWindowContext(leftCtx, app, "left", state.left, state, ref, checkpoint)
+	finishLeft(err)
 	if err != nil {
 		if requestprotection.IsCancellation(err) {
 			return err
@@ -187,7 +192,9 @@ func renderDualModePageWithCheckpoint(app *pocketbase.PocketBase, c *core.Reques
 	if err := checkpoint(c.Request.Context(), "dual.right.window"); err != nil {
 		return dualCancellationError(c, err)
 	}
-	rightWindow, err := buildWindowContext(c.Request.Context(), app, "right", state.right, state, ref, checkpoint)
+	rightCtx, finishRight := observability.StartWorkflow(c.Request.Context(), observability.WorkflowDualRightPane)
+	rightWindow, err := buildWindowContext(rightCtx, app, "right", state.right, state, ref, checkpoint)
+	finishRight(err)
 	if err != nil {
 		if requestprotection.IsCancellation(err) {
 			return err
@@ -213,7 +220,9 @@ func renderDualModePageWithCheckpoint(app *pocketbase.PocketBase, c *core.Reques
 	c.Response.Header().Set("HX-Push-Url", state.path())
 
 	var buff bytes.Buffer
-	if err := checkpoint(c.Request.Context(), "dual.render"); err != nil {
+	renderCtx, finishRender := observability.StartWorkflow(c.Request.Context(), observability.WorkflowDualRender)
+	if err := checkpoint(renderCtx, "dual.render"); err != nil {
+		finishRender(err)
 		return dualCancellationError(c, err)
 	}
 	if utils.IsHtmxRequest(c) && !utils.RequestsMainContentArea(c) {
@@ -221,6 +230,7 @@ func renderDualModePageWithCheckpoint(app *pocketbase.PocketBase, c *core.Reques
 	} else {
 		err = pages.DualModePage(view).Render(ctx, &buff)
 	}
+	finishRender(err)
 	if err != nil {
 		if requestprotection.IsCancellation(err) {
 			return err

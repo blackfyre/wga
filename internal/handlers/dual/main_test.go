@@ -20,6 +20,9 @@ import (
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/router"
+	"go.opentelemetry.io/otel"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 )
 
 func mustParseQuery(t *testing.T, raw string) neturl.Values {
@@ -1190,6 +1193,62 @@ func TestDualModeRouteRendersFullAndHTMX(t *testing.T) {
 	}
 	if !strings.Contains(partial.Body.String(), `id="dual-area"`) {
 		t.Error("HTMX response should render the dual block fragment")
+	}
+}
+
+func TestDualModeTraceHasBoundedWorkflowStages(t *testing.T) {
+	spanRecorder := tracetest.NewSpanRecorder()
+	provider := sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(spanRecorder))
+	previousProvider := otel.GetTracerProvider()
+	otel.SetTracerProvider(provider)
+	t.Cleanup(func() {
+		otel.SetTracerProvider(previousProvider)
+		if err := provider.Shutdown(context.Background()); err != nil {
+			t.Errorf("shutdown trace provider: %v", err)
+		}
+	})
+
+	app := newDualTestApp(t)
+	seedDualArtistAndWork(t, app)
+	for _, path := range []string{
+		"/dual-mode",
+		"/dual-mode?left=/artists/rembrandt-artistone000001&right=/artists/rembrandt-artistone000001/the-night-watch-artworkone00001",
+	} {
+		spansBefore := len(spanRecorder.Ended())
+		ctx, parent := provider.Tracer("dual-test").Start(t.Context(), "GET /dual-mode")
+		parentID := parent.SpanContext().SpanID()
+		request := httptest.NewRequest(http.MethodGet, path, nil).WithContext(ctx)
+		event := &core.RequestEvent{Event: router.Event{Request: request, Response: httptest.NewRecorder()}}
+		if err := renderDualModePageWithCheckpoint(app, event, requestprotection.Checkpoint); err != nil {
+			t.Fatalf("render dual mode %q: %v", path, err)
+		}
+		parent.End()
+
+		want := map[string]int{
+			"wga.workflow.dual.reference":  0,
+			"wga.workflow.dual.left_pane":  0,
+			"wga.workflow.dual.right_pane": 0,
+			"wga.workflow.dual.render":     0,
+		}
+		for _, span := range spanRecorder.Ended()[spansBefore:] {
+			if _, ok := want[span.Name()]; ok {
+				want[span.Name()]++
+				if span.Parent().SpanID() != parentID {
+					t.Errorf("%s parent = %s, want request span %s", span.Name(), span.Parent().SpanID(), parentID)
+				}
+			}
+			for _, attr := range span.Attributes() {
+				value := attr.Value.AsString()
+				if strings.Contains(value, "artistone000001") || strings.Contains(value, "artworkone00001") || strings.Contains(value, "/artists/rembrandt") {
+					t.Errorf("%s leaked path or record identity through %q", span.Name(), attr.Key)
+				}
+			}
+		}
+		for name, count := range want {
+			if count != 1 {
+				t.Errorf("%s span count for %q = %d, want 1", path, name, count)
+			}
+		}
 	}
 }
 

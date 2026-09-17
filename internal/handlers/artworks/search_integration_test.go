@@ -24,6 +24,9 @@ import (
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
+	"go.opentelemetry.io/otel"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 )
 
 // workID returns a deterministic 15-character artwork record id for a short tag.
@@ -201,6 +204,60 @@ func TestArtworkSearchFullViewComposesCanonicalResultsWorkflow(t *testing.T) {
 	}
 	if resultsContext.view.Pagination == "" {
 		t.Fatal("results workflow omitted pagination")
+	}
+}
+
+func TestArtworkSearchTraceHasBoundedWorkflowHierarchy(t *testing.T) {
+	spanRecorder := tracetest.NewSpanRecorder()
+	provider := sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(spanRecorder))
+	previousProvider := otel.GetTracerProvider()
+	otel.SetTracerProvider(provider)
+	t.Cleanup(func() {
+		otel.SetTracerProvider(previousProvider)
+		if err := provider.Shutdown(context.Background()); err != nil {
+			t.Errorf("shutdown trace provider: %v", err)
+		}
+	})
+
+	app := newArtworkSearchApp(t)
+	saveSearchArtist(t, app, "artistone000001", "Private Artist")
+	saveSearchArtwork(t, app, searchArtworkSeed{
+		id:        workID("private"),
+		title:     "Private Work",
+		authors:   []string{"artistone000001"},
+		published: true,
+	})
+
+	ctx, parent := provider.Tracer("artwork-search-test").Start(t.Context(), "GET /artworks")
+	parentID := parent.SpanContext().SpanID()
+	_, _, err := buildArtworkSearchViewContext(ctx, app, neturl.Values{"q": {"visitor-private-term"}}, 1, 16, requestprotection.Checkpoint)
+	if err != nil {
+		t.Fatalf("build artwork search view: %v", err)
+	}
+	parent.End()
+
+	want := map[string]int{
+		"wga.workflow.artwork_search.results": 0,
+		"wga.workflow.artwork_search.facets":  0,
+	}
+	for _, span := range spanRecorder.Ended() {
+		if _, ok := want[span.Name()]; ok {
+			want[span.Name()]++
+			if span.Parent().SpanID() != parentID {
+				t.Errorf("%s parent = %s, want request span %s", span.Name(), span.Parent().SpanID(), parentID)
+			}
+		}
+		for _, attr := range span.Attributes() {
+			value := attr.Value.AsString()
+			if strings.Contains(value, "visitor-private-term") || strings.Contains(value, "artistone000001") || strings.Contains(value, "Private Work") {
+				t.Errorf("%s leaked private value through %q", span.Name(), attr.Key)
+			}
+		}
+	}
+	for name, count := range want {
+		if count != 1 {
+			t.Errorf("span %q count = %d, want 1", name, count)
+		}
 	}
 }
 
