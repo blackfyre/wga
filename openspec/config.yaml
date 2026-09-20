@@ -1,6 +1,13 @@
 schema: spec-driven
 
 context: |
+  WGA (Web Gallery of Art) is a single deployable Go application built on PocketBase, with server-rendered Templ + HTMX pages, Tailwind 4 CSS, and minimal vanilla JavaScript.
+  Sources of truth outside OpenSpec: CLAUDE.md, docs/development-guide.md, and docs/features/ (feature specifications and acceptance criteria).
+  Historical plans and review notes under docs/ are context only, not current guidance.
+  Extend the owning feature package and use explicit contracts across capability boundaries. Handlers and hooks are thin framework adapters; business rules and side-effect ordering live outside them.
+  Deployment settings are loaded only through internal/config. Request-scoped and background work use the logging package's request and run loggers, with sensitive values redacted.
+  Database changes are timestamped PocketBase migrations in internal/migrations/.
+  Treat an HTMX interaction (markup, handler, fragment, swap target) as one contract.
   Treat active OpenSpec artifacts as authoritative for intended behaviour and scope.
   Surface conflicts between code and specifications instead of resolving them silently.
   Prefer the smallest coherent change that satisfies the specification.
@@ -13,9 +20,12 @@ rules:
   design:
     - Record only consequential technical decisions and tradeoffs; omit obvious implementation narration.
     - When alternatives matter, include at most two credible alternatives.
+  specs:
+    - Describe observable behaviour (routes, rendered content, persisted data, configuration, logs, or traces) rather than Go package or Templ structure.
   tasks:
     - Make each task independently verifiable and small enough for one focused implementation session when practical.
     - Split cross-cutting umbrella tasks into bounded units with clear completion conditions.
+    - Name the verification for each task using the repository's tooling, such as `go vet ./...`, a focused `go test ./internal/<pkg> -run '^TestName$'`, `templ generate`, `bun run build`, or `mise run test:playwright`.
     - Include deterministic verification in the relevant task when the required check is not obvious from the repository.
 
 operations:
@@ -23,6 +33,11 @@ operations:
     guidance:
       - Work one unchecked task at a time unless the user explicitly asks for a batch.
       - Read only task-relevant artifacts and code before broadening context.
+      - Edit .templ, resources/js, and resources/css sources only; generated *_templ.go files and internal/assets/public/{js,css} output are not committed by hand.
+      - Run `templ generate` after Templ changes and `bun run build` after frontend changes.
+      - Before completion run `go mod tidy`, `go vet ./...`, and `go test ./... -cover`; `mise run check` adds golangci-lint.
+      - Do not claim visual, focus, or HTMX swap behaviour is verified unless a browser check (Playwright) exercised it.
+      - Update docs per docs/documentation-maintenance.md when behaviour, configuration, or operations change.
       - Run focused deterministic checks before marking a task complete.
       - Do not mark a task complete when required verification is failing.
       - Retry the same implementation failure at most twice; then leave the task unchecked and report the blocker.
@@ -30,4 +45,5 @@ operations:
   archive:
     guidance:
       - Archive only after all intended tasks are complete and no known critical verification issue remains.
+      - Confirm affected docs/ pages and docs/features/ specifications are consistent with the change.
       - Keep the archive summary concise.
