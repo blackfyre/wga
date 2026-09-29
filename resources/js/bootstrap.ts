@@ -24,6 +24,7 @@ import {
 import { initBottomStack } from "./bottom-stack";
 import { initCookieConsent } from "./cookieconsent";
 import { initDualHorizontalScroll } from "./dual";
+import { initEdgeChallengeRecovery } from "./edge-challenge";
 import { registerItineraryHelpers } from "./itinerary";
 import { initKeyboardNavigation } from "./keyboard";
 import logger from "./logger";
@@ -1260,6 +1261,7 @@ const wgaInternal: wgaInternals = {
 	});
 	initKeyboardNavigation();
 	initTextSearch();
+	initEdgeChallengeRecovery();
 	initialiseAppearancePreferences();
 	initBionicReading();
 	initPostcardRichText();
