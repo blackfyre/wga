@@ -626,3 +626,91 @@ func TestArtworkFilterBlockPreservesTextFieldsOnlyWhenRequested(t *testing.T) {
 		}
 	}
 }
+
+func highlightSampleResults(view string, titleHighlight string, artistHighlight string) ArtworkSearchResultsView {
+	results := sampleArtworkSearchResults()
+	results.View = view
+	results.TitleHighlight = titleHighlight
+	results.ArtistHighlight = artistHighlight
+	results.Artworks = dto.ImageGrid{{
+		Id:     "work00000000001",
+		Url:    "/artworks/sample-work-123",
+		Thumb:  "/api/files/artworks/123/image.jpg",
+		Title:  "Madonna and Child <b>",
+		Date:   "1305",
+		Artist: dto.Artist{FilingName: "GIOTTO di Bondone"},
+	}}
+	return results
+}
+
+func TestArtworkSearchResultsHighlightTitleMatch(t *testing.T) {
+	for _, view := range []string{"grid", "list"} {
+		t.Run(view, func(t *testing.T) {
+			rendered := renderArtworkSearchResults(t, highlightSampleResults(view, "madonna", "madonna"))
+
+			if !strings.Contains(rendered, "<mark>Madonna</mark> and Child &lt;b&gt;") {
+				t.Errorf("expected highlighted title, got %q", rendered)
+			}
+			if !strings.Contains(rendered, `alt="Madonna and Child &lt;b&gt;"`) {
+				t.Error("expected image alternative text to stay plain")
+			}
+			if strings.Contains(rendered, "<mark>GIOTTO") {
+				t.Error("artist name must not be highlighted when the term does not match it")
+			}
+		})
+	}
+}
+
+func TestArtworkSearchResultsHighlightArtistMatch(t *testing.T) {
+	for _, view := range []string{"grid", "list"} {
+		t.Run(view, func(t *testing.T) {
+			rendered := renderArtworkSearchResults(t, highlightSampleResults(view, "giotto", "giotto"))
+
+			if !strings.Contains(rendered, `data-artwork-result-meta="identity"><mark>GIOTTO</mark> di Bondone · 1305<`) {
+				t.Errorf("expected highlighted artist name with plain date, got %q", rendered)
+			}
+			if strings.Count(rendered, "<mark>") != 1 {
+				t.Errorf("expected only the artist name to be highlighted, got %d marks", strings.Count(rendered, "<mark>"))
+			}
+		})
+	}
+}
+
+func TestArtworkSearchResultsHighlightEscapesSearchText(t *testing.T) {
+	rendered := renderArtworkSearchResults(t, highlightSampleResults("grid", "<b>", "<b>"))
+
+	if !strings.Contains(rendered, "<mark>&lt;b&gt;</mark>") {
+		t.Errorf("expected escaped highlighted match, got %q", rendered)
+	}
+	if strings.Contains(rendered, "<b>") {
+		t.Error("search text or title must not inject markup")
+	}
+}
+
+func TestArtworkSearchResultsWithoutTextSearchHasNoMark(t *testing.T) {
+	for _, view := range []string{"grid", "list"} {
+		rendered := renderArtworkSearchResults(t, highlightSampleResults(view, "", ""))
+		if strings.Contains(rendered, "<mark>") {
+			t.Errorf("%s view rendered a mark without a text search", view)
+		}
+		if !strings.Contains(rendered, "GIOTTO di Bondone · 1305") {
+			t.Errorf("%s view changed the identity line text", view)
+		}
+	}
+}
+
+func TestArtworkSearchIdentityKeepsNotRecordedFallback(t *testing.T) {
+	for _, tt := range []struct{ name, date, want string }{
+		{"", "", "NOT RECORDED"},
+		{"", "1305", "1305"},
+		{" GIOTTO ", "", "<mark>GIOTTO</mark>"},
+	} {
+		var output bytes.Buffer
+		if err := artworkSearchIdentity(tt.name, tt.date, "giotto").Render(context.Background(), &output); err != nil {
+			t.Fatalf("render identity: %v", err)
+		}
+		if output.String() != tt.want {
+			t.Errorf("artworkSearchIdentity(%q, %q) = %q, want %q", tt.name, tt.date, output.String(), tt.want)
+		}
+	}
+}

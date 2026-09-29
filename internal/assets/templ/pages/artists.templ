@@ -1,11 +1,8 @@
 package pages
 
 import (
-	"context"
 	"fmt"
-	"io"
 	"strconv"
-	"unicode"
 
 	"github.com/blackfyre/wga/internal/assets/templ/components"
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
@@ -214,7 +211,7 @@ templ ArtistsBlock(c ArtistsView) {
 								<tr class="transition-colors hover:bg-wga-accent-bg/5">
 									<th scope="row" class="font-semibold text-(length:--t-15)" data-kbd-idx={ strconv.Itoa(navigableIndex(c.Artists, index)) } data-kbd-href={ artist.URL }>
 										@components.KeyboardCaret()
-										<a href={ templ.URL(artist.URL) } hx-get={ artist.URL }>@ArtistName(artist.Name, c.NameQuery)
+										<a href={ templ.URL(artist.URL) } hx-get={ artist.URL }>@components.HighlightMatch(artist.Name, c.NameQuery)
 </a>
 									</th>
 									<td class="font-mono text-xs text-wga-ink/70">{ artist.Dates }</td>
@@ -225,7 +222,7 @@ templ ArtistsBlock(c ArtistsView) {
 							} else {
 								<tr class="opacity-50">
 									<th scope="row" class="font-semibold text-(length:--t-15)">
-										<span>@ArtistName(artist.Name, c.NameQuery)
+										<span>@components.HighlightMatch(artist.Name, c.NameQuery)
 </span>
 										<span class="mt-0.5 block font-mono text-(length:--t-10) tracking-[1px] text-faint">NOT DIGITISED</span>
 									</th>
@@ -247,7 +244,7 @@ templ ArtistsBlock(c ArtistsView) {
 							@components.KeyboardCaret()
 							<a href={ templ.URL(artist.URL) } hx-get={ artist.URL } class="wga-record-card min-w-0">
 								@components.Plate(dto.Plate{DisplayURL: artist.Thumb, Alt: "Portrait of " + artist.Name, Placeholder: "PORTRAIT — " + artist.Name, Aspect: "aspect-square mb-3.5", Contain: false})
-								<span class="mb-1 block text-(length:--t-17) font-semibold break-words">@ArtistName(artist.Name, c.NameQuery)
+								<span class="mb-1 block text-(length:--t-17) font-semibold break-words">@components.HighlightMatch(artist.Name, c.NameQuery)
 </span>
 								<span class="block break-words font-mono text-(length:--t-11) leading-relaxed text-muted">
 									{ artist.Dates }
@@ -260,7 +257,7 @@ templ ArtistsBlock(c ArtistsView) {
 						<li class="min-w-0 opacity-50">
 							<div class="block">
 								@components.Plate(dto.Plate{DisplayURL: artist.Thumb, Alt: "Portrait of " + artist.Name, Placeholder: "PORTRAIT — " + artist.Name, Aspect: "aspect-square mb-3.5", Contain: false})
-								<span class="mb-1 block text-(length:--t-17) font-semibold break-words">@ArtistName(artist.Name, c.NameQuery)
+								<span class="mb-1 block text-(length:--t-17) font-semibold break-words">@components.HighlightMatch(artist.Name, c.NameQuery)
 </span>
 								<span class="block break-words font-mono text-(length:--t-11) leading-relaxed text-muted">
 									{ artist.Dates }
@@ -296,54 +293,6 @@ templ ArtistsBlock(c ArtistsView) {
 		}
 		</div>
 	</section>
-}
-
-// ArtistName renders an artist name with the matched search query wrapped in a
-// mark element. All dynamic content is escaped; the markup itself is static, so
-// script-like names and search strings cannot inject markup.
-func ArtistName(name string, query string) templ.Component {
-	before, match, after := splitNameHighlight(name, query)
-	escaped := templ.EscapeString(before)
-	if match != "" {
-		escaped += "<mark>" + templ.EscapeString(match) + "</mark>" + templ.EscapeString(after)
-	}
-	content := escaped
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
-		_, err := io.WriteString(w, content)
-		return err
-	})
-}
-
-func splitNameHighlight(name string, query string) (string, string, string) {
-	if query == "" {
-		return name, "", ""
-	}
-
-	// Match case-insensitively over runes so a match found in a lowercased
-	// string is sliced from the original by rune index. Lowercasing can change
-	// a name's byte and rune length (for example "İ" folds to "i"+combining
-	// dot), so byte indexes obtained from the folded string must never be used
-	// to slice the original.
-	nameRunes := []rune(name)
-	queryRunes := []rune(query)
-	if len(queryRunes) == 0 || len(queryRunes) > len(nameRunes) {
-		return name, "", ""
-	}
-
-	for i := 0; i+len(queryRunes) <= len(nameRunes); i++ {
-		matched := true
-		for j := 0; j < len(queryRunes); j++ {
-			if unicode.ToLower(nameRunes[i+j]) != unicode.ToLower(queryRunes[j]) {
-				matched = false
-				break
-			}
-		}
-		if matched {
-			return string(nameRunes[:i]), string(nameRunes[i : i+len(queryRunes)]), string(nameRunes[i+len(queryRunes):])
-		}
-	}
-
-	return name, "", ""
 }
 
 func artistsAriaCurrent(active bool) string {

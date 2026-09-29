@@ -402,6 +402,7 @@ func buildArtworkSearchResults(app *pocketbase.PocketBase, filters *filters, dua
 		ResetUrl:        buildArtworkSearchClearPath(dualModeContext),
 		SortOptions:     buildSortOptions(filters, dualModeContext),
 	}
+	results.TitleHighlight, results.ArtistHighlight = filters.highlightTerms()
 
 	if dualModeContext != nil {
 		results.DualModeUrls = map[string]string{}
