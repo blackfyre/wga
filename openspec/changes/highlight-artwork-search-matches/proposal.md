@@ -11,7 +11,7 @@ On `/artists`, the part of each name that matches the search text is highlighted
   - the `title` filter highlights the title;
   - the `artist` text filter highlights the artist name, but only when no exact `artist_id` filter is active.
 - The artist-name part of the result metadata line is rendered separately from the date so that only the name can carry a highlight; the visible text stays the same.
-- `/artists` and `/artworks` share one highlight renderer. The current `/artists` behaviour, including its output, escaping and Unicode handling, is kept.
+- `/artists` and `/artworks` share one highlight renderer. The current `/artists` output and escaping are kept. Matching switches from per-rune lowercasing to Unicode case folding, so case variants that lowercasing misses (such as Greek `Σ` and final `ς`) now match.
 - Non-goals:
   - highlighting technique (the result cards don't show it);
   - highlighting in the Dual Mode result picker;

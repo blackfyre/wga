@@ -32,5 +32,7 @@ The artwork results views (`ArtworkSearchResults` and `ArtworkSearchResultList`)
 ## Risks / Trade-offs
 
 - [SQLite `LIKE` folds only ASCII case, while the highlighter folds Unicode] → Every row the database returns still contains a match the highlighter can find, so the worst case is a result with no highlight. `/artists` already behaves this way.
+- [Case folding is broader than per-rune lowercasing] → `strings.EqualFold` treats variants such as `Σ`, `σ` and `ς` as equal, which the old `/artists` comparison did not. In rare cases a text containing both a folded variant and the literal query highlights the earlier folded variant. That is still a case-insensitive occurrence, so this is accepted.
+- [A multi-author work can match through a later author, but the result shows only its first author] → The visible artist name then has no highlight. Showing the author that matched would change the card's artist and link, which is outside this change.
 - [`<mark>` uses the browser's default styling, which may look out of place in dark mode] → This is accepted to match `/artists`. Restyling it belongs in a separate change.
 - [Bionic reading processes result titles] → `mark` is already on its skip list, so highlighted text is left intact.
