@@ -34,11 +34,13 @@ func seedArtworkTitleSearch(t *testing.T) *pocketbase.PocketBase {
 	app := newArtworkSearchApp(t)
 	saveSearchArtist(t, app, "artisttitle0001", "Title Artist")
 	saveSearchTaxonomy(t, app, "schools", "titleschool0001", "dutch", "Dutch")
+	saveSearchLocation(t, app, "loctitlezebra01", "ZZZ Museum")
 	saveSearchArtwork(t, app, searchArtworkSeed{
 		id:        "worktitle000001",
 		title:     "Madonna Title Work",
 		authors:   []string{"artisttitle0001"},
 		school:    "titleschool0001",
+		location:  "loctitlezebra01",
 		published: true,
 	})
 	return app
@@ -102,8 +104,8 @@ func documentTitleOf(t *testing.T, body string) string {
 
 func TestArtworkSearchTitleMatchesAcrossResponseKinds(t *testing.T) {
 	app := seedArtworkTitleSearch(t)
-	query := "?q=madonna&art_school=dutch&artist_id=artisttitle0001"
-	want := "“madonna” · Title Artist · Artworks Search · Dutch - WGA"
+	query := "?q=madonna&art_school=dutch&artist_id=artisttitle0001&venue=loctitlezebra01"
+	want := "“madonna” · Title Artist · Artworks Search · Dutch · ZZZ Museum - WGA"
 
 	for _, test := range []struct {
 		name    string

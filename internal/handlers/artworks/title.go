@@ -2,10 +2,14 @@ package artworks
 
 import (
 	"context"
+	"database/sql"
+	"errors"
+	"slices"
 	"strconv"
 	"strings"
 
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
+	"github.com/blackfyre/wga/internal/constants"
 	"github.com/pocketbase/pocketbase"
 )
 
@@ -43,6 +47,7 @@ type artworkSearchTitleLabels struct {
 	forms       map[string]string
 	types       map[string]string
 	periods     map[string]string
+	collection  string
 }
 
 // resolveArtworkSearchTitleLabels loads only the labels of active filters,
@@ -53,7 +58,7 @@ func resolveArtworkSearchTitleLabels(ctx context.Context, app *pocketbase.Pocket
 		return labels, err
 	}
 
-	needsLabels := len(f.schoolValues()) > 0 || len(f.formValues()) > 0 || f.ArtTypeString != "" || f.PeriodString != ""
+	needsLabels := len(f.schoolValues()) > 0 || len(f.formValues()) > 0 || f.ArtTypeString != "" || f.PeriodString != "" || f.selectedVenue() != ""
 	if !needsLabels {
 		return labels, nil
 	}
@@ -85,6 +90,17 @@ func resolveArtworkSearchTitleLabels(ctx context.Context, app *pocketbase.Pocket
 			labels.periods[entry.value] = entry.label
 		}
 	}
+	if venue := f.selectedVenue(); venue != "" {
+		// The collection value is a location record ID. One record lookup
+		// avoids the catalogue-wide holdings projection.
+		location, lookupErr := app.FindRecordById(constants.CollectionLocations, venue)
+		if lookupErr != nil && !errors.Is(lookupErr, sql.ErrNoRows) {
+			return labels, lookupErr
+		}
+		if location != nil {
+			labels.collection = strings.TrimSpace(location.GetString("name"))
+		}
+	}
 
 	return labels, nil
 }
@@ -111,7 +127,7 @@ func artworkSearchTitle(f *filters, labels artworkSearchTitleLabels, page int, p
 		multiValueFilterPart("form", f.formValues(), labels.forms),
 		tmplUtils.TitlePart{Key: "type", Long: titleLabel(labels.types, f.ArtTypeString), Role: tmplUtils.TitleFilter},
 		tmplUtils.TitlePart{Key: "period", Long: titleLabel(labels.periods, f.PeriodString), Role: tmplUtils.TitleFilter},
-		tmplUtils.TitlePart{Key: "collection", Long: collectionTitleLabel(f.selectedVenue()), Role: tmplUtils.TitleFilter},
+		tmplUtils.TitlePart{Key: "collection", Long: labels.collection, Role: tmplUtils.TitleFilter},
 		tmplUtils.TitlePart{Key: "year", Long: yearTitleLabel(f.YearFrom, f.YearTo), Role: tmplUtils.TitleFilter},
 		tmplUtils.TitlePart{Key: "position", Long: tmplUtils.TitlePagePosition(page, pageCount), Role: tmplUtils.TitlePosition},
 	)
@@ -124,8 +140,10 @@ func quotedFilterPart(key string, name string, value string) tmplUtils.TitlePart
 	return tmplUtils.TitlePart{Key: key, Long: name + " " + quoted, Short: quoted, Role: tmplUtils.TitleFilter}
 }
 
-// multiValueFilterPart lists every selected label, shortening to the first
-// label plus a count of the others.
+// multiValueFilterPart lists every selected label in case-insensitive
+// alphabetical order, so the same selection always yields the same title
+// whatever the parameter order, and shortens to the first label plus a count
+// of the others.
 func multiValueFilterPart(key string, values []string, labels map[string]string) tmplUtils.TitlePart {
 	if len(values) == 0 {
 		return tmplUtils.TitlePart{Key: key, Role: tmplUtils.TitleFilter}
@@ -140,6 +158,12 @@ func multiValueFilterPart(key string, values []string, labels map[string]string)
 	if len(names) == 0 {
 		return tmplUtils.TitlePart{Key: key, Role: tmplUtils.TitleFilter}
 	}
+	slices.SortFunc(names, func(left, right string) int {
+		if order := strings.Compare(strings.ToLower(left), strings.ToLower(right)); order != 0 {
+			return order
+		}
+		return strings.Compare(left, right)
+	})
 	part := tmplUtils.TitlePart{Key: key, Long: strings.Join(names, ", "), Role: tmplUtils.TitleFilter}
 	if len(names) > 1 {
 		part.Short = names[0] + " +" + strconv.Itoa(len(names)-1)
@@ -152,15 +176,6 @@ func titleLabel(labels map[string]string, value string) string {
 		return ""
 	}
 	return strings.TrimSpace(labels[value])
-}
-
-// collectionTitleLabel uses the holding house name, as the collection facet
-// summary does.
-func collectionTitleLabel(value string) string {
-	if value == "" {
-		return ""
-	}
-	return strings.TrimSpace(strings.Split(value, ",")[0])
 }
 
 func yearTitleLabel(from string, to string) string {

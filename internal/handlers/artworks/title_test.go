@@ -15,6 +15,8 @@ func TestArtworkSearchTitle(t *testing.T) {
 		types:   map[string]string{"religious": "religious"},
 		periods: map[string]string{"period00001": "Early Renaissance"},
 	}
+	withCollection := labels
+	withCollection.collection = "Uffizi"
 	for _, test := range []struct {
 		name      string
 		filters   filters
@@ -38,9 +40,21 @@ func TestArtworkSearchTitle(t *testing.T) {
 		},
 		{
 			name:    "period collection and year",
-			filters: filters{PeriodString: "period00001", VenueString: "Uffizi, Florence", YearFrom: "1400"},
-			labels:  labels, page: 2, pageCount: 3,
+			filters: filters{PeriodString: "period00001", VenueString: "loct71zebra0001", YearFrom: "1400"},
+			labels:  withCollection, page: 2, pageCount: 3,
 			want: "Artworks Search · Early Renaissance · Uffizi · 1400–1900 · p. 2/3",
+		},
+		{
+			name:    "multi-value order does not depend on parameter order",
+			filters: filters{SchoolValues: []string{"venetian", "florentine"}},
+			labels:  labels, page: 1, pageCount: 1,
+			want: "Artworks Search · Florentine, Venetian",
+		},
+		{
+			name:    "unresolved collection is left out",
+			filters: filters{VenueString: "loct71zebra0001"},
+			labels:  labels, page: 1, pageCount: 1,
+			want: "Artworks Search",
 		},
 		{
 			name:    "unresolved values are left out",
