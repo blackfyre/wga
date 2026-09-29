@@ -1,0 +1,10 @@
+package components
+
+import "github.com/blackfyre/wga/internal/assets/templ/utils"
+
+// DocumentTitle renders the page title as a root-level element of a partial
+// HTMX response, where htmx reads it to update document.title. Render it only
+// at the start of a response, never nested inside swapped markup.
+templ DocumentTitle() {
+	<title>{ utils.GetTitle(ctx) }</title>
+}

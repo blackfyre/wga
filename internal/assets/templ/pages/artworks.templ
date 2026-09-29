@@ -49,6 +49,8 @@ type ArtworkSearchResultsView struct {
 	// marked in each result's visible title and artist name.
 	TitleHighlight  string
 	ArtistHighlight string
+	// DocumentTitle is the state-derived page title, without the site suffix.
+	DocumentTitle string
 }
 
 // ArtworkSearchView is the page-owned contract for the artwork catalogue.
@@ -449,6 +451,20 @@ templ ArtworkSearchDualModeResultGrid(artworks dto.ImageGrid, dualModeUrls map[s
 			</div>
 		}
 	</div>
+}
+
+// ArtworkSearchBlockResponse is the HTMX response for artwork-search block
+// swaps: the root-level title followed by the block.
+templ ArtworkSearchBlockResponse(s ArtworkSearchView) {
+	@components.DocumentTitle()
+	@ArtworkSearchBlock(s)
+}
+
+// ArtworkSearchResultsResponse is the HTMX response for the results fragment:
+// the root-level title followed by the results.
+templ ArtworkSearchResultsResponse(r ArtworkSearchResultsView) {
+	@components.DocumentTitle()
+	@ArtworkSearchResults(r)
 }
 
 templ ArtworkSearchBlock(s ArtworkSearchView) {

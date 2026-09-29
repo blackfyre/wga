@@ -102,6 +102,14 @@ func finishSearchSpan(span trace.Span, err error) {
 	span.End()
 }
 
+// searchTitle derives the document title from the displayed search term.
+func searchTitle(term string) string {
+	return tmplUtils.FitTitle([]tmplUtils.TitlePart{
+		{Key: "q", Long: term, Role: tmplUtils.TitleLead, Quoted: true},
+		{Key: "page", Long: "Search", Role: tmplUtils.TitlePageName},
+	}, nil)
+}
+
 func render(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	term := strings.TrimSpace(c.Request.URL.Query().Get("q"))
 	view, err := searchView(c.Request.Context(), app, term)
@@ -110,11 +118,11 @@ func render(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
-	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, "Search")
+	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, searchTitle(term))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "Search artists and artworks in the collection.")
 	var output bytes.Buffer
 	if utils.IsHtmxRequest(c) && c.Request.URL.Path == "/search/results" {
-		err = pages.SearchResults(view).Render(ctx, &output)
+		err = pages.SearchResultsResponse(view).Render(ctx, &output)
 	} else {
 		err = pages.SearchPage(view).Render(ctx, &output)
 	}

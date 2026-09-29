@@ -4,6 +4,7 @@ import (
 	"net/url"
 	"strconv"
 
+	"github.com/blackfyre/wga/internal/assets/templ/components"
 	"github.com/blackfyre/wga/internal/assets/templ/layouts"
 )
 
@@ -40,6 +41,13 @@ templ SearchPage(v SearchView) {
 			@SearchResults(v)
 		</section>
 	}
+}
+
+// SearchResultsResponse is the HTMX response for debounced result swaps: the
+// root-level title followed by the results.
+templ SearchResultsResponse(v SearchView) {
+	@components.DocumentTitle()
+	@SearchResults(v)
 }
 
 templ SearchResults(v SearchView) {

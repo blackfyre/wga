@@ -105,7 +105,7 @@ func searchWithCheckpoint(app *pocketbase.PocketBase, c *core.RequestEvent, chec
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
-	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, "Artworks Search")
+	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, results.DocumentTitle)
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "Search the collection by title, artist, school, form, type, and technique.")
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgUrlKey, canonical)
 
@@ -116,9 +116,9 @@ func searchWithCheckpoint(app *pocketbase.PocketBase, c *core.RequestEvent, chec
 	err = renderArtworkSearch(c.Request.Context(), func() error {
 		switch responseKind {
 		case artworkSearchBlock:
-			return pages.ArtworkSearchBlock(view).Render(ctx, &buff)
+			return pages.ArtworkSearchBlockResponse(view).Render(ctx, &buff)
 		case artworkSearchResultsFragment:
-			return pages.ArtworkSearchResults(results).Render(ctx, &buff)
+			return pages.ArtworkSearchResultsResponse(results).Render(ctx, &buff)
 		default:
 			return pages.ArtworkSearchPage(view).Render(ctx, &buff)
 		}
@@ -155,6 +155,7 @@ type artworkSearchResultsContext struct {
 	dualModeContext *pages.ArtworkSearchDualMode
 	view            pages.ArtworkSearchResultsView
 	canonical       string
+	artistScope     string
 }
 
 type artworkSearchFilterOptions struct {
@@ -237,12 +238,18 @@ func buildArtworkSearchResultsViewContext(ctx context.Context, app *pocketbase.P
 	if err != nil {
 		return artworkSearchResultsContext{}, err
 	}
+	titleLabels, err := resolveArtworkSearchTitleLabels(ctx, app, filters, checkpoint)
+	if err != nil {
+		return artworkSearchResultsContext{}, err
+	}
+	view.DocumentTitle = artworkSearchTitle(filters, titleLabels, page, (recordsCount+limit-1)/limit)
 
 	return artworkSearchResultsContext{
 		filters:         filters,
 		dualModeContext: dualModeContext,
 		view:            view,
 		canonical:       buildArtworkSearchPath("/artworks", filters, dualModeContext),
+		artistScope:     titleLabels.artistScope,
 	}, nil
 }
 
@@ -266,10 +273,7 @@ func buildArtworkSearchViewContext(ctx context.Context, app *pocketbase.PocketBa
 
 	filters := resultsContext.filters
 	dualModeContext := resultsContext.dualModeContext
-	artistScopeFilingName, err := resolveArtworkSearchArtistScope(ctx, app, filters.ArtistID, checkpoint)
-	if err != nil {
-		return pages.ArtworkSearchView{}, "", err
-	}
+	artistScopeFilingName := resultsContext.artistScope
 
 	options, err := loadArtworkSearchFilterOptions(ctx, app, checkpoint)
 	if err != nil {

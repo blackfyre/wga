@@ -292,3 +292,14 @@ test("artist index history restores each earlier query", async ({ page }) => {
 		"zq",
 	);
 });
+
+test("artist index letter swaps update the document title", async ({
+	page,
+}) => {
+	await page.goto("/artists");
+	await expect(page).toHaveTitle("Artists - WGA");
+
+	await page.getByRole("link", { name: "S", exact: true }).click();
+	await expect(page).toHaveURL(/letter=S/);
+	await expect(page).toHaveTitle("Artists · Letter S - WGA");
+});
