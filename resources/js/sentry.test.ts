@@ -60,6 +60,7 @@ test("initialises Sentry only when a DSN is configured", () => {
 			dsn: "https://public@example.ingest.sentry.io/1",
 			environment: "production",
 			release: "test-release",
+			tunnel: "/diagnostics/browser",
 			beforeBreadcrumb: expect.any(Function),
 			beforeSend: scrubSentryEvent,
 		},

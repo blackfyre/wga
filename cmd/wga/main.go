@@ -103,7 +103,11 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		if err := handlers.RegisterHandlers(app, serverConfig.Environment, serverConfig.Captcha, serverConfig.Postcards.TokenKeyring(), contributorStore, captchaVerifier, itineraryPolicy, authenticateOrigin, clientIdentity, serverConfig.PublicURL, publicReadPolicy); err != nil {
+		browserTunnel, err := observability.NewBrowserTunnel(serverConfig.Sentry.BrowserDSN(), serverConfig.Sentry.DSN(), nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if err := handlers.RegisterHandlers(app, serverConfig.Environment, serverConfig.Captcha, serverConfig.Postcards.TokenKeyring(), contributorStore, captchaVerifier, itineraryPolicy, authenticateOrigin, clientIdentity, serverConfig.PublicURL, publicReadPolicy, browserTunnel); err != nil {
 			log.Fatal(err)
 		}
 		crontab.RegisterCronJobs(app, serverConfig.Postcards, serverConfig.Sitemap(), contributors.NewRefreshJob(app, contributorProvider, contributorStore))

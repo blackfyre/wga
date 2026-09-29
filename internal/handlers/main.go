@@ -7,6 +7,7 @@ import (
 	"github.com/blackfyre/wga/internal/handlers/artists"
 	"github.com/blackfyre/wga/internal/handlers/artworks"
 	contributorhandlers "github.com/blackfyre/wga/internal/handlers/contributors"
+	"github.com/blackfyre/wga/internal/handlers/diagnostics"
 	"github.com/blackfyre/wga/internal/handlers/dual"
 	"github.com/blackfyre/wga/internal/handlers/feedback"
 	"github.com/blackfyre/wga/internal/handlers/glossary"
@@ -26,6 +27,7 @@ import (
 	"github.com/blackfyre/wga/internal/handlers/tours"
 
 	"github.com/blackfyre/wga/internal/handlers/postcards"
+	"github.com/blackfyre/wga/internal/observability"
 	"github.com/blackfyre/wga/internal/requestprotection"
 	"github.com/blackfyre/wga/internal/requesttrust"
 	"github.com/pocketbase/pocketbase"
@@ -39,7 +41,7 @@ import (
 // It returns an error when an integration that must fail closed at startup
 // (currently the visitor-itinerary anonymous-write surface) rejects its
 // security policy.
-func RegisterHandlers(app *pocketbase.PocketBase, environment config.Environment, captcha config.Captcha, postcardKeyring config.PostcardTokenKeyring, contributorReader contributorworkflow.Reader, captchaVerifier antiabuse.Verifier, itineraryPolicy itineraryhandlers.SecurityPolicy, authenticateOrigin requesttrust.OriginAuthenticator, clientIdentity requesttrust.Resolver, publicURL config.PublicURL, publicReadPolicy *requestprotection.Policy) error {
+func RegisterHandlers(app *pocketbase.PocketBase, environment config.Environment, captcha config.Captcha, postcardKeyring config.PostcardTokenKeyring, contributorReader contributorworkflow.Reader, captchaVerifier antiabuse.Verifier, itineraryPolicy itineraryhandlers.SecurityPolicy, authenticateOrigin requesttrust.OriginAuthenticator, clientIdentity requesttrust.Resolver, publicURL config.PublicURL, publicReadPolicy *requestprotection.Policy, browserTunnel *observability.BrowserTunnel) error {
 
 	app.Logger().Debug("Registering route handlers...")
 	if err := registerProtectedReadMiddleware(app, environment, publicURL.String(), authenticateOrigin, clientIdentity, publicReadPolicy); err != nil {
@@ -76,6 +78,9 @@ func RegisterHandlers(app *pocketbase.PocketBase, environment config.Environment
 	timeline.RegisterHandlers(app)
 
 	if err := itineraryhandlers.RegisterHandlers(app, itineraryPolicy); err != nil {
+		return err
+	}
+	if err := diagnostics.RegisterHandlers(app, browserTunnel, publicURL.String(), clientIdentity); err != nil {
 		return err
 	}
 

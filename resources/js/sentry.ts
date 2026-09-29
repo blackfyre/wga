@@ -104,6 +104,10 @@ export const loadSentryConfiguration = (
 			"",
 });
 
+// First-party relay path (observability.BrowserTunnelPath). Content blockers
+// reject requests to sentry.io, so envelopes are sent to the page's origin.
+export const SENTRY_TUNNEL_PATH = "/diagnostics/browser";
+
 export const initialiseSentry = (
 	configuration: SentryConfiguration,
 	initialise: typeof Sentry.init = Sentry.init,
@@ -117,6 +121,7 @@ export const initialiseSentry = (
 			dsn: configuration.dsn,
 			environment: configuration.environment,
 			release: configuration.release,
+			tunnel: SENTRY_TUNNEL_PATH,
 			beforeBreadcrumb: scrubBreadcrumb,
 			beforeSend: scrubSentryEvent,
 		});
