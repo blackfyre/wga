@@ -9,10 +9,12 @@ The artwork results views (`ArtworkSearchResults` and `ArtworkSearchResultList`)
 ## Goals / Non-Goals
 
 **Goals:**
+
 - One highlight renderer shared by `/artists` and `/artworks`.
 - Highlight terms chosen by the server from the same filter state that produced the results.
 
 **Non-Goals:**
+
 - Aligning SQLite `LIKE` case folding with Go Unicode folding.
 - Highlighting multiple occurrences of a term.
 
@@ -24,7 +26,8 @@ The artwork results views (`ArtworkSearchResults` and `ArtworkSearchResultList`)
   - artist term = `artist` when `artist_id` is empty, otherwise `q`.
 
   The terms are passed through exactly as the filters use them, so each highlight matches what the database searched for. The templates stay free of filter logic. The alternative, passing the raw filters into the view, would spread query rules into Templ.
-- **Render the identity line in parts.** The grid and list views render the highlighted artist name, the ` · ` separator and the date as separate pieces. They keep the existing `NOT RECORDED` fallback when both are empty, so the visible text is unchanged.
+
+- **Render the identity line in parts.** The grid and list views render the highlighted artist name, the `·` separator and the date as separate pieces. They keep the existing `NOT RECORDED` fallback when both are empty, so the visible text is unchanged.
 
 ## Risks / Trade-offs
 
