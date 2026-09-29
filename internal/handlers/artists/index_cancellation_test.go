@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/blackfyre/wga/internal/requestprotection"
@@ -64,5 +65,42 @@ func TestArtistSearchCancellationSkipsRender(t *testing.T) {
 	}
 	if called {
 		t.Fatal("artist renderer was invoked after cancellation")
+	}
+}
+
+func TestArtistIndexPreservesNameFieldOnlyForFilterFormRequests(t *testing.T) {
+	app := newArtistRecordApp(t)
+	tests := []struct {
+		name    string
+		trigger string
+		want    bool
+	}{
+		{name: "filter form", trigger: "artist-filters", want: true},
+		{name: "letter, sort or reset link", trigger: "", want: false},
+		{name: "other element", trigger: "artist-sort", want: false},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodGet, "/artists?q=van", nil)
+			request.Header.Set("HX-Request", "true")
+			request.Header.Set("HX-Target", "artists")
+			if test.trigger != "" {
+				request.Header.Set("HX-Trigger", test.trigger)
+			}
+			recorder := httptest.NewRecorder()
+			event := &core.RequestEvent{Event: router.Event{Request: request, Response: recorder}}
+
+			if err := processArtists(app, event); err != nil {
+				t.Fatalf("processArtists() error = %v", err)
+			}
+			body := recorder.Body.String()
+			if !strings.Contains(body, `id="artist-name"`) || !strings.Contains(body, `value="van"`) {
+				t.Fatal("response must render the name field with the submitted query")
+			}
+			if got := strings.Contains(body, "hx-preserve"); got != test.want {
+				t.Fatalf("hx-preserve rendered = %v, want %v", got, test.want)
+			}
+		})
 	}
 }

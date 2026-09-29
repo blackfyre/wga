@@ -16,7 +16,14 @@ type GlossaryView struct {
 	SelectedLetter string
 	Letters        []string
 	Terms          []GlossaryTerm
+	// PreserveQuery keeps the visitor's in-progress search text when this
+	// response answers a request issued by the search form itself.
+	PreserveQuery bool
 }
+
+// GlossarySearchFormID identifies the glossary search form; HTMX sends it as
+// HX-Trigger for requests the form issues.
+const GlossarySearchFormID = "glossary-search"
 
 templ GlossaryPage(view GlossaryView) {
 	@layouts.LayoutMain() {
@@ -48,13 +55,13 @@ templ GlossaryBlock(view GlossaryView) {
 				>{ letter }</a>
 			}
 		</nav>
-		<form action="/glossary" method="GET" hx-get="/glossary" hx-target="#glossary" hx-select="#glossary" hx-swap="outerHTML" hx-trigger="input delay:300ms" class="flex flex-col justify-between gap-3.5 py-5 pb-8 md:flex-row md:items-baseline md:gap-8">
+		<form id={ GlossarySearchFormID } action="/glossary" method="GET" hx-get="/glossary" hx-target="#glossary" hx-select="#glossary" hx-swap="outerHTML" hx-sync="this:replace" hx-trigger="input changed delay:500ms" class="flex flex-col justify-between gap-3.5 py-5 pb-8 md:flex-row md:items-baseline md:gap-8">
 			if view.SelectedLetter != "" {
 				<input type="hidden" name="letter" value={ view.SelectedLetter }/>
 			}
 			<label class="w-full md:w-80">
 				<span class="sr-only">Search terms and definitions</span>
-				<input class="w-full border-0 border-b border-wga-ink bg-transparent px-0 py-2 text-sm" type="search" name="q" value={ view.Query } placeholder="Search terms and definitions"/>
+				<input class="w-full border-0 border-b border-wga-ink bg-transparent px-0 py-2 text-sm" type="search" id="glossary-query" hx-preserve?={ view.PreserveQuery } data-text-search name="q" value={ view.Query } placeholder="Search terms and definitions"/>
 			</label>
 			<p class="font-mono text-xs tracking-[1px] text-wga-ink/60" aria-live="polite">{ len(view.Terms) } SHOWN</p>
 		</form>

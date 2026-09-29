@@ -1,4 +1,11 @@
 import { expect, type Page, test } from "@playwright/test";
+import {
+	expectDebouncedSearch,
+	expectHistoryMatchesEachSearchState,
+	expectNavigationAndHistoryUseStateValues,
+	expectTypingSurvivesInFlightSwap,
+	type TextSearch,
+} from "./helpers/text-search";
 
 const viewports = [
 	{ width: 390, height: 900 },
@@ -241,4 +248,47 @@ test.describe("artist index without JavaScript", () => {
 		await page.getByRole("link", { name: "S", exact: true }).click();
 		await expect(page).toHaveURL(/letter=S/);
 	});
+});
+
+function artistIndexTextSearch(page: Page): TextSearch {
+	return {
+		page,
+		field: page.locator("#artist-name"),
+		param: "q",
+		path: "/artists",
+	};
+}
+
+test("artist index debounces typing and keeps input across its own swaps", async ({
+	page,
+}) => {
+	await page.goto("/artists");
+	const search = artistIndexTextSearch(page);
+
+	await expectDebouncedSearch(search, "zzzq");
+	await expectNavigationAndHistoryUseStateValues(search, "zzzq", () =>
+		page.getByRole("link", { name: "RESET FILTERS →" }).click(),
+	);
+});
+
+test("artist index keeps characters typed while a search is in flight", async ({
+	page,
+}) => {
+	await page.goto("/artists");
+
+	await expectTypingSurvivesInFlightSwap(
+		artistIndexTextSearch(page),
+		"zz",
+		"zq",
+	);
+});
+
+test("artist index history restores each earlier query", async ({ page }) => {
+	await page.goto("/artists");
+
+	await expectHistoryMatchesEachSearchState(
+		artistIndexTextSearch(page),
+		"zz",
+		"zq",
+	);
 });

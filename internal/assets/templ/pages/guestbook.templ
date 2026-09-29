@@ -19,7 +19,14 @@ type GuestbookView struct {
 	YearOptions  []string
 	Entries      dto.GuestbookEntries
 	Form         GuestbookFormView
+	// PreserveQuery keeps the visitor's in-progress search text when this
+	// response answers a request issued by the search form itself.
+	PreserveQuery bool
 }
+
+// GuestbookSearchFormID identifies the guestbook search form; HTMX sends it
+// as HX-Trigger for requests the form issues.
+const GuestbookSearchFormID = "guestbook-search"
 
 type GuestbookFormView struct {
 	Name          string
@@ -46,9 +53,9 @@ templ GuestbookBlock(v GuestbookView) {
 				@GuestbookEntryForm(v.Form)
 			</aside>
 			<div class="min-w-0 flex-1 md:order-1">
-				<form hx-get="/guestbook" hx-target="#guestbook" hx-select="#guestbook" hx-swap="outerHTML" hx-trigger="change, input changed delay:300ms from:input[type=search]" class="mb-6">
+				<form id={ GuestbookSearchFormID } hx-get="/guestbook" hx-target="#guestbook" hx-select="#guestbook" hx-swap="outerHTML" hx-sync="this:replace" hx-trigger="change[!target.hasAttribute('data-text-search')], input[target.hasAttribute('data-text-search')] changed delay:500ms" class="mb-6">
 					<div class="flex items-center gap-3.5 pb-4.5">
-						<label class="min-w-0 flex-1"><span class="sr-only">Search entries</span><input type="search" name="q" value={ v.Query } placeholder="Search entries by name, place or text" class="w-full border-0 border-b border-wga-ink bg-transparent px-0 py-2 text-sm"/></label>
+						<label class="min-w-0 flex-1"><span class="sr-only">Search entries</span><input type="search" id="guestbook-query" hx-preserve?={ v.PreserveQuery } data-text-search name="q" value={ v.Query } placeholder="Search entries by name, place or text" class="w-full border-0 border-b border-wga-ink bg-transparent px-0 py-2 text-sm"/></label>
 						<p class="whitespace-nowrap font-mono text-(length:--t-11) text-wga-ink/60" aria-live="polite">{ strconv.Itoa(v.ScopeTotal) } FOUND</p>
 					</div>
 					<input type="hidden" name="year" value={ v.SelectedYear }/>

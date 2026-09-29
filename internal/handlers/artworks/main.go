@@ -91,6 +91,7 @@ func searchWithCheckpoint(app *pocketbase.PocketBase, c *core.RequestEvent, chec
 	} else {
 		view, canonical, err = buildArtworkSearchViewContext(c.Request.Context(), app, queryParams, page, artworkSearchPageSize, checkpoint)
 		results = view.Results
+		view.PreserveTextFields = utils.RequestTriggeredBy(c, pages.ArtworkFiltersFormID)
 	}
 	if err != nil {
 		if requestprotection.IsCancellation(err) {

@@ -61,7 +61,14 @@ type ArtworkSearchView struct {
 	DualModeContext       *ArtworkSearchDualMode
 	HxTarget              string
 	Results               ArtworkSearchResultsView
+	// PreserveTextFields keeps the visitor's in-progress free-text input when
+	// this response answers a request issued by the filter form itself.
+	PreserveTextFields bool
 }
+
+// ArtworkFiltersFormID identifies the artwork filter form; HTMX sends it as
+// HX-Trigger for requests the form issues.
+const ArtworkFiltersFormID = "artwork-filters"
 
 // ArtworkSearchPage is the template for the artwork catalogue page.
 templ ArtworkSearchPage(s ArtworkSearchView) {
@@ -90,7 +97,7 @@ templ artworkSearchFacet(facet ArtworkSearchFacet) {
 
 templ ArtworkSeachFilterBlock(b ArtworkSearchView) {
 	<form
-		id="artwork-filters"
+		id={ ArtworkFiltersFormID }
 		action="/artworks"
 		hx-get="/artworks"
 		hx-disabled-elt="button"
@@ -100,7 +107,7 @@ templ ArtworkSeachFilterBlock(b ArtworkSearchView) {
 		hx-indicator="inherit, #artwork-search-indicator"
 		hx-sync="this:replace"
 		method="GET"
-		hx-trigger="change, input changed delay:300ms"
+		hx-trigger="change[!target.hasAttribute('data-text-search')], input changed delay:500ms"
 		class="w-full"
 	>
 		if b.ArtistID != "" {
@@ -148,6 +155,8 @@ templ ArtworkSeachFilterBlock(b ArtworkSearchView) {
 					class="w-full border-0 border-b border-wga-ink bg-transparent px-0 py-2 text-sm"
 					type="search"
 					id="artwork-query"
+					hx-preserve?={ b.PreserveTextFields }
+					data-text-search
 					data-keyboard-page-search
 					name="q"
 					placeholder="e.g. milkmaid"
@@ -162,6 +171,8 @@ templ ArtworkSeachFilterBlock(b ArtworkSearchView) {
 					class="w-full border-0 border-b border-wga-ink bg-transparent px-0 py-2 text-sm"
 					type="search"
 					id="artwork-technique"
+					hx-preserve?={ b.PreserveTextFields }
+					data-text-search
 					name="technique"
 					placeholder="e.g. oil on canvas"
 					value={ b.TechniqueField.Value }
@@ -185,6 +196,9 @@ templ ArtworkSeachFilterBlock(b ArtworkSearchView) {
 				<span class="sr-only">{ b.Facets.Collection.QueryField.Label }</span>
 				<input
 					type="search"
+					id={ b.Facets.Collection.QueryField.ID }
+					hx-preserve?={ b.PreserveTextFields }
+					data-text-search
 					name={ b.Facets.Collection.QueryField.Name }
 					value={ b.Facets.Collection.QueryField.Value }
 					placeholder={ b.Facets.Collection.QueryField.Placeholder }

@@ -562,7 +562,7 @@ func TestArtworkFilterBlockOmitsDefaultSortDirViewState(t *testing.T) {
 func TestArtworkFilterBlockTriggerBubblesFromEverySearchInput(t *testing.T) {
 	rendered := renderArtworkFilterBlock(t, sampleArtworkSearchView())
 
-	if !strings.Contains(rendered, `hx-trigger="change, input changed delay:300ms"`) {
+	if !strings.Contains(rendered, `hx-trigger="change[!target.hasAttribute('data-text-search')], input changed delay:500ms"`) {
 		t.Error("expected a form-bubbled change/input trigger")
 	}
 	if strings.Contains(rendered, "from:") {
@@ -575,6 +575,9 @@ func TestArtworkFilterBlockTriggerBubblesFromEverySearchInput(t *testing.T) {
 	}
 	if got := strings.Count(rendered, `type="search"`); got != 3 {
 		t.Errorf("expected all 3 search inputs inside the form, got %d", got)
+	}
+	if got := strings.Count(rendered, "data-text-search"); got != 3+1 {
+		t.Errorf("expected the 3 search inputs marked plus the change filter, got %d", got)
 	}
 }
 
@@ -602,5 +605,24 @@ func TestArtworkSortAndViewLinksTargetFullBlock(t *testing.T) {
 	}
 	if strings.Contains(rendered, `hx-target="#artwork-search-results"`) {
 		t.Error("sort/view controls must not remain result-local")
+	}
+}
+
+func TestArtworkFilterBlockPreservesTextFieldsOnlyWhenRequested(t *testing.T) {
+	plain := renderArtworkFilterBlock(t, sampleArtworkSearchView())
+	if strings.Contains(plain, "hx-preserve") {
+		t.Error("filter block must not preserve text fields unless requested")
+	}
+
+	view := sampleArtworkSearchView()
+	view.PreserveTextFields = true
+	preserved := renderArtworkFilterBlock(t, view)
+	if got := strings.Count(preserved, "hx-preserve"); got != 3 {
+		t.Errorf("expected hx-preserve on the 3 free-text fields, got %d", got)
+	}
+	for _, id := range []string{`id="artwork-query"`, `id="artwork-technique"`, `id="` + view.Facets.Collection.QueryField.ID + `"`} {
+		if !strings.Contains(preserved, id) {
+			t.Errorf("preserved field missing stable %s", id)
+		}
 	}
 }

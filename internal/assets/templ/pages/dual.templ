@@ -159,6 +159,12 @@ type DualWorkRecord struct {
 	ArtworkID   string
 }
 
+// DualFiltersFormID identifies a pane's artist-index filter form; HTMX sends
+// it as HX-Trigger for requests that form issues.
+func DualFiltersFormID(key string) string {
+	return "dual-filters-" + key
+}
+
 // DualWindow is one independent pane of the comparison.
 type DualWindow struct {
 	Key          string // "left" | "right"
@@ -371,14 +377,15 @@ templ dualIndexPane(w DualWindow) {
 		}
 	</nav>
 	<form
-		id={ "dual-filters-" + w.Key }
+		id={ DualFiltersFormID(w.Key) }
 		action="/dual-mode"
 		method="GET"
 		hx-get="/dual-mode"
 		hx-target={ w.SelfSel }
 		hx-select={ w.SelfSel }
 		hx-swap="outerHTML"
-		hx-trigger="change, input changed delay:300ms from:find input[type=search], input changed delay:300ms from:find input[type=range]"
+		hx-trigger="change[!target.hasAttribute('data-text-search')], input[target.hasAttribute('data-text-search')] changed delay:500ms, input changed delay:300ms from:find input[type=range]"
+		hx-sync="this:replace"
 	>
 		for _, hidden := range w.Index.Hidden {
 			<input type="hidden" name={ hidden.Name } value={ hidden.Value }/>

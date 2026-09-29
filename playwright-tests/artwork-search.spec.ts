@@ -1,4 +1,11 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
+import {
+	expectDebouncedSearch,
+	expectHistoryMatchesEachSearchState,
+	expectNavigationAndHistoryUseStateValues,
+	expectTypingSurvivesInFlightSwap,
+	type TextSearch,
+} from "./helpers/text-search";
 
 test.describe.configure({ mode: "serial" });
 test.setTimeout(60000);
@@ -385,4 +392,50 @@ test("artwork search form works without JavaScript", async ({ browser }) => {
 		"ARTISTS",
 	);
 	await context.close();
+});
+
+function artworkSearchTextSearch(page: Page): TextSearch {
+	return {
+		page,
+		field: page.locator("#artwork-query"),
+		param: "q",
+		path: "/artworks",
+	};
+}
+
+test("artwork search debounces typing and keeps input across its own swaps", async ({
+	page,
+}) => {
+	await page.goto("/artworks");
+	const search = artworkSearchTextSearch(page);
+
+	await expectDebouncedSearch(search, "zzzq");
+	await expectNavigationAndHistoryUseStateValues(search, "zzzq", () =>
+		page
+			.locator("#artwork-filters")
+			.getByRole("link", { name: "RESET", exact: true })
+			.click(),
+	);
+});
+
+test("artwork search keeps characters typed while a search is in flight", async ({
+	page,
+}) => {
+	await page.goto("/artworks");
+
+	await expectTypingSurvivesInFlightSwap(
+		artworkSearchTextSearch(page),
+		"zz",
+		"zq",
+	);
+});
+
+test("artwork search history restores each earlier query", async ({ page }) => {
+	await page.goto("/artworks");
+
+	await expectHistoryMatchesEachSearchState(
+		artworkSearchTextSearch(page),
+		"zz",
+		"zq",
+	);
 });

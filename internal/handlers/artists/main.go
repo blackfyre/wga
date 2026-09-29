@@ -27,6 +27,7 @@ func processArtists(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
+	view.NameField.Preserve = utils.RequestTriggeredBy(c, pages.ArtistFiltersFormID)
 	c.Response.Header().Set("HX-Push-Url", canonicalURL)
 
 	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, "Artists")

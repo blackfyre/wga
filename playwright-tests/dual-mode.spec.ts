@@ -1,4 +1,11 @@
 import { expect, type Page, test } from "@playwright/test";
+import {
+	expectDebouncedSearch,
+	expectHistoryMatchesEachSearchState,
+	expectNavigationAndHistoryUseStateValues,
+	expectTypingSurvivesInFlightSwap,
+	type TextSearch,
+} from "./helpers/text-search";
 
 // Dual mode markup contract. The 1080px narrow gate and the `[data-wide]`
 // override are CSS-driven (.wga-dual-narrow / .wga-dual-split / .wga-dual-bar);
@@ -299,4 +306,49 @@ test("dual pane route target changes preserve the opposite pane through history"
 	await expect(page).toHaveURL(initialURL);
 	await expect(oppositeHeading).toBeVisible();
 	await expect(opposite).toContainText("THIS REPRODUCTION");
+});
+
+function dualModeArtistIndexTextSearch(page: Page): TextSearch {
+	return {
+		page,
+		field: page.locator("#l-name"),
+		param: "l_q",
+		path: "/dual-mode",
+	};
+}
+
+test("dual mode artist index debounces typing and keeps input across its own swaps", async ({
+	page,
+}) => {
+	await page.goto("/dual-mode?wide=1");
+	const search = dualModeArtistIndexTextSearch(page);
+
+	await expectDebouncedSearch(search, "zzzq");
+	await expectNavigationAndHistoryUseStateValues(search, "zzzq", () =>
+		page.getByRole("link", { name: "RESET BOTH" }).click(),
+	);
+});
+
+test("dual mode artist index keeps characters typed while a search is in flight", async ({
+	page,
+}) => {
+	await page.goto("/dual-mode?wide=1");
+
+	await expectTypingSurvivesInFlightSwap(
+		dualModeArtistIndexTextSearch(page),
+		"zz",
+		"zq",
+	);
+});
+
+test("dual mode artist index history restores each earlier query", async ({
+	page,
+}) => {
+	await page.goto("/dual-mode?wide=1");
+
+	await expectHistoryMatchesEachSearchState(
+		dualModeArtistIndexTextSearch(page),
+		"zz",
+		"zq",
+	);
 });

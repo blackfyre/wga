@@ -206,6 +206,8 @@ func renderDualModePageWithCheckpoint(app *pocketbase.PocketBase, c *core.Reques
 	if err := checkpoint(c.Request.Context(), "dual.projection"); err != nil {
 		return dualCancellationError(c, err)
 	}
+	leftWindow.Index.NameField.Preserve = utils.RequestTriggeredBy(c, pages.DualFiltersFormID(leftWindow.Key))
+	rightWindow.Index.NameField.Preserve = utils.RequestTriggeredBy(c, pages.DualFiltersFormID(rightWindow.Key))
 	view := pages.DualModeView{
 		Windows:   [2]pages.DualWindow{leftWindow, rightWindow},
 		SwapHref:  state.swapped().path(),
@@ -927,6 +929,7 @@ func buildDualNameField(side string, idx dualIndexState) dto.Field {
 		Type:        "search",
 		Value:       idx.query,
 		Placeholder: "e.g. van",
+		TextSearch:  true,
 	}
 }
 

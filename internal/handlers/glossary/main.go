@@ -125,6 +125,7 @@ func renderGlossary(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 		SelectedLetter: query.Letter,
 		Letters:        glossaryLetters(allTerms),
 		Terms:          filterGlossaryTerms(allTerms, query),
+		PreserveQuery:  utils.RequestTriggeredBy(c, pages.GlossarySearchFormID),
 	}
 
 	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, "Glossary")

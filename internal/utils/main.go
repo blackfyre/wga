@@ -315,6 +315,18 @@ func RequestsMainContentArea(c *core.RequestEvent) bool {
 	return target == "mc-area"
 }
 
+// RequestTriggeredBy reports whether an HTMX request was issued by the element
+// with the given id. HTMX sends that element's id in the HX-Trigger request
+// header; requests from elements without an id, full page loads, and history
+// restores carry no matching value.
+func RequestTriggeredBy(c *core.RequestEvent, id string) bool {
+	if id == "" {
+		return false
+	}
+
+	return strings.TrimSpace(c.Request.Header.Get("HX-Trigger")) == id
+}
+
 // NotFoundError is a handler that returns a 404 error page.
 func NotFoundError(c *core.RequestEvent) error {
 	var buf bytes.Buffer

@@ -147,3 +147,40 @@ func TestArtworkSearchCancellationSkipsRender(t *testing.T) {
 		t.Fatal("artwork renderer was invoked after cancellation")
 	}
 }
+
+func TestArtworkSearchPreservesTextFieldsOnlyForFilterFormRequests(t *testing.T) {
+	app := newArtworkSearchApp(t)
+	tests := []struct {
+		name    string
+		trigger string
+		want    bool
+	}{
+		{name: "filter form", trigger: "artwork-filters", want: true},
+		{name: "other element", trigger: "artwork-sort", want: false},
+		{name: "no trigger id", trigger: "", want: false},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodGet, "/artworks?q=Mary", nil)
+			request.Header.Set("HX-Request", "true")
+			request.Header.Set("HX-Target", "artwork-search")
+			if test.trigger != "" {
+				request.Header.Set("HX-Trigger", test.trigger)
+			}
+			recorder := httptest.NewRecorder()
+			event := &core.RequestEvent{Event: router.Event{Request: request, Response: recorder}}
+
+			if err := searchWithCheckpoint(app, event, func(context.Context, string) error { return nil }); err != nil {
+				t.Fatalf("searchWithCheckpoint() error = %v", err)
+			}
+			body := recorder.Body.String()
+			if !strings.Contains(body, `value="Mary"`) {
+				t.Fatal("response must echo the submitted query")
+			}
+			if got := strings.Contains(body, "hx-preserve"); got != test.want {
+				t.Fatalf("hx-preserve rendered = %v, want %v", got, test.want)
+			}
+		})
+	}
+}

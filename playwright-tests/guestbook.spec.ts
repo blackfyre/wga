@@ -1,4 +1,11 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
+import {
+	expectDebouncedSearch,
+	expectHistoryMatchesEachSearchState,
+	expectNavigationAndHistoryUseStateValues,
+	expectTypingSurvivesInFlightSwap,
+	type TextSearch,
+} from "./helpers/text-search";
 
 const entry = {
 	name: "Playwright visitor",
@@ -101,4 +108,49 @@ test.describe("without JavaScript", () => {
 			page.locator(".gb-entry", { hasText: privateMessage }),
 		).toHaveCount(0);
 	});
+});
+
+function guestbookSearchTextSearch(page: Page): TextSearch {
+	return {
+		page,
+		field: page.locator("#guestbook-query"),
+		param: "q",
+		path: "/guestbook",
+	};
+}
+
+test("guestbook search debounces typing and keeps input across its own swaps", async ({
+	page,
+}) => {
+	await page.goto("/guestbook?year=all");
+	const search = guestbookSearchTextSearch(page);
+
+	await expectDebouncedSearch(search, "zzzq");
+	await expectNavigationAndHistoryUseStateValues(search, "zzzq", () =>
+		page.getByRole("link", { name: "CLEAR SEARCH AND YEAR →" }).click(),
+	);
+});
+
+test("guestbook search keeps characters typed while a search is in flight", async ({
+	page,
+}) => {
+	await page.goto("/guestbook?year=all");
+
+	await expectTypingSurvivesInFlightSwap(
+		guestbookSearchTextSearch(page),
+		"zz",
+		"zq",
+	);
+});
+
+test("guestbook search history restores each earlier query", async ({
+	page,
+}) => {
+	await page.goto("/guestbook?year=all");
+
+	await expectHistoryMatchesEachSearchState(
+		guestbookSearchTextSearch(page),
+		"zz",
+		"zq",
+	);
 });

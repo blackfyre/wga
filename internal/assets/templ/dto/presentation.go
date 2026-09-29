@@ -42,6 +42,13 @@ type Field struct {
 	Required    bool
 	MaxLength   int
 	Rows        int
+	// Preserve keeps the visitor's in-progress input when an HTMX response
+	// from the field's own form replaces it. Handlers set it only for
+	// requests that form issued.
+	Preserve bool
+	// TextSearch marks a free-text search field whose form searches as the
+	// visitor types; it is rendered as data-text-search.
+	TextSearch bool
 }
 
 // ChipOption is one value in a no-JavaScript filter choice.

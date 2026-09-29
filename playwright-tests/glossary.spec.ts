@@ -1,4 +1,11 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
+import {
+	expectDebouncedSearch,
+	expectHistoryMatchesEachSearchState,
+	expectNavigationAndHistoryUseStateValues,
+	expectTypingSurvivesInFlightSwap,
+	type TextSearch,
+} from "./helpers/text-search";
 
 test("glossary supports alphabetic filtering, delayed search, and reset", async ({
 	page,
@@ -85,4 +92,49 @@ test("glossary search form works without JavaScript", async ({ browser }) => {
 	await expect(page).toHaveURL(/\/glossary\?q=/);
 	await expect(page.locator("#glossary dt")).toHaveCount(1);
 	await context.close();
+});
+
+function glossarySearchTextSearch(page: Page): TextSearch {
+	return {
+		page,
+		field: page.locator("#glossary-query"),
+		param: "q",
+		path: "/glossary",
+	};
+}
+
+test("glossary search debounces typing and keeps input across its own swaps", async ({
+	page,
+}) => {
+	await page.goto("/glossary");
+	const search = glossarySearchTextSearch(page);
+
+	await expectDebouncedSearch(search, "zzzq");
+	await expectNavigationAndHistoryUseStateValues(search, "zzzq", () =>
+		page.getByRole("link", { name: "CLEAR SEARCH →" }).click(),
+	);
+});
+
+test("glossary search keeps characters typed while a search is in flight", async ({
+	page,
+}) => {
+	await page.goto("/glossary");
+
+	await expectTypingSurvivesInFlightSwap(
+		glossarySearchTextSearch(page),
+		"zz",
+		"zq",
+	);
+});
+
+test("glossary search history restores each earlier query", async ({
+	page,
+}) => {
+	await page.goto("/glossary");
+
+	await expectHistoryMatchesEachSearchState(
+		glossarySearchTextSearch(page),
+		"zz",
+		"zq",
+	);
 });

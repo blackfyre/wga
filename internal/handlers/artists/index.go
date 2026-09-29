@@ -613,6 +613,7 @@ func buildNameField(value string) dto.Field {
 		Type:        "search",
 		Value:       value,
 		Placeholder: "e.g. van",
+		TextSearch:  true,
 	}
 }
 

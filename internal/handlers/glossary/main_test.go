@@ -177,6 +177,30 @@ func TestGlossaryRouteSelectsTargetAwareResponse(t *testing.T) {
 			t.Error("feature-local response must not carry #mc-area")
 		}
 
+		for _, test := range []struct {
+			trigger string
+			want    bool
+		}{
+			{trigger: "glossary-search", want: true},
+			{trigger: "", want: false},
+		} {
+			recorder := httptest.NewRecorder()
+			request := httptest.NewRequest(http.MethodGet, "/glossary?q=paint", nil)
+			request.Header.Set("HX-Request", "true")
+			request.Header.Set("HX-Target", "glossary")
+			if test.trigger != "" {
+				request.Header.Set("HX-Trigger", test.trigger)
+			}
+			mux.ServeHTTP(recorder, request)
+			body := recorder.Body.String()
+			if !strings.Contains(body, `id="glossary-query"`) || !strings.Contains(body, `value="paint"`) {
+				t.Errorf("trigger %q: search field must render with the submitted query", test.trigger)
+			}
+			if got := strings.Contains(body, "hx-preserve"); got != test.want {
+				t.Errorf("trigger %q: hx-preserve rendered = %v, want %v", test.trigger, got, test.want)
+			}
+		}
+
 		return nil
 	}); err != nil {
 		t.Fatalf("trigger serve event: %v", err)

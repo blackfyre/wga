@@ -34,6 +34,10 @@ type ArtistRow struct {
 }
 
 // ArtistsView is the page-owned contract for the artist index.
+// ArtistFiltersFormID identifies the artist filter form; HTMX sends it as
+// HX-Trigger for requests the form issues.
+const ArtistFiltersFormID = "artist-filters"
+
 type ArtistsView struct {
 	Letters        []ArtistLetter
 	Schools        []dto.SelectOption
@@ -101,14 +105,15 @@ templ ArtistsBlock(c ArtistsView) {
 			}
 		</nav>
 		<form
-			id="artist-filters"
+			id={ ArtistFiltersFormID }
 			action="/artists"
 			method="GET"
 			hx-get="/artists"
 			hx-target="#artists"
 			hx-select="#artists"
 			hx-swap="outerHTML"
-			hx-trigger="change, input changed delay:300ms from:find input[type=search], input changed delay:300ms from:find input[type=range]"
+			hx-trigger="change[!target.hasAttribute('data-text-search')], input[target.hasAttribute('data-text-search')] changed delay:500ms, input changed delay:300ms from:find input[type=range]"
+			hx-sync="this:replace"
 		>
 			if c.SelectedLetter != "" {
 				<input type="hidden" name="letter" value={ c.SelectedLetter }/>

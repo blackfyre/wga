@@ -122,6 +122,7 @@ func renderGuestbook(app core.App, c *core.RequestEvent, status int, form pages.
 	if err != nil {
 		return err
 	}
+	view.PreserveQuery = utils.RequestTriggeredBy(c, pages.GuestbookSearchFormID)
 
 	fullURL := url.GenerateCurrentPageUrl(c)
 	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, "Guestbook")

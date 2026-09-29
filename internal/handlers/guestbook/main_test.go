@@ -533,6 +533,31 @@ func TestGuestbookRouteSelectsTargetAwareResponse(t *testing.T) {
 			t.Error("feature-local response must not carry #mc-area")
 		}
 
+		for _, test := range []struct {
+			trigger string
+			want    bool
+		}{
+			{trigger: "guestbook-search", want: true},
+			{trigger: "guestbook-entry-form", want: false},
+			{trigger: "", want: false},
+		} {
+			recorder := httptest.NewRecorder()
+			request := httptest.NewRequest(http.MethodGet, "/guestbook?q=Jane", nil)
+			request.Header.Set("HX-Request", "true")
+			request.Header.Set("HX-Target", "guestbook")
+			if test.trigger != "" {
+				request.Header.Set("HX-Trigger", test.trigger)
+			}
+			mux.ServeHTTP(recorder, request)
+			body := recorder.Body.String()
+			if !strings.Contains(body, `id="guestbook-query"`) || !strings.Contains(body, `value="Jane"`) {
+				t.Errorf("trigger %q: search field must render with the submitted query", test.trigger)
+			}
+			if got := strings.Contains(body, "hx-preserve"); got != test.want {
+				t.Errorf("trigger %q: hx-preserve rendered = %v, want %v", test.trigger, got, test.want)
+			}
+		}
+
 		return nil
 	}); err != nil {
 		t.Fatalf("trigger serve event: %v", err)

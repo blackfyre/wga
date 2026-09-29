@@ -197,6 +197,20 @@ func TestFieldProvidesLabelledTextAndBoundedNoteControls(t *testing.T) {
 	}
 
 	plain := renderComponent(t, Field(dto.Field{ID: "title", Name: "title", Label: "Title"}))
+	if strings.Contains(plain, "hx-preserve") || strings.Contains(text, "hx-preserve") {
+		t.Fatal("field must not preserve input unless requested")
+	}
+	preserved := renderComponent(t, Field(dto.Field{ID: "artist-name", Name: "q", Label: "Name", Type: "search", Preserve: true}))
+	if !strings.Contains(preserved, `id="artist-name"`) || !strings.Contains(preserved, "hx-preserve") {
+		t.Fatal("preserved field must render hx-preserve with its stable id")
+	}
+	if strings.Contains(preserved, "data-text-search") || strings.Contains(plain, "data-text-search") {
+		t.Fatal("field must not carry the text-search marker unless requested")
+	}
+	marked := renderComponent(t, Field(dto.Field{ID: "artist-name", Name: "q", Label: "Name", Type: "search", TextSearch: true}))
+	if !strings.Contains(marked, "data-text-search") {
+		t.Fatal("text-search field must render the data-text-search marker")
+	}
 	if strings.Contains(plain, "aria-describedby") {
 		t.Fatal("field without a hint or error must not reference a missing description")
 	}

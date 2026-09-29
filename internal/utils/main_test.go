@@ -98,6 +98,41 @@ func TestRequestsMainContentArea(t *testing.T) {
 	}
 }
 
+func TestRequestTriggeredBy(t *testing.T) {
+	tests := []struct {
+		name    string
+		trigger string
+		id      string
+		want    bool
+	}{
+		{name: "matching id", trigger: "artist-filters", id: "artist-filters", want: true},
+		{name: "matching id with whitespace", trigger: "  artist-filters  ", id: "artist-filters", want: true},
+		{name: "different id", trigger: "artist-sort", id: "artist-filters", want: false},
+		{name: "missing header", trigger: "", id: "artist-filters", want: false},
+		{name: "empty expected id", trigger: "", id: "", want: false},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/artists", nil)
+			if test.trigger != "" {
+				req.Header.Set("HX-Trigger", test.trigger)
+			}
+
+			event := &core.RequestEvent{
+				Event: router.Event{
+					Request:  req,
+					Response: httptest.NewRecorder(),
+				},
+			}
+
+			if got := RequestTriggeredBy(event, test.id); got != test.want {
+				t.Errorf("RequestTriggeredBy(%q, %q) = %v, want %v", test.trigger, test.id, got, test.want)
+			}
+		})
+	}
+}
+
 func TestErrorHelpersRenderSharedShellWithExactStatuses(t *testing.T) {
 	tests := []struct {
 		name      string

@@ -31,6 +31,7 @@ import { initPeriodMusic } from "./music";
 import { initPostcardRichText } from "./postcard-rich-text";
 import { closeMobileNavigation, syncNavigation } from "./public-shell";
 import { initialiseStudyBoard } from "./study-board";
+import { initTextSearch } from "./text-search";
 import { registerTourHelpers } from "./tours";
 import { viewerImageURL } from "./viewer";
 
@@ -1258,6 +1259,7 @@ const wgaInternal: wgaInternals = {
 		logger.error("Failed to initialise Cookie Consent", error);
 	});
 	initKeyboardNavigation();
+	initTextSearch();
 	initialiseAppearancePreferences();
 	initBionicReading();
 	initPostcardRichText();
