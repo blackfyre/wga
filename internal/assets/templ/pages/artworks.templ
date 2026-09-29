@@ -1,7 +1,9 @@
 package pages
 
 import (
+	"context"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 
@@ -43,6 +45,10 @@ type ArtworkSearchResultsView struct {
 	DualModeUrls    map[string]string
 	DualModeTarget  string
 	Pagination      string
+	// TitleHighlight and ArtistHighlight are the active text-search terms
+	// marked in each result's visible title and artist name.
+	TitleHighlight  string
+	ArtistHighlight string
 }
 
 // ArtworkSearchView is the page-owned contract for the artwork catalogue.
@@ -300,7 +306,7 @@ templ ArtworkSearchResults(r ArtworkSearchResultsView) {
 			if r.DualModeTarget != "" {
 				@ArtworkSearchDualModeResultGrid(r.Artworks, r.DualModeUrls, r.DualModeTarget)
 			} else if r.View == "list" {
-				@ArtworkSearchResultList(r.Artworks)
+				@ArtworkSearchResultList(r.Artworks, r.TitleHighlight, r.ArtistHighlight)
 			} else {
 				<div class="mt-7 grid grid-cols-2 gap-x-4 gap-y-9 md:grid-cols-3 md:gap-x-7" data-kbd-list data-kbd-cols="2" data-kbd-cols-md="3" data-view="grid">
 					for index, artwork := range r.Artworks {
@@ -310,8 +316,10 @@ templ ArtworkSearchResults(r ArtworkSearchResultsView) {
 								<figure class="mb-2.5 aspect-[4/5] border border-wga-ink/15 bg-wga-fill p-2.5">
 									<img src={ artwork.Thumb } alt={ artwork.Title } width="500" height="625" loading="lazy" class="h-full w-full object-cover"/>
 								</figure>
-								<p title={ artwork.Title } class="line-clamp-2 min-h-[2.6em] break-words text-sm font-semibold leading-tight">{ artwork.Title }</p>
-								<p class="mt-[3px] line-clamp-2 min-h-[3.2em] break-words font-mono text-(length:--t-11) leading-relaxed text-muted" data-artwork-result-meta="identity">{ artworkSearchMetadata(artwork.Artist.FilingName, artwork.Date) }</p>
+								<p title={ artwork.Title } class="line-clamp-2 min-h-[2.6em] break-words text-sm font-semibold leading-tight">@components.HighlightMatch(artwork.Title, r.TitleHighlight)
+</p>
+								<p class="mt-[3px] line-clamp-2 min-h-[3.2em] break-words font-mono text-(length:--t-11) leading-relaxed text-muted" data-artwork-result-meta="identity">@artworkSearchIdentity(artwork.Artist.FilingName, artwork.Date, r.ArtistHighlight)
+</p>
 								<p class="min-h-[1.6em] overflow-hidden text-ellipsis whitespace-nowrap font-mono text-(length:--t-11) leading-relaxed text-muted" data-artwork-result-meta="classification">{ artworkSearchMetadata(artwork.School, artwork.Type) }</p>
 							</a>
 							@artworkSearchWorkspaceActions(artwork, false)
@@ -355,14 +363,16 @@ func artworkActiveCountLabel(count int) string {
 	return " · " + strconv.Itoa(count) + " ACTIVE"
 }
 
-templ ArtworkSearchResultList(artworks dto.ImageGrid) {
+templ ArtworkSearchResultList(artworks dto.ImageGrid, titleHighlight string, artistHighlight string) {
 	<ul data-kbd-list data-kbd-cols="1" data-view="list">
 		for index, artwork := range artworks {
 			<li class="flex flex-col border-b border-wga-ink/15 lg:flex-row lg:items-stretch">
 				<a href={ templ.SafeURL(artwork.Url) } hx-get={ artwork.Url } data-kbd-idx={ strconv.Itoa(index) } data-kbd-href={ artwork.Url } class="flex min-w-0 flex-1 items-center gap-4 py-3.5 transition-colors hover:bg-wga-accent-bg/5">
 					@components.KeyboardCaret()
 					<img src={ artwork.Thumb } alt={ artwork.Title } width="44" height="54" loading="lazy" class="h-[54px] w-11 shrink-0 border border-wga-ink/15 bg-wga-fill object-cover"/>
-					<span class="min-w-0 flex-1"><span class="block text-(length:--t-15) font-semibold leading-tight">{ artwork.Title }</span><span class="mt-[3px] block font-mono text-(length:--t-11) text-muted" data-artwork-result-meta="identity">{ artworkSearchMetadata(artwork.Artist.FilingName, artwork.Date) }</span></span>
+					<span class="min-w-0 flex-1"><span class="block text-(length:--t-15) font-semibold leading-tight">@components.HighlightMatch(artwork.Title, titleHighlight)
+</span><span class="mt-[3px] block font-mono text-(length:--t-11) text-muted" data-artwork-result-meta="identity">@artworkSearchIdentity(artwork.Artist.FilingName, artwork.Date, artistHighlight)
+</span></span>
 					<span class="hidden w-28 shrink-0 font-mono text-(length:--t-10) text-muted lg:block"><span class="block text-faint">SCHOOL</span>{ artworkSearchValue(artwork.School) }</span>
 					<span class="hidden w-28 shrink-0 font-mono text-(length:--t-10) text-muted lg:block"><span class="block text-faint">FORM</span>{ artworkSearchValue(artwork.Form) }</span>
 					<span class="hidden w-28 shrink-0 font-mono text-(length:--t-10) text-muted lg:block"><span class="block text-faint">TYPE</span>{ artworkSearchValue(artwork.Type) }</span>
@@ -378,6 +388,30 @@ templ artworkSearchWorkspaceActions(artwork dto.Image, dense bool) {
 		@components.AddToItineraryAction(artwork.Id, components.AddToItinerarySearchBlock)
 		@components.AddToStudyBoardAction(artwork.Id, artwork.Title, artwork.Thumb, components.AddToStudyBoardCard)
 	</div>
+}
+
+// artworkSearchIdentity renders the artist name and date line with the artist
+// name highlighted. Its visible text is identical to
+// artworkSearchMetadata(name, date).
+func artworkSearchIdentity(name string, date string, query string) templ.Component {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
+			_, err := io.WriteString(w, templ.EscapeString(artworkSearchMetadata(name, date)))
+			return err
+		})
+	}
+	suffix := ""
+	if date = strings.TrimSpace(date); date != "" {
+		suffix = " · " + date
+	}
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
+		if err := components.HighlightMatch(name, query).Render(ctx, w); err != nil {
+			return err
+		}
+		_, err := io.WriteString(w, templ.EscapeString(suffix))
+		return err
+	})
 }
 
 func artworkSearchMetadata(values ...string) string {

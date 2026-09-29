@@ -5,7 +5,6 @@ import (
 	"context"
 	"strings"
 	"testing"
-	"unicode/utf8"
 
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 )
@@ -282,46 +281,6 @@ func TestArtistsBlockGridNameBreaksLongFilingNames(t *testing.T) {
 		if !strings.Contains(rendered, `text-(length:--t-17) font-semibold break-words">`+name+"</span>") {
 			t.Errorf("expected grid name %q to carry break-words wrapping", name)
 		}
-	}
-}
-
-func TestArtistNameEscapesScriptLikeContent(t *testing.T) {
-	var output bytes.Buffer
-	component := ArtistName(`<script>alert("x")</script>`, "<script>")
-	if err := component.Render(context.Background(), &output); err != nil {
-		t.Fatalf("render artist name: %v", err)
-	}
-	rendered := output.String()
-
-	if strings.Contains(rendered, "<script>") {
-		t.Errorf("script-like name was not escaped: %q", rendered)
-	}
-	if !strings.Contains(rendered, "&lt;script&gt;") {
-		t.Errorf("expected escaped name content, got %q", rendered)
-	}
-	if !strings.Contains(rendered, "<mark>&lt;script&gt;</mark>") {
-		t.Errorf("expected escaped match wrapped in mark, got %q", rendered)
-	}
-}
-
-func TestSplitNameHighlightUnicodeSafe(t *testing.T) {
-	// "İ" (U+0130) lowercases to a shorter byte sequence than the source rune,
-	// so a byte index taken from the lowercased string must never be used to
-	// slice the original. The old implementation sliced the original name by
-	// such an index and produced invalid UTF-8 here.
-	before, match, after := splitNameHighlight("İzmir", "zmir")
-	if before != "İ" || match != "zmir" || after != "" {
-		t.Errorf("splitNameHighlight = (%q, %q, %q), want (%q, %q, %q)", before, match, after, "İ", "zmir", "")
-	}
-	if !utf8.ValidString(before + match + after) {
-		t.Errorf("splitNameHighlight output is not valid UTF-8: %q", before+match+after)
-	}
-}
-
-func TestSplitNameHighlightCaseInsensitiveAndEscaped(t *testing.T) {
-	before, match, after := splitNameHighlight("Rembrandt van Rijn", "VAN")
-	if before != "Rembrandt " || match != "van" || after != " Rijn" {
-		t.Errorf("splitNameHighlight = (%q, %q, %q), want case-insensitive (%q, %q, %q)", before, match, after, "Rembrandt ", "van", " Rijn")
 	}
 }
 

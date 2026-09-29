@@ -1196,3 +1196,58 @@ func TestArtworksRouteRendersFullPageAndFragment(t *testing.T) {
 		t.Fatalf("trigger serve event: %v", err)
 	}
 }
+
+func TestArtworksRouteHighlightsTextSearchMatches(t *testing.T) {
+	app := newArtworkSearchApp(t)
+	saveSearchArtist(t, app, "giotto000000001", "GIOTTO di Bondone")
+	saveSearchArtwork(t, app, searchArtworkSeed{id: "workmadonna0001", title: "Madonna and Child", authors: []string{"giotto000000001"}, year: 1305, published: true})
+
+	RegisterArtworksHandlers(app)
+
+	router, err := apis.NewRouter(app)
+	if err != nil {
+		t.Fatalf("create router: %v", err)
+	}
+	serveEvent := &core.ServeEvent{App: app, Router: router}
+	if err := app.OnServe().Trigger(serveEvent, func(event *core.ServeEvent) error {
+		mux, err := event.Router.BuildMux()
+		if err != nil {
+			return err
+		}
+		get := func(target string, htmx bool) string {
+			t.Helper()
+			recorder := httptest.NewRecorder()
+			request := httptest.NewRequest(http.MethodGet, target, nil)
+			if htmx {
+				request.Header.Set("HX-Request", "true")
+			}
+			mux.ServeHTTP(recorder, request)
+			if recorder.Code != http.StatusOK {
+				t.Fatalf("GET %s status = %d, want %d", target, recorder.Code, http.StatusOK)
+			}
+			return recorder.Body.String()
+		}
+
+		full := get("/artworks?q=madonna", false)
+		if !strings.Contains(full, "<mark>Madonna</mark> and Child") {
+			t.Error("full page must highlight the free-text query in the title")
+		}
+		if !strings.Contains(full, `alt="Madonna and Child"`) {
+			t.Error("full page must keep image alternative text plain")
+		}
+
+		fragment := get("/artworks/results?q=giotto", true)
+		if !strings.Contains(fragment, "<mark>GIOTTO</mark> di Bondone") {
+			t.Error("results fragment must highlight the free-text query in the artist name")
+		}
+
+		scoped := get("/artworks?artist_id=giotto000000001&artist=giotto", false)
+		if strings.Contains(scoped, "<mark>") {
+			t.Error("exact artist filter must suppress highlighting from the artist text filter")
+		}
+
+		return nil
+	}); err != nil {
+		t.Fatalf("trigger serve event: %v", err)
+	}
+}

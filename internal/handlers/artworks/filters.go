@@ -145,6 +145,15 @@ func (f *filters) BuildFilter() (string, dbx.Params) {
 	return filterString, params
 }
 
+// highlightTerms returns the text-search terms that matched each result's title
+// and artist name. A field-specific filter takes precedence over the free-text
+// query for its field; ArtistString is already cleared while an exact artist
+// filter is active, so the free-text query remains the artist term then. Terms
+// are passed through unchanged so they match what BuildFilter searched for.
+func (f *filters) highlightTerms() (title string, artist string) {
+	return cmp.Or(f.Title, f.Query), cmp.Or(f.ArtistString, f.Query)
+}
+
 // BuildFilterString builds a query string based on the values of the filters struct.
 func (f *filters) BuildFilterString() string {
 	return f.queryValues().Encode()

@@ -312,3 +312,32 @@ func TestForSortPreservesUnrelatedFilters(t *testing.T) {
 		t.Errorf("forSort lost unrelated filters: %#v", next)
 	}
 }
+
+func TestArtworkSearchHighlightTerms(t *testing.T) {
+	tests := []struct {
+		name       string
+		query      string
+		wantTitle  string
+		wantArtist string
+	}{
+		{name: "no text search", query: "art_school=italian"},
+		{name: "free-text query marks both fields", query: "q=madonna", wantTitle: "madonna", wantArtist: "madonna"},
+		{name: "title filter takes precedence for title", query: "q=giotto&title=madonna", wantTitle: "madonna", wantArtist: "giotto"},
+		{name: "artist filter takes precedence for artist", query: "q=madonna&artist=giotto", wantTitle: "madonna", wantArtist: "giotto"},
+		{name: "exact artist filter suppresses artist text filter", query: "artist_id=abc&artist=rem"},
+		{name: "exact artist filter keeps free-text query", query: "artist_id=abc&artist=rem&q=night", wantTitle: "night", wantArtist: "night"},
+		{name: "technique is not highlighted", query: "technique=oil"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			values, err := url.ParseQuery(tt.query)
+			if err != nil {
+				t.Fatalf("parse query: %v", err)
+			}
+			title, artist := buildFilters(values).highlightTerms()
+			if title != tt.wantTitle || artist != tt.wantArtist {
+				t.Errorf("highlightTerms() = (%q, %q), want (%q, %q)", title, artist, tt.wantTitle, tt.wantArtist)
+			}
+		})
+	}
+}
