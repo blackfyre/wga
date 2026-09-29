@@ -13,3 +13,4 @@
 
 - [x] 3.1 Extend the artwork search integration test to assert that `/artworks?q=<term>` and `/artworks/results?q=<term>` return `mark`-wrapped matches and that `artist_id` suppresses highlighting from the `artist` filter. Verify with `go test ./internal/handlers/artworks -run 'Search'`.
 - [ ] 3.2 Run `go mod tidy`, `go vet ./...`, `go test ./... -cover` and `mise run check`, and confirm all pass.
+  - Archived deliberately with this task open. `go mod tidy`, `go vet ./...` and `go test ./... -cover` passed. `mise run check` could not run its golangci-lint step: the local v2.12.2 binary is built with Go 1.26 and rejects the `go 1.27.1` module, and building it under Go 1.27.1 makes staticcheck panic while analysing the standard library. Lint remains unverified.
