@@ -47,3 +47,16 @@ func TestSplitHighlightCaseInsensitiveAndEscaped(t *testing.T) {
 		t.Errorf("splitHighlight = (%q, %q, %q), want case-insensitive (%q, %q, %q)", before, match, after, "Rembrandt ", "van", " Rijn")
 	}
 }
+
+func TestSplitHighlightUsesUnicodeCaseFolding(t *testing.T) {
+	// unicode.ToLower maps "Σ" to "σ" but leaves final sigma "ς" unchanged, so
+	// only case folding treats them as equal.
+	before, match, after := splitHighlight("ΟΔΥΣΣΕΥς", "Σ")
+	if before != "ΟΔΥ" || match != "Σ" || after != "ΣΕΥς" {
+		t.Errorf("splitHighlight = (%q, %q, %q), want first sigma matched", before, match, after)
+	}
+	before, match, after = splitHighlight("λόγος", "Σ")
+	if before != "λόγο" || match != "ς" || after != "" {
+		t.Errorf("splitHighlight = (%q, %q, %q), want final sigma matched", before, match, after)
+	}
+}

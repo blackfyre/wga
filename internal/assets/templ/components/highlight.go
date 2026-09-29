@@ -3,7 +3,7 @@ package components
 import (
 	"context"
 	"io"
-	"unicode"
+	"strings"
 
 	"github.com/a-h/templ"
 )
@@ -30,11 +30,12 @@ func splitHighlight(text string, query string) (string, string, string) {
 		return text, "", ""
 	}
 
-	// Match case-insensitively over runes so a match found in a lowercased
-	// string is sliced from the original by rune index. Lowercasing can change
-	// a string's byte and rune length (for example "İ" folds to "i"+combining
-	// dot), so byte indexes obtained from the folded string must never be used
-	// to slice the original.
+	// Compare rune windows of the original text with Unicode case folding and
+	// slice the original by rune index. Lowercasing can change a string's byte
+	// and rune length (for example "İ" folds to "i"+combining dot), so byte
+	// indexes obtained from a folded string must never be used to slice the
+	// original. EqualFold also equates case variants that ToLower does not,
+	// such as Greek "Σ" and final "ς".
 	textRunes := []rune(text)
 	queryRunes := []rune(query)
 	if len(queryRunes) == 0 || len(queryRunes) > len(textRunes) {
@@ -42,14 +43,7 @@ func splitHighlight(text string, query string) (string, string, string) {
 	}
 
 	for i := 0; i+len(queryRunes) <= len(textRunes); i++ {
-		matched := true
-		for j := 0; j < len(queryRunes); j++ {
-			if unicode.ToLower(textRunes[i+j]) != unicode.ToLower(queryRunes[j]) {
-				matched = false
-				break
-			}
-		}
-		if matched {
+		if strings.EqualFold(string(textRunes[i:i+len(queryRunes)]), query) {
 			return string(textRunes[:i]), string(textRunes[i : i+len(queryRunes)]), string(textRunes[i+len(queryRunes):])
 		}
 	}
