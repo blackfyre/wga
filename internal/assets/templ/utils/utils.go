@@ -152,7 +152,7 @@ func AssetUrl(path string) string {
 // If the title is not found, it returns an empty string.
 func GetTitle(c context.Context) string {
 	if v, ok := c.Value(TitleKey).(string); ok && strings.TrimSpace(v) != "" {
-		return v + " - WGA"
+		return v + TitleSuffix
 	}
 
 	return "Web Gallery of Art"

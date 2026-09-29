@@ -30,7 +30,7 @@ func processArtists(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	view.NameField.Preserve = utils.RequestTriggeredBy(c, pages.ArtistFiltersFormID)
 	c.Response.Header().Set("HX-Push-Url", canonicalURL)
 
-	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, "Artists")
+	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, artistIndexTitle(view))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "Check out the artists in the gallery.")
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.CanonicalUrlKey, utils.AssetUrl(canonicalURL))
 

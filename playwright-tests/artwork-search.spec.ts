@@ -439,3 +439,23 @@ test("artwork search history restores each earlier query", async ({ page }) => {
 		"zq",
 	);
 });
+
+test("artwork search swaps keep the document title in step with the state", async ({
+	page,
+}) => {
+	await page.goto("/artworks");
+	await expect(page).toHaveTitle("Artworks Search - WGA");
+
+	await chooseFilter(page, "art_school", "bohemian");
+	await expect(page).toHaveTitle(/^Artworks Search · .+ - WGA$/);
+	const swapped = await page.title();
+
+	await page.getByRole("link", { name: "LIST", exact: true }).click();
+	await expect(page).toHaveURL(
+		(url) => url.searchParams.get("view") === "list",
+	);
+	await expect(page).toHaveTitle(swapped);
+
+	await page.goto(page.url());
+	await expect(page).toHaveTitle(swapped);
+});

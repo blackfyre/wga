@@ -39,3 +39,11 @@ test("updates grouped results while typing", async ({ page }) => {
 		"SYNTHETIC ARTIST 01",
 	);
 });
+
+test("debounced result swaps update the document title", async ({ page }) => {
+	await page.goto("/search");
+	await expect(page).toHaveTitle("Search - WGA");
+
+	await page.locator("#search").getByRole("searchbox").fill("Synthetic");
+	await expect(page).toHaveTitle("“Synthetic” · Search - WGA");
+});
