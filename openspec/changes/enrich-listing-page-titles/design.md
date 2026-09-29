@@ -12,10 +12,12 @@
 ## Goals / Non-Goals
 
 **Goals:**
+
 - A single shared fitting mechanism. Each feature package owns its title parts and their priorities.
 - Tuning the reduction order means editing one ordered list per page and its table test.
 
 **Non-Goals:**
+
 - Changing `GetTitle`, the ` - WGA` suffix, or titles on other pages.
 - Changing the global search to push a URL.
 

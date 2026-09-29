@@ -47,7 +47,7 @@ A listing title SHALL be composed as follows:
 3. Further filter parts follow, in the order their controls appear on the page.
 4. The page position is written `p. N/M` and comes last.
 
-Parts SHALL be separated by ` · ` and followed by the existing ` - WGA` suffix. The page position SHALL be omitted on the first page. Filter values SHALL use their display labels in their normal letter case, not the uppercase facet summaries. Visitor-supplied text SHALL render as escaped text and SHALL NOT be interpreted as markup.
+Parts SHALL be separated by `·` and followed by the existing ` - WGA` suffix. The page position SHALL be omitted on the first page. Filter values SHALL use their display labels in their normal letter case, not the uppercase facet summaries. Visitor-supplied text SHALL render as escaped text and SHALL NOT be interpreted as markup.
 
 #### Scenario: Query, facet and page position
 
