@@ -136,7 +136,7 @@ func newSecurityContext(policy SecurityPolicy) (*securityContext, error) {
 		policy:    policy,
 		canonical: canonical,
 		cookie:    cookie,
-		limiter:   itineraryworkflow.NewAdmissionLimiter(),
+		limiter:   itineraryworkflow.NewAdmissionLimiter(policy.Admission),
 	}, nil
 }
 

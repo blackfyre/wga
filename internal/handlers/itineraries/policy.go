@@ -45,6 +45,9 @@ type SecurityPolicy struct {
 	Development CookiePolicy
 	// TrustedClientID resolves the trusted client identity. It is required.
 	TrustedClientID TrustedClientID
+	// Admission holds the configured per-identity draft and publication
+	// budgets. Zero values select the production defaults.
+	Admission itineraryworkflow.AdmissionBudgets
 }
 
 // Validate reports whether the policy is complete and internally consistent.
@@ -79,6 +82,10 @@ func (p SecurityPolicy) Validate() error {
 
 	if p.TrustedClientID == nil {
 		return fmt.Errorf("itinerary security policy: TrustedClientID resolver is required")
+	}
+
+	if p.Admission.Drafts < 0 || p.Admission.Publishes < 0 {
+		return fmt.Errorf("itinerary security policy: admission budgets must not be negative")
 	}
 
 	return nil

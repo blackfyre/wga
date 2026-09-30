@@ -8,7 +8,7 @@ import (
 )
 
 func TestAdmissionLimiterBoundedPerIdentity(t *testing.T) {
-	limiter := NewAdmissionLimiter()
+	limiter := NewAdmissionLimiter(AdmissionBudgets{})
 
 	for index := 0; index < admissionDraftBudget; index++ {
 		if !limiter.Admit("client-a", AdmissionDraft) {
@@ -36,7 +36,7 @@ func TestAdmissionLimiterBoundedPerIdentity(t *testing.T) {
 }
 
 func TestAdmissionLimiterStoresHashesOnly(t *testing.T) {
-	limiter := NewAdmissionLimiter()
+	limiter := NewAdmissionLimiter(AdmissionBudgets{})
 	identity := "192.0.2.7"
 
 	limiter.Admit(identity, AdmissionDraft)
@@ -52,7 +52,7 @@ func TestAdmissionLimiterStoresHashesOnly(t *testing.T) {
 }
 
 func TestAdmissionLimiterReleaseRestoresBudget(t *testing.T) {
-	limiter := NewAdmissionLimiter()
+	limiter := NewAdmissionLimiter(AdmissionBudgets{})
 
 	for index := 0; index < admissionPublishBudget; index++ {
 		if !limiter.Admit("client-a", AdmissionPublish) {
@@ -77,7 +77,7 @@ func TestAdmissionLimiterReleaseRestoresBudget(t *testing.T) {
 }
 
 func TestAdmissionLimiterWindowRollover(t *testing.T) {
-	limiter := NewAdmissionLimiter()
+	limiter := NewAdmissionLimiter(AdmissionBudgets{})
 	now := time.Date(2026, 8, 23, 12, 0, 0, 0, time.UTC)
 	limiter.now = func() time.Time { return now }
 
@@ -97,7 +97,7 @@ func TestAdmissionLimiterWindowRollover(t *testing.T) {
 }
 
 func TestAdmissionLimiterBoundedKeys(t *testing.T) {
-	limiter := NewAdmissionLimiter()
+	limiter := NewAdmissionLimiter(AdmissionBudgets{})
 
 	for index := 0; index < admissionMaxKeys*2; index++ {
 		limiter.Admit(fmt.Sprintf("client-%d", index), AdmissionDraft)
@@ -111,7 +111,7 @@ func TestAdmissionLimiterBoundedKeys(t *testing.T) {
 }
 
 func TestAdmissionLimiterAtomicConcurrency(t *testing.T) {
-	limiter := NewAdmissionLimiter()
+	limiter := NewAdmissionLimiter(AdmissionBudgets{})
 
 	const workers = 32
 	var wg sync.WaitGroup
@@ -134,5 +134,35 @@ func TestAdmissionLimiterAtomicConcurrency(t *testing.T) {
 	}
 	if successes != admissionPublishBudget {
 		t.Errorf("concurrent admissions = %d, want exactly %d", successes, admissionPublishBudget)
+	}
+}
+
+func TestAdmissionLimiterDefaultsRefuseFourthDraft(t *testing.T) {
+	limiter := NewAdmissionLimiter(AdmissionBudgets{})
+
+	for index := 0; index < 3; index++ {
+		if !limiter.Admit("client-a", AdmissionDraft) {
+			t.Fatalf("default draft %d must be admitted", index+1)
+		}
+	}
+	if limiter.Admit("client-a", AdmissionDraft) {
+		t.Error("a fourth draft within the hour must be refused under the default budget")
+	}
+}
+
+func TestAdmissionLimiterHonoursConfiguredBudgets(t *testing.T) {
+	limiter := NewAdmissionLimiter(AdmissionBudgets{Drafts: 1000, Publishes: 1})
+
+	for index := 0; index < 20; index++ {
+		if !limiter.Admit("client-a", AdmissionDraft) {
+			t.Fatalf("draft %d must be admitted under a raised budget", index+1)
+		}
+	}
+
+	if !limiter.Admit("client-a", AdmissionPublish) {
+		t.Fatal("first publication must be admitted")
+	}
+	if limiter.Admit("client-a", AdmissionPublish) {
+		t.Error("publication beyond the configured budget must be refused")
 	}
 }

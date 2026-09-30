@@ -214,6 +214,10 @@ func itinerarySecurityPolicy(serverConfig config.Server, clientIdentity requestt
 			Secure: true,
 		},
 		TrustedClientID: itineraryhandlers.TrustedClientID(clientIdentity),
+		Admission: itineraryworkflow.AdmissionBudgets{
+			Drafts:    serverConfig.ItineraryAdmission.DraftBudget,
+			Publishes: serverConfig.ItineraryAdmission.PublishBudget,
+		},
 	}
 
 	if serverConfig.Environment.IsDevelopment() || serverConfig.Environment == config.EnvironmentTest {

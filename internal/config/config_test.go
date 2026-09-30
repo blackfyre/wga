@@ -431,6 +431,70 @@ func TestServerRejectsInvalidPublicRequestProtectionConfiguration(t *testing.T) 
 	}
 }
 
+func TestServerItineraryAdmissionConfiguration(t *testing.T) {
+	tests := []struct {
+		name   string
+		values map[string]string
+		want   ItineraryAdmission
+	}{
+		{
+			name: "defaults to production budgets",
+			want: ItineraryAdmission{DraftBudget: 3, PublishBudget: 3},
+		},
+		{
+			name: "parses configured budgets",
+			values: map[string]string{
+				"WGA_ITINERARY_DRAFT_BUDGET":   "1000",
+				"WGA_ITINERARY_PUBLISH_BUDGET": "250",
+			},
+			want: ItineraryAdmission{DraftBudget: 1000, PublishBudget: 250},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			values := validValues()
+			for key, value := range test.values {
+				values[key] = value
+			}
+
+			server, err := LoadFrom(lookup(values)).Server()
+			if err != nil {
+				t.Fatalf("unexpected server configuration error: %v", err)
+			}
+			if server.ItineraryAdmission != test.want {
+				t.Fatalf("itinerary admission = %#v, want %#v", server.ItineraryAdmission, test.want)
+			}
+		})
+	}
+}
+
+func TestServerRejectsInvalidItineraryAdmissionConfiguration(t *testing.T) {
+	tests := []struct {
+		name  string
+		key   string
+		value string
+	}{
+		{name: "zero draft budget", key: "WGA_ITINERARY_DRAFT_BUDGET", value: "0"},
+		{name: "negative draft budget", key: "WGA_ITINERARY_DRAFT_BUDGET", value: "-1"},
+		{name: "non-integer draft budget", key: "WGA_ITINERARY_DRAFT_BUDGET", value: "many"},
+		{name: "zero publish budget", key: "WGA_ITINERARY_PUBLISH_BUDGET", value: "0"},
+		{name: "fractional publish budget", key: "WGA_ITINERARY_PUBLISH_BUDGET", value: "2.5"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			values := validValues()
+			values[test.key] = test.value
+
+			_, err := LoadFrom(lookup(values)).Server()
+			if err == nil || !strings.Contains(err.Error(), test.key) {
+				t.Fatalf("expected error containing %q, got %v", test.key, err)
+			}
+		})
+	}
+}
+
 func TestPostcardTokenKeyringParsesMultipleKeys(t *testing.T) {
 	activeBytes := bytes.Repeat([]byte{0x22}, 32)
 	previousBytes := bytes.Repeat([]byte{0x11}, 32)

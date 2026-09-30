@@ -21,11 +21,11 @@ const (
 const (
 	// admissionWindow is the rolling window shared by both budgets.
 	admissionWindow = time.Hour
-	// admissionDraftBudget is the maximum number of new drafts one trusted
-	// identity may create within admissionWindow.
+	// admissionDraftBudget is the default maximum number of new drafts one
+	// trusted identity may create within admissionWindow.
 	admissionDraftBudget = 3
-	// admissionPublishBudget is the maximum number of successful publications
-	// one trusted identity may perform within admissionWindow.
+	// admissionPublishBudget is the default maximum number of successful
+	// publications one trusted identity may perform within admissionWindow.
 	admissionPublishBudget = 3
 	// admissionMaxKeys bounds the in-memory key space. When full, expired
 	// entries are evicted first, then arbitrary entries, so memory use stays
@@ -40,22 +40,46 @@ type admissionWindowState struct {
 	publishes int
 }
 
+// AdmissionBudgets holds the per-identity budgets for the rolling admission
+// window. A non-positive budget selects the production default of 3.
+type AdmissionBudgets struct {
+	// Drafts is the maximum number of new drafts per identity per window.
+	Drafts int
+	// Publishes is the maximum number of successful publications per identity
+	// per window.
+	Publishes int
+}
+
+// normalized replaces non-positive budgets with the production defaults.
+func (b AdmissionBudgets) normalized() AdmissionBudgets {
+	if b.Drafts <= 0 {
+		b.Drafts = admissionDraftBudget
+	}
+	if b.Publishes <= 0 {
+		b.Publishes = admissionPublishBudget
+	}
+	return b
+}
+
 // AdmissionLimiter is a bounded, privacy-preserving in-memory rate limiter. It
 // stores only the SHA-256 hash of the trusted client identity, never the raw
 // identity. A single mutex serialises admission and release so the budget is
 // enforced atomically under concurrency.
 type AdmissionLimiter struct {
-	mu   sync.Mutex
-	keys map[string]*admissionWindowState
-	now  func() time.Time
+	mu      sync.Mutex
+	keys    map[string]*admissionWindowState
+	now     func() time.Time
+	budgets AdmissionBudgets
 }
 
-// NewAdmissionLimiter returns a limiter with the fixed one-hour window and
-// per-kind budgets described by the admission* constants.
-func NewAdmissionLimiter() *AdmissionLimiter {
+// NewAdmissionLimiter returns a limiter with the fixed one-hour window and the
+// given per-kind budgets. Non-positive budgets fall back to the production
+// defaults described by the admission* constants.
+func NewAdmissionLimiter(budgets AdmissionBudgets) *AdmissionLimiter {
 	return &AdmissionLimiter{
-		keys: make(map[string]*admissionWindowState),
-		now:  time.Now,
+		keys:    make(map[string]*admissionWindowState),
+		now:     time.Now,
+		budgets: budgets.normalized(),
 	}
 }
 
@@ -119,9 +143,9 @@ func (l *AdmissionLimiter) Reset() {
 func (l *AdmissionLimiter) capacityLocked(window *admissionWindowState, kind AdmissionKind) bool {
 	switch kind {
 	case AdmissionDraft:
-		return window.drafts < admissionDraftBudget
+		return window.drafts < l.budgets.Drafts
 	case AdmissionPublish:
-		return window.publishes < admissionPublishBudget
+		return window.publishes < l.budgets.Publishes
 	default:
 		return false
 	}

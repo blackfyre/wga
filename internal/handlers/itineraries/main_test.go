@@ -748,6 +748,28 @@ func TestDraftLimitCannotBeBypassedByCookieRotation(t *testing.T) {
 	}
 }
 
+func TestConfiguredDraftBudgetAdmitsMoreDrafts(t *testing.T) {
+	policy := testSecurityPolicy(false)
+	policy.Admission = itineraryworkflow.AdmissionBudgets{Drafts: 1000}
+	_, mux := newItineraryMuxWithPolicy(t, policy)
+
+	for index := 0; index < 20; index++ {
+		cookie, csrf := sessionForMux(t, mux)
+		response := postForm(t, mux, "/itineraries/draft/add", cookie, csrf, url.Values{"artwork_id": {testArtworkID}})
+		if response.Code != http.StatusSeeOther {
+			t.Fatalf("draft %d status = %d, want 303 under a raised budget", index+1, response.Code)
+		}
+	}
+}
+
+func TestNegativeAdmissionBudgetFailsValidation(t *testing.T) {
+	policy := testSecurityPolicy(false)
+	policy.Admission = itineraryworkflow.AdmissionBudgets{Publishes: -1}
+	if err := policy.Validate(); err == nil {
+		t.Fatal("expected a negative admission budget to fail validation")
+	}
+}
+
 func TestExistingDraftMutationsDoNotConsumeBudget(t *testing.T) {
 	_, mux := newItineraryMux(t)
 
