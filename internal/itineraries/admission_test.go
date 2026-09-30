@@ -96,6 +96,45 @@ func TestAdmissionLimiterWindowRollover(t *testing.T) {
 	}
 }
 
+func TestAdmissionLimiterEnforcesTrailingWindow(t *testing.T) {
+	limiter := NewAdmissionLimiter(AdmissionBudgets{})
+	start := time.Date(2026, 8, 23, 12, 0, 0, 0, time.UTC)
+	now := start
+	limiter.now = func() time.Time { return now }
+
+	// One draft early in the hour, two just before its end.
+	if !limiter.Admit("client-a", AdmissionDraft) {
+		t.Fatal("first draft must be admitted")
+	}
+	now = start.Add(59 * time.Minute)
+	for index := 0; index < 2; index++ {
+		if !limiter.Admit("client-a", AdmissionDraft) {
+			t.Fatalf("draft %d must be admitted", index+2)
+		}
+	}
+
+	// Once the first draft leaves the trailing hour exactly one slot frees; the
+	// two recent drafts still count, so no fixed-bucket reset admits a burst.
+	now = start.Add(61 * time.Minute)
+	if !limiter.Admit("client-a", AdmissionDraft) {
+		t.Fatal("the slot freed by the expired draft must be admitted")
+	}
+	if limiter.Admit("client-a", AdmissionDraft) {
+		t.Error("more than three drafts within a trailing hour must be refused")
+	}
+
+	// After the recent drafts expire, their slots free as well.
+	now = start.Add(119 * time.Minute)
+	for index := 0; index < 2; index++ {
+		if !limiter.Admit("client-a", AdmissionDraft) {
+			t.Fatalf("draft %d after the recent drafts expired must be admitted", index+1)
+		}
+	}
+	if limiter.Admit("client-a", AdmissionDraft) {
+		t.Error("the budget must stay bounded after slots free")
+	}
+}
+
 func TestAdmissionLimiterBoundedKeys(t *testing.T) {
 	limiter := NewAdmissionLimiter(AdmissionBudgets{})
 

@@ -33,11 +33,41 @@ const (
 	admissionMaxKeys = 8192
 )
 
-// admissionWindowState records the in-window counters for one identity hash.
+// admissionWindowState records the in-window admission times for one identity
+// hash, oldest first. Each slice holds at most its kind's budget, so a budget is
+// enforced over every trailing admissionWindow rather than a fixed bucket.
 type admissionWindowState struct {
-	start     time.Time
-	drafts    int
-	publishes int
+	drafts    []time.Time
+	publishes []time.Time
+}
+
+// slot returns the admission times recorded for kind, or nil for an unknown
+// kind.
+func (w *admissionWindowState) slot(kind AdmissionKind) *[]time.Time {
+	switch kind {
+	case AdmissionDraft:
+		return &w.drafts
+	case AdmissionPublish:
+		return &w.publishes
+	default:
+		return nil
+	}
+}
+
+// prune drops admissions that have left the trailing window at now.
+func (w *admissionWindowState) prune(now time.Time) {
+	for _, times := range []*[]time.Time{&w.drafts, &w.publishes} {
+		keep := 0
+		for keep < len(*times) && now.Sub((*times)[keep]) >= admissionWindow {
+			keep++
+		}
+		*times = (*times)[keep:]
+	}
+}
+
+// empty reports whether no admission remains in the window.
+func (w *admissionWindowState) empty() bool {
+	return len(w.drafts) == 0 && len(w.publishes) == 0
 }
 
 // AdmissionBudgets holds the per-identity budgets for the rolling admission
@@ -72,7 +102,7 @@ type AdmissionLimiter struct {
 	budgets AdmissionBudgets
 }
 
-// NewAdmissionLimiter returns a limiter with the fixed one-hour window and the
+// NewAdmissionLimiter returns a limiter with the rolling one-hour window and the
 // given per-kind budgets. Non-positive budgets fall back to the production
 // defaults described by the admission* constants.
 func NewAdmissionLimiter(budgets AdmissionBudgets) *AdmissionLimiter {
@@ -92,19 +122,25 @@ func (l *AdmissionLimiter) Admit(identity string, kind AdmissionKind) bool {
 
 	l.sweepLocked()
 
+	budget := l.budgetFor(kind)
+	if budget <= 0 {
+		return false
+	}
+
 	key := hashIdentity(identity)
 	window := l.keys[key]
 	if window == nil {
-		window = &admissionWindowState{start: l.now()}
+		window = &admissionWindowState{}
 		l.keys[key] = window
 		l.evictLocked()
 	}
 
-	if !l.capacityLocked(window, kind) {
+	times := window.slot(kind)
+	if len(*times) >= budget {
 		return false
 	}
 
-	l.chargeLocked(window, kind)
+	*times = append(*times, l.now())
 	return true
 }
 
@@ -120,16 +156,12 @@ func (l *AdmissionLimiter) Release(identity string, kind AdmissionKind) {
 		return
 	}
 
-	switch kind {
-	case AdmissionDraft:
-		if window.drafts > 0 {
-			window.drafts--
-		}
-	case AdmissionPublish:
-		if window.publishes > 0 {
-			window.publishes--
-		}
+	times := window.slot(kind)
+	if times == nil || len(*times) == 0 {
+		return
 	}
+	// The reservation being released is the most recent admission.
+	*times = (*times)[:len(*times)-1]
 }
 
 // Reset clears all recorded admissions. It exists for tests and for explicit
@@ -140,32 +172,25 @@ func (l *AdmissionLimiter) Reset() {
 	l.keys = make(map[string]*admissionWindowState)
 }
 
-func (l *AdmissionLimiter) capacityLocked(window *admissionWindowState, kind AdmissionKind) bool {
+func (l *AdmissionLimiter) budgetFor(kind AdmissionKind) int {
 	switch kind {
 	case AdmissionDraft:
-		return window.drafts < l.budgets.Drafts
+		return l.budgets.Drafts
 	case AdmissionPublish:
-		return window.publishes < l.budgets.Publishes
+		return l.budgets.Publishes
 	default:
-		return false
+		return 0
 	}
 }
 
-func (l *AdmissionLimiter) chargeLocked(window *admissionWindowState, kind AdmissionKind) {
-	switch kind {
-	case AdmissionDraft:
-		window.drafts++
-	case AdmissionPublish:
-		window.publishes++
-	}
-}
-
-// sweepLocked removes every window whose start lies outside the rolling
-// one-hour window, so expired identities stop consuming key storage.
+// sweepLocked drops admissions older than the trailing one-hour window and
+// removes identities with none left, so expired identities stop consuming key
+// storage.
 func (l *AdmissionLimiter) sweepLocked() {
 	now := l.now()
 	for key, window := range l.keys {
-		if now.Sub(window.start) >= admissionWindow {
+		window.prune(now)
+		if window.empty() {
 			delete(l.keys, key)
 		}
 	}
