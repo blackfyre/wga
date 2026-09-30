@@ -41,6 +41,14 @@
 - Non-`main` deployment runs only when the head commit message contains `deploy-dev`; release tags matching `v*.*.*` invoke GoReleaser.
 - When changing repository documentation, read `docs/documentation-maintenance.md` and `docs/development-guide.md`; the maintenance guide identifies the authoritative config and CI sources, including the Mailpit service and `MAILPIT_URL` endpoint.
 
+## Review guidelines
+
+- Judge behaviour against `openspec/specs/` and the PR's active `openspec/changes/<name>/` artifacts. Report a divergence from them as a finding. A preference that no specification supports is not a finding.
+- CI can fail in areas the PR does not touch. Before attributing a failing check to the PR, compare it with the latest `main` run of the same workflow, and flag only failures the diff introduces or leaves unaddressed within its own stated scope.
+- Dual Mode pane links (work cards, index rows, routing toggles, embedded record links) are all built from the pane state at render time. Staleness after the other pane swaps affects the whole Dual Mode link design, not a single link. Raise it as a separate concern, not against a PR that follows the existing contract.
+- Generated output is not reviewed line by line: `*_templ.go`, `internal/assets/public/{js,css}`, and `.pre-commit-config.yaml`. Review the `.templ`, `resources/`, or generator source instead.
+- Skip formatting and style points that Biome, Prettier, `go vet`, or golangci-lint already enforce.
+
 ## Model-family assurance
 
 - For material or high-risk changes, use different model families for substantive implementation and final assurance where practical: DeepSeek implementation uses OpenAI review or verification; OpenAI implementation uses DeepSeek review or verification.
