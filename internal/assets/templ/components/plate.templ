@@ -6,7 +6,7 @@ templ Plate(plate dto.Plate) {
 	<div class={ "flex items-end border border-wga-ink/15 bg-wga-fill p-2.5", plate.Aspect, templ.KV("justify-center", plate.Aspect == "") }>
 		if plate.DisplayURL != "" {
 			if plate.ZoomURL != "" {
-				<a href={ templ.SafeURL(plate.ZoomURL) } class="relative block h-full w-full" data-viewer data-viewer-label={ plateLabel(plate) } aria-label={ plateLabel(plate) }>
+				<a href={ templ.SafeURL(plate.ZoomURL) } class="relative block h-full w-full" data-viewer data-viewer-no-navbar?={ plate.NoNavbar } data-viewer-label={ plateLabel(plate) } aria-label={ plateLabel(plate) }>
 					<img src={ plate.DisplayURL } alt={ plate.Alt } loading="lazy" data-zoom-url={ plate.ZoomURL } class={ templ.KV("h-auto w-full", plate.Aspect == ""), templ.KV("h-full w-full", plate.Aspect != ""), templ.KV("object-contain", plate.Contain && plate.Aspect != ""), templ.KV("object-cover", !plate.Contain && plate.Aspect != "") }/>
 					@ZoomHint()
 				</a>

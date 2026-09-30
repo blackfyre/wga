@@ -53,6 +53,7 @@ func TestArtworkBlockRendersPlateNotLegacyWell(t *testing.T) {
 		`data-zoom-url="/api/files/artworks/` + artworkTestID + `/work.jpg?thumb=2000x0"`,
 		`href="/api/files/artworks/` + artworkTestID + `/work.jpg?thumb=2000x0"`,
 		`data-viewer`,
+		`data-viewer-no-navbar`,
 		"CLICK TO ZOOM",
 	} {
 		if !strings.Contains(rendered, expected) {

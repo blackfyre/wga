@@ -59,7 +59,7 @@ templ ArtworkBlock(aw dto.Artwork) {
 		}
 		<div class="flex flex-col gap-8 md:flex-row md:items-start md:gap-16">
 			<figure class="w-full min-w-0 md:flex-1">
-				@components.Plate(dto.Plate{DisplayURL: aw.Image.Image, ZoomURL: aw.Image.Zoom, Alt: aw.Title, Label: "IMAGE — " + aw.Title, Placeholder: "IMAGE — " + aw.Title, Aspect: "", Contain: true})
+				@components.Plate(dto.Plate{DisplayURL: aw.Image.Image, ZoomURL: aw.Image.Zoom, Alt: aw.Title, Label: "IMAGE — " + aw.Title, Placeholder: "IMAGE — " + aw.Title, Aspect: "", Contain: true, NoNavbar: true})
 				<figcaption>
 					<div class="mt-4 flex flex-wrap items-start justify-between gap-4 border-b border-wga-ink pb-2.5">
 						<span class="font-mono text-(length:--t-11) tracking-[1.5px]">THIS REPRODUCTION</span>

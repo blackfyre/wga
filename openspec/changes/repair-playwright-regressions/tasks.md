@@ -8,9 +8,9 @@
 
 ## 2. Visual-overhaul drift
 
-- [ ] 2.1 Restore `data-viewer-no-navbar` on the artwork record plate's viewer trigger and add a Templ render assertion. Verify with `templ generate`, `go test ./internal/assets/templ/pages -run 'Artwork'`, and `mise run test:playwright playwright-tests/artwork.spec.ts`.
-- [ ] 2.2 Remove the file-weight expectation from `artwork.spec.ts`, as the catalogue-exploration spec requires. Verify with `mise run test:playwright playwright-tests/artwork.spec.ts`.
-- [ ] 2.3 Compare the mobile logo mark and the large-viewport footer columns with `internal/assets/reference/visual-overhaul.html`. Update `public-navigation.spec.ts:285` and `public-shell.spec.ts:155` where the markup matches the reference, or fix the markup where it doesn't. Verify with `mise run test:playwright playwright-tests/public-navigation.spec.ts playwright-tests/public-shell.spec.ts`.
+- [x] 2.1 Restore `data-viewer-no-navbar` on the artwork record plate's viewer trigger and add a Templ render assertion. Verify with `templ generate`, `go test ./internal/assets/templ/pages -run 'Artwork'`, and `mise run test:playwright playwright-tests/artwork.spec.ts`.
+- [x] 2.2 Remove the file-weight expectation from `artwork.spec.ts`, as the catalogue-exploration spec requires. Verify with `mise run test:playwright playwright-tests/artwork.spec.ts`.
+- [x] 2.3 Compare the mobile logo mark and the large-viewport footer columns with `internal/assets/reference/visual-overhaul.html`. Update `public-navigation.spec.ts:285` and `public-shell.spec.ts:155` where the markup matches the reference, or fix the markup where it doesn't. Verify with `mise run test:playwright playwright-tests/public-navigation.spec.ts playwright-tests/public-shell.spec.ts`.
 
 ## 3. No-JavaScript stability
 

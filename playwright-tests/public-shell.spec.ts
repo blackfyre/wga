@@ -152,7 +152,9 @@ test.describe("shared public shell", () => {
 				(element) =>
 					getComputedStyle(element).gridTemplateColumns.split(" ").length,
 			);
-		expect(largeColumns).toBe(4);
+		// Reference footer grid at large viewports: brand column plus BROWSE,
+		// SERVICES, ABOUT, and COMMUNITY (1.5fr 1fr 1fr 1fr 1fr).
+		expect(largeColumns).toBe(5);
 	});
 
 	test("exposes ordinary navigation and deferred destinations", async ({

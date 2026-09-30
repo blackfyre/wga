@@ -278,9 +278,12 @@ for (const viewport of [
 		expect(probe.inLogo).toBe(false);
 
 		// complete mobile brand is present, visible, and not clipped/ellipsised
-		const wgaMark = logo.locator("span").first();
-		const title = logo.locator("span").nth(1).locator("span").nth(0);
-		const tagline = logo.locator("span").nth(1).locator("span").nth(1);
+		// The reference mark is an SVG image labelled "WGA", followed by the
+		// two-line wordmark (internal/assets/reference/visual-overhaul.html).
+		const wgaMark = logo.getByRole("img", { name: "WGA", exact: true });
+		const wordmark = logo.locator(":scope > span");
+		const title = wordmark.locator("span").nth(0);
+		const tagline = wordmark.locator("span").nth(1);
 		await expect(wgaMark).toBeVisible();
 		await expect(wgaMark).toHaveText("WGA");
 		await expect(title).toBeVisible();
