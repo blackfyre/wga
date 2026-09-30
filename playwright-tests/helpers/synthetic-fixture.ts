@@ -60,11 +60,12 @@ export const museumVenue = {
 	name: "Synthetic Museum of Fine Arts",
 } as const;
 
-// Year range over the synthetic artists' lifetimes, strictly inside the fixed
-// 200–1900 artwork filter span so neither bound is canonicalised away (the
-// synthetic artworks themselves are dated 1902–1911, beyond that span).
+// Bounded year range containing synthetic artworks (dated 1902–1911),
+// including relationshipArtwork in museumVenue. Both bounds sit on the range
+// control's 10-year steps and strictly inside the 100–2000 artwork filter
+// span, so the slider keeps them and neither is canonicalised away.
 // Used by artwork-search-task71.
-export const artworkYearRange = { from: "1800", to: "1850" } as const;
+export const artworkYearRange = { from: "1900", to: "1910" } as const;
 
 // Music record with an embedded audio file. Used by release-inventory.
 export const musicSong = {
