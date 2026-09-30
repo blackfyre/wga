@@ -24,4 +24,4 @@
 
 ## 5. Integration
 
-- [x] 5.1 Run `go vet ./...`, `go test ./... -cover`, `bun run build`, and the full `mise run test:playwright`. Confirm that the only remaining failure is postcard's Mailpit dependency when Mailpit is not running. (2026-09-30: 355 passed, 28 skipped; the 34 failures are postcard's Mailpit dependency plus the production-ID and fixture-bound specs owned by `bind-playwright-specs-to-synthetic-fixture`: artwork-palette, task73, task71, dual-production, record-production, release-inventory.)
+- [ ] 5.1 Run `go vet ./...`, `go test ./... -cover`, `bun run build`, and the full `mise run test:playwright`. Confirm that the only remaining failure is postcard's Mailpit dependency when Mailpit is not running. (Open: 2026-09-30 run had 355 passed, 28 skipped, 34 failed. The failures are postcard's Mailpit dependency plus the production-ID and fixture-bound specs owned by `bind-playwright-specs-to-synthetic-fixture`: artwork-palette, task73, task71, dual-production, record-production, release-inventory. This task completes once that change lands and a rerun leaves only postcard failing.)
