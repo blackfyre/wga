@@ -1,14 +1,17 @@
 import { expect, test } from "@playwright/test";
+import {
+	commentarySelection,
+	curatedArtist,
+	relationshipArtwork,
+	uncommentedSelection,
+} from "./helpers/synthetic-fixture";
 
-const artistPath = "/artists/gozzoli-benozzo-r9fb82d431d2a5c";
-const artworkPath =
-	"/artists/gozzoli-benozzo-r9fb82d431d2a5c/the-mocking-of-christ-detail-r8c3a31f30aefc8";
-const commentarySelectionPath =
-	"/artists/gozzoli-benozzo-r9fb82d431d2a5c/selections/rfae1de58855628";
-const unavailableSelectionPath =
-	"/artists/gozzoli-benozzo-r9fb82d431d2a5c/selections/r16c7b98bc13fb4";
+const artistPath = curatedArtist.path;
+const artworkPath = relationshipArtwork.path;
+const commentarySelectionPath = commentarySelection.path;
+const unavailableSelectionPath = uncommentedSelection.path;
 
-test.describe("production records without JavaScript", () => {
+test.describe("curated records without JavaScript", () => {
 	test.use({ javaScriptEnabled: false });
 
 	test("preserves supplied names and exposes curated record navigation", async ({
@@ -16,10 +19,10 @@ test.describe("production records without JavaScript", () => {
 	}) => {
 		await page.goto(artistPath);
 
-		await expect(page.locator("h1")).toHaveText("GOZZOLI, Benozzo");
+		await expect(page.locator("h1")).toHaveText(curatedArtist.name);
 		await expect(
 			page.locator("nav[aria-label='Breadcrumb'] a").last(),
-		).toHaveText("Benozzo Gozzoli");
+		).toHaveText(curatedArtist.breadcrumb);
 		await expect(
 			page.getByRole("navigation", { name: "On this page" }),
 		).toBeVisible();
@@ -48,12 +51,12 @@ test.describe("production records without JavaScript", () => {
 	}) => {
 		await page.goto(commentarySelectionPath);
 		await expect(
-			page.getByRole("heading", { name: "COMMENTARY" }),
+			page.getByRole("heading", { name: "COMMENTARY", exact: true }),
 		).toBeVisible();
 		await expect(page.getByText("CITE THIS RECORD — BIBTEX")).toBeVisible();
 		await expect(
 			page.getByRole("link", { name: /VIEW FULL HOLDING/ }),
-		).toHaveAttribute("href", "/artworks?artist=GOZZOLI%2C+Benozzo");
+		).toHaveAttribute("href", curatedArtist.holdingPath);
 		await expect(
 			page.locator("ul.grid.grid-cols-2.md\\:grid-cols-4"),
 		).toHaveCount(1);
@@ -68,7 +71,7 @@ test.describe("production records without JavaScript", () => {
 test("artist record scope remains visible through live artwork refinement", async ({
 	page,
 }) => {
-	const artistID = "r9fb82d431d2a5c";
+	const artistID = curatedArtist.id;
 	await page.goto(`/artworks?artist_id=${artistID}`);
 
 	const form = page.locator("#artwork-filters");
@@ -79,7 +82,7 @@ test("artist record scope remains visible through live artwork refinement", asyn
 	);
 	await expect(form.locator("input[name='artist_id']")).toHaveValue(artistID);
 	await expect(form.locator("[data-artwork-artist-scope]")).toContainText(
-		"GOZZOLI, Benozzo",
+		curatedArtist.name,
 	);
 
 	const query = form.locator("#artwork-query");
@@ -89,23 +92,23 @@ test("artist record scope remains visible through live artwork refinement", asyn
 		return (
 			url.pathname === "/artworks" &&
 			url.searchParams.get("artist_id") === artistID &&
-			url.searchParams.get("q") === "Mocking"
+			url.searchParams.get("q") === "02-01"
 		);
 	});
-	await query.fill("Mocking");
+	await query.fill("02-01");
 	await refinement;
 
 	await expect(page).toHaveURL(
 		(url) =>
 			url.pathname === "/artworks" &&
 			url.searchParams.get("artist_id") === artistID &&
-			url.searchParams.get("q") === "Mocking",
+			url.searchParams.get("q") === "02-01",
 	);
 	await expect(form.locator("input[name='artist_id']")).toHaveValue(artistID);
 	await expect(form.locator("[data-artwork-artist-scope]")).toContainText(
-		"GOZZOLI, Benozzo",
+		curatedArtist.name,
 	);
 	await expect(page.locator("#artwork-search-results")).toContainText(
-		"The Mocking of Christ",
+		"Synthetic Artwork 02-01",
 	);
 });

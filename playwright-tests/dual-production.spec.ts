@@ -1,20 +1,24 @@
 import { expect, test } from "@playwright/test";
+import {
+	commentarySelection,
+	curatedArtist,
+	relationshipArtwork,
+} from "./helpers/synthetic-fixture";
 
-const artistPath = "/artists/gozzoli-benozzo-r9fb82d431d2a5c";
-const artworkPath =
-	"/artists/gozzoli-benozzo-r9fb82d431d2a5c/the-mocking-of-christ-detail-r8c3a31f30aefc8";
-const selectionPath =
-	"/artists/gozzoli-benozzo-r9fb82d431d2a5c/selections/rfae1de58855628";
+const artistPath = curatedArtist.path;
+const artworkPath = relationshipArtwork.path;
+const selectionPath = commentarySelection.path;
+const artistQuery = curatedArtist.name;
 
-test("production comparison restores panes, routing, and rendition state", async ({
+test("Dual comparison restores panes, routing, and rendition state", async ({
 	page,
 }) => {
 	const url = `/dual-mode?wide=1&left=${encodeURIComponent(artistPath)}&right=${encodeURIComponent(artworkPath)}&l_size=small&r_size=large&left_render_to=left`;
 	await page.goto(url);
 
-	await expect(page.locator("#dual-left")).toContainText("GOZZOLI, Benozzo");
+	await expect(page.locator("#dual-left")).toContainText(curatedArtist.name);
 	await expect(page.locator("#dual-right")).toContainText(
-		"The Mocking of Christ (detail)",
+		relationshipArtwork.title,
 	);
 	await expect(page.locator("#dual-left a[aria-current]")).toHaveCount(1);
 	expect(
@@ -36,11 +40,11 @@ test("production comparison restores panes, routing, and rendition state", async
 	await page.reload();
 	await expect(page).not.toHaveURL(/(?:l|r)_size=/);
 	await expect(page.locator("#dual-right")).toContainText(
-		"The Mocking of Christ (detail)",
+		relationshipArtwork.title,
 	);
 });
 
-test("production curated selection navigation remains pane-local", async ({
+test("Dual curated selection navigation remains pane-local", async ({
 	page,
 }) => {
 	await page.goto(
@@ -56,7 +60,7 @@ test("production curated selection navigation remains pane-local", async ({
 	await expect(left).toContainText("SELECTED WORKS");
 	await expect(left).toContainText("CITE THIS RECORD — BIBTEX");
 	await expect(page.locator("#dual-right")).toContainText(
-		"The Mocking of Christ (detail)",
+		relationshipArtwork.title,
 	);
 });
 
@@ -82,7 +86,7 @@ test("duplicate curated panes keep every contents and citation id unique", async
 	).toBe(true);
 });
 
-test.describe("production comparison without JavaScript", () => {
+test.describe("Dual comparison without JavaScript", () => {
 	test.use({ javaScriptEnabled: false });
 
 	test("opens a selection through its ordinary same-pane link", async ({
@@ -101,59 +105,57 @@ test.describe("production comparison without JavaScript", () => {
 		await expect(page).toHaveURL(/left=.*selections/);
 		await expect(page.locator("#dual-left")).toContainText("21 — SELECTION");
 		await expect(page.locator("#dual-right")).toContainText(
-			"The Mocking of Christ (detail)",
+			relationshipArtwork.title,
 		);
 	});
 });
 
-test("production comparison keeps pane query and sort state addressable", async ({
+test("Dual comparison keeps pane query and sort state addressable", async ({
 	page,
 }) => {
 	await page.goto(
-		"/dual-mode?wide=1&l_q=GOZZOLI&l_sort=za&r_q=GOZZOLI&r_sort=birth",
+		`/dual-mode?wide=1&l_q=${encodeURIComponent(artistQuery)}&l_sort=za&r_q=${encodeURIComponent(artistQuery)}&r_sort=birth`,
 	);
-	await expect(page).toHaveURL(/l_q=GOZZOLI/);
+	await expect(page).toHaveURL(/l_q=SYNTHETIC(?:\+|%20)ARTIST(?:\+|%20)02/);
 	await expect(page).toHaveURL(/r_sort=birth/);
 	await expect(page.locator("#dual-left")).toContainText("SORT: Z–A");
 	await expect(page.locator("#dual-right")).toContainText("SORT: BIRTH YEAR");
 });
 
-test("production comparison applies a pane sort control", async ({ page }) => {
+test("Dual comparison applies a pane sort control", async ({ page }) => {
 	await page.goto("/dual-mode?wide=1");
 	await page.locator("#dual-left a[href*='l_sort=za']").click();
 	await expect(page).toHaveURL(/l_sort=za/);
 	await expect(page.locator("#dual-left")).toContainText("SORT: Z–A");
 });
 
-test("production comparison applies pane search and record navigation without changing its opposite pane", async ({
+test("Dual comparison applies pane search and record navigation without changing its opposite pane", async ({
 	page,
 }) => {
 	await page.goto(
 		`/dual-mode?wide=1&right=${encodeURIComponent(artworkPath)}&left_render_to=left`,
 	);
 	const form = page.locator("form#dual-filters-left");
-	await form.locator("input[name='l_q']").fill("GOZZOLI");
+	await form.locator("input[name='l_q']").fill(artistQuery);
 	await form.evaluate((element: HTMLFormElement) => element.requestSubmit());
-	await expect(page).toHaveURL(/l_q=GOZZOLI/);
+	await expect(page).toHaveURL(/l_q=SYNTHETIC(?:\+|%20)ARTIST(?:\+|%20)02/);
 	await expect(page.locator("#dual-right")).toContainText(
-		"The Mocking of Christ (detail)",
+		relationshipArtwork.title,
 	);
 
 	const record = page
-		.locator("#dual-left a", { hasText: "GOZZOLI, Benozzo" })
+		.locator("#dual-left a", { hasText: curatedArtist.name })
 		.first();
 	await record.click();
-	await expect(page).toHaveURL(/left=.*gozzoli-benozzo/);
-	await expect(page.locator("#dual-left")).toContainText("GOZZOLI, Benozzo");
+	await expect(page).toHaveURL(/left=.*synthetic-artist-02/);
+	await expect(page.locator("#dual-left")).toContainText(curatedArtist.name);
 	await expect(page.locator("#dual-right")).toContainText(
-		"The Mocking of Christ (detail)",
+		relationshipArtwork.title,
 	);
 });
 
 for (const width of [390, 834, 1440]) {
-	test(`production comparison has no overflow at ${width}px`, async ({
-		page,
-	}) => {
+	test(`Dual comparison has no overflow at ${width}px`, async ({ page }) => {
 		await page.setViewportSize({ width, height: 900 });
 		await page.goto(
 			`/dual-mode?wide=1&left=${encodeURIComponent(artistPath)}&right=${encodeURIComponent(artworkPath)}`,

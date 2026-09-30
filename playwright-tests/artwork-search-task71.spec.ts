@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { artworkYearRange, museumVenue } from "./helpers/synthetic-fixture";
 
 const viewports = [390, 834, 1440];
 
@@ -26,14 +27,19 @@ for (const width of viewports) {
 				await details.locator("summary").click();
 			}
 			await expect(details).toHaveAttribute("open", "");
-			const option = collectionOptions(page).first();
+			const option = collectionOptions(page).and(
+				page.locator(`[value='${museumVenue.id}']`),
+			);
 			await expect(option).toHaveCount(1);
-			const value = await option.getAttribute("value");
-			expect(value).toBeTruthy();
 			const label = option.locator("..");
 			await expect(label).toBeVisible();
-			const name = (await label.innerText()).replace(/\d+\s*$/, "").trim();
-			return { label, name, option, value: value as string };
+			await expect(label).toContainText(museumVenue.name);
+			return {
+				label,
+				name: museumVenue.name,
+				option,
+				value: museumVenue.id,
+			};
 		}
 
 		test("renders eight semantic disclosures with canonical initial state", async ({
@@ -143,9 +149,15 @@ for (const width of viewports) {
 			page,
 		}) => {
 			await openSearch(page);
-			await page.goto("/artworks?year_from=1600&year_to=1700");
-			await expect(page.locator("input[name='year_from']")).toHaveValue("1600");
-			await expect(page.locator("input[name='year_to']")).toHaveValue("1700");
+			await page.goto(
+				`/artworks?year_from=${artworkYearRange.from}&year_to=${artworkYearRange.to}`,
+			);
+			await expect(page.locator("input[name='year_from']")).toHaveValue(
+				artworkYearRange.from,
+			);
+			await expect(page.locator("input[name='year_to']")).toHaveValue(
+				artworkYearRange.to,
+			);
 			await page.getByRole("link", { name: "LIST" }).click();
 			await expect(page).toHaveURL(
 				(url) => url.searchParams.get("view") === "list",
@@ -162,12 +174,16 @@ for (const width of viewports) {
 					url.searchParams.get("view") === "list" &&
 					url.searchParams.get("dir") === "desc" &&
 					!url.searchParams.has("sort") &&
-					url.searchParams.get("year_from") === "1600" &&
-					url.searchParams.get("year_to") === "1700",
+					url.searchParams.get("year_from") === artworkYearRange.from &&
+					url.searchParams.get("year_to") === artworkYearRange.to,
 			);
 			await expect(page.locator("[data-view='list']")).toBeVisible();
-			await expect(page.locator("input[name='year_from']")).toHaveValue("1600");
-			await expect(page.locator("input[name='year_to']")).toHaveValue("1700");
+			await expect(page.locator("input[name='year_from']")).toHaveValue(
+				artworkYearRange.from,
+			);
+			await expect(page.locator("input[name='year_to']")).toHaveValue(
+				artworkYearRange.to,
+			);
 		});
 
 		test("active sort criterion toggles its explicit direction", async ({
@@ -235,11 +251,11 @@ for (const width of viewports) {
 		await summary.focus();
 		await summary.press("Enter");
 		await expect(details).toHaveAttribute("open", "");
-		const collection = page
-			.locator("#artwork-filters input[name='venue']:not([value=''])")
-			.first();
+		const collection = page.locator(
+			`#artwork-filters input[name='venue'][value='${museumVenue.id}']`,
+		);
 		await expect(collection).toHaveCount(1);
-		const value = await collection.getAttribute("value");
+		const value = museumVenue.id;
 		await expect(collection.locator("..")).toBeVisible();
 		await collection.focus();
 		await collection.press("Space");

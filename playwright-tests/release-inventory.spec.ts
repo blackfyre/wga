@@ -1,28 +1,33 @@
 import { readdirSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { expect, test } from "@playwright/test";
+import {
+	commentarySelection,
+	curatedArtist,
+	dualPath,
+	musicSong,
+	relationshipArtwork,
+} from "./helpers/synthetic-fixture";
 
-const artistPath = "/artists/gozzoli-benozzo-r9fb82d431d2a5c";
-const artworkPath =
-	"/artists/gozzoli-benozzo-r9fb82d431d2a5c/the-mocking-of-christ-detail-r8c3a31f30aefc8";
-const selectionPath =
-	"/artists/gozzoli-benozzo-r9fb82d431d2a5c/selections/rfae1de58855628";
-const musicPath = "/player?song=rda10616be61eca";
+const artistPath = curatedArtist.path;
+const artworkPath = relationshipArtwork.path;
+const selectionPath = commentarySelection.path;
+const musicPath = musicSong.path;
 
 const releaseRoutes = [
 	"/",
 	"/artists",
 	artistPath,
 	selectionPath,
-	"/artworks?q=Mocking",
+	"/artworks?q=Synthetic",
 	artworkPath,
-	`/dual-mode?wide=1&left=${encodeURIComponent(artistPath)}&right=${encodeURIComponent(artworkPath)}`,
-	"/search?q=Gozzoli",
-	"/timeline?from=1400&to=1500",
+	dualPath(artistPath, artworkPath),
+	"/search?q=Synthetic",
+	"/timeline?from=1800&to=1900",
 	"/inspire",
 	"/tours",
 	"/statistics",
-	"/glossary?q=fresco",
+	"/glossary?q=pala",
 	"/pages/about",
 	"/pages/privacy-policy",
 	"/contributors",
@@ -30,7 +35,7 @@ const releaseRoutes = [
 	"/itineraries",
 	"/itineraries/new",
 	"/postcard",
-	"/postcard/send?awid=r8c3a31f30aefc8",
+	`/postcard/send?awid=${relationshipArtwork.id}`,
 	"/guestbook",
 	musicPath,
 ] as const;
@@ -47,7 +52,7 @@ function publicAssetPaths(directory = publicRoot): string[] {
 }
 
 test.describe("release acceptance inventory", () => {
-	test("serves every public release destination with production-shaped records", async ({
+	test("serves every public release destination with fixture records", async ({
 		request,
 	}) => {
 		test.setTimeout(120_000);
@@ -70,7 +75,7 @@ test.describe("release acceptance inventory", () => {
 		}
 	});
 
-	test("serves production artwork, portrait, and music files used by release records", async ({
+	test("serves artwork and music files used by release records", async ({
 		page,
 		request,
 	}) => {
