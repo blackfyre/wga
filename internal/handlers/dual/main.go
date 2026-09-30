@@ -1619,11 +1619,33 @@ func dualRoutedProseHref(anchor *html.Node, pane dualPaneState, state dualState)
 		if path == "" {
 			return "", false
 		}
+		// The pane-path grammar is positional, so application routes such as
+		// /artworks/results also match it; only rewrite links whose segments
+		// carry record identifiers.
+		record, _ := parsePanePath(path)
+		if !dualRecordID(record.Id) || (record.Kind == "selection" && !dualRecordID(record.ArtistID)) {
+			return "", false
+		}
 
 		return state.withPanePath(pane.renderTo, path).path(), true
 	}
 
 	return "", false
+}
+
+// dualRecordID reports whether id has the PocketBase record identifier shape
+// (15 lowercase alphanumeric characters).
+func dualRecordID(id string) bool {
+	if len(id) != 15 {
+		return false
+	}
+	for _, r := range id {
+		if (r < 'a' || r > 'z') && (r < '0' || r > '9') {
+			return false
+		}
+	}
+
+	return true
 }
 
 // dualRoutedLinkAttrs replaces the anchor's href and any HTMX attributes with

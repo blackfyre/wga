@@ -56,9 +56,9 @@ func TestDualEmbeddedLinkRoutesToSamePane(t *testing.T) {
 func TestDualEmbeddedLinkRoutesArtworkAndSelectionRoutes(t *testing.T) {
 	state := parseDualState(neturl.Values{})
 	for _, path := range []string{
-		"/artists/hals-artistthree0001/laughing-cavalier-artworkthree01",
-		"/artists/hals-artistthree0001/artworks/laughing-cavalier-artworkthree01",
-		"/artworks/laughing-cavalier-artworkthree01",
+		"/artists/hals-artistthree0001/laughing-cavalier-artworkthree001",
+		"/artists/hals-artistthree0001/artworks/laughing-cavalier-artworkthree001",
+		"/artworks/laughing-cavalier-artworkthree001",
 		"/artists/hals-artistthree0001/selections/selectionthree1",
 	} {
 		got := dualRoutedProseHTML(`<a href="`+path+`">x</a>`, state.left, state)
@@ -76,6 +76,8 @@ func TestDualEmbeddedLinkLeavesOtherLinksUnchanged(t *testing.T) {
 		`<p><a href="//example.org/artists/hals-artistthree0001">protocol relative</a></p>`,
 		`<p><a href="/glossary">glossary</a> and <a href="/artists">index</a></p>`,
 		`<p><a href="artists/hals-artistthree0001">relative</a></p>`,
+		`<p><a href="/artworks/results?q=hals">artwork results</a></p>`,
+		`<p><a href="/artists/hals-artistthree0001/selections">not a record</a></p>`,
 		`<p>No links here.</p>`,
 	} {
 		if got := dualRoutedProseHTML(input, state.left, state); got != input {
