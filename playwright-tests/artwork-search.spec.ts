@@ -351,7 +351,7 @@ test("artwork date range search", async ({ page }) => {
 		input.dispatchEvent(new Event("input", { bubbles: true }));
 	});
 	await expect(page.locator("output[for='year_from year_to']")).toHaveText(
-		"1800–1900",
+		"1800–2000",
 	);
 });
 
@@ -365,7 +365,7 @@ test("reset clears the artwork search form", async ({ page }) => {
 	await expect(page).toHaveURL(/\/artworks$/);
 	await expect(form.getByRole("searchbox")).toHaveValue("");
 	await expect(page.locator("input[name='art_school']:checked")).toHaveCount(0);
-	await expect(page.locator("[name='year_from']")).toHaveValue("200");
+	await expect(page.locator("[name='year_from']")).toHaveValue("100");
 	await expect(page.locator("#search-result-container")).toContainText(
 		/works match/i,
 	);
