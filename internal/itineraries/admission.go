@@ -37,13 +37,20 @@ const (
 // hash, oldest first. Each slice holds at most its kind's budget, so a budget is
 // enforced over every trailing admissionWindow rather than a fixed bucket.
 type admissionWindowState struct {
-	drafts    []time.Time
-	publishes []time.Time
+	drafts    []admissionEntry
+	publishes []admissionEntry
 }
 
-// slot returns the admission times recorded for kind, or nil for an unknown
-// kind.
-func (w *admissionWindowState) slot(kind AdmissionKind) *[]time.Time {
+// admissionEntry is one admission inside the window. The sequence number lets
+// a reservation release exactly its own entry even when operations for the
+// same identity overlap and finish out of order.
+type admissionEntry struct {
+	at  time.Time
+	seq uint64
+}
+
+// slot returns the admissions recorded for kind, or nil for an unknown kind.
+func (w *admissionWindowState) slot(kind AdmissionKind) *[]admissionEntry {
 	switch kind {
 	case AdmissionDraft:
 		return &w.drafts
@@ -56,9 +63,9 @@ func (w *admissionWindowState) slot(kind AdmissionKind) *[]time.Time {
 
 // prune drops admissions that have left the trailing window at now.
 func (w *admissionWindowState) prune(now time.Time) {
-	for _, times := range []*[]time.Time{&w.drafts, &w.publishes} {
+	for _, times := range []*[]admissionEntry{&w.drafts, &w.publishes} {
 		keep := 0
-		for keep < len(*times) && now.Sub((*times)[keep]) >= admissionWindow {
+		for keep < len(*times) && now.Sub((*times)[keep].at) >= admissionWindow {
 			keep++
 		}
 		*times = (*times)[keep:]
@@ -100,6 +107,7 @@ type AdmissionLimiter struct {
 	keys    map[string]*admissionWindowState
 	now     func() time.Time
 	budgets AdmissionBudgets
+	seq     uint64
 }
 
 // NewAdmissionLimiter returns a limiter with the rolling one-hour window and the
@@ -113,10 +121,38 @@ func NewAdmissionLimiter(budgets AdmissionBudgets) *AdmissionLimiter {
 	}
 }
 
+// AdmissionReservation identifies one successful admission so that a guarded
+// operation that fails afterwards can release exactly that admission. The zero
+// value reserves nothing and its Release is a no-op.
+type AdmissionReservation struct {
+	limiter *AdmissionLimiter
+	key     string
+	kind    AdmissionKind
+	seq     uint64
+}
+
+// Release undoes the reserved admission, so validation and persistence
+// failures do not spend a budget slot. It removes only this reservation's
+// entry, is idempotent, and does nothing once the entry has left the window.
+func (r AdmissionReservation) Release() {
+	if r.limiter == nil {
+		return
+	}
+	r.limiter.release(r)
+}
+
 // Admit records an admission for identity and reports whether the one-hour
-// budget for kind still has capacity. It returns false when the budget is
-// exhausted. Identity is hashed before it touches the limiter.
+// budget for kind still has capacity. The admission is kept; use Reserve when
+// a later failure must be able to release it.
 func (l *AdmissionLimiter) Admit(identity string, kind AdmissionKind) bool {
+	_, ok := l.Reserve(identity, kind)
+	return ok
+}
+
+// Reserve records an admission for identity and returns its reservation, or
+// false when the one-hour budget for kind is exhausted. Identity is hashed
+// before it touches the limiter.
+func (l *AdmissionLimiter) Reserve(identity string, kind AdmissionKind) (AdmissionReservation, bool) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -124,7 +160,7 @@ func (l *AdmissionLimiter) Admit(identity string, kind AdmissionKind) bool {
 
 	budget := l.budgetFor(kind)
 	if budget <= 0 {
-		return false
+		return AdmissionReservation{}, false
 	}
 
 	key := hashIdentity(identity)
@@ -137,31 +173,36 @@ func (l *AdmissionLimiter) Admit(identity string, kind AdmissionKind) bool {
 
 	times := window.slot(kind)
 	if len(*times) >= budget {
-		return false
+		return AdmissionReservation{}, false
 	}
 
-	*times = append(*times, l.now())
-	return true
+	l.seq++
+	*times = append(*times, admissionEntry{at: l.now(), seq: l.seq})
+	return AdmissionReservation{limiter: l, key: key, kind: kind, seq: l.seq}, true
 }
 
-// Release undoes a previously successful Admit. It is used for reservations
-// that must not be consumed when the guarded operation subsequently fails, so
-// validation and persistence failures do not permanently spend a budget slot.
-func (l *AdmissionLimiter) Release(identity string, kind AdmissionKind) {
+func (l *AdmissionLimiter) release(r AdmissionReservation) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	window := l.keys[hashIdentity(identity)]
+	window := l.keys[r.key]
 	if window == nil {
 		return
 	}
 
-	times := window.slot(kind)
-	if times == nil || len(*times) == 0 {
+	times := window.slot(r.kind)
+	if times == nil {
 		return
 	}
-	// The reservation being released is the most recent admission.
-	*times = (*times)[:len(*times)-1]
+	for index, entry := range *times {
+		if entry.seq == r.seq {
+			*times = append((*times)[:index], (*times)[index+1:]...)
+			break
+		}
+	}
+	if window.empty() {
+		delete(l.keys, r.key)
+	}
 }
 
 // Reset clears all recorded admissions. It exists for tests and for explicit

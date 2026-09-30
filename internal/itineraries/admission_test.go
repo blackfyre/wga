@@ -54,25 +54,61 @@ func TestAdmissionLimiterStoresHashesOnly(t *testing.T) {
 func TestAdmissionLimiterReleaseRestoresBudget(t *testing.T) {
 	limiter := NewAdmissionLimiter(AdmissionBudgets{})
 
+	reservations := make([]AdmissionReservation, 0, admissionPublishBudget)
 	for index := 0; index < admissionPublishBudget; index++ {
-		if !limiter.Admit("client-a", AdmissionPublish) {
+		reservation, ok := limiter.Reserve("client-a", AdmissionPublish)
+		if !ok {
 			t.Fatalf("publish %d must be admitted", index)
 		}
+		reservations = append(reservations, reservation)
 	}
 	if limiter.Admit("client-a", AdmissionPublish) {
 		t.Error("publish beyond budget must be rejected")
 	}
 
-	limiter.Release("client-a", AdmissionPublish)
+	reservations[0].Release()
 	if !limiter.Admit("client-a", AdmissionPublish) {
 		t.Error("release must restore a publication slot")
 	}
 
-	// Releasing when nothing was charged is a no-op and never goes negative.
-	limiter.Release("unknown-client", AdmissionPublish)
-	limiter.Release("client-a", AdmissionPublish)
-	if !limiter.Admit("client-a", AdmissionPublish) {
-		t.Error("over-release must not corrupt the budget")
+	// Releasing twice, or releasing a zero reservation, is a no-op and never
+	// frees a slot another admission still holds.
+	reservations[0].Release()
+	AdmissionReservation{}.Release()
+	if limiter.Admit("client-a", AdmissionPublish) {
+		t.Error("repeated release must not free another admission's slot")
+	}
+}
+
+func TestAdmissionLimiterReleasesTheMatchingReservation(t *testing.T) {
+	limiter := NewAdmissionLimiter(AdmissionBudgets{})
+	start := time.Date(2026, 8, 23, 12, 0, 0, 0, time.UTC)
+	now := start
+	limiter.now = func() time.Time { return now }
+
+	// An earlier operation reserves first; a later one reserves and succeeds;
+	// then the earlier one fails and releases.
+	earlier, _ := limiter.Reserve("client-a", AdmissionDraft)
+	now = start.Add(30 * time.Minute)
+	if _, ok := limiter.Reserve("client-a", AdmissionDraft); !ok {
+		t.Fatal("later draft must be admitted")
+	}
+	earlier.Release()
+	for index := 0; index < 2; index++ {
+		if !limiter.Admit("client-a", AdmissionDraft) {
+			t.Fatalf("draft %d must be admitted after the release", index+1)
+		}
+	}
+	if limiter.Admit("client-a", AdmissionDraft) {
+		t.Fatal("budget must be exhausted")
+	}
+
+	// Had the later success been released instead, a slot would free when the
+	// earlier reservation expires. It must not: all three kept admissions are
+	// at 12:30 and remain inside the trailing hour at 13:05.
+	now = start.Add(65 * time.Minute)
+	if limiter.Admit("client-a", AdmissionDraft) {
+		t.Error("the kept admissions must still count inside the trailing hour")
 	}
 }
 

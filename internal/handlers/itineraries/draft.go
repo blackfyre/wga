@@ -216,14 +216,12 @@ func (ctx *securityContext) setMeta(app *pocketbase.PocketBase, c *core.RequestE
 		Creator: c.Request.FormValue("creator"),
 	}
 
-	allowed, charged := ctx.admitDraftIfNew(app, owner, clientID)
+	allowed, reservation := ctx.admitDraftIfNew(app, owner, clientID)
 	if !allowed {
 		return tooManyDrafts(c)
 	}
 	if err := itineraryworkflow.SetMeta(app, owner, meta); err != nil {
-		if charged {
-			ctx.limiter.Release(clientID, itineraryworkflow.AdmissionDraft)
-		}
+		reservation.Release()
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
@@ -245,14 +243,12 @@ func (ctx *securityContext) addStop(app *pocketbase.PocketBase, c *core.RequestE
 		return utils.BadRequestError(c)
 	}
 
-	allowed, charged := ctx.admitDraftIfNew(app, owner, clientID)
+	allowed, reservation := ctx.admitDraftIfNew(app, owner, clientID)
 	if !allowed {
 		return tooManyDrafts(c)
 	}
 	if _, err := itineraryworkflow.AddStop(app, owner, artworkID); err != nil {
-		if charged {
-			ctx.limiter.Release(clientID, itineraryworkflow.AdmissionDraft)
-		}
+		reservation.Release()
 		if errors.Is(err, itineraryworkflow.ErrStopLimit) {
 			utils.SendToastMessage("Itineraries are limited to 15 stops.", "error", true, c, "")
 			return utils.BadRequestError(c)

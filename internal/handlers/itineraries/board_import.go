@@ -39,7 +39,7 @@ func (ctx *securityContext) replaceDraftFromBoard(app *pocketbase.PocketBase, c 
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 	ids := board.IDs()
-	allowed, charged := ctx.admitDraftIfNew(app, owner, clientID)
+	allowed, reservation := ctx.admitDraftIfNew(app, owner, clientID)
 	if !allowed {
 		return tooManyDrafts(c)
 	}
@@ -51,9 +51,7 @@ func (ctx *securityContext) replaceDraftFromBoard(app *pocketbase.PocketBase, c 
 		c.Request.FormValue("confirm") == "replace",
 	)
 	if err != nil {
-		if charged {
-			ctx.limiter.Release(clientID, itineraryworkflow.AdmissionDraft)
-		}
+		reservation.Release()
 		switch {
 		case errors.Is(err, itineraryworkflow.ErrReplacementStale):
 			return ctx.renderBoardImport(app, c, owner, itineraryworkflow.CSRFToken(token), strings.Join(ids, ","), true, http.StatusConflict)
