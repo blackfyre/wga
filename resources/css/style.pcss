@@ -2416,6 +2416,16 @@ figure.hidden-caption {
 
 #cc-main .cm__btn {
 	white-space: normal;
+	overflow-wrap: anywhere;
+}
+
+/* The library's narrow layout forces `width: auto` on the bottom-left notice
+   with only a left offset, so the notice shrinks to fit its content and can
+   run past the right edge at enlarged text. Bound it on both sides. */
+@media screen and (max-width: 640px) {
+	#cc-main .cm {
+		right: var(--cc-modal-margin);
+	}
 }
 
 #cc-main .pm {
