@@ -14,7 +14,7 @@
 
 ## 3. No-JavaScript stability
 
-- [ ] 3.1 Diagnose the shared "element is not stable" cause in `guestbook:94`, `artwork-search:374`, `timeline-task81:105`, and `reference-pages:115` from their Playwright traces, and fix it at its source, not with forced clicks or longer timeouts. Verify with `mise run test:playwright` limited to those four spec files.
+- [x] 3.1 Diagnose the shared "element is not stable" cause in `guestbook:94`, `artwork-search:374`, `timeline-task81:105`, and `reference-pages:115` from their Playwright traces, and fix it at its source, not with forced clicks or longer timeouts. Verify with `mise run test:playwright` limited to those four spec files.
 
 ## 4. Layout and interaction
 

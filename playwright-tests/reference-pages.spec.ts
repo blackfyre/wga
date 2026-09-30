@@ -117,8 +117,11 @@ test.describe("reference destinations", () => {
 	}) => {
 		await page.setViewportSize({ width: 390, height: 900 });
 		await page.goto(referencePages[0].path);
+		// The colour scheme control lives in the footer's Preferences dialog.
+		await page.locator("[data-wga-preferences-open]").click();
 		await page.getByRole("button", { name: "DARK", exact: true }).click();
 		await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+		await page.locator("[data-wga-preferences-close]").click();
 
 		for (const width of [390, 834, 1440]) {
 			for (const reference of referencePages) {
