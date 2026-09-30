@@ -212,7 +212,8 @@ test.describe("task 9.2 tray regression", () => {
 		await expect(tray).toContainText("ITINERARY DRAFT · 1 OF 15");
 		const toast = page.locator("#toast-container");
 		await expect(toast).toContainText("Added to your itinerary.");
-		await expect(toast).toHaveClass(/bottom-20/);
+		// The shared toast stack lifts above the active tray (see public-shell).
+		await expect(toast).toHaveClass(/wga-toast-stack/);
 
 		await page.reload();
 		await expect(page.locator("#itinerary-tray")).toContainText(
