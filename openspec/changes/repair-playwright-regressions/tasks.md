@@ -18,9 +18,9 @@
 
 ## 4. Layout and interaction
 
-- [ ] 4.1 Fix the artist-record horizontal overflow at 200% text. Verify with `mise run test:playwright playwright-tests/artist-record.spec.ts`.
-- [ ] 4.2 Fix the cookie-notice overflow at 390 px. Verify with `mise run test:playwright playwright-tests/cookieconsent.spec.ts`.
-- [ ] 4.3 Establish why `keyboard-navigation.spec.ts:512` never observes `/artworks/results` with `q=Synthetic Artwork 01-01`. Fix the application if the search request regressed, otherwise align the spec with the current request contract. Verify with `mise run test:playwright playwright-tests/keyboard-navigation.spec.ts`.
+- [x] 4.1 Fix the artist-record horizontal overflow at 200% text. Verify with `mise run test:playwright playwright-tests/artist-record.spec.ts`.
+- [x] 4.2 Fix the cookie-notice overflow at 390 px. Verify with `mise run test:playwright playwright-tests/cookieconsent.spec.ts`.
+- [x] 4.3 Establish why `keyboard-navigation.spec.ts:512` never observes `/artworks/results` with `q=Synthetic Artwork 01-01`. Fix the application if the search request regressed, otherwise align the spec with the current request contract. Verify with `mise run test:playwright playwright-tests/keyboard-navigation.spec.ts`.
 
 ## 5. Integration
 
