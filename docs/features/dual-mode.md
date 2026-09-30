@@ -88,6 +88,7 @@ Dual Mode is not intended for mobile use. Small screens do not provide enough sp
 - [ ] A user can view artist biography content as part of an artist page in either pane.
 - [ ] Left/right combinations of supported content types work without forcing both panes to be the same type.
 - [ ] Reloading or sharing the Dual Mode URL preserves the pane state.
+- [ ] Artist, artwork, and selection record links inside a pane's artist biography or selection commentary open in the pane chosen by that pane's link-routing setting, keep the other pane, and still work as ordinary `/dual-mode` links without JavaScript; external and other links are unchanged.
 - [ ] If one pane has no selected content, the page still renders with a valid default state for that pane.
 - [ ] On screens below the supported desktop breakpoint, the split-pane interface is not shown.
 - [ ] On unsupported small screens, the user sees a clear message explaining that Dual Mode is desktop-only.

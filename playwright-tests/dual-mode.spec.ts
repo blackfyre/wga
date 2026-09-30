@@ -204,8 +204,78 @@ test("curated selections use namespaced contents and stay in their current pane"
 	await expect(page.locator("#dual-right")).toContainText("BIOGRAPHY");
 });
 
+function biographyLink(page: Page, side: string, name: string) {
+	return page
+		.locator(`#dual-${side}-biography + .content a`, { hasText: name })
+		.first();
+}
+
+test("biography record links open in the pane chosen by link routing", async ({
+	page,
+}) => {
+	await page.goto(
+		`/dual-mode?wide=1&left=${encodeURIComponent(artistOnePath)}&right=${encodeURIComponent(artistOneArtworkPath)}`,
+	);
+	const left = page.locator("#dual-left");
+	const right = page.locator("#dual-right");
+	const link = biographyLink(page, "left", "Synthetic Artist 02");
+	const routedHref = `/dual-mode?wide=1&left=${encodeURIComponent(artistOnePath)}&right=${encodeURIComponent(curatedArtistPath)}`;
+	await expect(link).toHaveAttribute("href", routedHref);
+	await expect(link).toHaveAttribute("hx-target", "#dual-right");
+	await settleEntryAnimation(page);
+	await link.click();
+	await expect(
+		right.getByRole("heading", { name: "Synthetic Artist 02", level: 2 }),
+	).toBeVisible();
+	await expect(
+		left.getByRole("heading", { name: "Synthetic Artist 01" }),
+	).toBeVisible();
+	await expect(page).toHaveURL(routedHref);
+});
+
+test("biography record links can open in the same pane", async ({ page }) => {
+	await page.goto(
+		`/dual-mode?wide=1&left=${encodeURIComponent(artistOnePath)}&right=${encodeURIComponent(artistOneArtworkPath)}&left_render_to=left`,
+	);
+	const left = page.locator("#dual-left");
+	const right = page.locator("#dual-right");
+	const link = biographyLink(page, "left", "Synthetic Artist 02");
+	await expect(link).toHaveAttribute("hx-target", "#dual-left");
+	await settleEntryAnimation(page);
+	await link.click();
+	await expect(
+		left.getByRole("heading", { name: "Synthetic Artist 02", level: 2 }),
+	).toBeVisible();
+	await expect(
+		right.getByRole("heading", { name: "Synthetic Artwork 01-01" }),
+	).toBeVisible();
+	expect(page.url()).toContain(`left=${encodeURIComponent(curatedArtistPath)}`);
+	expect(page.url()).toContain(
+		`right=${encodeURIComponent(artistOneArtworkPath)}`,
+	);
+});
+
 test.describe("dual mode without JavaScript", () => {
 	test.use({ javaScriptEnabled: false });
+
+	test("follows a biography record link to the routed dual mode URL", async ({
+		page,
+	}) => {
+		await page.goto(
+			`/dual-mode?wide=1&left=${encodeURIComponent(artistOnePath)}`,
+		);
+		const link = biographyLink(page, "left", "Synthetic Artist 02");
+		const routedHref = `/dual-mode?wide=1&left=${encodeURIComponent(artistOnePath)}&right=${encodeURIComponent(curatedArtistPath)}`;
+		await expect(link).toHaveAttribute("href", routedHref);
+		await settleEntryAnimation(page);
+		await link.click();
+		await expect(page).toHaveURL(routedHref);
+		await expect(
+			page
+				.locator("#dual-right")
+				.getByRole("heading", { name: "Synthetic Artist 02", level: 2 }),
+		).toBeVisible();
+	});
 
 	test("submits pane-prefixed native filters independently", async ({
 		page,

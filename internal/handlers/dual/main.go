@@ -29,6 +29,8 @@ import (
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
+	"golang.org/x/net/html"
+	"golang.org/x/net/html/atom"
 )
 
 const (
@@ -1130,7 +1132,7 @@ func buildDualArtistRecordContext(ctx context.Context, app *pocketbase.PocketBas
 	if glossaryErr != nil {
 		app.Logger().Warn("Failed to load glossary entries", "error", glossaryErr)
 	}
-	bio := dualAnnotatedHTML(artist.GetString("bio"), glossaryEntries)
+	bio := dualRoutedProseHTML(dualAnnotatedHTML(artist.GetString("bio"), glossaryEntries), pane, state)
 
 	if err := checkpoint(ctx, "dual.window.artist.music"); err != nil {
 		return pages.DualArtistRecord{}, err
@@ -1335,7 +1337,7 @@ func buildDualSelectionPreviews(ctx context.Context, app core.App, side string, 
 		if len(previewWorks) > dualSelectionPreviewWorkLimit {
 			previewWorks = previewWorks[:dualSelectionPreviewWorkLimit]
 		}
-		commentary := dualAnnotatedHTML(selection.GetString("commentary"), nil)
+		commentary := dualRoutedProseHTML(dualAnnotatedHTML(selection.GetString("commentary"), nil), pane, state)
 		previews = append(previews, pages.DualSelectionPreview{
 			AnchorID:        "dual-" + side + "-selection-" + selection.Id,
 			DisplayTitle:    selection.GetString("display_title"),
@@ -1400,7 +1402,7 @@ func buildDualSelectionRecordContext(ctx context.Context, app core.App, side str
 			Href:  state.withPanePath(side, dualSelectionPath(artist, sibling)).path(),
 		})
 	}
-	commentary := dualAnnotatedHTML(selection.GetString("commentary"), nil)
+	commentary := dualRoutedProseHTML(dualAnnotatedHTML(selection.GetString("commentary"), nil), pane, state)
 	return pages.DualSelectionRecord{
 		ArtistFilingName: artist.GetString("filing_name"),
 		ArtistShortName:  artist.GetString("short_name"),
@@ -1544,6 +1546,128 @@ func dualAnnotatedHTML(html string, entries []glossary.GlossaryEntry) string {
 	}
 
 	return glossary.AnnotateHTML(sanitized, entries)
+}
+
+// dualRoutedProseHTML rewrites record links in already sanitised (and
+// annotated) pane prose so they follow the originating pane's link routing.
+// Only root-relative hrefs that resolve to supported pane content (artist,
+// artwork, or selection routes) are rewritten: each becomes the routed
+// /dual-mode URL plus the same HTMX request, target, select, and swap
+// attributes as other pane content links. Other links, glossary definition
+// templates, and all surrounding content are left unchanged.
+func dualRoutedProseHTML(prose string, pane dualPaneState, state dualState) string {
+	if !strings.Contains(prose, "<a") {
+		return prose
+	}
+
+	container := &html.Node{Type: html.ElementNode, DataAtom: atom.Div, Data: "div"}
+	nodes, err := html.ParseFragment(strings.NewReader(prose), container)
+	if err != nil {
+		return prose
+	}
+
+	target := "#dual-" + pane.renderTo
+	rewritten := false
+	var visit func(n *html.Node)
+	visit = func(n *html.Node) {
+		if n.Type == html.ElementNode && n.DataAtom == atom.Template {
+			return
+		}
+		if n.Type == html.ElementNode && n.DataAtom == atom.A {
+			if href, ok := dualRoutedProseHref(n, pane, state); ok {
+				n.Attr = dualRoutedLinkAttrs(n.Attr, href, target)
+				rewritten = true
+			}
+		}
+		for child := n.FirstChild; child != nil; child = child.NextSibling {
+			visit(child)
+		}
+	}
+	for _, node := range nodes {
+		visit(node)
+	}
+	if !rewritten {
+		return prose
+	}
+
+	var buf bytes.Buffer
+	for _, node := range nodes {
+		if err := html.Render(&buf, node); err != nil {
+			return prose
+		}
+	}
+
+	return buf.String()
+}
+
+// dualRoutedProseHref returns the routed /dual-mode URL for an anchor whose
+// href is a root-relative supported pane record route.
+func dualRoutedProseHref(anchor *html.Node, pane dualPaneState, state dualState) (string, bool) {
+	for _, attr := range anchor.Attr {
+		if attr.Namespace != "" || attr.Key != "href" {
+			continue
+		}
+		raw := strings.TrimSpace(attr.Val)
+		if !strings.HasPrefix(raw, "/") || strings.HasPrefix(raw, "//") {
+			return "", false
+		}
+		parsed, err := neturl.Parse(raw)
+		if err != nil || parsed.Scheme != "" || parsed.Host != "" {
+			return "", false
+		}
+		path := parseDualPath(parsed.Path)
+		if path == "" {
+			return "", false
+		}
+		// The pane-path grammar is positional, so application routes such as
+		// /artworks/results also match it; only rewrite links whose segments
+		// carry record identifiers.
+		record, _ := parsePanePath(path)
+		if !dualRecordID(record.Id) || (record.Kind == "selection" && !dualRecordID(record.ArtistID)) {
+			return "", false
+		}
+
+		return state.withPanePath(pane.renderTo, path).path(), true
+	}
+
+	return "", false
+}
+
+// dualRecordID reports whether id has the PocketBase record identifier shape
+// (15 lowercase alphanumeric characters).
+func dualRecordID(id string) bool {
+	if len(id) != 15 {
+		return false
+	}
+	for _, r := range id {
+		if (r < 'a' || r > 'z') && (r < '0' || r > '9') {
+			return false
+		}
+	}
+
+	return true
+}
+
+// dualRoutedLinkAttrs replaces the anchor's href and any HTMX attributes with
+// the pane content-link contract, preserving every other attribute.
+func dualRoutedLinkAttrs(attrs []html.Attribute, href string, target string) []html.Attribute {
+	next := make([]html.Attribute, 0, len(attrs)+4)
+	for _, attr := range attrs {
+		switch attr.Key {
+		case "href":
+			next = append(next, html.Attribute{Key: "href", Val: href})
+		case "hx-get", "hx-target", "hx-select", "hx-swap":
+		default:
+			next = append(next, attr)
+		}
+	}
+
+	return append(next,
+		html.Attribute{Key: "hx-get", Val: href},
+		html.Attribute{Key: "hx-target", Val: target},
+		html.Attribute{Key: "hx-select", Val: target},
+		html.Attribute{Key: "hx-swap", Val: "outerHTML"},
+	)
 }
 
 func dualResolveAliases(app core.App, ids []string) string {
