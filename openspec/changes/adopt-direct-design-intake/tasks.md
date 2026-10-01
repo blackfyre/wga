@@ -10,7 +10,7 @@
 ## 2. Design intake
 
 - [x] 2.1 Add `docs/design-sync.md` recording the design project, the authoritative file, the last implemented entry (21 September 2026), the in-progress 29 September 2026 entries, and how to read the design; verify with `bunx prettier --check docs/design-sync.md`.
-- [ ] 2.2 Add the `design-intake` skill in `.agents/skills/`, retire `visual-overhaul-reference-parity`, and update `AGENTS.md`; verify with `bunx prettier --check` on the changed Markdown.
+- [x] 2.2 Add the `design-intake` skill in `.agents/skills/`, retire `visual-overhaul-reference-parity`, and update `AGENTS.md`; verify with `bunx prettier --check` on the changed Markdown.
 
 ## 3. Integration
 
