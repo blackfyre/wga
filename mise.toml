@@ -105,8 +105,8 @@ description = "Rebuild and restart the development server."
 run = ["mise run app:build", "mise run app:run"]
 
 [tasks."app:init-env"]
-description = "Bootstrap a local environment file from the example."
-run = "cp .env.example .env"
+description = "Create a startable .env from the example; an existing .env is kept."
+run = "sh resources/scripts/init-env.sh"
 
 [tasks."code:run"]
 description = "Run the application in development mode without building."
