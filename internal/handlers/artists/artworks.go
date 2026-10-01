@@ -397,7 +397,7 @@ func artworkLocationAndDimensions(comment string) (string, string) {
 
 func populateArtworkCitation(artwork *dto.Artwork) {
 	artwork.CitationKey = "wga-" + artwork.Id
-	artwork.CitationTitle = fmt.Sprintf("%s by %s", artwork.Title, artwork.Artist.FilingName)
+	artwork.CitationTitle = fmt.Sprintf("%s by %s", artwork.Title, artwork.FilingName)
 	artwork.CitationURL = utils.AssetUrl(artwork.Url)
 }
 
@@ -609,7 +609,7 @@ func buildArtworkMusic(app *pocketbase.PocketBase, artwork *core.Record) dto.Mus
 func buildRelatedWorkState(basis repositories.RelatedWorkBasis, holding *repositories.RelatedWorkHolding, content *dto.Artwork, artwork *core.Record, baseURL string) dto.RelatedWorkState {
 	state := dto.RelatedWorkState{
 		ActiveBasis: string(basis),
-		Connection:  relatedConnection(basis, content.Artist.ShortName, artwork.GetInt("date_start")),
+		Connection:  relatedConnection(basis, content.ShortName, artwork.GetInt("date_start")),
 		Sparse:      len(content.RelatedWorks) < relatedWorksLimit,
 		Bases:       relatedWorkBases(baseURL, basis),
 	}

@@ -121,7 +121,7 @@ func TestCapacityGateRejectsInvalidInputs(t *testing.T) {
 		t.Fatal("nil gate acquired capacity")
 	}
 	gate := mustCapacityGate(t, 1)
-	if lease, ok := gate.TryAcquire(nil); ok || lease != nil {
+	if lease, ok := gate.TryAcquire(nil); ok || lease != nil { //nolint:staticcheck // SA1012: deliberately nil to exercise the nil-context guard.
 		t.Fatal("nil context acquired capacity")
 	}
 	(*CapacityLease)(nil).Release()

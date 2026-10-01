@@ -39,7 +39,7 @@ func TestInspirationWorksReturnsOnlyEligiblePublishedFirstAuthors(t *testing.T) 
 		if work.Title == "Missing Author Work" {
 			t.Errorf("missing-author artwork must not appear in inspiration results")
 		}
-		if work.Artist.Name != "Public Artist" {
+		if work.Name != "Public Artist" {
 			t.Errorf("work %#v has an ineligible author", work)
 		}
 		if !strings.HasPrefix(work.Url, "/artists/public-artist-artistpublic001/") {

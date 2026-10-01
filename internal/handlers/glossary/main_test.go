@@ -43,9 +43,11 @@ func TestGlossaryLettersUsesAvailableInitials(t *testing.T) {
 		{Expression: "Acanthus"},
 		{Expression: "Allegory"},
 		{Expression: "1-point perspective"},
+		{Expression: "  cartoon"},
+		{Expression: ""},
 	})
 
-	if got, want := strings.Join(letters, ","), "A,B"; got != want {
+	if got, want := strings.Join(letters, ","), "A,B,C"; got != want {
 		t.Errorf("letters = %q, want %q", got, want)
 	}
 }

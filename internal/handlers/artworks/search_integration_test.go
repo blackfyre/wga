@@ -421,7 +421,7 @@ func TestBuildArtworkSearchViewFiltersBySchoolFormAndTechnique(t *testing.T) {
 		t.Errorf("filtered artwork = %q, want Fresco Work", view.Results.Artworks[0].Title)
 	}
 	projected := view.Results.Artworks[0]
-	if projected.Artist.FilingName != "Artist One" || projected.Date != "1598–1602" || projected.School != "Dutch" || projected.Form != "Painting" || projected.Type != "Fresco" {
+	if projected.FilingName != "Artist One" || projected.Date != "1598–1602" || projected.School != "Dutch" || projected.Form != "Painting" || projected.Type != "Fresco" {
 		t.Errorf("result projection = %#v, want filing artist, date, school, form, and type", projected)
 	}
 }

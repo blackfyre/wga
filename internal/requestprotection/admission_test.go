@@ -109,7 +109,7 @@ func TestPolicyEnforceRejectsAndHoldsSuccessfulCapacity(t *testing.T) {
 func TestPolicyBypassesUnprotectedProfiles(t *testing.T) {
 	policy := testPolicy(t, config.ProtectionModeEnforce, 1, 1)
 	for _, profile := range []Profile{ProfileExempt, ProfileUnclassified} {
-		admission := policy.Admit(nil, profile, "", false)
+		admission := policy.Admit(context.Background(), profile, "", false)
 		if !admission.Allowed() || admission.Decision() != DecisionBypass {
 			t.Fatalf("profile %q was not bypassed", profile)
 		}

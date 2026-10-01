@@ -171,8 +171,8 @@ func TestBuildRecordWorkImagesUsesCanonicalRecordLinks(t *testing.T) {
 	if image.Image != "/api/files/artworks/artwork12345678/painting.jpg?thumb=500x0" {
 		t.Errorf("image = %q, want 500-profile thumb", image.Image)
 	}
-	if image.Artist.FilingName != "Artist, Portrait" {
-		t.Errorf("artist filing name = %q, want Artist, Portrait", image.Artist.FilingName)
+	if image.FilingName != "Artist, Portrait" {
+		t.Errorf("artist filing name = %q, want Artist, Portrait", image.FilingName)
 	}
 	if image.Zoom != "" {
 		t.Errorf("zoom = %q, want empty (no viewer hooks)", image.Zoom)

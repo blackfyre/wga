@@ -142,7 +142,7 @@ func TestArtworkBlockRendersReproductionFigcaption(t *testing.T) {
 	plate := strings.Index(rendered, "CLICK TO ZOOM")
 	caption := strings.Index(rendered, "THIS REPRODUCTION")
 	title := strings.Index(rendered, "03 — ARTWORK")
-	if plate < 0 || caption < 0 || title < 0 || !(plate < caption && caption < title) {
+	if plate < 0 || caption < 0 || title < 0 || plate >= caption || caption >= title {
 		t.Error("artwork composition order must be plate, then reproduction figcaption, then record article")
 	}
 }
@@ -588,7 +588,7 @@ func TestArtworkBlockPlacesConditionalCurrentLocationUnderFullFileLink(t *testin
 	download := strings.Index(rendered, "DOWNLOAD THE FULL FILE")
 	location := strings.Index(rendered, "CURRENT LOCATION · Mauritshuis, The Hague")
 	file := strings.Index(rendered, `>FILE</dt>`)
-	if download < 0 || location < 0 || file < 0 || !(download < location && location < file) {
+	if download < 0 || location < 0 || file < 0 || download >= location || location >= file {
 		t.Error("current location must appear directly after the full-file link and before file metadata")
 	}
 
@@ -611,7 +611,7 @@ func TestArtworkBlockPlacesCitationAfterDescriptionAndProvenance(t *testing.T) {
 	description := strings.Index(rendered, "Source-backed description.")
 	provenance := strings.Index(rendered, "SAME COLLECTION")
 	citation := strings.Index(rendered, "CITE THIS RECORD — BIBTEX")
-	if description < 0 || provenance < 0 || citation < 0 || !(description < provenance && provenance < citation) {
+	if description < 0 || provenance < 0 || citation < 0 || description >= provenance || provenance >= citation {
 		t.Error("citation must follow the artwork description and provenance content")
 	}
 }
