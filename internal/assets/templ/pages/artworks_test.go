@@ -747,10 +747,13 @@ func TestArtworkSearchToolbarPreferenceContract(t *testing.T) {
 
 	list := sampleArtworkSearchResults()
 	list.View = "list"
+	list.Sort = "date"
+	list.SortDir = "desc"
 	list.ActionsShown = true
 	list.Artworks = dto.ImageGrid{sampleWork}
 	rendered = renderArtworkSearchResults(t, list)
 	for _, expected := range []string{
+		`<div id="artwork-search-results" data-wga-aw-sort="date" data-wga-aw-dir="desc" data-wga-aw-view="list">`,
 		`href="/artworks"`,
 		"VIEW: LIST",
 		", switch to grid view",

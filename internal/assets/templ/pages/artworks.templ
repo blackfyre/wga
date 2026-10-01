@@ -38,6 +38,10 @@ type ArtworkSearchResultsView struct {
 	ResultCount     int
 	Artworks        dto.ImageGrid
 	View            string
+	// Sort and SortDir are the normalised sort key and direction the
+	// results are rendered in.
+	Sort            string
+	SortDir         string
 	GridUrl         string
 	ListUrl         string
 	ResetUrl        string
@@ -295,7 +299,7 @@ templ ArtworkSortControl(r ArtworkSearchResultsView) {
 }
 
 templ ArtworkSearchResults(r ArtworkSearchResultsView) {
-	<div id="artwork-search-results">
+	<div id="artwork-search-results" data-wga-aw-sort={ r.Sort } data-wga-aw-dir={ r.SortDir } data-wga-aw-view={ r.View }>
 		<div class="flex flex-wrap items-baseline justify-between gap-3 border-b border-wga-ink pb-4">
 			<p class="font-mono text-xs text-wga-ink/60" aria-live="polite">
 				{ artworkMatchCount(r.ResultCount) }

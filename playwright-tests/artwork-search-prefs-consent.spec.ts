@@ -1,4 +1,5 @@
 import { type BrowserContext, expect, type Page, test } from "@playwright/test";
+import { grantPreferenceConsent } from "./helpers/artwork-search-prefs";
 
 test.setTimeout(60000);
 
@@ -148,4 +149,58 @@ test("accepted preference consent remembers choices, and withdrawing it deletes 
 	await page.goto("/artworks");
 	await expect(viewToggle(page)).toHaveText(/^VIEW: GRID/);
 	await expect(actionsToggle(page)).toHaveText("ACTIONS +");
+});
+
+test("granting consent remembers the choices the page shows", async ({
+	context,
+	page,
+}) => {
+	await page.goto("/artworks?sort=date&view=list");
+	await expect(viewToggle(page)).toHaveText(/^VIEW: LIST/);
+	await page
+		.locator("#cc-main .cm")
+		.getByRole("button", { name: "PREFERENCES", exact: true })
+		.click();
+	await savePreferenceStorage(page, true);
+
+	const stored = await storedPrefs(page, context);
+	expect(stored.cookie).not.toBeNull();
+	expect(JSON.parse(stored.local ?? "null")).toEqual({
+		sort: "date",
+		dir: "asc",
+		view: "list",
+		actions: false,
+	});
+
+	await page.goto("/artworks");
+	await expect(viewToggle(page)).toHaveText(/^VIEW: LIST/);
+	await expect(
+		page.locator(
+			'#artwork-search-results a[data-wga-aw-pref][aria-current="true"]',
+		),
+	).toContainText("DATE");
+});
+
+test("the actions toggle inverts what the page shows after another tab changed it", async ({
+	context,
+	page,
+}) => {
+	await grantPreferenceConsent(page);
+	await page.goto("/artworks");
+	await expect(actionsToggle(page)).toHaveText("ACTIONS +");
+
+	const otherTab = await context.newPage();
+	await otherTab.goto("/artworks");
+	await actionsToggle(otherTab).click();
+	await expect(actionsToggle(otherTab)).toHaveText("ACTIONS ✓");
+	await otherTab.close();
+
+	// This page has not swapped, so it still shows the actions hidden.
+	await expect(actionsToggle(page)).toHaveText("ACTIONS +");
+	await actionsToggle(page).click();
+	await expect(actionsToggle(page)).toHaveText("ACTIONS ✓");
+	await expect(page.locator("html")).toHaveAttribute("data-aw-actions", "on");
+	await expect(page.locator(".wga-work-actions").first()).toBeVisible();
+	const stored = await storedPrefs(page, context);
+	expect(JSON.parse(stored.local ?? "null")).toMatchObject({ actions: true });
 });

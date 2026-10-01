@@ -121,6 +121,26 @@ export const readCookie = (cookies: string, name: string): string | null => {
 	return null;
 };
 
+// renderedPrefs reads the state the page currently presents: the sort,
+// direction, and view the server rendered onto the search results, and the
+// actions setting on <html>. Any field the page does not present keeps its
+// current in-memory value.
+export const renderedPrefs = (
+	results: DOMStringMap | null | undefined,
+	actions: string | undefined,
+	current: SearchPrefs,
+): SearchPrefs => {
+	const parsed = parsePrefs(
+		JSON.stringify({
+			sort: results?.wgaAwSort ?? current.sort,
+			dir: results?.wgaAwDir ?? current.dir,
+			view: results?.wgaAwView ?? current.view,
+			actions: actions === undefined ? current.actions : actions === "on",
+		}),
+	);
+	return parsed ?? current;
+};
+
 export const actionsLabel = (shown: boolean): string =>
 	shown ? "ACTIONS ✓" : "ACTIONS +";
 
@@ -200,8 +220,18 @@ const applyActions = (shown: boolean): void => {
 	}
 };
 
+const presentedPrefs = (): SearchPrefs =>
+	renderedPrefs(
+		document.querySelector<HTMLElement>("#artwork-search-results")?.dataset,
+		document.documentElement.dataset.awActions,
+		prefs,
+	);
+
 let initialised = false;
 let prefs: SearchPrefs = DEFAULT_PREFS;
+// remembering records whether this page last knew consent to be granted, so a
+// grant can be told apart from the library confirming existing consent.
+let remembering = false;
 
 export const registerSearchPrefs = (): void => {
 	if (initialised) {
@@ -209,7 +239,8 @@ export const registerSearchPrefs = (): void => {
 	}
 	initialised = true;
 
-	if (!mayStore()) {
+	remembering = mayStore();
+	if (!remembering) {
 		clearStoredPrefs();
 	}
 	const stored = readStoredPrefs();
@@ -241,9 +272,14 @@ export const registerSearchPrefs = (): void => {
 			// Another tab may have changed the choices since this page loaded.
 			prefs = readStoredPrefs() ?? prefs;
 			if (toggle) {
-				prefs = { ...prefs, actions: !prefs.actions };
-				writePrefs(prefs);
+				// Invert what the page shows, not the stored value: another tab
+				// may have changed it without this page's label following.
+				prefs = {
+					...prefs,
+					actions: document.documentElement.dataset.awActions !== "on",
+				};
 				applyActions(prefs.actions);
+				writePrefs(prefs);
 				return;
 			}
 			// A modified click opens another tab or window rather than changing
@@ -286,12 +322,19 @@ export const registerSearchPrefs = (): void => {
 };
 
 // setSearchPrefsConsent applies a consent decision from the cookie-consent
-// dialog. Granting it starts remembering the current choices; withdrawing it
-// deletes the stored copies while the current page keeps its state.
+// dialog. Granting it starts remembering the choices the page presents, which
+// an explicit search URL may have set; confirming consent that already existed
+// keeps the remembered choices. Withdrawing it deletes the stored copies while
+// the current page keeps its state.
 export const setSearchPrefsConsent = (allowed: boolean): void => {
 	if (allowed) {
+		if (!remembering) {
+			prefs = presentedPrefs();
+		}
+		remembering = true;
 		writePrefs(prefs);
 	} else {
+		remembering = false;
 		clearStoredPrefs();
 	}
 };

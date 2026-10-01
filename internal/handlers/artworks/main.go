@@ -406,6 +406,8 @@ func buildArtworkSearchResults(app *pocketbase.PocketBase, filters *filters, dua
 		ResultCount:     recordsCount,
 		Artworks:        dto.ImageGrid{},
 		View:            filters.View,
+		Sort:            filters.Sort,
+		SortDir:         filters.SortDir,
 		GridUrl:         buildArtworkSearchPath("/artworks", filters.forView("grid"), dualModeContext),
 		ListUrl:         buildArtworkSearchPath("/artworks", filters.forView("list"), dualModeContext),
 		ResetUrl:        buildArtworkSearchClearPath(dualModeContext),
