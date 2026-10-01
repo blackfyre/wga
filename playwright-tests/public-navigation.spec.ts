@@ -279,7 +279,7 @@ for (const viewport of [
 
 		// complete mobile brand is present, visible, and not clipped/ellipsised
 		// The reference mark is an SVG image labelled "WGA", followed by the
-		// two-line wordmark (internal/assets/reference/visual-overhaul.html).
+		// two-line wordmark (the WGA Claude Design prototype; see docs/design-sync.md).
 		const wgaMark = logo.getByRole("img", { name: "WGA", exact: true });
 		const wordmark = logo.locator(":scope > span");
 		const title = wordmark.locator("span").nth(0);
