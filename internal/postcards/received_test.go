@@ -24,7 +24,7 @@ func newReceivedFixture(t *testing.T) *receivedFixture {
 	f := &receivedFixture{app: app}
 
 	f.artists = core.NewBaseCollection(constants.CollectionArtists)
-	f.artists.Fields.Add(&core.TextField{Name: "name"}, &core.TextField{Name: "filing_name"}, &core.TextField{Name: "short_name"})
+	f.artists.Fields.Add(&core.BoolField{Name: "published"}, &core.TextField{Name: "name"}, &core.TextField{Name: "filing_name"}, &core.TextField{Name: "short_name"})
 	f.locations = core.NewBaseCollection(constants.CollectionLocations)
 	f.locations.Fields.Add(&core.TextField{Name: "name"})
 	for _, collection := range []*core.Collection{f.artists, f.locations} {
@@ -39,7 +39,7 @@ func newReceivedFixture(t *testing.T) *receivedFixture {
 		&core.TextField{Name: "title"},
 		&core.TextField{Name: "comment"},
 		&core.TextField{Name: "technique"},
-		&core.RelationField{Name: "author", CollectionId: f.artists.Id, MaxSelect: 1},
+		&core.RelationField{Name: "author", CollectionId: f.artists.Id, MaxSelect: 2},
 		&core.RelationField{Name: "current_location_id", CollectionId: f.locations.Id, MaxSelect: 1},
 	)
 	f.postcards = core.NewBaseCollection("received_postcards_fixture")
@@ -65,7 +65,7 @@ func (f *receivedFixture) save(t *testing.T, collection *core.Collection, values
 }
 
 func (f *receivedFixture) artist(t *testing.T) *core.Record {
-	return f.save(t, f.artists, map[string]any{"name": "Johannes Vermeer", "filing_name": "VERMEER, Johannes", "short_name": "Vermeer"})
+	return f.save(t, f.artists, map[string]any{"published": true, "name": "Johannes Vermeer", "filing_name": "VERMEER, Johannes", "short_name": "Vermeer"})
 }
 
 func (f *receivedFixture) postcardFor(t *testing.T, artwork *core.Record) *core.Record {
@@ -152,9 +152,49 @@ func TestResolveReceivedCardRejectsUnavailableWorks(t *testing.T) {
 		t.Errorf("unpublished artwork error = %v, want ErrArtworkUnavailable", err)
 	}
 
-	blank := f.save(t, f.artists, map[string]any{"name": "Unknown"})
+	blank := f.save(t, f.artists, map[string]any{"published": true, "name": "Unknown"})
 	unattributed := f.save(t, f.artworks, map[string]any{"published": true, "title": "Work", "author": blank.Id})
 	if _, err := ResolveReceivedCard(f.app, f.postcardFor(t, unattributed)); !errors.Is(err, ErrArtistIdentityUnavailable) {
 		t.Errorf("incomplete artist identity error = %v, want ErrArtistIdentityUnavailable", err)
+	}
+
+	hidden := f.save(t, f.artists, map[string]any{"published": false, "name": "Hidden Artist", "filing_name": "ARTIST, Hidden", "short_name": "Hidden"})
+	unlinkable := f.save(t, f.artworks, map[string]any{"published": true, "title": "Work", "author": hidden.Id})
+	if _, err := ResolveReceivedCard(f.app, f.postcardFor(t, unlinkable)); !errors.Is(err, ErrArtistIdentityUnavailable) {
+		t.Errorf("unpublished artist error = %v, want ErrArtistIdentityUnavailable", err)
+	}
+}
+
+func TestResolveReceivedCardLinksThroughTheFirstPublishedAuthor(t *testing.T) {
+	f := newReceivedFixture(t)
+	hidden := f.save(t, f.artists, map[string]any{"published": false, "name": "Hidden Artist", "filing_name": "ARTIST, Hidden", "short_name": "Hidden"})
+	public := f.artist(t)
+	artwork := f.save(t, f.artworks, map[string]any{"published": true, "title": "Work", "author": []string{hidden.Id, public.Id}})
+
+	card, err := ResolveReceivedCard(f.app, f.postcardFor(t, artwork))
+	if err != nil {
+		t.Fatalf("ResolveReceivedCard() error = %v", err)
+	}
+	if want := "/artists/johannes-vermeer-" + public.Id + "/work-" + artwork.Id; card.RecordURL != want {
+		t.Errorf("RecordURL = %q, want %q", card.RecordURL, want)
+	}
+	if card.ArtistFilingName != "VERMEER, Johannes" {
+		t.Errorf("ArtistFilingName = %q, want the published author", card.ArtistFilingName)
+	}
+}
+
+func TestResolveReceivedCardKeepsLocationWithoutDimensions(t *testing.T) {
+	f := newReceivedFixture(t)
+	artwork := f.save(t, f.artworks, map[string]any{
+		"published": true, "title": "Work", "author": f.artist(t).Id, "technique": "Tempera on panel",
+		"comment": "<p>1480 · Uffizi, Florence</p>",
+	})
+
+	card, err := ResolveReceivedCard(f.app, f.postcardFor(t, artwork))
+	if err != nil {
+		t.Fatalf("ResolveReceivedCard() error = %v", err)
+	}
+	if card.Location != "Uffizi, Florence" || card.Dimensions != "" || card.Technique != "Tempera on panel" {
+		t.Errorf("location, dimensions, technique = %q, %q, %q", card.Location, card.Dimensions, card.Technique)
 	}
 }

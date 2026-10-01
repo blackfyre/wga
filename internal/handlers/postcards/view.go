@@ -44,7 +44,7 @@ func viewPostcard(app core.App, c *core.RequestEvent) error {
 		logger.Warn("Postcard view rejected", "event", "postcard.view.rejected", "outcome", "artist_identity_unavailable")
 		return utils.NotFoundError(c)
 	case err != nil:
-		logger.Error("Postcard view expansion failed", "event", "postcard.view.failed", "outcome", "expansion_error", "error", logging.Redact(err))
+		logger.Error("Postcard view lookup failed", "event", "postcard.view.failed", "outcome", "lookup_error", "error", logging.Redact(err))
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 	message := postcardworkflow.SanitiseMessage(postcard.GetString("message"))

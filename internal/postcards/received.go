@@ -1,19 +1,22 @@
 package postcards
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"net/url"
 	"strings"
 
 	"github.com/blackfyre/wga/internal/artworks"
+	"github.com/blackfyre/wga/internal/repositories"
 	"github.com/blackfyre/wga/internal/utils"
 	urlutils "github.com/blackfyre/wga/internal/utils/url"
 	"github.com/pocketbase/pocketbase/core"
 )
 
-// ErrArtistIdentityUnavailable indicates that the postcard's artwork author
-// lacks the authoritative identity fields needed to attribute the work.
+// ErrArtistIdentityUnavailable indicates that the postcard's artwork has no
+// published author with the identity fields needed to attribute the work and
+// link to its record.
 var ErrArtistIdentityUnavailable = errors.New("postcard artwork artist identity is unavailable")
 
 // ReceivedCard is the recipient-facing projection of a postcard's selected
@@ -45,12 +48,9 @@ func ResolveReceivedCard(app core.App, postcard *core.Record) (*ReceivedCard, er
 	if err != nil {
 		return nil, ErrArtworkUnavailable
 	}
-	if errs := app.ExpandRecord(artwork, []string{"author"}, nil); len(errs) > 0 {
-		return nil, fmt.Errorf("expand postcard artwork author: %v", errs)
-	}
-	author := artwork.ExpandedOne("author")
-	if !HasCompleteArtistIdentity(author) {
-		return nil, ErrArtistIdentityUnavailable
+	author, err := publishedAuthor(app, artwork)
+	if err != nil {
+		return nil, err
 	}
 
 	location, dimensions := artworks.LocationAndDimensions(artwork.GetString("comment"))
@@ -83,6 +83,27 @@ func ResolveReceivedCard(app core.App, postcard *core.Record) (*ReceivedCard, er
 		}),
 		ComposeURL: "/postcard/send?" + url.Values{"awid": {artwork.Id}}.Encode(),
 	}, nil
+}
+
+// publishedAuthor returns the artwork's first published author with complete
+// identity. The canonical record URL names that artist, and the artwork route
+// serves only published artists, so an unpublished author would make every
+// record link a 404.
+func publishedAuthor(app core.App, artwork *core.Record) (*core.Record, error) {
+	repository := repositories.NewArtistRecordRepository(app)
+	for _, authorID := range artwork.GetStringSlice("author") {
+		author, err := repository.FindPublishedArtist(authorID)
+		if errors.Is(err, sql.ErrNoRows) {
+			continue
+		}
+		if err != nil {
+			return nil, fmt.Errorf("find postcard artwork author: %w", err)
+		}
+		if HasCompleteArtistIdentity(author) {
+			return author, nil
+		}
+	}
+	return nil, ErrArtistIdentityUnavailable
 }
 
 // HasCompleteArtistIdentity reports whether an artist record carries both

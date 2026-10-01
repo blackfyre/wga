@@ -26,6 +26,7 @@ func TestViewPostcardSetsRecipientResponseHeaders(t *testing.T) {
 
 	artists := core.NewBaseCollection(constants.CollectionArtists)
 	artists.Fields.Add(
+		&core.BoolField{Name: "published"},
 		&core.TextField{Name: "name"},
 		&core.TextField{Name: "filing_name"},
 		&core.TextField{Name: "short_name"},
@@ -34,6 +35,7 @@ func TestViewPostcardSetsRecipientResponseHeaders(t *testing.T) {
 		t.Fatalf("create artists collection: %v", err)
 	}
 	author := core.NewRecord(artists)
+	author.Set("published", true)
 	author.Set("name", "Artist")
 	author.Set("filing_name", "Artist, Filing")
 	author.Set("short_name", "Artist")

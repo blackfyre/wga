@@ -25,6 +25,13 @@ func TestLocationAndDimensionsWithoutCatalogueSummary(t *testing.T) {
 	}
 }
 
+func TestLocationAndDimensionsWithoutDimensions(t *testing.T) {
+	location, dimensions := LocationAndDimensions("<p>1480 · Uffizi, Florence</p>")
+	if location != "Uffizi, Florence" || dimensions != "" {
+		t.Errorf("LocationAndDimensions() = %q, %q; want the location and no dimensions", location, dimensions)
+	}
+}
+
 func TestCurrentLocation(t *testing.T) {
 	app := testutils.NewTestApp(t)
 	locations := core.NewBaseCollection(constants.CollectionLocations)

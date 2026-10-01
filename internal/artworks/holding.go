@@ -13,16 +13,20 @@ import (
 const summarySeparator = " · "
 
 // LocationAndDimensions extracts the location and dimensions from an artwork's
-// catalogue summary comment. It returns empty values when the comment does not
-// follow the date · location · dimensions shape, so callers omit the details
-// rather than guess them.
+// catalogue summary comment. The importer writes date · location · dimensions,
+// or date · location when the source has no dimensions. A comment without a
+// separator yields empty values, so callers omit the details rather than guess
+// them.
 func LocationAndDimensions(comment string) (location string, dimensions string) {
 	parts := strings.Split(tmplUtils.StripHtmlTags(comment), summarySeparator)
-	if len(parts) < 3 {
+	switch {
+	case len(parts) >= 3:
+		return strings.TrimSpace(parts[1]), strings.TrimSpace(parts[2])
+	case len(parts) == 2:
+		return strings.TrimSpace(parts[1]), ""
+	default:
 		return "", ""
 	}
-
-	return strings.TrimSpace(parts[1]), strings.TrimSpace(parts[2])
 }
 
 // CurrentLocation returns the name of the artwork's source-backed present
