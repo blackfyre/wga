@@ -99,7 +99,11 @@ func publishAgentContent(t *testing.T, app core.App) (PublicationResult, error) 
 	if err != nil {
 		return PublicationResult{}, err
 	}
-	defer os.RemoveAll(staging)
+	defer func() {
+		if err := os.RemoveAll(staging); err != nil {
+			t.Errorf("remove agent-content staging: %v", err)
+		}
+	}()
 	result, err := Generate(app, publicationPublicURL(t), filepath.Join(staging, PublicationDirectoryName))
 	if err != nil {
 		return PublicationResult{}, err

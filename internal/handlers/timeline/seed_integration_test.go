@@ -89,7 +89,7 @@ func newImportedTimelineApp(t *testing.T) *pocketbase.PocketBase {
 		t.Fatalf("bootstrap: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Errorf("reset bootstrap state: %v", err)
 		}
 	})

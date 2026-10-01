@@ -167,10 +167,7 @@ func parseAuthority(authority string) (string, string, error) {
 		return "", "", fmt.Errorf("invalid host authority")
 	}
 
-	host := strings.ToLower(parsed.Hostname())
-	if strings.HasSuffix(host, ".") {
-		host = strings.TrimSuffix(host, ".")
-	}
+	host := strings.TrimSuffix(strings.ToLower(parsed.Hostname()), ".")
 	if host == "" || strings.HasSuffix(host, ".") {
 		return "", "", fmt.Errorf("invalid host name")
 	}

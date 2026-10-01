@@ -98,13 +98,9 @@ func buildSelectionURL(artistSlug string, selectionID string) string {
 	return "/artists/" + artistSlug + "/selections/" + selectionID
 }
 
-// buildSelectionView assembles the page-owned selection read model from the
+// buildSelectionViewContext assembles the page-owned selection read model from the
 // bounded selection repository. Commentary is sanitised through the record's
 // trusted-HTML boundary before it reaches templ.Raw.
-func buildSelectionView(app *pocketbase.PocketBase, artist *core.Record, selection *core.Record) (pages.SelectionView, error) {
-	return buildSelectionViewContext(context.Background(), app, artist, selection, requestprotection.Checkpoint)
-}
-
 func buildSelectionViewContext(ctx context.Context, app *pocketbase.PocketBase, artist *core.Record, selection *core.Record, checkpoint selectionDetailCheckpoint) (pages.SelectionView, error) {
 	repo := repositories.NewArtistSelectionsRepository(app)
 

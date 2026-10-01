@@ -10,7 +10,7 @@ import (
 func TestArtistSelectionsMigrationCreatesAndRollsBack(t *testing.T) {
 	app := newMigrationTestApp(t, t.TempDir())
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})
@@ -135,7 +135,7 @@ func TestArtistSelectionsMigrationCreatesAndRollsBack(t *testing.T) {
 func TestArtistSelectionsMigrationReAddsIndexesAfterRollback(t *testing.T) {
 	app := newMigrationTestApp(t, t.TempDir())
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})
@@ -163,7 +163,7 @@ func TestArtistSelectionsMigrationReAddsIndexesAfterRollback(t *testing.T) {
 func TestArtistSelectionsMigrationIsIdempotent(t *testing.T) {
 	app := newMigrationTestApp(t, t.TempDir())
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})

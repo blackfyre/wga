@@ -46,7 +46,7 @@ func newArtworkSearchApp(t *testing.T) *pocketbase.PocketBase {
 		t.Fatalf("bootstrap test app: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Errorf("reset test app: %v", err)
 		}
 	})
@@ -421,7 +421,7 @@ func TestBuildArtworkSearchViewFiltersBySchoolFormAndTechnique(t *testing.T) {
 		t.Errorf("filtered artwork = %q, want Fresco Work", view.Results.Artworks[0].Title)
 	}
 	projected := view.Results.Artworks[0]
-	if projected.Artist.FilingName != "Artist One" || projected.Date != "1598–1602" || projected.School != "Dutch" || projected.Form != "Painting" || projected.Type != "Fresco" {
+	if projected.FilingName != "Artist One" || projected.Date != "1598–1602" || projected.School != "Dutch" || projected.Form != "Painting" || projected.Type != "Fresco" {
 		t.Errorf("result projection = %#v, want filing artist, date, school, form, and type", projected)
 	}
 }

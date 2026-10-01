@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
@@ -73,12 +74,9 @@ func filterGlossaryTerms(terms []pages.GlossaryTerm, query glossaryQuery) []page
 func glossaryLetters(terms []pages.GlossaryTerm) []string {
 	letters := map[string]struct{}{}
 	for _, term := range terms {
-		for _, character := range strings.TrimSpace(term.Expression) {
-			initial := unicode.ToUpper(character)
-			if initial >= 'A' && initial <= 'Z' {
-				letters[string(initial)] = struct{}{}
-			}
-			break
+		first, _ := utf8.DecodeRuneInString(strings.TrimSpace(term.Expression))
+		if initial := unicode.ToUpper(first); initial >= 'A' && initial <= 'Z' {
+			letters[string(initial)] = struct{}{}
 		}
 	}
 

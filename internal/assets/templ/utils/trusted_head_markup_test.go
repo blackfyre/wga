@@ -42,7 +42,7 @@ func TestWithTrustedHeadMarkupEmptyValue(t *testing.T) {
 }
 
 func TestGetTrustedHeadMarkupIgnoresUnrelatedStringKey(t *testing.T) {
-	ctx := context.WithValue(context.Background(), "scripts:header", "<script>alert(1)</script>")
+	ctx := context.WithValue(context.Background(), "scripts:header", "<script>alert(1)</script>") //nolint:staticcheck // SA1029: a colliding built-in string key is the input under test.
 
 	if got := templutils.GetTrustedHeadMarkup(ctx); got != "" {
 		t.Fatalf("expected unrelated string context value to be ignored, got %q", got)

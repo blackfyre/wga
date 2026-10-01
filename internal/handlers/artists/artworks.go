@@ -397,7 +397,7 @@ func artworkLocationAndDimensions(comment string) (string, string) {
 
 func populateArtworkCitation(artwork *dto.Artwork) {
 	artwork.CitationKey = "wga-" + artwork.Id
-	artwork.CitationTitle = fmt.Sprintf("%s by %s", artwork.Title, artwork.Artist.FilingName)
+	artwork.CitationTitle = fmt.Sprintf("%s by %s", artwork.Title, artwork.FilingName)
 	artwork.CitationURL = utils.AssetUrl(artwork.Url)
 }
 
@@ -470,12 +470,8 @@ func artworkCommentaryHTML(sourceComment string) string {
 	return bioSanitizer.Sanitize(strings.Join(paragraphs, ""))
 }
 
-// populateArtworkRelated resolves the active related-work basis and fills the
-// related-work images and basis controls into the artwork DTO.
-func populateArtworkRelated(app *pocketbase.PocketBase, artwork *core.Record, content *dto.Artwork, basis repositories.RelatedWorkBasis, baseURL string) {
-	_ = populateArtworkRelatedContext(context.Background(), app, artwork, content, basis, baseURL, requestprotection.Checkpoint)
-}
-
+// populateArtworkRelatedContext resolves the active related-work basis and
+// fills the related-work images and basis controls into the artwork DTO.
 func populateArtworkRelatedContext(ctx context.Context, app *pocketbase.PocketBase, artwork *core.Record, content *dto.Artwork, basis repositories.RelatedWorkBasis, baseURL string, checkpoint artworkDetailCheckpoint) error {
 	result, err := repositories.NewRelatedWorkResolver(app).ResolveContext(ctx, artwork, basis, func(ctx context.Context, stage string) error {
 		return checkpoint(ctx, "artwork.detail.related."+stage)
@@ -613,7 +609,7 @@ func buildArtworkMusic(app *pocketbase.PocketBase, artwork *core.Record) dto.Mus
 func buildRelatedWorkState(basis repositories.RelatedWorkBasis, holding *repositories.RelatedWorkHolding, content *dto.Artwork, artwork *core.Record, baseURL string) dto.RelatedWorkState {
 	state := dto.RelatedWorkState{
 		ActiveBasis: string(basis),
-		Connection:  relatedConnection(basis, content.Artist.ShortName, artwork.GetInt("date_start")),
+		Connection:  relatedConnection(basis, content.ShortName, artwork.GetInt("date_start")),
 		Sparse:      len(content.RelatedWorks) < relatedWorksLimit,
 		Bases:       relatedWorkBases(baseURL, basis),
 	}

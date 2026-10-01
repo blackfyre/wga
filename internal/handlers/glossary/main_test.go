@@ -43,9 +43,11 @@ func TestGlossaryLettersUsesAvailableInitials(t *testing.T) {
 		{Expression: "Acanthus"},
 		{Expression: "Allegory"},
 		{Expression: "1-point perspective"},
+		{Expression: "  cartoon"},
+		{Expression: ""},
 	})
 
-	if got, want := strings.Join(letters, ","), "A,B"; got != want {
+	if got, want := strings.Join(letters, ","), "A,B,C"; got != want {
 		t.Errorf("letters = %q, want %q", got, want)
 	}
 }
@@ -56,7 +58,7 @@ func TestGlossaryRouteRendersFullAndHTMXResponses(t *testing.T) {
 		t.Fatalf("bootstrap test application: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Errorf("reset test application: %v", err)
 		}
 	})
@@ -111,7 +113,7 @@ func TestGlossaryRouteSelectsTargetAwareResponse(t *testing.T) {
 		t.Fatalf("bootstrap test application: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Errorf("reset test application: %v", err)
 		}
 	})

@@ -557,17 +557,16 @@ func PurgeExpiredRecipientAccess(app core.App, now types.DateTime, limit int) (P
 
 	var counts PurgeCounts
 	err := app.RunInTransaction(func(txApp core.App) error {
-		result, err := txApp.DB().NewQuery(`
+		if _, err := txApp.DB().NewQuery(`
 			UPDATE Postcards SET submission_key_hash = ''
 			WHERE id IN (
 				SELECT postcard FROM postcard_sender_controls
 				WHERE expires_at <= {:now}
 				ORDER BY id LIMIT {:limit}
-			)`).Bind(dbx.Params{"now": now, "limit": limit}).Execute()
-		if err != nil {
+			)`).Bind(dbx.Params{"now": now, "limit": limit}).Execute(); err != nil {
 			return err
 		}
-		result, err = txApp.DB().NewQuery(`
+		result, err := txApp.DB().NewQuery(`
 			DELETE FROM postcard_sender_controls
 			WHERE id IN (
 				SELECT id FROM postcard_sender_controls

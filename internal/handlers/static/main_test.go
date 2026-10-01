@@ -294,7 +294,7 @@ func newFullAppTestApp(t testing.TB) *pocketbase.PocketBase {
 		t.Fatalf("bootstrap full app: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Errorf("reset full app: %v", err)
 		}
 	})

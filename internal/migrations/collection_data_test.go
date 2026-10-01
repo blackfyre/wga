@@ -10,7 +10,7 @@ import (
 func TestCollectionDataMigrationCreatesLocationsAndArtworkFields(t *testing.T) {
 	app := newMigrationTestApp(t, t.TempDir())
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})
@@ -115,7 +115,7 @@ func TestCollectionDataMigrationCreatesLocationsAndArtworkFields(t *testing.T) {
 func TestCollectionDataMigrationIsIdempotent(t *testing.T) {
 	app := newMigrationTestApp(t, t.TempDir())
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})
@@ -134,7 +134,7 @@ func TestCollectionDataMigrationIsIdempotent(t *testing.T) {
 func TestRemoveCollectionDataKeepsFieldsAndDropsIndexes(t *testing.T) {
 	app := newMigrationTestApp(t, t.TempDir())
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})

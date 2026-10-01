@@ -11,7 +11,7 @@ import (
 	"go.opentelemetry.io/otel"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 )
 
 func newSearchTestApp(t *testing.T) *pocketbase.PocketBase {
@@ -21,7 +21,7 @@ func newSearchTestApp(t *testing.T) *pocketbase.PocketBase {
 		t.Fatalf("bootstrap test app: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Errorf("reset test app: %v", err)
 		}
 	})
@@ -236,7 +236,7 @@ func TestSearchViewSupportsUnicodeAndCreatesTraceSpans(t *testing.T) {
 	provider := sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(recorder))
 	otel.SetTracerProvider(provider)
 	t.Cleanup(func() {
-		otel.SetTracerProvider(trace.NewNoopTracerProvider())
+		otel.SetTracerProvider(noop.NewTracerProvider())
 		if err := provider.Shutdown(context.Background()); err != nil {
 			t.Errorf("shutdown trace provider: %v", err)
 		}

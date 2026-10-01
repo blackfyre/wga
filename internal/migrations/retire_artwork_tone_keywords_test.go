@@ -130,7 +130,7 @@ func newToneKeywordsApp(t *testing.T) *core.BaseApp {
 	t.Helper()
 	app := newMigrationTestApp(t, t.TempDir())
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})

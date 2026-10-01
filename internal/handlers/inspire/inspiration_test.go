@@ -39,7 +39,7 @@ func TestInspirationWorksReturnsOnlyEligiblePublishedFirstAuthors(t *testing.T) 
 		if work.Title == "Missing Author Work" {
 			t.Errorf("missing-author artwork must not appear in inspiration results")
 		}
-		if work.Artist.Name != "Public Artist" {
+		if work.Name != "Public Artist" {
 			t.Errorf("work %#v has an ineligible author", work)
 		}
 		if !strings.HasPrefix(work.Url, "/artists/public-artist-artistpublic001/") {
@@ -233,7 +233,7 @@ func newInspirationTestApp(t *testing.T) *pocketbase.PocketBase {
 		t.Fatalf("bootstrap test app: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Errorf("reset test app: %v", err)
 		}
 	})

@@ -106,11 +106,6 @@ type dualReference struct {
 	bornMax     int
 }
 
-type dualSchool struct {
-	slug string
-	name string
-}
-
 type dualPeriod struct {
 	id    string
 	name  string
@@ -1723,11 +1718,6 @@ func dualTrimDimensions(technique string, dimensions string) string {
 	}
 
 	return strings.TrimSpace(strings.TrimSuffix(technique, ", "+dimensions))
-}
-
-func dualWorkArtType(app core.App, work *core.Record) string {
-	artType, _ := dualWorkArtTypeContext(context.Background(), app, work, requestprotection.Checkpoint)
-	return artType
 }
 
 func dualWorkArtTypeContext(ctx context.Context, app core.App, work *core.Record, checkpoint dualCheckpoint) (string, error) {

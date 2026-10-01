@@ -13,7 +13,7 @@ func TestCountRecordsByFilter(t *testing.T) {
 		t.Fatalf("bootstrap app: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})
