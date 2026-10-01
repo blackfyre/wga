@@ -13,6 +13,11 @@
 // browser) follows it. The [data-wga-aw-actions] toggle only flips the <html>
 // attribute, which CSS uses to show or hide every .wga-work-actions block.
 // Listeners are document-level and bound once, so they survive every swap.
+//
+// Remembering is optional storage, gated on the cookie-consent "preferences"
+// category. Without that consent the choices apply to the current page only:
+// nothing is read from or written to the cookie or localStorage, any stale
+// copy is deleted, and the server renders its defaults.
 
 export type SortKey = "title" | "artist" | "date";
 export type SortDir = "asc" | "desc";
@@ -28,6 +33,8 @@ export type SearchPrefs = {
 export const STORAGE_KEY = "wga-aw-prefs";
 export const COOKIE_NAME = "wga_aw_prefs";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+export const CONSENT_COOKIE_NAME = "cc_cookie";
+export const PREFERENCES_CATEGORY = "preferences";
 
 export const DEFAULT_PREFS: SearchPrefs = {
 	sort: "title",
@@ -117,6 +124,28 @@ export const readCookie = (cookies: string, name: string): string | null => {
 export const actionsLabel = (shown: boolean): string =>
 	shown ? "ACTIONS ✓" : "ACTIONS +";
 
+// consentAllowsPreferences reads the CookieConsent record directly, because
+// this module runs before the consent library has loaded. An absent or
+// unreadable record means no consent.
+export const consentAllowsPreferences = (cookies: string): boolean => {
+	const raw = readCookie(cookies, CONSENT_COOKIE_NAME);
+	if (!raw) {
+		return false;
+	}
+	try {
+		const record: unknown = JSON.parse(raw);
+		return (
+			isRecord(record) &&
+			Array.isArray(record.categories) &&
+			record.categories.includes(PREFERENCES_CATEGORY)
+		);
+	} catch {
+		return false;
+	}
+};
+
+let consented = false;
+
 const readStorage = (): string | null => {
 	try {
 		return window.localStorage.getItem(STORAGE_KEY);
@@ -126,18 +155,37 @@ const readStorage = (): string | null => {
 };
 
 const readStoredPrefs = (): SearchPrefs | null =>
-	parsePrefs(readStorage()) ??
-	parsePrefs(readCookie(document.cookie, COOKIE_NAME));
+	consented
+		? (parsePrefs(readStorage()) ??
+			parsePrefs(readCookie(document.cookie, COOKIE_NAME)))
+		: null;
+
+const cookieAttributes = (maxAge: number): string => {
+	const secure = window.location.protocol === "https:" ? "; Secure" : "";
+	return `Path=/; Max-Age=${maxAge}; SameSite=Lax${secure}`;
+};
 
 const writePrefs = (prefs: SearchPrefs): void => {
+	if (!consented) {
+		return;
+	}
 	try {
 		window.localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
 	} catch {
 		// Storage can be unavailable; the cookie still carries the choice.
 	}
-	const secure = window.location.protocol === "https:" ? "; Secure" : "";
 	// biome-ignore lint/suspicious/noDocumentCookie: the Cookie Store API is not available in every supported browser.
-	document.cookie = `${COOKIE_NAME}=${cookieValue(prefs)}; Path=/; Max-Age=${COOKIE_MAX_AGE}; SameSite=Lax${secure}`;
+	document.cookie = `${COOKIE_NAME}=${cookieValue(prefs)}; ${cookieAttributes(COOKIE_MAX_AGE)}`;
+};
+
+const clearStoredPrefs = (): void => {
+	try {
+		window.localStorage.removeItem(STORAGE_KEY);
+	} catch {
+		// Nothing to remove when storage is unavailable.
+	}
+	// biome-ignore lint/suspicious/noDocumentCookie: the Cookie Store API is not available in every supported browser.
+	document.cookie = `${COOKIE_NAME}=; ${cookieAttributes(0)}`;
 };
 
 const applyActions = (shown: boolean): void => {
@@ -159,6 +207,10 @@ export const registerSearchPrefs = (): void => {
 	}
 	initialised = true;
 
+	consented = consentAllowsPreferences(document.cookie);
+	if (!consented) {
+		clearStoredPrefs();
+	}
 	const stored = readStoredPrefs();
 	prefs = stored ?? DEFAULT_PREFS;
 	if (stored) {
@@ -215,4 +267,16 @@ export const registerSearchPrefs = (): void => {
 	const sync = () => applyActions(prefs.actions);
 	document.addEventListener("htmx:load", sync);
 	document.addEventListener("htmx:historyRestore", sync);
+};
+
+// setSearchPrefsConsent applies a consent decision from the cookie-consent
+// dialog. Granting it starts remembering the current choices; withdrawing it
+// deletes the stored copies while the current page keeps its state.
+export const setSearchPrefsConsent = (allowed: boolean): void => {
+	consented = allowed;
+	if (allowed) {
+		writePrefs(prefs);
+	} else {
+		clearStoredPrefs();
+	}
 };

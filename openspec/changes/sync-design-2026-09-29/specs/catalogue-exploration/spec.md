@@ -2,12 +2,22 @@
 
 ### Requirement: Artwork search remembers presentation choices
 
-The system SHALL remember an artwork search visitor's sort key, sort direction, result view, and result-actions setting on that visitor's device across page loads, using the `wga-aw-prefs` browser storage entry and the `wga_aw_prefs` first-party cookie. These choices are presentation state, not part of the query. A visit to `/artworks` with no query parameters SHALL render with the remembered sort, direction, and view without a redirect. Any explicit query parameter SHALL take precedence over every remembered sort, direction, and view, so a shared or bookmarked search URL renders as addressed. Resetting filters SHALL leave the remembered choices unchanged. A missing, malformed, or invalid remembered value SHALL be ignored in favour of the ordinary defaults. Sort and view controls SHALL remain ordinary links that work without JavaScript.
+The system SHALL remember an artwork search visitor's sort key, sort direction, result view, and result-actions setting on that visitor's device across page loads, using the `wga-aw-prefs` browser storage entry and the `wga_aw_prefs` first-party cookie. These choices are presentation state, not part of the query. Remembering is optional storage: the system SHALL read or write either copy only while the visitor has accepted the optional `preferences` cookie-consent category, SHALL delete both when that consent is absent or withdrawn, and without it SHALL apply the choices to the current page only. A visit to `/artworks` with no query parameters SHALL render with the remembered sort, direction, and view without a redirect. Any explicit query parameter SHALL take precedence over every remembered sort, direction, and view, so a shared or bookmarked search URL renders as addressed. Resetting filters SHALL leave the remembered choices unchanged. A missing, malformed, or invalid remembered value SHALL be ignored in favour of the ordinary defaults. Sort and view controls SHALL remain ordinary links that work without JavaScript.
 
 #### Scenario: Visitor returns to artwork search
 
 - **WHEN** a visitor who last chose date-descending sort in list view opens `/artworks` with no query parameters
 - **THEN** the results render sorted by date descending in the list view, the controls report that state, and the canonical result URL records it.
+
+#### Scenario: Visitor has not accepted preference storage
+
+- **WHEN** a visitor without `preferences` consent changes the view or shows result actions and then reloads `/artworks`
+- **THEN** the change applied to the page they were on, no `wga_aw_prefs` cookie or `wga-aw-prefs` entry exists, and the reloaded page uses the defaults.
+
+#### Scenario: Visitor withdraws preference storage
+
+- **WHEN** a visitor who accepted `preferences` consent withdraws it in the cookie preferences
+- **THEN** the `wga_aw_prefs` cookie and the `wga-aw-prefs` entry are deleted, the current page keeps its state, and later visits use the defaults.
 
 #### Scenario: Visitor opens a shared search link
 

@@ -6,7 +6,7 @@ The Claude Design changelog of 29 September 2026 makes two public-surface change
 
 - Hide the per-result itinerary and Study Board actions on artwork search by default, and add an `ACTIONS +` / `ACTIONS ✓` toggle to the sort/view toolbar.
 - Merge the separate `GRID` and `LIST` controls into one control that names the current view (`VIEW: GRID` / `VIEW: LIST`) and switches to the other.
-- Remember the sort key, sort direction, view, and actions setting on the visitor's device across page loads. A bare `/artworks` visit uses the remembered choices; any explicit query parameter wins, and resetting filters leaves the remembered choices untouched.
+- Remember the sort key, sort direction, view, and actions setting on the visitor's device across page loads, only with the visitor's consent to a new optional `preferences` cookie-consent category. A bare `/artworks` visit uses the remembered choices; any explicit query parameter wins, and resetting filters leaves the remembered choices untouched.
 - Add a plain `↑ BACK TO TOP` footer link beside `PREFERENCES` that targets the page header, and remove the unused floating back-to-top script and style.
 
 ## Capabilities
@@ -18,12 +18,12 @@ None.
 ### Modified Capabilities
 
 - `catalogue-exploration`: opt-in result actions, the merged view control, and remembered artwork search presentation.
-- `public-page-experience`: footer return-to-top link.
+- `public-page-experience`: footer return-to-top link, and the optional preference-storage consent category.
 
 ## Impact
 
 - Artwork search handler, its templates, shared layout and footer templates, one new browser module, and shared CSS.
-- One new first-party preference cookie (`wga_aw_prefs`) and `localStorage` key (`wga-aw-prefs`); no data, API, or configuration changes.
+- One new optional first-party preference cookie (`wga_aw_prefs`) and `localStorage` key (`wga-aw-prefs`), gated by consent, and updated consent copy; no data, API, or configuration changes.
 
 ## Non-goals
 

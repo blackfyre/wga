@@ -1,6 +1,13 @@
 import { expect, type Page, test } from "@playwright/test";
+import { grantPreferenceConsent } from "./helpers/artwork-search-prefs";
 
 test.setTimeout(60000);
+
+// These specifications cover remembering, which needs preference consent; the
+// consent gate itself is covered by artwork-search-prefs-consent.spec.ts.
+test.beforeEach(async ({ page }) => {
+	await grantPreferenceConsent(page);
+});
 
 const results = (page: Page) => page.locator("#artwork-search-results");
 const actionsToggle = (page: Page) =>

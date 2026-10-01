@@ -1,3 +1,19 @@
+## MODIFIED Requirements
+
+### Requirement: Cookie consent retains Vanilla CookieConsent semantics
+
+The system SHALL display Vanilla CookieConsent using the reference's notice treatment while retaining the existing client-side necessary-consent category, persistence, and preferences behaviour. The system SHALL also offer an optional `preferences` category, off by default, that gates remembered artwork search choices; the notice and the preferences interface SHALL state that this optional storage exists, what it remembers, and that turning it off deletes it.
+
+#### Scenario: Visitor accepts necessary cookies
+
+- **WHEN** a visitor accepts the available necessary-consent action from the redesigned notice
+- **THEN** Vanilla CookieConsent persists consent and does not show the initial notice again according to its existing lifecycle.
+
+#### Scenario: Visitor opens cookie preferences
+
+- **WHEN** a visitor selects the cookie-preferences action
+- **THEN** Vanilla CookieConsent opens its preferences interface without a server-side consent request, listing the strictly necessary category and the optional preference-storage category.
+
 ## ADDED Requirements
 
 ### Requirement: Shared footer returns visitors to the top of the page

@@ -18,6 +18,10 @@
 
 - [x] 5.1 Add or update Playwright specs for actions toggle on/off, the view switch, persistence across reload, no-JavaScript sort/view links, filter reset keeping preferences, and the footer link reaching `#top`; update specs that use search-result actions. Verify with `mise run test:playwright --port 8880` on the affected specs, then the full suite.
 
-## 6. Final verification
+## 6. Preference-storage consent
 
-- [x] 6.1 Run `go mod tidy`, `go vet ./...`, `go test ./... -cover`, and `golangci-lint run` with no new issues.
+- [x] 6.1 Add the optional `preferences` consent category and copy, gate every read and write of `wga_aw_prefs` and `wga-aw-prefs` on it, and delete both when consent is absent or withdrawn. Verify with `bun test resources/js/search-prefs.test.ts` and `mise run test:playwright --port 8880 playwright-tests/artwork-search-prefs-consent.spec.ts playwright-tests/cookieconsent.spec.ts`.
+
+## 7. Final verification
+
+- [x] 7.1 Run `go mod tidy`, `go vet ./...`, `go test ./... -cover`, and `golangci-lint run` with no new issues.

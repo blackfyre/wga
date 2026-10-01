@@ -26,6 +26,12 @@ Any query parameter on `/artworks`, and every `/artworks/results` fragment reque
 
 `resources/js/search-prefs.ts` exports `registerSearchPrefs()`, called synchronously from `app.ts` so `<html data-aw-actions>` is set before the bootstrap chunk loads. It binds document-level capture listeners once, so it survives every HTMX swap: a click on a `[data-wga-aw-pref]` link records the sort, direction, and view from that link's `href` before HTMX issues the request, and a click on `[data-wga-aw-actions]` flips the actions setting. Each write updates `localStorage` and the cookie (one year, `Path=/`, `SameSite=Lax`, `Secure` on HTTPS). On `htmx:load` the module re-syncs toggle labels from the stored state, which covers a visitor whose cookie is blocked but whose `localStorage` works. `localStorage` is the client's source of truth; when it holds preferences the cookie is refreshed from it on each load.
 
+### Preference storage is optional and consent-gated
+
+The remembered choices are not essential, so they sit behind a new CookieConsent category, `preferences`, which is off by default. `search-prefs.ts` runs before the consent library loads, so it reads the CookieConsent record (`cc_cookie`, its `categories` list) directly to decide at start-up; afterwards the library's `onConsent` and `onChange` callbacks call `setSearchPrefsConsent(acceptedCategory("preferences"))`. Without consent the module keeps the choices in memory for the current page, never reads or writes `localStorage` or the cookie, and deletes any copy it finds, so the server sees no cookie and renders defaults. Granting consent saves the current choices; withdrawing it deletes both copies while the page keeps its state. The server-side cookie read is unchanged: with no consent there is no cookie to read.
+
+The privacy policy is database content (`static_pages`, slug `privacy-policy`) and describes cookies generically without listing individual ones, so it is not changed here; the consent notice and preferences dialog carry the specific description.
+
 ### No-JavaScript honesty
 
 The actions toggle is a client-only control. It is laid out but `visibility: hidden` until the module marks `<html data-wga-search-prefs>`, so the toolbar does not shift when the module starts and a visitor without JavaScript, or whose bundle failed, is not offered a dead control. The server-rendered `data-aw-actions` cannot serve as that marker because a cookie outlives the script that wrote it. Without JavaScript the actions stay hidden and sort/view remain ordinary links.

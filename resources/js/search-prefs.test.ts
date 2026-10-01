@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import {
 	actionsLabel,
+	consentAllowsPreferences,
 	cookieValue,
 	DEFAULT_PREFS,
 	parsePrefs,
@@ -62,4 +63,20 @@ test("round-trips the cookie value", () => {
 test("labels the actions toggle", () => {
 	expect(actionsLabel(false)).toBe("ACTIONS +");
 	expect(actionsLabel(true)).toBe("ACTIONS ✓");
+});
+
+test("remembers only with the preferences consent category", () => {
+	const consent = (categories: string[]) =>
+		`cc_cookie=${encodeURIComponent(JSON.stringify({ categories, revision: 0 }))}`;
+	expect(consentAllowsPreferences("")).toBe(false);
+	expect(consentAllowsPreferences(consent(["necessary"]))).toBe(false);
+	expect(
+		consentAllowsPreferences(`a=1; ${consent(["necessary", "preferences"])}`),
+	).toBe(true);
+	expect(consentAllowsPreferences("cc_cookie=%7Bbroken")).toBe(false);
+	expect(
+		consentAllowsPreferences(
+			`cc_cookie=${encodeURIComponent('{"categories":"preferences"}')}`,
+		),
+	).toBe(false);
 });
