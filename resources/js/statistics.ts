@@ -59,7 +59,13 @@ function readSwatch(element: Element | null | undefined): SeriesFill | null {
 	};
 }
 
-function fallbackFill(index: number): SeriesFill {
+// fallbackFill applies only when a key swatch is missing. It mirrors the
+// template's series ramp, including "Other" as the faint hatch, so a missing
+// swatch never changes how a series is drawn.
+function fallbackFill(index: number, name: string): SeriesFill {
+	if (name === "Other") {
+		return { token: "--wga-faint", hatch: true };
+	}
 	return { token: fallbackTones[index % fallbackTones.length], hatch: false };
 }
 
@@ -182,8 +188,8 @@ function initDonutChart(): void {
 	const swatches = document.querySelectorAll(
 		"#art-form-summary tbody [data-series-token]",
 	);
-	const fills = data.map((_, i) =>
-		resolveFill(readSwatch(swatches[i]) ?? fallbackFill(i)),
+	const fills = data.map((d, i) =>
+		resolveFill(readSwatch(swatches[i]) ?? fallbackFill(i, d.name)),
 	);
 	const border = resolveTone("--wga-bg");
 	const animation = chartAnimation();
@@ -254,7 +260,7 @@ function buildStackedBarChart(
 			`[data-school="${CSS.escape(school)}"] [data-series-token]`,
 		);
 		return resolveFill(
-			readSwatch(swatch) ?? fallbackFill(schoolOrder.indexOf(school)),
+			readSwatch(swatch) ?? fallbackFill(schoolOrder.indexOf(school), school),
 		);
 	});
 
