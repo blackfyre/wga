@@ -49,7 +49,7 @@
     "tailwindcss": "^4.3.3",
     "vanilla-cookieconsent": "3.1.0",
     "viewerjs": "^1.14.0",
-    "wrangler": "^4.131.2"
+    "wrangler": "^4.145.0"
   },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown"
