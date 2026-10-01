@@ -2075,6 +2075,17 @@
   }
 }
 
+/* navigation-scroll.ts adds .wga-smooth-scroll only while an in-page anchor
+   jump runs, so scripted, history and automation scrolling stay instant. Each
+   Dual Mode pane scrolls on its own and scroll-behavior is not inherited.
+   Reduced motion keeps the instant jump; the rule below guards every element. */
+@media (prefers-reduced-motion: no-preference) {
+  .wga-smooth-scroll,
+  .wga-smooth-scroll .wga-dual-body {
+    scroll-behavior: smooth;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
