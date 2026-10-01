@@ -41,10 +41,10 @@ async function savePreferenceStorage(page: Page, allowed: boolean) {
 	await expect(preferences).toBeHidden();
 }
 
-test.beforeEach(async ({ context, page }) => {
+test.beforeEach(async ({ context }) => {
 	await context.clearCookies();
 	// CookieConsent hides its dialog from automation; present as a visitor.
-	await page.addInitScript(() => {
+	await context.addInitScript(() => {
 		Object.defineProperty(navigator, "webdriver", { get: () => false });
 	});
 });
@@ -68,6 +68,27 @@ test("without preference consent, choices apply to the page but are not remember
 		cookie: null,
 		local: null,
 	});
+});
+
+test("consent granted in another tab applies to an already-open page", async ({
+	context,
+	page,
+}) => {
+	await page.goto("/artworks");
+	const otherTab = await context.newPage();
+	await otherTab.goto("/");
+	await otherTab
+		.locator("#cc-main .cm")
+		.getByRole("button", { name: "COOKIE PREFERENCES" })
+		.click();
+	await savePreferenceStorage(otherTab, true);
+	await otherTab.close();
+
+	await actionsToggle(page).click();
+	await expect(actionsToggle(page)).toHaveText("ACTIONS ✓");
+	const stored = await storedPrefs(page, context);
+	expect(stored.cookie).not.toBeNull();
+	expect(JSON.parse(stored.local ?? "null")).toMatchObject({ actions: true });
 });
 
 test("accepted preference consent remembers choices, and withdrawing it deletes them", async ({

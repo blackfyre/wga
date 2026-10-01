@@ -144,12 +144,9 @@ export const consentAllowsPreferences = (cookies: string): boolean => {
 	}
 };
 
-let consented = false;
-
-// mayStore rechecks the live consent record as well as this document's last
-// decision, so a withdrawal made in another tab stops this tab writing too.
-const mayStore = (): boolean =>
-	consented && consentAllowsPreferences(document.cookie);
+// mayStore reads the live consent record on every use, so a grant or a
+// withdrawal made in another tab applies here at once.
+const mayStore = (): boolean => consentAllowsPreferences(document.cookie);
 
 const readStorage = (): string | null => {
 	try {
@@ -212,8 +209,7 @@ export const registerSearchPrefs = (): void => {
 	}
 	initialised = true;
 
-	consented = consentAllowsPreferences(document.cookie);
-	if (!consented) {
+	if (!mayStore()) {
 		clearStoredPrefs();
 	}
 	const stored = readStoredPrefs();
@@ -269,7 +265,12 @@ export const registerSearchPrefs = (): void => {
 
 	// Swapped search markup is rendered from the cookie; re-sync in case only
 	// localStorage holds the choice (for example, when cookies are blocked).
-	const sync = () => applyActions(prefs.actions);
+	const sync = () => {
+		// Another tab may have changed the remembered setting since this page
+		// last read it.
+		prefs = readStoredPrefs() ?? prefs;
+		applyActions(prefs.actions);
+	};
 	document.addEventListener("htmx:load", sync);
 	document.addEventListener("htmx:historyRestore", sync);
 };
@@ -278,7 +279,6 @@ export const registerSearchPrefs = (): void => {
 // dialog. Granting it starts remembering the current choices; withdrawing it
 // deletes the stored copies while the current page keeps its state.
 export const setSearchPrefsConsent = (allowed: boolean): void => {
-	consented = allowed;
 	if (allowed) {
 		writePrefs(prefs);
 	} else {
