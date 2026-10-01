@@ -184,7 +184,7 @@ jobs:
           retention-days: 1
   playwright-tests:
     needs: build
-    timeout-minutes: 10
+    timeout-minutes: 20
     permissions:
       contents: read
     strategy:
@@ -230,12 +230,19 @@ jobs:
       #     path: |
       #       ~/.cache/ms-playwright
       #     key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}
-      - run: bunx playwright install --with-deps
-        name: Install Playwright
-        # if: steps.playwright-cache.outputs.cache-hit != 'true'
-      - run: bunx playwright install-deps
-        name: Install Playwright dependencies
-        # if: steps.playwright-cache.outputs.cache-hit != 'true'
+      - name: Install Playwright Chromium
+        # The suite runs only the chromium project, so install that browser and
+        # its system packages once. Each attempt is bounded, so a stalled apt
+        # mirror is retried instead of consuming the whole job timeout.
+        run: |
+          for attempt in 1 2 3; do
+            if timeout 240 bunx playwright install --with-deps chromium; then
+              exit 0
+            fi
+            echo "Playwright install attempt $attempt failed or timed out; retrying." >&2
+            sleep 10
+          done
+          exit 1
       - name: Add executable permissions
         run: chmod +x ./wga
         working-directory: ./wga_tmp
