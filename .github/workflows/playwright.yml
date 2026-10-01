@@ -36,26 +36,50 @@ jobs:
               - "mise.toml"
               - ".golangci.yml"
 
+  format:
+    # Checks Prettier formatting of the JS and Markdown files a change touches,
+    # on every push and pull request (documentation-only changes included).
+    # It fails instead of committing fixes: run `bunx prettier --write` locally.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Check formatting of changed files
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            base="origin/$BASE_REF"
+          elif [ -n "$BEFORE" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ]; then
+            base="$BEFORE"
+          else
+            echo "No comparison base; nothing to check."
+            exit 0
+          fi
+          git diff --name-only --diff-filter=ACMR -z "$base"...HEAD -- '*.js' '*.md' \
+            | xargs -0 -r bunx prettier --check
+
   backend-quality-gates:
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          # Make sure the actual branch is checked out when running on pull requests
-          ref: ${{ github.head_ref }}
-          # This is important to fetch the changes to the previous commit
-          fetch-depth: 0
-      - name: Prettify code
-        uses: creyD/prettier_action@v4.3
-        with:
-          # This part is also where you can pass other options, for example:
-          prettier_options: --write **/*.{js,md}
-          only_changed: True
       - name: Set up bun
         uses: oven-sh/setup-bun@v1
         with:
@@ -93,8 +117,7 @@ jobs:
           retention-days: 1
 
   lint:
-    # Kept apart from backend-quality-gates, whose Prettier step needs
-    # contents: write, so the third-party lint action gets a read-only token.
+    # Runs the third-party lint action with a read-only token.
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
@@ -315,7 +338,8 @@ jobs:
     # The single required status check. It passes when no code changed (the
     # gated jobs are skipped) and otherwise only when every gated job succeeded.
     if: always()
-    needs: [changes, backend-quality-gates, lint, build, playwright-tests]
+    needs:
+      [changes, format, backend-quality-gates, lint, build, playwright-tests]
     runs-on: ubuntu-latest
     permissions: {}
     steps:
