@@ -68,3 +68,20 @@ func TestSearchFullPageTitles(t *testing.T) {
 		}
 	}
 }
+
+// The page body defaults hx-select to #mc-area, which the results fragment does
+// not contain. The debounced form must opt out so the swap keeps its target.
+func TestSearchFormSwapDoesNotInheritPageSelect(t *testing.T) {
+	page := renderSearchForTitle(t, "/search?q=giotto", false)
+	if want := `hx-get="/search/results" hx-target="#global-search-results" hx-swap="outerHTML" hx-select="unset"`; !strings.Contains(page, want) {
+		t.Fatalf("search form missing %q", want)
+	}
+
+	fragment := renderSearchForTitle(t, "/search/results?q=giotto", true)
+	if strings.Contains(fragment, `id="mc-area"`) {
+		t.Fatal("results fragment unexpectedly contains #mc-area")
+	}
+	if !strings.Contains(fragment, `<div id="global-search-results"`) {
+		t.Fatal("results fragment missing its #global-search-results swap root")
+	}
+}

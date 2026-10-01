@@ -24,20 +24,18 @@ test("shows an explicit empty state", async ({ page }) => {
 });
 
 test("updates grouped results while typing", async ({ page }) => {
-	await page.goto("/search");
+	// Start from the empty state so the assertions below can only pass once the
+	// debounced fragment has actually been swapped into the results region.
+	await page.goto("/search?q=No+Such+Record");
+	const results = page.locator("#global-search-results");
+	await expect(results).toContainText("No artist matches that.");
+	await expect(results).not.toContainText("SYNTHETIC ARTIST 01");
 
-	const response = page.waitForResponse((candidate) => {
-		const url = new URL(candidate.url());
-		return (
-			url.pathname === "/search/results" &&
-			url.searchParams.get("q") === "Synthetic"
-		);
-	});
 	await page.locator("#search").getByRole("searchbox").fill("Synthetic");
-	await response;
-	await expect(page.locator("#global-search-results")).toContainText(
-		"SYNTHETIC ARTIST 01",
-	);
+
+	await expect(results).toBeVisible();
+	await expect(results).toContainText("SYNTHETIC ARTIST 01");
+	await expect(results).not.toContainText("No artist matches that.");
 });
 
 test("debounced result swaps update the document title", async ({ page }) => {
