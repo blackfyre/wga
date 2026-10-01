@@ -6,6 +6,10 @@ export const STUDY_BOARD_CAPACITY = 12;
 const recordIDPattern = /^[A-Za-z0-9_-]{1,255}$/;
 let currentBoardIDs: string[] = [];
 let eventsBound = false;
+// Bootstrap initialises the page directly and again from the body's initial
+// htmx:load, so the restore must be requested at most once per page load: a
+// second location.replace aborts the first navigation mid-flight.
+let restoreNavigationRequested = false;
 
 export function normaliseStudyBoardIDs(raw: string): string[] {
 	const ids: string[] = [];
@@ -354,6 +358,9 @@ async function copyCurrentLink(button: HTMLButtonElement): Promise<void> {
 
 /** Restores or remembers canonical state and binds the board's transient actions. */
 export function initialiseStudyBoard(): void {
+	if (restoreNavigationRequested) {
+		return;
+	}
 	const root = document.querySelector<HTMLElement>("[data-study-board]");
 	bindStudyBoardEvents();
 	if (root) {
@@ -365,6 +372,7 @@ export function initialiseStudyBoard(): void {
 		} else {
 			const remembered = readRememberedBoard();
 			if (remembered.length > 0) {
+				restoreNavigationRequested = true;
 				window.location.replace(studyBoardPath(remembered));
 				return;
 			}
