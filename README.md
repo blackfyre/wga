@@ -26,7 +26,7 @@ The project is built around the following active technologies and workflows:
 
 ### Prerequisites
 
-Copy `.env.example` to `.env` in the directory from which you start the application. `mise run app:init-env` creates it in the repository root for `mise run code:run`; copy it to `dist/.env` when using `mise run app:run`.
+Copy `.env.example` to `.env` in the directory from which you start the application. `mise run app:init-env` creates it in the repository root for `mise run code:run`, with a generated development postcard token key, and keeps an existing `.env`; copy it to `dist/.env` when using `mise run app:run`. In a fresh checkout or worktree, `mise run worktree:setup` also installs dependencies, builds assets, and generates Templ output.
 
 ```bash
 WGA_ENV=development

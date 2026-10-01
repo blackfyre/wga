@@ -16,6 +16,7 @@ mise run dev
 
 The main project tasks are:
 
+- `mise run worktree:setup` to prepare a fresh checkout or worktree: create a missing `.env`, install locked frontend dependencies, build assets, and generate templates
 - `mise run app:build` to install frontend dependencies, build assets, regenerate templates, and compile `dist/wga`
 - `mise run app:run` to launch the built server from `dist/`
 - `mise run code:run [--port <port>]` to run the application directly from source, with an optional worktree-specific listener
