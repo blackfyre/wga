@@ -50,6 +50,8 @@ Use S3-compatible object storage for durable uploaded files. Do not make a local
 
 Anonymous-write admission (visitor itineraries, and future participation surfaces) resolves a trusted client identity through `WGA_CLIENT_IP_SOURCE`. `direct` parses and canonicalises the socket peer (`RemoteAddr`) and ignores forwarding headers; `railway` is the production Railway-edge contract and requires exactly one syntactically valid `X-Railway-Edge` marker plus exactly one parseable `X-Real-IP`, ignores `X-Forwarded-For`, and fails closed on anything else. Development and test default to `direct`; production and staging must select a source explicitly. The resolver (`internal/requesttrust`) neither persists nor logs the raw client address — it is hashed by callers before use in admission limits.
 
+Visitor-itinerary admission allows each trusted client identity a rolling one-hour budget of new drafts (`WGA_ITINERARY_DRAFT_BUDGET`) and successful publications (`WGA_ITINERARY_PUBLISH_BUDGET`). Both default to 3, the production value, and must be positive integers; startup fails and names the setting otherwise. Because the whole Playwright suite runs from one loopback client, `mise run test:playwright` and the CI Playwright job set both budgets to 1000 explicitly. Do not raise them in staging or production.
+
 ## Scheduled and external work
 
 Cron jobs and other non-request executions start a fresh `run_id`. Preserve a stable correlation value when work continues an earlier flow, but do not reuse the originating execution identifier as the current run identifier.

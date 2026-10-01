@@ -5,6 +5,17 @@ const waitForKeyboard = (page: Page) =>
 		() => document.documentElement.dataset.keyboardNavigationReady === "true",
 	);
 
+// A settled HTMX swap clears the keyboard caret, so keys pressed before the
+// swap settles are discarded by design. Wait until no request, swap, or settle
+// phase is still pending.
+const waitForHtmxIdle = (page: Page) =>
+	page.waitForFunction(
+		() =>
+			document.querySelector(
+				".htmx-request, .htmx-swapping, .htmx-settling, .htmx-added",
+			) === null,
+	);
+
 test("opens keyboard help and command palette", async ({ page }) => {
 	await page.goto("/");
 	await waitForKeyboard(page);
@@ -498,6 +509,7 @@ test("artwork list traversal uses one-row movement and resets after HTMX replace
 		"data-view",
 		"list",
 	);
+	await waitForHtmxIdle(page);
 
 	await page.keyboard.press("ArrowDown");
 	await page.keyboard.press("ArrowDown");
@@ -509,10 +521,13 @@ test("artwork list traversal uses one-row movement and resets after HTMX replace
 	await expect(page.locator("[data-kbd-caret]")).toHaveCount(0);
 
 	await page.keyboard.press("ArrowDown");
+	// The search form's own HTMX request targets /artworks (see
+	// ArtworkSeachFilterBlock); /artworks/results serves pagination only.
 	const replacement = page.waitForResponse((candidate) => {
 		const url = new URL(candidate.url());
 		return (
-			url.pathname === "/artworks/results" &&
+			candidate.request().headers()["hx-request"] === "true" &&
+			url.pathname === "/artworks" &&
 			url.searchParams.get("q") === "Synthetic Artwork 01-01"
 		);
 	});
@@ -521,6 +536,7 @@ test("artwork list traversal uses one-row movement and resets after HTMX replace
 		.fill("Synthetic Artwork 01-01");
 	await replacement;
 	await expect(page.locator("[data-kbd-list] [data-kbd-idx]")).toHaveCount(1);
+	await waitForHtmxIdle(page);
 	await expect(page.locator("[data-kbd-caret]")).toHaveCount(0);
 	await page.getByRole("heading", { level: 1 }).click();
 	await page.keyboard.press("ArrowDown");

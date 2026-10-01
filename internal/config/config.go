@@ -129,6 +129,13 @@ type PublicRequestProtection struct {
 	RetryAfter                time.Duration
 }
 
+// ItineraryAdmission contains the per-client rolling one-hour budgets for new
+// itinerary drafts and successful itinerary publications.
+type ItineraryAdmission struct {
+	DraftBudget   int
+	PublishBudget int
+}
+
 // PublicURL is the canonical external URL for the application.
 type PublicURL struct {
 	url url.URL
@@ -354,6 +361,7 @@ type Server struct {
 	ClientIPSource          ClientIPSource
 	CloudflareOriginSecrets CloudflareOriginSecrets
 	PublicRequestProtection PublicRequestProtection
+	ItineraryAdmission      ItineraryAdmission
 	Postcards               Postcards
 	Captcha                 Captcha
 	Sentry                  Sentry
@@ -419,6 +427,7 @@ type Config struct {
 	clientIPSource       parsed[ClientIPSource]
 	cloudflareSecrets    parsed[CloudflareOriginSecrets]
 	requestProtection    parsed[PublicRequestProtection]
+	itineraryAdmission   parsed[ItineraryAdmission]
 	sender               parsed[MailSender]
 	postcards            parsed[Postcards]
 	postcardTokenKeyring parsed[PostcardTokenKeyring]
@@ -451,6 +460,7 @@ func LoadFrom(lookup Lookup) Config {
 		Secret{value: lookup("WGA_CLOUDFLARE_EDGE_SECRET_NEXT")},
 	)
 	requestProtection := parsePublicRequestProtection(lookup)
+	itineraryAdmission := parseItineraryAdmission(lookup)
 	sender := parseSender(lookup)
 	mailConfig := parseMail(lookup, sender)
 	storage := parseStorage(lookup)
@@ -477,6 +487,7 @@ func LoadFrom(lookup Lookup) Config {
 		clientIPSource:       clientIPSource,
 		cloudflareSecrets:    cloudflareSecrets,
 		requestProtection:    requestProtection,
+		itineraryAdmission:   itineraryAdmission,
 		sender:               sender,
 		postcards:            postcards,
 		postcardTokenKeyring: postcardTokenKeyring,
@@ -506,6 +517,7 @@ func (c Config) Server() (Server, error) {
 		ClientIPSource:          c.clientIPSource.value,
 		CloudflareOriginSecrets: c.cloudflareSecrets.value,
 		PublicRequestProtection: c.requestProtection.value,
+		ItineraryAdmission:      c.itineraryAdmission.value,
 		Postcards:               c.postcards.value,
 		Captcha:                 c.captcha,
 		Sentry:                  c.sentry.value,
@@ -546,6 +558,7 @@ func (c Config) Server() (Server, error) {
 		c.clientIPSource.err,
 		c.cloudflareSecrets.err,
 		c.requestProtection.err,
+		c.itineraryAdmission.err,
 		c.postcards.err,
 		c.sentry.err,
 		c.openTelemetry.err,
@@ -653,6 +666,21 @@ func parsePublicRequestProtection(lookup Lookup) parsed[PublicRequestProtection]
 			limiterCapacity.err,
 			retryAfter.err,
 		),
+	}
+}
+
+// parseItineraryAdmission validates the itinerary draft and publication
+// admission budgets. Both default to the production value of 3 per hour.
+func parseItineraryAdmission(lookup Lookup) parsed[ItineraryAdmission] {
+	draftBudget := parsePositiveInt(lookup, "WGA_ITINERARY_DRAFT_BUDGET", 3)
+	publishBudget := parsePositiveInt(lookup, "WGA_ITINERARY_PUBLISH_BUDGET", 3)
+
+	return parsed[ItineraryAdmission]{
+		value: ItineraryAdmission{
+			DraftBudget:   draftBudget.value,
+			PublishBudget: publishBudget.value,
+		},
+		err: errors.Join(draftBudget.err, publishBudget.err),
 	}
 }
 

@@ -149,6 +149,14 @@ func TestPlateUsesSeparateDisplayAndZoomURLsWithAccessibleFallbacks(t *testing.T
 		t.Fatalf("plate anchor must keep the ordinary zoom fallback link and viewer trigger: %s", rendered)
 	}
 
+	if strings.Contains(rendered, "data-viewer-no-navbar") {
+		t.Fatalf("plate must keep the viewer navbar unless NoNavbar is set: %s", rendered)
+	}
+	withoutNavbar := renderComponent(t, Plate(dto.Plate{DisplayURL: "/images/display.jpg", ZoomURL: "/images/zoom.jpg", NoNavbar: true}))
+	if !strings.Contains(withoutNavbar, "data-viewer data-viewer-no-navbar") {
+		t.Fatalf("plate with NoNavbar must mark its viewer trigger: %s", withoutNavbar)
+	}
+
 	placeholder := renderComponent(t, Plate(dto.Plate{Placeholder: "Reproduction unavailable"}))
 	if !strings.Contains(placeholder, "Reproduction unavailable") || !strings.Contains(placeholder, "text-(length:--t-10)") || !strings.Contains(placeholder, "text-muted") {
 		t.Fatal("plate placeholder must be visible")

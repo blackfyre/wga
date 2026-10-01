@@ -84,7 +84,8 @@ test("artwork viewer retains an ordinary zoom link without JavaScript", async ({
 	if (!zoomURL) {
 		throw new Error("artwork viewer must receive a zoom URL");
 	}
-	await expect(page.locator("[data-viewer-no-navbar] a")).toHaveAttribute(
+	// The plate's viewer trigger is the ordinary zoom link itself.
+	await expect(page.locator("a[data-viewer-no-navbar]")).toHaveAttribute(
 		"href",
 		zoomURL,
 	);
@@ -102,7 +103,10 @@ test.describe("artwork record without JavaScript", () => {
 		);
 
 		const file = page.locator("figure dl");
-		await expect(file).toContainText("512 × 1024 px · JPEG · 97.3 KB");
+		// The catalogue-exploration spec keeps file type and pixel dimensions
+		// but forbids file weight in the reproduction block.
+		await expect(file).toContainText("512 × 1024 px · JPEG");
+		await expect(file).not.toContainText(/\b\d+(?:\.\d+)?\s?[KMG]B\b/);
 		await expect(file).not.toContainText(/SOURCE|LICENCE|LICENSE/);
 		await expect(
 			page.getByRole("link", { name: /DOWNLOAD THE FULL FILE/ }),

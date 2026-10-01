@@ -136,7 +136,7 @@ func newSecurityContext(policy SecurityPolicy) (*securityContext, error) {
 		policy:    policy,
 		canonical: canonical,
 		cookie:    cookie,
-		limiter:   itineraryworkflow.NewAdmissionLimiter(),
+		limiter:   itineraryworkflow.NewAdmissionLimiter(policy.Admission),
 	}, nil
 }
 
@@ -225,24 +225,26 @@ func (ctx *securityContext) requireClientID(app core.App, c *core.RequestEvent, 
 
 // admitDraftIfNew charges the per-identity new-draft budget only when the owner
 // has no draft yet, so mutations of an existing draft never consume the
-// creation budget. It reports whether the request may proceed and whether a
-// budget slot was actually charged; callers release the slot when the guarded
-// workflow subsequently fails, since a rolled-back transaction leaves no draft.
-func (ctx *securityContext) admitDraftIfNew(app core.App, owner string, clientID string) (allowed bool, charged bool) {
+// creation budget. It reports whether the request may proceed and the charged
+// reservation, which is the zero value when nothing was charged; callers
+// release it when the guarded workflow subsequently fails, since a rolled-back
+// transaction leaves no draft.
+func (ctx *securityContext) admitDraftIfNew(app core.App, owner string, clientID string) (allowed bool, reservation itineraryworkflow.AdmissionReservation) {
 	_, err := itineraryworkflow.FindDraft(app, owner)
 	if err == nil {
-		return true, false
+		return true, itineraryworkflow.AdmissionReservation{}
 	}
 	if !errors.Is(err, sql.ErrNoRows) {
 		// A read failure is surfaced by the workflow rather than here.
-		return true, false
+		return true, itineraryworkflow.AdmissionReservation{}
 	}
 
-	if !ctx.limiter.Admit(clientID, itineraryworkflow.AdmissionDraft) {
-		return false, false
+	reservation, ok := ctx.limiter.Reserve(clientID, itineraryworkflow.AdmissionDraft)
+	if !ok {
+		return false, itineraryworkflow.AdmissionReservation{}
 	}
 
-	return true, true
+	return true, reservation
 }
 
 // tooManyDrafts responds with the bounded-draft rate-limit page.

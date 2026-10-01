@@ -299,11 +299,23 @@ function bindBuilderVisibility(): void {
 	}
 }
 
-function bindViewerKeyboard(viewer: HTMLElement): void {
+function bindViewerKeyboard(initialViewer: HTMLElement): void {
+	let viewer = initialViewer;
 	const handleKeydown = (event: KeyboardEvent) => {
 		if (!viewer.isConnected) {
-			document.removeEventListener("keydown", handleKeydown);
-			return;
+			// A slide swap replaces the viewer before htmx:load binds its
+			// successor. Adopt an unbound replacement so a key pressed in that
+			// window still navigates; release the listener only when no viewer
+			// remains.
+			const replacement = document.querySelectorAll<HTMLElement>(
+				"[data-itinerary-viewer]:not([data-itinerary-keyboard])",
+			)[0];
+			if (!replacement) {
+				document.removeEventListener("keydown", handleKeydown);
+				return;
+			}
+			replacement.dataset.itineraryKeyboard = "bound";
+			viewer = replacement;
 		}
 
 		const target = event.target as HTMLElement | null;

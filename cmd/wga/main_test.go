@@ -116,6 +116,29 @@ func TestItinerarySecurityPolicy(t *testing.T) {
 		if policy.TrustedClientID == nil {
 			t.Fatal("trusted client resolver is required")
 		}
+		if policy.Admission.Drafts != 3 || policy.Admission.Publishes != 3 {
+			t.Errorf("default admission budgets = %+v, want 3 drafts and 3 publishes", policy.Admission)
+		}
+	})
+
+	t.Run("configured admission budgets reach the policy", func(t *testing.T) {
+		server := loadServer(t, map[string]string{
+			"WGA_ENV":                      "test",
+			"WGA_PROTOCOL":                 "http",
+			"WGA_HOSTNAME":                 "localhost:8090",
+			"WGA_SENDER_NAME":              "WGA",
+			"WGA_SENDER_ADDRESS":           "sender@example.test",
+			"WGA_ITINERARY_DRAFT_BUDGET":   "1000",
+			"WGA_ITINERARY_PUBLISH_BUDGET": "500",
+		})
+
+		policy, err := itinerarySecurityPolicy(server, requesttrust.New(requesttrust.Source(server.ClientIPSource)))
+		if err != nil {
+			t.Fatalf("itinerary security policy: %v", err)
+		}
+		if policy.Admission.Drafts != 1000 || policy.Admission.Publishes != 500 {
+			t.Errorf("admission budgets = %+v, want 1000 drafts and 500 publishes", policy.Admission)
+		}
 	})
 
 	t.Run("development HTTP opts in the development cookie", func(t *testing.T) {

@@ -2041,6 +2041,15 @@
     animation: wga-rise 280ms cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
   }
 
+  /* Without scripting every form submit and link is a full document load, so
+     the rise would replay on each step and move the page's controls while a
+     visitor acts on them. No-JavaScript pages therefore render in place. */
+  @media (scripting: none) {
+    .wga-enter {
+      animation: none;
+    }
+  }
+
 	.wga-meta {
 		font-family: var(--font-mono);
 		font-size: var(--t-10);
@@ -2407,6 +2416,16 @@ figure.hidden-caption {
 
 #cc-main .cm__btn {
 	white-space: normal;
+	overflow-wrap: anywhere;
+}
+
+/* The library's narrow layout forces `width: auto` on the bottom-left notice
+   with only a left offset, so the notice shrinks to fit its content and can
+   run past the right edge at enlarged text. Bound it on both sides. */
+@media screen and (max-width: 640px) {
+	#cc-main .cm {
+		right: var(--cc-modal-margin);
+	}
 }
 
 #cc-main .pm {

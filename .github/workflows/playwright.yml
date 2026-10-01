@@ -202,6 +202,9 @@ jobs:
           MAILPIT_URL: http://127.0.0.1:8025
           WGA_POSTCARD_TOKEN_KEYS: '{"test":"MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE"}'
           WGA_POSTCARD_TOKEN_ACTIVE_KEY_ID: test
+          # One runner client executes every spec; production keeps 3 per hour.
+          WGA_ITINERARY_DRAFT_BUDGET: "1000"
+          WGA_ITINERARY_PUBLISH_BUDGET: "1000"
       - name: Wait for the application to start
         run: |
           for i in {1..60}; do

@@ -452,6 +452,47 @@ test("registerItineraryKeyboard removes its listener when the viewer disconnects
 	expect(listeners.keydown).toBeUndefined();
 });
 
+test("adopts a replacement viewer that is not yet bound after a slide swap", () => {
+	const { listeners, navigations, viewer } = makeFakeDom();
+
+	registerItineraryKeyboard();
+	const listener = listeners.keydown;
+
+	// The swap disconnects the bound viewer and inserts a fresh, unbound one
+	// before htmx:load has run.
+	viewer.isConnected = false;
+	const replacement = { ...viewer, isConnected: true, dataset: {} };
+	const fakeDocument = globalThis.document as unknown as {
+		querySelectorAll: (selector: string) => unknown[];
+	};
+	fakeDocument.querySelectorAll = (selector: string) =>
+		selector === "[data-itinerary-viewer]:not([data-itinerary-keyboard])" &&
+		!(replacement.dataset as Record<string, string>).itineraryKeyboard
+			? [replacement]
+			: [];
+
+	listener({
+		key: "ArrowLeft",
+		target: { closest: () => null },
+		preventDefault: () => {},
+	});
+
+	expect(navigations).toContain("/itineraries/t?stop=0");
+	expect(listeners.keydown).toBe(listener);
+	expect(
+		(replacement.dataset as Record<string, string>).itineraryKeyboard,
+	).toBe("bound");
+
+	// htmx:load then finds no unbound viewer, so no second listener is added.
+	registerItineraryKeyboard();
+	listener({
+		key: "ArrowRight",
+		target: { closest: () => null },
+		preventDefault: () => {},
+	});
+	expect(navigations).toHaveLength(2);
+});
+
 test("registerItineraryHelpers after the synchronous binder does not double-bind keyboard", () => {
 	const { appendedLinks, listeners, navigations } = makeFakeDom();
 

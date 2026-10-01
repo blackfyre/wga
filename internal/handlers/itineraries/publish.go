@@ -41,7 +41,8 @@ func (ctx *securityContext) publish(app *pocketbase.PocketBase, c *core.RequestE
 		return c.NoContent(http.StatusNoContent)
 	}
 
-	if !ctx.limiter.Admit(clientID, itineraryworkflow.AdmissionPublish) {
+	reservation, admitted := ctx.limiter.Reserve(clientID, itineraryworkflow.AdmissionPublish)
+	if !admitted {
 		return tooManyPublishes(c)
 	}
 
@@ -77,7 +78,7 @@ func (ctx *securityContext) publish(app *pocketbase.PocketBase, c *core.RequestE
 	}
 	if !contentSubmitted && content.Listed != nil {
 		if err := itineraryworkflow.SetListed(app, owner, *content.Listed); err != nil && !errors.Is(err, sql.ErrNoRows) {
-			ctx.limiter.Release(clientID, itineraryworkflow.AdmissionPublish)
+			reservation.Release()
 			return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 		}
 	}
@@ -89,7 +90,7 @@ func (ctx *securityContext) publish(app *pocketbase.PocketBase, c *core.RequestE
 		_, publishErr = itineraryworkflow.Publish(app, owner)
 	}
 	if publishErr != nil {
-		ctx.limiter.Release(clientID, itineraryworkflow.AdmissionPublish)
+		reservation.Release()
 		switch {
 		case errors.Is(publishErr, itineraryworkflow.ErrPublishRateLimit):
 			return tooManyPublishes(c)

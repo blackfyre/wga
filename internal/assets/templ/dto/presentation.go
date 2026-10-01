@@ -27,6 +27,8 @@ type Plate struct {
 	Placeholder string
 	Aspect      string
 	Contain     bool
+	// NoNavbar hides the zoom viewer's thumbnail navigation bar.
+	NoNavbar bool
 }
 
 // Field describes one ordinary labelled form control.
