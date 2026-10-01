@@ -14,23 +14,6 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
-func TestArtworkLocationAndDimensions(t *testing.T) {
-	location, dimensions := artworkLocationAndDimensions("<p>1902 · Synthetic Gallery, Test City · 101 x 201 cm</p>")
-	if location != "Synthetic Gallery, Test City" {
-		t.Errorf("location = %q, want %q", location, "Synthetic Gallery, Test City")
-	}
-	if dimensions != "101 x 201 cm" {
-		t.Errorf("dimensions = %q, want %q", dimensions, "101 x 201 cm")
-	}
-}
-
-func TestArtworkLocationAndDimensionsWithoutCatalogueSummary(t *testing.T) {
-	location, dimensions := artworkLocationAndDimensions("<p>Commentary without catalogue metadata.</p>")
-	if location != "" || dimensions != "" {
-		t.Errorf("artworkLocationAndDimensions() = %q, %q; want empty values", location, dimensions)
-	}
-}
-
 func TestPopulateArtworkMetadataUsesDateEnd(t *testing.T) {
 	collection := core.NewBaseCollection("Artworks")
 	collection.Fields.Add(

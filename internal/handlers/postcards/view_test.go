@@ -129,6 +129,17 @@ func TestViewPostcardSetsRecipientResponseHeaders(t *testing.T) {
 	if got := recorder.Header().Get("Referrer-Policy"); got != "no-referrer" {
 		t.Fatalf("Referrer-Policy = %q, want no-referrer", got)
 	}
+	body := recorder.Body.String()
+	for _, expected := range []string{
+		`href="/artists/artist-` + author.Id + `/work-` + artwork.Id + `"`,
+		`href="/postcard/send?awid=` + artwork.Id + `"`,
+		"VIEW IN GALLERY →",
+		"SEND YOUR OWN →",
+	} {
+		if !strings.Contains(body, expected) {
+			t.Fatalf("recipient page missing %s", expected)
+		}
+	}
 }
 
 func newTestRecipientToken(t *testing.T) string {

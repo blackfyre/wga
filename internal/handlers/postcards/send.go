@@ -47,7 +47,7 @@ func renderForm(artworkID string, values pages.PostcardComposeView, formError st
 	values.SiteKey = captcha.SiteKey()
 	values.Error = formError
 	author := record.ExpandedOne("author")
-	if !hasCompleteArtistIdentity(author) {
+	if !postcardworkflow.HasCompleteArtistIdentity(author) {
 		logger.Warn("Postcard form artwork author unavailable", "event", "postcard.form.rejected", "outcome", "artist_identity_unavailable")
 		return utils.NotFoundError(c)
 	}
