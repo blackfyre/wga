@@ -29,6 +29,7 @@ import { registerItineraryHelpers } from "./itinerary";
 import { initKeyboardNavigation } from "./keyboard";
 import logger from "./logger";
 import { initPeriodMusic } from "./music";
+import { initNavigationScroll } from "./navigation-scroll";
 import { initPostcardRichText } from "./postcard-rich-text";
 import { closeMobileNavigation, syncNavigation } from "./public-shell";
 import { initialiseStudyBoard } from "./study-board";
@@ -860,16 +861,6 @@ const wgaInternal: wgaInternals = {
 				}
 			});
 		},
-		() => {
-			logger.debug("Setting up jumpToTop event listener");
-			// Back to top button
-			const jumpToTop = document.querySelector(".jump.back-to-top");
-			if (jumpToTop) {
-				jumpToTop.addEventListener("click", () => {
-					window.scrollTo({ top: 0, behavior: "smooth" });
-				});
-			}
-		},
 	],
 	func: {
 		cloner: () => {
@@ -1260,6 +1251,7 @@ const wgaInternal: wgaInternals = {
 		logger.error("Failed to initialise Cookie Consent", error);
 	});
 	initKeyboardNavigation();
+	initNavigationScroll();
 	initTextSearch();
 	initEdgeChallengeRecovery();
 	initialiseAppearancePreferences();

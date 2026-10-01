@@ -116,7 +116,7 @@ templ StatisticsBlock(c StatisticsPageDTO) {
 		</div>
 		<section class="mb-[72px]">
 			<div class="flex flex-wrap items-baseline justify-between gap-4 border-b border-wga-ink pb-3">
-				<h2 class="text-xl font-semibold">Art form distribution</h2>
+				<h2 class="text-(length:--t-20) font-semibold">Art form distribution</h2>
 				<p class="font-mono text-(length:--t-10) tracking-[1px] text-wga-ink/60">ARTWORKS BY FORM</p>
 			</div>
 			if len(c.ArtFormSummary) > 0 {
@@ -130,7 +130,7 @@ templ StatisticsBlock(c StatisticsPageDTO) {
 						<canvas id="art-form-chart" role="img" aria-label="Art form distribution chart" aria-describedby="art-form-summary"></canvas>
 						<div class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center" aria-hidden="true">
 							<p class="font-mono text-(length:--t-10) tracking-[1px] text-wga-ink/60">TOTAL</p>
-							<p class="mt-[3px] text-xl font-semibold tracking-[-0.3px]">{ c.ArtworkCount }</p>
+							<p class="mt-[3px] text-(length:--t-20) font-semibold tracking-[-0.3px]">{ c.ArtworkCount }</p>
 						</div>
 					</div>
 				}
@@ -141,7 +141,7 @@ templ StatisticsBlock(c StatisticsPageDTO) {
 		</section>
 		<section class="mb-[72px]">
 			<div class="flex flex-wrap items-baseline justify-between gap-4 border-b border-wga-ink pb-3">
-				<h2 class="text-xl font-semibold">Artworks by school &amp; period</h2>
+				<h2 class="text-(length:--t-20) font-semibold">Artworks by school &amp; period</h2>
 				<p class="font-mono text-(length:--t-10) tracking-[1px] text-wga-ink/60">STACKED BY SCHOOL · BIRTH PERIOD OF ARTIST</p>
 			</div>
 			<canvas id="artworks-by-period-chart" class="mt-8" role="img" aria-label="Artworks by school and period chart" aria-describedby="artworks-period-summary"></canvas>
@@ -155,7 +155,7 @@ templ StatisticsBlock(c StatisticsPageDTO) {
 		</section>
 		<section>
 			<div class="flex flex-wrap items-baseline justify-between gap-4 border-b border-wga-ink pb-3">
-				<h2 class="text-xl font-semibold">Artists by school &amp; period</h2>
+				<h2 class="text-(length:--t-20) font-semibold">Artists by school &amp; period</h2>
 				<p class="font-mono text-(length:--t-10) tracking-[1px] text-wga-ink/60">STACKED BY SCHOOL · BIRTH PERIOD</p>
 			</div>
 			<canvas id="artists-by-period-chart" class="mt-8" role="img" aria-label="Artists by school and period chart" aria-describedby="artists-period-summary"></canvas>

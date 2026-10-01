@@ -2,18 +2,17 @@ package postcards
 
 import (
 	"bytes"
+	"errors"
 	"net/http"
 	"strings"
 
 	"github.com/blackfyre/wga/internal/assets/templ/components"
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
-	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/logging"
 	postcardworkflow "github.com/blackfyre/wga/internal/postcards"
 	"github.com/blackfyre/wga/internal/repositories"
 	"github.com/blackfyre/wga/internal/utils"
-	asseturl "github.com/blackfyre/wga/internal/utils/url"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/types"
 )
@@ -36,34 +35,24 @@ func viewPostcard(app core.App, c *core.RequestEvent) error {
 		return utils.NotFoundError(c)
 	}
 	postcard := view.Postcard
-	artwork, err := app.FindFirstRecordByFilter(
-		constants.CollectionArtworks,
-		"id = {:id} && published = true",
-		map[string]any{"id": postcard.GetString("image_id")},
-	)
-	if err != nil {
+	card, err := postcardworkflow.ResolveReceivedCard(app, postcard)
+	switch {
+	case errors.Is(err, postcardworkflow.ErrArtworkUnavailable):
+		logger.Warn("Postcard view rejected", "event", "postcard.view.rejected", "outcome", "artwork_unavailable")
 		return utils.NotFoundError(c)
-	}
-	if errs := app.ExpandRecord(artwork, []string{"author"}, nil); len(errs) > 0 {
-		logger.Error("Postcard view expansion failed", "event", "postcard.view.failed", "outcome", "expansion_error", "error", logging.Redact(errs))
-		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
-	}
-	image := utils.AssetUrl("/assets/images/no-image.png")
-	if imageName := artwork.GetString("image"); imageName != "" {
-		image = asseturl.GenerateArtworkImageURL(artwork, asseturl.DeliveryProfilePostcardSmallDualPlate, "")
-	}
-	author := artwork.ExpandedOne("author")
-	if !hasCompleteArtistIdentity(author) {
+	case errors.Is(err, postcardworkflow.ErrArtistIdentityUnavailable):
 		logger.Warn("Postcard view rejected", "event", "postcard.view.rejected", "outcome", "artist_identity_unavailable")
 		return utils.NotFoundError(c)
+	case err != nil:
+		logger.Error("Postcard view lookup failed", "event", "postcard.view.failed", "outcome", "lookup_error", "error", logging.Redact(err))
+		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
-	artistFilingName := author.GetString("filing_name")
-	music := resolveRecipientMusic(app, artwork)
 	message := postcardworkflow.SanitiseMessage(postcard.GetString("message"))
 	content := pages.PostcardView{
-		SenderName: postcard.GetString("sender_name"), Message: message.HTML(), Image: image,
-		Title: artwork.GetString("title"), Comment: artwork.GetString("comment"), Technique: artwork.GetString("technique"), ArtistFilingName: artistFilingName,
-		Music: music,
+		SenderName: postcard.GetString("sender_name"), Message: message.HTML(), Image: card.Image,
+		Title: card.Title, Comment: card.Comment, Technique: card.Technique, ArtistFilingName: card.ArtistFilingName,
+		Dimensions: card.Dimensions, Location: card.Location, RecordURL: card.RecordURL, ComposeURL: card.ComposeURL,
+		Music: resolveRecipientMusic(app, card.Artwork),
 	}
 	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, "Postcard")
 	var buf bytes.Buffer
@@ -127,13 +116,4 @@ func buildPostcardMusic(song *repositories.PeriodSong) components.MusicPeriodCar
 		Piece:     piece,
 		PlayerURL: "/player?song=" + song.Record.Id,
 	}
-}
-
-// hasCompleteArtistIdentity reports whether an artist record carries both
-// authoritative identity fields. Prior-bootstrap artists have blank fields and
-// must fail closed rather than render reconstructed or blank identity.
-func hasCompleteArtistIdentity(artist *core.Record) bool {
-	return artist != nil &&
-		strings.TrimSpace(artist.GetString("filing_name")) != "" &&
-		strings.TrimSpace(artist.GetString("short_name")) != ""
 }

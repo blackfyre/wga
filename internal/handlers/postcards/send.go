@@ -3,6 +3,7 @@ package postcards
 import (
 	"bytes"
 	"cmp"
+	"errors"
 	"net/http"
 
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
@@ -36,8 +37,15 @@ func renderForm(artworkID string, values pages.PostcardComposeView, formError st
 		logger.Warn("Postcard form artwork unavailable", "event", "postcard.form.rejected", "outcome", "artwork_unavailable")
 		return utils.NotFoundError(c)
 	}
-	if errs := app.ExpandRecord(record, []string{"author"}, nil); len(errs) > 0 {
-		logger.Error("Postcard form artwork expansion failed", "event", "postcard.form.failed", "outcome", "expansion_error", "error", logging.Redact(errs))
+	// The composer attributes the work to the same published author as the
+	// received card, so SEND YOUR OWN opens for every card that renders.
+	author, err := postcardworkflow.PublishedAuthor(app, record)
+	if errors.Is(err, postcardworkflow.ErrArtistIdentityUnavailable) {
+		logger.Warn("Postcard form artwork author unavailable", "event", "postcard.form.rejected", "outcome", "artist_identity_unavailable")
+		return utils.NotFoundError(c)
+	}
+	if err != nil {
+		logger.Error("Postcard form author lookup failed", "event", "postcard.form.failed", "outcome", "lookup_error", "error", logging.Redact(err))
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 	values.ImageID = artworkID
@@ -46,11 +54,7 @@ func renderForm(artworkID string, values pages.PostcardComposeView, formError st
 	values.Technique = record.GetString("technique")
 	values.SiteKey = captcha.SiteKey()
 	values.Error = formError
-	author := record.ExpandedOne("author")
-	if !hasCompleteArtistIdentity(author) {
-		logger.Warn("Postcard form artwork author unavailable", "event", "postcard.form.rejected", "outcome", "artist_identity_unavailable")
-		return utils.NotFoundError(c)
-	}
+	values.MessageLength = postcardworkflow.SanitiseMessage(values.Message).RuneCount()
 	values.ArtistFilingName = author.GetString("filing_name")
 	if image := record.GetString("image"); image != "" {
 		values.Image = asseturl.GenerateArtworkImageURL(record, asseturl.DeliveryProfilePostcardSmallDualPlate, "")
