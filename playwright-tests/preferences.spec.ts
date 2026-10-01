@@ -215,10 +215,27 @@ test("preserves settings focus and page scroll across preference updates", async
 test("remains functional after repeated footer replacement", async ({
 	page,
 }) => {
-	await page.goto("/tmp/visual-overhaul/footer");
+	await page.goto("/");
 	await page.waitForFunction(() => "wga" in window);
 
+	// Retarget an already-processed header navigation link so that HTMX swaps
+	// the real server-rendered footer of the requested public page into place.
 	await page.evaluate(() => {
+		const link = document.querySelector<HTMLAnchorElement>(
+			'header a[hx-get="/artists"]',
+		);
+		if (!link) {
+			throw new Error("header navigation link with hx-get is missing");
+		}
+		link.dataset.footerReplacement = "true";
+		link.setAttribute("hx-target", "footer");
+		link.setAttribute("hx-select", "footer");
+		link.setAttribute("hx-swap", "outerHTML");
+		link.setAttribute("hx-push-url", "false");
+		// Without HX-* headers the server answers with the complete document,
+		// which includes the footer that an HTMX partial response omits.
+		link.setAttribute("hx-request", '{"noHeaders": true}');
+		document.querySelector("footer")?.setAttribute("data-original-footer", "");
 		document.documentElement.dataset.footerSwaps = "0";
 		document.addEventListener("htmx:afterSwap", (event) => {
 			if (
@@ -233,12 +250,18 @@ test("remains functional after repeated footer replacement", async ({
 		});
 	});
 	for (let index = 1; index <= 2; index += 1) {
-		await page.getByRole("button", { name: "Replace footer" }).click();
+		await page.evaluate(() => {
+			document
+				.querySelector<HTMLAnchorElement>("[data-footer-replacement]")
+				?.click();
+		});
 		await page.waitForFunction(
 			(count) => document.documentElement.dataset.footerSwaps === String(count),
 			index,
 		);
 	}
+	await expect(page.locator("footer[data-original-footer]")).toHaveCount(0);
+	await expect(page.locator("footer")).toHaveCount(1);
 
 	await expect(page.locator("[data-wga-preferences-control]")).toHaveClass(
 		/flex/,

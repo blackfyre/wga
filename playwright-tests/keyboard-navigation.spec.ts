@@ -504,7 +504,7 @@ test("artwork list traversal uses one-row movement and resets after HTMX replace
 }) => {
 	await page.goto("/artworks");
 	await waitForKeyboard(page);
-	await page.getByRole("link", { name: "LIST" }).click();
+	await page.getByRole("link", { name: /^VIEW: GRID/ }).click();
 	await expect(page.locator("[data-kbd-list]")).toHaveAttribute(
 		"data-view",
 		"list",

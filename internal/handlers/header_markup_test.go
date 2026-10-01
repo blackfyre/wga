@@ -42,7 +42,6 @@ func TestEligibleForTrustedHeadMarkup(t *testing.T) {
 		{name: "agent boundary rejected", method: http.MethodGet, path: "/agents/artists/id.md", accept: "text/html", want: false},
 		{name: "llms boundary rejected", method: http.MethodGet, path: "/llms.txt", accept: "text/html", want: false},
 		{name: "sitemap boundary rejected", method: http.MethodGet, path: "/sitemap/sitemap.xml", accept: "text/html", want: false},
-		{name: "visual overhaul boundary rejected", method: http.MethodGet, path: "/tmp/visual-overhaul", accept: "text/html", want: false},
 		{name: "similar prefix is not a boundary", method: http.MethodGet, path: "/apian", accept: "text/html", want: true},
 	}
 
