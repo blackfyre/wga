@@ -7,7 +7,7 @@ The received-postcard page is a dead end. A recipient sees the work but cannot o
 - Link the received card's artwork title and a `VIEW IN GALLERY →` action to the work's canonical artwork record.
 - Add a `SEND YOUR OWN →` action that opens the composer for the same work, beside `BROWSE THE ARCHIVE →`.
 - Show the work's dimensions and holding location on the received card when the record provides them, and omit each line when it does not.
-- Make every recipient-page link an ordinary navigation, so that it works without JavaScript and does not carry the bearer URL in HTMX request headers.
+- Make the card's links and the links below it ordinary navigations, so that they work without JavaScript and move the address bar off the bearer URL. The shared site navigation in the page layout is unchanged.
 - Align the composer's character-count copy with the design: `MESSAGE — N CHARACTERS LEFT`.
 
 ## Capabilities

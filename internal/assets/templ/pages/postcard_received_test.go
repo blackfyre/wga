@@ -27,8 +27,8 @@ func TestPostcardReceivedLinksBackIntoTheCollection(t *testing.T) {
 			t.Fatalf("received postcard missing link %s", pattern)
 		}
 	}
-	// Recipient links are full navigations: an HTMX request would send the
-	// bearer URL in HX-Current-URL and leave the address bar on the token URL.
+	// Card links are full navigations: an un-pushed HTMX request would leave
+	// the address bar on the bearer URL and would not work without JavaScript.
 	section := html[strings.Index(html, `id="postcard-view"`):]
 	if strings.Contains(section, "hx-get") || strings.Contains(section, "hx-post") {
 		t.Fatal("received postcard links must be ordinary navigations")
