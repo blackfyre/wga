@@ -429,16 +429,6 @@ func sqliteNoCaseCompare(left string, right string) int {
 	return 0
 }
 
-func sqliteNoCaseKey(value string) string {
-	folded := []byte(value)
-	for i, char := range folded {
-		if char >= 'A' && char <= 'Z' {
-			folded[i] = char + ('a' - 'A')
-		}
-	}
-	return string(folded)
-}
-
 // unknownVenueLabel is the honest display label for a selected venue value that
 // has no matching location record. It reads as unavailable rather than an
 // opaque identifier while the underlying value still round-trips.

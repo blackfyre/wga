@@ -470,12 +470,8 @@ func artworkCommentaryHTML(sourceComment string) string {
 	return bioSanitizer.Sanitize(strings.Join(paragraphs, ""))
 }
 
-// populateArtworkRelated resolves the active related-work basis and fills the
-// related-work images and basis controls into the artwork DTO.
-func populateArtworkRelated(app *pocketbase.PocketBase, artwork *core.Record, content *dto.Artwork, basis repositories.RelatedWorkBasis, baseURL string) {
-	_ = populateArtworkRelatedContext(context.Background(), app, artwork, content, basis, baseURL, requestprotection.Checkpoint)
-}
-
+// populateArtworkRelatedContext resolves the active related-work basis and
+// fills the related-work images and basis controls into the artwork DTO.
 func populateArtworkRelatedContext(ctx context.Context, app *pocketbase.PocketBase, artwork *core.Record, content *dto.Artwork, basis repositories.RelatedWorkBasis, baseURL string, checkpoint artworkDetailCheckpoint) error {
 	result, err := repositories.NewRelatedWorkResolver(app).ResolveContext(ctx, artwork, basis, func(ctx context.Context, stage string) error {
 		return checkpoint(ctx, "artwork.detail.related."+stage)

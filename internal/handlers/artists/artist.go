@@ -648,16 +648,12 @@ func buildArtistNameWorksURL(filingName string) string {
 // the dedicated selection route.
 const selectionPreviewWorkLimit = 4
 
-// buildSelectionPreviews assembles the artist record's selection previews. It
-// returns previews only when the artist has more than one published source-backed
-// selection, so a single selection never distorts the ordinary works holding.
-// Each preview carries the supplied display title, selected and catalogued
-// counts, sanitised commentary, bounded representative works, and the stable
-// selection route.
-func buildSelectionPreviews(app *pocketbase.PocketBase, artist *core.Record, workCount int) ([]pages.SelectionPreview, error) {
-	return buildSelectionPreviewsContext(context.Background(), app, artist, workCount, requestprotection.Checkpoint)
-}
-
+// buildSelectionPreviewsContext assembles the artist record's selection
+// previews. It returns previews only when the artist has more than one
+// published source-backed selection, so a single selection never distorts the
+// ordinary works holding. Each preview carries the supplied display title,
+// selected and catalogued counts, sanitised commentary, bounded representative
+// works, and the stable selection route.
 func buildSelectionPreviewsContext(ctx context.Context, app *pocketbase.PocketBase, artist *core.Record, workCount int, checkpoint artistDetailCheckpoint) ([]pages.SelectionPreview, error) {
 	repo := repositories.NewArtistSelectionsRepository(app)
 
