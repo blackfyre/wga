@@ -1,0 +1,5 @@
+# Claude Code copies these git-ignored files into worktrees it creates
+# (--worktree and isolated subagents), using .gitignore syntax. Copying .env
+# keeps each worktree on the developer's local settings and postcard token key
+# instead of requiring a fresh `mise run app:init-env` there.
+.env
