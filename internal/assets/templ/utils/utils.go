@@ -19,6 +19,7 @@ type trustedHeadMarkupContextKey struct{}
 
 type requestPathContextKey struct{}
 type htmxRequestContextKey struct{}
+type artworkActionsContextKey struct{}
 
 const defaultDescription = "Explore European artists and artworks from the 3rd century to the early 20th in the Web Gallery of Art."
 
@@ -334,4 +335,18 @@ func StripHtmlTags(s string) string {
 	// remove all html tags
 	re := regexp.MustCompile(`<[^>]*>`)
 	return re.ReplaceAllString(s, "")
+}
+
+// WithArtworkActions returns a context carrying the remembered artwork search
+// result-actions setting ("on" or "off") for the layout's <html
+// data-aw-actions> attribute. An empty value leaves the attribute unset.
+func WithArtworkActions(c context.Context, value string) context.Context {
+	return context.WithValue(c, artworkActionsContextKey{}, value)
+}
+
+// GetArtworkActions returns the value stored by WithArtworkActions, or an empty
+// string when none was stored.
+func GetArtworkActions(c context.Context) string {
+	value, _ := c.Value(artworkActionsContextKey{}).(string)
+	return value
 }

@@ -2086,6 +2086,18 @@
   }
 }
 
+/* Artwork search result actions are opt-in: hidden unless the remembered
+   setting marks <html data-aw-actions="on">. The toggle is client-only, so it
+   keeps its place but stays invisible until the preference module (or a cookie
+   it wrote) has set the attribute. */
+:root:not([data-aw-actions="on"]) .wga-work-actions {
+  display: none;
+}
+
+:root:not([data-aw-actions]) [data-wga-aw-actions] {
+  visibility: hidden;
+}
+
 .content {
   @apply text-lg text-wga-ink leading-normal;
   & > * + *,

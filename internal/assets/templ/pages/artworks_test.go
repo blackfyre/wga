@@ -201,7 +201,7 @@ func TestArtworkSearchResultsRendersGridView(t *testing.T) {
 		`line-clamp-2 min-h-[2.6em] break-words`,
 		`line-clamp-2 min-h-[3.2em] break-words`,
 		`min-h-[1.6em] overflow-hidden text-ellipsis whitespace-nowrap`,
-		`class="mt-auto flex w-full shrink-0 flex-col`,
+		`class="wga-work-actions mt-auto flex w-full shrink-0 flex-col`,
 	} {
 		if !strings.Contains(rendered, expected) {
 			t.Errorf("grid result missing alignment contract %q", expected)
@@ -585,7 +585,6 @@ func TestArtworkSortAndViewLinksTargetFullBlock(t *testing.T) {
 	rendered := renderArtworkSearchResults(t, sampleArtworkSearchResults())
 
 	for _, link := range []string{
-		`hx-get="/artworks"`,
 		`hx-get="/artworks?sort=date"`,
 		`hx-get="/artworks?view=list"`,
 		`hx-get="/artworks?dir=desc"`,
@@ -597,11 +596,11 @@ func TestArtworkSortAndViewLinksTargetFullBlock(t *testing.T) {
 	if strings.Contains(rendered, "/artworks/results") {
 		t.Error("sort/view links must use the canonical /artworks path, not /artworks/results")
 	}
-	if got := strings.Count(rendered, `hx-target="#artwork-search"`); got != 5 {
-		t.Errorf("expected all 5 sort/view controls to target #artwork-search, got %d", got)
+	if got := strings.Count(rendered, `hx-target="#artwork-search"`); got != 4 {
+		t.Errorf("expected all 4 sort/view controls to target #artwork-search, got %d", got)
 	}
-	if got := strings.Count(rendered, `hx-select="#artwork-search"`); got != 5 {
-		t.Errorf("expected all 5 sort/view controls to select #artwork-search, got %d", got)
+	if got := strings.Count(rendered, `hx-select="#artwork-search"`); got != 4 {
+		t.Errorf("expected all 4 sort/view controls to select #artwork-search, got %d", got)
 	}
 	if strings.Contains(rendered, `hx-target="#artwork-search-results"`) {
 		t.Error("sort/view controls must not remain result-local")
@@ -712,5 +711,64 @@ func TestArtworkSearchIdentityKeepsNotRecordedFallback(t *testing.T) {
 		if output.String() != tt.want {
 			t.Errorf("artworkSearchIdentity(%q, %q) = %q, want %q", tt.name, tt.date, output.String(), tt.want)
 		}
+	}
+}
+
+func TestArtworkSearchToolbarPreferenceContract(t *testing.T) {
+	sampleWork := dto.Image{Id: "work00000000001", Url: "/artworks/sample-work-123", Title: "Sample"}
+
+	grid := sampleArtworkSearchResults()
+	grid.Artworks = dto.ImageGrid{sampleWork}
+	rendered := renderArtworkSearchResults(t, grid)
+
+	if got := strings.Count(rendered, "data-wga-aw-pref"); got != 4 {
+		t.Errorf("expected the 3 sort links and the view link to carry data-wga-aw-pref, got %d", got)
+	}
+	for _, expected := range []string{
+		`href="/artworks?view=list"`,
+		"VIEW: GRID",
+		", switch to list view",
+		`data-wga-aw-actions aria-pressed="false"`,
+		"ACTIONS +",
+		`class="wga-work-actions `,
+	} {
+		if !strings.Contains(rendered, expected) {
+			t.Errorf("grid toolbar missing %q", expected)
+		}
+	}
+	for _, removed := range []string{">GRID</a>", ">LIST</a>", `href="/artworks"`} {
+		if strings.Contains(rendered, removed) {
+			t.Errorf("grid toolbar must not render separate view control %q", removed)
+		}
+	}
+	if got := strings.Count(rendered, "data-wga-aw-actions"); got != 1 {
+		t.Errorf("expected one actions toggle, got %d", got)
+	}
+
+	list := sampleArtworkSearchResults()
+	list.View = "list"
+	list.ActionsShown = true
+	list.Artworks = dto.ImageGrid{sampleWork}
+	rendered = renderArtworkSearchResults(t, list)
+	for _, expected := range []string{
+		`href="/artworks"`,
+		"VIEW: LIST",
+		", switch to grid view",
+		`data-wga-aw-actions aria-pressed="true"`,
+		"ACTIONS ✓",
+		`class="wga-work-actions `,
+	} {
+		if !strings.Contains(rendered, expected) {
+			t.Errorf("list toolbar missing %q", expected)
+		}
+	}
+	if strings.Contains(rendered, `href="/artworks?view=list"`) {
+		t.Error("list view control must link to the grid view")
+	}
+
+	dual := sampleArtworkSearchResults()
+	dual.DualModeTarget = "left"
+	if rendered := renderArtworkSearchResults(t, dual); strings.Contains(rendered, "data-wga-aw-actions") {
+		t.Error("Dual Mode results have no workspace actions, so the actions toggle must not render")
 	}
 }

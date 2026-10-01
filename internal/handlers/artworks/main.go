@@ -66,7 +66,8 @@ func artworkSearchResponseFor(c *core.RequestEvent) artworkSearchResponseKind {
 func searchWithCheckpoint(app *pocketbase.PocketBase, c *core.RequestEvent, checkpoint artworkSearchCheckpoint) error {
 	page := 1
 
-	queryParams := c.Request.URL.Query()
+	prefs := storedSearchPrefs(c.Request)
+	queryParams := searchRequestValues(c.Request.URL, prefs)
 	if queryParams.Has("page") {
 		parsed, err := strconv.Atoi(queryParams.Get("page"))
 		if err != nil || parsed < 1 {
@@ -93,6 +94,8 @@ func searchWithCheckpoint(app *pocketbase.PocketBase, c *core.RequestEvent, chec
 		results = view.Results
 		view.PreserveTextFields = utils.RequestTriggeredBy(c, pages.ArtworkFiltersFormID)
 	}
+	results.ActionsShown = prefs.Actions
+	view.Results.ActionsShown = prefs.Actions
 	if err != nil {
 		if requestprotection.IsCancellation(err) {
 			return err
@@ -108,8 +111,10 @@ func searchWithCheckpoint(app *pocketbase.PocketBase, c *core.RequestEvent, chec
 	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, results.DocumentTitle)
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "Search the collection by title, artist, school, form, type, and technique.")
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.OgUrlKey, canonical)
+	ctx = tmplUtils.WithArtworkActions(ctx, prefs.ActionsAttribute())
 
 	c.Response.Header().Set("HX-Push-Url", artworkSearchPushURL(c.Request.URL.Path, canonical))
+	c.Response.Header().Add("Vary", "Cookie")
 
 	var buff bytes.Buffer
 

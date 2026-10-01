@@ -42,9 +42,12 @@ type ArtworkSearchResultsView struct {
 	ListUrl         string
 	ResetUrl        string
 	SortOptions     []ArtworkSortOption
-	DualModeUrls    map[string]string
-	DualModeTarget  string
-	Pagination      string
+	// ActionsShown is the visitor's remembered result-actions setting; it
+	// sets the toolbar toggle's initial label and pressed state.
+	ActionsShown   bool
+	DualModeUrls   map[string]string
+	DualModeTarget string
+	Pagination     string
 	// TitleHighlight and ArtistHighlight are the active text-search terms
 	// marked in each result's visible title and artist name.
 	TitleHighlight  string
@@ -278,6 +281,7 @@ templ ArtworkSortControl(r ArtworkSearchResultsView) {
 				hx-target="#artwork-search"
 				hx-select="#artwork-search"
 				hx-swap="outerHTML"
+				data-wga-aw-pref
 				class={ "border px-[13px] py-1.5 font-mono text-(length:--t-11) leading-[18px] tracking-[1px] transition-colors", templ.KV("border-wga-accent bg-wga-accent-bg text-wga-inv-fg", option.Active), templ.KV("border-wga-ink/25 text-wga-ink/70 hover:border-wga-ink", !option.Active) }
 				aria-current={ fmt.Sprint(option.Active) }
 			>
@@ -299,8 +303,10 @@ templ ArtworkSearchResults(r ArtworkSearchResultsView) {
 			<div class="flex flex-col items-start gap-3 md:flex-row md:items-center md:gap-5">
 				@ArtworkSortControl(r)
 				<div class="flex items-center gap-2">
-					<a href={ templ.SafeURL(r.GridUrl) } hx-get={ r.GridUrl } hx-target="#artwork-search" hx-select="#artwork-search" hx-swap="outerHTML" class={ "border px-[13px] py-1.5 font-mono text-(length:--t-11) leading-[18px] tracking-[1px] transition-colors", templ.KV("border-wga-accent bg-wga-accent-bg text-wga-inv-fg", r.View == "grid"), templ.KV("border-wga-ink/25 text-wga-ink/70 hover:border-wga-ink", r.View != "grid") } aria-pressed={ fmt.Sprint(r.View == "grid") }>GRID</a>
-					<a href={ templ.SafeURL(r.ListUrl) } hx-get={ r.ListUrl } hx-target="#artwork-search" hx-select="#artwork-search" hx-swap="outerHTML" class={ "border px-[13px] py-1.5 font-mono text-(length:--t-11) leading-[18px] tracking-[1px] transition-colors", templ.KV("border-wga-accent bg-wga-accent-bg text-wga-inv-fg", r.View == "list"), templ.KV("border-wga-ink/25 text-wga-ink/70 hover:border-wga-ink", r.View != "list") } aria-pressed={ fmt.Sprint(r.View == "list") }>LIST</a>
+					@artworkSearchViewToggle(r)
+					if r.DualModeTarget == "" {
+						@ArtworkSearchActionsToggle(r.ActionsShown)
+					}
 				</div>
 			</div>
 		</div>
@@ -385,8 +391,61 @@ templ ArtworkSearchResultList(artworks dto.ImageGrid, titleHighlight string, art
 	</ul>
 }
 
+// artworkSearchViewToggle is the single view control: it names the current
+// view and links to the other one, so it works as an ordinary link.
+templ artworkSearchViewToggle(r ArtworkSearchResultsView) {
+	<a
+		href={ templ.SafeURL(artworkSearchOtherViewURL(r)) }
+		hx-get={ artworkSearchOtherViewURL(r) }
+		hx-target="#artwork-search"
+		hx-select="#artwork-search"
+		hx-swap="outerHTML"
+		data-wga-aw-pref
+		data-artwork-view-toggle
+		aria-label={ "VIEW: " + strings.ToUpper(r.View) + ", switch to " + artworkSearchOtherView(r.View) + " view" }
+		class="border border-wga-ink/25 px-[13px] py-1.5 font-mono text-(length:--t-11) leading-[18px] tracking-[1px] text-wga-ink/70 transition-colors hover:border-wga-ink"
+	>
+		{ "VIEW: " + strings.ToUpper(r.View) }
+	</a>
+}
+
+func artworkSearchOtherView(view string) string {
+	if view == "list" {
+		return "grid"
+	}
+	return "list"
+}
+
+func artworkSearchOtherViewURL(r ArtworkSearchResultsView) string {
+	if r.View == "list" {
+		return r.GridUrl
+	}
+	return r.ListUrl
+}
+
+// ArtworkSearchActionsToggle shows or hides the per-result workspace actions.
+// It is a client-only control: CSS keeps it invisible until the search
+// preference module has marked <html data-aw-actions>.
+templ ArtworkSearchActionsToggle(shown bool) {
+	<button
+		type="button"
+		data-wga-aw-actions
+		aria-pressed={ fmt.Sprint(shown) }
+		class="cursor-pointer border border-wga-ink/25 px-[13px] py-1.5 font-mono text-(length:--t-11) leading-[18px] tracking-[1px] text-wga-ink/70 transition-colors hover:border-wga-ink aria-pressed:border-wga-accent aria-pressed:bg-wga-accent-bg aria-pressed:text-wga-inv-fg"
+	>{ ArtworkSearchActionsLabel(shown) }</button>
+}
+
+// ArtworkSearchActionsLabel is the toggle text for the given state; the
+// browser module uses the same two strings.
+func ArtworkSearchActionsLabel(shown bool) string {
+	if shown {
+		return "ACTIONS ✓"
+	}
+	return "ACTIONS +"
+}
+
 templ artworkSearchWorkspaceActions(artwork dto.Image, dense bool) {
-	<div class={ "mt-auto flex w-full shrink-0 flex-col gap-2 py-2.5", templ.KV("lg:w-52 lg:pl-3", dense) } data-artwork-workspace-actions>
+	<div class={ "wga-work-actions mt-auto flex w-full shrink-0 flex-col gap-2 py-2.5", templ.KV("lg:w-52 lg:pl-3", dense) } data-artwork-workspace-actions>
 		@components.AddToItineraryAction(artwork.Id, components.AddToItinerarySearchBlock)
 		@components.AddToStudyBoardAction(artwork.Id, artwork.Title, artwork.Thumb, components.AddToStudyBoardCard)
 	</div>
