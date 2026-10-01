@@ -1609,43 +1609,28 @@
 	border-color: #8fb6de;
 }
 
-:root[data-palette="bone"][data-theme="dark"] :focus-visible {
-	outline-color: #8fb6de;
-}
-
 :root[data-palette="classic"][data-theme="dark"] .text-wga-accent { color: #7fb2e8; }
 :root[data-palette="classic"][data-theme="dark"] .border-wga-accent { border-color: #7fb2e8; }
-:root[data-palette="classic"][data-theme="dark"] :focus-visible { outline-color: #7fb2e8; }
 :root[data-palette="verdigris"][data-theme="dark"] .text-wga-accent { color: #7fcbb8; }
 :root[data-palette="verdigris"][data-theme="dark"] .border-wga-accent { border-color: #7fcbb8; }
-:root[data-palette="verdigris"][data-theme="dark"] :focus-visible { outline-color: #7fcbb8; }
 :root[data-palette="gothic"][data-theme="dark"] .text-wga-accent { color: #e8c878; }
 :root[data-palette="gothic"][data-theme="dark"] .border-wga-accent { border-color: #e8c878; }
-:root[data-palette="gothic"][data-theme="dark"] :focus-visible { outline-color: #e8c878; }
 :root[data-palette="renaissance"][data-theme="dark"] .text-wga-accent { color: #e0906f; }
 :root[data-palette="renaissance"][data-theme="dark"] .border-wga-accent { border-color: #e0906f; }
-:root[data-palette="renaissance"][data-theme="dark"] :focus-visible { outline-color: #e0906f; }
 :root[data-palette="baroque"] .text-wga-accent { color: #e0b450; }
 :root[data-palette="baroque"] .border-wga-accent { border-color: #e0b450; }
-:root[data-palette="baroque"] :focus-visible { outline-color: #e0b450; }
 :root[data-palette="rococo"][data-theme="dark"] .text-wga-accent { color: #e79ab8; }
 :root[data-palette="rococo"][data-theme="dark"] .border-wga-accent { border-color: #e79ab8; }
-:root[data-palette="rococo"][data-theme="dark"] :focus-visible { outline-color: #e79ab8; }
 :root[data-palette="classical"][data-theme="dark"] .text-wga-accent { color: #8fb2ce; }
 :root[data-palette="classical"][data-theme="dark"] .border-wga-accent { border-color: #8fb2ce; }
-:root[data-palette="classical"][data-theme="dark"] :focus-visible { outline-color: #8fb2ce; }
 :root[data-palette="impressionist"][data-theme="dark"] .text-wga-accent { color: #8fc6de; }
 :root[data-palette="impressionist"][data-theme="dark"] .border-wga-accent { border-color: #8fc6de; }
-:root[data-palette="impressionist"][data-theme="dark"] :focus-visible { outline-color: #8fc6de; }
 :root[data-palette="catppuccin"][data-theme="light"] .text-wga-accent { color: #1858de; }
 :root[data-palette="catppuccin"][data-theme="light"] .border-wga-accent { border-color: #1858de; }
-:root[data-palette="catppuccin"][data-theme="light"] :focus-visible { outline-color: #1858de; }
 :root[data-palette="catppuccin"][data-theme="dark"] .text-wga-accent { color: #89b4fa; }
 :root[data-palette="catppuccin"][data-theme="dark"] .border-wga-accent { border-color: #89b4fa; }
-:root[data-palette="catppuccin"][data-theme="dark"] :focus-visible { outline-color: #89b4fa; }
 :root[data-palette="tokyo"] .text-wga-accent { color: #7aa2f7; }
 :root[data-palette="tokyo"] .border-wga-accent { border-color: #7aa2f7; }
-:root[data-palette="tokyo"] :focus-visible { outline-color: #7aa2f7; }
 
 .text-muted { color: var(--wga-muted); }
 .text-faint { color: var(--wga-faint); }
@@ -1670,8 +1655,15 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--wga-accent-bg);
+    outline: 2px solid var(--wga-accent);
     outline-offset: 3px;
+  }
+
+  /* A bare link is underlined so it is not identified by colour alone. It is
+     a base default, so component rules such as .content can restyle it. */
+  a:not([class]) {
+    font-weight: 600;
+    text-decoration-line: underline;
   }
 }
 
@@ -2055,6 +2047,95 @@
 		font-size: var(--t-10);
 		letter-spacing: 0.15em;
 	}
+
+	/* Sanitised rich text (biographies, commentaries, static pages, tours and
+	   postcard messages). It sits in the components layer so a surface's own
+	   type-scale utilities win; the default is the design's running prose,
+	   --t-16 at 1.7 in the text role (P:2272, P:2502). */
+	.content {
+		font-size: var(--t-16);
+		line-height: 1.7;
+		color: var(--wga-text);
+
+		& > * + *,
+		& li + li,
+		& li > p + p {
+			margin-top: 1em;
+		}
+
+		& strong {
+			font-weight: 700;
+			color: var(--wga-ink);
+		}
+
+		/* Prose links follow the design's link rule (P:494): accent, a 1px
+		   underline clear of the descenders, and no change of weight. */
+		& a {
+			font-weight: inherit;
+			color: var(--wga-accent);
+			text-decoration-line: underline;
+			text-decoration-thickness: 1px;
+			text-underline-offset: 0.18em;
+			transition: color 160ms ease;
+		}
+
+		& a:hover {
+			color: var(--wga-accent-2);
+		}
+
+		& h2 {
+			margin-top: 2.5rem;
+			margin-bottom: 0.5rem;
+			font-size: var(--t-20);
+			font-weight: 600;
+			line-height: 1.25;
+			letter-spacing: -0.2px;
+			color: var(--wga-ink);
+		}
+
+		& h3 {
+			margin-top: 2rem;
+			margin-bottom: -0.5rem;
+			font-size: var(--t-17);
+			font-weight: 600;
+			line-height: 1.3;
+			color: var(--wga-ink);
+		}
+
+		& code {
+			display: inline;
+			padding-inline: 0.25rem;
+			background: var(--wga-fill);
+			font-family: var(--font-mono);
+			font-size: var(--t-14);
+		}
+
+		& pre code {
+			display: block;
+			padding: 1rem;
+			background: var(--wga-inv-bg);
+			color: var(--wga-inv-fg);
+		}
+
+		& blockquote {
+			padding-left: 1rem;
+			border-left: 4px solid var(--wga-fill);
+			font-style: italic;
+		}
+
+		& ul,
+		& ol {
+			padding-left: 1.25rem;
+		}
+
+		& ul {
+			list-style-type: disc;
+		}
+
+		& ol {
+			list-style-type: decimal;
+		}
+	}
 }
 
 @keyframes wga-pulse {
@@ -2092,50 +2173,6 @@
   bottom: 2rem;
   right: 2rem;
   z-index: 1000;
-}
-
-.content {
-  @apply text-lg text-wga-ink leading-normal;
-  & > * + *,
-  & li + li,
-  & li > p + p {
-    @apply mt-6;
-  }
-  & strong {
-    @apply text-wga-ink font-bold;
-  }
-  & a {
-    @apply text-wga-ink font-semibold;
-  }
-  & strong a {
-    @apply font-bold;
-  }
-  & h2 {
-    @apply leading-tight text-xl font-bold text-wga-ink mb-2 mt-10;
-  }
-  & h3 {
-    @apply leading-tight text-lg font-bold text-wga-ink mt-8 -mb-2;
-  }
-  & code {
-    @apply font-mono text-sm inline bg-wga-fill px-1;
-  }
-  & pre code {
-    @apply block bg-wga-inv-bg text-wga-inv-fg p-4 rounded;
-  }
-  & blockquote {
-    @apply border-l-4 border-wga-fill pl-4 italic;
-  }
-  & ul,
-  & ol {
-    @apply pl-5;
-    @screen sm {
-      @apply pl-10;
-    }
-  }
-
-  & ul {
-    @apply list-disc;
-  }
 }
 
 .font-display {
@@ -2276,47 +2313,6 @@
     transform: translateX(4px);
     border-color: color-mix(in oklab, var(--wga-muted) 45%, var(--wga-fill));
     background-color: color-mix(in oklab, var(--wga-bg) 82%, var(--wga-muted) 18%);
-  }
-}
-
-.home-prose {
-  @apply text-base leading-8 text-wga-ink;
-
-  & > :first-child {
-    margin-top: 0;
-  }
-
-  & > * + * {
-    margin-top: 1rem;
-  }
-
-  & h1,
-  & h2,
-  & h3 {
-    font-family: var(--font-sans);
-    color: var(--wga-accent-bg);
-  }
-
-  & a {
-    color: var(--wga-accent-bg);
-    text-decoration: underline;
-    text-decoration-color: color-mix(in oklab, var(--wga-muted) 60%, transparent);
-    text-underline-offset: 0.15em;
-  }
-
-  & strong {
-    color: var(--wga-accent-bg);
-  }
-
-  & blockquote {
-    border-left: 3px solid var(--wga-muted);
-    padding-left: 1rem;
-    color: color-mix(in oklab, var(--wga-ink) 82%, transparent);
-  }
-
-  & ul {
-    padding-left: 1.25rem;
-    list-style: disc;
   }
 }
 
@@ -2612,10 +2608,6 @@ body.wga-has-itinerary-tray {
     max-width: 70vw;
   }
 } */
-
-a:not([class]) {
-  @apply font-semibold underline;
-}
 
 a[href]:not(:where(
   [href^="#"],
