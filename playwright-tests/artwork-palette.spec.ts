@@ -1,8 +1,12 @@
 import { expect, test } from "@playwright/test";
+import {
+	dualPath,
+	pairedPaletteArtwork,
+	relationshipArtwork,
+} from "./helpers/synthetic-fixture";
 
-const artworkURL =
-	"/artists/aachen-hans-von-r49032850f1b20c/boy-with-grapes-r4e965fe756506e";
-const dualURL = `/dual-mode?wide=1&left=${encodeURIComponent(artworkURL)}&right=${encodeURIComponent(artworkURL)}`;
+const artworkURL = relationshipArtwork.path;
+const dualURL = dualPath(artworkURL, pairedPaletteArtwork.path);
 
 test.use({ viewport: { width: 390, height: 844 } });
 
@@ -18,7 +22,7 @@ test("discloses a contained artwork palette through hover, focus, and tap", asyn
 	await expect(swatches).toHaveCount(6);
 	await expect(first).toHaveAttribute(
 		"aria-label",
-		/#0C0909, 63% of the surface/,
+		relationshipArtwork.firstPaletteBand,
 	);
 
 	await first.hover();

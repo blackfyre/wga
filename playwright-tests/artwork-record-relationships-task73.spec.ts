@@ -1,18 +1,19 @@
 import { expect, type Page, test } from "@playwright/test";
+import { relationshipArtwork } from "./helpers/synthetic-fixture";
 
 const viewports = [390, 834, 1440];
 const basisLabels = ["BY ARTIST", "SAME COLLECTION", "SAME PERIOD"];
 let artworkPath = "";
 
 async function discoverArtworkPath(page: Page) {
-	const title = "Kolowrat Wedding";
+	const title = relationshipArtwork.title;
 	await page.goto(`/artworks?q=${encodeURIComponent(title)}`);
 	const candidates = await page
 		.locator("#artwork-search-results [data-kbd-href]")
 		.filter({ hasText: title });
 	await expect(candidates).toHaveCount(1);
 	const candidate = await candidates.getAttribute("href");
-	expect(candidate).toContain("rea135c19d9c553");
+	expect(candidate).toBe(relationshipArtwork.path);
 	if (!candidate) throw new Error("Exact artwork search result has no href");
 
 	const response = await page.goto(candidate);
@@ -87,6 +88,20 @@ for (const width of viewports) {
 		});
 	});
 }
+
+test("each basis lists its pinned related record", async ({ page }) => {
+	const expected = [
+		["", relationshipArtwork.sameArtistPath],
+		["?basis=collection", relationshipArtwork.sameCollectionPath],
+		["?basis=period", relationshipArtwork.samePeriodPath],
+	] as const;
+	for (const [query, relatedPath] of expected) {
+		await page.goto(`${artworkPath}${query}`);
+		await expect(
+			page.locator(`#mc-area a.wga-record-card[href="${relatedPath}"]`),
+		).toHaveCount(1);
+	}
+});
 
 test("basis navigation works as ordinary links without JavaScript", async ({
 	browser,
