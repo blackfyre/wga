@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/blackfyre/wga/internal/artworks"
 	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/utils"
@@ -418,5 +419,39 @@ func TestArtworkRouteRejectsMismatchedArtist(t *testing.T) {
 	recorder := request("/artists/synthetic-artist-artistone000001/other-work-otherwork000001")
 	if recorder.Code != http.StatusNotFound {
 		t.Fatalf("status = %d, want 404 (mismatched artist)", recorder.Code)
+	}
+}
+
+// TestArtworkRouteCanonicalisesToTheStoredArtistSlug covers an artist whose
+// stored slug was disambiguated because another artist's name normalises to
+// the same slug. RecordPath serves the record, while a name-derived URL
+// redirects to it.
+func TestArtworkRouteCanonicalisesToTheStoredArtistSlug(t *testing.T) {
+	app, request := newArtworkRouteApp(t)
+	saveRecordRecord(t, app, constants.CollectionArtists, "artisttwo000002", map[string]any{
+		"name": "Synthetic Artist", "slug": "synthetic-artist-artisttwo000002", "published": true,
+	})
+	saveRecordRecord(t, app, constants.CollectionArtworks, "worktwo00000002", map[string]any{
+		"title": "Another Painting", "author": []string{"artisttwo000002"}, "published": true, "form": []string{},
+	})
+	artist, err := app.FindRecordById(constants.CollectionArtists, "artisttwo000002")
+	if err != nil {
+		t.Fatal(err)
+	}
+	artwork, err := app.FindRecordById(constants.CollectionArtworks, "worktwo00000002")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	canonical := artworks.RecordPath(artist, artwork)
+	if want := "/artists/synthetic-artist-artisttwo000002-artisttwo000002/another-painting-worktwo00000002"; canonical != want {
+		t.Fatalf("RecordPath() = %q, want %q", canonical, want)
+	}
+	if recorder := request(canonical); recorder.Code != http.StatusOK {
+		t.Fatalf("canonical record status = %d, want 200", recorder.Code)
+	}
+	recorder := request("/artists/synthetic-artist-artisttwo000002/another-painting-worktwo00000002")
+	if recorder.Code != http.StatusMovedPermanently || recorder.Header().Get("Location") != canonical {
+		t.Fatalf("name-derived record = %d to %q, want 301 to %q", recorder.Code, recorder.Header().Get("Location"), canonical)
 	}
 }

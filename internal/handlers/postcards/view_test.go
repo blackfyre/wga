@@ -26,7 +26,9 @@ func TestViewPostcardSetsRecipientResponseHeaders(t *testing.T) {
 
 	artists := core.NewBaseCollection(constants.CollectionArtists)
 	artists.Fields.Add(
+		&core.BoolField{Name: "published"},
 		&core.TextField{Name: "name"},
+		&core.TextField{Name: "slug"},
 		&core.TextField{Name: "filing_name"},
 		&core.TextField{Name: "short_name"},
 	)
@@ -34,7 +36,9 @@ func TestViewPostcardSetsRecipientResponseHeaders(t *testing.T) {
 		t.Fatalf("create artists collection: %v", err)
 	}
 	author := core.NewRecord(artists)
+	author.Set("published", true)
 	author.Set("name", "Artist")
+	author.Set("slug", "artist")
 	author.Set("filing_name", "Artist, Filing")
 	author.Set("short_name", "Artist")
 	if err := app.Save(author); err != nil {
@@ -128,6 +132,17 @@ func TestViewPostcardSetsRecipientResponseHeaders(t *testing.T) {
 	}
 	if got := recorder.Header().Get("Referrer-Policy"); got != "no-referrer" {
 		t.Fatalf("Referrer-Policy = %q, want no-referrer", got)
+	}
+	body := recorder.Body.String()
+	for _, expected := range []string{
+		`href="/artists/artist-` + author.Id + `/work-` + artwork.Id + `"`,
+		`href="/postcard/send?awid=` + artwork.Id + `"`,
+		"VIEW IN GALLERY →",
+		"SEND YOUR OWN →",
+	} {
+		if !strings.Contains(body, expected) {
+			t.Fatalf("recipient page missing %s", expected)
+		}
 	}
 }
 
