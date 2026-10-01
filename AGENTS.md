@@ -34,7 +34,7 @@
 ## Verification and workflow
 
 - Backend CI order is `go mod tidy`, `go vet ./...`, then `go test ./... -cover`; a separate read-only `lint` job runs `golangci-lint run` (v2.14.0, pinned in `mise.toml` and `.github/workflows/playwright.yml`). For a focused check, use commands such as `go test ./internal/handlers/dual -run '^TestResolvePaneTarget$'`.
-- `mise run check` runs the local Go pre-commit checks (`go vet` and `golangci-lint`), not the test suite. `.pre-commit-config.yaml` is generated; do not edit it.
+- `mise run check` runs the local Go checks (`go vet` and `golangci-lint`) that Git hooks used to provide, not the test suite. The repository installs no Git hooks; run it before pushing.
 - Playwright has no active `webServer` setting. `mise run test:playwright [--port <port>] [args...]` rebuilds browser assets and Templ output, installs the matching Chromium binary, starts WGA with an isolated temporary data directory, forwards optional arguments to Playwright, and stops the server on exit; use distinct ports for concurrent worktrees. It refuses to run when its selected WGA address is already occupied. For direct `bunx playwright test` use, start the app and set `WGA_PROTOCOL`, `WGA_HOSTNAME`, and a reachable `MAILPIT_URL`; the postcard spec queries the Mailpit API.
 - The full Go suite includes a mail-send test that skips only when no `sendmail` executable is available.
 - `biome.json` configures JS/TS tabs, double quotes, and import organisation. The Playwright CI workflow also runs Prettier on changed JS and Markdown files.
@@ -47,7 +47,7 @@
 - Judge behaviour against `openspec/specs/` and the PR's active `openspec/changes/<name>/` artifacts. Report a divergence from them as a finding. A preference that no specification supports is not a finding.
 - CI can fail in areas the PR does not touch. Before attributing a failing check to the PR, compare it with the latest `main` run of the same workflow, and flag only failures the diff introduces or leaves unaddressed within its own stated scope.
 - Dual Mode pane links (work cards, index rows, routing toggles, embedded record links) are all built from the pane state at render time. Staleness after the other pane swaps affects the whole Dual Mode link design, not a single link. Raise it as a separate concern, not against a PR that follows the existing contract.
-- Generated output is not reviewed line by line: `*_templ.go`, `internal/assets/public/{js,css}`, and `.pre-commit-config.yaml`. Review the `.templ`, `resources/`, or generator source instead.
+- Generated output is not reviewed line by line: `*_templ.go` and `internal/assets/public/{js,css}`. Review the `.templ` or `resources/` source instead.
 - Skip formatting and style points that Biome, Prettier, `go vet`, or golangci-lint already enforce.
 
 ## Model-family assurance

@@ -8,13 +8,13 @@ import (
 )
 
 const (
-	guestbookNameMaxLength       = 100
-	guestbookLocationMaxLength   = 120
-	guestbookMessageMaxLength    = 1000
-	guestbookPrivateRetention    = 90 * 24 * time.Hour
-	guestbookStateUnreviewed     = "unreviewed"
-	guestbookStateApproved       = "approved"
-	guestbookStateRejected       = "rejected"
+	guestbookNameMaxLength     = 100
+	guestbookLocationMaxLength = 120
+	guestbookMessageMaxLength  = 1000
+	guestbookPrivateRetention  = 90 * 24 * time.Hour
+	guestbookStateUnreviewed   = "unreviewed"
+	guestbookStateApproved     = "approved"
+	guestbookStateRejected     = "rejected"
 )
 
 type submissionInput struct {

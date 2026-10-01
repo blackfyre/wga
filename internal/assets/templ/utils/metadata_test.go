@@ -55,11 +55,11 @@ func TestMetadataUsesPageSpecificCanonicalImageDetails(t *testing.T) {
 
 	openGraph := templutils.GetOpenGraphTags(ctx)
 	for key, expected := range map[string]string{
-		"og:title":        "The Arnolfini Portrait",
-		"og:description":  "Artwork description",
-		"og:url":          "https://gallery.example/artworks/arnolfini",
-		"og:image":        "https://gallery.example/image.jpg",
-		"og:image:alt":    "The Arnolfini Portrait",
+		"og:title":       "The Arnolfini Portrait",
+		"og:description": "Artwork description",
+		"og:url":         "https://gallery.example/artworks/arnolfini",
+		"og:image":       "https://gallery.example/image.jpg",
+		"og:image:alt":   "The Arnolfini Portrait",
 	} {
 		if got := openGraph[key]; got != expected {
 			t.Errorf("Open Graph %s = %q, want %q", key, got, expected)
