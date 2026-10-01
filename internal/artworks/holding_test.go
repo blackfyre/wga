@@ -32,6 +32,13 @@ func TestLocationAndDimensionsWithoutDimensions(t *testing.T) {
 	}
 }
 
+func TestLocationAndDimensionsDecodesEntities(t *testing.T) {
+	location, dimensions := LocationAndDimensions("<p>1850 · Victoria &amp; Albert Museum, London · 20 &times; 30 cm</p>")
+	if location != "Victoria & Albert Museum, London" || dimensions != "20 × 30 cm" {
+		t.Errorf("LocationAndDimensions() = %q, %q; want decoded text", location, dimensions)
+	}
+}
+
 func TestCurrentLocation(t *testing.T) {
 	app := testutils.NewTestApp(t)
 	locations := core.NewBaseCollection(constants.CollectionLocations)

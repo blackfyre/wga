@@ -1,6 +1,7 @@
 package artworks
 
 import (
+	"html"
 	"strings"
 
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
@@ -18,7 +19,7 @@ const summarySeparator = " · "
 // separator yields empty values, so callers omit the details rather than guess
 // them.
 func LocationAndDimensions(comment string) (location string, dimensions string) {
-	parts := strings.Split(tmplUtils.StripHtmlTags(comment), summarySeparator)
+	parts := strings.Split(html.UnescapeString(tmplUtils.StripHtmlTags(comment)), summarySeparator)
 	switch {
 	case len(parts) >= 3:
 		return strings.TrimSpace(parts[1]), strings.TrimSpace(parts[2])
