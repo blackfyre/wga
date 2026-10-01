@@ -195,7 +195,7 @@ test("received postcard links navigate without JavaScript", async ({
 		);
 		await expect(page.locator("#postcard_create")).toBeVisible();
 		await expect(page.locator("[data-rte-count]")).toHaveText(
-			"300 CHARACTERS AT MOST",
+			"300 CHARACTERS LEFT",
 		);
 
 		await page.goto(postcardPath);

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/testutils"
 	"github.com/pocketbase/pocketbase/core"
@@ -146,5 +147,34 @@ func TestSendPostcardAttributesThePublishedAuthor(t *testing.T) {
 	}
 	if strings.Contains(body, "ARTIST, Hidden") {
 		t.Fatal("composer exposed the unpublished author")
+	}
+}
+
+// TestRenderFormCountsTheRedisplayedMessage verifies the no-JavaScript counter
+// charges a redisplayed message for its visible text, as validation does, and
+// not for its formatting markup.
+func TestRenderFormCountsTheRedisplayedMessage(t *testing.T) {
+	app := testutils.NewTestApp(t)
+	artworkID := installComposeArtwork(t, app, "Selected work")
+	for _, tc := range []struct {
+		name    string
+		message string
+		counter string
+	}{
+		{name: "new composer", counter: ">300 CHARACTERS LEFT<"},
+		{name: "formatted message", message: "<p><b>Hello</b> world</p>", counter: ">289 CHARACTERS LEFT<"},
+		{name: "over the limit", message: "<p>" + strings.Repeat("é", 302) + "</p>", counter: ">2 CHARACTERS OVER THE LIMIT<"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			recorder := httptest.NewRecorder()
+			event := &core.RequestEvent{App: app, Event: router.Event{Request: httptest.NewRequest(http.MethodPost, "/postcards", nil), Response: recorder}}
+			values := pages.PostcardComposeView{Message: tc.message}
+			if err := renderForm(artworkID, values, "Check the message", http.StatusUnprocessableEntity, app, event, config.Captcha{}); err != nil {
+				t.Fatal(err)
+			}
+			if body := recorder.Body.String(); !strings.Contains(body, tc.counter) {
+				t.Fatalf("composer counter missing %q", tc.counter)
+			}
+		})
 	}
 }

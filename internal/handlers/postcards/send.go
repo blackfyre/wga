@@ -54,6 +54,7 @@ func renderForm(artworkID string, values pages.PostcardComposeView, formError st
 	values.Technique = record.GetString("technique")
 	values.SiteKey = captcha.SiteKey()
 	values.Error = formError
+	values.MessageLength = postcardworkflow.SanitiseMessage(values.Message).RuneCount()
 	values.ArtistFilingName = author.GetString("filing_name")
 	if image := record.GetString("image"); image != "" {
 		values.Image = asseturl.GenerateArtworkImageURL(record, asseturl.DeliveryProfilePostcardSmallDualPlate, "")

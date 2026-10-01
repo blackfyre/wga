@@ -75,13 +75,8 @@ func ResolveReceivedCard(app core.App, postcard *core.Record) (*ReceivedCard, er
 		Location:         location,
 		Comment:          artwork.GetString("comment"),
 		Image:            image,
-		RecordURL: urlutils.GenerateFullArtworkUrl(urlutils.ArtworkUrlDTO{
-			ArtistName:   author.GetString("name"),
-			ArtistId:     author.Id,
-			ArtworkTitle: artwork.GetString("title"),
-			ArtworkId:    artwork.Id,
-		}),
-		ComposeURL: "/postcard/send?" + url.Values{"awid": {artwork.Id}}.Encode(),
+		RecordURL:        artworks.RecordPath(author, artwork),
+		ComposeURL:       "/postcard/send?" + url.Values{"awid": {artwork.Id}}.Encode(),
 	}, nil
 }
 

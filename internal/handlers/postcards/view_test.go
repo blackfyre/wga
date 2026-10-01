@@ -28,6 +28,7 @@ func TestViewPostcardSetsRecipientResponseHeaders(t *testing.T) {
 	artists.Fields.Add(
 		&core.BoolField{Name: "published"},
 		&core.TextField{Name: "name"},
+		&core.TextField{Name: "slug"},
 		&core.TextField{Name: "filing_name"},
 		&core.TextField{Name: "short_name"},
 	)
@@ -37,6 +38,7 @@ func TestViewPostcardSetsRecipientResponseHeaders(t *testing.T) {
 	author := core.NewRecord(artists)
 	author.Set("published", true)
 	author.Set("name", "Artist")
+	author.Set("slug", "artist")
 	author.Set("filing_name", "Artist, Filing")
 	author.Set("short_name", "Artist")
 	if err := app.Save(author); err != nil {

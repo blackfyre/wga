@@ -83,9 +83,29 @@ func TestPostcardReceivedOmitsMissingRecordDetails(t *testing.T) {
 }
 
 func TestPostcardComposerCountsCharactersLikeTheDesign(t *testing.T) {
-	html := renderPostcard(t, PostcardComposeBlock(PostcardComposeView{ImageID: "artwork-id", Image: "/image.jpg", Title: "Work", ArtistFilingName: "Artist, Filing", Recipients: []string{""}}))
+	for _, tc := range []struct {
+		name          string
+		messageLength int
+		counter       string
+		overLimit     bool
+	}{
+		{name: "empty composer", counter: "300 CHARACTERS LEFT"},
+		{name: "redisplayed message", messageLength: 11, counter: "289 CHARACTERS LEFT"},
+		{name: "one character left", messageLength: 299, counter: "1 CHARACTER LEFT"},
+		{name: "at the limit", messageLength: 300, counter: "0 CHARACTERS LEFT"},
+		{name: "over the limit", messageLength: 305, counter: "5 CHARACTERS OVER THE LIMIT", overLimit: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			html := renderPostcard(t, PostcardComposeBlock(PostcardComposeView{ImageID: "artwork-id", Image: "/image.jpg", Title: "Work", ArtistFilingName: "Artist, Filing", Recipients: []string{""}, MessageLength: tc.messageLength}))
 
-	if !regexp.MustCompile(`<label id="message-label" for="message">MESSAGE</label>\s*<span aria-hidden="true"[^>]*>—</span>\s*<span id="message-count"[^>]*>300 CHARACTERS AT MOST</span>`).MatchString(html) {
-		t.Fatal("composer must label the message as MESSAGE — 300 CHARACTERS AT MOST before enhancement")
+			pattern := `<label id="message-label" for="message">MESSAGE</label>\s*<span aria-hidden="true"[^>]*>—</span>\s*<span id="message-count"[^>]*class="([^"]*)"[^>]*>` + regexp.QuoteMeta(tc.counter) + `</span>`
+			match := regexp.MustCompile(pattern).FindStringSubmatch(html)
+			if match == nil {
+				t.Fatalf("composer must read MESSAGE — %s before enhancement", tc.counter)
+			}
+			if got := strings.Contains(match[1], "text-wga-error"); got != tc.overLimit {
+				t.Fatalf("counter error styling = %v, want %v (class %q)", got, tc.overLimit, match[1])
+			}
+		})
 	}
 }

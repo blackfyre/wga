@@ -78,9 +78,6 @@ func processArtworkWithCheckpoint(c *core.RequestEvent, app *pocketbase.PocketBa
 		return utils.NotFoundError(c)
 	}
 
-	// Generate the expected slug for the artist
-	expectedArtistSlug := artist.GetString("slug") + "-" + artist.GetString("id")
-
 	// Split the slug on the last dash and use the last part as the artwork id
 	artworkSlugParts := strings.Split(artworkSlug, "-")
 	artworkId := artworkSlugParts[len(artworkSlugParts)-1]
@@ -109,10 +106,7 @@ func processArtworkWithCheckpoint(c *core.RequestEvent, app *pocketbase.PocketBa
 		return utils.NotFoundError(c)
 	}
 
-	// Generate the expected slug for the artwork
-	expectedArtworkSlug := utils.Slugify(aw.GetString("title")) + "-" + aw.GetString("id")
-
-	expectedPageUrl := "/artists/" + expectedArtistSlug + "/" + expectedArtworkSlug
+	expectedPageUrl := artworks.RecordPath(artist, aw)
 
 	// Parse and normalise the related-work basis from the query, falling back to
 	// BY ARTIST for an absent, unsupported, or unknown value.
@@ -122,8 +116,9 @@ func processArtworkWithCheckpoint(c *core.RequestEvent, app *pocketbase.PocketBa
 
 	// Redirect to the correct URL if either slug is not correct or a retired
 	// palette-basis URL is requested.
-	if artistSlug != expectedArtistSlug ||
-		artworkSlug != expectedArtworkSlug ||
+	// Neither path value can contain a slash, so comparing the joined path
+	// compares both segments.
+	if "/artists/"+artistSlug+"/"+artworkSlug != expectedPageUrl ||
 		requestedBasis == "palette" {
 		return c.Redirect(http.StatusMovedPermanently, canonicalURL)
 	}

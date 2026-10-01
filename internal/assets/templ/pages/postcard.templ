@@ -22,9 +22,13 @@ type PostcardComposeView struct {
 	SenderEmail      string
 	Recipients       []string
 	Message          string
-	SiteKey          string
-	Error            string
-	SubmissionKey    string
+	// MessageLength is the visible character count of Message, as the
+	// workflow validates it, so the counter can show what is left without
+	// JavaScript.
+	MessageLength int
+	SiteKey       string
+	Error         string
+	SubmissionKey string
 }
 
 type PostcardConfirmationView struct {
@@ -114,7 +118,7 @@ templ PostcardComposeBlock(v PostcardComposeView) {
 					<div class="mb-2 flex flex-wrap items-baseline gap-x-2 font-mono text-(length:--t-11) tracking-[1px]">
 						<label id="message-label" for="message">MESSAGE</label>
 						<span aria-hidden="true" class="text-wga-ink/60">—</span>
-						<span id="message-count" data-rte-count aria-live="polite" class="shrink-0 text-wga-ink/60">{ strconv.Itoa(PostcardMessageLimit) } CHARACTERS AT MOST</span>
+						<span id="message-count" data-rte-count aria-live="polite" class={ "shrink-0 text-wga-ink/60", templ.KV("text-wga-error", v.MessageLength > PostcardMessageLimit) }>{ postcardCounterCopy(v.MessageLength) }</span>
 					</div>
 					<div class="border border-wga-ink/30 bg-transparent focus-within:border-wga-accent">
 						<div role="toolbar" aria-label="Message formatting" data-rte-toolbar hidden class="flex gap-0.5 border-b border-wga-ink/30 p-1.5">
@@ -249,5 +253,22 @@ func postcardMaterialLine(technique string, dimensions string) string {
 		return technique
 	default:
 		return dimensions
+	}
+}
+
+// postcardCounterCopy renders the composer counter before the rich-text script
+// takes it over: "MESSAGE — N CHARACTERS LEFT" for a message of the given
+// visible length, or how far a redisplayed message runs over the limit.
+func postcardCounterCopy(messageLength int) string {
+	remaining := PostcardMessageLimit - messageLength
+	switch {
+	case remaining == 1:
+		return "1 CHARACTER LEFT"
+	case remaining >= 0:
+		return strconv.Itoa(remaining) + " CHARACTERS LEFT"
+	case remaining == -1:
+		return "1 CHARACTER OVER THE LIMIT"
+	default:
+		return strconv.Itoa(-remaining) + " CHARACTERS OVER THE LIMIT"
 	}
 }

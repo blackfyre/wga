@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/blackfyre/wga/internal/artworks"
 	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/testutils"
 	"github.com/pocketbase/pocketbase/core"
@@ -24,7 +25,7 @@ func newReceivedFixture(t *testing.T) *receivedFixture {
 	f := &receivedFixture{app: app}
 
 	f.artists = core.NewBaseCollection(constants.CollectionArtists)
-	f.artists.Fields.Add(&core.BoolField{Name: "published"}, &core.TextField{Name: "name"}, &core.TextField{Name: "filing_name"}, &core.TextField{Name: "short_name"})
+	f.artists.Fields.Add(&core.BoolField{Name: "published"}, &core.TextField{Name: "name"}, &core.TextField{Name: "slug"}, &core.TextField{Name: "filing_name"}, &core.TextField{Name: "short_name"})
 	f.locations = core.NewBaseCollection(constants.CollectionLocations)
 	f.locations.Fields.Add(&core.TextField{Name: "name"})
 	for _, collection := range []*core.Collection{f.artists, f.locations} {
@@ -65,7 +66,7 @@ func (f *receivedFixture) save(t *testing.T, collection *core.Collection, values
 }
 
 func (f *receivedFixture) artist(t *testing.T) *core.Record {
-	return f.save(t, f.artists, map[string]any{"published": true, "name": "Johannes Vermeer", "filing_name": "VERMEER, Johannes", "short_name": "Vermeer"})
+	return f.save(t, f.artists, map[string]any{"published": true, "name": "Johannes Vermeer", "slug": "johannes-vermeer", "filing_name": "VERMEER, Johannes", "short_name": "Vermeer"})
 }
 
 func (f *receivedFixture) postcardFor(t *testing.T, artwork *core.Record) *core.Record {
@@ -107,6 +108,32 @@ func TestResolveReceivedCardLinksToTheRecordAndComposer(t *testing.T) {
 	}
 	if card.Artwork == nil || card.Artwork.Id != artwork.Id {
 		t.Error("card must carry the resolved artwork record")
+	}
+}
+
+// TestResolveReceivedCardLinksThroughTheStoredArtistSlug covers two published
+// artists whose names normalise to the same slug. The importer stores the
+// later one as <slug>-<id>, and the artwork route canonicalises to that stored
+// slug, so a name-derived link would redirect.
+func TestResolveReceivedCardLinksThroughTheStoredArtistSlug(t *testing.T) {
+	f := newReceivedFixture(t)
+	f.artist(t)
+	namesake := f.save(t, f.artists, map[string]any{
+		"id": "namesake0000001", "published": true, "name": "Johannes Vermeer", "slug": "johannes-vermeer-namesake0000001",
+		"filing_name": "VERMEER, Johannes (II)", "short_name": "Vermeer II",
+	})
+	artwork := f.save(t, f.artworks, map[string]any{"published": true, "title": "View of Delft", "author": namesake.Id})
+
+	card, err := ResolveReceivedCard(f.app, f.postcardFor(t, artwork))
+	if err != nil {
+		t.Fatalf("ResolveReceivedCard() error = %v", err)
+	}
+	want := "/artists/johannes-vermeer-namesake0000001-namesake0000001/view-of-delft-" + artwork.Id
+	if card.RecordURL != want {
+		t.Errorf("RecordURL = %q, want the stored-slug record URL %q", card.RecordURL, want)
+	}
+	if card.RecordURL != artworks.RecordPath(namesake, artwork) {
+		t.Errorf("RecordURL = %q, want the route's canonical path %q", card.RecordURL, artworks.RecordPath(namesake, artwork))
 	}
 }
 
