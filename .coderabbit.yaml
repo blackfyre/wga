@@ -1,6 +1,0 @@
-reviews:
-  request_changes_workflow: true
-  tools:
-    golangci-lint:
-      enabled: true
-      config_file: ".golangci.yml"
