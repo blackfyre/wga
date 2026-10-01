@@ -24,7 +24,7 @@
 
 ## Environment and development
 
-- Use Go 1.26.5 (`go.mod`/`mise.toml`), Bun, and Templ. `devenv shell` is the documented development environment; `mise` pins the same toolchain and exposes equivalent tasks as `mise run <task>`.
+- Use Go 1.27.1 (`go.mod`/`mise.toml`), Bun, and Templ. `devenv shell` is the documented development environment; `mise` pins the same toolchain and exposes equivalent tasks as `mise run <task>`.
 - Create `.env` from `.env.example` (`mise run app:init-env`). `godotenv.Load()` reads the default `.env` from the process working directory: `code:run` uses the repository root, while `app:run` changes into `dist/`.
 - `wga_data` is likewise relative to the process working directory. `app:run` uses `dist/wga_data`; clear the data directory used by the launcher rather than assuming root `wga_data` is the active one.
 - `mise run dev` brings up the Podman Compose Mailpit and Garage services, then starts JS/CSS/Templ watchers, but not the application server. Start it separately with `code:run`; concurrent worktrees can select distinct listeners with `mise run code:run --port <port>`. Alternatively, use `app:build` followed by `app:run`.
