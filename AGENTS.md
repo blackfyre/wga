@@ -32,7 +32,7 @@
 
 ## Verification and workflow
 
-- Backend CI order is `go mod tidy`, `go vet ./...`, `golangci-lint run` (v2.14.0, pinned in `mise.toml` and `.github/workflows/playwright.yml`), then `go test ./... -cover`. For a focused check, use commands such as `go test ./internal/handlers/dual -run '^TestResolvePaneTarget$'`.
+- Backend CI order is `go mod tidy`, `go vet ./...`, then `go test ./... -cover`; a separate read-only `lint` job runs `golangci-lint run` (v2.14.0, pinned in `mise.toml` and `.github/workflows/playwright.yml`). For a focused check, use commands such as `go test ./internal/handlers/dual -run '^TestResolvePaneTarget$'`.
 - `mise run check` runs the local Go pre-commit checks (`go vet` and `golangci-lint`), not the test suite. `.pre-commit-config.yaml` is generated; do not edit it.
 - Playwright has no active `webServer` setting. `mise run test:playwright [--port <port>] [args...]` rebuilds browser assets and Templ output, installs the matching Chromium binary, starts WGA with an isolated temporary data directory, forwards optional arguments to Playwright, and stops the server on exit; use distinct ports for concurrent worktrees. It refuses to run when its selected WGA address is already occupied. For direct `bunx playwright test` use, start the app and set `WGA_PROTOCOL`, `WGA_HOSTNAME`, and a reachable `MAILPIT_URL`; the postcard spec queries the Mailpit API.
 - The full Go suite includes a mail-send test that skips only when no `sendmail` executable is available.
