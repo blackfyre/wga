@@ -60,6 +60,15 @@ test("without preference consent, choices apply to the page but are not remember
 		local: null,
 	});
 
+	// An enhanced navigation away and back is a new page: defaults again.
+	const header = page.locator("header");
+	await header.getByRole("link", { name: "ARTISTS", exact: true }).click();
+	await expect(page).toHaveURL(/\/artists/);
+	await header.getByRole("link", { name: "ARTWORKS", exact: true }).click();
+	await expect(page).toHaveURL((url) => url.pathname === "/artworks");
+	await expect(actionsToggle(page)).toHaveText("ACTIONS +");
+	await expect(page.locator(".wga-work-actions").first()).toBeHidden();
+
 	await page.goto("/artworks");
 	await expect(viewToggle(page)).toHaveText(/^VIEW: GRID/);
 	await expect(actionsToggle(page)).toHaveText("ACTIONS +");

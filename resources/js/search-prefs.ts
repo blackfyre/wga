@@ -265,10 +265,20 @@ export const registerSearchPrefs = (): void => {
 
 	// Swapped search markup is rendered from the cookie; re-sync in case only
 	// localStorage holds the choice (for example, when cookies are blocked).
-	const sync = () => {
+	const sync = (event: Event) => {
 		// Another tab may have changed the remembered setting since this page
 		// last read it.
-		prefs = readStoredPrefs() ?? prefs;
+		const stored = readStoredPrefs();
+		if (stored) {
+			prefs = stored;
+		} else if (
+			event.target instanceof Element &&
+			event.target.id === "mc-area"
+		) {
+			// An enhanced navigation replaced the whole page. Unremembered
+			// choices belonged to the previous page, so start from the defaults.
+			prefs = { ...DEFAULT_PREFS };
+		}
 		applyActions(prefs.actions);
 	};
 	document.addEventListener("htmx:load", sync);
