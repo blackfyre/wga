@@ -230,19 +230,23 @@ jobs:
       #     path: |
       #       ~/.cache/ms-playwright
       #     key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}
+      - name: Make apt resilient to slow mirrors
+        # Playwright's --with-deps calls apt-get as root. A stalled mirror
+        # connection used to hang it until the job timed out, and killing the
+        # wrapper left apt-get holding the dpkg lock. Let apt itself time out
+        # and retry stalled downloads, and wait for the lock instead of failing.
+        run: |
+          printf '%s\n' \
+            'Acquire::Retries "5";' \
+            'Acquire::http::Timeout "30";' \
+            'Acquire::https::Timeout "30";' \
+            'DPkg::Lock::Timeout "300";' \
+            | sudo tee /etc/apt/apt.conf.d/99-wga-ci >/dev/null
       - name: Install Playwright Chromium
         # The suite runs only the chromium project, so install that browser and
-        # its system packages once. Each attempt is bounded, so a stalled apt
-        # mirror is retried instead of consuming the whole job timeout.
-        run: |
-          for attempt in 1 2 3; do
-            if timeout 240 bunx playwright install --with-deps chromium; then
-              exit 0
-            fi
-            echo "Playwright install attempt $attempt failed or timed out; retrying." >&2
-            sleep 10
-          done
-          exit 1
+        # its system packages once.
+        timeout-minutes: 12
+        run: bunx playwright install --with-deps chromium
       - name: Add executable permissions
         run: chmod +x ./wga
         working-directory: ./wga_tmp
