@@ -332,7 +332,13 @@ jobs:
           for result in $RESULTS; do
             case "$result" in
               success) ;;
-              skipped) [ "$CODE_CHANGED" = "true" ] && { echo "A gated job was skipped although code changed." >&2; exit 1; } ;;
+              skipped)
+                if [ "$CODE_CHANGED" = "true" ]; then
+                  echo "A gated job was skipped although code changed." >&2
+                  exit 1
+                fi
+                ;;
               *) echo "A gated job finished with: $result" >&2; exit 1 ;;
             esac
           done
+          echo "All gated jobs passed."
