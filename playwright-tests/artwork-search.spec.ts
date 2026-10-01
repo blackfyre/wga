@@ -1,4 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
+import { showArtworkResultActions } from "./helpers/artwork-search-prefs";
 import {
 	expectDebouncedSearch,
 	expectHistoryMatchesEachSearchState,
@@ -87,7 +88,11 @@ test("sort and view controls use the compact reference rank", async ({
 	await page.goto("/artworks");
 	const titleAscending = page.getByRole("link", { name: "TITLE A–Z" });
 	await expect(titleAscending).toHaveCSS("height", "32px");
-	await expect(page.getByRole("link", { name: "GRID", exact: true })).toHaveCSS(
+	await expect(page.locator("[data-artwork-view-toggle]")).toHaveCSS(
+		"height",
+		"32px",
+	);
+	await expect(page.locator("[data-wga-aw-actions]")).toHaveCSS(
 		"height",
 		"32px",
 	);
@@ -131,6 +136,7 @@ test("search cards request portrait thumbnails", async ({ page }) => {
 test("grid results expose reference metadata and independent workspace actions", async ({
 	page,
 }) => {
+	await showArtworkResultActions(page);
 	await page.goto("/artworks?art_school=bohemian");
 	await expectArtworkResults(page);
 	const card = page
@@ -187,6 +193,7 @@ test("grid cards reserve catalogue lines and bottom-align workspace actions", as
 	const longIdentity =
 		"COLENBRANDER, Theodoor Christiaan Adriaan · circa 1895–1905";
 
+	await showArtworkResultActions(page);
 	for (const viewport of [
 		{ width: 390, height: 844 },
 		{ width: 834, height: 900 },
@@ -244,6 +251,7 @@ test("grid cards reserve catalogue lines and bottom-align workspace actions", as
 test("dense results expose desktop columns and retain actions responsively", async ({
 	page,
 }) => {
+	await showArtworkResultActions(page);
 	await page.setViewportSize({ width: 1440, height: 900 });
 	await page.goto("/artworks?art_school=bohemian&view=list");
 	const row = page
@@ -450,7 +458,7 @@ test("artwork search swaps keep the document title in step with the state", asyn
 	await expect(page).toHaveTitle(/^Artworks Search · .+ - WGA$/);
 	const swapped = await page.title();
 
-	await page.getByRole("link", { name: "LIST", exact: true }).click();
+	await page.getByRole("link", { name: /^VIEW: GRID/ }).click();
 	await expect(page).toHaveURL(
 		(url) => url.searchParams.get("view") === "list",
 	);

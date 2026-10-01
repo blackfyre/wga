@@ -71,7 +71,7 @@ func TestAssetRouteServesEmbeddedCSS(t *testing.T) {
 		},
 		TestAppFactory: func(t testing.TB) *tests.TestApp {
 			app := newStaticTestApp(t)
-			RegisterHandlers(app, config.EnvironmentProduction)
+			RegisterHandlers(app)
 			return app
 		},
 	}
@@ -112,7 +112,7 @@ func writeGeneratedAgentFixture(t *testing.T, app core.App) {
 func TestGeneratedAgentRoutesServeOnlyCurrentMarkdown(t *testing.T) {
 	app := newStaticTestApp(t)
 	writeGeneratedAgentFixture(t, app)
-	RegisterHandlers(app, config.EnvironmentProduction)
+	RegisterHandlers(app)
 
 	router, err := apis.NewRouter(app)
 	if err != nil {
@@ -193,7 +193,7 @@ func TestSitemapReadFailureIsLogged(t *testing.T) {
 			if _, err := generatedpublication.Publish(app, staging, "broken-sitemap"); err != nil {
 				t.Fatal(err)
 			}
-			RegisterHandlers(app, config.EnvironmentProduction)
+			RegisterHandlers(app)
 			return app
 		},
 		AfterTestFunc: func(t testing.TB, app *tests.TestApp, _ *http.Response) {
@@ -217,7 +217,7 @@ func TestSitemapReadFailureIsLogged(t *testing.T) {
 func TestGeneratedAgentRoutesRevalidateCurrentPublication(t *testing.T) {
 	app := newStaticTestApp(t)
 	writeGeneratedAgentFixture(t, app)
-	RegisterHandlers(app, config.EnvironmentProduction)
+	RegisterHandlers(app)
 
 	router, err := apis.NewRouter(app)
 	if err != nil {
@@ -420,7 +420,7 @@ func TestSitemapRoutesServeCanonicalFilesAndDiscovery(t *testing.T) {
 					configureStaticPublicURL(t)
 					app := newStaticTestApp(t)
 					writeSitemapFiles(t, app)
-					RegisterHandlers(app, config.EnvironmentProduction)
+					RegisterHandlers(app)
 					return app
 				},
 			}
@@ -466,7 +466,7 @@ func TestStaticPageRouteRendersManagedPageWithMetadataAndContents(t *testing.T) 
 		TestAppFactory: func(t testing.TB) *tests.TestApp {
 			configureStaticPublicURL(t)
 			app := newStaticTestApp(t)
-			RegisterHandlers(app, config.EnvironmentProduction)
+			RegisterHandlers(app)
 			createStaticPage(t, app, "about", "About", `<h2>The collection</h2><p>The archive.</p>`)
 			return app
 		},
@@ -529,7 +529,7 @@ func TestStaticPageRouteRendersPrivacyAndOtherRecords(t *testing.T) {
 			TestAppFactory: func(t testing.TB) *tests.TestApp {
 				configureStaticPublicURL(t)
 				app := newStaticTestApp(t)
-				RegisterHandlers(app, config.EnvironmentProduction)
+				RegisterHandlers(app)
 				createStaticPage(t, app, tc.slug, tc.title, tc.content)
 				return app
 			},
@@ -554,7 +554,7 @@ func TestStaticPageRouteMissingRecordReturnsShared404WithoutErrorLog(t *testing.
 		TestAppFactory: func(t testing.TB) *tests.TestApp {
 			app := newStaticTestApp(t)
 			captured = testutils.CaptureLogs(app)
-			RegisterHandlers(app, config.EnvironmentProduction)
+			RegisterHandlers(app)
 			return app
 		},
 		AfterTestFunc: func(t testing.TB, app *tests.TestApp, _ *http.Response) {
@@ -603,7 +603,7 @@ func TestStaticPageRouteDatabaseFailureReturnsShared500(t *testing.T) {
 				t.Fatalf("save broken static_pages collection: %v", err)
 			}
 
-			RegisterHandlers(app, config.EnvironmentProduction)
+			RegisterHandlers(app)
 			return app
 		},
 		AfterTestFunc: func(t testing.TB, app *tests.TestApp, _ *http.Response) {
@@ -689,7 +689,7 @@ func TestCatchAllUnknownPublicGetReturnsHtml404(t *testing.T) {
 		TestAppFactory: func(t testing.TB) *tests.TestApp {
 			app := newStaticTestApp(t)
 			registerFakeHome(app)
-			RegisterHandlers(app, config.EnvironmentProduction)
+			RegisterHandlers(app)
 			return app
 		},
 		AfterTestFunc: func(t testing.TB, _ *tests.TestApp, response *http.Response) {
@@ -724,7 +724,7 @@ func TestCatchAllKeepsTechnicalBoundariesTechnical(t *testing.T) {
 			TestAppFactory: func(t testing.TB) *tests.TestApp {
 				app := newStaticTestApp(t)
 				registerFakeHome(app)
-				RegisterHandlers(app, config.EnvironmentProduction)
+				RegisterHandlers(app)
 				return app
 			},
 			AfterTestFunc: func(t testing.TB, _ *tests.TestApp, response *http.Response) {
@@ -742,7 +742,7 @@ func TestCatchAllKeepsTechnicalBoundariesTechnical(t *testing.T) {
 			TestAppFactory: func(t testing.TB) *tests.TestApp {
 				app := newStaticTestApp(t)
 				registerFakeHome(app)
-				RegisterHandlers(app, config.EnvironmentProduction)
+				RegisterHandlers(app)
 				return app
 			},
 			AfterTestFunc: func(t testing.TB, _ *tests.TestApp, response *http.Response) {
@@ -761,7 +761,7 @@ func TestCatchAllKeepsTechnicalBoundariesTechnical(t *testing.T) {
 			TestAppFactory: func(t testing.TB) *tests.TestApp {
 				app := newStaticTestApp(t)
 				registerFakeHome(app)
-				RegisterHandlers(app, config.EnvironmentProduction)
+				RegisterHandlers(app)
 				return app
 			},
 			AfterTestFunc: func(t testing.TB, _ *tests.TestApp, response *http.Response) {
@@ -779,7 +779,7 @@ func TestCatchAllKeepsTechnicalBoundariesTechnical(t *testing.T) {
 			TestAppFactory: func(t testing.TB) *tests.TestApp {
 				app := newStaticTestApp(t)
 				registerFakeHome(app)
-				RegisterHandlers(app, config.EnvironmentProduction)
+				RegisterHandlers(app)
 				return app
 			},
 			AfterTestFunc: func(t testing.TB, _ *tests.TestApp, response *http.Response) {
@@ -803,7 +803,6 @@ func TestReservedBoundary(t *testing.T) {
 		{path: "/_/admins", want: true},
 		{path: "/assets/css/style.css", want: true},
 		{path: "/sitemap/sitemap.xml", want: true},
-		{path: "/tmp/visual-overhaul", want: true},
 		{path: "/apix", want: false},
 		{path: "/pages/about", want: false},
 		{path: "/artworks", want: false},
@@ -831,7 +830,7 @@ func TestFullAppRoutingPreservesHomeAndKnownRoutes(t *testing.T) {
 		return se.Next()
 	})
 	landing.RegisterHandlers(app)
-	RegisterHandlers(app, config.EnvironmentProduction)
+	RegisterHandlers(app)
 	createStaticPage(t, app, "about", "About", `<h2>The collection</h2><p>The archive.</p>`)
 
 	router, err := apis.NewRouter(app)

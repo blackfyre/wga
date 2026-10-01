@@ -28,7 +28,12 @@ func getHtmxDefaultArea(target string) string {
 
 templ LayoutBase(bodyClasses string, HtmxTargetArea string) {
 	<!DOCTYPE html>
-	<html lang="en">
+	<html
+		lang="en"
+		if actions := utils.GetArtworkActions(ctx); actions != "" {
+			data-aw-actions={ actions }
+		}
+	>
 		<head>
 			<meta charset="utf-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>

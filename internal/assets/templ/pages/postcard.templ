@@ -22,9 +22,13 @@ type PostcardComposeView struct {
 	SenderEmail      string
 	Recipients       []string
 	Message          string
-	SiteKey          string
-	Error            string
-	SubmissionKey    string
+	// MessageLength is the visible character count of Message, as the
+	// workflow validates it, so the counter can show what is left without
+	// JavaScript.
+	MessageLength int
+	SiteKey       string
+	Error         string
+	SubmissionKey string
 }
 
 type PostcardConfirmationView struct {
@@ -41,7 +45,14 @@ type PostcardView struct {
 	Technique        string
 	ArtistFilingName string
 	SenderName       string
-	Music            components.MusicPeriodCard
+	// Dimensions and Location are omitted from the card when empty.
+	Dimensions string
+	Location   string
+	// RecordURL is the canonical artwork record; ComposeURL starts a new
+	// postcard for the same work.
+	RecordURL  string
+	ComposeURL string
+	Music      components.MusicPeriodCard
 }
 
 templ PostcardComposePage(v PostcardComposeView) {
@@ -104,9 +115,10 @@ templ PostcardComposeBlock(v PostcardComposeView) {
 					}
 				</fieldset>
 				<div class="mb-6" data-wga-rte data-rte-limit={ strconv.Itoa(PostcardMessageLimit) }>
-					<div class="mb-2 flex items-baseline justify-between gap-4 font-mono text-(length:--t-11) tracking-[1px]">
-						<label id="message-label" for="message">MESSAGE — 300 CHARACTERS AT MOST</label>
-						<span id="message-count" data-rte-count aria-live="polite" class="shrink-0 text-wga-ink/60">300 characters remaining</span>
+					<div class="mb-2 flex flex-wrap items-baseline gap-x-2 font-mono text-(length:--t-11) tracking-[1px]">
+						<label id="message-label" for="message">MESSAGE</label>
+						<span aria-hidden="true" class="text-wga-ink/60">—</span>
+						<span id="message-count" data-rte-count aria-live="polite" class={ "shrink-0 text-wga-ink/60", templ.KV("text-wga-error", v.MessageLength > PostcardMessageLimit) }>{ postcardCounterCopy(v.MessageLength) }</span>
 					</div>
 					<div class="border border-wga-ink/30 bg-transparent focus-within:border-wga-accent">
 						<div role="toolbar" aria-label="Message formatting" data-rte-toolbar hidden class="flex gap-0.5 border-b border-wga-ink/30 p-1.5">
@@ -202,17 +214,61 @@ templ PostcardBlock(p PostcardView) {
 					</div>
 				</div>
 				<div class="border-t border-wga-ink/15 pt-6 md:border-l md:border-t-0 md:pl-6 md:pt-0">
-					<h2 class="text-(length:--t-15) font-semibold leading-tight">{ p.Title }</h2>
-					<p class="mt-1 font-mono text-(length:--t-11) leading-relaxed text-wga-ink/60">{ p.ArtistFilingName }<br/>{ p.Technique }</p>
+					<h2 class="text-(length:--t-15) font-semibold leading-tight"><a href={ templ.SafeURL(p.RecordURL) } class="hover:underline">{ p.Title }</a></h2>
+					<p class="mt-1 font-mono text-(length:--t-11) leading-relaxed text-wga-ink/60">
+						{ p.ArtistFilingName }
+						if line := postcardMaterialLine(p.Technique, p.Dimensions); line != "" {
+							<br/>
+							<span data-postcard-material>{ line }</span>
+						}
+						if p.Location != "" {
+							<br/>
+							<span data-postcard-location>{ p.Location }</span>
+						}
+					</p>
 					<div class="content mt-4 text-(length:--t-15) leading-[1.7]">
 						@templ.Raw(p.Comment)
 					</div>
+					<a href={ templ.SafeURL(p.RecordURL) } class="wga-action-link mt-4 block text-right font-mono text-(length:--t-11) tracking-[1px]">VIEW IN GALLERY →</a>
 				</div>
 			</div>
 			if p.Music.PlayerURL != "" {
 				@components.MusicPeriodPlayerCard(p.Music.SongID, p.Music.Piece, p.Music.PlayerURL)
 			}
 		</article>
-		<a href="/artists" hx-get="/artists" class="wga-action-link mt-7 inline-block font-mono text-(length:--t-11) tracking-[1px]">BROWSE THE ARCHIVE →</a>
+		<nav aria-label="Continue from this postcard" class="mt-7 flex flex-wrap gap-x-6 gap-y-3 font-mono text-(length:--t-12) tracking-[1px]">
+			<a href={ templ.SafeURL(p.ComposeURL) } class="wga-action-link">SEND YOUR OWN →</a>
+			<a href="/artists" class="wga-action-link">BROWSE THE ARCHIVE →</a>
+		</nav>
 	</section>
+}
+
+// postcardMaterialLine joins the technique and dimensions as the design's
+// "Oil on canvas, 46,5 × 40 cm" line, omitting whichever is absent.
+func postcardMaterialLine(technique string, dimensions string) string {
+	switch {
+	case technique != "" && dimensions != "":
+		return technique + ", " + dimensions
+	case technique != "":
+		return technique
+	default:
+		return dimensions
+	}
+}
+
+// postcardCounterCopy renders the composer counter before the rich-text script
+// takes it over: "MESSAGE — N CHARACTERS LEFT" for a message of the given
+// visible length, or how far a redisplayed message runs over the limit.
+func postcardCounterCopy(messageLength int) string {
+	remaining := PostcardMessageLimit - messageLength
+	switch {
+	case remaining == 1:
+		return "1 CHARACTER LEFT"
+	case remaining >= 0:
+		return strconv.Itoa(remaining) + " CHARACTERS LEFT"
+	case remaining == -1:
+		return "1 CHARACTER OVER THE LIMIT"
+	default:
+		return strconv.Itoa(-remaining) + " CHARACTERS OVER THE LIMIT"
+	}
 }

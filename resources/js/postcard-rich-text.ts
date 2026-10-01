@@ -219,7 +219,7 @@ function mount(root: HTMLElement): void {
 					: `${count - limit} ${count - limit === 1 ? "character" : "characters"} over the limit`;
 		} else {
 			surface.removeAttribute("aria-invalid");
-			counter.textContent = `${remaining} ${remaining === 1 ? "character" : "characters"} remaining`;
+			counter.textContent = `${remaining} ${remaining === 1 ? "CHARACTER" : "CHARACTERS"} LEFT`;
 		}
 		counter.classList.toggle("text-wga-error", remainsInvalid || remaining < 0);
 		surface.toggleAttribute("data-rte-empty", count === 0);

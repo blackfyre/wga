@@ -29,7 +29,6 @@ var trustedHeadMarkupBoundaries = []string{
 	"/agents",
 	"/llms.txt",
 	"/sitemap",
-	"/tmp/visual-overhaul",
 }
 
 // registerTrustedHeadMarkupMiddleware binds the header-markup middleware to the

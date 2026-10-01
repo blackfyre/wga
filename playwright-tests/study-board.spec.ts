@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { showArtworkResultActions } from "./helpers/artwork-search-prefs";
 
 const storageKey = "wga-study-board";
 
@@ -96,6 +97,7 @@ test("adds without record navigation, shows the fixed shelf, and reorders both v
 	page,
 }) => {
 	test.setTimeout(60000);
+	await showArtworkResultActions(page);
 	await page.goto("/artworks");
 	const actions = page.locator("[data-study-board-add]");
 	await expect(actions.first()).toBeVisible({ timeout: 30000 });
@@ -183,6 +185,7 @@ test("adds without record navigation, shows the fixed shelf, and reorders both v
 
 test("reports capacity without mutating or navigating", async ({ page }) => {
 	test.setTimeout(60000);
+	await showArtworkResultActions(page);
 	await page.goto("/artworks");
 	const actions = page.locator("[data-study-board-add]");
 	await expect(actions.nth(12)).toBeVisible({ timeout: 30000 });

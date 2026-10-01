@@ -158,7 +158,7 @@ for (const width of viewports) {
 			await expect(page.locator("input[name='year_to']")).toHaveValue(
 				artworkYearRange.to,
 			);
-			await page.getByRole("link", { name: "LIST" }).click();
+			await page.getByRole("link", { name: /^VIEW: GRID/ }).click();
 			await expect(page).toHaveURL(
 				(url) => url.searchParams.get("view") === "list",
 			);
