@@ -116,6 +116,45 @@ func TestFocusRingAndDeadProseRulesAreNotDuplicated(t *testing.T) {
 	if !strings.Contains(focus, "outline: 2px solid var(--wga-accent);") {
 		t.Error("the base focus ring must use the --wga-accent role")
 	}
+	if !strings.Contains(ruleBody(t, css, ".glossary-term"), "outline-wga-accent") {
+		t.Error("the glossary-term focus ring must use the --wga-accent role")
+	}
+}
+
+// Rich-text containers keep the prose line height and focus rings keep the
+// accent role: a surface may pick another size rung, but no other leading or
+// focus colour.
+func TestPublicTemplKeepsProseLeadingAndAccentFocus(t *testing.T) {
+	contentClass := regexp.MustCompile(`class="content(?: [^"]*)?"`)
+	offLeading := regexp.MustCompile(`\bleading-(?:none|tight|snug|normal|relaxed|loose)\b`)
+	offFocus := regexp.MustCompile(`\bfocus(?:-visible)?:outline-wga-(?:[a-z0-9-]+)`)
+
+	err := filepath.WalkDir("templ", func(path string, entry os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if entry.IsDir() || filepath.Ext(path) != ".templ" {
+			return nil
+		}
+		source, readErr := os.ReadFile(path)
+		if readErr != nil {
+			return readErr
+		}
+		for _, class := range contentClass.FindAll(source, -1) {
+			if match := offLeading.Find(class); match != nil {
+				t.Errorf("%s gives rich-text prose %q; keep the 1.7 prose line height", path, match)
+			}
+		}
+		for _, match := range offFocus.FindAll(source, -1) {
+			if !strings.HasSuffix(string(match), ":outline-wga-accent") {
+				t.Errorf("%s sets focus ring colour %q; use the accent role", path, match)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("scan templ: %v", err)
+	}
 }
 
 func TestPublicSourcesStayOnTheTypeScale(t *testing.T) {

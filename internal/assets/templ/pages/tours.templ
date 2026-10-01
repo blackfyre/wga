@@ -226,11 +226,11 @@ templ tourBlocks(blocks []dto.TourBlock) {
 	<div class="max-w-2xl space-y-5 leading-relaxed">
 		for _, block := range blocks {
 			if block.Kind == "quote" {
-				<blockquote class="border-l-4 border-wga-accent pl-5 text-(length:--t-18)">
+				<blockquote class="content border-l-4 border-wga-accent pl-5 text-(length:--t-18)">
 					@templ.Raw(block.HTML)
 				</blockquote>
 			} else if block.Kind == "note" {
-				<aside class="border border-wga-ink/20 p-4">
+				<aside class="content border border-wga-ink/20 p-4">
 					@templ.Raw(block.HTML)
 				</aside>
 			} else {
@@ -262,7 +262,7 @@ templ tourIndex(view dto.TourPage) {
 	<div>
 		@tourPageHead(view)
 		<h1 class="text-3xl font-semibold leading-tight md:text-4xl">{ view.PageTitle }</h1>
-		<div class="content max-w-2xl leading-relaxed">
+		<div class="content max-w-2xl">
 			@tourBlocks(view.Blocks)
 		</div>
 		<ul class="mt-8 border-t border-wga-ink/25" data-kbd-list data-kbd-cols="1">
