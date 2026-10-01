@@ -26,7 +26,11 @@ func TestAcquireLockExcludesAnotherFileDescriptor(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			t.Errorf("close lock file: %v", err)
+		}
+	}()
 	if err := unix.Flock(int(file.Fd()), unix.LOCK_EX|unix.LOCK_NB); !errors.Is(err, unix.EWOULDBLOCK) && !errors.Is(err, unix.EAGAIN) {
 		t.Fatalf("second lock error = %v, want would-block", err)
 	}
@@ -63,7 +67,11 @@ func TestFailedPublicationLeavesAllReadersOnPreviousVersion(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(next)
+	defer func() {
+		if err := os.RemoveAll(next); err != nil {
+			t.Errorf("remove next staging: %v", err)
+		}
+	}()
 	writeGeneratedTestFile(t, next, "sitemap/sitemap.xml", "new sitemap")
 	writeGeneratedTestFile(t, next, "agent-content/agents/artists/a.md", "new artist")
 	conflict := filepath.Join(Directory(app), versionsName, "next")

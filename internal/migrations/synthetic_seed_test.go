@@ -319,7 +319,11 @@ func TestSyntheticSeedImportExternalSQLite(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open external source: %v", err)
 	}
-	defer source.Close()
+	defer func() {
+		if err := source.Close(); err != nil {
+			t.Errorf("close external source: %v", err)
+		}
+	}()
 	if _, err := source.Exec(`
 		UPDATE artists
 		SET biography_image_output_path = 'Artists/2236bdd57f7492e/portrait.jpg',

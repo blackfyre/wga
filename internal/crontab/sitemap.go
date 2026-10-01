@@ -13,10 +13,12 @@ import (
 func generateSiteMap(app *pocketbase.PocketBase, sitemapConfig config.Sitemap) {
 	app.Logger().Debug("Registering cron job for sitemap generation...")
 	app.Cron().MustAdd("sitemap", "0 0 * * *", func() {
-		runSitemap(app, sitemapConfig, "scheduled")
+		// runSitemap logs its own failure; cron has no caller to report it to.
+		_ = runSitemap(app, sitemapConfig, "scheduled")
 	})
 	app.OnServe().BindFunc(func(event *core.ServeEvent) error {
-		runSitemap(app, sitemapConfig, "startup")
+		// runSitemap logs its own failure; a missing sitemap must not block serving.
+		_ = runSitemap(app, sitemapConfig, "startup")
 		return event.Next()
 	})
 }

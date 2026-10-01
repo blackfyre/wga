@@ -27,7 +27,11 @@ func TestReleaseDataPreflightExternalSourcePreservesReleaseData(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open external source: %v", err)
 	}
-	defer source.Close()
+	defer func() {
+		if err := source.Close(); err != nil {
+			t.Errorf("close external source: %v", err)
+		}
+	}()
 
 	comment := strings.Repeat("release-source-comment-", 300)
 	if _, err := source.Exec("UPDATE artworks SET source_comment = ? WHERE id = ?", comment, "07561d2efd0a6db"); err != nil {

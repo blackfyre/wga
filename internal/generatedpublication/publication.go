@@ -142,7 +142,9 @@ func selectVersion(root string, version string) error {
 		return fmt.Errorf("create generated-publication marker: %w", err)
 	}
 	markerPath := marker.Name()
-	defer os.Remove(markerPath)
+	// Best-effort removal of an unrenamed marker; after a successful rename the
+	// path no longer exists, so the error carries no information.
+	defer func() { _ = os.Remove(markerPath) }()
 	if _, err := marker.WriteString(version + "\n"); err != nil {
 		_ = marker.Close()
 		return fmt.Errorf("write generated-publication marker: %w", err)

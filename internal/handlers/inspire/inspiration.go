@@ -30,7 +30,9 @@ func inspirationWorks(app *pocketbase.PocketBase) (dto.ImageGrid, error) {
 	if err != nil {
 		return nil, fmt.Errorf("query inspiration works: %w", err)
 	}
-	defer rows.Close()
+	// Iteration errors are reported through rows.Err below; Close on a read-only
+	// query has nothing further to report.
+	defer func() { _ = rows.Close() }()
 
 	content := make(dto.ImageGrid, 0, inspirationLimit)
 	for rows.Next() {

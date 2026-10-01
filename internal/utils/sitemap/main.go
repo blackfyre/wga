@@ -111,7 +111,11 @@ func GenerateSiteMap(app core.App, sitemapConfig config.Sitemap) (result Result,
 	if err != nil {
 		return Result{}, err
 	}
-	defer os.RemoveAll(staging)
+	defer func() {
+		if removeErr := os.RemoveAll(staging); removeErr != nil {
+			result.CleanupErr = errors.Join(result.CleanupErr, fmt.Errorf("remove sitemap staging directory: %w", removeErr))
+		}
+	}()
 	stagingDir := filepath.Join(staging, directoryName)
 	if err := os.MkdirAll(stagingDir, 0o755); err != nil {
 		return Result{}, fmt.Errorf("create sitemap staging directory: %w", err)
