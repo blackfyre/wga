@@ -79,7 +79,7 @@ test("consent granted in another tab applies to an already-open page", async ({
 	await otherTab.goto("/");
 	await otherTab
 		.locator("#cc-main .cm")
-		.getByRole("button", { name: "COOKIE PREFERENCES" })
+		.getByRole("button", { name: "PREFERENCES", exact: true })
 		.click();
 	await savePreferenceStorage(otherTab, true);
 	await otherTab.close();
@@ -98,7 +98,7 @@ test("accepted preference consent remembers choices, and withdrawing it deletes 
 	await page.goto("/artworks");
 	await page
 		.locator("#cc-main .cm")
-		.getByRole("button", { name: "COOKIE PREFERENCES" })
+		.getByRole("button", { name: "PREFERENCES", exact: true })
 		.click();
 	await savePreferenceStorage(page, true);
 

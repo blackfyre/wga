@@ -2,16 +2,21 @@
 
 ### Requirement: Cookie consent retains Vanilla CookieConsent semantics
 
-The system SHALL display Vanilla CookieConsent using the reference's notice treatment while retaining the existing client-side necessary-consent category, persistence, and preferences behaviour. The system SHALL also offer an optional `preferences` category, off by default, that gates remembered artwork search choices; the notice and the preferences interface SHALL state that this optional storage exists, what it remembers, and that turning it off deletes it.
+The system SHALL display Vanilla CookieConsent using the reference's notice treatment while retaining the existing client-side necessary-consent category, persistence, and preferences behaviour. The system SHALL also offer an optional `preferences` category, off by default, that gates remembered artwork search choices; the notice and the preferences interface SHALL state that this optional storage exists, what it remembers, and that turning it off deletes it. The notice SHALL offer exactly three keyboard-operable actions, in this reading and focus order: `ACCEPT ALL` (every category, including `preferences`), `DENY` (the necessary category only, leaving optional storage off and deleting any stored copy), and `PREFERENCES` (opens the preferences interface). The preferences interface SHALL offer `ACCEPT ALL`, `DENY`, and `SAVE PREFERENCES` alongside a per-category toggle.
 
 #### Scenario: Visitor accepts necessary cookies
 
-- **WHEN** a visitor accepts the available necessary-consent action from the redesigned notice
-- **THEN** Vanilla CookieConsent persists consent and does not show the initial notice again according to its existing lifecycle.
+- **WHEN** a visitor activates `DENY` in the notice
+- **THEN** Vanilla CookieConsent persists consent to the necessary category only, any stored preference copy is deleted, and the initial notice is not shown again according to its existing lifecycle.
+
+#### Scenario: Visitor accepts all categories
+
+- **WHEN** a visitor activates `ACCEPT ALL` in the notice
+- **THEN** Vanilla CookieConsent persists consent to every category, including `preferences`.
 
 #### Scenario: Visitor opens cookie preferences
 
-- **WHEN** a visitor selects the cookie-preferences action
+- **WHEN** a visitor selects `PREFERENCES`
 - **THEN** Vanilla CookieConsent opens its preferences interface without a server-side consent request, listing the strictly necessary category and the optional preference-storage category.
 
 ## ADDED Requirements
