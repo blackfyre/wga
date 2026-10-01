@@ -9,7 +9,7 @@ import (
 
 func TestGuidedTourContractsUpDownAndReUpRetainEditorialData(t *testing.T) {
 	app := newMigrationTestApp(t, t.TempDir())
-	t.Cleanup(func() { _ = app.ResetBootstrapState() })
+	t.Cleanup(func() { _ = app.ClearBootstrap() })
 	if err := createCurrentSchema(app); err != nil {
 		t.Fatalf("baseline: %v", err)
 	}
@@ -105,7 +105,7 @@ func TestGuidedTourContractsUpDownAndReUpRetainEditorialData(t *testing.T) {
 
 func TestGuidedTourContractsUseProducerTextAndListContracts(t *testing.T) {
 	app := newMigrationTestApp(t, t.TempDir())
-	t.Cleanup(func() { _ = app.ResetBootstrapState() })
+	t.Cleanup(func() { _ = app.ClearBootstrap() })
 	if err := createCurrentSchema(app); err != nil {
 		t.Fatal(err)
 	}
@@ -170,7 +170,7 @@ func TestGuidedTourContractsUseProducerTextAndListContracts(t *testing.T) {
 
 func TestGuidedTourContractsRejectMissingProvenance(t *testing.T) {
 	app := newMigrationTestApp(t, t.TempDir())
-	t.Cleanup(func() { _ = app.ResetBootstrapState() })
+	t.Cleanup(func() { _ = app.ClearBootstrap() })
 	if err := createCurrentSchema(app); err != nil {
 		t.Fatal(err)
 	}
@@ -231,7 +231,7 @@ func TestGuidedTourContractsRejectMissingProvenance(t *testing.T) {
 
 func TestGuidedTourContractsStartEmpty(t *testing.T) {
 	app := newMigrationTestApp(t, t.TempDir())
-	t.Cleanup(func() { _ = app.ResetBootstrapState() })
+	t.Cleanup(func() { _ = app.ClearBootstrap() })
 	if err := createCurrentSchema(app); err != nil {
 		t.Fatal(err)
 	}

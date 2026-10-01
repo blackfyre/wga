@@ -43,7 +43,7 @@ func newTask86FixtureApp(t *testing.T) *pocketbase.PocketBase {
 	if err := app.Bootstrap(); err != nil {
 		t.Fatalf("bootstrap: %v", err)
 	}
-	t.Cleanup(func() { _ = app.ResetBootstrapState() })
+	t.Cleanup(func() { _ = app.ClearBootstrap() })
 
 	artworks := task86Collection("Artworks", "artworks", &core.TextField{Name: "title"}, &core.TextField{Name: "image"}, &core.NumberField{Name: "image_width"}, &core.BoolField{Name: "published"})
 	task86SaveCollection(t, app, artworks)

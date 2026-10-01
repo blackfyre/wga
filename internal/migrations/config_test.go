@@ -44,13 +44,13 @@ func TestMigrationsKeepExistingSettings(t *testing.T) {
 	if len(superusers) != 0 {
 		t.Fatalf("expected no bootstrap administrator, got %d superusers", len(superusers))
 	}
-	if err := fresh.ResetBootstrapState(); err != nil {
+	if err := fresh.ClearBootstrap(); err != nil {
 		t.Fatalf("close fresh app: %v", err)
 	}
 
 	existing := newMigrationTestApp(t, dataDir)
 	defer func() {
-		if err := existing.ResetBootstrapState(); err != nil {
+		if err := existing.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	}()

@@ -16,7 +16,7 @@ func TestRegisteredTourRoutesRenderEmptyIndexAndDenyMissingTour(t *testing.T) {
 	if err := app.Bootstrap(); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = app.ResetBootstrapState() })
+	t.Cleanup(func() { _ = app.ClearBootstrap() })
 
 	editors := core.NewBaseCollection("Guided_tour_editors")
 	editors.Id = "guided_tour_editors"
@@ -120,7 +120,7 @@ func TestLegacyTourRoutesRedirectToCanonicalAddress(t *testing.T) {
 	if err := app.Bootstrap(); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = app.ResetBootstrapState() })
+	t.Cleanup(func() { _ = app.ClearBootstrap() })
 
 	editors := core.NewBaseCollection("Guided_tour_editors")
 	editors.Id = "guided_tour_editors"

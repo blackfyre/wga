@@ -467,7 +467,7 @@ func TestGuestbookRouteSelectsTargetAwareResponse(t *testing.T) {
 		t.Fatalf("bootstrap: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Errorf("reset: %v", err)
 		}
 	})

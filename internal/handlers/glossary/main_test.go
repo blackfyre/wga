@@ -56,7 +56,7 @@ func TestGlossaryRouteRendersFullAndHTMXResponses(t *testing.T) {
 		t.Fatalf("bootstrap test application: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Errorf("reset test application: %v", err)
 		}
 	})
@@ -111,7 +111,7 @@ func TestGlossaryRouteSelectsTargetAwareResponse(t *testing.T) {
 		t.Fatalf("bootstrap test application: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Errorf("reset test application: %v", err)
 		}
 	})

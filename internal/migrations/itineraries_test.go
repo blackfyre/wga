@@ -11,7 +11,7 @@ func TestItinerariesMigrationCreatesCollectionsAndIndexes(t *testing.T) {
 	dataDir := t.TempDir()
 	app := newMigrationTestApp(t, dataDir)
 	defer func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	}()
@@ -58,7 +58,7 @@ func TestItinerariesMigrationCreatesCollectionsAndIndexes(t *testing.T) {
 func TestItinerariesDraftOwnerUniqueIndex(t *testing.T) {
 	app := newMigrationTestApp(t, t.TempDir())
 	defer func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	}()
@@ -90,7 +90,7 @@ func TestItinerariesDraftOwnerUniqueIndex(t *testing.T) {
 func TestItinerariesStopArtworkUniqueIndex(t *testing.T) {
 	app := newMigrationTestApp(t, t.TempDir())
 	defer func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	}()
@@ -134,7 +134,7 @@ func TestItinerariesStopArtworkUniqueIndex(t *testing.T) {
 func TestItinerariesStopPositionUniqueIndex(t *testing.T) {
 	app := newMigrationTestApp(t, t.TempDir())
 	defer func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	}()
@@ -184,7 +184,7 @@ func TestItinerariesStopPositionUniqueIndex(t *testing.T) {
 func TestItinerariesMigrationRollbackPreservesData(t *testing.T) {
 	app := newMigrationTestApp(t, t.TempDir())
 	defer func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	}()

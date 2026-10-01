@@ -10,7 +10,7 @@ func TestPostcardSenderControlsMigrationCreatesAdditiveSchema(t *testing.T) {
 	configureMigrations(t)
 	app := newMigrationTestApp(t, t.TempDir())
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})
@@ -67,7 +67,7 @@ func TestPostcardSenderControlsMigrationCreatesAdditiveSchema(t *testing.T) {
 func TestPostcardSenderControlsMigrationPreservesExistingPostcards(t *testing.T) {
 	app := newMigrationTestApp(t, t.TempDir())
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})

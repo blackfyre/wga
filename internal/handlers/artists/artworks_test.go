@@ -302,7 +302,7 @@ func TestPopulateArtworkSourceDataUsesSourceComment(t *testing.T) {
 		t.Fatalf("bootstrap: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})
@@ -356,7 +356,7 @@ func TestPopulateArtworkSourceDataKeepsFileWeightInternal(t *testing.T) {
 		t.Fatalf("bootstrap: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})
@@ -414,7 +414,7 @@ func TestResolveWorkArtistChoosesPublishedAuthor(t *testing.T) {
 		t.Fatalf("bootstrap: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})

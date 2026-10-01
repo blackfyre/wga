@@ -10,7 +10,7 @@ import (
 func TestArtworkSourceFieldsMigrationAddsTypedFields(t *testing.T) {
 	app := newMigrationTestApp(t, t.TempDir())
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})
@@ -57,7 +57,7 @@ func TestArtworkSourceFieldsMigrationAddsTypedFields(t *testing.T) {
 func TestArtworkSourceFieldsMigrationIsIdempotent(t *testing.T) {
 	app := newMigrationTestApp(t, t.TempDir())
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})
@@ -76,7 +76,7 @@ func TestArtworkSourceFieldsMigrationIsIdempotent(t *testing.T) {
 func TestRemoveArtworkSourceFieldsKeepsFieldsAndDropsIndex(t *testing.T) {
 	app := newMigrationTestApp(t, t.TempDir())
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})

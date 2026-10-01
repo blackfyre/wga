@@ -223,7 +223,7 @@ func newArtworkExperimentApp(tb testing.TB) (*pocketbase.PocketBase, bool) {
 		tb.Fatalf("bootstrap experiment app: %v", err)
 	}
 	tb.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			tb.Errorf("reset experiment app: %v", err)
 		}
 	})

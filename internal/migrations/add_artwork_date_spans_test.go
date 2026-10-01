@@ -10,7 +10,7 @@ import (
 func TestAddArtworkDateSpansAddsFieldsAndIndex(t *testing.T) {
 	app := newMigrationTestApp(t, t.TempDir())
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})
@@ -65,7 +65,7 @@ func TestAddArtworkDateSpansAddsFieldsAndIndex(t *testing.T) {
 func TestRemoveArtworkDateSpansKeepsFieldsAndDropsIndex(t *testing.T) {
 	app := newMigrationTestApp(t, t.TempDir())
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})

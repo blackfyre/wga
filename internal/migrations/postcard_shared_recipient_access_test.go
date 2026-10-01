@@ -4,7 +4,7 @@ import "testing"
 
 func TestPostcardSharedRecipientAccessMigrationCreatesAdditiveSchema(t *testing.T) {
 	app := newMigrationTestApp(t, t.TempDir())
-	t.Cleanup(func() { _ = app.ResetBootstrapState() })
+	t.Cleanup(func() { _ = app.ClearBootstrap() })
 	configureMigrations(t)
 	if err := createCurrentSchema(app); err != nil {
 		t.Fatal(err)

@@ -333,7 +333,7 @@ func TestImportSyntheticLocations(t *testing.T) {
 		t.Fatalf("bootstrap app: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})
@@ -380,7 +380,7 @@ func TestImportSyntheticArtworksCarriesCollectionData(t *testing.T) {
 		t.Fatalf("bootstrap app: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})
@@ -451,7 +451,7 @@ func TestImportSyntheticArtworksCarriesSourceAndColourFields(t *testing.T) {
 		t.Fatalf("bootstrap app: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})
@@ -538,7 +538,7 @@ func TestImportSyntheticArtworksOmitsAbsentSourceAndColourFields(t *testing.T) {
 		t.Fatalf("bootstrap app: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})
@@ -603,7 +603,7 @@ func TestImportSyntheticArtworksImageLessPersistsWithoutFile(t *testing.T) {
 		t.Fatalf("bootstrap app: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})
@@ -643,7 +643,7 @@ func TestImportSyntheticArtworksRejectsDeclaredMissingMedia(t *testing.T) {
 		t.Fatalf("bootstrap app: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})
@@ -675,7 +675,7 @@ func TestImportSyntheticArtworksRetainsLongSourceComment(t *testing.T) {
 		t.Fatalf("bootstrap app: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})

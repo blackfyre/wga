@@ -639,7 +639,7 @@ func assertProtectionAdmissionMetric(t testing.TB, reader *sdkmetric.ManualReade
 			for _, point := range sum.DataPoints {
 				attributes := map[string]string{}
 				for _, attr := range point.Attributes.ToSlice() {
-					attributes[string(attr.Key)] = attr.Value.Emit()
+					attributes[string(attr.Key)] = attr.Value.String()
 				}
 				if attributes["wga.request_protection.profile"] == profile &&
 					attributes["wga.request_protection.decision"] == decision &&

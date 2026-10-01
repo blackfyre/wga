@@ -109,7 +109,7 @@ func newLandingRepositoryTestApp(t *testing.T) *pocketbase.PocketBase {
 		t.Fatalf("bootstrap test app: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Errorf("reset test app: %v", err)
 		}
 	})

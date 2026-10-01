@@ -20,7 +20,7 @@ func TestSyntheticSeedMigrationImportsBaselineSchema(t *testing.T) {
 
 	app := newMigrationTestApp(t, t.TempDir())
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})
@@ -278,7 +278,7 @@ func TestSyntheticSeedMigrationSkipsPopulatedTarget(t *testing.T) {
 
 	app := newMigrationTestApp(t, t.TempDir())
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})
@@ -336,7 +336,7 @@ func TestSyntheticSeedImportExternalSQLite(t *testing.T) {
 
 	app := newMigrationTestApp(t, t.TempDir())
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})

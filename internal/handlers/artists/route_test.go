@@ -101,7 +101,7 @@ func TestArtistIndexRouteRendersFullAndHTMX(t *testing.T) {
 		t.Fatalf("bootstrap: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Errorf("reset: %v", err)
 		}
 	})
@@ -174,7 +174,7 @@ func TestArtistIndexRouteSelectsTargetAwareResponse(t *testing.T) {
 		t.Fatalf("bootstrap: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Errorf("reset: %v", err)
 		}
 	})
@@ -259,7 +259,7 @@ func TestArtistIndexRouteNormalisesCanonicalUrl(t *testing.T) {
 		t.Fatalf("bootstrap: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Errorf("reset: %v", err)
 		}
 	})

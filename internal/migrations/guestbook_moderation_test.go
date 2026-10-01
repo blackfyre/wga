@@ -10,7 +10,7 @@ import (
 func TestGuestbookModerationBackfillsLegacyEmailsWithoutRevalidating(t *testing.T) {
 	app := newMigrationTestApp(t, t.TempDir())
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})
@@ -129,7 +129,7 @@ func TestGuestbookModerationBackfillsLegacyEmailsWithoutRevalidating(t *testing.
 func TestGuestbookModerationMigrationBackfillsAndRollsBack(t *testing.T) {
 	app := newMigrationTestApp(t, t.TempDir())
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})

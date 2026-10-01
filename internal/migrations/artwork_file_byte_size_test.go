@@ -9,7 +9,7 @@ import (
 func TestArtworkFileByteSizeMigrationAddsFieldAndRaisesMax(t *testing.T) {
 	app := newMigrationTestApp(t, t.TempDir())
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})
@@ -49,7 +49,7 @@ func TestArtworkFileByteSizeMigrationAddsFieldAndRaisesMax(t *testing.T) {
 func TestArtworkFileByteSizeMigrationAddsSourceCommentWhenAbsent(t *testing.T) {
 	app := newMigrationTestApp(t, t.TempDir())
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})
@@ -80,7 +80,7 @@ func TestArtworkFileByteSizeMigrationAddsSourceCommentWhenAbsent(t *testing.T) {
 func TestArtworkFileByteSizeMigrationIsIdempotent(t *testing.T) {
 	app := newMigrationTestApp(t, t.TempDir())
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})
@@ -114,7 +114,7 @@ func TestArtworkFileByteSizeMigrationIsIdempotent(t *testing.T) {
 func TestArtworkFileByteSizeMigrationPreservesExistingComment(t *testing.T) {
 	app := newMigrationTestApp(t, t.TempDir())
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})
@@ -199,7 +199,7 @@ func TestArtworkFileByteSizeMigrationAppliesOnCleanSchemaSetup(t *testing.T) {
 
 	app := newMigrationTestApp(t, t.TempDir())
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})
@@ -227,7 +227,7 @@ func TestArtworkFileByteSizeMigrationUpgradesExistingBootstrapHistory(t *testing
 
 	app := newMigrationTestApp(t, t.TempDir())
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Error(err)
 		}
 	})

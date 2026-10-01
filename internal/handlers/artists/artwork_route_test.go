@@ -31,7 +31,7 @@ func newArtworkRouteAppWithEnvironment(t *testing.T, environment config.Environm
 		t.Fatalf("bootstrap: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Errorf("reset: %v", err)
 		}
 	})

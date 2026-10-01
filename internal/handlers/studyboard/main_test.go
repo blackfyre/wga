@@ -21,7 +21,7 @@ func newStudyBoardRouteApp(t *testing.T) (*pocketbase.PocketBase, func(string, b
 		t.Fatalf("bootstrap: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := app.ResetBootstrapState(); err != nil {
+		if err := app.ClearBootstrap(); err != nil {
 			t.Errorf("reset: %v", err)
 		}
 	})
