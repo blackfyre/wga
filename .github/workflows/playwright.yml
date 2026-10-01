@@ -13,7 +13,6 @@ on:
       - ".github/workflows/playwright.yml"
       - "package.json"
       - "bun.lock"
-      - "yarn.lock"
       - "go.mod"
       - "go.sum"
       - "mise.toml"
@@ -31,7 +30,6 @@ on:
       - ".github/workflows/playwright.yml"
       - "package.json"
       - "bun.lock"
-      - "yarn.lock"
       - "go.mod"
       - "go.sum"
       - "mise.toml"
@@ -196,7 +194,7 @@ jobs:
         run: bun install
       - name: Get installed Playwright version
         id: playwright-version
-        run: echo "PLAYWRIGHT_VERSION=$(grep '@playwright/test@' yarn.lock | awk -F'[@"]' '{print $4}' | awk -F'^' '{print $2}')" >> $GITHUB_ENV
+        run: echo "PLAYWRIGHT_VERSION=$(jq -r .version node_modules/@playwright/test/package.json)" >> "$GITHUB_ENV"
       # - name: Cache playwright binaries
       #   uses: actions/cache@v4
       #   id: playwright-cache

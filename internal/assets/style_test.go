@@ -246,8 +246,6 @@ func TestThirdPartyStyleDependencyIsAbsent(t *testing.T) {
 	for _, path := range []string{
 		"../../package.json",
 		"../../bun.lock",
-		"../../package-lock.json",
-		"../../yarn.lock",
 		"../../resources/css/style.pcss",
 		"../licences/manifest.json",
 		"views/open-source-licences.html",
