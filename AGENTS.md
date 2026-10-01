@@ -39,6 +39,7 @@
 - The full Go suite includes a mail-send test that skips only when no `sendmail` executable is available.
 - `biome.json` configures JS/TS tabs, double quotes, and import organisation. The Playwright CI workflow also runs Prettier on changed JS and Markdown files.
 - PR titles must use one of the Conventional Commit types enforced by `.github/workflows/pr-validation.yml`: `feat`, `fix`, `docs`, `test`, `ci`, `refactor`, `perf`, `chore`, `revert`, or `build`.
+- PR descriptions follow `.github/pull_request_template.md`. When a change alters a request/response path, an HTMX interaction, or a flow across components or background work, include a Mermaid `sequenceDiagram` of the changed interaction, naming the real handlers, workflows, and swap targets involved. Omit it for documentation, configuration, dependency, formatting, and refactor-only changes.
 - Non-`main` deployment runs only when the head commit message contains `deploy-dev`; release tags matching `v*.*.*` invoke GoReleaser.
 - When changing repository documentation, read `docs/documentation-maintenance.md` and `docs/development-guide.md`; the maintenance guide identifies the authoritative config and CI sources, including the Mailpit service and `MAILPIT_URL` endpoint.
 
