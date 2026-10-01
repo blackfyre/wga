@@ -39,9 +39,9 @@ test("every chart has a visible table caption", async ({ page }) => {
 	await page.goto("/statistics");
 
 	const captions = {
-		"#art-form-summary": "Art form distribution data",
-		"#artworks-period-summary": "Artworks by school and birth period data",
-		"#artists-period-summary": "Artists by school and birth period data",
+		"#art-form-summary": "Art form distribution — data",
+		"#artworks-period-summary": "Artworks by school and birth period — data",
+		"#artists-period-summary": "Artists by school and birth period — data",
 	};
 
 	for (const [summaryId, captionText] of Object.entries(captions)) {

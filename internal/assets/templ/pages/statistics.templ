@@ -30,21 +30,59 @@ type StatisticsPageDTO struct {
 }
 
 // schoolOrder mirrors resources/js/statistics.ts so the CSS bars and the
-// Chart.js stacks agree on order and tone. "Other" is always last.
+// Chart.js stacks agree on order. "Other" is always last.
 var schoolOrder = []string{"Italian", "French", "Dutch", "Flemish", "German", "English", "Spanish", "Other"}
 
-// schoolTone is a tonal ramp of the primary, not a categorical palette. "Other"
-// is a hatch rather than a tone: a category that means "we do not know" must
-// never read as a school.
-var schoolTone = map[string]string{
-	"Italian": "var(--wga-series-0)",
-	"French":  "var(--wga-series-1)",
-	"Dutch":   "var(--wga-series-2)",
-	"Flemish": "var(--wga-series-3)",
-	"German":  "var(--wga-series-4)",
-	"English": "var(--wga-series-5)",
-	"Spanish": "var(--wga-series-6)",
-	"Other":   "repeating-linear-gradient(135deg, var(--wga-faint) 0 2px, transparent 2px 5px)",
+// seriesTokens is the one series ramp for every Statistics chart: a tonal ramp
+// of the primary, not a categorical palette. The keys render it on their
+// swatches (data-series-token) and resources/js/statistics.ts reads the chart
+// colours back from those swatches, so a key cannot disagree with its chart.
+var seriesTokens = []string{
+	"--wga-series-0",
+	"--wga-series-1",
+	"--wga-series-2",
+	"--wga-series-3",
+	"--wga-series-4",
+	"--wga-series-5",
+	"--wga-series-6",
+}
+
+// otherToken paints the "Other" hatch. A category that means "we do not know"
+// must never read as a school, so it is a hatch rather than a tone.
+const otherToken = "--wga-faint"
+
+type seriesSwatch struct {
+	Token string
+	Hatch bool
+}
+
+func (s seriesSwatch) Background() string {
+	if s.Hatch {
+		return "repeating-linear-gradient(135deg, var(" + s.Token + ") 0 2px, transparent 2px 5px)"
+	}
+	return "var(" + s.Token + ")"
+}
+
+func (s seriesSwatch) Fill() string {
+	if s.Hatch {
+		return "hatch"
+	}
+	return "solid"
+}
+
+// formSwatch returns the series swatch for an art-form index; forms beyond the
+// ramp wrap round it, as the donut segments do.
+func formSwatch(index int) seriesSwatch {
+	return seriesSwatch{Token: seriesTokens[index%len(seriesTokens)]}
+}
+
+func schoolSwatch(school string) seriesSwatch {
+	for i, name := range schoolOrder {
+		if name == school && i < len(seriesTokens) {
+			return seriesSwatch{Token: seriesTokens[i]}
+		}
+	}
+	return seriesSwatch{Token: otherToken, Hatch: true}
 }
 
 var schoolShort = map[string]string{
@@ -104,7 +142,7 @@ templ StatisticsBlock(c StatisticsPageDTO) {
 		<section class="mb-[72px]">
 			<div class="flex flex-wrap items-baseline justify-between gap-4 border-b border-wga-ink pb-3">
 				<h2 class="text-xl font-semibold">Artworks by school &amp; period</h2>
-				<p class="font-mono text-(length:--t-10) tracking-[1px] text-wga-ink/60">STACKED BY SCHOOL · BIRTH PERIOD</p>
+				<p class="font-mono text-(length:--t-10) tracking-[1px] text-wga-ink/60">STACKED BY SCHOOL · BIRTH PERIOD OF ARTIST</p>
 			</div>
 			<canvas id="artworks-by-period-chart" class="mt-8" role="img" aria-label="Artworks by school and period chart" aria-describedby="artworks-period-summary"></canvas>
 			if len(c.ArtworksPeriodSummary) > 0 {
@@ -113,7 +151,7 @@ templ StatisticsBlock(c StatisticsPageDTO) {
 				</noscript>
 				@schoolLegend()
 			}
-			@schoolPeriodSummary("artworks-period-summary", "Artworks by school and birth period data", "No published artworks are grouped by school and birth period.", c.ArtworksPeriodSummary)
+			@schoolPeriodSummary("artworks-period-summary", "Artworks by school and birth period — data", "No published artworks are grouped by school and birth period.", c.ArtworksPeriodSummary)
 		</section>
 		<section>
 			<div class="flex flex-wrap items-baseline justify-between gap-4 border-b border-wga-ink pb-3">
@@ -127,15 +165,21 @@ templ StatisticsBlock(c StatisticsPageDTO) {
 				</noscript>
 				@schoolLegend()
 			}
-			@schoolPeriodSummary("artists-period-summary", "Artists by school and birth period data", "No published artists are grouped by school and birth period.", c.ArtistsPeriodSummary)
+			@schoolPeriodSummary("artists-period-summary", "Artists by school and birth period — data", "No published artists are grouped by school and birth period.", c.ArtistsPeriodSummary)
 		</section>
 		<p class="mt-11 border-t border-wga-ink/15 pt-5 font-mono text-(length:--t-10) leading-relaxed text-wga-ink/60">
-			RECOMPUTED NIGHTLY FROM PUBLISHED RECORDS. ARTISTS WITHOUT A RECORDED BIRTH YEAR ARE EXCLUDED FROM THE PERIOD CHARTS. SCHOOLS OUTSIDE THE SEVEN LARGEST ARE GROUPED AS OTHER.
+			RECOMPUTED HOURLY FROM PUBLISHED RECORDS. ARTISTS WITHOUT A RECORDED BIRTH YEAR ARE EXCLUDED FROM THE PERIOD CHARTS. SCHOOLS OUTSIDE THE SEVEN LARGEST ARE GROUPED AS OTHER.
 		</p>
 		<div id="art-form-data" hidden data-json={ c.ArtFormData }></div>
 		<div id="artworks-period-data" hidden data-json={ c.ArtworksPeriodData }></div>
 		<div id="artists-period-data" hidden data-json={ c.ArtistsPeriodData }></div>
 	</section>
+}
+
+// keySwatch is the one swatch a key row draws. Its data attributes are the
+// colour contract the chart script reads.
+templ keySwatch(s seriesSwatch) {
+	<span class="h-2.5 w-2.5 shrink-0 border border-wga-ink/15" data-series-token={ s.Token } data-series-fill={ s.Fill() } style={ "background:" + s.Background() }></span>
 }
 
 // artFormBars is the no-JS equivalent of the art-form donut: one horizontal,
@@ -165,7 +209,7 @@ templ artFormSummary(rows []StatisticsArtFormRow) {
 			<p class="py-6 text-(length:--t-15) leading-relaxed text-wga-ink/70" role="status">No published artworks are grouped by art form.</p>
 		} else {
 			<table class="w-full text-sm">
-				<caption class="caption-top pb-3 text-left font-mono text-(length:--t-10) tracking-[1px] text-wga-ink/60">Art form distribution data</caption>
+				<caption class="caption-top pb-3 text-left font-mono text-(length:--t-10) uppercase tracking-[1.5px] text-wga-ink/60">Art form distribution — data</caption>
 				<thead class="border-y border-wga-ink/15 font-mono text-(length:--t-10) tracking-[1px] text-wga-ink/60">
 					<tr>
 						<th scope="col" class="py-3 text-left font-normal">ART FORM</th>
@@ -178,7 +222,7 @@ templ artFormSummary(rows []StatisticsArtFormRow) {
 						<tr class="border-b border-wga-ink/15">
 							<th scope="row" class="art-form-label py-3 text-left font-normal">
 								<span class="flex items-center gap-2.5">
-									<span class="h-2.5 w-2.5 shrink-0 border border-wga-ink/15" style={ "background:" + formTone(i) }></span>
+									@keySwatch(formSwatch(i))
 									<span>{ row.Name }</span>
 								</span>
 							</th>
@@ -195,10 +239,10 @@ templ artFormSummary(rows []StatisticsArtFormRow) {
 // schoolLegend names each school with its tone swatch so the canvas and the
 // CSS bars share one legend, with or without JavaScript.
 templ schoolLegend() {
-	<ul class="mt-6 flex flex-wrap gap-x-5 gap-y-2 border-t border-wga-ink/15 pt-4">
+	<ul class="mt-6 flex flex-wrap gap-x-5 gap-y-2 border-t border-wga-ink/15 pt-4" data-school-key>
 		for _, school := range schoolOrder {
-			<li class="flex items-center gap-[7px]">
-				<span class="h-2.5 w-2.5 shrink-0 border border-wga-ink/15" style={ "background:" + schoolTone[school] }></span>
+			<li class="flex items-center gap-[7px]" data-school={ school }>
+				@keySwatch(schoolSwatch(school))
 				<span class="font-mono text-(length:--t-10) tracking-[0.5px] text-wga-ink/70">{ school }</span>
 			</li>
 		}
@@ -214,7 +258,7 @@ templ schoolPeriodSummary(id string, caption string, emptyMessage string, rows [
 			<p class="py-6 text-(length:--t-15) leading-relaxed text-wga-ink/70" role="status">{ emptyMessage }</p>
 		} else {
 			<table class="min-w-[560px] text-sm">
-				<caption class="caption-top pb-3 text-left font-mono text-(length:--t-10) tracking-[1px] text-wga-ink/60">{ caption }</caption>
+				<caption class="caption-top pb-3 text-left font-mono text-(length:--t-10) uppercase tracking-[1.5px] text-wga-ink/60">{ caption }</caption>
 				<thead class="border-y border-wga-ink/15 font-mono text-(length:--t-10) tracking-[1px] text-wga-ink/60">
 					<tr>
 						<th scope="col" class="py-3 text-left font-normal">BIRTH PERIOD</th>
@@ -256,7 +300,7 @@ templ StatisticsPeriodBars(rows []StatisticsSchoolPeriodRow) {
 					<div class="flex min-h-0 flex-1 flex-col justify-end">
 						for _, school := range schoolOrder {
 							if countFor(rows, period, school) > 0 {
-								<span class="block shrink-0 border-t border-wga-bg opacity-[0.82] transition-opacity group-hover:opacity-100" style={ fmt.Sprintf("height:%.3f%%;background:%s", barShare(rows, period, school), schoolTone[school]) }></span>
+								<span class="block shrink-0 border-t border-wga-bg opacity-[0.82] transition-opacity group-hover:opacity-100" style={ fmt.Sprintf("height:%.3f%%;background:%s", barShare(rows, period, school), schoolSwatch(school).Background()) }></span>
 							}
 						}
 					</div>
@@ -267,19 +311,10 @@ templ StatisticsPeriodBars(rows []StatisticsSchoolPeriodRow) {
 	</div>
 }
 
-// formTone returns the Rams series token for an art-form index so each swatch
-// matches the corresponding donut-chart segment colour.
+// formTone returns the series background for an art-form index so each
+// no-JS bar matches its key swatch and donut segment.
 func formTone(index int) string {
-	tones := []string{
-		"var(--wga-series-0)",
-		"var(--wga-series-1)",
-		"var(--wga-series-2)",
-		"var(--wga-series-3)",
-		"var(--wga-series-4)",
-		"var(--wga-series-5)",
-		"var(--wga-series-6)",
-	}
-	return tones[index%len(tones)]
+	return formSwatch(index).Background()
 }
 
 func artFormTotal(rows []StatisticsArtFormRow) int {

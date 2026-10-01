@@ -45,7 +45,11 @@ func TestStatisticsBlockRendersAccessibleSummaries(t *testing.T) {
 		`id="artworks-period-summary"`,
 		`id="artists-period-summary"`,
 		`class="caption-top`,
-		"Art form distribution data",
+		"Art form distribution — data",
+		"STACKED BY SCHOOL · BIRTH PERIOD OF ARTIST",
+		`data-series-token="--wga-series-0"`,
+		`data-school="Other"`,
+		`data-series-token="--wga-faint" data-series-fill="hatch"`,
 		`title="Italian"`,
 		`title="Other"`,
 		"background:var(--wga-series-0)",
@@ -57,7 +61,7 @@ func TestStatisticsBlockRendersAccessibleSummaries(t *testing.T) {
 		"wga-enter",
 		"text-(length:--t-32)",
 		"md:text-(length:--t-44)",
-		"RECOMPUTED NIGHTLY FROM PUBLISHED RECORDS.",
+		"RECOMPUTED HOURLY FROM PUBLISHED RECORDS.",
 		"ARTISTS WITHOUT A RECORDED BIRTH YEAR ARE EXCLUDED FROM THE PERIOD CHARTS.",
 	} {
 		if !strings.Contains(rendered, expected) {
@@ -284,6 +288,51 @@ func TestSchoolPeriodHelpersDeriveFromSameRows(t *testing.T) {
 	}
 	if got := periodTotal(rows, "1550–1599"); got != 4 {
 		t.Errorf("periodTotal 1550 = %d, want 4", got)
+	}
+}
+
+// TestStatisticsKeysDrawOneSwatchPerRow guards design-audit ST-1: each key row
+// draws exactly one swatch, and that swatch names the series token the chart
+// script reads back, so the key and the chart share one colour source.
+func TestStatisticsKeysDrawOneSwatchPerRow(t *testing.T) {
+	forms := make([]StatisticsArtFormRow, 9)
+	for i := range forms {
+		forms[i] = StatisticsArtFormRow{Name: fmt.Sprintf("Form %d", i), Count: i + 1}
+	}
+
+	var summary bytes.Buffer
+	if err := artFormSummary(forms).Render(context.Background(), &summary); err != nil {
+		t.Fatalf("render art form summary: %v", err)
+	}
+	rows := strings.Split(summary.String(), `<tr class="border-b`)[1:]
+	if len(rows) != len(forms) {
+		t.Fatalf("expected %d key rows, got %d", len(forms), len(rows))
+	}
+	for i, row := range rows {
+		if got := strings.Count(row, "data-series-token="); got != 1 {
+			t.Errorf("art form row %d draws %d swatches, want 1", i, got)
+		}
+		want := fmt.Sprintf(`data-series-token="--wga-series-%d" data-series-fill="solid" style="background:var(--wga-series-%d);"`, i%7, i%7)
+		if !strings.Contains(row, want) {
+			t.Errorf("art form row %d swatch: want %s\ngot: %s", i, want, row)
+		}
+	}
+
+	var legend bytes.Buffer
+	if err := schoolLegend().Render(context.Background(), &legend); err != nil {
+		t.Fatalf("render school legend: %v", err)
+	}
+	items := strings.Split(legend.String(), "<li ")[1:]
+	if len(items) != len(schoolOrder) {
+		t.Fatalf("expected %d school key items, got %d", len(schoolOrder), len(items))
+	}
+	for i, item := range items {
+		if got := strings.Count(item, "data-series-token="); got != 1 {
+			t.Errorf("school key item %d draws %d swatches, want 1", i, got)
+		}
+	}
+	if !strings.Contains(items[len(items)-1], `data-series-fill="hatch"`) {
+		t.Errorf("expected Other to be a hatch, got: %s", items[len(items)-1])
 	}
 }
 
