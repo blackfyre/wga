@@ -42,7 +42,7 @@ func TestArtworkSearchTitle(t *testing.T) {
 			name:    "period collection and year",
 			filters: filters{PeriodString: "period00001", VenueString: "loct71zebra0001", YearFrom: "1400"},
 			labels:  withCollection, page: 2, pageCount: 3,
-			want: "Artworks Search · Early Renaissance · Uffizi · 1400–1900 · p. 2/3",
+			want: "Artworks Search · Early Renaissance · Uffizi · 1400–2000 · p. 2/3",
 		},
 		{
 			name:    "multi-value order does not depend on parameter order",

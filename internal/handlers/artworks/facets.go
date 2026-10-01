@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	artworkYearMin = 200
-	artworkYearMax = 1900
+	artworkYearMin = 100
+	artworkYearMax = 2000
 )
 
 func buildArtworkSearchFacets(

@@ -149,6 +149,41 @@ func TestTask71YearRangeNormalisation(t *testing.T) {
 	}
 }
 
+func TestArtworkYearSpanCoversCatalogue(t *testing.T) {
+	// The catalogue runs from 101 to 1994, so bounds on either side of the
+	// former 200–1900 span must survive as explicit state.
+	wide := buildFilters(url.Values{"year_from": {"150"}, "year_to": {"1994"}})
+	if wide.YearFrom != "150" || wide.YearTo != "1994" {
+		t.Fatalf("in-catalogue bounds were not preserved: %#v", wide)
+	}
+
+	defaults := buildFilters(url.Values{"year_from": {"100"}, "year_to": {"2000"}})
+	if defaults.YearFrom != "" || defaults.YearTo != "" {
+		t.Fatalf("default bounds were not omitted: %#v", defaults)
+	}
+	if path := defaults.BuildPath("/artworks"); strings.Contains(path, "year_") {
+		t.Fatalf("canonical path %q kept default year bounds", path)
+	}
+
+	clamped := buildFilters(url.Values{"year_from": {"99"}, "year_to": {"2001"}})
+	if clamped.YearFrom != "" || clamped.YearTo != "" {
+		t.Fatalf("out-of-span bounds did not clamp to defaults: %#v", clamped)
+	}
+
+	app := newArtworkSearchApp(t)
+	view, _, err := buildArtworkSearchView(app, url.Values{}, 1, 16)
+	if err != nil {
+		t.Fatalf("build view: %v", err)
+	}
+	control := view.Facets.YearRange
+	if control.Min != 100 || control.Max != 2000 || control.FromValue != 100 || control.ToValue != 2000 {
+		t.Fatalf("year range control = %#v, want 100–2000", control)
+	}
+	if view.Facets.Year.Summary != "100–2000" {
+		t.Fatalf("year summary = %q, want 100–2000", view.Facets.Year.Summary)
+	}
+}
+
 func TestTask71YearRangeDisplayAndSummaryAgree(t *testing.T) {
 	app := newArtworkSearchApp(t)
 	view, canonical, err := buildArtworkSearchView(app, url.Values{"year_from": {"1700"}, "year_to": {"1500"}}, 1, 16)

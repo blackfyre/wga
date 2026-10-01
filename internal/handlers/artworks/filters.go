@@ -364,7 +364,7 @@ func artworkSearchView(value string) string {
 
 // normalizeArtworkYearBounds parses the year request state exactly once.
 // Malformed values fall back to the range defaults, each bound clamps to the
-// 200–1900 span, and reversed bounds are swapped so the canonical state always
+// 100–2000 span, and reversed bounds are swapped so the canonical state always
 // reads from <= to. Bounds equal to their defaults are returned empty so the
 // canonical URL omits them, matching the result predicate and facet summary.
 func normalizeArtworkYearBounds(rawFrom string, rawTo string) (string, string) {
