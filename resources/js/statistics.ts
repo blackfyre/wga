@@ -22,10 +22,12 @@ Chart.register(
 	Legend,
 );
 
-// Rams theme tokens are read from the root element at chart-build time so the
-// charts follow the active light/dark theme, including theme changes while the
-// page is open.
-const seriesTones = [
+// The server-rendered keys are the single source of series colour: each key
+// swatch carries the token it paints (data-series-token) and whether it is a
+// hatch (data-series-fill). Tokens are resolved against the root element at
+// chart-build time, so the charts follow the active palette and theme,
+// including changes while the page is open.
+const fallbackTones = [
 	"--wga-series-0",
 	"--wga-series-1",
 	"--wga-series-2",
@@ -34,6 +36,8 @@ const seriesTones = [
 	"--wga-series-5",
 	"--wga-series-6",
 ];
+
+type SeriesFill = { token: string; hatch: boolean };
 
 function resolveTone(name: string): string {
 	const value = getComputedStyle(document.documentElement)
@@ -45,6 +49,67 @@ function resolveTone(name: string): string {
 const chartText = (): string => resolveTone("--wga-text");
 const chartMutedText = (): string => resolveTone("--wga-muted");
 const chartRule = (): string => resolveTone("--wga-rule");
+
+function readSwatch(element: Element | null | undefined): SeriesFill | null {
+	const token = element?.getAttribute("data-series-token");
+	if (!token) return null;
+	return {
+		token,
+		hatch: element?.getAttribute("data-series-fill") === "hatch",
+	};
+}
+
+// fallbackFill applies only when a key swatch is missing. It mirrors the
+// template's series ramp, including "Other" as the faint hatch, so a missing
+// swatch never changes how a series is drawn.
+function fallbackFill(index: number, name: string): SeriesFill {
+	if (name === "Other") {
+		return { token: "--wga-faint", hatch: true };
+	}
+	return { token: fallbackTones[index % fallbackTones.length], hatch: false };
+}
+
+// hatchPattern mirrors the key's 135° hatch: rising diagonal strokes 2px
+// wide, about 5px apart, on a transparent ground, so "Other" never reads as
+// one of the tones. A 7px tile puts the diagonals 7/√2 ≈ 5px apart.
+const hatchTile = 7;
+
+function hatchPattern(colour: string): CanvasPattern | string {
+	const tile = document.createElement("canvas");
+	tile.width = hatchTile;
+	tile.height = hatchTile;
+	const context = tile.getContext("2d");
+	if (!context) return colour;
+	context.strokeStyle = colour;
+	context.lineWidth = 2;
+	context.beginPath();
+	for (const offset of [-hatchTile, 0, hatchTile]) {
+		context.moveTo(offset, hatchTile);
+		context.lineTo(offset + hatchTile, 0);
+	}
+	context.stroke();
+	return context.createPattern(tile, "repeat") ?? colour;
+}
+
+type ResolvedFill = { paint: CanvasPattern | string; label: string };
+
+function resolveFill(fill: SeriesFill): ResolvedFill {
+	const colour = resolveTone(fill.token);
+	if (fill.hatch) {
+		return { paint: hatchPattern(colour), label: `hatch:${colour}` };
+	}
+	return { paint: colour, label: colour };
+}
+
+// recordSeriesColours exposes the colours each chart was drawn with, so
+// browser tests can compare them with the key swatches without sampling
+// canvas pixels.
+function recordSeriesColours(
+	canvas: HTMLCanvasElement,
+	fills: ResolvedFill[],
+): void {
+	canvas.dataset.seriesColours = JSON.stringify(fills.map((f) => f.label));
+}
 
 function chartAnimation(): false | undefined {
 	if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -74,17 +139,6 @@ const schoolOrder = [
 	"Spanish",
 	"Other",
 ];
-
-const schoolTones: Record<string, string> = {
-	Italian: "--wga-series-0",
-	French: "--wga-series-1",
-	Dutch: "--wga-series-2",
-	Flemish: "--wga-series-3",
-	German: "--wga-series-4",
-	English: "--wga-series-5",
-	Spanish: "--wga-series-6",
-	Other: "--wga-fill-line",
-};
 
 type SchoolPeriodRow = { period_start: number; school: string; count: number };
 
@@ -131,8 +185,11 @@ function initDonutChart(): void {
 	const data = readJson("art-form-data") as { name: string; count: number }[];
 	if (data.length === 0) return;
 
-	const colors = data.map((_, i) =>
-		resolveTone(seriesTones[i % seriesTones.length]),
+	const swatches = document.querySelectorAll(
+		"#art-form-summary tbody [data-series-token]",
+	);
+	const fills = data.map((d, i) =>
+		resolveFill(readSwatch(swatches[i]) ?? fallbackFill(i, d.name)),
 	);
 	const border = resolveTone("--wga-bg");
 	const animation = chartAnimation();
@@ -144,7 +201,7 @@ function initDonutChart(): void {
 			datasets: [
 				{
 					data: data.map((d) => d.count),
-					backgroundColor: colors,
+					backgroundColor: fills.map((f) => f.paint),
 					borderColor: border,
 					borderWidth: 1,
 				},
@@ -173,6 +230,7 @@ function initDonutChart(): void {
 		},
 	});
 	canvas.dataset.chartAnimation = animationLabel(animation);
+	recordSeriesColours(canvas, fills);
 }
 
 function buildStackedBarChart(
@@ -196,7 +254,17 @@ function buildStackedBarChart(
 
 	const labels = periods.map((p) => `${p}–${p + 49}`);
 
-	const datasets = orderedSchools.map((school) => ({
+	const key = canvas.closest("section")?.querySelector("[data-school-key]");
+	const fills = orderedSchools.map((school) => {
+		const swatch = key?.querySelector(
+			`[data-school="${CSS.escape(school)}"] [data-series-token]`,
+		);
+		return resolveFill(
+			readSwatch(swatch) ?? fallbackFill(schoolOrder.indexOf(school), school),
+		);
+	});
+
+	const datasets = orderedSchools.map((school, index) => ({
 		label: school,
 		data: periods.map((period) => {
 			const row = rows.find(
@@ -204,7 +272,7 @@ function buildStackedBarChart(
 			);
 			return row ? row.count : 0;
 		}),
-		backgroundColor: resolveTone(schoolTones[school] ?? "--wga-fill-line"),
+		backgroundColor: fills[index].paint,
 		stack: "stack",
 	}));
 
@@ -241,17 +309,8 @@ function buildStackedBarChart(
 				},
 			},
 			plugins: {
-				legend: {
-					position: "bottom",
-					labels: {
-						boxWidth: 10,
-						color: chartMutedText(),
-						font: {
-							family: "ui-monospace, SF Mono, Menlo, monospace",
-							size: 11,
-						},
-					},
-				},
+				// The server-rendered school key below the canvas is the legend.
+				legend: { display: false },
 				tooltip: {
 					callbacks: {
 						footer: (items) => {
@@ -267,12 +326,13 @@ function buildStackedBarChart(
 		},
 	});
 	canvas.dataset.chartAnimation = animationLabel(animation);
+	recordSeriesColours(canvas, fills);
 }
 
 let themeObserver: MutationObserver | null = null;
 
-// Rebuilds the charts whenever the active theme changes so their colours stay
-// in sync with the Rams light/dark tokens while the page is open.
+// Rebuilds the charts whenever the active palette or theme changes so their
+// colours stay in sync with the key while the page is open.
 function watchThemeChanges(): void {
 	if (themeObserver) {
 		return;
@@ -282,7 +342,7 @@ function watchThemeChanges(): void {
 	});
 	themeObserver.observe(document.documentElement, {
 		attributes: true,
-		attributeFilter: ["data-theme"],
+		attributeFilter: ["data-palette", "data-theme"],
 	});
 }
 
