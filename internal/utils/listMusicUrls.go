@@ -9,8 +9,8 @@ import (
 )
 
 type UrlData struct {
-    Url string
-    ID  uuid.UUID
+	Url string
+	ID  uuid.UUID
 }
 
 type Song struct {
