@@ -32,7 +32,7 @@ For local Jaeger, start the documented service and set `OTEL_EXPORTER_OTLP_ENDPO
 
 Browser Sentry monitoring is enabled by `WGA_SENTRY_BROWSER_DSN`. The browser SDK then sends envelopes to the first-party relay at `POST /diagnostics/browser` instead of `sentry.io`, which default content blockers reject. The relay (`internal/observability/browser_tunnel.go`, adapter in `internal/handlers/diagnostics`) forwards only envelopes addressed to the configured browser project, to a destination derived solely from that DSN. It admits only canonical-origin requests with a trusted client identity, bounds size, per-client rate and concurrency, and forwards no client address, cookies, or inbound headers. It is not registered when the browser DSN is absent. To exercise it in Playwright, start the run with `WGA_SENTRY_BROWSER_DSN` set; `playwright-tests/sentry-tunnel.spec.ts` skips otherwise.
 
-Postcard delivery requires `WGA_POSTCARD_TOKEN_KEYS`, a secret JSON object mapping key IDs to unpadded Base64URL-encoded 32-byte keys, and `WGA_POSTCARD_TOKEN_ACTIVE_KEY_ID`, which names the key used for new envelopes. Generate each key independently with `python3 -c 'import base64, secrets; print(base64.urlsafe_b64encode(secrets.token_bytes(32)).rstrip(b"=").decode())'`, then inject the resulting value through the deployment secret mechanism rather than committing it to `.env.example`. Server startup rejects a missing or invalid keyring; errors, logs, and operator commands must not print keys, bearer tokens, or token envelopes.
+Postcard delivery requires `WGA_POSTCARD_TOKEN_KEYS`, a secret JSON object mapping key IDs to unpadded Base64URL-encoded 32-byte keys, and `WGA_POSTCARD_TOKEN_ACTIVE_KEY_ID`, which names the key used for new envelopes. Generate each key independently with `python3 -c 'import base64, secrets; print(base64.urlsafe_b64encode(secrets.token_bytes(32)).rstrip(b"=").decode())'`, then inject the resulting value through the deployment secret mechanism rather than committing it to `.env.example`. Server startup rejects a missing or invalid keyring; errors, logs, and operator commands must not print keys, bearer tokens, or token envelopes. For local development, `mise run app:init-env` (also run by `mise run worktree:setup`) writes a missing `.env` with a freshly generated key under the `dev` ID and never overwrites an existing `.env`; Claude Code worktrees receive a copy of the main checkout's `.env` through `.worktreeinclude`.
 
 Rotate postcard token keys in this order:
 
@@ -71,6 +71,8 @@ When a feature stores personal data, define its purpose and retention outcome. R
 ## Delivery discipline
 
 Use Conventional Commit types for commits and pull-request titles. Keep documentation aligned with the executable configuration and CI workflow; task plans, review notes, and historical summaries are not a substitute for current guidance.
+
+Prepare each fresh checkout or worktree with `mise run worktree:setup`, which is idempotent. Concurrent worktrees share the local Mailpit and Garage services but must use distinct `--port` values for `mise run code:run` and `mise run test:playwright`.
 
 Use `docs/bot-protection-runbook.md` for the Cloudflare and Railway request-protection rollout, origin-secret rotation, cache verification, privacy-safe evidence, and rollback procedure.
 

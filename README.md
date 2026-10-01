@@ -26,7 +26,7 @@ The project is built around the following active technologies and workflows:
 
 ### Prerequisites
 
-Copy `.env.example` to `.env` in the directory from which you start the application. `mise run app:init-env` creates it in the repository root for `mise run code:run`; copy it to `dist/.env` when using `mise run app:run`.
+WGA reads `.env` from the directory from which you start the application. In a fresh checkout or worktree, run `mise run worktree:setup`: it creates `.env` in the repository root for `mise run code:run`, with a generated development postcard token key, then installs dependencies, builds assets, and generates Templ output. `mise run app:init-env` creates only the `.env`. Both keep an existing `.env` unchanged, so do not copy `.env.example` by hand first; a manual copy must also set `WGA_POSTCARD_TOKEN_KEYS` and `WGA_POSTCARD_TOKEN_ACTIVE_KEY_ID` (see the comments in `.env.example`) before the server will start. Copy the generated file to `dist/.env` when using `mise run app:run`.
 
 ```bash
 WGA_ENV=development
@@ -161,7 +161,7 @@ Mise manages the project's development tools and tasks. Install Mise following i
 
 ```bash
 mise install
-mise run app:init-env
+mise run worktree:setup
 ```
 
 `mise.toml` defines the pinned tools, local environment defaults, build tasks, watchers, and Podman Compose local services.
