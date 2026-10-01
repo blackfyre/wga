@@ -860,16 +860,6 @@ const wgaInternal: wgaInternals = {
 				}
 			});
 		},
-		() => {
-			logger.debug("Setting up jumpToTop event listener");
-			// Back to top button
-			const jumpToTop = document.querySelector(".jump.back-to-top");
-			if (jumpToTop) {
-				jumpToTop.addEventListener("click", () => {
-					window.scrollTo({ top: 0, behavior: "smooth" });
-				});
-			}
-		},
 	],
 	func: {
 		cloner: () => {
