@@ -181,7 +181,7 @@ templ ArtistsBlock(c ArtistsView) {
 		</div>
 		if len(c.Artists) == 0 {
 			<div class="border-b border-wga-ink/15 py-14">
-				<h2 class="mb-2 text-lg font-semibold">No artists match these filters.</h2>
+				<h2 class="mb-2 text-(length:--t-18) font-semibold">No artists match these filters.</h2>
 				<p class="mb-4 max-w-[380px] text-(length:--t-15) leading-relaxed text-wga-ink/70 text-pretty">Widen the birth-year range or clear the school and period filters — the index is uneven across periods.</p>
 				<a
 					href={ templ.URL(c.ResetUrl) }

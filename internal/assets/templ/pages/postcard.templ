@@ -156,7 +156,7 @@ templ PostcardConfirmationDialog(v PostcardConfirmationView) {
 
 templ PostcardConfirmationBlock(v PostcardConfirmationView) {
 	<section id="postcard-compose" role="status" aria-live="polite" class="container mx-auto max-w-[520px] px-4 pb-20 pt-10 md:px-0">
-		<p aria-hidden="true" class="mb-6 flex h-11 w-11 items-center justify-center border border-wga-accent font-mono text-lg text-wga-accent">✓</p>
+		<p aria-hidden="true" class="mb-6 flex h-11 w-11 items-center justify-center border border-wga-accent font-mono text-(length:--t-18) text-wga-accent">✓</p>
 		<h1 id="postcard-confirmation-title" data-dialog-title tabindex="-1" autofocus class="mb-3 text-(length:--t-28) font-semibold">Postcard queued</h1>
 		<p class="mb-2 leading-relaxed">Delivery is being prepared for <span class="font-mono text-sm">{ v.MaskedRecipients }</span>.</p>
 		<p class="mb-7 text-sm text-wga-ink/60">The private link remains valid until { v.Expires }.</p>

@@ -46,7 +46,7 @@ templ ToursBlock(view dto.TourIndex) {
 								<span>{ tour.Kind } · #{ tour.Number }</span>
 								<span>{ tour.Revision }</span>
 							</div>
-							<h2 class="mt-2 text-2xl font-semibold group-hover:underline">{ tour.Title }</h2>
+							<h2 class="mt-2 text-(length:--t-20) font-semibold group-hover:underline">{ tour.Title }</h2>
 							<p class="mt-2 text-sm text-wga-ink/65">Edited by { tour.Editor }</p>
 							<p class="mt-3 leading-relaxed text-wga-ink/75">{ tour.Blurb }</p>
 							<p class="mt-3 font-mono text-(length:--t-10) tracking-[1px] text-wga-accent">{ tourPageCount(tour.Pages) } · { tourScope(tour) }</p>
@@ -78,7 +78,7 @@ templ ToursBlock(view dto.TourIndex) {
 		}
 		if len(view.Rebuilt) == 0 && len(view.Original) == 0 {
 			<div class="mt-12 border-y border-wga-ink/15 py-10">
-				<h2 class="text-xl font-semibold">No published tours yet</h2>
+				<h2 class="text-(length:--t-18) font-semibold">No published tours yet</h2>
 				<p class="mt-2 max-w-xl text-wga-ink/70">The editorial tour collection is empty. No scraped or prototype material is published without an approved revision.</p>
 			</div>
 		}
@@ -180,7 +180,7 @@ templ tourTitle(view dto.TourPage) {
 		@components.Plate(dto.Plate{DisplayURL: view.DisplayURL, Alt: view.TourTitle, Label: "IMAGE — " + view.TourTitle, Placeholder: "IMAGE — " + view.TourTitle, Aspect: "aspect-[4/3] md:aspect-video mb-7", Contain: false})
 		<p class="mb-3 font-mono text-(length:--t-11) tracking-[1.5px] text-wga-ink/60">{ view.Kind } · TOUR #{ view.Number }</p>
 		<h1 class="text-4xl font-semibold leading-tight md:text-5xl">{ view.PageTitle }</h1>
-		<p class="mt-4 max-w-[60ch] text-lg leading-relaxed text-wga-ink/70">{ view.Blurb }</p>
+		<p class="mt-4 max-w-[60ch] text-(length:--t-18) leading-relaxed text-wga-ink/70">{ view.Blurb }</p>
 		<dl class="mb-7 mt-7 grid grid-cols-2 gap-5 border-t border-wga-ink/25 py-5 md:grid-cols-3 md:gap-7">
 			@tourFact("EDITOR", view.Editor)
 			@tourFact("FIRST PUBLISHED", tourYear(view.PublishedYear))
@@ -226,7 +226,7 @@ templ tourBlocks(blocks []dto.TourBlock) {
 	<div class="max-w-2xl space-y-5 leading-relaxed">
 		for _, block := range blocks {
 			if block.Kind == "quote" {
-				<blockquote class="border-l-4 border-wga-accent pl-5 text-lg">
+				<blockquote class="border-l-4 border-wga-accent pl-5 text-(length:--t-18)">
 					@templ.Raw(block.HTML)
 				</blockquote>
 			} else if block.Kind == "note" {

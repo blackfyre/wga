@@ -85,7 +85,7 @@ templ GuestbookBlock(v GuestbookView) {
 					</div>
 				} else {
 					<div class="py-12">
-						<p class="mb-2 text-lg font-semibold">No entries match.</p>
+						<p class="mb-2 text-(length:--t-17) font-semibold">No entries match.</p>
 						<a href="/guestbook" hx-get="/guestbook" hx-target="#guestbook" hx-select="#guestbook" hx-swap="outerHTML" class="wga-action-link font-mono text-(length:--t-11) tracking-[1px]">CLEAR SEARCH AND YEAR →</a>
 					</div>
 				}
@@ -97,7 +97,7 @@ templ GuestbookBlock(v GuestbookView) {
 templ GuestbookEntryForm(v GuestbookFormView) {
 	if v.Submitted {
 		<div id="guestbook-entry-form" class="border border-wga-ink/25 p-5" role="status" tabindex="-1">
-			<p class="mb-2 text-lg font-semibold">Thank you — your note is queued.</p>
+			<p class="mb-2 text-(length:--t-18) font-semibold">Thank you — your note is queued.</p>
 			<p class="text-(length:--t-15) leading-relaxed text-wga-ink/70">An editor will review it before it appears in the archive.</p>
 		</div>
 	} else {
