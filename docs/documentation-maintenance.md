@@ -42,3 +42,4 @@ When a command is environment-sensitive, say so explicitly. Do not imply a workf
 - Keep primary contributor docs concise and consistent with each other.
 - Update secondary or historical docs when they would otherwise preserve stale path or command wording as current truth.
 - Treat CI workflow files as evidence for documented automation, not just background context.
+
