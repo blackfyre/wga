@@ -29,6 +29,7 @@ import { registerItineraryHelpers } from "./itinerary";
 import { initKeyboardNavigation } from "./keyboard";
 import logger from "./logger";
 import { initPeriodMusic } from "./music";
+import { initNavigationScroll } from "./navigation-scroll";
 import { initPostcardRichText } from "./postcard-rich-text";
 import { closeMobileNavigation, syncNavigation } from "./public-shell";
 import { initialiseStudyBoard } from "./study-board";
@@ -1250,6 +1251,7 @@ const wgaInternal: wgaInternals = {
 		logger.error("Failed to initialise Cookie Consent", error);
 	});
 	initKeyboardNavigation();
+	initNavigationScroll();
 	initTextSearch();
 	initEdgeChallengeRecovery();
 	initialiseAppearancePreferences();
