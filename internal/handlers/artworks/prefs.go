@@ -4,12 +4,20 @@ import (
 	"encoding/json"
 	"net/http"
 	neturl "net/url"
+	"slices"
 )
 
 // searchPrefsCookieName is the first-party cookie the browser preference
 // module (resources/js/search-prefs.ts) writes. Its value is the URL-encoded
 // JSON object also kept in localStorage["wga-aw-prefs"].
 const searchPrefsCookieName = "wga_aw_prefs"
+
+// consentCookieName is the CookieConsent record. Remembered preferences are
+// optional storage, honoured only while it accepts preferencesCategory.
+const (
+	consentCookieName   = "cc_cookie"
+	preferencesCategory = "preferences"
+)
 
 // searchPrefs are the visitor's remembered artwork search presentation
 // choices. They are presentation state, never part of the query: they only
@@ -27,8 +35,12 @@ type searchPrefs struct {
 
 // storedSearchPrefs decodes the remembered preferences. Each field is
 // validated independently, so one bad value does not discard the others; an
-// absent or undecodable cookie yields the zero value.
+// absent or undecodable cookie, or one left over without current preference
+// consent, yields the zero value.
 func storedSearchPrefs(r *http.Request) searchPrefs {
+	if !preferenceConsentGranted(r) {
+		return searchPrefs{}
+	}
 	cookie, err := r.Cookie(searchPrefsCookieName)
 	if err != nil {
 		return searchPrefs{}
@@ -60,6 +72,26 @@ func storedSearchPrefs(r *http.Request) searchPrefs {
 	}
 
 	return prefs
+}
+
+// preferenceConsentGranted reports whether the CookieConsent record accepts
+// the optional preferences category.
+func preferenceConsentGranted(r *http.Request) bool {
+	cookie, err := r.Cookie(consentCookieName)
+	if err != nil {
+		return false
+	}
+	raw, err := neturl.PathUnescape(cookie.Value)
+	if err != nil {
+		return false
+	}
+	var record struct {
+		Categories []string `json:"categories"`
+	}
+	if err := json.Unmarshal([]byte(raw), &record); err != nil {
+		return false
+	}
+	return slices.Contains(record.Categories, preferencesCategory)
 }
 
 func jsonString(raw json.RawMessage) string {

@@ -15,12 +15,38 @@ import (
 
 const rememberedDateListCookie = "%7B%22sort%22%3A%22date%22%2C%22dir%22%3A%22desc%22%2C%22view%22%3A%22list%22%2C%22actions%22%3Atrue%7D"
 
+const preferenceConsentCookie = "%7B%22categories%22%3A%5B%22necessary%22%2C%22preferences%22%5D%2C%22revision%22%3A0%7D"
+
+// searchPrefsRequest carries the remembered cookie with preference consent.
 func searchPrefsRequest(target string, cookie string) *http.Request {
 	request := httptest.NewRequest(http.MethodGet, target, nil)
+	request.AddCookie(&http.Cookie{Name: consentCookieName, Value: preferenceConsentCookie})
 	if cookie != "" {
 		request.AddCookie(&http.Cookie{Name: searchPrefsCookieName, Value: cookie})
 	}
 	return request
+}
+
+func TestStoredSearchPrefsRequirePreferenceConsent(t *testing.T) {
+	for _, test := range []struct {
+		name    string
+		consent string
+	}{
+		{name: "no consent record"},
+		{name: "essential only", consent: neturl.PathEscape(`{"categories":["necessary"]}`)},
+		{name: "malformed record", consent: "%7Bbroken"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodGet, "/artworks", nil)
+			if test.consent != "" {
+				request.AddCookie(&http.Cookie{Name: consentCookieName, Value: test.consent})
+			}
+			request.AddCookie(&http.Cookie{Name: searchPrefsCookieName, Value: rememberedDateListCookie})
+			if got := storedSearchPrefs(request); got != (searchPrefs{}) {
+				t.Fatalf("storedSearchPrefs() = %#v, want stale preferences ignored", got)
+			}
+		})
+	}
 }
 
 func TestStoredSearchPrefsDecodesEachFieldIndependently(t *testing.T) {

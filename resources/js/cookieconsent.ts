@@ -50,7 +50,7 @@ export const initCookieConsent = async () => {
 					consentModal: {
 						title: "COOKIES",
 						description:
-							'Essential cookies keep this site working. Analytics cookies are not in use. With your permission, optional preference storage remembers your artwork search settings on this device. Read our <a href="/pages/privacy-policy">privacy policy</a>.',
+							'Essential cookies keep this site working. Analytics cookies are not in use. With your permission, optional preference storage remembers your artwork search sort, view, and whether result actions are shown, on this device; turning it off in cookie preferences deletes it. Read our <a href="/pages/privacy-policy">privacy policy</a>.',
 						acceptAllBtn: "ACCEPT ALL",
 						acceptNecessaryBtn: "ACCEPT ESSENTIAL COOKIES",
 						showPreferencesBtn: "COOKIE PREFERENCES",

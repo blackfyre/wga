@@ -94,6 +94,10 @@ test("accepted preference consent remembers choices, and withdrawing it deletes 
 	await expect(actionsToggle(page)).toHaveText("ACTIONS ✓");
 	await expect(page.locator("html")).toHaveAttribute("data-aw-actions", "on");
 
+	const otherTab = await context.newPage();
+	await otherTab.goto("/artworks");
+	await expect(actionsToggle(otherTab)).toHaveText("ACTIONS ✓");
+
 	await page.getByRole("link", { name: "Cookie settings" }).click();
 	await savePreferenceStorage(page, false);
 	expect(await storedPrefs(page, context)).toEqual({
@@ -101,6 +105,15 @@ test("accepted preference consent remembers choices, and withdrawing it deletes 
 		local: null,
 	});
 	await expect(actionsToggle(page)).toHaveText("ACTIONS ✓");
+
+	// A tab opened before the withdrawal must not store choices again.
+	await actionsToggle(otherTab).click();
+	await expect(actionsToggle(otherTab)).toHaveText("ACTIONS +");
+	expect(await storedPrefs(otherTab, context)).toEqual({
+		cookie: null,
+		local: null,
+	});
+	await otherTab.close();
 
 	await page.goto("/artworks");
 	await expect(viewToggle(page)).toHaveText(/^VIEW: GRID/);

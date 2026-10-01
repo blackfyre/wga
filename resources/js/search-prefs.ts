@@ -146,6 +146,11 @@ export const consentAllowsPreferences = (cookies: string): boolean => {
 
 let consented = false;
 
+// mayStore rechecks the live consent record as well as this document's last
+// decision, so a withdrawal made in another tab stops this tab writing too.
+const mayStore = (): boolean =>
+	consented && consentAllowsPreferences(document.cookie);
+
 const readStorage = (): string | null => {
 	try {
 		return window.localStorage.getItem(STORAGE_KEY);
@@ -155,7 +160,7 @@ const readStorage = (): string | null => {
 };
 
 const readStoredPrefs = (): SearchPrefs | null =>
-	consented
+	mayStore()
 		? (parsePrefs(readStorage()) ??
 			parsePrefs(readCookie(document.cookie, COOKIE_NAME)))
 		: null;
@@ -166,7 +171,7 @@ const cookieAttributes = (maxAge: number): string => {
 };
 
 const writePrefs = (prefs: SearchPrefs): void => {
-	if (!consented) {
+	if (!mayStore()) {
 		return;
 	}
 	try {
