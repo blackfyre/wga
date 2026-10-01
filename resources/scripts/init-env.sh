@@ -5,12 +5,17 @@
 # requires one even in development.
 set -eu
 
+# Succeeds when .env assigns the named setting a non-empty value, ignoring
+# surrounding whitespace, quotes, and an optional export prefix.
+env_sets() {
+	grep -Eq "^[[:space:]]*(export[[:space:]]+)?$1[[:space:]]*=[[:space:]]*[\"']?[^\"'[:space:]#]" .env
+}
+
 existing_env() {
 	echo ".env already exists; leaving it unchanged."
 	# An older app:init-env copied .env.example verbatim, and Claude Code
 	# copies that file into new worktrees, so flag a keyring the server rejects.
-	if ! grep -Eq '^WGA_POSTCARD_TOKEN_KEYS=.' .env ||
-		! grep -Eq '^WGA_POSTCARD_TOKEN_ACTIVE_KEY_ID=.' .env; then
+	if ! env_sets WGA_POSTCARD_TOKEN_KEYS || ! env_sets WGA_POSTCARD_TOKEN_ACTIVE_KEY_ID; then
 		echo "warning: .env does not set WGA_POSTCARD_TOKEN_KEYS and WGA_POSTCARD_TOKEN_ACTIVE_KEY_ID;" >&2
 		echo "warning: the server will not start unless the environment provides them." >&2
 		echo "warning: delete .env and rerun mise run app:init-env, or set both as described in .env.example." >&2

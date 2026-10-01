@@ -81,18 +81,35 @@ func TestInitEnvProducesStartableServerConfiguration(t *testing.T) {
 }
 
 func TestInitEnvKeepsExistingEnvFile(t *testing.T) {
-	dir := newInitEnvDir(t)
-	existing := []byte("WGA_ENV=development\n# local edits\n")
-	if err := os.WriteFile(filepath.Join(dir, ".env"), existing, 0o600); err != nil {
-		t.Fatalf("write existing .env: %v", err)
+	tests := []struct {
+		name     string
+		existing string
+		warns    bool
+	}{
+		{name: "keyring absent", existing: "WGA_ENV=development\n# local edits\n", warns: true},
+		{name: "keyring empty", existing: "WGA_POSTCARD_TOKEN_KEYS=\nWGA_POSTCARD_TOKEN_ACTIVE_KEY_ID=\n", warns: true},
+		{name: "keyring quoted empty", existing: "WGA_POSTCARD_TOKEN_KEYS=''\nWGA_POSTCARD_TOKEN_ACTIVE_KEY_ID=\"\"\n", warns: true},
+		{name: "keyring whitespace", existing: "WGA_POSTCARD_TOKEN_KEYS= \nWGA_POSTCARD_TOKEN_ACTIVE_KEY_ID=\" \"\n", warns: true},
+		{name: "active key ID missing", existing: "WGA_POSTCARD_TOKEN_KEYS='{\"dev\":\"key\"}'\n", warns: true},
+		{name: "keyring set", existing: "WGA_POSTCARD_TOKEN_KEYS='{\"dev\":\"key\"}'\nexport WGA_POSTCARD_TOKEN_ACTIVE_KEY_ID = dev\n"},
 	}
 
-	got, stderr := runInitEnvWithStderr(t, dir)
-	if !bytes.Equal(got, existing) {
-		t.Fatalf("expected existing .env to be unchanged, got %q", got)
-	}
-	if !strings.Contains(stderr, "WGA_POSTCARD_TOKEN_KEYS") {
-		t.Fatalf("expected a warning about the missing postcard keyring, got %q", stderr)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			dir := newInitEnvDir(t)
+			existing := []byte(test.existing)
+			if err := os.WriteFile(filepath.Join(dir, ".env"), existing, 0o600); err != nil {
+				t.Fatalf("write existing .env: %v", err)
+			}
+
+			got, stderr := runInitEnvWithStderr(t, dir)
+			if !bytes.Equal(got, existing) {
+				t.Fatalf("expected existing .env to be unchanged, got %q", got)
+			}
+			if warned := strings.Contains(stderr, "WGA_POSTCARD_TOKEN_KEYS"); warned != test.warns {
+				t.Fatalf("expected warning=%t, got stderr %q", test.warns, stderr)
+			}
+		})
 	}
 }
 
