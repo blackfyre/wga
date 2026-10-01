@@ -34,7 +34,7 @@
     "choices.js": "^11.2.4",
     "concurrently": "^10.0.5",
     "cssnano": "^9.0.4",
-    "dompurify": "3.4.15",
+    "dompurify": "3.4.16",
     "dotenv": "^17.4.2",
     "esbuild": "0.28.2",
     "esbuild-plugin-copy": "^2.1.1",
@@ -65,7 +65,7 @@
       "picomatch": "2.3.2"
     },
     "braces": "3.0.3",
-    "dompurify": "3.4.15",
+    "dompurify": "3.4.16",
     "micromatch": {
       ".": "4.0.8",
       "picomatch": "2.3.2"
