@@ -108,6 +108,27 @@ run = ["mise run app:build", "mise run app:run"]
 description = "Create a startable .env from the example; an existing .env is kept."
 run = "sh resources/scripts/init-env.sh"
 
+[tasks."worktree:setup"]
+description = "Prepare a fresh checkout or worktree to compile and run; safe to re-run."
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+
+sh resources/scripts/init-env.sh
+bun install --frozen-lockfile
+bun run build
+templ generate
+
+cat <<'SUMMARY'
+
+Worktree ready: .env present, browser assets built, Templ output generated.
+  Run the app:    mise run code:run --port <port>
+  Run Playwright: mise run test:playwright --port <port>
+Use a distinct --port for each concurrent worktree. Mailpit and Garage are
+shared local services; start them once with mise run services:up.
+SUMMARY
+'''
+
 [tasks."code:run"]
 description = "Run the application in development mode without building."
 usage = '''
