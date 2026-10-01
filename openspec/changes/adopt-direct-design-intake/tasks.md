@@ -14,4 +14,4 @@
 
 ## 3. Integration
 
-- [ ] 3.1 Run `go vet ./...`, `go test ./... -cover`, `golangci-lint run`, the full `mise run test:playwright --port 8881`, and `openspec validate adopt-direct-design-intake`.
+- [x] 3.1 Run `go vet ./...`, `go test ./... -cover`, `golangci-lint run`, the full `mise run test:playwright --port 8881`, and `openspec validate adopt-direct-design-intake`.
