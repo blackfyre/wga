@@ -1,41 +1,44 @@
 name: Playwright Tests
+# The workflow runs for every push and pull request so the ci-gate check is
+# always reported; the changes job skips the heavy jobs when no code changed.
 on:
   push:
     branches: [main]
-    paths:
-      - "**/*.go"
-      - "**/*.js"
-      - "**/*.ts"
-      - "**/*.templ"
-      - "**/*.pcss"
-      - "internal/licences/**"
-      - "internal/assets/views/open-source-licences.html"
-      - ".github/workflows/playwright.yml"
-      - "package.json"
-      - "bun.lock"
-      - "go.mod"
-      - "go.sum"
-      - "mise.toml"
-      - ".golangci.yml"
   pull_request:
     branches: [main]
-    paths:
-      - "**/*.go"
-      - "**/*.js"
-      - "**/*.ts"
-      - "**/*.templ"
-      - "**/*.pcss"
-      - "internal/licences/**"
-      - "internal/assets/views/open-source-licences.html"
-      - ".github/workflows/playwright.yml"
-      - "package.json"
-      - "bun.lock"
-      - "go.mod"
-      - "go.sum"
-      - "mise.toml"
-      - ".golangci.yml"
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            code:
+              - "**/*.go"
+              - "**/*.js"
+              - "**/*.ts"
+              - "**/*.templ"
+              - "**/*.pcss"
+              - "internal/licences/**"
+              - "internal/assets/views/open-source-licences.html"
+              - ".github/workflows/playwright.yml"
+              - "package.json"
+              - "bun.lock"
+              - "go.mod"
+              - "go.sum"
+              - "mise.toml"
+              - ".golangci.yml"
+
   backend-quality-gates:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -92,6 +95,8 @@ jobs:
   lint:
     # Kept apart from backend-quality-gates, whose Prettier step needs
     # contents: write, so the third-party lint action gets a read-only token.
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -305,3 +310,29 @@ jobs:
           name: html-report--attempt-${{ github.run_attempt }}
           path: playwright-report
           retention-days: 14
+
+  ci-gate:
+    # The single required status check. It passes when no code changed (the
+    # gated jobs are skipped) and otherwise only when every gated job succeeded.
+    if: always()
+    needs: [changes, backend-quality-gates, lint, build, playwright-tests]
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Check gated job results
+        env:
+          CODE_CHANGED: ${{ needs.changes.outputs.code }}
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+          CHANGES_RESULT: ${{ needs.changes.result }}
+        run: |
+          echo "code changed: ${CODE_CHANGED:-unknown}; results: ${RESULTS}"
+          if [ "$CHANGES_RESULT" != "success" ]; then
+            echo "The changes job did not succeed." >&2; exit 1
+          fi
+          for result in $RESULTS; do
+            case "$result" in
+              success) ;;
+              skipped) [ "$CODE_CHANGED" = "true" ] && { echo "A gated job was skipped although code changed." >&2; exit 1; } ;;
+              *) echo "A gated job finished with: $result" >&2; exit 1 ;;
+            esac
+          done
