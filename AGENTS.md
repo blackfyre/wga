@@ -6,7 +6,7 @@
 - Route modules are registered from `internal/handlers/main.go`; add a new handler package there rather than looking for a central route table.
 - Add PocketBase migrations as timestamped files in `internal/migrations/` that call `m.Register` from `init()`. The entrypoint blank-imports this package and disables migration-file generation; `serve` applies pending migrations before listening, while the built binary's `migrate` command remains available for explicit operations.
 - Edit Templ sources in `internal/assets/templ/`, then run `templ generate`. Adjacent `*_templ.go` files are generated and Git-ignored: do not edit or commit them.
-- Edit frontend sources in `resources/js/` and `resources/css/`; `bun run build` writes generated JS/CSS to `internal/assets/public/{js,css}`, which the Go binary embeds. `internal/assets/views/` and `internal/assets/reference/` are also embedded at build time.
+- Edit frontend sources in `resources/js/` and `resources/css/`; `bun run build` writes generated JS/CSS to `internal/assets/public/{js,css}`, which the Go binary embeds. `internal/assets/views/` is also embedded at build time.
 - The application-owned Tailwind 4 theme and shared visual primitives are in `resources/css/style.pcss`.
 - Treat `.templ` files as authoritative frontend source. Treat HTMX markup, its Go handler, rendered fragment, and swap target as one interaction contract; prefer server-rendered HTML and minimal JavaScript.
 - Keep WGA as one deployable application. Extend the owning feature package and use explicit contracts across capability boundaries rather than reaching into another feature's persistence helpers.
@@ -20,6 +20,7 @@
 - `docs/development-guide.md` contains durable application design, configuration, external-work, logging, privacy, and delivery guidance.
 - `docs/documentation-maintenance.md` identifies the sources of truth and checks required when repository documentation changes.
 - `docs/features/` contains feature specifications and acceptance criteria.
+- `docs/design-sync.md` records the Claude Design project that is the UI/UX source of truth, the last implemented design changelog entry, and how to read the design. Use the `design-intake` skill to turn new changelog entries into OpenSpec changes and to check parity with the prototype.
 - Issue plans, review notes, and historical summaries are task-specific context, not current implementation guidance unless explicitly stated otherwise.
 
 ## Environment and development
@@ -37,7 +38,7 @@
 - `mise run check` runs the local Go checks (`go vet` and `golangci-lint`) that Git hooks used to provide, not the test suite. The repository installs no Git hooks; run it before pushing.
 - Playwright has no active `webServer` setting. `mise run test:playwright [--port <port>] [args...]` rebuilds browser assets and Templ output, installs the matching Chromium binary, starts WGA with an isolated temporary data directory, forwards optional arguments to Playwright, and stops the server on exit; use distinct ports for concurrent worktrees. It refuses to run when its selected WGA address is already occupied. For direct `bunx playwright test` use, start the app and set `WGA_PROTOCOL`, `WGA_HOSTNAME`, and a reachable `MAILPIT_URL`; the postcard spec queries the Mailpit API.
 - The full Go suite includes a mail-send test that skips only when no `sendmail` executable is available.
-- `biome.json` configures JS/TS tabs, double quotes, and import organisation. The Playwright CI workflow also runs Prettier on changed JS and Markdown files.
+- `biome.json` configures JS/TS tabs, double quotes, and import organisation. The Playwright workflow's `format` job (part of `ci-gate`) fails when a change's JS or Markdown files are not Prettier-formatted; run `bunx prettier --write` on the files you changed before pushing. It never commits fixes.
 - PR titles must use one of the Conventional Commit types enforced by `.github/workflows/pr-validation.yml`: `feat`, `fix`, `docs`, `test`, `ci`, `refactor`, `perf`, `chore`, `revert`, or `build`.
 - PR descriptions follow `.github/pull_request_template.md`. When a change alters a request/response path, an HTMX interaction, or a flow across components or background work, include a Mermaid `sequenceDiagram` of the changed interaction, naming the real handlers, workflows, and swap targets involved. Omit it for documentation, configuration, dependency, formatting, and refactor-only changes.
 - Non-`main` deployment runs only when the head commit message contains `deploy-dev`; release tags matching `v*.*.*` invoke GoReleaser.

@@ -65,7 +65,7 @@ func RegisterHandlers(app *pocketbase.PocketBase, environment config.Environment
 	artists.RegisterHandlers(app, environment)
 	postcards.RegisterPostcardHandlers(app, captcha, postcardKeyring, captchaVerifier, clientIdentity)
 	contributorhandlers.RegisterHandlers(app, contributorReader)
-	static.RegisterHandlers(app, environment)
+	static.RegisterHandlers(app)
 	artworks.RegisterArtworksHandlers(app)
 	inspire.RegisterHandlers(app)
 	landing.RegisterHandlers(app)
