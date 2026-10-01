@@ -5,9 +5,21 @@
 # requires one even in development.
 set -eu
 
-if [ -e .env ]; then
+existing_env() {
 	echo ".env already exists; leaving it unchanged."
+	# An older app:init-env copied .env.example verbatim, and Claude Code
+	# copies that file into new worktrees, so flag a keyring the server rejects.
+	if ! grep -Eq '^WGA_POSTCARD_TOKEN_KEYS=.' .env ||
+		! grep -Eq '^WGA_POSTCARD_TOKEN_ACTIVE_KEY_ID=.' .env; then
+		echo "warning: .env does not set WGA_POSTCARD_TOKEN_KEYS and WGA_POSTCARD_TOKEN_ACTIVE_KEY_ID;" >&2
+		echo "warning: the server will not start unless the environment provides them." >&2
+		echo "warning: delete .env and rerun mise run app:init-env, or set both as described in .env.example." >&2
+	fi
 	exit 0
+}
+
+if [ -e .env ]; then
+	existing_env
 fi
 
 if [ ! -f .env.example ]; then
@@ -33,8 +45,7 @@ sed \
 
 # Refuse to replace a .env created concurrently after the check above.
 if ! ln "$tmp" .env 2>/dev/null; then
-	echo ".env already exists; leaving it unchanged."
-	exit 0
+	existing_env
 fi
 chmod 600 .env
 

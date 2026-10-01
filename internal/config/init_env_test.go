@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/joho/godotenv"
@@ -14,20 +15,29 @@ import (
 // resulting .env contents.
 func runInitEnv(t *testing.T, dir string) []byte {
 	t.Helper()
+	contents, _ := runInitEnvWithStderr(t, dir)
+	return contents
+}
+
+// runInitEnvWithStderr also returns what the script wrote to stderr.
+func runInitEnvWithStderr(t *testing.T, dir string) ([]byte, string) {
+	t.Helper()
 	script, err := filepath.Abs("../../resources/scripts/init-env.sh")
 	if err != nil {
 		t.Fatalf("resolve init-env script: %v", err)
 	}
+	var stderr bytes.Buffer
 	command := exec.Command("sh", script)
 	command.Dir = dir
-	if output, err := command.CombinedOutput(); err != nil {
-		t.Fatalf("init-env failed: %v\n%s", err, output)
+	command.Stderr = &stderr
+	if output, err := command.Output(); err != nil {
+		t.Fatalf("init-env failed: %v\n%s%s", err, output, stderr.String())
 	}
 	contents, err := os.ReadFile(filepath.Join(dir, ".env"))
 	if err != nil {
 		t.Fatalf("read generated .env: %v", err)
 	}
-	return contents
+	return contents, stderr.String()
 }
 
 func newInitEnvDir(t *testing.T) string {
@@ -77,7 +87,24 @@ func TestInitEnvKeepsExistingEnvFile(t *testing.T) {
 		t.Fatalf("write existing .env: %v", err)
 	}
 
-	if got := runInitEnv(t, dir); !bytes.Equal(got, existing) {
+	got, stderr := runInitEnvWithStderr(t, dir)
+	if !bytes.Equal(got, existing) {
 		t.Fatalf("expected existing .env to be unchanged, got %q", got)
+	}
+	if !strings.Contains(stderr, "WGA_POSTCARD_TOKEN_KEYS") {
+		t.Fatalf("expected a warning about the missing postcard keyring, got %q", stderr)
+	}
+}
+
+func TestInitEnvAcceptsExistingEnvFileWithKeyring(t *testing.T) {
+	dir := newInitEnvDir(t)
+	generated := runInitEnv(t, dir)
+
+	got, stderr := runInitEnvWithStderr(t, dir)
+	if !bytes.Equal(got, generated) {
+		t.Fatalf("expected generated .env to be unchanged on re-run")
+	}
+	if stderr != "" {
+		t.Fatalf("expected no warning for a complete .env, got %q", stderr)
 	}
 }
