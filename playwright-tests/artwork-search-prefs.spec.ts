@@ -199,4 +199,31 @@ test.describe("without JavaScript", () => {
 		);
 		await expect(results(page).locator("[data-view='list']")).toBeVisible();
 	});
+
+	test("a remembered cookie does not offer the toggle without its script", async ({
+		page,
+		context,
+		baseURL,
+	}) => {
+		await context.addCookies([
+			{
+				name: "wga_aw_prefs",
+				value: encodeURIComponent(
+					JSON.stringify({
+						sort: "title",
+						dir: "asc",
+						view: "grid",
+						actions: false,
+					}),
+				),
+				url: baseURL,
+			},
+		]);
+		await page.goto("/artworks");
+		await expect(page.locator("html")).toHaveAttribute(
+			"data-aw-actions",
+			"off",
+		);
+		await expect(actionsToggle(page)).toBeHidden();
+	});
 });

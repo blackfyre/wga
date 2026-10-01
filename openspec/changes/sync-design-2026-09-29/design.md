@@ -28,7 +28,7 @@ Any query parameter on `/artworks`, and every `/artworks/results` fragment reque
 
 ### No-JavaScript honesty
 
-The actions toggle is a client-only control. It is laid out but `visibility: hidden` until `<html>` carries `data-aw-actions`, which only the module or a cookie it previously wrote can produce, so the toolbar does not shift when the module starts and a visitor without JavaScript is not offered a dead control. Without JavaScript the actions stay hidden and sort/view remain ordinary links.
+The actions toggle is a client-only control. It is laid out but `visibility: hidden` until the module marks `<html data-wga-search-prefs>`, so the toolbar does not shift when the module starts and a visitor without JavaScript, or whose bundle failed, is not offered a dead control. The server-rendered `data-aw-actions` cannot serve as that marker because a cookie outlives the script that wrote it. Without JavaScript the actions stay hidden and sort/view remain ordinary links.
 
 ### Back to top
 
@@ -36,7 +36,7 @@ The footer link is a plain `href="#top"` fragment link, and the shared header ca
 
 ## Risks / Trade-offs
 
-- [A visitor who disables JavaScript after using it keeps a cookie, so the hidden toggle reserves space] → harmless; the toggle stays non-interactive for them only through `visibility`, and sort/view still work.
+- [A visitor who disables JavaScript after using it keeps a cookie that can render `data-aw-actions="on"`] → the actions follow the remembered setting, but the toggle stays invisible because only the running module reveals it; sort/view still work.
 - [A full load of bare `/artworks` shows remembered state while the address bar stays `/artworks`] → intended: the bare address means "my usual view"; the canonical link and any later HTMX navigation carry the explicit state.
 - [Cookie expiry while `localStorage` persists] → the first full load renders defaults and the module refreshes the cookie; the next load is correct.
 

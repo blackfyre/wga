@@ -425,7 +425,7 @@ func artworkSearchOtherViewURL(r ArtworkSearchResultsView) string {
 
 // ArtworkSearchActionsToggle shows or hides the per-result workspace actions.
 // It is a client-only control: CSS keeps it invisible until the search
-// preference module has marked <html data-aw-actions>.
+// preference module has marked <html data-wga-search-prefs>.
 templ ArtworkSearchActionsToggle(shown bool) {
 	<button
 		type="button"

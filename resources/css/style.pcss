@@ -2088,13 +2088,13 @@
 
 /* Artwork search result actions are opt-in: hidden unless the remembered
    setting marks <html data-aw-actions="on">. The toggle is client-only, so it
-   keeps its place but stays invisible until the preference module (or a cookie
-   it wrote) has set the attribute. */
+   keeps its place but stays invisible until the preference module itself has
+   marked <html data-wga-search-prefs>; the server never renders that marker. */
 :root:not([data-aw-actions="on"]) .wga-work-actions {
   display: none;
 }
 
-:root:not([data-aw-actions]) [data-wga-aw-actions] {
+:root:not([data-wga-search-prefs]) [data-wga-aw-actions] {
   visibility: hidden;
 }
 

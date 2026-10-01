@@ -167,6 +167,10 @@ export const registerSearchPrefs = (): void => {
 		writePrefs(prefs);
 	}
 	applyActions(prefs.actions);
+	// Reveal the client-only actions toggle. The server may render
+	// data-aw-actions from the cookie, so only this marker proves the handler
+	// below is bound.
+	document.documentElement.dataset.wgaSearchPrefs = "ready";
 
 	document.addEventListener(
 		"click",
