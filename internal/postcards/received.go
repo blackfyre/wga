@@ -48,7 +48,7 @@ func ResolveReceivedCard(app core.App, postcard *core.Record) (*ReceivedCard, er
 	if err != nil {
 		return nil, ErrArtworkUnavailable
 	}
-	author, err := publishedAuthor(app, artwork)
+	author, err := PublishedAuthor(app, artwork)
 	if err != nil {
 		return nil, err
 	}
@@ -85,11 +85,11 @@ func ResolveReceivedCard(app core.App, postcard *core.Record) (*ReceivedCard, er
 	}, nil
 }
 
-// publishedAuthor returns the artwork's first published author with complete
+// PublishedAuthor returns the artwork's first published author with complete
 // identity. The canonical record URL names that artist, and the artwork route
 // serves only published artists, so an unpublished author would make every
 // record link a 404.
-func publishedAuthor(app core.App, artwork *core.Record) (*core.Record, error) {
+func PublishedAuthor(app core.App, artwork *core.Record) (*core.Record, error) {
 	repository := repositories.NewArtistRecordRepository(app)
 	for _, authorID := range artwork.GetStringSlice("author") {
 		author, err := repository.FindPublishedArtist(authorID)

@@ -67,12 +67,13 @@ func installComposeArtwork(t *testing.T, app core.App, title string) string {
 	artists, err := app.FindCollectionByNameOrId("artists")
 	if err != nil {
 		artists = core.NewBaseCollection("artists")
-		artists.Fields.Add(&core.TextField{Name: "filing_name"}, &core.TextField{Name: "short_name"})
+		artists.Fields.Add(&core.BoolField{Name: "published"}, &core.TextField{Name: "filing_name"}, &core.TextField{Name: "short_name"})
 		if err := app.Save(artists); err != nil {
 			t.Fatal(err)
 		}
 	}
 	artist := core.NewRecord(artists)
+	artist.Set("published", true)
 	artist.Set("filing_name", "Artist, Test")
 	artist.Set("short_name", "Test Artist")
 	if err := app.Save(artist); err != nil {
@@ -95,4 +96,55 @@ func installComposeArtwork(t *testing.T, app core.App, title string) string {
 		t.Fatal(err)
 	}
 	return artwork.Id
+}
+
+// TestSendPostcardAttributesThePublishedAuthor verifies the composer uses the
+// same published-author resolution as the received card, so SEND YOUR OWN
+// opens for a co-authored work whose first author is unpublished.
+func TestSendPostcardAttributesThePublishedAuthor(t *testing.T) {
+	app := testutils.NewTestApp(t)
+	artists := core.NewBaseCollection("artists")
+	artists.Fields.Add(&core.BoolField{Name: "published"}, &core.TextField{Name: "filing_name"}, &core.TextField{Name: "short_name"})
+	if err := app.Save(artists); err != nil {
+		t.Fatal(err)
+	}
+	authorIDs := make([]string, 0, 2)
+	for _, values := range []map[string]any{
+		{"published": false, "filing_name": "ARTIST, Hidden", "short_name": "Hidden"},
+		{"published": true, "filing_name": "ARTIST, Public", "short_name": "Public"},
+	} {
+		artist := core.NewRecord(artists)
+		for key, value := range values {
+			artist.Set(key, value)
+		}
+		if err := app.Save(artist); err != nil {
+			t.Fatal(err)
+		}
+		authorIDs = append(authorIDs, artist.Id)
+	}
+	artworks := core.NewBaseCollection("artworks")
+	artworks.Fields.Add(&core.BoolField{Name: "published"}, &core.TextField{Name: "title"}, &core.TextField{Name: "technique"}, &core.TextField{Name: "image"}, &core.RelationField{Name: "author", CollectionId: artists.Id, MaxSelect: 2})
+	if err := app.Save(artworks); err != nil {
+		t.Fatal(err)
+	}
+	artwork := core.NewRecord(artworks)
+	artwork.Set("published", true)
+	artwork.Set("title", "Co-authored work")
+	artwork.Set("author", authorIDs)
+	if err := app.Save(artwork); err != nil {
+		t.Fatal(err)
+	}
+
+	recorder := httptest.NewRecorder()
+	event := &core.RequestEvent{App: app, Event: router.Event{Request: httptest.NewRequest(http.MethodGet, "/postcard/send?awid="+artwork.Id, nil), Response: recorder}}
+	if err := sendPostcard(app, event, config.Captcha{}); err != nil {
+		t.Fatal(err)
+	}
+	body := recorder.Body.String()
+	if recorder.Code != http.StatusOK || !strings.Contains(body, "ARTIST, Public") {
+		t.Fatalf("status=%d, want the composer attributed to the published author", recorder.Code)
+	}
+	if strings.Contains(body, "ARTIST, Hidden") {
+		t.Fatal("composer exposed the unpublished author")
+	}
 }
