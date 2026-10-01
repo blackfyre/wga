@@ -30,6 +30,16 @@ test("restores, shares, canonicalises, and clears transient board state", async 
 		([key, id]) => window.localStorage.setItem(key, id),
 		[storageKey, ids[0]],
 	);
+	const restoreRequests: string[] = [];
+	const recordRestoreRequest = (request) => {
+		if (
+			request.isNavigationRequest() &&
+			new URL(request.url()).searchParams.get("board") === ids[0]
+		) {
+			restoreRequests.push(request.url());
+		}
+	};
+	page.on("request", recordRestoreRequest);
 	await page.goto("/study-board");
 	await expect(page).toHaveURL(
 		(url) => url.searchParams.get("board") === ids[0],
@@ -37,6 +47,9 @@ test("restores, shares, canonicalises, and clears transient board state", async 
 	await expect(page.locator(`[data-study-board-work='${ids[0]}']`)).toHaveCount(
 		1,
 	);
+	page.off("request", recordRestoreRequest);
+	// A repeated restore aborts the first navigation, which waitForURL reports.
+	expect(restoreRequests).toHaveLength(1);
 
 	await page.evaluate(
 		([key, id]) => window.localStorage.setItem(key, id),

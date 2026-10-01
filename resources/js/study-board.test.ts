@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import {
 	addStudyBoardID,
+	initialiseStudyBoard,
 	moveStudyBoardID,
 	normaliseStudyBoardIDs,
 	removeStudyBoardID,
@@ -67,4 +68,30 @@ test("builds the stable canonical board path", () => {
 	expect(studyBoardPath(["work00000000000", "work00000000001"])).toBe(
 		"/study-board?board=work00000000000,work00000000001",
 	);
+});
+
+test("requests a remembered-board restore once per page load", () => {
+	const remembered = "work00000000000";
+	const root = {
+		dataset: { studyBoard: "", studyBoardIds: "" } as Record<string, string>,
+		querySelector: () => null,
+	};
+	globalThis.document = {
+		querySelector: (selector: string) =>
+			selector === "[data-study-board]" ? root : null,
+		querySelectorAll: () => [],
+		addEventListener: () => {},
+	} as unknown as Document;
+	const replacements: string[] = [];
+	globalThis.window = {
+		localStorage: { getItem: () => remembered },
+		location: { replace: (url: string) => replacements.push(url) },
+	} as unknown as Window & typeof globalThis;
+
+	// Bootstrap calls the initialiser directly and again from the initial
+	// htmx:load; a second replace would abort the first navigation.
+	initialiseStudyBoard();
+	initialiseStudyBoard();
+
+	expect(replacements).toEqual([studyBoardPath([remembered])]);
 });
