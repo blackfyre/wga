@@ -11,11 +11,9 @@ This document records where WGA's UI/UX design lives and how far the repository 
 
 ## Implementation state
 
-| State            | Changelog entry                                                                                | Change                   |
-| ---------------- | ---------------------------------------------------------------------------------------------- | ------------------------ |
-| Last implemented | 21 September 2026: "Back to top shares the corner with the feedback button"                    | —                        |
-| In progress      | 29 September 2026: "Artwork search: card actions are opt-in, and the toolbar remembers itself" | `sync-design-2026-09-29` |
-| In progress      | 29 September 2026: "Back to top moves into the footer"                                         | `sync-design-2026-09-29` |
+| State            | Changelog entry                                                                                                                                        | Change                   |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------ |
+| Last implemented | 29 September 2026: "Artwork search: card actions are opt-in, and the toolbar remembers itself" (and "Back to top moves into the footer", the same day) | `sync-design-2026-09-29` |
 
 The changelog is newest first: the last implemented entry and every entry below it are implemented. When an in-progress change merges, move its entries to "Last implemented" and delete their rows. Whichever of two concurrent changes merges second reconciles this table with the other's result.
 

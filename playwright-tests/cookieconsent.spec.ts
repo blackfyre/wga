@@ -58,11 +58,11 @@ test("renders a truthful necessary-only notice and reopens preferences", async (
 	expect(
 		await consentModal.evaluate((notice) => notice.scrollWidth),
 	).toBeLessThanOrEqual(enlargedNotice.width);
-	const acceptEssential = consentModal.getByRole("button", {
-		name: "ACCEPT ESSENTIAL COOKIES",
+	const deny = consentModal.getByRole("button", {
+		name: "DENY",
 	});
-	await acceptEssential.scrollIntoViewIfNeeded();
-	await expect(acceptEssential).toBeInViewport();
+	await deny.scrollIntoViewIfNeeded();
+	await expect(deny).toBeInViewport();
 	const enlargedFeedback = await page
 		.getByRole("link", { name: "FEEDBACK" })
 		.boundingBox();
@@ -81,7 +81,7 @@ test("renders a truthful necessary-only notice and reopens preferences", async (
 	});
 	await expect(consentModal).toHaveCSS("background-color", "rgb(26, 24, 20)");
 	await page.emulateMedia({ reducedMotion: "reduce" });
-	await acceptEssential.click();
+	await deny.click();
 	await expect(consentModal).toBeHidden();
 	await page.reload();
 	await expect(consentModal).toBeHidden();
@@ -132,4 +132,122 @@ test("keeps settings unavailable when CookieConsent cannot generate preferences 
 		page.getByRole("link", { name: "Cookie settings" }),
 	).toBeHidden();
 	await expect(page.getByRole("link", { name: "FEEDBACK" })).toBeVisible();
+});
+
+async function consentCategories(page): Promise<string[] | null> {
+	const cookie = (await page.context().cookies()).find(
+		(entry) => entry.name === "cc_cookie",
+	);
+	if (!cookie) {
+		return null;
+	}
+	return JSON.parse(decodeURIComponent(cookie.value)).categories;
+}
+
+test.describe("consent actions", () => {
+	test.beforeEach(async ({ page }) => {
+		await page.addInitScript(() => {
+			Object.defineProperty(navigator, "webdriver", { get: () => false });
+		});
+	});
+
+	test("the notice offers ACCEPT ALL, DENY and PREFERENCES in reading and focus order", async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width: 1440, height: 900 });
+		await page.goto("/");
+		const notice = page.locator("#cc-main .cm");
+		await expect(notice).toBeVisible();
+		const buttons = notice.getByRole("button");
+		await expect(buttons).toHaveText(["ACCEPT ALL", "DENY", "PREFERENCES"]);
+
+		const boxes = await buttons.evaluateAll((elements) =>
+			elements.map((element) => element.getBoundingClientRect().left),
+		);
+		expect(boxes).toEqual([...boxes].sort((a, b) => a - b));
+		for (const button of await buttons.all()) {
+			await expect(button).toHaveCSS("text-transform", "none");
+			await expect(button).toHaveCSS("font-family", /mono/i);
+		}
+
+		await buttons.first().focus();
+		await page.keyboard.press("Tab");
+		await expect(notice.getByRole("button", { name: "DENY" })).toBeFocused();
+		await page.keyboard.press("Tab");
+		await expect(
+			notice.getByRole("button", { name: "PREFERENCES", exact: true }),
+		).toBeFocused();
+		await page.keyboard.press("Enter");
+		await expect(page.locator("#cc-main .pm")).toBeVisible();
+	});
+
+	test("ACCEPT ALL grants preference storage", async ({ page }) => {
+		await page.goto("/");
+		await page
+			.locator("#cc-main .cm")
+			.getByRole("button", { name: "ACCEPT ALL" })
+			.click();
+		await expect(page.locator("#cc-main .cm")).toBeHidden();
+		expect(await consentCategories(page)).toEqual(
+			expect.arrayContaining(["necessary", "preferences"]),
+		);
+	});
+
+	test("DENY keeps only necessary cookies and deletes stored preferences", async ({
+		page,
+		baseURL,
+	}) => {
+		await page
+			.context()
+			.addCookies([
+				{
+					name: "wga_aw_prefs",
+					value: "%7B%22actions%22%3Atrue%7D",
+					url: baseURL,
+				},
+			]);
+		await page.addInitScript(() => {
+			window.localStorage.setItem("wga-aw-prefs", '{"actions":true}');
+		});
+		await page.goto("/");
+		await page
+			.locator("#cc-main .cm")
+			.getByRole("button", { name: "DENY" })
+			.press("Enter");
+		await expect(page.locator("#cc-main .cm")).toBeHidden();
+		expect(await consentCategories(page)).toEqual(["necessary"]);
+		const cookies = await page.context().cookies();
+		expect(
+			cookies.find((entry) => entry.name === "wga_aw_prefs"),
+		).toBeUndefined();
+	});
+
+	test("the preferences dialog offers accept all, deny and save with a category toggle", async ({
+		page,
+	}) => {
+		await page.goto("/");
+		await page
+			.locator("#cc-main .cm")
+			.getByRole("button", { name: "PREFERENCES", exact: true })
+			.click();
+		const dialog = page.locator("#cc-main .pm");
+		await expect(dialog).toBeVisible();
+		for (const name of ["ACCEPT ALL", "DENY", "SAVE PREFERENCES"]) {
+			await expect(
+				dialog.getByRole("button", { name, exact: true }),
+			).toBeVisible();
+		}
+		const toggle = dialog.locator('input[value="preferences"]');
+		await expect(toggle).not.toBeChecked();
+		await toggle.focus();
+		await page.keyboard.press("Space");
+		await expect(toggle).toBeChecked();
+		await dialog
+			.getByRole("button", { name: "SAVE PREFERENCES", exact: true })
+			.click();
+		await expect(dialog).toBeHidden();
+		expect(await consentCategories(page)).toEqual(
+			expect.arrayContaining(["necessary", "preferences"]),
+		);
+	});
 });

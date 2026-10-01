@@ -1,4 +1,5 @@
 import * as CookieConsent from "vanilla-cookieconsent";
+import { PREFERENCES_CATEGORY, setSearchPrefsConsent } from "./search-prefs";
 
 const revealSettingsControl = () => {
 	for (const control of document.querySelectorAll<HTMLElement>(
@@ -11,6 +12,9 @@ const revealSettingsControl = () => {
 };
 
 const hasConsentUI = () => document.querySelector("#cc-main .cm") !== null;
+
+const applyPreferenceConsent = () =>
+	setSearchPrefsConsent(CookieConsent.acceptedCategory(PREFERENCES_CATEGORY));
 
 export const initCookieConsent = async () => {
 	const result = (await CookieConsent.run({
@@ -32,7 +36,13 @@ export const initCookieConsent = async () => {
 				enabled: true,
 				readOnly: true,
 			},
+			[PREFERENCES_CATEGORY]: {
+				enabled: false,
+				readOnly: false,
+			},
 		},
+		onConsent: applyPreferenceConsent,
+		onChange: applyPreferenceConsent,
 		language: {
 			default: "en",
 			translations: {
@@ -40,26 +50,34 @@ export const initCookieConsent = async () => {
 					consentModal: {
 						title: "COOKIES",
 						description:
-							'Essential cookies keep this site working. Analytics cookies are not in use. Read our <a href="/pages/privacy-policy">privacy policy</a>.',
-						acceptNecessaryBtn: "ACCEPT ESSENTIAL COOKIES",
-						showPreferencesBtn: "COOKIE PREFERENCES",
+							'Essential cookies keep this site working. Analytics cookies are not in use. With your permission, optional preference storage remembers your artwork search sort, view, and whether result actions are shown, on this device; DENY, or turning it off under PREFERENCES, deletes it. Read our <a href="/pages/privacy-policy">privacy policy</a>.',
+						acceptAllBtn: "ACCEPT ALL",
+						acceptNecessaryBtn: "DENY",
+						showPreferencesBtn: "PREFERENCES",
 					},
 					preferencesModal: {
 						title: "COOKIE PREFERENCES",
-						acceptNecessaryBtn: "ACCEPT ESSENTIAL COOKIES",
+						acceptAllBtn: "ACCEPT ALL",
+						acceptNecessaryBtn: "DENY",
 						savePreferencesBtn: "SAVE PREFERENCES",
 						closeIconLabel: "Close cookie preferences",
 						sections: [
 							{
 								title: "Cookie use",
 								description:
-									"We only use essential cookies needed for this site to work.",
+									"Essential cookies keep this site working. Optional preference storage stays off unless you turn it on.",
 							},
 							{
 								title: "Strictly necessary cookies",
 								description:
 									"These cookies are required for the site to function and cannot be disabled.",
 								linkedCategory: "necessary",
+							},
+							{
+								title: "Preference storage",
+								description:
+									"Remembers your artwork search sort, view, and whether result actions are shown, in the wga_aw_prefs cookie and this browser's local storage. Turning it off deletes both; the settings then apply to the current page only.",
+								linkedCategory: PREFERENCES_CATEGORY,
 							},
 							{
 								title: "More information",
