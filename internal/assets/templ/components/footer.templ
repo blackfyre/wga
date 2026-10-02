@@ -279,7 +279,11 @@ templ PreferencesPanel() {
 				</div>
 				@BionicReadingToggle()
 			</section>
-			<p class="border-t border-wga-ink/15 pt-4 text-(length:--t-15)/[1.6] text-pretty text-wga-ink/60">These choices apply to this visit. They are kept on this device only if you allow preference storage in Cookie settings, and nothing here is sent to the archive.</p>
+			<p class="border-t border-wga-ink/15 pt-4 text-(length:--t-15)/[1.6] text-pretty text-wga-ink/60">
+				<span data-wga-storage-note="off">These choices last for this visit only. To keep them on this device, allow preference storage in Cookie settings.</span>
+				<span data-wga-storage-note="on">These choices are kept on this device, because preference storage is allowed in Cookie settings.</span>
+				Nothing here is sent to the archive.
+			</p>
 		</div>
 	</dialog>
 }

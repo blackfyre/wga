@@ -14,3 +14,27 @@ test("keeps the static page contents list sticky on desktop", async ({
 	expect(box?.y).toBeGreaterThanOrEqual(32);
 	expect(box?.y).toBeLessThan(40);
 });
+
+test("the privacy policy describes cookie and storage use under the consent model", async ({
+	page,
+}) => {
+	await page.goto("/pages/privacy-policy");
+	const article = page.locator("main");
+	const heading = article.getByRole("heading", {
+		name: "Cookies and browser storage",
+	});
+	await expect(heading).toBeVisible();
+	await expect(article).toContainText(
+		"They hold your session and the record of your cookie choice",
+	);
+	await expect(article).toContainText("Reading preferences are optional.");
+	await expect(article).toContainText(
+		"No advertising or cross-site tracking cookies are set",
+	);
+	await expect(
+		article.getByRole("heading", { name: "Cookies and Web Beacons" }),
+	).toHaveCount(0);
+	await expect(
+		article.getByRole("heading", { name: "Log Files" }),
+	).toBeVisible();
+});
