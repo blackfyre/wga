@@ -16,7 +16,7 @@ The selected-artwork postcard route renders the full composer for ordinary navig
 
 ### Make recipient emails truthful and data-backed
 
-`resources/mjml/postcard_notification.mjml`, ported from `wga-visual-overhaul/project/postcard-email.mjml`, is the approved presentation source for the recipient notification. Its compiled, embedded HTML template must use only data authorised for the recipient: selected artwork image and details, the sender name, escaped message, music availability, expiry, and the recipient’s private link. The selected artwork image uses the established hosted delivery profile when available; the template retains a text plate only as its unavailable-image fallback.
+`resources/mjml/postcard_notification.mjml`, ported from `postcard-email.mjml` in the Claude Design project "WGA" (see `docs/design-sync.md`), is the approved presentation source for the recipient notification. Its compiled, embedded HTML template must use only data authorised for the recipient: selected artwork image and details, the sender name, escaped message, music availability, expiry, and the recipient’s private link. The selected artwork image uses the established hosted delivery profile when available; the template retains a text plate only as its unavailable-image fallback.
 
 The email must omit unavailable artwork or music fields rather than using the MJML sample content. Its music panel requires both the sender’s music opt-in and a matching published work. It must not include recipient addresses, sender-control material, or another recipient’s bearer link.
 
@@ -26,11 +26,11 @@ Recipient tokens remain the only public capability for viewing a postcard. They 
 
 ## Component boundaries
 
-| Area | Owner | Responsibility |
-| --- | --- | --- |
-| Composer | postcard handlers, Templ pages/components, client bootstrap | page/fragment rendering, validation recovery, and accessible progressive enhancement |
-| Submission and delivery | postcard workflow | idempotency, recipient state, retries, and terminal-parent reconciliation |
-| Recipient communication | postcard delivery workflow and embedded email view | authorised email data, recipient link, and message rendering |
+| Area                    | Owner                                                       | Responsibility                                                                       |
+| ----------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Composer                | postcard handlers, Templ pages/components, client bootstrap | page/fragment rendering, validation recovery, and accessible progressive enhancement |
+| Submission and delivery | postcard workflow                                           | idempotency, recipient state, retries, and terminal-parent reconciliation            |
+| Recipient communication | postcard delivery workflow and embedded email view          | authorised email data, recipient link, and message rendering                         |
 
 ## Verification
 
