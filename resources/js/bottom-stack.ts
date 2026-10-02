@@ -85,7 +85,16 @@ export const initBottomStack = () => {
 	}
 	resizeObserver = new ResizeObserver(refreshBottomStack);
 	observer = new MutationObserver(refreshBottomStack);
-	observer.observe(document.body, { childList: true, subtree: true });
+	// CookieConsent inserts its notice hidden and reveals it later by toggling
+	// classes on <html> and its wrapper, which changes neither the DOM tree nor
+	// the notice's size. Measuring writes only style properties, so watching
+	// class and hidden changes cannot feed back into itself.
+	observer.observe(document.documentElement, {
+		childList: true,
+		subtree: true,
+		attributes: true,
+		attributeFilter: ["class", "hidden"],
+	});
 	window.addEventListener("resize", refreshBottomStack);
 	refreshBottomStack();
 };
