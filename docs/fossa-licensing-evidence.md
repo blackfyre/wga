@@ -60,12 +60,23 @@ When either reviewed `modernc` module changes version, repeat the FOSSA-match re
 
 On 2 October 2026 the dependency graph resolves `modernc.org/libc@v1.75.7` and `modernc.org/sqlite@v1.59.0`. The FOSSA issues and match records above belong to the 29 August revision (`libc@v1.75.6`, `sqlite@v1.57.0`). They do not apply to the current versions. FOSSA match retrieval for the current versions is outstanding: it needs credentialed FOSSA access, and no one has performed it.
 
-Re-running the Linux/amd64 `CGO_ENABLED=0` build-selection command against the current versions gives the following selection for the previously matched files:
+The following commands review the build selection for the current versions. The first confirms that WGA's Linux/amd64 dependency graph contains all three packages. The second lists the files each package selects, and the files its build constraints exclude, for that target:
 
-| File                                                          | Build status                          |
-| ------------------------------------------------------------- | ------------------------------------- |
-| `modernc.org/libc@v1.75.7/uuid/uuid/uuid_linux_amd64.go`      | Compiled                              |
-| `modernc.org/libc@v1.75.7/sys/types/types_linux_amd64.go`     | Compiled                              |
-| `modernc.org/sqlite@v1.59.0/lib/sqlite_g_0000000000060000.go` | Present, not selected for Linux/amd64 |
+```sh
+GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go list -deps ./cmd/wga \
+  | grep -xE 'modernc.org/(sqlite/lib|libc/uuid/uuid|libc/sys/types)'
+
+GOOS=linux GOARCH=amd64 CGO_ENABLED=0 \
+  go list -f '{{.ImportPath}}: {{join .GoFiles " "}} | ignored: {{join .IgnoredGoFiles " "}}' \
+  modernc.org/libc/uuid/uuid modernc.org/libc/sys/types modernc.org/sqlite/lib
+```
+
+All three packages are in the graph. For the previously matched files, the selection is:
+
+| File                                                          | Build status                                              |
+| ------------------------------------------------------------- | --------------------------------------------------------- |
+| `modernc.org/libc@v1.75.7/uuid/uuid/uuid_linux_amd64.go`      | Compiled                                                  |
+| `modernc.org/libc@v1.75.7/sys/types/types_linux_amd64.go`     | Compiled                                                  |
+| `modernc.org/sqlite@v1.59.0/lib/sqlite_g_0000000000060000.go` | Present, excluded by build constraints (`IgnoredGoFiles`) |
 
 This shows only which of the previously matched files are built. It does not establish which files FOSSA matches in the current versions.
