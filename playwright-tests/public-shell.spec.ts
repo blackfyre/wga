@@ -143,7 +143,7 @@ test.describe("shared public shell", () => {
 		);
 		await expect(desktopNavigation).toBeVisible();
 		await expect(
-			desktopNavigation.getByText("MORE", { exact: true }),
+			desktopNavigation.getByText("MORE ▾", { exact: true }),
 		).toBeVisible();
 		const largeColumns = await page
 			.locator("footer > div")

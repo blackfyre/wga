@@ -289,7 +289,7 @@ for (const viewport of [
 		await expect(title).toBeVisible();
 		await expect(title).toHaveText("WEB GALLERY OF ART");
 		await expect(tagline).toBeVisible();
-		await expect(tagline).toHaveText("EUROPEAN ART, 3RD CENTURY – EARLY 20TH");
+		await expect(tagline).toHaveText("EUROPEAN ART, 3rd CENTURY – EARLY 20th");
 		for (const brand of [title, tagline]) {
 			const metrics = await brand.evaluate((el) => ({
 				scrollWidth: el.scrollWidth,
@@ -575,7 +575,7 @@ test("open mobile disclosure closes at the 45rem boundary and moves focus to des
 	await expect(
 		page
 			.locator("header > nav[aria-label='Primary navigation']")
-			.getByText("MORE", { exact: true }),
+			.getByText("MORE ▾", { exact: true }),
 	).toBeVisible();
 });
 

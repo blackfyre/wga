@@ -20,7 +20,7 @@ templ TopNav() {
 					@LogoMark()
 					<span>
 						<span class="block font-mono text-(length:--t-11) tracking-[2.5px]">WEB GALLERY OF ART</span>
-						<span class="mt-[3px] block font-mono text-(length:--t-10) tracking-[1px] text-wga-ink/60">EUROPEAN ART, 3RD CENTURY – EARLY 20TH</span>
+						<span class="mt-[3px] block font-mono text-(length:--t-10) tracking-[1px] text-wga-ink/60">EUROPEAN ART, 3rd CENTURY – EARLY 20th</span>
 					</span>
 				</a>
 				<details class="col-span-full row-start-1" data-kbd-mobile-navigation>
@@ -35,9 +35,9 @@ templ TopNav() {
 					</nav>
 				</details>
 			</div>
-			<div class="hidden items-center justify-between gap-6 min-[720px]:flex">
+			<div class="hidden items-center justify-between gap-4 min-[720px]:flex">
 				<a
-					class="flex items-center gap-3.5"
+					class="flex shrink-0 items-center gap-3.5"
 					href="/"
 					hx-get="/"
 					if homePathActive(ctx) {
@@ -46,24 +46,24 @@ templ TopNav() {
 				>
 					@LogoMark()
 					<span>
-						<span class="block font-mono text-(length:--t-11) tracking-[2.5px]">WEB GALLERY OF ART</span>
-						<span class="mt-[3px] block font-mono text-(length:--t-10) tracking-[1px] text-wga-ink/60">EUROPEAN ART, 3RD CENTURY – EARLY 20TH</span>
+						<span class="block font-mono text-(length:--t-14) leading-[1.15] font-semibold tracking-[3px]">WEB GALLERY OF ART</span>
+						<span class="mt-1 block font-mono text-(length:--t-10) tracking-[1px] text-wga-faint">EUROPEAN ART, 3rd CENTURY – EARLY 20th</span>
 					</span>
 				</a>
-				<div class="hidden items-end gap-6 min-[720px]:flex">
-					<form class="flex w-[190px] items-end gap-4 min-[1080px]:w-[340px]" action="/search">
-						<label>
+				<div class="hidden min-w-0 flex-1 justify-end min-[720px]:flex">
+					<form class="flex w-full min-w-0 max-w-[340px] items-end gap-2 min-[1080px]:gap-4" action="/search">
+						<label class="min-w-[140px] flex-1">
 							<span class="sr-only">Search collection</span>
 							<input class="w-full border-0 border-b border-wga-ink bg-transparent px-0 py-2 text-sm leading-4" name="q" placeholder="Search artist, title, school" type="search" data-kbd-search/>
 						</label>
-						<button class="wga-action-link font-mono py-2 text-(length:--t-11) leading-[18px] tracking-[1px]" type="submit">SEARCH</button>
-						<button type="button" data-keyboard-open aria-label="Open Go to" class="border border-wga-ink/55 px-[7px] py-[5px] font-mono text-(length:--t-10) leading-[17px] tracking-[1px] text-(color:--wga-muted)"><span data-kbd-modifier aria-hidden="true">CTRL K</span></button>
+						<button class="wga-action-link font-mono shrink-0 whitespace-nowrap py-2 text-(length:--t-11) leading-[18px] tracking-[1px]" type="submit">SEARCH</button>
+						<button type="button" data-keyboard-open aria-label="Open Go to" class="shrink-0 whitespace-nowrap border border-wga-ink/55 px-[7px] py-[5px] font-mono text-(length:--t-10) leading-[17px] tracking-[1px] text-(color:--wga-muted)"><span data-kbd-modifier aria-hidden="true">CTRL K</span></button>
 					</form>
 				</div>
 			</div>
 		</div>
-		<nav class="container mx-auto hidden items-start gap-6 px-4 pt-3 min-[720px]:flex min-[720px]:px-0 min-[720px]:pt-0" aria-label="Primary navigation">
-			@navLinks("flex flex-wrap gap-x-[26px] gap-y-[2px] [&_a]:py-0 [&_a]:pb-3")
+		<nav class="container mx-auto hidden items-start gap-5 px-4 pt-3 min-[720px]:flex min-[720px]:px-0 min-[720px]:pt-0 min-[1080px]:gap-6" aria-label="Primary navigation">
+			@navLinks("flex flex-wrap gap-x-5 min-[1080px]:gap-x-[26px] gap-y-[2px] [&_a]:py-0 [&_a]:pb-3")
 			@MoreNavigation("group relative shrink-0", "absolute right-0 z-[60] mt-1.5 min-w-[196px] border border-wga-ink bg-wga-bg py-[5px]")
 		</nav>
 	</header>
@@ -136,7 +136,7 @@ templ navLinks(classes string) {
 
 templ MoreNavigation(classes string, menuClasses string) {
 	<details class={ classes } aria-label="More destinations">
-		<summary class={ "cursor-pointer border-b-2 border-transparent pb-3 font-mono text-xs tracking-[1.5px] hover:border-wga-accent group-open:border-wga-accent group-open:text-wga-accent", templ.KV("border-wga-accent text-wga-accent", morePathActive(ctx)) }>MORE</summary>
+		<summary class={ "cursor-pointer border-b-2 border-transparent pb-3 font-mono text-xs tracking-[1.5px] list-none [&::-webkit-details-marker]:hidden hover:border-wga-accent group-open:border-wga-accent group-open:text-wga-accent", templ.KV("border-wga-accent text-wga-accent", morePathActive(ctx)) }>MORE <span aria-hidden="true">▾</span></summary>
 		<div class={ menuClasses }>
 			<ul>
 				<li><a
