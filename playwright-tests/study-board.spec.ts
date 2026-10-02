@@ -159,7 +159,7 @@ test("adds without record navigation, shows the fixed shelf, and reorders both v
 	);
 
 	const matrixView = page.getByRole("button", { name: "MATRIX" });
-	const boardView = page.getByRole("button", { name: "BOARD" });
+	const boardView = page.getByRole("button", { name: "BOARD", exact: true });
 	await expect(matrixView).toHaveCSS("height", "32px");
 	await expect(boardView).toHaveCSS("height", "32px");
 	await expect(matrixView).toHaveAttribute("aria-pressed", "true");
@@ -181,7 +181,7 @@ test("adds without record navigation, shows the fixed shelf, and reorders both v
 		(url) => url.searchParams.get("board") === `${second},${first}`,
 	);
 
-	await page.getByRole("button", { name: "BOARD" }).click();
+	await page.getByRole("button", { name: "BOARD", exact: true }).click();
 	await page
 		.locator("[data-study-board-panel='board']")
 		.locator(`[data-study-board-work='${second}']`)
