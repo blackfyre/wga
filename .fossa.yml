@@ -6,3 +6,14 @@ project:
 paths:
   exclude:
     - .opencode
+    - .claude
+    - .agents
+    - .fallow
+    - .codegraph
+    - .vscode
+    - .gitnexus
+    - dist
+    - tmp
+    - wga_data
+    - wga_sitemap
+    - node_modules
