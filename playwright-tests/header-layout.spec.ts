@@ -42,6 +42,8 @@ async function headerGeometry(page: Page) {
 			submit: box("button[type='submit']"),
 			input: box("input[type='search']"),
 			logo,
+			row: row.getBoundingClientRect(),
+			rowOverflow: row.scrollWidth - row.clientWidth,
 			navItems: items.length,
 			navLines: navBottoms.size,
 			overflow:
@@ -81,6 +83,31 @@ for (const width of widths) {
 			expect(geometry.navLines).toBe(1);
 		}
 		expect(geometry.overflow).toBe(0);
+	});
+}
+
+// Headless Chromium hides scrollbars, so a classic (non-overlay) scrollbar is
+// simulated by narrowing the body while media queries still see the full
+// viewport, which is what a 17px scrollbar does to the layout.
+for (const width of [720, 834]) {
+	test(`desktop header absorbs a classic scrollbar at ${width}px`, async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width, height: 900 });
+		await page.goto("/");
+		await page.addStyleTag({
+			content: "body { margin-right: 17px !important; }",
+		});
+
+		const geometry = await headerGeometry(page);
+
+		expect(geometry.rowOverflow).toBeLessThanOrEqual(0);
+		expect(geometry.cue.right).toBeLessThanOrEqual(geometry.row.right + 0.5);
+		expect(geometry.cue.height).toBeLessThanOrEqual(32);
+		expect(geometry.input.width).toBeGreaterThanOrEqual(120);
+		if (width >= singleLineNavFrom) {
+			expect(geometry.navLines).toBe(1);
+		}
 	});
 }
 

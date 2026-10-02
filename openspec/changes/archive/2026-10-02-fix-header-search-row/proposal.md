@@ -4,9 +4,9 @@ Between 720 and 1079px the desktop header search form is fixed at 190px and none
 
 ## What Changes
 
-- The SEARCH and `CTRL K` controls keep their natural width on one line; the search field takes the remaining space between a 140px minimum and the existing 340px form maximum.
+- The SEARCH and `CTRL K` controls keep their natural width on one line; the search field takes the remaining space up to the existing 340px form maximum, at least 140px wide from 720px, and shrinks rather than overflowing when a classic scrollbar narrows the page.
 - The logo row uses the design's 16px gap, and the search controls tighten their gap below 1080px so the field stays readable at 720px.
-- The navigation row tightens its item gap below 1080px so all destinations and MORE fit on one line at 834px; at 720px it wraps to a second line without dropping items.
+- The navigation row tightens its item gap below 1080px so all destinations and MORE fit on one line at 834px, even with a classic scrollbar; at 720px it wraps to a second line without dropping items.
 - The desktop wordmark and strapline follow the design: `--t-14`, weight 600, 3px tracking and 1.15 line height for the wordmark; `--t-10`, 1px tracking, the faint colour role and a 4px top margin for the strapline, which reads `EUROPEAN ART, 3rd CENTURY – EARLY 20th` on desktop and mobile.
 - MORE renders `MORE ▾` without the native disclosure marker.
 

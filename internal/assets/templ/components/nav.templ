@@ -52,7 +52,7 @@ templ TopNav() {
 				</a>
 				<div class="hidden min-w-0 flex-1 justify-end min-[720px]:flex">
 					<form class="flex w-full min-w-0 max-w-[340px] items-end gap-2 min-[1080px]:gap-4" action="/search">
-						<label class="min-w-[140px] flex-1">
+						<label class="min-w-0 flex-1">
 							<span class="sr-only">Search collection</span>
 							<input class="w-full border-0 border-b border-wga-ink bg-transparent px-0 py-2 text-sm leading-4" name="q" placeholder="Search artist, title, school" type="search" data-kbd-search/>
 						</label>
@@ -62,8 +62,8 @@ templ TopNav() {
 				</div>
 			</div>
 		</div>
-		<nav class="container mx-auto hidden items-start gap-5 px-4 pt-3 min-[720px]:flex min-[720px]:px-0 min-[720px]:pt-0 min-[1080px]:gap-6" aria-label="Primary navigation">
-			@navLinks("flex flex-wrap gap-x-5 min-[1080px]:gap-x-[26px] gap-y-[2px] [&_a]:py-0 [&_a]:pb-3")
+		<nav class="container mx-auto hidden items-start gap-[18px] px-4 pt-3 min-[720px]:flex min-[720px]:px-0 min-[720px]:pt-0 min-[1080px]:gap-6" aria-label="Primary navigation">
+			@navLinks("flex flex-wrap gap-x-[18px] min-[1080px]:gap-x-[26px] gap-y-[2px] [&_a]:py-0 [&_a]:pb-3")
 			@MoreNavigation("group relative shrink-0", "absolute right-0 z-[60] mt-1.5 min-w-[196px] border border-wga-ink bg-wga-bg py-[5px]")
 		</nav>
 	</header>

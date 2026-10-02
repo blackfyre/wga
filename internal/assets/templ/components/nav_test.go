@@ -207,14 +207,14 @@ func TestTopNavKeepsMoreInlineWithDesktopDestinations(t *testing.T) {
 	if strings.Contains(rendered, `items-start justify-between gap-6`) {
 		t.Fatal("desktop navigation must not push MORE to the far edge")
 	}
-	if !strings.Contains(rendered, `hidden items-start gap-5 px-4 pt-3 min-[720px]:flex`) {
+	if !strings.Contains(rendered, `hidden items-start gap-[18px] px-4 pt-3 min-[720px]:flex`) {
 		t.Fatal("expected inline desktop navigation layout")
 	}
 	if !strings.Contains(rendered, `flex w-full min-w-0 max-w-[340px] items-end gap-2 min-[1080px]:gap-4`) {
 		t.Fatal("expected a flexible search form capped at the 340px reference width")
 	}
-	if !strings.Contains(rendered, `<label class="min-w-[140px] flex-1">`) {
-		t.Fatal("expected the search field to fill the remaining space above a 140px minimum")
+	if !strings.Contains(rendered, `<label class="min-w-0 flex-1">`) {
+		t.Fatal("expected the search field to fill the remaining space and shrink rather than overflow")
 	}
 	if strings.Count(rendered, `shrink-0 whitespace-nowrap`) != 2 {
 		t.Fatal("expected SEARCH and the keyboard cue to keep their natural width")
@@ -331,7 +331,7 @@ func mobileNavRegion(rendered string) string {
 }
 
 func desktopNavRegion(rendered string) string {
-	marker := `class="container mx-auto hidden items-start gap-5 px-4 pt-3 min-[720px]:flex min-[720px]:px-0 min-[720px]:pt-0 min-[1080px]:gap-6" aria-label="Primary navigation"`
+	marker := `class="container mx-auto hidden items-start gap-[18px] px-4 pt-3 min-[720px]:flex min-[720px]:px-0 min-[720px]:pt-0 min-[1080px]:gap-6" aria-label="Primary navigation"`
 	start := strings.Index(rendered, marker)
 	if start < 0 {
 		return ""
