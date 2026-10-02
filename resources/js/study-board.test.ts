@@ -1,4 +1,8 @@
-import { expect, test } from "bun:test";
+import { afterAll, expect, test } from "bun:test";
+import {
+	applyPreferenceConsent,
+	resetPreferenceConsentForTests,
+} from "./preference-consent";
 import {
 	addStudyBoardID,
 	initialiseStudyBoard,
@@ -6,9 +10,38 @@ import {
 	normaliseStudyBoardIDs,
 	removeStudyBoardID,
 	STUDY_BOARD_CAPACITY,
+	STUDY_BOARD_STORAGE_KEY,
 	studyBoardControlState,
 	studyBoardPath,
 } from "./study-board";
+import {
+	installPreferenceBrowser,
+	restorePreferenceBrowser,
+} from "./testing/preference-browser";
+
+afterAll(restorePreferenceBrowser);
+
+// A Study Board page whose root carries the given board IDs, recording every
+// restore navigation.
+const installBoardPage = (ids: string, urlState: boolean) => {
+	const root = {
+		dataset: {
+			studyBoard: "",
+			studyBoardIds: ids,
+			...(urlState ? { studyBoardUrlState: "true" } : {}),
+		} as Record<string, string>,
+		querySelector: () => null,
+	};
+	const replacements: string[] = [];
+	const browser = installPreferenceBrowser({
+		window: { location: { replace: (url: string) => replacements.push(url) } },
+		document: {
+			querySelector: (selector: string) =>
+				selector === "[data-study-board]" ? root : null,
+		},
+	});
+	return { ...browser, replacements };
+};
 
 test("normalises duplicate and invalid board identifiers at capacity", () => {
 	const valid = Array.from(
@@ -70,37 +103,41 @@ test("builds the stable canonical board path", () => {
 	);
 });
 
+// The board module binds its consent store once per page load, so these tests
+// share it and run in order.
+test("a URL board shapes the page without replacing the remembered board", () => {
+	resetPreferenceConsentForTests();
+	const page = installBoardPage("work00000000001,work00000000002", true);
+	page.grantConsent();
+	page.storage.set(STUDY_BOARD_STORAGE_KEY, "work00000000009");
+	initialiseStudyBoard();
+	expect(page.replacements).toEqual([]);
+	expect(page.storage.get(STUDY_BOARD_STORAGE_KEY)).toBe("work00000000009");
+
+	// Withdrawing deletes the copy; a later first grant stores the URL board
+	// the page holds.
+	page.withdrawConsent();
+	applyPreferenceConsent(false);
+	expect(page.storage.has(STUDY_BOARD_STORAGE_KEY)).toBe(false);
+	page.grantConsent();
+	applyPreferenceConsent(true);
+	expect(page.storage.get(STUDY_BOARD_STORAGE_KEY)).toBe(
+		"work00000000001,work00000000002",
+	);
+});
+
 // Keep this test last: the restore guard deliberately lives for the module's
 // lifetime (one page load), so it stays set once this test has run.
 test("requests a remembered-board restore once per page load", () => {
-	const previousDocument = globalThis.document;
-	const previousWindow = globalThis.window;
 	const remembered = "work00000000000";
-	const root = {
-		dataset: { studyBoard: "", studyBoardIds: "" } as Record<string, string>,
-		querySelector: () => null,
-	};
-	globalThis.document = {
-		querySelector: (selector: string) =>
-			selector === "[data-study-board]" ? root : null,
-		querySelectorAll: () => [],
-		addEventListener: () => {},
-	} as unknown as Document;
-	const replacements: string[] = [];
-	globalThis.window = {
-		localStorage: { getItem: () => remembered },
-		location: { replace: (url: string) => replacements.push(url) },
-	} as unknown as Window & typeof globalThis;
+	const page = installBoardPage("", false);
+	page.grantConsent();
+	page.storage.set(STUDY_BOARD_STORAGE_KEY, remembered);
 
 	// Bootstrap calls the initialiser directly and again from the initial
 	// htmx:load; a second replace would abort the first navigation.
-	try {
-		initialiseStudyBoard();
-		initialiseStudyBoard();
+	initialiseStudyBoard();
+	initialiseStudyBoard();
 
-		expect(replacements).toEqual([studyBoardPath([remembered])]);
-	} finally {
-		globalThis.document = previousDocument;
-		globalThis.window = previousWindow;
-	}
+	expect(page.replacements).toEqual([studyBoardPath([remembered])]);
 });

@@ -5,8 +5,13 @@ import {
 	guardPageErrors,
 	resetErrorCapture,
 } from "./helpers/page-errors";
+import { grantPreferenceConsent } from "./helpers/preference-consent";
 
 test.beforeEach(async ({ page }) => {
+	// These specifications exercise remembered preferences, which need the
+	// optional "preferences" consent; ./preference-storage-consent.spec.ts covers
+	// the behaviour without it.
+	await grantPreferenceConsent(page);
 	resetErrorCapture();
 	guardPageErrors(page);
 });

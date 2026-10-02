@@ -1,4 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
+import { grantPreferenceConsent } from "./helpers/preference-consent";
 
 const referencePages = [
 	{ path: "/pages/about", title: "About" },
@@ -115,6 +116,8 @@ test.describe("reference destinations", () => {
 	test("reference pages remain usable across Rams viewports and preferences", async ({
 		page,
 	}) => {
+		// Keeping DARK across page loads is a remembered preference.
+		await grantPreferenceConsent(page);
 		await page.setViewportSize({ width: 390, height: 900 });
 		await page.goto(referencePages[0].path);
 		// The colour scheme control lives in the footer's Preferences dialog.

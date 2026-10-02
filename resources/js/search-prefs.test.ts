@@ -1,17 +1,19 @@
 import { describe, expect, test } from "bun:test";
 import {
+	applyPreferenceConsent,
+	readCookie,
+	resetPreferenceConsentForTests,
+} from "./preference-consent";
+import {
 	actionsLabel,
 	COOKIE_NAME,
-	consentAllowsPreferences,
 	cookieValue,
 	DEFAULT_PREFS,
 	parsePrefs,
 	prefsFromHref,
-	readCookie,
 	registerSearchPrefs,
 	renderedPrefs,
 	STORAGE_KEY,
-	setSearchPrefsConsent,
 } from "./search-prefs";
 
 test("parses stored preferences field by field", () => {
@@ -68,22 +70,6 @@ test("round-trips the cookie value", () => {
 test("labels the actions toggle", () => {
 	expect(actionsLabel(false)).toBe("ACTIONS +");
 	expect(actionsLabel(true)).toBe("ACTIONS ✓");
-});
-
-test("remembers only with the preferences consent category", () => {
-	const consent = (categories: string[]) =>
-		`cc_cookie=${encodeURIComponent(JSON.stringify({ categories, revision: 0 }))}`;
-	expect(consentAllowsPreferences("")).toBe(false);
-	expect(consentAllowsPreferences(consent(["necessary"]))).toBe(false);
-	expect(
-		consentAllowsPreferences(`a=1; ${consent(["necessary", "preferences"])}`),
-	).toBe(true);
-	expect(consentAllowsPreferences("cc_cookie=%7Bbroken")).toBe(false);
-	expect(
-		consentAllowsPreferences(
-			`cc_cookie=${encodeURIComponent('{"categories":"preferences"}')}`,
-		),
-	).toBe(false);
 });
 
 test("reads the presented state from the rendered page", () => {
@@ -189,18 +175,19 @@ describe("on the rendered search page", () => {
 		wgaAwDir: "asc",
 		wgaAwView: "list",
 	};
+	resetPreferenceConsentForTests();
 	registerSearchPrefs();
 
 	test("granting consent stores the rendered choices", () => {
 		const shown = { sort: "date", dir: "asc", view: "list", actions: false };
 		page.grantConsent();
-		setSearchPrefsConsent(true);
+		applyPreferenceConsent(true);
 		expect(page.stored()).toEqual({ storage: shown, cookie: shown });
 
 		// The consent library confirms existing consent on every page load; an
 		// explicit URL then must not replace the remembered choices.
 		page.results.dataset = { ...page.results.dataset, wgaAwSort: "artist" };
-		setSearchPrefsConsent(true);
+		applyPreferenceConsent(true);
 		expect(page.stored()).toEqual({ storage: shown, cookie: shown });
 	});
 
