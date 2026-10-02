@@ -1,30 +1,5 @@
 import type { Page } from "@playwright/test";
-
-// Remembering artwork search choices needs the optional "preferences"
-// cookie-consent category. This records that consent the way CookieConsent
-// stores it, before any page script runs.
-export async function grantPreferenceConsent(page: Page): Promise<void> {
-	const now = new Date().toISOString();
-	await page.context().addCookies([
-		{
-			name: "cc_cookie",
-			value: encodeURIComponent(
-				JSON.stringify({
-					categories: ["necessary", "preferences"],
-					revision: 0,
-					data: null,
-					consentTimestamp: now,
-					consentId: "00000000-0000-4000-8000-000000000000",
-					services: { necessary: [], preferences: [] },
-					languageCode: "en",
-					lastConsentTimestamp: now,
-					expirationTime: Date.now() + 182 * 24 * 60 * 60 * 1000,
-				}),
-			),
-			url: `${process.env.WGA_PROTOCOL}://${process.env.WGA_HOSTNAME}`,
-		},
-	]);
-}
+import { grantPreferenceConsent } from "./preference-consent";
 
 // Artwork search result actions are opt-in. Specifications that exercise the
 // per-result itinerary or Study Board controls opt in the way a visitor's

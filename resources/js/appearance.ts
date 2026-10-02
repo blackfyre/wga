@@ -1,3 +1,11 @@
+import {
+	expireCookie,
+	readPreference,
+	registerPreferenceStore,
+	removePreference,
+	writePreference,
+} from "./preference-consent";
+
 export type Scheme = "light" | "dark";
 
 export const PALETTE_NAMES = [
@@ -18,6 +26,8 @@ export type Palette = (typeof PALETTE_NAMES)[number];
 
 export const SCHEME_STORAGE_KEY = "wga-theme";
 export const PALETTE_STORAGE_KEY = "wga-palette";
+// Cookies that releases before #208 set. Nothing reads them any more.
+const LEGACY_COOKIES = ["wga_theme", "wga_palette"] as const;
 
 const DEFAULT_PALETTE: Palette = "bone";
 const DARK_ONLY_PALETTES: ReadonlySet<Palette> = new Set(["baroque", "tokyo"]);
@@ -60,42 +70,18 @@ export function effectiveScheme(scheme: Scheme, palette: Palette): Scheme {
 	return scheme;
 }
 
-function localStorageValue(key: string): string | null {
-	try {
-		return window.localStorage.getItem(key);
-	} catch {
-		return null;
-	}
-}
-
-function writeLocalStorage(key: string, value: string): void {
-	try {
-		window.localStorage.setItem(key, value);
-	} catch {
-		// The in-memory choice still applies when storage is unavailable.
-	}
-}
-
-function removeLocalStorage(key: string): void {
-	try {
-		window.localStorage.removeItem(key);
-	} catch {
-		// There is nothing else to clear when storage is unavailable.
-	}
-}
-
 function storedScheme(): Scheme | null {
 	if (sessionScheme) {
 		return sessionScheme;
 	}
-	return parseScheme(localStorageValue(SCHEME_STORAGE_KEY));
+	return parseScheme(readPreference(SCHEME_STORAGE_KEY));
 }
 
 function storedPalette(): Palette | null {
 	if (sessionPalette) {
 		return sessionPalette;
 	}
-	return parsePalette(localStorageValue(PALETTE_STORAGE_KEY));
+	return parsePalette(readPreference(PALETTE_STORAGE_KEY));
 }
 
 export function currentScheme(): Scheme {
@@ -286,26 +272,48 @@ export function reconcileAppearancePreferences(): void {
 
 export function setScheme(scheme: Scheme): void {
 	sessionScheme = scheme;
-	writeLocalStorage(SCHEME_STORAGE_KEY, scheme);
+	writePreference(SCHEME_STORAGE_KEY, scheme);
 	reconcileAppearancePreferences();
 }
 
 export function clearScheme(): void {
 	sessionScheme = null;
-	removeLocalStorage(SCHEME_STORAGE_KEY);
+	removePreference(SCHEME_STORAGE_KEY);
 	reconcileAppearancePreferences();
 }
 
 export function setPalette(palette: Palette): void {
 	sessionPalette = palette;
-	writeLocalStorage(PALETTE_STORAGE_KEY, palette);
+	writePreference(PALETTE_STORAGE_KEY, palette);
 	reconcileAppearancePreferences();
 }
 
 export function clearPalette(): void {
 	sessionPalette = null;
-	removeLocalStorage(PALETTE_STORAGE_KEY);
+	removePreference(PALETTE_STORAGE_KEY);
 	reconcileAppearancePreferences();
+}
+
+// rememberAppearance stores what the page shows: the palette on <html>, and
+// the scheme only when one was chosen on this page. <html data-theme> cannot
+// be stored, because a dark-only palette forces it and an operating-system
+// scheme must keep following the operating system.
+export function rememberAppearance(): void {
+	const palette = parsePalette(
+		document.documentElement.dataset.palette ?? null,
+	);
+	if (palette) {
+		writePreference(PALETTE_STORAGE_KEY, palette);
+	}
+	if (sessionScheme) {
+		writePreference(SCHEME_STORAGE_KEY, sessionScheme);
+	}
+}
+
+// forgetAppearance deletes the stored copies; the page keeps its appearance.
+export function forgetAppearance(): void {
+	removePreference(SCHEME_STORAGE_KEY);
+	removePreference(PALETTE_STORAGE_KEY);
 }
 
 function preferencesPanel(): HTMLDialogElement | null {
@@ -341,12 +349,12 @@ export function closePreferences(): void {
 }
 
 function migrateLegacyScheme(): void {
-	const storedValue = localStorageValue(SCHEME_STORAGE_KEY);
+	const storedValue = readPreference(SCHEME_STORAGE_KEY);
 	const scheme = parseScheme(storedValue);
 	if (!scheme || storedValue === scheme) {
 		return;
 	}
-	writeLocalStorage(SCHEME_STORAGE_KEY, scheme);
+	writePreference(SCHEME_STORAGE_KEY, scheme);
 }
 
 function constrainPaletteTooltip(swatch: HTMLButtonElement): void {
@@ -436,7 +444,18 @@ export function initialiseAppearancePreferences(): void {
 		return;
 	}
 	initialised = true;
+	for (const name of LEGACY_COOKIES) {
+		expireCookie(name);
+	}
+	registerPreferenceStore({
+		remember: rememberAppearance,
+		forget: forgetAppearance,
+	});
 	migrateLegacyScheme();
+	// Hold the remembered choices in memory, so the page keeps its appearance
+	// when another tab withdraws consent and deletes the stored copies.
+	sessionScheme = parseScheme(readPreference(SCHEME_STORAGE_KEY));
+	sessionPalette = parsePalette(readPreference(PALETTE_STORAGE_KEY));
 	reconcileAppearancePreferences();
 	document.addEventListener("click", handleClick);
 	document.addEventListener("pointerover", (event) => {

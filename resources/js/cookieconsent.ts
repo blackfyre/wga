@@ -1,5 +1,8 @@
 import * as CookieConsent from "vanilla-cookieconsent";
-import { PREFERENCES_CATEGORY, setSearchPrefsConsent } from "./search-prefs";
+import {
+	applyPreferenceConsent,
+	PREFERENCES_CATEGORY,
+} from "./preference-consent";
 
 const revealSettingsControl = () => {
 	for (const control of document.querySelectorAll<HTMLElement>(
@@ -13,8 +16,8 @@ const revealSettingsControl = () => {
 
 const hasConsentUI = () => document.querySelector("#cc-main .cm") !== null;
 
-const applyPreferenceConsent = () =>
-	setSearchPrefsConsent(CookieConsent.acceptedCategory(PREFERENCES_CATEGORY));
+const applyConsentDecision = () =>
+	applyPreferenceConsent(CookieConsent.acceptedCategory(PREFERENCES_CATEGORY));
 
 export const initCookieConsent = async () => {
 	const result = (await CookieConsent.run({
@@ -41,8 +44,8 @@ export const initCookieConsent = async () => {
 				readOnly: false,
 			},
 		},
-		onConsent: applyPreferenceConsent,
-		onChange: applyPreferenceConsent,
+		onConsent: applyConsentDecision,
+		onChange: applyConsentDecision,
 		language: {
 			default: "en",
 			translations: {
@@ -50,7 +53,7 @@ export const initCookieConsent = async () => {
 					consentModal: {
 						title: "COOKIES",
 						description:
-							'Essential cookies keep this site working. Analytics cookies are not in use. With your permission, optional preference storage remembers your artwork search sort, view, and whether result actions are shown, on this device; DENY, or turning it off under PREFERENCES, deletes it. Read our <a href="/pages/privacy-policy">privacy policy</a>.',
+							'Essential cookies keep this site working. Analytics cookies are not in use. With your permission, optional preference storage remembers your artwork search toolbar, colour scheme, palette, reading aid, and Study Board on this device. DENY, or turning it off under PREFERENCES, deletes them. Read our <a href="/pages/privacy-policy">privacy policy</a>.',
 						acceptAllBtn: "ACCEPT ALL",
 						acceptNecessaryBtn: "DENY",
 						showPreferencesBtn: "PREFERENCES",
@@ -76,7 +79,7 @@ export const initCookieConsent = async () => {
 							{
 								title: "Preference storage",
 								description:
-									"Remembers your artwork search sort, view, and whether result actions are shown, in the wga_aw_prefs cookie and this browser's local storage. Turning it off deletes both; the settings then apply to the current page only.",
+									"Remembers, on this device, your artwork search toolbar (sort, view, and whether result actions are shown), your colour scheme and palette, the bionic reading aid, and your Study Board. They are kept in this browser's local storage and, for the search toolbar, the wga_aw_prefs cookie. Turning it off, or DENY, deletes them all; the settings then apply to the current visit only.",
 								linkedCategory: PREFERENCES_CATEGORY,
 							},
 							{

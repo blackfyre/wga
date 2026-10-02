@@ -1,6 +1,13 @@
 import logger from "./logger";
+import {
+	preferenceStorageAllowed,
+	readPreference,
+	registerPreferenceStore,
+	removePreference,
+	writePreference,
+} from "./preference-consent";
 
-const STUDY_BOARD_STORAGE_KEY = "wga-study-board";
+export const STUDY_BOARD_STORAGE_KEY = "wga-study-board";
 export const STUDY_BOARD_CAPACITY = 12;
 
 const recordIDPattern = /^[A-Za-z0-9_-]{1,255}$/;
@@ -70,27 +77,20 @@ export function moveStudyBoardID(
 	return next;
 }
 
+// Remembering the board is optional storage, gated on the cookie-consent
+// "preferences" category. Without it the board lasts for the current visit,
+// through its URL and this module's memory; the URL remains the complete
+// board state, so the workspace still functions honestly.
 function readRememberedBoard(): string[] {
-	try {
-		return normaliseStudyBoardIDs(
-			window.localStorage.getItem(STUDY_BOARD_STORAGE_KEY) ?? "",
-		);
-	} catch {
-		return [];
-	}
+	return normaliseStudyBoardIDs(readPreference(STUDY_BOARD_STORAGE_KEY) ?? "");
 }
 
 function rememberBoard(ids: readonly string[]): void {
-	try {
-		if (ids.length === 0) {
-			window.localStorage.removeItem(STUDY_BOARD_STORAGE_KEY);
-			return;
-		}
-		window.localStorage.setItem(STUDY_BOARD_STORAGE_KEY, ids.join(","));
-	} catch {
-		// Private browsing may make localStorage unavailable. The URL remains the
-		// complete board state, so the workspace still functions honestly.
+	if (ids.length === 0) {
+		removePreference(STUDY_BOARD_STORAGE_KEY);
+		return;
 	}
+	writePreference(STUDY_BOARD_STORAGE_KEY, ids.join(","));
 }
 
 function sameIDs(first: readonly string[], second: readonly string[]): boolean {
@@ -322,6 +322,11 @@ function bindStudyBoardEvents(): void {
 		return;
 	}
 	eventsBound = true;
+	// A first grant stores the board the page holds, which may be a URL board.
+	registerPreferenceStore({
+		remember: () => rememberBoard(currentBoardIDs),
+		forget: () => removePreference(STUDY_BOARD_STORAGE_KEY),
+	});
 	document.addEventListener("keydown", handleStudyBoardPaletteKey, true);
 	document.addEventListener("click", (event) => {
 		const target = event.target as Element | null;
@@ -367,18 +372,25 @@ export function initialiseStudyBoard(): void {
 		root.dataset.studyBoardBound = "true";
 		const ids = normaliseStudyBoardIDs(root.dataset.studyBoardIds ?? "");
 		if (root.dataset.studyBoardUrlState === "true") {
+			// An explicit board URL, such as a shared link, shapes this page but
+			// does not replace the remembered board; only edits write it.
 			currentBoardIDs = ids;
-			rememberBoard(ids);
 		} else {
-			const remembered = readRememberedBoard();
-			if (remembered.length > 0) {
+			// With consent the remembered board, even an empty one, is the state
+			// to restore; a URL board seen earlier in this visit must not replace
+			// it. Without consent nothing is remembered, so continue the board
+			// this visit holds in memory, if any.
+			const restore = preferenceStorageAllowed()
+				? readRememberedBoard()
+				: currentBoardIDs;
+			if (restore.length > 0) {
 				restoreNavigationRequested = true;
-				window.location.replace(studyBoardPath(remembered));
+				window.location.replace(studyBoardPath(restore));
 				return;
 			}
 			currentBoardIDs = [];
 		}
-	} else {
+	} else if (preferenceStorageAllowed()) {
 		currentBoardIDs = readRememberedBoard();
 	}
 	syncAddControls();

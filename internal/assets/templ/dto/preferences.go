@@ -88,7 +88,27 @@ const resolverScriptBody = `(function () {
 		var PALETTES = %s;
 	var DEFAULT_PALETTE = %s;
 
+	// Remembered appearance is optional storage: it is consulted only while
+	// the CookieConsent record accepts the "preferences" category.
+	function preferencesAllowed() {
+		var match = document.cookie.match(/(?:^|;\s*)cc_cookie=([^;]*)/);
+		if (!match) {
+			return false;
+		}
+		try {
+			var record = JSON.parse(decodeURIComponent(match[1]));
+			return !!record && Array.isArray(record.categories) && record.categories.indexOf("preferences") !== -1;
+		} catch (error) {
+			return false;
+		}
+	}
+
+	var allowed = preferencesAllowed();
+
 	function readLocalStorage(key) {
+		if (!allowed) {
+			return null;
+		}
 		try {
 			return window.localStorage.getItem(key);
 		} catch (error) {

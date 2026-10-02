@@ -1,5 +1,5 @@
 import { type BrowserContext, expect, type Page, test } from "@playwright/test";
-import { grantPreferenceConsent } from "./helpers/artwork-search-prefs";
+import { grantPreferenceConsent } from "./helpers/preference-consent";
 
 test.setTimeout(60000);
 

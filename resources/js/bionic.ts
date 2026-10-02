@@ -1,4 +1,14 @@
-const STORAGE_KEY = "wga-bionic";
+import {
+	expireCookie,
+	readPreference,
+	registerPreferenceStore,
+	removePreference,
+	writePreference,
+} from "./preference-consent";
+
+export const BIONIC_STORAGE_KEY = "wga-bionic";
+// The cookie releases before #208 set. Nothing reads it any more.
+const LEGACY_COOKIE = "wga_bionic";
 const PROSE_SELECTOR = "p, [data-bionic]";
 const SKIP_SELECTOR =
 	"[data-bionic-mark], b, strong, em, i, mark, [data-bionic='off'], nav, footer, figure, [class~='font-mono'], code, pre, form, button, input, select, textarea";
@@ -80,20 +90,23 @@ function clear(): void {
 	document.body.normalize();
 }
 
+// Remembering is optional storage: readPreference and writePreference refuse
+// without cookie-consent "preferences", so the choice then lasts for the
+// current page only.
 function storedBionicReading(): boolean {
-	try {
-		const stored = window.localStorage.getItem(STORAGE_KEY);
-		if (stored === "on") {
-			return true;
-		}
-		if (stored === "off") {
-			return false;
-		}
-	} catch {
-		// Storage can be unavailable in private browsing modes.
-	}
+	return readPreference(BIONIC_STORAGE_KEY) === "on";
+}
 
-	return false;
+// rememberBionicReading stores the state the page shows.
+export function rememberBionicReading(): void {
+	writePreference(
+		BIONIC_STORAGE_KEY,
+		document.documentElement.dataset.bionicReading === "true" ? "on" : "off",
+	);
+}
+
+export function forgetBionicReading(): void {
+	removePreference(BIONIC_STORAGE_KEY);
 }
 
 function updateControls(on: boolean): void {
@@ -124,11 +137,7 @@ export function currentBionicReading(): boolean {
 export function setBionicReading(on: boolean, persist = true): void {
 	enabled = on;
 	if (persist) {
-		try {
-			window.localStorage.setItem(STORAGE_KEY, on ? "on" : "off");
-		} catch {
-			// Storage can be unavailable in private browsing modes.
-		}
+		writePreference(BIONIC_STORAGE_KEY, on ? "on" : "off");
 	}
 
 	document.documentElement.dataset.bionicReading = String(on);
@@ -150,6 +159,11 @@ export function initBionicReading(): void {
 		return;
 	}
 	initialised = true;
+	expireCookie(LEGACY_COOKIE);
+	registerPreferenceStore({
+		remember: rememberBionicReading,
+		forget: forgetBionicReading,
+	});
 	setBionicReading(storedBionicReading(), false);
 
 	document.addEventListener("click", (event) => {
