@@ -1,4 +1,4 @@
-# Dependabot version updates for every ecosystem the application ships or builds with.
+# Dependabot version updates for every ecosystem the application ships, builds or develops with.
 # Commit prefixes produce Conventional Commit PR titles accepted by pr-validation.yml.
 # Security updates are grouped separately so they are not held back by routine bumps.
 # https://docs.github.com/code-security/dependabot/working-with-dependabot/dependabot-options-reference
@@ -60,12 +60,22 @@ updates:
       include: "scope"
     groups:
       github-actions:
+        update-types: ["minor", "patch"]
         patterns: ["*"]
 
   - package-ecosystem: "docker"
     directories:
       - "/"
       - "/deploy/otel-collector"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    commit-message:
+      prefix: "build"
+      include: "scope"
+
+  - package-ecosystem: "docker-compose"
+    directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
