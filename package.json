@@ -34,7 +34,7 @@
     "choices.js": "^11.2.4",
     "concurrently": "^10.0.5",
     "cssnano": "^9.0.4",
-    "dompurify": "3.4.15",
+    "dompurify": "3.4.16",
     "dotenv": "^17.4.2",
     "esbuild": "0.28.2",
     "esbuild-plugin-copy": "^2.1.1",
@@ -49,7 +49,7 @@
     "tailwindcss": "^4.3.3",
     "vanilla-cookieconsent": "3.1.0",
     "viewerjs": "^1.14.0",
-    "wrangler": "^4.131.2"
+    "wrangler": "^4.145.0"
   },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown"
@@ -65,7 +65,7 @@
       "picomatch": "2.3.2"
     },
     "braces": "3.0.3",
-    "dompurify": "3.4.15",
+    "dompurify": "3.4.16",
     "micromatch": {
       ".": "4.0.8",
       "picomatch": "2.3.2"

@@ -421,10 +421,10 @@
     {
       "ecosystem": "golang",
       "name": "github.com/klauspost/compress",
-      "version": "v1.20.0",
-      "source_url": "https://pkg.go.dev/github.com/klauspost/compress@v1.20.0",
-      "purl": "pkg:golang/github.com/klauspost/compress@v1.20.0",
-      "integrity": "h1:a3C1ke2ohxFymNlb2HWAHjDeKCI90scRskErZkR0ezA=",
+      "version": "v1.20.1",
+      "source_url": "https://pkg.go.dev/github.com/klauspost/compress@v1.20.1",
+      "purl": "pkg:golang/github.com/klauspost/compress@v1.20.1",
+      "integrity": "h1:T7kKElXUMXrUJ2E9QhQhxFtcK5rPyLdsGZvdbLMPdiQ=",
       "targets": [
         "binary"
       ],
@@ -435,7 +435,7 @@
         "notice": "",
         "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
       },
-      "source_evidence": "https://pkg.go.dev/github.com/klauspost/compress@v1.20.0"
+      "source_evidence": "https://pkg.go.dev/github.com/klauspost/compress@v1.20.1"
     },
     {
       "ecosystem": "golang",
@@ -1248,10 +1248,10 @@
     {
       "ecosystem": "golang",
       "name": "modernc.org/sqlite",
-      "version": "v1.58.0",
-      "source_url": "https://pkg.go.dev/modernc.org/sqlite@v1.58.0",
-      "purl": "pkg:golang/modernc.org/sqlite@v1.58.0",
-      "integrity": "h1:38u40/bwkfM7f0Myhosl+SEMltSDxnGdQf8o6Kjmys0=",
+      "version": "v1.59.0",
+      "source_url": "https://pkg.go.dev/modernc.org/sqlite@v1.59.0",
+      "purl": "pkg:golang/modernc.org/sqlite@v1.59.0",
+      "integrity": "h1:X1es1GpqBlS/5T+vbM4HLUdaa8OtQx468DF2vrx+38A=",
       "targets": [
         "binary"
       ],
@@ -1265,7 +1265,7 @@
         "notice": "",
         "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
       },
-      "source_evidence": "https://pkg.go.dev/modernc.org/sqlite@v1.58.0"
+      "source_evidence": "https://pkg.go.dev/modernc.org/sqlite@v1.59.0"
     },
     {
       "ecosystem": "npm",
@@ -1432,10 +1432,10 @@
     {
       "ecosystem": "npm",
       "name": "dompurify",
-      "version": "3.4.15",
-      "source_url": "https://www.npmjs.com/package/dompurify/v/3.4.15",
-      "purl": "pkg:npm/dompurify@3.4.15",
-      "integrity": "sha512-EUBjM+B+lkDE41iE82DDSCfkoPGfXx8IxFxPMjNzm/Uk4xDet77rTN9wqlxlVg71kK7XGuUMv6wUxJUwwv+Xyw==",
+      "version": "3.4.16",
+      "source_url": "https://www.npmjs.com/package/dompurify/v/3.4.16",
+      "purl": "pkg:npm/dompurify@3.4.16",
+      "integrity": "sha512-sqo+pNp3qRhCIpbgRi1y8Tgk27Bo2Ry7w0dC1NBeNTdZChWjz9Xb/KOoZbRP/R6pQZ80Qw8YhXw13hWWBbMRnQ==",
       "targets": [
         "browser"
       ],
@@ -1446,7 +1446,7 @@
         "notice": "",
         "handling": "Include this licence text and any supplied NOTICE material in distributed notices."
       },
-      "source_evidence": "https://www.npmjs.com/package/dompurify/v/3.4.15"
+      "source_evidence": "https://www.npmjs.com/package/dompurify/v/3.4.16"
     },
     {
       "ecosystem": "npm",
