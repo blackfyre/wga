@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { grantPreferenceConsent } from "./helpers/preference-consent";
 
 const widths = [390, 834, 1440] as const;
 
@@ -104,6 +105,7 @@ test.describe("task 9.2 itinerary tray acceptance", () => {
 			await expect(page.locator("#itinerary-tray")).toContainText("1 OF 15");
 			await noHorizontalOverflow(page);
 		}
+		await grantPreferenceConsent(page);
 		await page.addInitScript(() => localStorage.setItem("wga-theme", "dark"));
 		await page.setViewportSize({ width: 1440, height: 834 });
 		await page.reload();

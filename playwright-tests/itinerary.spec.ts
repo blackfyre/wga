@@ -1,4 +1,5 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
+import { grantPreferenceConsent } from "./helpers/preference-consent";
 
 const viewports = [390, 834, 1440] as const;
 
@@ -128,6 +129,7 @@ test.describe("itinerary index", () => {
 	});
 
 	test("applies the dark theme from stored preference", async ({ page }) => {
+		await grantPreferenceConsent(page);
 		await page.addInitScript(() => {
 			localStorage.setItem("wga-theme", "dark");
 		});
@@ -525,6 +527,7 @@ test.describe("publication and slideshow", () => {
 		page,
 	}) => {
 		// A light user theme must not lighten the intrinsically dark viewer.
+		await grantPreferenceConsent(page);
 		await page.addInitScript(() => {
 			localStorage.setItem("wga-theme", "light");
 		});

@@ -1,7 +1,15 @@
 import { expect, test } from "@playwright/test";
 import { showArtworkResultActions } from "./helpers/artwork-search-prefs";
+import { grantPreferenceConsent } from "./helpers/preference-consent";
 
 const storageKey = "wga-study-board";
+
+test.beforeEach(async ({ page }) => {
+	// These specifications exercise remembered preferences, which need the
+	// optional "preferences" consent; ./preference-storage-consent.spec.ts covers
+	// the behaviour without it.
+	await grantPreferenceConsent(page);
+});
 
 async function publishedArtworkIDs(page): Promise<string[]> {
 	await page.goto("/artworks");
@@ -63,9 +71,10 @@ test("restores, shares, canonicalises, and clears transient board state", async 
 	await expect(page.locator(`[data-study-board-work='${ids[0]}']`)).toHaveCount(
 		0,
 	);
+	// A board URL shapes the page; it does not replace the remembered board.
 	expect(
 		await page.evaluate((key) => window.localStorage.getItem(key), storageKey),
-	).toBe(ids[1]);
+	).toBe(ids[0]);
 
 	await page.goto(`/study-board?board=missing00000001,${ids[1]},${ids[1]}`);
 	await expect(page).toHaveURL(

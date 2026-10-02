@@ -94,7 +94,7 @@ func TestThemeResolverScriptContracts(t *testing.T) {
 		}
 	}
 	// The corrected scheme contract must not introduce a separate scheme key.
-	for _, forbidden := range []string{`wga-scheme`, `wga_scheme`, `wga_palette`, `wga_theme`, `document.cookie`} {
+	for _, forbidden := range []string{`wga-scheme`, `wga_scheme`, `wga_palette`, `wga_theme`, `document.cookie =`} {
 		if strings.Contains(script, forbidden) {
 			t.Errorf("resolver script must not reference %q", forbidden)
 		}
@@ -114,5 +114,36 @@ func TestThemeResolverScriptPaletteFallback(t *testing.T) {
 	guarded := "if (!Object.prototype.hasOwnProperty.call(PALETTES, palette)) {\n\t\tpalette = DEFAULT_PALETTE;"
 	if !strings.Contains(script, guarded) {
 		t.Errorf("resolver missing validity-guarded fallback %q", guarded)
+	}
+}
+
+// Remembered palette and scheme are optional storage. The resolver must read
+// them only while the CookieConsent record accepts "preferences", reading that
+// record without writing any cookie.
+func TestThemeResolverScriptGatesStorageOnPreferenceConsent(t *testing.T) {
+	script := ThemeResolverScript()
+	for _, want := range []string{
+		`cc_cookie=`,
+		`decodeURIComponent(match[1])`,
+		`record.categories.indexOf("preferences") !== -1`,
+		`var allowed = preferencesAllowed();`,
+	} {
+		if !strings.Contains(script, want) {
+			t.Errorf("resolver script missing consent check %q", want)
+		}
+	}
+	if strings.Count(script, `document.cookie`) != 1 {
+		t.Error("resolver must touch document.cookie exactly once, to read the consent record")
+	}
+
+	gate := strings.Index(script, "if (!allowed) {\n\t\t\treturn null;")
+	read := strings.Index(script, `window.localStorage.getItem(key)`)
+	if gate < 0 || read < 0 || gate > read {
+		t.Fatalf("resolver must refuse to read local storage without consent, got gate=%d read=%d", gate, read)
+	}
+	consent := strings.Index(script, `var allowed = preferencesAllowed();`)
+	palette := strings.Index(script, `readLocalStorage("wga-palette")`)
+	if consent > palette {
+		t.Fatal("resolver must establish consent before reading the palette")
 	}
 }
