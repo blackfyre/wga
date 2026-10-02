@@ -22,7 +22,7 @@ The system SHALL render every public page, dialog, cookie surface, and error pag
 
 ### Requirement: Responsive public navigation
 
-The system SHALL provide the reference's branded public header, search affordance, navigation destinations, and responsive mobile navigation while keeping navigation links usable without JavaScript.
+The system SHALL provide the reference's branded public header, search affordance, navigation destinations, and responsive mobile navigation while keeping navigation links usable without JavaScript. From 720px the header SHALL place the logo and the search group (search field, SEARCH and the Go to keyboard cue) on one row, with the navigation destinations and MORE on a second row. SEARCH and the keyboard cue SHALL keep their natural width on a single line, and the search field SHALL take the remaining space: at least 140px wide from 720px when no classic scrollbar narrows the page, and shrinking rather than overflowing the row when one does. The navigation row SHALL be a single line from 834px, including when a classic scrollbar narrows the page; where it cannot fit, it SHALL wrap without hiding destinations. The header SHALL NOT cause horizontal page overflow. The desktop wordmark SHALL render `WEB GALLERY OF ART` in the monospace face at `--t-14`, weight 600, 3px letter-spacing and a 1.15 line height, and the strapline SHALL read `EUROPEAN ART, 3rd CENTURY – EARLY 20th` in the monospace face at `--t-10` with 1px letter-spacing, the faint colour role and a 4px top margin. MORE SHALL read `MORE ▾` without the browser's native disclosure marker.
 
 #### Scenario: Desktop visitor navigates the catalogue
 
@@ -33,6 +33,26 @@ The system SHALL provide the reference's branded public header, search affordanc
 
 - **WHEN** a mobile visitor activates the navigation control
 - **THEN** the navigation destinations become visible and keyboard-accessible.
+
+#### Scenario: Desktop header at intermediate and wide widths
+
+- **WHEN** a visitor opens a public page at 720px, 834px, 1079px, 1080px or 1440px
+- **THEN** the keyboard cue is one line no taller than 32px, bottom-aligned with SEARCH on the logo's row, the search field is at least 140px wide, and the page has no horizontal overflow.
+
+#### Scenario: A classic scrollbar narrows the page
+
+- **WHEN** a visitor whose platform draws a 17px non-overlay scrollbar opens a scrollable public page at 720px or 834px
+- **THEN** the logo row does not overflow, the keyboard cue stays one line, and at 834px the navigation row is still a single line.
+
+#### Scenario: Navigation row fits on one line
+
+- **WHEN** a visitor opens a public page at 834px or wider
+- **THEN** every navigation destination and MORE sit on a single line.
+
+#### Scenario: Visitor reads the brand and the MORE control
+
+- **WHEN** a visitor opens a public page at 720px or wider
+- **THEN** the wordmark and strapline use the design's type values and MORE reads `MORE ▾` with no native disclosure marker.
 
 ### Requirement: Public pages preserve functional routes and enhanced navigation
 
@@ -334,12 +354,22 @@ The system SHALL highlight an available record-opening work, artist, tour, relat
 
 ### Requirement: Fixed bottom surfaces share one measured stack
 
-The system SHALL coordinate the Study Board tray, itinerary tray, cookie notice, toast container, keyboard hint, and page-content reservation through one measured bottom-stack contract. When multiple fixed surfaces are visible, they SHALL not overlap one another or obscure page content or focused controls.
+The system SHALL coordinate the Study Board tray, itinerary tray, cookie notice, toast container, keyboard hint bar, and page-content reservation through one measured bottom-stack contract. When multiple fixed surfaces are visible, they SHALL not overlap one another or obscure page content or focused controls. The keyboard hint bar, when displayed, SHALL be the lowest item of the stack, with the itinerary tray and then the Study Board tray above it. The FEEDBACK control and the toast container SHALL sit one shared constant gap above the total height of the stack: 16px below a 720px viewport width and 24px from 720px.
 
 #### Scenario: Cookie notice and itinerary tray are visible together
 
 - **WHEN** both fixed surfaces are rendered and a toast is raised
 - **THEN** the Study Board shelf and itinerary tray remain adjacent in their reference order, the notice and toast clear the combined stack, and the page retains sufficient bottom space to reach its final content.
+
+#### Scenario: Floating controls clear the docked surfaces
+
+- **WHEN** a public page shows any combination of the keyboard hint bar, the itinerary tray, and the Study Board tray, including none of them
+- **THEN** the bottom edge of FEEDBACK and of the toast container is exactly the shared gap above the top of the highest docked surface, or above the viewport's bottom edge when nothing is docked.
+
+#### Scenario: Desktop page reserves the hint bar
+
+- **WHEN** a desktop-pointer visitor scrolls to the end of a public page
+- **THEN** the shared footer's final row remains reachable above the keyboard hint bar and any visible trays.
 
 ### Requirement: Shared footer exposes community destinations
 

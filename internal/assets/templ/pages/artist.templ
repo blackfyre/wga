@@ -59,7 +59,7 @@ templ ArtistRecordBlock(view ArtistView) {
 	if utils.IsHTMXRequest(ctx) {
 		<title>{ utils.GetTitle(ctx) }</title>
 	}
-	<main id="mc-area" class="wga-enter wga-bottom-stack-content">
+	<main id="mc-area" class="wga-enter">
 		@ArtistRecordContent(view)
 	</main>
 }

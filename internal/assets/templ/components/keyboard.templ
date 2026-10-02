@@ -42,7 +42,7 @@ type KeyboardSuggestion struct {
 
 templ KeyboardLayer() {
 	<div id="kbd-screens" hidden data-json={ keyboardScreensJSON() }></div>
-	<div class="wga-kbd-bar" role="status" aria-live="off">
+	<div class="wga-kbd-bar" data-wga-bottom-stack-item="keyboard" data-wga-bottom-stack-order="0" role="status" aria-live="off">
 		<span class="font-mono text-(length:--t-9) tracking-[1.5px] text-wga-ink">KEYBOARD</span>
 		<span class="h-3 w-px bg-wga-ink/25" aria-hidden="true"></span>
 		<span class="flex items-center gap-1.5"><span class="wga-kbd-key">↑↓</span><span class="font-mono text-(length:--t-9) tracking-[1px] text-muted">MOVE</span></span>

@@ -207,14 +207,42 @@ func TestTopNavKeepsMoreInlineWithDesktopDestinations(t *testing.T) {
 	if strings.Contains(rendered, `items-start justify-between gap-6`) {
 		t.Fatal("desktop navigation must not push MORE to the far edge")
 	}
-	if !strings.Contains(rendered, `hidden items-start gap-6 px-4 pt-3 min-[720px]:flex`) {
+	if !strings.Contains(rendered, `hidden items-start gap-[18px] px-4 pt-3 min-[720px]:flex`) {
 		t.Fatal("expected inline desktop navigation layout")
 	}
-	if !strings.Contains(rendered, `w-[190px] items-end gap-4 min-[1080px]:w-[340px]`) {
-		t.Fatal("expected reference search widths at 720px and 1080px tiers")
+	if !strings.Contains(rendered, `flex w-full min-w-0 max-w-[340px] items-end gap-2 min-[1080px]:gap-4`) {
+		t.Fatal("expected a flexible search form capped at the 340px reference width")
 	}
-	if !strings.Contains(rendered, `hidden items-end gap-6 min-[720px]:flex`) {
+	if !strings.Contains(rendered, `<label class="min-w-0 flex-1">`) {
+		t.Fatal("expected the search field to fill the remaining space and shrink rather than overflow")
+	}
+	if strings.Count(rendered, `shrink-0 whitespace-nowrap`) != 2 {
+		t.Fatal("expected SEARCH and the keyboard cue to keep their natural width")
+	}
+	if !strings.Contains(rendered, `hidden min-w-0 flex-1 justify-end min-[720px]:flex`) {
 		t.Fatal("expected desktop search to appear at the 720px reference tier")
+	}
+}
+
+func TestTopNavUsesDesignBrandTypeAndMoreMarker(t *testing.T) {
+	var output bytes.Buffer
+	if err := TopNav().Render(context.Background(), &output); err != nil {
+		t.Fatalf("render top navigation: %v", err)
+	}
+
+	rendered := output.String()
+	for _, expected := range []string{
+		`<span class="block font-mono text-(length:--t-14) leading-[1.15] font-semibold tracking-[3px]">WEB GALLERY OF ART</span>`,
+		`<span class="mt-1 block font-mono text-(length:--t-10) tracking-[1px] text-wga-faint">EUROPEAN ART, 3rd CENTURY – EARLY 20th</span>`,
+		`MORE <span aria-hidden="true">▾</span></summary>`,
+		`list-none [&amp;::-webkit-details-marker]:hidden`,
+	} {
+		if !strings.Contains(rendered, expected) {
+			t.Fatalf("expected design header markup %q", expected)
+		}
+	}
+	if strings.Contains(rendered, "3RD CENTURY") || strings.Contains(rendered, "EARLY 20TH") {
+		t.Fatal("strapline must use the design's lowercase ordinals")
 	}
 }
 
@@ -303,7 +331,7 @@ func mobileNavRegion(rendered string) string {
 }
 
 func desktopNavRegion(rendered string) string {
-	marker := `class="container mx-auto hidden items-start gap-6 px-4 pt-3 min-[720px]:flex min-[720px]:px-0 min-[720px]:pt-0" aria-label="Primary navigation"`
+	marker := `class="container mx-auto hidden items-start gap-[18px] px-4 pt-3 min-[720px]:flex min-[720px]:px-0 min-[720px]:pt-0 min-[1080px]:gap-6" aria-label="Primary navigation"`
 	start := strings.Index(rendered, marker)
 	if start < 0 {
 		return ""

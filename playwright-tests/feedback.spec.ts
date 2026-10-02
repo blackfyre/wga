@@ -15,10 +15,13 @@ test("renders feedback as a styled ordinary external link", async ({
   await expect(feedback).not.toHaveAttribute("hx-target");
   await expect(feedback).not.toHaveAttribute("hx-select");
   await expect(feedback).not.toHaveAttribute("hx-swap");
+  // A desktop pointer always shows the 30px keyboard bar; at SM width
+  // FEEDBACK clears it by the 16px floating gap.
+  await expect(page.locator(".wga-kbd-bar")).toBeVisible();
   const bottom = await feedback.evaluate(
     (element) => window.innerHeight - element.getBoundingClientRect().bottom,
   );
-  expect(bottom).toBeCloseTo(16, 0);
+  expect(bottom).toBeCloseTo(30 + 16, 0);
   await expect(feedback).toHaveCSS("padding-left", "18px");
   await expect(feedback).toHaveCSS("padding-top", "13px");
 });

@@ -82,7 +82,6 @@ templ LayoutBase(bodyClasses string, HtmxTargetArea string) {
 			<a
 				href="https://github.com/blackfyre/wga/issues/new/choose"
 				class="wga-feedback-anchor fixed right-4 z-50 bg-wga-inv-bg px-4.5 py-[13px] font-mono text-(length:--t-11) tracking-[1.5px] text-wga-inv-fg transition-colors hover:bg-wga-accent-bg md:right-8"
-				style="bottom: calc(var(--wga-bottom-stack-height, 0px) + 1rem)"
 			>FEEDBACK</a>
 			<div class="wga-toast-stack" id="toast-container"></div>
 			<script type="module" src="/assets/js/app.js"></script>
@@ -103,7 +102,7 @@ templ LayoutMain() {
 			</section>
 		}
 		@components.TopNav()
-		<main id="mc-area" class="wga-enter wga-bottom-stack-content">
+		<main id="mc-area" class="wga-enter">
 			{ children... }
 		</main>
 		@components.ItineraryTray(utils.GetItineraryTray(ctx), false)
@@ -112,13 +111,14 @@ templ LayoutMain() {
 	}
 }
 
-// layoutBodyClass provides a no-JavaScript fallback reservation. The client
-// replaces it with the measured shared-stack height when scripts are available.
+// layoutBodyClass reserves the bottom stack on <body>, after the footer, so the
+// page's final content clears it. The tray class is a no-JavaScript fallback
+// height; the client replaces it with the measured stack height.
 func layoutBodyClass(tray dto.ItineraryTrayView) string {
 	if tray.Count > 0 {
-		return "min-h-screen wga-has-itinerary-tray"
+		return "min-h-screen wga-bottom-stack-content wga-has-itinerary-tray"
 	}
-	return "min-h-screen"
+	return "min-h-screen wga-bottom-stack-content"
 }
 
 templ LayoutSlim() {

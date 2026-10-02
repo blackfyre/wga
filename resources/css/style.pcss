@@ -198,8 +198,11 @@
 	display: none;
 }
 
+/* The bar is permanent wherever a keyboard is likely: shown from first paint so
+   the bottom stack never changes height mid-session. It is the lowest measured
+   bottom-stack item, so the trays and floating controls clear its 30px. */
 @media (hover: hover) and (pointer: fine) {
-	html[data-kbd-on] .wga-kbd-bar {
+	.wga-kbd-bar {
 		display: flex;
 	}
 }
@@ -1991,7 +1994,7 @@
 	.wga-toast-stack {
 		position: fixed;
 		right: 1rem;
-		bottom: calc(var(--wga-bottom-stack-height, 0px) + 1rem);
+		bottom: calc(var(--wga-bottom-stack-height, 0px) + var(--wga-floating-gap));
 		z-index: 50;
 		display: flex;
 		width: max-content;
@@ -2001,12 +2004,15 @@
 		background: transparent;
 	}
 
+	/* On <body>, so the reservation follows the footer, the page's last content. */
 	.wga-bottom-stack-content {
 		padding-bottom: var(--wga-bottom-stack-height, 0px);
 	}
 
+	/* Before measurement (or without JavaScript) a tray still clears the
+	   permanent keyboard bar beneath it. */
 	.wga-bottom-stack-item {
-		bottom: var(--wga-bottom-stack-offset, 0px);
+		bottom: var(--wga-bottom-stack-offset, var(--wga-kbd-bar-reserve, 0px));
 	}
 
 	.wga-skeleton {
@@ -2454,13 +2460,42 @@ figure.hidden-caption {
 	}
 }
 
+/* FEEDBACK and the toast stack sit one constant gap above the whole measured
+   bottom stack. The gap widens at MD, where FEEDBACK's right inset does too. */
+body {
+	--wga-floating-gap: 16px;
+}
+
+@media (min-width: 45rem) {
+	body {
+		--wga-floating-gap: 24px;
+	}
+}
+
+.wga-feedback-anchor {
+	bottom: calc(var(--wga-bottom-stack-height, 0px) + var(--wga-floating-gap));
+}
+
+/* Pre-measurement reservations. bottom-stack.ts replaces them with the measured
+   height; the permanent keyboard bar adds its 30px on desktop pointers. */
+body {
+	--wga-kbd-bar-reserve: 0px;
+	--wga-bottom-stack-height: var(--wga-kbd-bar-reserve);
+}
+
+@media (hover: hover) and (pointer: fine) {
+	body {
+		--wga-kbd-bar-reserve: 30px;
+	}
+}
+
 body.wga-has-itinerary-tray {
-	--wga-bottom-stack-height: 7rem;
+	--wga-bottom-stack-height: calc(7rem + var(--wga-kbd-bar-reserve));
 }
 
 @media (min-width: 45rem) {
 	body.wga-has-itinerary-tray {
-		--wga-bottom-stack-height: 5rem;
+		--wga-bottom-stack-height: calc(5rem + var(--wga-kbd-bar-reserve));
 	}
 }
 

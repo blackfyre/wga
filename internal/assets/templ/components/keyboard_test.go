@@ -176,6 +176,18 @@ func TestKeyboardLayerExposesHelpFromKeyboardBar(t *testing.T) {
 	}
 }
 
+func TestKeyboardBarIsLowestMeasuredBottomStackItem(t *testing.T) {
+	var output bytes.Buffer
+	if err := KeyboardLayer().Render(context.Background(), &output); err != nil {
+		t.Fatalf("render keyboard layer: %v", err)
+	}
+
+	expected := `<div class="wga-kbd-bar" data-wga-bottom-stack-item="keyboard" data-wga-bottom-stack-order="0"`
+	if !strings.Contains(output.String(), expected) {
+		t.Fatalf("keyboard bar must register as bottom-stack order 0, want %q", expected)
+	}
+}
+
 func keyboardPayload(t *testing.T, rendered string) []KeyboardScreen {
 	t.Helper()
 	matches := regexp.MustCompile(`data-json="([^"]*)"`).FindStringSubmatch(rendered)
