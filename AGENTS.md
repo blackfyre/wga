@@ -118,6 +118,7 @@ Hard budget: at most two subagent calls for one task, including the final review
 8. Apply valid review findings and rerun the affected deterministic checks.
 9. Stop after two remediation cycles. Record the unresolved failure and evidence instead of starting an agent recursion.
 10. Mark an OpenSpec task complete only after its acceptance criteria and required verification are satisfied.
+11. Archive the change before its pull request merges. Once every task is complete and review is resolved, add a final commit to the same PR: run `openspec archive <change> --yes`, run `bunx prettier --write` on the specs it synced into `openspec/specs/`, and check that `openspec validate --specs` passes. A PR that implements an OpenSpec change merges with that change already archived; never leave archiving to a follow-up PR. When several PRs touch the same main spec, the one merging later archives against the updated `main` after a branch update.
 
 ### Output discipline
 
