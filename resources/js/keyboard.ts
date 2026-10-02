@@ -93,10 +93,6 @@ const readScreens = () => {
 	}
 };
 
-const markUsed = () => {
-	document.documentElement.dataset.kbdOn = "true";
-};
-
 const list = () => {
 	for (const candidate of document.querySelectorAll<HTMLElement>(
 		"[data-kbd-list]",
@@ -165,7 +161,6 @@ const moveCaret = (delta: number) => {
 	} else {
 		caret = Math.max(0, Math.min(currentRows.length - 1, caret + delta));
 	}
-	markUsed();
 	paintCaret();
 	let behavior: ScrollBehavior = "smooth";
 	if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -200,7 +195,6 @@ const openMarked = () => {
 const navigate = (href: string) => {
 	closePalette();
 	closeHelp();
-	markUsed();
 	window.location.assign(href);
 };
 
@@ -244,7 +238,6 @@ const openPalette = () => {
 		return;
 	}
 	closeHelp();
-	markUsed();
 	pick = 0;
 	if (!dialog.open) {
 		if (document.activeElement instanceof HTMLElement) {
@@ -266,7 +259,6 @@ const openHelp = () => {
 		return;
 	}
 	closePalette();
-	markUsed();
 	if (!dialog.open) {
 		if (document.activeElement instanceof HTMLElement) {
 			helpInvoker = document.activeElement;
@@ -573,7 +565,6 @@ export const initKeyboardNavigation = () => {
 		if (event.key === "/") {
 			event.preventDefault();
 			focusSearch();
-			markUsed();
 			return;
 		}
 		let moved = false;

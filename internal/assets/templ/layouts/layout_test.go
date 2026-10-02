@@ -129,15 +129,15 @@ func TestLayoutMainReservesSpaceForTray(t *testing.T) {
 		{
 			name:       "non-empty tray reserves bottom space",
 			tray:       dto.ItineraryTrayView{Count: 1, BuilderURL: "/itineraries/new"},
-			bodyClass:  `body class="min-h-screen wga-has-itinerary-tray"`,
-			mainClass:  `id="mc-area" class="wga-enter wga-bottom-stack-content"`,
+			bodyClass:  `body class="min-h-screen wga-bottom-stack-content wga-has-itinerary-tray"`,
+			mainClass:  `id="mc-area" class="wga-enter"`,
 			toastClass: `class="wga-toast-stack" id="toast-container"`,
 		},
 		{
 			name:       "empty tray reserves no bottom space",
 			tray:       dto.ItineraryTrayView{},
-			bodyClass:  `body class="min-h-screen"`,
-			mainClass:  `id="mc-area" class="wga-enter wga-bottom-stack-content"`,
+			bodyClass:  `body class="min-h-screen wga-bottom-stack-content"`,
+			mainClass:  `id="mc-area" class="wga-enter"`,
 			toastClass: `class="wga-toast-stack" id="toast-container"`,
 		},
 	}

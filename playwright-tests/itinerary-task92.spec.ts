@@ -58,9 +58,7 @@ test.describe("task 9.2 itinerary tray acceptance", () => {
 		await expect(
 			tray.getByRole("link", { name: "ARRANGE & NARRATE →", exact: true }),
 		).toBeVisible();
-		await expect(page.locator("#mc-area")).toHaveClass(
-			/wga-bottom-stack-content/,
-		);
+		await expect(page.locator("body")).toHaveClass(/wga-bottom-stack-content/);
 		await expect(page.locator("#toast-container")).toHaveClass(
 			/wga-toast-stack/,
 		);
@@ -71,9 +69,7 @@ test.describe("task 9.2 itinerary tray acceptance", () => {
 		await expect(page.locator("#itinerary-tray")).toContainText(
 			"ITINERARY DRAFT · 1 OF 15",
 		);
-		await expect(page.locator("#mc-area")).toHaveClass(
-			/wga-bottom-stack-content/,
-		);
+		await expect(page.locator("body")).toHaveClass(/wga-bottom-stack-content/);
 		await expect(page.locator("#toast-container")).toHaveClass(
 			/wga-toast-stack/,
 		);

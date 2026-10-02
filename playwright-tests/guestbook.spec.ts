@@ -67,7 +67,9 @@ test("queues a note without collecting email or publishing it", async ({
 	await page.getByLabel(/NOTE/).fill(entry.message);
 	await page.getByRole("button", { name: "SIGN THE GUESTBOOK →" }).click();
 
-	await expect(page.getByRole("status")).toContainText("your note is queued");
+	await expect(
+		page.locator("#guestbook-entry-form[role='status']"),
+	).toContainText("your note is queued");
 	await expect(
 		page.locator(".gb-entry", { hasText: entry.message }),
 	).toHaveCount(0);
@@ -85,7 +87,9 @@ test("supports keyboard-only form completion", async ({ page }) => {
 	await page.keyboard.type("Keyboard-only private note");
 	await page.keyboard.press("Tab");
 	await page.keyboard.press("Enter");
-	await expect(page.getByRole("status")).toContainText("your note is queued");
+	await expect(
+		page.locator("#guestbook-entry-form[role='status']"),
+	).toContainText("your note is queued");
 });
 
 test.describe("without JavaScript", () => {
@@ -102,7 +106,9 @@ test.describe("without JavaScript", () => {
 		await page.getByRole("button", { name: "SIGN THE GUESTBOOK →" }).click();
 
 		await expect(page).toHaveURL(/\/guestbook\?submitted=1/);
-		await expect(page.getByRole("status")).toContainText("your note is queued");
+		await expect(
+			page.locator("#guestbook-entry-form[role='status']"),
+		).toContainText("your note is queued");
 		await page.goto("/guestbook?year=all");
 		await expect(
 			page.locator(".gb-entry", { hasText: privateMessage }),

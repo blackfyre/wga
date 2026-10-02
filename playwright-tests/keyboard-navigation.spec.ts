@@ -46,6 +46,43 @@ test("opens keyboard help and command palette", async ({ page }) => {
 	).toBeFocused();
 });
 
+test("shows the keyboard bar before any key press without changing the stack", async ({
+	page,
+}) => {
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await page.goto("/");
+	await waitForKeyboard(page);
+	const bar = page.locator(".wga-kbd-bar");
+	const stackHeight = () =>
+		page.evaluate(() =>
+			getComputedStyle(document.body).getPropertyValue(
+				"--wga-bottom-stack-height",
+			),
+		);
+
+	await expect(bar).toBeVisible();
+	await expect(bar).toContainText("KEYBOARD");
+	await expect(page.locator("html")).not.toHaveAttribute("data-kbd-on");
+	await expect.poll(stackHeight).toBe("30px");
+
+	await page.keyboard.press("j");
+	await expect(bar).toBeVisible();
+	expect(await stackHeight()).toBe("30px");
+});
+
+test.describe("touch devices", () => {
+	test.use({ hasTouch: true, isMobile: true });
+
+	test("never show the keyboard bar", async ({ page }) => {
+		await page.setViewportSize({ width: 834, height: 1112 });
+		await page.goto("/");
+		await waitForKeyboard(page);
+		await expect(page.locator(".wga-kbd-bar")).toBeHidden();
+		await page.keyboard.press("j");
+		await expect(page.locator(".wga-kbd-bar")).toBeHidden();
+	});
+});
+
 test("centres keyboard dialogs on desktop", async ({ page }) => {
 	await page.setViewportSize({ width: 1440, height: 900 });
 	await page.goto("/");
