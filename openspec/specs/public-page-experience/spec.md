@@ -78,17 +78,22 @@ The system SHALL derive a hierarchical table of contents from each static page's
 
 ### Requirement: Cookie consent retains Vanilla CookieConsent semantics
 
-The system SHALL display Vanilla CookieConsent using the reference's notice treatment while retaining the existing client-side necessary-consent category, persistence, and preferences behaviour.
+The system SHALL display Vanilla CookieConsent using the reference's notice treatment while retaining the existing client-side necessary-consent category, persistence, and preferences behaviour. The system SHALL also offer an optional `preferences` category, off by default, that gates remembered artwork search choices; the notice and the preferences interface SHALL state that this optional storage exists, what it remembers, and that turning it off deletes it. The notice SHALL offer exactly three keyboard-operable actions, in this reading and focus order: `ACCEPT ALL` (every category, including `preferences`), `DENY` (the necessary category only, leaving optional storage off and deleting any stored copy), and `PREFERENCES` (opens the preferences interface). The preferences interface SHALL offer `ACCEPT ALL`, `DENY`, and `SAVE PREFERENCES` alongside a per-category toggle.
 
 #### Scenario: Visitor accepts necessary cookies
 
-- **WHEN** a visitor accepts the available necessary-consent action from the redesigned notice
-- **THEN** Vanilla CookieConsent persists consent and does not show the initial notice again according to its existing lifecycle.
+- **WHEN** a visitor activates `DENY` in the notice
+- **THEN** Vanilla CookieConsent persists consent to the necessary category only, any stored preference copy is deleted, and the initial notice is not shown again according to its existing lifecycle.
+
+#### Scenario: Visitor accepts all categories
+
+- **WHEN** a visitor activates `ACCEPT ALL` in the notice
+- **THEN** Vanilla CookieConsent persists consent to every category, including `preferences`.
 
 #### Scenario: Visitor opens cookie preferences
 
-- **WHEN** a visitor selects the cookie-preferences action
-- **THEN** Vanilla CookieConsent opens its preferences interface without a server-side consent request.
+- **WHEN** a visitor selects `PREFERENCES`
+- **THEN** Vanilla CookieConsent opens its preferences interface without a server-side consent request, listing the strictly necessary category and the optional preference-storage category.
 
 ### Requirement: Enhanced text search preserves in-progress input
 
@@ -306,3 +311,69 @@ The system SHALL include the refreshed reference's labelled Mastodon and GitHub 
 
 - **WHEN** a visitor activates either footer community link
 - **THEN** the browser follows the labelled external destination without requiring a scripted interaction.
+
+### Requirement: Shared footer returns visitors to the top of the page
+
+The system SHALL place a plain `↑ BACK TO TOP` text link in the shared footer's bottom row beside the preferences control. The link SHALL be an ordinary in-page link to the shared page header, SHALL work without JavaScript, and SHALL leave scrolling to the browser's CSS scroll behaviour, including its reduced-motion handling. Apart from the feedback control, the system SHALL not render a floating back-to-top control.
+
+#### Scenario: Visitor returns to the top from the footer
+
+- **WHEN** a visitor at the bottom of a public page activates `↑ BACK TO TOP`
+- **THEN** the browser moves to the page header without a scripted interaction.
+
+### Requirement: Rich-text prose and links follow the design type scale
+
+The system SHALL render running prose in sanitised rich text (artist biographies, artwork and selection commentaries, Dual Mode panes, static pages, guided tours, and postcards) at `--t-16` with a 1.7 line-height in the text colour role, unless the surface explicitly selects another rung of the type scale, in which case that rung SHALL apply. Links inside that prose SHALL use the accent colour role with a 1px underline offset clear of the descenders, SHALL NOT change the surrounding weight, and SHALL take the secondary accent on hover. Headings, lists, code, quotations and strong text inside rich text SHALL use rungs of the type scale and the palette's colour roles. Public templates and styles SHALL NOT use a type size outside the 33-rung scale, including Tailwind's named `text-lg`, `text-xl` and `text-2xl` sizes. The keyboard focus ring SHALL use the active palette's accent colour role in every palette and scheme.
+
+#### Scenario: Visitor reads an artist biography, artwork commentary or static page
+
+- **WHEN** a visitor opens an artist biography, an artwork commentary, or a static page at 390px, 834px or 1440px in the light or dark scheme at a 16px root
+- **THEN** each prose paragraph renders at 17px with a 28.9px line-height in the text colour role, and each prose link renders in the accent colour with a 1px underline at the paragraph's weight.
+
+#### Scenario: Surface selects a different prose rung
+
+- **WHEN** a prose surface such as a Dual Mode pane declares `--t-15`
+- **THEN** its paragraphs render at that rung rather than the default prose rung.
+
+#### Scenario: Visitor focuses a control in a dark palette
+
+- **WHEN** a visitor moves keyboard focus in any palette and scheme
+- **THEN** the focus ring uses that palette's accent colour role.
+
+### Requirement: In-page navigation scrolls smoothly and respects reduced motion
+
+The system SHALL scroll smoothly to the destination of an in-page fragment link in the public document and inside Dual Mode pane scroll regions. When a visitor has requested reduced motion, the system SHALL NOT animate any of these scrolls.
+
+#### Scenario: Visitor follows an in-page anchor
+
+- **WHEN** a visitor without a reduced-motion preference activates an "ON THIS PAGE", table-of-contents, back-to-top or other fragment link to an element on the current page
+- **THEN** the viewport scrolls progressively to that element, and the URL fragment updates.
+
+#### Scenario: Reduced motion is requested for an in-page anchor
+
+- **WHEN** a visitor who has requested reduced motion activates the same fragment link
+- **THEN** the viewport moves to the element immediately, without intermediate scroll positions.
+
+### Requirement: Page navigations start at the top without disturbing in-place updates
+
+The system SHALL return the viewport to the top, instantly, after an enhanced navigation swaps the main area and pushes or replaces the browser URL. The system SHALL leave the scroll position unchanged for fragment and in-place updates and SHALL retain HTMX history scroll restoration.
+
+#### Scenario: Visitor navigates from a scrolled page
+
+- **WHEN** a visitor scrolled down a page follows a public navigation or record link that replaces the main area
+- **THEN** the new page is shown from its top, without a scroll animation.
+
+#### Scenario: Fragment or in-place update occurs
+
+- **WHEN** global search, artwork-search filtering, in-block pagination, a Dual Mode pane, the itinerary tray, the study board shelf, a toast or a dialog updates
+- **THEN** the viewport scroll position is unchanged.
+
+#### Scenario: Visitor goes back
+
+- **WHEN** a visitor uses browser Back after an enhanced navigation
+- **THEN** the previous page is restored at its previous scroll position.
+
+#### Scenario: Visitor opens a page section link
+
+- **WHEN** a visitor opens a public URL with a fragment that identifies a section
+- **THEN** the page lands on that section rather than at the top.
