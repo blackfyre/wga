@@ -376,10 +376,13 @@ export function initialiseStudyBoard(): void {
 			// does not replace the remembered board; only edits write it.
 			currentBoardIDs = ids;
 		} else {
-			// Without consent nothing is remembered, so continue the board this
-			// visit holds in memory, if any.
-			const remembered = readRememberedBoard();
-			const restore = remembered.length > 0 ? remembered : currentBoardIDs;
+			// With consent the remembered board, even an empty one, is the state
+			// to restore; a URL board seen earlier in this visit must not replace
+			// it. Without consent nothing is remembered, so continue the board
+			// this visit holds in memory, if any.
+			const restore = preferenceStorageAllowed()
+				? readRememberedBoard()
+				: currentBoardIDs;
 			if (restore.length > 0) {
 				restoreNavigationRequested = true;
 				window.location.replace(studyBoardPath(restore));

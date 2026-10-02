@@ -126,6 +126,16 @@ test("a URL board shapes the page without replacing the remembered board", () =>
 	);
 });
 
+test("with consent, an empty remembered board is not replaced by the visit's URL board", () => {
+	// The previous test left this visit holding a URL board in memory. A bare
+	// board route rendered in the same document restores the remembered,
+	// empty board instead of redirecting back to that URL board.
+	const page = installBoardPage("", false);
+	page.grantConsent();
+	initialiseStudyBoard();
+	expect(page.replacements).toEqual([]);
+});
+
 // Keep this test last: the restore guard deliberately lives for the module's
 // lifetime (one page load), so it stays set once this test has run.
 test("requests a remembered-board restore once per page load", () => {
