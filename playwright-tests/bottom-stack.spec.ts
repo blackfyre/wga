@@ -144,6 +144,62 @@ for (const pointer of ["desktop", "touch"] as const) {
 	});
 }
 
+test("stops measuring once the permanent bar and a tray have settled", async ({
+	page,
+}) => {
+	await page.addInitScript(() => {
+		const win = window as unknown as { stackWrites: number };
+		win.stackWrites = 0;
+		const setProperty = CSSStyleDeclaration.prototype.setProperty;
+		CSSStyleDeclaration.prototype.setProperty = function (name, ...rest) {
+			if (name === "--wga-bottom-stack-height") {
+				win.stackWrites += 1;
+			}
+			return setProperty.call(this, name, ...rest);
+		};
+	});
+	await page.setViewportSize({ width: 1440, height: 844 });
+	await page.goto("/");
+	await dockTrays(page, { itinerary: true, board: false });
+	await expect
+		.poll(() => stackHeight(page))
+		.toBeCloseTo(KBD_BAR + ITINERARY, 0);
+	await page.waitForTimeout(300);
+
+	const writes = () =>
+		page.evaluate(
+			() => (window as unknown as { stackWrites: number }).stackWrites,
+		);
+	const settled = await writes();
+	await page.waitForTimeout(1000);
+	expect(await writes()).toBe(settled);
+});
+
+for (const pointer of ["desktop", "touch"] as const) {
+	test.describe(`${pointer} pre-measurement tray offset`, () => {
+		if (pointer === "touch") {
+			test.use({ hasTouch: true, isMobile: true });
+		}
+
+		test("places an unmeasured tray above the keyboard bar", async ({
+			page,
+		}) => {
+			await page.setViewportSize({ width: 1440, height: 844 });
+			await page.goto("/");
+			// Without the measurement attribute the script never sets an offset,
+			// which is the tray's state before the first frame or without scripts.
+			const bottom = await page.evaluate(() => {
+				const tray = document.createElement("div");
+				tray.className = "wga-bottom-stack-item";
+				tray.style.cssText = "position:fixed;inset-inline:0;height:72px";
+				document.body.append(tray);
+				return getComputedStyle(tray).bottom;
+			});
+			expect(bottom).toBe(pointer === "desktop" ? `${KBD_BAR}px` : "0px");
+		});
+	});
+}
+
 for (const width of widths) {
 	test(`measures and coordinates fixed bottom surfaces at ${width}px`, async ({
 		page,

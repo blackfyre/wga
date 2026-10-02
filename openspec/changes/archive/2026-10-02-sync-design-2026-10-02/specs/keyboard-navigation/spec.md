@@ -2,7 +2,7 @@
 
 ### Requirement: Keyboard hint bar is permanent on desktop pointers
 
-The system SHALL render the keyboard hint bar along the bottom edge of every shared-layout public page from the first paint whenever the device reports a hovering, fine pointer, without waiting for a key press or any other keyboard use. The system SHALL hide the bar on devices without a hovering, fine pointer. The bar SHALL appear without a slide-in or other entrance animation, and its contents SHALL be unchanged.
+The system SHALL render the keyboard hint bar along the bottom edge of every shared-layout public page from the first paint whenever the device reports a hovering, fine pointer, without waiting for a key press or any other keyboard use. The system SHALL hide the bar on devices without a hovering, fine pointer. The bar SHALL appear without a slide-in or other entrance animation, and its contents SHALL be unchanged. A full-viewport mode surface, such as Dual Mode or the itinerary viewer, covers the bar together with the rest of the shared page chrome (FEEDBACK and the trays) while it is open.
 
 #### Scenario: Desktop visitor loads a page
 

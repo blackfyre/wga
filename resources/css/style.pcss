@@ -2009,8 +2009,10 @@
 		padding-bottom: var(--wga-bottom-stack-height, 0px);
 	}
 
+	/* Before measurement (or without JavaScript) a tray still clears the
+	   permanent keyboard bar beneath it. */
 	.wga-bottom-stack-item {
-		bottom: var(--wga-bottom-stack-offset, 0px);
+		bottom: var(--wga-bottom-stack-offset, var(--wga-kbd-bar-reserve, 0px));
 	}
 
 	.wga-skeleton {

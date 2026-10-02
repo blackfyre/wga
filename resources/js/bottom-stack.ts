@@ -30,12 +30,35 @@ const prepareItems = () => {
 	);
 };
 
+// Observing a sized element queues an initial notification, so re-observing
+// every item on each measurement would loop forever. Only new items are
+// observed and removed ones released.
+const observed = new Set<HTMLElement>();
+
+const reconcileObserved = (items: HTMLElement[]) => {
+	if (!resizeObserver) {
+		return;
+	}
+	const current = new Set(items);
+	for (const item of observed) {
+		if (!current.has(item)) {
+			resizeObserver.unobserve(item);
+			observed.delete(item);
+		}
+	}
+	for (const item of items) {
+		if (!observed.has(item)) {
+			resizeObserver.observe(item);
+			observed.add(item);
+		}
+	}
+};
+
 const measureBottomStack = () => {
 	let offset = 0;
 	const items = prepareItems();
-	resizeObserver?.disconnect();
+	reconcileObserved(items);
 	for (const item of items) {
-		resizeObserver?.observe(item);
 		if (!visible(item)) {
 			item.style.removeProperty("--wga-bottom-stack-offset");
 			continue;
