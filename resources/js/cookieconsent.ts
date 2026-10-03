@@ -37,7 +37,7 @@ const focusWhenVisible = (
 	framesLeft = 30,
 ) => {
 	const element = target();
-	element?.focus();
+	element?.focus({ preventScroll: true });
 	if (element && document.activeElement !== element && framesLeft > 0) {
 		window.requestAnimationFrame(() =>
 			focusWhenVisible(target, framesLeft - 1),
@@ -105,11 +105,21 @@ export const initCookieConsent = async () => {
 			}
 			const invoker = preferencesInvoker;
 			preferencesInvoker = null;
-			if (!CookieConsent.validConsent()) {
+			const noticeReturns = !CookieConsent.validConsent();
+			if (noticeReturns) {
 				CookieConsent.show();
 			}
-			if (invoker?.isConnected) {
-				focusWhenVisible(() => invoker);
+			// A choice made after opening the panel from the notice closes the
+			// notice for good, so its PREFERENCES button cannot take focus back;
+			// focus moves to Cookie settings, where the choice can be revisited.
+			const invokerLeftWithNotice =
+				!noticeReturns && invoker?.closest("#cc-main .cm") !== null;
+			const target =
+				invoker?.isConnected && !invokerLeftWithNotice
+					? invoker
+					: document.querySelector<HTMLElement>("[data-wga-cookie-settings]");
+			if (target) {
+				focusWhenVisible(() => target);
 			}
 		},
 		language: {

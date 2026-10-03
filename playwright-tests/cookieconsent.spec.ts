@@ -429,6 +429,21 @@ test.describe("cookie preferences panel", () => {
 		});
 	}
 
+	test("moves focus to Cookie settings after a choice made from the notice's panel", async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width: 1440, height: 900 });
+		await page.goto("/");
+		const panel = await openFromNotice(page);
+		await panel.getByRole("button", { name: "DENY", exact: true }).click();
+		await expect.poll(() => panelOpen(page)).toBe(false);
+		await expect(page.locator("#cc-main .cm")).toBeHidden();
+		expect(await consentCategories(page)).toEqual(["necessary"]);
+		await expect(
+			page.getByRole("link", { name: "Cookie settings" }),
+		).toBeFocused();
+	});
+
 	test("opens from Cookie settings and returns focus there", async ({
 		page,
 	}) => {
