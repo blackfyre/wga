@@ -11,9 +11,9 @@ This document records where WGA's UI/UX design lives and how far the repository 
 
 ## Implementation state
 
-| State            | Changelog entry                                                                       | Change                   |
-| ---------------- | ------------------------------------------------------------------------------------- | ------------------------ |
-| Last implemented | 2 October 2026: "Keyboard bar is permanent; floating controls clear every bottom bar" | `sync-design-2026-10-02` |
+| State            | Changelog entry                                                                        | Change                                 |
+| ---------------- | -------------------------------------------------------------------------------------- | -------------------------------------- |
+| Last implemented | 2 October 2026: "Cookie notice: three-button consent, and preference storage needs it" | `sync-design-2026-10-02-cookie-notice` |
 
 The changelog is newest first: the last implemented entry and every entry below it are implemented. When an in-progress change merges, move its entries to "Last implemented" and delete their rows. Whichever of two concurrent changes merges second reconciles this table with the other's result.
 

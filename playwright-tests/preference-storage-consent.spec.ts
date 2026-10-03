@@ -230,3 +230,27 @@ test("a shared board URL does not replace the remembered board", async ({
 		(url) => url.searchParams.get("board") === remembered,
 	);
 });
+
+test("the Preferences panel's storage note follows consent on the open page", async ({
+	page,
+}) => {
+	await page.goto("/");
+	const panel = page.locator("[data-wga-preferences-panel]");
+	const visitOnly = panel.locator('[data-wga-storage-note="off"]');
+	const kept = panel.locator('[data-wga-storage-note="on"]');
+
+	await page.locator("[data-wga-preferences-open]").click();
+	await expect(visitOnly).toBeVisible();
+	await expect(visitOnly).toContainText("last for this visit only");
+	await expect(kept).toBeHidden();
+	await expect(panel).toContainText("Nothing here is sent to the archive.");
+	await page.keyboard.press("Escape");
+	await expect(panel).toBeHidden();
+
+	await notice(page).getByRole("button", { name: "ACCEPT ALL" }).click();
+	await expect(notice(page)).toBeHidden();
+	await page.locator("[data-wga-preferences-open]").click();
+	await expect(kept).toBeVisible();
+	await expect(kept).toContainText("kept on this device");
+	await expect(visitOnly).toBeHidden();
+});

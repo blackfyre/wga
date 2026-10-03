@@ -51,10 +51,11 @@ func TestHomeRendersCollectionDiscoveryAndWorks(t *testing.T) {
 	})
 
 	for _, expected := range []string{
-		"Explore artists and artworks", "WORK OF THE DAY", "The Annunciation", "Fra Angelico · 1438",
-		"PROVIDING EXPERIENCE SINCE 1996", "49,610", "4,012", "128", "ARTWORKS", "ARTISTS", "SCHOOLS", "3RD–EARLY 20TH", "PERIOD",
+		"Explore artists and artworks", "WORK OF THE DAY", "The Annunciation", `<span class="uppercase">Fra Angelico</span> · 1438<span aria-hidden="true"> →</span>`,
+		"PROVIDING EXPERIENCE SINCE 1996", "49,610", "4,012", "128", ">REPRODUCTIONS</dt>", ">ARTISTS</dt>", ">SCHOOLS</dt>", ">3rd–early 20th</dd>", ">CENTURY</dt>",
 		"RECENT ADDITIONS", "ALL WORKS", "The Birth of Venus", "Sandro Botticelli · 1485",
-		"Compare two works side by side", "Send any work as a postcard", "Help sustain the archive",
+		"TWO WINDOWS", "Run two copies of the collection", "TIMELINE", "See what overlapped in a given fifty years",
+		"POSTCARD SERVICE", "Send any work as a postcard", "Free, no account, no address kept after delivery.",
 		`href="/artworks/annunciation"`, `href="/artworks/birth-of-venus"`,
 		`src="/images/annunciation.jpg" alt="The Annunciation"`,
 		`src="/images/venus.jpg" alt="The Birth of Venus" loading="lazy"`,
@@ -64,14 +65,29 @@ func TestHomeRendersCollectionDiscoveryAndWorks(t *testing.T) {
 			t.Errorf("expected rendered home to contain %q\ngot: %s", expected, rendered)
 		}
 	}
-	if strings.Contains(rendered, "SINCE 1992") || strings.Contains(rendered, "3RD–19TH") {
-		t.Fatal("home page must not retain superseded chronology copy")
+	for _, stale := range []string{"SINCE 1992", "3RD–19TH", "3rd–19th", "Period music optional", "Help sustain the archive", "BROWSE ARTWORKS", "FIND INSPIRATION"} {
+		if strings.Contains(rendered, stale) {
+			t.Errorf("home page must not retain superseded copy %q", stale)
+		}
 	}
 
-	for _, route := range []string{"/artists", "/artworks", "/inspire"} {
-		if !strings.Contains(rendered, `href="`+route+`"`) {
-			t.Errorf("home discovery links must include %q", route)
+	for _, link := range []string{
+		`href="/artists" class="wga-button wga-button-primary`, `>BROWSE ARTISTS →</a>`,
+		`href="/dual-mode" class="wga-button`, `>COMPARE TWO WORKS →</a>`,
+		`href="/artworks" class="wga-action-link`, `>ALL WORKS →</a>`,
+		`href="/dual-mode" class="wga-action-link wga-trailing-action`, `>OPEN DUAL MODE →</a>`,
+		`href="/timeline" class="wga-action-link wga-trailing-action`, `>OPEN THE TIMELINE →</a>`,
+		`href="/postcard" class="wga-action-link wga-trailing-action`, `>SEND A POSTCARD →</a>`,
+		`href="/contributors" class="wga-action-link wga-trailing-action`, `>MEET THE CONTRIBUTORS →</a>`,
+	} {
+		if !strings.Contains(rendered, link) {
+			t.Errorf("home discovery links must include %q", link)
 		}
+	}
+	hero := rendered[strings.Index(rendered, `aria-label="Discover the collection"`):]
+	hero = hero[:strings.Index(hero, "</nav>")]
+	if count := strings.Count(hero, "<a "); count != 2 {
+		t.Errorf("hero actions = %d, want 2: %s", count, hero)
 	}
 	if strings.Contains(rendered, "data-viewer") || strings.Contains(rendered, "data-caret-list") {
 		t.Fatal("home browsing links must not mount viewer or caret-list hooks")

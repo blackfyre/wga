@@ -277,6 +277,18 @@
 	}
 }
 
+/* The Preferences panel's storage note follows the consent state that
+   preference-consent.ts mirrors on <html>; without it, the visit-only note
+   shows, which is also true without JavaScript. */
+[data-wga-storage-note="on"],
+html[data-wga-preference-storage="on"] [data-wga-storage-note="off"] {
+	display: none;
+}
+
+html[data-wga-preference-storage="on"] [data-wga-storage-note="on"] {
+	display: inline;
+}
+
 .wga-kbd-palette,
 .wga-kbd-help {
 	border: 1px solid var(--wga-ink);
@@ -2414,15 +2426,69 @@ figure.hidden-caption {
   letter-spacing: 0.1em;
 }
 
-#cc-main .cm__btns {
+/* The notice and the preferences panel lay out their actions the same way:
+   the ACCEPT ALL / DENY group and the PREFERENCES (or SAVE PREFERENCES) group
+   wrap instead of switching at a breakpoint. With room, all three share one
+   row at equal widths; on a narrow surface the second group drops to a full
+   row of its own beneath an equal ACCEPT ALL / DENY pair. */
+#cc-main .cm__btns,
+#cc-main .pm__footer {
 	display: flex;
-	flex-direction: column;
+	flex-direction: row;
+	flex-wrap: wrap;
 	gap: 0.5rem;
 	min-width: 0;
 }
 
-#cc-main .cm__btn--primary {
-	order: -1;
+#cc-main .cm__btn-group,
+#cc-main .pm__btn-group {
+	display: flex;
+	flex: 2 1 16.5rem;
+	gap: 0.5rem;
+	margin: 0;
+	min-width: 0;
+}
+
+#cc-main .cm__btn-group + .cm__btn-group,
+#cc-main .pm__btn-group + .pm__btn-group {
+	flex: 1 1 8rem;
+}
+
+#cc-main .cm__btn,
+#cc-main .pm__btn {
+	flex: 1 1 0;
+	margin: 0;
+	min-width: 0;
+}
+
+/* The library spaces its buttons with margins, and stacks them in columns
+   below 640px with !important rules; spacing here is the gap above. */
+#cc-main .cm .cm__btn + .cm__btn,
+#cc-main .cm .cm__btn-group + .cm__btn-group,
+#cc-main .pm .pm__btn + .pm__btn,
+#cc-main .pm .pm__btn-group + .pm__btn-group {
+	margin: 0;
+}
+
+@media screen and (max-width: 640px) {
+	#cc-main .cm__btns,
+	#cc-main .cm__btn-group,
+	#cc-main .pm__footer,
+	#cc-main .pm__btn-group {
+		flex-direction: row !important;
+	}
+
+	#cc-main .cm__btn,
+	#cc-main .pm__btn {
+		flex: 1 1 0 !important;
+	}
+
+	#cc-main .cm__btn + .cm__btn,
+	#cc-main .cm__btn-group + .cm__btn-group,
+	#cc-main .pm__btn + .pm__btn,
+	#cc-main .pm__btn-group + .pm__btn-group {
+		margin: 0 !important;
+	}
 }
 
 #cc-main .cm__btn,
@@ -2445,8 +2511,58 @@ figure.hidden-caption {
 	}
 }
 
-#cc-main .pm {
-	max-width: min(42rem, calc(100vw - 32px));
+/* COOKIE PREFERENCES is the same right-hand panel as Preferences: a
+   full-screen sheet on narrow screens, 400px against the right edge from
+   45rem, with the same ink backdrop. */
+#cc-main {
+	--cc-overlay-bg: color-mix(in srgb, var(--wga-ink) 45%, transparent);
+}
+
+#cc-main .pm.pm--bar {
+	/* The bar layout sets its own 350ms slide; the site's modals do not move. */
+	--cc-modal-transition-duration: 0ms;
+	width: 100vw;
+	max-width: 100vw;
+	height: 100dvh;
+	max-height: 100dvh;
+	border: 0;
+}
+
+@media (min-width: 45rem) {
+	#cc-main .pm.pm--bar {
+		width: 400px;
+		border-left: 1px solid var(--wga-ink);
+	}
+}
+
+#cc-main .pm.pm--bar .pm__footer,
+#cc-main .pm.pm--bar .pm__btn-group {
+	flex-direction: row;
+}
+
+#cc-main .pm.pm--bar.pm--right .pm__btn + .pm__btn,
+#cc-main .pm.pm--bar.pm--right .pm__btn-group + .pm__btn-group {
+	margin: 0;
+}
+
+#cc-main .pm .pm__close-btn {
+	width: auto;
+	height: auto;
+	min-width: 2.75rem;
+	min-height: 2.25rem;
+	padding: 0.5rem 0.75rem;
+	border: 1px solid color-mix(in srgb, var(--wga-ink) 25%, transparent);
+	border-radius: 0;
+	background: transparent;
+	color: color-mix(in srgb, var(--wga-ink) 60%, transparent);
+	font-family: var(--font-mono);
+	font-size: var(--t-10);
+	letter-spacing: 1.5px;
+}
+
+#cc-main .pm .pm__close-btn:hover {
+	background: var(--wga-fill);
+	color: var(--wga-ink);
 }
 
 @media (min-width: 45rem) {
@@ -2454,10 +2570,6 @@ figure.hidden-caption {
 		left: 2rem;
 	}
 
-	#cc-main .cm__btns {
-		flex-direction: row;
-		justify-content: flex-end;
-	}
 }
 
 /* FEEDBACK and the toast stack sit one constant gap above the whole measured
