@@ -3,6 +3,7 @@ import {
 	readPreference,
 	registerPreferenceStore,
 	removePreference,
+	syncPreferenceStorageState,
 	writePreference,
 } from "./preference-consent";
 
@@ -328,6 +329,8 @@ export function openPreferences(invoker?: HTMLElement): void {
 		return;
 	}
 	preferencesInvoker = invoker ?? null;
+	// Consent may have changed in another tab since the page loaded.
+	syncPreferenceStorageState();
 	panel.showModal();
 	panelWasOpen.set(panel, true);
 	window.requestAnimationFrame(() => {
