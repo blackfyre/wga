@@ -311,3 +311,32 @@ func TestNewSBOMLinksVendoredPackageByPURL(t *testing.T) {
 	}
 	t.Fatal("missing example editor dependency record")
 }
+
+func TestReadNoticeIncludesThirdPartyLicenceFile(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "NOTICE"), []byte("Upstream notice\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "LICENSE-3RD-PARTY.md"), []byte("# Third-Party Licenses\n\nmusl libc: MIT\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	notice, err := readNoticeFrom(root)
+	if err != nil {
+		t.Fatalf("read notice: %v", err)
+	}
+	want := "Upstream notice\n\n-------------------------------------------------------------------------------\n\n# Third-Party Licenses\n\nmusl libc: MIT"
+	if notice != want {
+		t.Fatalf("notice = %q, want %q", notice, want)
+	}
+}
+
+func TestReadNoticeWithoutNoticeFilesIsEmpty(t *testing.T) {
+	notice, err := readNoticeFrom(t.TempDir())
+	if err != nil {
+		t.Fatalf("read notice: %v", err)
+	}
+	if notice != "" {
+		t.Fatalf("notice = %q, want empty", notice)
+	}
+}
