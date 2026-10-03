@@ -99,7 +99,7 @@ templ ArtistRecordContent(view ArtistView) {
 						<ul class="space-y-2 text-(length:--t-13) leading-snug">
 							<li><a href="#biography" class="hover:text-wga-accent">Biography</a></li>
 							for _, selection := range view.Selections {
-								<li><a href={ templ.SafeURL("#" + selection.AnchorID) } class="hover:text-wga-accent">{ selection.DisplayTitle } · { strconv.Itoa(len(selection.Works)) } works</a></li>
+								<li><a href={ templ.SafeURL("#" + selection.AnchorID) } class="hover:text-wga-accent">{ selection.DisplayTitle } · { selectionWorkCount(selection) }</a></li>
 							}
 							<li><a href="#cite-this-record" class="hover:text-wga-accent">Cite This Record</a></li>
 						</ul>
@@ -204,6 +204,15 @@ func artistWorksSummary(view ArtistView) string {
 	}
 
 	return strconv.Itoa(view.WorkCount) + " RECORDS"
+}
+
+// selectionWorkCount labels a selection's index entry with the works it holds,
+// not the bounded preview its section shows.
+func selectionWorkCount(selection SelectionPreview) string {
+	if selection.SelectedCount == 1 {
+		return "1 work"
+	}
+	return strconv.Itoa(selection.SelectedCount) + " works"
 }
 
 func selectionCounts(selection SelectionPreview) string {

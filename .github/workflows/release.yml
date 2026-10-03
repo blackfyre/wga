@@ -40,7 +40,7 @@ jobs:
     environment: uat
     steps:
       - name: executing remote ssh commands using ssh key
-        uses: appleboy/ssh-action@v1.0.0
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ secrets.DEPLOY_TARGET_HOST }}
           username: ${{ secrets.DEPLOY_TARGET_USER }}
