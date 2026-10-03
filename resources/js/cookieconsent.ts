@@ -31,18 +31,56 @@ const labelPreferencesClose = (modal: HTMLElement) => {
 
 // The library moves focus only on a transitionend, which the site's 0ms
 // modal transition never fires, and reveals each modal a few frames after its
-// show event. Focus is retried each frame until the target can take it.
-const focusWhenVisible = (
-	target: () => HTMLElement | null,
-	framesLeft = 30,
-) => {
-	const element = target();
-	element?.focus({ preventScroll: true });
-	if (element && document.activeElement !== element && framesLeft > 0) {
-		window.requestAnimationFrame(() =>
-			focusWhenVisible(target, framesLeft - 1),
-		);
-	}
+// show event. Focus is retried each frame until the target can take it, and
+// held there briefly while the library settles.
+// Only the latest request runs, so closing the panel straight after opening
+// it cannot let the pending move to CLOSE take focus back from the invoker.
+let focusRequest = 0;
+
+// Focus counts as lost when it sits on the page body, on an element the
+// library has just hidden, or on the non-interactive sentinel the library
+// focuses 100 ms after showing either dialog. A visible control the visitor
+// moved to is left alone.
+const LIBRARY_CONTROLS = "button, a[href], input, select, textarea";
+
+const focusLost = (active: Element | null) =>
+	active === null ||
+	active === document.body ||
+	!active.isConnected ||
+	(active.closest("#cc-main") !== null && !active.matches(LIBRARY_CONTROLS)) ||
+	(active instanceof HTMLElement &&
+		typeof active.checkVisibility === "function" &&
+		!active.checkVisibility({ visibilityProperty: true }));
+
+const focusWhenVisible = (target: () => HTMLElement | null) => {
+	focusRequest += 1;
+	const request = focusRequest;
+	const started = performance.now();
+	let settled: number | null = null;
+	const attempt = () => {
+		if (request !== focusRequest) {
+			return;
+		}
+		const element = target();
+		const active = document.activeElement;
+		if (
+			element &&
+			active !== element &&
+			(settled === null || focusLost(active))
+		) {
+			element.focus({ preventScroll: true });
+		}
+		const now = performance.now();
+		if (document.activeElement === element && settled === null) {
+			settled = now;
+		}
+		const settling = settled !== null && now - settled < 500;
+		const searching = settled === null && now - started < 2000;
+		if (settling || searching) {
+			window.requestAnimationFrame(attempt);
+		}
+	};
+	attempt();
 };
 
 // The control that opened the panel: the notice's PREFERENCES or the footer's

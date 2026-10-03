@@ -351,6 +351,10 @@ test.describe("cookie preferences panel", () => {
 				name: "Close cookie preferences",
 			});
 			await expect(close).toBeFocused();
+			// The library moves focus to its own sentinel 100 ms after showing
+			// the panel; CLOSE must still hold focus after that.
+			await page.waitForTimeout(300);
+			await expect(close).toBeFocused();
 			await expect(close).toHaveText("CLOSE");
 			await expect(page.locator("#cc-main .cm")).toBeHidden();
 
@@ -422,9 +426,14 @@ test.describe("cookie preferences panel", () => {
 			await expect.poll(() => panelOpen(page)).toBe(false);
 			const notice = page.locator("#cc-main .cm");
 			await expect(notice).toBeVisible();
-			await expect(
-				notice.getByRole("button", { name: "PREFERENCES", exact: true }),
-			).toBeFocused();
+			const preferences = notice.getByRole("button", {
+				name: "PREFERENCES",
+				exact: true,
+			});
+			await expect(preferences).toBeFocused();
+			// The reshown notice's own delayed sentinel focus must not take it.
+			await page.waitForTimeout(300);
+			await expect(preferences).toBeFocused();
 			expect(await consentCategories(page)).toBeNull();
 		});
 	}
