@@ -390,3 +390,29 @@ func TestArtistBlockRendersPortraitFallback(t *testing.T) {
 		t.Error("expected no portrait image")
 	}
 }
+
+func TestArtistRecordTOCReportsSelectionWorkCountNotPreviewCount(t *testing.T) {
+	preview := make([]dto.Image, 4)
+	for i := range preview {
+		preview[i] = dto.Image{Title: "Preview work", Url: "/artworks/work"}
+	}
+	rendered := renderArtistRecord(t, ArtistView{
+		FilingName: "Portrait Artist",
+		Selections: []SelectionPreview{
+			{AnchorID: "selection-one", DisplayTitle: "Paintings", SelectedCount: 7, CataloguedCount: 9, Works: preview},
+			{AnchorID: "selection-two", DisplayTitle: "Drawings", SelectedCount: 1, CataloguedCount: 9},
+		},
+	})
+
+	for _, expected := range []string{
+		`href="#selection-one" class="hover:text-wga-accent">Paintings · 7 works</a>`,
+		`href="#selection-two" class="hover:text-wga-accent">Drawings · 1 work</a>`,
+	} {
+		if !strings.Contains(rendered, expected) {
+			t.Errorf("expected TOC entry %q", expected)
+		}
+	}
+	if strings.Contains(rendered, "Paintings · 4 works") {
+		t.Error("TOC must not report the bounded preview count")
+	}
+}

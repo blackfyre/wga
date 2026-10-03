@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: filter
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@v4
         with:
           filters: |
             code:
@@ -84,7 +84,7 @@ jobs:
         uses: oven-sh/setup-bun@v1
         with:
           bun-version: latest
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version-file: "go.mod"
       - name: Install dependencies
@@ -130,7 +130,7 @@ jobs:
         uses: oven-sh/setup-bun@v1
         with:
           bun-version: latest
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version-file: "go.mod"
       - name: Install dependencies
@@ -152,7 +152,7 @@ jobs:
     environment: playwright
     steps:
       - name: Fetch the application binary
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: wga-binary
           path: ./out
@@ -204,7 +204,7 @@ jobs:
         with:
           bun-version: latest
       - name: Fetch the build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: wga
           path: ./wga_tmp
@@ -329,7 +329,7 @@ jobs:
         run: bun install
 
       - name: Download blob reports from GitHub Actions Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: all-blob-reports
           pattern: blob-report-*

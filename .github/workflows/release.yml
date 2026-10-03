@@ -22,12 +22,12 @@ jobs:
           bun-version: latest
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version-file: "go.mod"
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v3
+        uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser
           version: latest
@@ -40,7 +40,7 @@ jobs:
     environment: uat
     steps:
       - name: executing remote ssh commands using ssh key
-        uses: appleboy/ssh-action@v1.0.0
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ secrets.DEPLOY_TARGET_HOST }}
           username: ${{ secrets.DEPLOY_TARGET_USER }}
