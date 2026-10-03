@@ -492,13 +492,26 @@ func buildArtworkSearchResults(app *pocketbase.PocketBase, filters *filters, dua
 		}
 	}
 
-	pUrl := buildArtworkSearchPath("/artworks", filters, dualModeContext)
-	pHtmxUrl := buildArtworkSearchPath("/artworks/results", filters, dualModeContext)
-
-	pagination := utils.NewPagination(recordsCount, limit, page, pUrl, "artwork-search-results", pHtmxUrl)
-	results.Pagination = string(pagination.Render())
+	results.Page, results.PageCount = page, 0
+	if limit > 0 {
+		results.PageCount = (recordsCount + limit - 1) / limit
+	}
+	if page > 1 && page <= results.PageCount {
+		results.PrevURL, results.PrevHxURL = artworkSearchPageURLs(filters, dualModeContext, page-1)
+	}
+	if page < results.PageCount {
+		results.NextURL, results.NextHxURL = artworkSearchPageURLs(filters, dualModeContext, page+1)
+	}
 
 	return results, nil
+}
+
+// artworkSearchPageURLs returns the full-page and results-fragment URLs for
+// one result page with every other filter, view and Dual Mode value retained.
+func artworkSearchPageURLs(filters *filters, dualModeContext *pages.ArtworkSearchDualMode, page int) (string, string) {
+	next := filters.clone()
+	next.Page = strconv.Itoa(page)
+	return buildArtworkSearchPath("/artworks", next, dualModeContext), buildArtworkSearchPath("/artworks/results", next, dualModeContext)
 }
 
 func artworkRelationLabels(app core.App, artworks []*core.Record, field string, collection string) (map[string]string, error) {

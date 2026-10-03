@@ -51,7 +51,15 @@ type ArtworkSearchResultsView struct {
 	ActionsShown   bool
 	DualModeUrls   map[string]string
 	DualModeTarget string
-	Pagination     string
+	// Page and PageCount drive the pagination row. The previous and next
+	// URLs are empty when that direction is unavailable; each direction has
+	// a full-page href and an /artworks/results HTMX URL.
+	Page        int
+	PageCount   int
+	PrevURL     string
+	PrevHxURL   string
+	NextURL     string
+	NextHxURL   string
 	// TitleHighlight and ArtistHighlight are the active text-search terms
 	// marked in each result's visible title and artist name.
 	TitleHighlight  string
@@ -179,33 +187,6 @@ templ ArtworkSeachFilterBlock(b ArtworkSearchView) {
 				/>
 			</label>
 		}
-		@artworkSearchFacet(b.Facets.Technique) {
-			<label class="block">
-				<span class="sr-only">{ b.TechniqueField.Label }</span>
-				<input
-					class="w-full border-0 border-b border-wga-ink bg-transparent px-0 py-2 text-sm"
-					type="search"
-					id="artwork-technique"
-					hx-preserve?={ b.PreserveTextFields }
-					data-text-search
-					name="technique"
-					placeholder="e.g. oil on canvas"
-					value={ b.TechniqueField.Value }
-				/>
-			</label>
-		}
-		@artworkSearchFacet(b.Facets.School) {
-			@artworkSearchMultiFacet(b.Facets.SchoolMulti)
-		}
-		@artworkSearchFacet(b.Facets.Form) {
-			@artworkSearchMultiFacet(b.Facets.FormMulti)
-		}
-		@artworkSearchFacet(b.Facets.Type) {
-			@components.ChipGroup(artworkSearchChipGroup(b.TypeGroup))
-		}
-		@artworkSearchFacet(b.Facets.Period) {
-			@components.ChipGroup(artworkSearchChipGroup(b.PeriodGroup))
-		}
 		@artworkSearchFacet(b.Facets.Collection.Facet) {
 			<label class="block">
 				<span class="sr-only">{ b.Facets.Collection.QueryField.Label }</span>
@@ -237,6 +218,33 @@ templ ArtworkSeachFilterBlock(b ArtworkSearchView) {
 				<p class="mt-2.5 font-mono text-(length:--t-10) leading-relaxed text-wga-ink/60">{ b.Facets.Collection.Note }</p>
 			}
 		}
+		@artworkSearchFacet(b.Facets.School) {
+			@artworkSearchMultiFacet(b.Facets.SchoolMulti)
+		}
+		@artworkSearchFacet(b.Facets.Form) {
+			@artworkSearchMultiFacet(b.Facets.FormMulti)
+		}
+		@artworkSearchFacet(b.Facets.Type) {
+			@components.ChipGroup(artworkSearchChipGroup(b.TypeGroup))
+		}
+		@artworkSearchFacet(b.Facets.Technique) {
+			<label class="block">
+				<span class="sr-only">{ b.TechniqueField.Label }</span>
+				<input
+					class="w-full border-0 border-b border-wga-ink bg-transparent px-0 py-2 text-sm"
+					type="search"
+					id="artwork-technique"
+					hx-preserve?={ b.PreserveTextFields }
+					data-text-search
+					name="technique"
+					placeholder="e.g. oil on canvas"
+					value={ b.TechniqueField.Value }
+				/>
+			</label>
+		}
+		@artworkSearchFacet(b.Facets.Period) {
+			@components.ChipGroup(artworkSearchChipGroup(b.PeriodGroup))
+		}
 		@artworkSearchFacet(b.Facets.Year) {
 			@components.RangeField(b.Facets.YearRange)
 		}
@@ -248,14 +256,24 @@ templ ArtworkSeachFilterBlock(b ArtworkSearchView) {
 }
 
 templ artworkSearchMultiFacet(facet ArtworkSearchMultiFacet) {
-	<div class="border-t border-wga-ink/10">
+	<div class="border-t border-wga-ink/10" data-artwork-facet-options={ facet.Name }>
 		for _, option := range facet.Options {
-			<label class={ "flex min-h-8 items-center justify-between gap-2.5 border-b border-wga-ink/10 py-1.5 text-sm leading-snug", templ.KV("cursor-pointer hover:text-wga-accent", !option.Disabled), templ.KV("cursor-not-allowed text-wga-ink/40", option.Disabled), templ.KV("font-semibold text-wga-ink", option.Selected) }>
-				<span class="flex min-w-0 items-center gap-2">
-					<input type="checkbox" name={ facet.Name } value={ option.Value } checked?={ option.Selected } disabled?={ option.Disabled } class="h-4 w-4 shrink-0 accent-wga-accent"/>
-					<span class="truncate">{ option.Label }</span>
+			<label
+				data-artwork-facet-option
+				class={ "flex min-h-8 items-baseline justify-between gap-2.5 border-b border-wga-ink/10 py-1.5 text-sm leading-snug transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-wga-accent",
+					templ.KV("cursor-pointer hover:text-wga-accent", !option.Disabled),
+					templ.KV("cursor-not-allowed text-wga-ink/40", option.Disabled),
+					templ.KV("font-semibold text-wga-ink", option.Selected),
+					templ.KV("text-wga-ink/70", !option.Selected && !option.Disabled) }
+			>
+				<input type="checkbox" name={ facet.Name } value={ option.Value } checked?={ option.Selected } disabled?={ option.Disabled } class="sr-only"/>
+				<span class="min-w-0 truncate">{ option.Label }</span>
+				<span class="flex shrink-0 items-baseline gap-[7px]">
+					if option.Selected {
+						<span class="font-mono text-(length:--t-10) text-wga-accent" aria-hidden="true">×</span>
+					}
+					<span class={ "font-mono text-(length:--t-10) tabular-nums", templ.KV("text-wga-ink", option.Selected), templ.KV("text-wga-ink/60", !option.Selected) }>{ option.Count }</span>
 				</span>
-				<span class="shrink-0 font-mono text-(length:--t-10) tabular-nums text-wga-ink/60">{ option.Count }</span>
 			</label>
 		}
 	</div>
@@ -346,18 +364,37 @@ templ ArtworkSearchResults(r ArtworkSearchResultsView) {
 			})
 		} else {
 			@components.EmptyState(dto.EmptyState{
-				Title:         "NO MATCHING WORKS",
-				Message:       "Try clearing one or two filters, or widen the period range.",
+				Title:         "No works match these filters.",
+				Message:       "Widen the year range or clear the school filter — the collection is uneven across periods.",
 				RecoveryLabel: "RESET FILTERS →",
 				RecoveryHref:  r.ResetUrl,
 			})
 		}
-		if len(r.Pagination) > 10 {
-			<nav class="wga-pagination" role="navigation" aria-label="pagination">
-				@templ.Raw(r.Pagination)
-			</nav>
+		if r.PageCount > 1 {
+			@artworkSearchPagination(r)
 		}
 	</div>
+}
+
+// artworkSearchPagination is the reference PAGE n OF m row. Available
+// directions are ordinary links enhanced to swap only the result fragment; an
+// unavailable direction is plain text, never an <a> without href.
+templ artworkSearchPagination(r ArtworkSearchResultsView) {
+	<nav class="mt-8 flex items-center justify-between gap-4 border-t border-wga-ink/15 pt-5" aria-label="Pagination" data-artwork-pagination>
+		<p class="font-mono text-xs text-muted">{ fmt.Sprintf("PAGE %d OF %d", r.Page, r.PageCount) }</p>
+		<div class="flex gap-3.5 font-mono text-xs tracking-[1px]">
+			@artworkSearchPageLink(r.PrevURL, r.PrevHxURL, "← PREV", "prev")
+			@artworkSearchPageLink(r.NextURL, r.NextHxURL, "NEXT →", "next")
+		</div>
+	</nav>
+}
+
+templ artworkSearchPageLink(href string, hxURL string, label string, rel string) {
+	if href != "" {
+		<a href={ templ.SafeURL(href) } hx-get={ hxURL } hx-target="#artwork-search-results" hx-select="#artwork-search-results" hx-swap="outerHTML" rel={ rel } class="wga-action-link">{ label }</a>
+	} else {
+		<span aria-disabled="true" class="text-faint-2">{ label }</span>
+	}
 }
 
 // artworkMatchCount keeps the readout grammatical.
