@@ -557,15 +557,33 @@ func readDOMPurifyLicenceMaterial(root string) (string, error) {
 	return strings.Join(parts, "\n\n-------------------------------------------------------------------------------\n\n"), nil
 }
 
+// noticeFiles are the attribution files a component may ship next to its
+// licence. LICENSE-3RD-PARTY.md is how modernc modules declare third-party code
+// compiled into them (musl libc, the transpiled SQLite amalgamation), which
+// module-graph discovery cannot see.
+var noticeFiles = []string{"NOTICE", "LICENSE-3RD-PARTY.md"}
+
 func readNotice(component component) (string, error) {
-	content, err := os.ReadFile(filepath.Join(componentRoot(component), "NOTICE"))
-	if errors.Is(err, os.ErrNotExist) {
-		return "", nil
+	return readNoticeFrom(componentRoot(component))
+}
+
+// readNoticeFrom joins every notice file present in root, in noticeFiles
+// order, separated like concatenated licence texts.
+func readNoticeFrom(root string) (string, error) {
+	parts := []string{}
+	for _, name := range noticeFiles {
+		content, err := os.ReadFile(filepath.Join(root, name))
+		if errors.Is(err, os.ErrNotExist) {
+			continue
+		}
+		if err != nil {
+			return "", err
+		}
+		if text := strings.TrimSpace(string(content)); text != "" {
+			parts = append(parts, text)
+		}
 	}
-	if err != nil {
-		return "", err
-	}
-	return string(content), nil
+	return strings.Join(parts, "\n\n-------------------------------------------------------------------------------\n\n"), nil
 }
 
 func componentRoot(component component) string {
