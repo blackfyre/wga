@@ -37,12 +37,17 @@ const labelPreferencesClose = (modal: HTMLElement) => {
 // it cannot let the pending move to CLOSE take focus back from the invoker.
 let focusRequest = 0;
 
-// Focus counts as lost when it sits on the page body or on an element the
-// library has just hidden, for example after its own late focus restore.
+// Focus counts as lost when it sits on the page body, on an element the
+// library has just hidden, or on the non-interactive sentinel the library
+// focuses 100 ms after showing either dialog. A visible control the visitor
+// moved to is left alone.
+const LIBRARY_CONTROLS = "button, a[href], input, select, textarea";
+
 const focusLost = (active: Element | null) =>
 	active === null ||
 	active === document.body ||
 	!active.isConnected ||
+	(active.closest("#cc-main") !== null && !active.matches(LIBRARY_CONTROLS)) ||
 	(active instanceof HTMLElement &&
 		typeof active.checkVisibility === "function" &&
 		!active.checkVisibility({ visibilityProperty: true }));
