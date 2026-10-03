@@ -115,6 +115,27 @@ func TestFooterRetainsPreferenceAndConsentMounts(t *testing.T) {
 	}
 }
 
+func TestFooterStorageNoteCoversBothConsentStates(t *testing.T) {
+	var output bytes.Buffer
+	if err := Footer().Render(context.Background(), &output); err != nil {
+		t.Fatalf("render footer: %v", err)
+	}
+
+	rendered := output.String()
+	for _, expected := range []string{
+		`<span data-wga-storage-note="off">These choices last for this visit only.`,
+		`<span data-wga-storage-note="on">These choices are kept on this device,`,
+		`Nothing here is sent to the archive.`,
+	} {
+		if !strings.Contains(rendered, expected) {
+			t.Fatalf("expected storage note %q", expected)
+		}
+	}
+	if strings.Contains(rendered, "These choices apply to this visit.") {
+		t.Fatal("expected the consent-independent storage note to be replaced")
+	}
+}
+
 func TestFooterHidesPreferencesControlUntilJavaScriptInitialises(t *testing.T) {
 	var output bytes.Buffer
 	if err := Footer().Render(context.Background(), &output); err != nil {

@@ -19,6 +19,36 @@ const hasConsentUI = () => document.querySelector("#cc-main .cm") !== null;
 const applyConsentDecision = () =>
 	applyPreferenceConsent(CookieConsent.acceptedCategory(PREFERENCES_CATEGORY));
 
+const PREFERENCES_MODAL = "preferencesModal";
+const PREFERENCES_CLOSE_SELECTOR = "#cc-main .pm__close-btn";
+
+// The library's close control is an icon; the panel's CLOSE reads like the
+// site's own Preferences panel. The aria-label keeps the full name.
+const labelPreferencesClose = (modal: HTMLElement) => {
+	const close = modal.querySelector<HTMLElement>(".pm__close-btn");
+	close?.replaceChildren("CLOSE");
+};
+
+// The library moves focus only on a transitionend, which the site's 0ms
+// modal transition never fires, and reveals each modal a few frames after its
+// show event. Focus is retried each frame until the target can take it.
+const focusWhenVisible = (
+	target: () => HTMLElement | null,
+	framesLeft = 30,
+) => {
+	const element = target();
+	element?.focus({ preventScroll: true });
+	if (element && document.activeElement !== element && framesLeft > 0) {
+		window.requestAnimationFrame(() =>
+			focusWhenVisible(target, framesLeft - 1),
+		);
+	}
+};
+
+// The control that opened the panel: the notice's PREFERENCES or the footer's
+// Cookie settings. Focus returns there when the panel closes.
+let preferencesInvoker: HTMLElement | null = null;
+
 export const initCookieConsent = async () => {
 	const result = (await CookieConsent.run({
 		guiOptions: {
@@ -29,7 +59,8 @@ export const initCookieConsent = async () => {
 				flipButtons: false,
 			},
 			preferencesModal: {
-				layout: "box",
+				layout: "bar",
+				position: "right",
 				equalWeightButtons: false,
 				flipButtons: false,
 			},
@@ -46,6 +77,51 @@ export const initCookieConsent = async () => {
 		},
 		onConsent: applyConsentDecision,
 		onChange: applyConsentDecision,
+		onModalReady: ({ modalName, modal }) => {
+			if (modalName === PREFERENCES_MODAL) {
+				labelPreferencesClose(modal);
+			}
+		},
+		// The notice steps aside while the panel is open, so nothing outside
+		// the panel stays operable, and returns if the panel closes before a
+		// choice is recorded.
+		onModalShow: ({ modalName }) => {
+			if (modalName !== PREFERENCES_MODAL) {
+				return;
+			}
+			preferencesInvoker =
+				document.activeElement instanceof HTMLElement &&
+				document.activeElement !== document.body
+					? document.activeElement
+					: null;
+			CookieConsent.hide();
+			focusWhenVisible(() =>
+				document.querySelector<HTMLElement>(PREFERENCES_CLOSE_SELECTOR),
+			);
+		},
+		onModalHide: ({ modalName }) => {
+			if (modalName !== PREFERENCES_MODAL) {
+				return;
+			}
+			const invoker = preferencesInvoker;
+			preferencesInvoker = null;
+			const noticeReturns = !CookieConsent.validConsent();
+			if (noticeReturns) {
+				CookieConsent.show();
+			}
+			// A choice made after opening the panel from the notice closes the
+			// notice for good, so its PREFERENCES button cannot take focus back;
+			// focus moves to Cookie settings, where the choice can be revisited.
+			const invokerLeftWithNotice =
+				!noticeReturns && invoker?.closest("#cc-main .cm") !== null;
+			const target =
+				invoker?.isConnected && !invokerLeftWithNotice
+					? invoker
+					: document.querySelector<HTMLElement>("[data-wga-cookie-settings]");
+			if (target) {
+				focusWhenVisible(() => target);
+			}
+		},
 		language: {
 			default: "en",
 			translations: {
