@@ -106,6 +106,16 @@ export const expireCookie = (name: string): void => {
 	document.cookie = `${name}=; ${cookieAttributes(0)}`;
 };
 
+// syncPreferenceStorageState mirrors the consent state on <html> so the
+// Preferences panel's storage note can say whether its choices are kept.
+export const syncPreferenceStorageState = (
+	allowed: boolean = preferenceStorageAllowed(),
+): void => {
+	document.documentElement.dataset.wgaPreferenceStorage = allowed
+		? "on"
+		: "off";
+};
+
 const stores: PreferenceStore[] = [];
 // remembering records whether this page last knew consent to be granted, so a
 // first grant can be told apart from the library confirming existing consent
@@ -117,6 +127,7 @@ export const registerPreferenceStore = (store: PreferenceStore): void => {
 	const allowed = preferenceStorageAllowed();
 	if (remembering === null) {
 		remembering = allowed;
+		syncPreferenceStorageState(allowed);
 	}
 	stores.push(store);
 	if (!allowed) {
@@ -129,6 +140,7 @@ export const registerPreferenceStore = (store: PreferenceStore): void => {
 // set; confirming consent that already existed keeps the remembered state.
 // Withdrawing deletes every stored copy while the page keeps its state.
 export const applyPreferenceConsent = (allowed: boolean): void => {
+	syncPreferenceStorageState(allowed);
 	if (allowed) {
 		const firstGrant = remembering !== true;
 		remembering = true;

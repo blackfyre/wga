@@ -203,8 +203,18 @@ func TestArtworkSearchFullViewComposesCanonicalResultsWorkflow(t *testing.T) {
 	if len(resultsContext.view.Artworks) != 1 || resultsContext.view.Artworks[0].Title != "Alpha Work" {
 		t.Fatalf("second descending page = %#v, want Alpha Work", resultsContext.view.Artworks)
 	}
-	if resultsContext.view.Pagination == "" {
-		t.Fatal("results workflow omitted pagination")
+	view := resultsContext.view
+	if view.Page != 2 || view.PageCount != 2 {
+		t.Fatalf("pagination = page %d of %d, want page 2 of 2", view.Page, view.PageCount)
+	}
+	if view.NextURL != "" || view.NextHxURL != "" {
+		t.Errorf("last page next = %q / %q, want unavailable", view.NextURL, view.NextHxURL)
+	}
+	if want := "/artworks?dir=desc&q=Work&view=list"; view.PrevURL != want {
+		t.Errorf("previous URL = %q, want %q", view.PrevURL, want)
+	}
+	if want := "/artworks/results?dir=desc&q=Work&view=list"; view.PrevHxURL != want {
+		t.Errorf("previous HTMX URL = %q, want %q", view.PrevHxURL, want)
 	}
 }
 
@@ -475,8 +485,13 @@ func TestBuildArtworkSearchViewFiltersByExactArtistID(t *testing.T) {
 	if err != nil {
 		t.Fatalf("build paged artist view: %v", err)
 	}
-	if !strings.Contains(paged.Results.Pagination, "artist_id=artistone000001") {
-		t.Errorf("pagination = %q, want retained artist ID", paged.Results.Pagination)
+	if paged.Results.PrevURL != "" {
+		t.Errorf("first page previous URL = %q, want unavailable", paged.Results.PrevURL)
+	}
+	for _, pageURL := range []string{paged.Results.NextURL, paged.Results.NextHxURL} {
+		if !strings.Contains(pageURL, "artist_id=artistone000001") || !strings.Contains(pageURL, "page=2") {
+			t.Errorf("next page URL = %q, want retained artist ID and page 2", pageURL)
+		}
 	}
 
 	unknown, _, err := buildArtworkSearchView(app, neturl.Values{"artist_id": {"unknownartist001"}}, 1, 16)

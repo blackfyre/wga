@@ -1,6 +1,7 @@
 # artist-selections Specification
 
 ## Purpose
+
 TBD - created by archiving change adopt-visual-overhaul. Update Purpose after archive.
 
 ## Requirements
@@ -34,7 +35,7 @@ The system SHALL not generate or imply selection commentary where none exists.
 
 ### Requirement: Curated artist records provide an optional stable in-page index
 
-The system SHALL render `ON THIS PAGE` only when an artist record renders selection previews, meaning it has more than one published source-backed curated selection. Its ordinary fragment links SHALL target Biography, every rendered selection form, and Cite This Record, and each selection entry SHALL report its shown-work count. The optional period-music player and TOC SHALL share one rail that becomes sticky from the reference medium breakpoint, subtracts the measured bottom stack from its available viewport height, and scrolls internally when necessary. Below that breakpoint the rail SHALL remain in normal document flow. An artist with fewer than two published source-backed curated selections SHALL retain the ordinary works presentation and omit selection previews, selection forms, and the one-section TOC; when additional uncatalogued-on-page holdings exist, its artwork-search action SHALL instead appear after the citation as the final onward link. Scroll-position highlighting MAY enhance the links but SHALL NOT be required for navigation.
+The system SHALL render `ON THIS PAGE` only when an artist record renders selection previews, meaning it has more than one published source-backed curated selection. Its ordinary fragment links SHALL target Biography, every rendered selection form, and Cite This Record, and each selection entry SHALL report the number of works in that selection, not the number its preview shows, as `1 work` or `N works`. The optional period-music player and TOC SHALL share one rail that becomes sticky from the reference medium breakpoint, subtracts the measured bottom stack from its available viewport height, and scrolls internally when necessary. Below that breakpoint the rail SHALL remain in normal document flow. An artist with fewer than two published source-backed curated selections SHALL retain the ordinary works presentation and omit selection previews, selection forms, and the one-section TOC; when additional uncatalogued-on-page holdings exist, its artwork-search action SHALL instead appear after the citation as the final onward link. Scroll-position highlighting MAY enhance the links but SHALL NOT be required for navigation.
 
 #### Scenario: Visitor follows the artist record index
 
@@ -55,3 +56,8 @@ The system SHALL render `ON THIS PAGE` only when an artist record renders select
 
 - **WHEN** a curated artist record has period music or a TOC and a Study Board or itinerary tray is visible
 - **THEN** the combined rail remains within the viewport above the measured bottom stack and its own content scrolls without obscuring its links or player.
+
+#### Scenario: A selection holds more works than its preview shows
+
+- **WHEN** an artist record shows a selection of seven works whose preview shows four
+- **THEN** that selection's `ON THIS PAGE` entry reads `· 7 works`, and a selection of one work reads `· 1 work`

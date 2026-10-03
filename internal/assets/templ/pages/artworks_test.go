@@ -255,8 +255,13 @@ func TestArtworkSearchResultsRendersNoMatchingEmptyState(t *testing.T) {
 	view.ResetUrl = "/artworks"
 	rendered := renderArtworkSearchResults(t, view)
 
-	if !strings.Contains(rendered, "NO MATCHING WORKS") {
-		t.Error("expected the NO MATCHING WORKS empty state")
+	for _, copy := range []string{
+		"No works match these filters.",
+		"Widen the year range or clear the school filter — the collection is uneven across periods.",
+	} {
+		if !strings.Contains(rendered, copy) {
+			t.Errorf("expected the reference empty-state copy %q", copy)
+		}
 	}
 	if !strings.Contains(rendered, `href="/artworks"`) || !strings.Contains(rendered, "RESET FILTERS") {
 		t.Error("expected a reset link to the clear URL")
@@ -310,8 +315,9 @@ func TestArtworkFilterBlockRendersCountedMultiSelectFacets(t *testing.T) {
 	rendered := renderArtworkFilterBlock(t, view)
 
 	for _, expected := range []string{
-		`type="checkbox" name="art_school" value="dutch" checked`,
-		`type="checkbox" name="art_school" value="italian" disabled`,
+		`type="checkbox" name="art_school" value="dutch" checked class="sr-only"`,
+		`type="checkbox" name="art_school" value="italian" disabled class="sr-only"`,
+		`aria-hidden="true">×</span>`,
 		">12</span>",
 		"SHOW ALL 10",
 		`hx-get="/artworks?view=list"`,
@@ -398,7 +404,7 @@ func TestArtworkFilterBlockReopensActiveFacets(t *testing.T) {
 	if !states[3] {
 		t.Error("expected the active FORM facet to reopen")
 	}
-	if !states[5] {
+	if !states[6] {
 		t.Error("expected the active PERIOD facet to reopen")
 	}
 }
@@ -773,5 +779,72 @@ func TestArtworkSearchToolbarPreferenceContract(t *testing.T) {
 	dual.DualModeTarget = "left"
 	if rendered := renderArtworkSearchResults(t, dual); strings.Contains(rendered, "data-wga-aw-actions") {
 		t.Error("Dual Mode results have no workspace actions, so the actions toggle must not render")
+	}
+}
+
+func TestArtworkFilterBlockFollowsReferenceFacetOrder(t *testing.T) {
+	rendered := renderArtworkFilterBlock(t, sampleArtworkSearchView())
+
+	previous := -1
+	for _, label := range []string{"TITLE OR ARTIST", "COLLECTION", "SCHOOL", "FORM", "TYPE", "TECHNIQUE", "PERIOD", "YEAR RANGE"} {
+		index := strings.Index(rendered, ">"+label+"</span>")
+		if index < 0 {
+			t.Fatalf("missing %s facet summary label", label)
+		}
+		if index <= previous {
+			t.Errorf("%s facet is out of the reference order", label)
+		}
+		previous = index
+	}
+}
+
+func TestArtworkFilterBlockMarksOnlySelectedFacetRows(t *testing.T) {
+	view := sampleArtworkSearchView()
+	view.Facets.FormMulti.Options = []ArtworkSearchMultiOption{
+		{Label: "Painting", Value: "painting", Count: 9},
+	}
+	rendered := renderArtworkFilterBlock(t, view)
+
+	if strings.Contains(rendered, "×</span>") {
+		t.Error("an unselected facet row must not show the selected marker")
+	}
+	if !strings.Contains(rendered, `type="checkbox" name="art_form" value="painting" class="sr-only"`) {
+		t.Error("expected a visually hidden native checkbox in the facet row")
+	}
+}
+
+func TestArtworkSearchResultsRendersReferencePagination(t *testing.T) {
+	view := sampleArtworkSearchResults()
+	view.ResultCount = 48
+	view.Page = 1
+	view.PageCount = 3
+	view.NextURL = "/artworks?page=2&q=a"
+	view.NextHxURL = "/artworks/results?page=2&q=a"
+	rendered := renderArtworkSearchResults(t, view)
+
+	for _, expected := range []string{
+		"PAGE 1 OF 3",
+		`<span aria-disabled="true" class="text-faint-2">← PREV</span>`,
+		`<a href="/artworks?page=2&amp;q=a" hx-get="/artworks/results?page=2&amp;q=a" hx-target="#artwork-search-results" hx-select="#artwork-search-results" hx-swap="outerHTML" rel="next" class="wga-action-link">NEXT →</a>`,
+	} {
+		if !strings.Contains(rendered, expected) {
+			t.Errorf("pagination missing %q in %s", expected, rendered)
+		}
+	}
+	for _, link := range strings.Split(rendered, "<a")[1:] {
+		if tag := link[:strings.Index(link, ">")]; !strings.Contains(tag, "href=") {
+			t.Errorf("link without href: <a%s>", tag)
+		}
+	}
+}
+
+func TestArtworkSearchResultsOmitsPaginationOnSinglePage(t *testing.T) {
+	view := sampleArtworkSearchResults()
+	view.Page = 1
+	view.PageCount = 1
+	rendered := renderArtworkSearchResults(t, view)
+
+	if strings.Contains(rendered, "data-artwork-pagination") {
+		t.Error("a single result page must not render the pagination row")
 	}
 }

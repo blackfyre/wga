@@ -289,3 +289,53 @@ test("footer exposes labelled ordinary community links without JavaScript", asyn
 	}
 	await context.close();
 });
+
+// The library inserts the real notice hidden and reveals it a moment later by
+// toggling classes, so this checks the measurement that follows the reveal
+// rather than a pre-shown stand-in.
+test.describe("revealed cookie notice", () => {
+	test.beforeEach(async ({ context, page }) => {
+		await context.clearCookies();
+		await page.addInitScript(() => {
+			Object.defineProperty(navigator, "webdriver", { get: () => false });
+			const win = window as unknown as { stackWrites: number };
+			win.stackWrites = 0;
+			const setProperty = CSSStyleDeclaration.prototype.setProperty;
+			CSSStyleDeclaration.prototype.setProperty = function (name, ...rest) {
+				if (name === "--wga-bottom-stack-height") {
+					win.stackWrites += 1;
+				}
+				return setProperty.call(this, name, ...rest);
+			};
+		});
+	});
+
+	test("clears the keyboard bar once CookieConsent reveals it", async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width: 1440, height: 900 });
+		await page.goto("/");
+		const notice = page.locator("#cc-main .cm");
+		await expect(notice).toBeVisible();
+		const noticeBottom = () =>
+			notice.evaluate(
+				(element) => innerHeight - element.getBoundingClientRect().bottom,
+			);
+		await expect.poll(noticeBottom).toBeCloseTo(KBD_BAR + 16, 0);
+		const noticeHeight = await notice.evaluate(
+			(element) => element.getBoundingClientRect().height,
+		);
+		await expect
+			.poll(() => stackHeight(page))
+			.toBeCloseTo(KBD_BAR + 16 + noticeHeight, 0);
+
+		await page.waitForTimeout(300);
+		const writes = () =>
+			page.evaluate(
+				() => (window as unknown as { stackWrites: number }).stackWrites,
+			);
+		const settled = await writes();
+		await page.waitForTimeout(1000);
+		expect(await writes()).toBe(settled);
+	});
+});
