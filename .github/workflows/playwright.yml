@@ -15,7 +15,7 @@ jobs:
     outputs:
       code: ${{ steps.filter.outputs.code }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - id: filter
         uses: dorny/paths-filter@v4
         with:
@@ -45,7 +45,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Set up bun
@@ -79,7 +79,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up bun
         uses: oven-sh/setup-bun@v1
         with:
@@ -125,7 +125,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up bun
         uses: oven-sh/setup-bun@v1
         with:
@@ -198,7 +198,7 @@ jobs:
       WGA_PROTOCOL: http
       WGA_HOSTNAME: 127.0.0.1:8090
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up bun
         uses: oven-sh/setup-bun@v1
         with:
@@ -320,7 +320,7 @@ jobs:
     environment: playwright
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up bun
         uses: oven-sh/setup-bun@v1
         with:
