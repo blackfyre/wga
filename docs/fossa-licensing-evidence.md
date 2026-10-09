@@ -58,7 +58,7 @@ When either reviewed `modernc` module changes version, repeat the FOSSA-match re
 
 ### Current versions: build selection reviewed, FOSSA matches outstanding
 
-On 3 October 2026 the dependency graph resolves `modernc.org/libc@v1.77.1` and `modernc.org/sqlite@v1.60.0`. The FOSSA issues and match records above belong to the 29 August revision (`libc@v1.75.6`, `sqlite@v1.57.0`). They do not apply to the current versions. FOSSA match retrieval for the current versions is outstanding: it needs credentialed FOSSA access, and no one has performed it.
+On 9 October 2026 the dependency graph resolves `modernc.org/libc@v1.77.1` and `modernc.org/sqlite@v1.60.1`. The FOSSA issues and match records above belong to the 29 August revision (`libc@v1.75.6`, `sqlite@v1.57.0`). They do not apply to the current versions. FOSSA match retrieval for the current versions is outstanding: it needs credentialed FOSSA access, and no one has performed it.
 
 The following commands review the build selection for the current versions. The first confirms that WGA's Linux/amd64 dependency graph contains all three packages. The second lists the files each package selects, and the files its build constraints exclude, for that target:
 
@@ -77,6 +77,6 @@ All three packages are in the graph. For the previously matched files, the selec
 | ------------------------------------------------------------- | --------------------------------------------------------- |
 | `modernc.org/libc@v1.77.1/uuid/uuid/uuid_linux_amd64.go`      | Compiled                                                  |
 | `modernc.org/libc@v1.77.1/sys/types/types_linux_amd64.go`     | Compiled                                                  |
-| `modernc.org/sqlite@v1.60.0/lib/sqlite_g_0000000000060000.go` | Present, excluded by build constraints (`IgnoredGoFiles`) |
+| `modernc.org/sqlite@v1.60.1/lib/sqlite_g_0000000000060000.go` | Present, excluded by build constraints (`IgnoredGoFiles`) |
 
 This shows only which of the previously matched files are built. It does not establish which files FOSSA matches in the current versions.
