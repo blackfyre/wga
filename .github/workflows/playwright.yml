@@ -105,12 +105,12 @@ jobs:
         run: go test ./... -cover
       - name: Build the application
         run: go build -v -o ./out/wga ./cmd/wga
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: wga-binary
           path: out/wga
           retention-days: 1
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: wga-sbom
           path: dist/wga.cdx.json
@@ -177,7 +177,7 @@ jobs:
           MAILPIT_URL: http://127.0.0.1:8025
           WGA_POSTCARD_TOKEN_KEYS: '{"test":"MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE"}'
           WGA_POSTCARD_TOKEN_ACTIVE_KEY_ID: test
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: wga
           path: out
@@ -290,19 +290,19 @@ jobs:
         run: bunx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
         env:
           MAILPIT_URL: http://127.0.0.1:8025
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: blob-report-${{ matrix.shardIndex }}
           path: blob-report
           retention-days: 1
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: mailpit-${{ matrix.shardIndex }}
           path: mailpit.log
           retention-days: 1
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: wga-log-${{ matrix.shardIndex }}
@@ -339,7 +339,7 @@ jobs:
         run: bunx playwright merge-reports --reporter html ./all-blob-reports
 
       - name: Upload HTML report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: html-report--attempt-${{ github.run_attempt }}
           path: playwright-report
