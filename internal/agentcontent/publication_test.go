@@ -148,7 +148,7 @@ func TestPublishSelectsCompletePublicAgentContent(t *testing.T) {
 	})
 	artwork := createPublicationRecord(t, app, constants.CollectionArtworks, map[string]any{
 		"title": "Blue Study", "published": true, "author": []string{artist.Id}, "date_start": 1640,
-		"technique": "Oil on canvas", "comment": "Blue Study · Gallery, London · 20 × 30 cm", "source_comment": "Public commentary.",
+		"technique": "Oil on canvas", "comment": "Blue Study · Gallery, London · 20 × 30 cm", "source_comment": "<p>Public commentary on Pisa&#39;s <i>market-place</i>.</p>",
 	})
 	hiddenArtwork := createPublicationRecord(t, app, constants.CollectionArtworks, map[string]any{
 		"title": "Hidden Work", "published": false, "author": []string{artist.Id},
@@ -178,7 +178,7 @@ func TestPublishSelectsCompletePublicAgentContent(t *testing.T) {
 
 	assertPublicationContains(t, filepath.Join(current, llmsFilename), "https://gallery.example/sitemap.xml", "/agents/artists/{id}.md")
 	assertPublicationContains(t, filepath.Join(current, "agents", "artists", artist.Id+".md"), "# Jane Doe", "Dutch School", "Public biography.", "Lifespan: 1600–c. 1670")
-	assertPublicationContains(t, filepath.Join(current, "agents", "artworks", artwork.Id+".md"), "# Blue Study", "Gallery, London", "20 × 30 cm")
+	assertPublicationContains(t, filepath.Join(current, "agents", "artworks", artwork.Id+".md"), "# Blue Study", "Gallery, London", "20 × 30 cm", "Public commentary on Pisa's market-place")
 	assertPublicationContains(t, filepath.Join(current, "agents", "artworks", coauthoredArtwork.Id+".md"), "# Shared Study", "/artists/authoritative-jane-"+artist.Id)
 	resource, err := ReadCurrent(app, "agents/artists/"+artist.Id+".md")
 	if err != nil {

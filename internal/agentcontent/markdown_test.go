@@ -37,12 +37,12 @@ func TestRenderArtistIncludesBoundedPublicContent(t *testing.T) {
 
 	content := string(first)
 	for _, expected := range []string{
-		`# O&#39;Keeffe, Georgia \*Painter\*`,
+		`# O'Keeffe, Georgia \*Painter\*`,
 		`[View the canonical artist record](<https://gallery.example/artists/georgia-okeeffe>)`,
 		`- Lifespan: 1887–1986`,
 		`- Profession: Painter \[Modernist\]`,
 		`- School: American Modernism`,
-		`Known for &lt;script&gt;unsafe\(\)&lt;/script&gt; flowers &amp; landscapes.`,
+		`Known for \<script\>unsafe\(\)\</script\> flowers \& landscapes.`,
 		`[Blue and Green Music](<https://gallery.example/artists/georgia-okeeffe/blue-green-music>)`,
 		`[Red Canna](<https://gallery.example/artists/georgia-okeeffe/red-canna>)`,
 		`[Web Gallery of Art](<https://gallery.example/pages/about>)`,
@@ -51,9 +51,7 @@ func TestRenderArtistIncludesBoundedPublicContent(t *testing.T) {
 			t.Errorf("artist Markdown missing %q:\n%s", expected, content)
 		}
 	}
-	if strings.Contains(content, "<script>") {
-		t.Fatal("artist Markdown retained executable HTML")
-	}
+	assertNoUnescapedHTML(t, content)
 }
 
 func TestRenderArtworkIncludesPublicFieldsAttributionAndLinks(t *testing.T) {
@@ -84,8 +82,8 @@ func TestRenderArtworkIncludesPublicFieldsAttributionAndLinks(t *testing.T) {
 		`- Date: c. 1916`,
 		`- Technique: Oil on canvas`,
 		`- Dimensions: 200 × 180 cm`,
-		`- Location: Musée de l&#39;Orangerie, Paris`,
-		`A reflective \*surface\* with &lt;img src=x onerror=unsafe\(\)&gt;.`,
+		`- Location: Musée de l'Orangerie, Paris`,
+		`A reflective \*surface\* with \<img src=x onerror=unsafe\(\)\>.`,
 		`[The Japanese Footbridge](<https://gallery.example/artists/claude-monet/japanese-footbridge>)`,
 		`[Web Gallery of Art](<https://gallery.example/pages/about>)`,
 	} {
@@ -93,9 +91,7 @@ func TestRenderArtworkIncludesPublicFieldsAttributionAndLinks(t *testing.T) {
 			t.Errorf("artwork Markdown missing %q:\n%s", expected, content)
 		}
 	}
-	if strings.Contains(content, "<img") {
-		t.Fatal("artwork Markdown retained embedded HTML")
-	}
+	assertNoUnescapedHTML(t, content)
 }
 
 func TestRenderBoundsProseAndRelatedLinks(t *testing.T) {
@@ -164,6 +160,18 @@ func TestPublicProjectionsExcludePrivateDataCarriers(t *testing.T) {
 					t.Errorf("%s projection exposes forbidden field %q", typeOf.Name(), typeOf.Field(index).Name)
 				}
 			}
+		}
+	}
+}
+
+func assertNoUnescapedHTML(t *testing.T, content string) {
+	t.Helper()
+	for index, character := range content {
+		if character == '<' && (index == 0 || content[index-1] != '\\') && !strings.HasPrefix(content[index:], "<https://") {
+			t.Fatalf("Markdown retained unescaped HTML at %d:\n%s", index, content)
+		}
+		if character == '&' && (index == 0 || content[index-1] != '\\') {
+			t.Fatalf("Markdown retained an unescaped entity at %d:\n%s", index, content)
 		}
 	}
 }

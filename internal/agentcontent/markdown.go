@@ -4,7 +4,6 @@ package agentcontent
 
 import (
 	"fmt"
-	"html"
 	"net/url"
 	"slices"
 	"strings"
@@ -245,6 +244,9 @@ func markdownText(value string, limit int) string {
 		")", "\\)",
 		"#", "\\#",
 		"|", "\\|",
+		"&", "\\&",
+		"<", "\\<",
+		">", "\\>",
 	)
-	return html.EscapeString(replacer.Replace(value))
+	return replacer.Replace(value)
 }

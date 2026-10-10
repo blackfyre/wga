@@ -325,7 +325,7 @@ func generatePublication(app core.App, publicURL config.PublicURL, staging strin
 			Title: projection.record.GetString("title"), CanonicalURL: projection.canonical,
 			Artist: Link{Label: projection.author.GetString("name"), URL: baseURL + canonicalArtistPath(projection.author)},
 			Date:   artworkDate(projection.record), Technique: projection.record.GetString("technique"),
-			Dimensions: dimensions, Location: location, Commentary: projection.record.GetString("source_comment"),
+			Dimensions: dimensions, Location: location, Commentary: plainText(projection.record.GetString("source_comment")),
 			Attribution: attribution, RelatedArtworks: related,
 		})
 		if err != nil {
