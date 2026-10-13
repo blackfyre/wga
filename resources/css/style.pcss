@@ -2006,7 +2006,10 @@ html[data-wga-preference-storage="on"] [data-wga-storage-note="on"] {
 	.wga-toast-stack {
 		position: fixed;
 		right: 1rem;
-		bottom: calc(var(--wga-bottom-stack-height, 0px) + var(--wga-floating-gap));
+		bottom: calc(
+			var(--wga-floating-clearance, var(--wga-bottom-stack-height, 0px)) +
+				var(--wga-floating-gap)
+		);
 		z-index: 50;
 		display: flex;
 		width: max-content;
@@ -2572,8 +2575,9 @@ figure.hidden-caption {
 
 }
 
-/* FEEDBACK and the toast stack sit one constant gap above the whole measured
-   bottom stack. The gap widens at MD, where FEEDBACK's right inset does too. */
+/* FEEDBACK and the toast stack sit one constant gap above the docked bottom
+   stack, and above the cookie notice only where it shares their columns. The
+   gap widens at MD, where FEEDBACK's right inset does too. */
 body {
 	--wga-floating-gap: 16px;
 }
@@ -2585,7 +2589,10 @@ body {
 }
 
 .wga-feedback-anchor {
-	bottom: calc(var(--wga-bottom-stack-height, 0px) + var(--wga-floating-gap));
+	bottom: calc(
+		var(--wga-floating-clearance, var(--wga-bottom-stack-height, 0px)) +
+			var(--wga-floating-gap)
+	);
 }
 
 /* Pre-measurement reservations. bottom-stack.ts replaces them with the measured

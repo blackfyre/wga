@@ -252,8 +252,11 @@ for (const width of widths) {
 		expect(geometry.trayBottom).toBeCloseTo(KBD_BAR, 0);
 		expect(geometry.noticeBottom).toBeCloseTo(KBD_BAR + 88, 0);
 		expect(geometry.reservedPadding).toBeCloseTo(noticeOnlyHeight + 72, 0);
+		// The notice box spans the phone viewport, so the toasts clear it there;
+		// wider, it sits clear of their column and they clear only the trays.
+		const toastFloor = width < 720 ? noticeOnlyHeight + 72 : KBD_BAR + 72;
 		expect(geometry.toastBottom).toBeCloseTo(
-			noticeOnlyHeight + 72 + floatingGap(width),
+			toastFloor + floatingGap(width),
 			0,
 		);
 
@@ -265,6 +268,45 @@ for (const width of widths) {
 		await expect.poll(() => stackHeight(page)).toBeCloseTo(noticeOnlyHeight, 0);
 	});
 }
+
+test("lifts the floating controls over a notice that shares their column", async ({
+	page,
+}) => {
+	const width = 390;
+	await page.setViewportSize({ width, height: 844 });
+	await page.goto("/");
+	await page.evaluate(() => {
+		document.querySelector("#cc-main")?.remove();
+		const consent = document.createElement("div");
+		consent.id = "cc-main";
+		consent.innerHTML =
+			'<div class="cm cm--bottom" style="display:block!important;visibility:visible;transform:none!important;opacity:1!important;position:fixed;left:16px;height:120px;width:calc(100vw - 32px);background:white"></div>';
+		document.body.append(consent);
+	});
+	const noticeTop = KBD_BAR + 136;
+	await expect.poll(() => stackHeight(page)).toBeCloseTo(noticeTop, 0);
+
+	await page.evaluate(() =>
+		document.body.dispatchEvent(
+			new CustomEvent("notification:toast", {
+				detail: { closeDialog: false, message: "Saved", type: "info" },
+			}),
+		),
+	);
+	await expect(page.locator("#toast-container [role='alert']")).toHaveCount(1);
+	const bottoms = await page.evaluate(() =>
+		["a.wga-feedback-anchor", "#toast-container"].map((selector) => {
+			const element = document.querySelector<HTMLElement>(selector);
+			if (!element) {
+				throw new Error(`${selector} is missing`);
+			}
+			return innerHeight - element.getBoundingClientRect().bottom;
+		}),
+	);
+	for (const bottom of bottoms) {
+		expect(bottom).toBeCloseTo(noticeTop + floatingGap(width), 0);
+	}
+});
 
 test("footer exposes labelled ordinary community links without JavaScript", async ({
 	browser,
@@ -328,6 +370,13 @@ test.describe("revealed cookie notice", () => {
 		await expect
 			.poll(() => stackHeight(page))
 			.toBeCloseTo(KBD_BAR + 16 + noticeHeight, 0);
+		// The bottom-left notice box leaves FEEDBACK above the keyboard bar alone.
+		const feedbackBottom = await page
+			.locator("a.wga-feedback-anchor")
+			.evaluate(
+				(element) => innerHeight - element.getBoundingClientRect().bottom,
+			);
+		expect(feedbackBottom).toBeCloseTo(KBD_BAR + floatingGap(1440), 0);
 
 		await page.waitForTimeout(300);
 		const writes = () =>

@@ -1,5 +1,6 @@
 const ITEM_SELECTOR = "[data-wga-bottom-stack-item]";
 const COOKIE_NOTICE_SELECTOR = "#cc-main .cm";
+const FLOATING_CONTROL_SELECTOR = ".wga-feedback-anchor, .wga-toast-stack";
 
 let frame = 0;
 let observer: MutationObserver | null = null;
@@ -21,6 +22,7 @@ const prepareItems = () => {
 		notice.dataset.wgaBottomStackItem = "cookie";
 		notice.dataset.wgaBottomStackOrder = "100";
 		notice.dataset.wgaBottomStackGap = "16";
+		notice.dataset.wgaBottomStackFloating = "";
 	}
 
 	return [...document.querySelectorAll<HTMLElement>(ITEM_SELECTOR)].sort(
@@ -54,10 +56,24 @@ const reconcileObserved = (items: HTMLElement[]) => {
 	}
 };
 
+const overlapsHorizontally = (first: DOMRect, second: DOMRect) =>
+	first.width > 0 &&
+	second.width > 0 &&
+	first.left < second.right &&
+	second.left < first.right;
+
+// FEEDBACK and the toasts clear every docked item, but a floating item (the
+// cookie notice box) only when it shares their columns, as at phone widths.
+// Their horizontal positions never depend on the clearance, so measuring them
+// cannot feed back into itself.
 const measureBottomStack = () => {
 	let offset = 0;
+	let clearance = 0;
 	const items = prepareItems();
 	reconcileObserved(items);
+	const controls = [
+		...document.querySelectorAll<HTMLElement>(FLOATING_CONTROL_SELECTOR),
+	].map((control) => control.getBoundingClientRect());
 	for (const item of items) {
 		if (!visible(item)) {
 			item.style.removeProperty("--wga-bottom-stack-offset");
@@ -65,11 +81,22 @@ const measureBottomStack = () => {
 		}
 		offset += numericData(item, "wgaBottomStackGap");
 		item.style.setProperty("--wga-bottom-stack-offset", `${offset}px`);
-		offset += item.getBoundingClientRect().height;
+		const rect = item.getBoundingClientRect();
+		offset += rect.height;
+		if (
+			!("wgaBottomStackFloating" in item.dataset) ||
+			controls.some((control) => overlapsHorizontally(rect, control))
+		) {
+			clearance = offset;
+		}
 	}
 	document.body.style.setProperty(
 		"--wga-bottom-stack-height",
 		`${Math.ceil(offset)}px`,
+	);
+	document.body.style.setProperty(
+		"--wga-floating-clearance",
+		`${Math.ceil(clearance)}px`,
 	);
 };
 
