@@ -56,8 +56,8 @@
   },
   "dependencies": {
     "@sentry/browser": "^10.74.0",
-    "baseline-browser-mapping": "^2.11.23",
-    "caniuse-lite": "^1.0.30001810",
+    "baseline-browser-mapping": "^2.11.28",
+    "caniuse-lite": "^1.0.30001815",
     "chart.js": "^4.5.1"
   },
   "overrides": {
