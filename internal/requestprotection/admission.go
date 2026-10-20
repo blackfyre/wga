@@ -26,15 +26,18 @@ const (
 	DecisionGlobalCapacity Decision = "global_capacity"
 )
 
-// Policy composes per-client rate accounting and global capacity for protected
-// public reads.
+// Policy composes per-client rate accounting and per-profile capacity for
+// protected public reads. Each protected profile owns its gate, so saturating
+// one route family does not reject work on the others.
 type Policy struct {
 	mode       config.ProtectionMode
 	rates      *RateLimiter
-	capacity   *CapacityGate
+	capacities map[Profile]*CapacityGate
 	retryAfter time.Duration
-	observed   atomic.Int64
+	observed   map[Profile]*atomic.Int64
 }
+
+var protectedProfiles = []Profile{ProfileSearch, ProfileFragment, ProfileDetail}
 
 // Admission contains only bounded fields safe for structured telemetry. A
 // successful enforced admission privately owns its capacity lease.
@@ -70,19 +73,32 @@ func NewPolicy(settings config.PublicRequestProtection) (*Policy, error) {
 	if err != nil {
 		return nil, err
 	}
-	capacity, err := NewCapacityGate(settings.MaxConcurrentReads)
-	if err != nil {
-		return nil, err
+	capacities := make(map[Profile]*CapacityGate, len(protectedProfiles))
+	for _, profile := range protectedProfiles {
+		capacity, err := NewCapacityGate(settings.MaxConcurrentReads)
+		if err != nil {
+			return nil, err
+		}
+		capacities[profile] = capacity
 	}
 	if settings.RetryAfter <= 0 {
 		return nil, fmt.Errorf("public-request retry interval must be positive")
 	}
 
-	return newPolicy(settings.Mode, rates, capacity, settings.RetryAfter), nil
+	return newPolicy(settings.Mode, rates, capacities, settings.RetryAfter), nil
 }
 
-func newPolicy(mode config.ProtectionMode, rates *RateLimiter, capacity *CapacityGate, retryAfter time.Duration) *Policy {
-	return &Policy{mode: mode, rates: rates, capacity: capacity, retryAfter: retryAfter}
+func newPolicy(mode config.ProtectionMode, rates *RateLimiter, capacities map[Profile]*CapacityGate, retryAfter time.Duration) *Policy {
+	observed := make(map[Profile]*atomic.Int64, len(capacities))
+	for profile := range capacities {
+		observed[profile] = &atomic.Int64{}
+	}
+	return &Policy{mode: mode, rates: rates, capacities: capacities, retryAfter: retryAfter, observed: observed}
+}
+
+// capacityFor returns the profile's gate, or nil for profiles outside admission.
+func (p *Policy) capacityFor(profile Profile) *CapacityGate {
+	return p.capacities[profile]
 }
 
 // Admit evaluates one route profile. Observe mode charges the same bounded rate
@@ -97,7 +113,7 @@ func (p *Policy) Admit(ctx context.Context, profile Profile, identity string, re
 		return admission
 	}
 	if !profile.Protected() {
-		return p.instrument(ctx, newAdmission(p.mode, profile, DecisionBypass, 0, 0, p.capacity, false, p.retryAfter))
+		return p.instrument(ctx, newAdmission(p.mode, profile, DecisionBypass, 0, 0, nil, false, p.retryAfter))
 	}
 
 	limit := p.rates.limit(profile)
@@ -111,11 +127,12 @@ func (p *Policy) Admit(ctx context.Context, profile Profile, identity string, re
 		return p.instrument(ctx, p.observeCapacity(ctx, profile, limit))
 	}
 
-	lease, acquired := p.capacity.TryAcquire(ctx)
+	capacity := p.capacityFor(profile)
+	lease, acquired := capacity.TryAcquire(ctx)
 	if !acquired {
 		return p.instrument(ctx, p.result(profile, DecisionGlobalCapacity, http.StatusServiceUnavailable, limit, nil))
 	}
-	return p.instrument(ctx, newAdmission(p.mode, profile, DecisionAllow, 0, limit, p.capacity, false, p.retryAfter).withLease(lease))
+	return p.instrument(ctx, newAdmission(p.mode, profile, DecisionAllow, 0, limit, capacity, false, p.retryAfter).withLease(lease))
 }
 
 // IngressDecision creates privacy-safe structured fields for a terminal host or
@@ -124,12 +141,13 @@ func (p *Policy) IngressDecision(profile Profile, decision Decision, status int)
 	if p == nil {
 		return newAdmission(config.ProtectionModeOff, profile, decision, status, 0, nil, true, 0)
 	}
-	return p.instrument(context.Background(), newAdmission(p.mode, profile, decision, status, p.rates.limit(profile), p.capacity, true, p.retryAfter))
+	return p.instrument(context.Background(), newAdmission(p.mode, profile, decision, status, p.rates.limit(profile), p.capacityFor(profile), true, p.retryAfter))
 }
 
 func (p *Policy) observeCapacity(ctx context.Context, profile Profile, limit int) Admission {
-	used := int(p.observed.Add(1))
-	capacityMax := p.capacity.Capacity()
+	observed := p.observed[profile]
+	used := int(observed.Add(1))
+	capacityMax := p.capacityFor(profile).Capacity()
 	decision := DecisionAllow
 	status := 0
 	if used > capacityMax {
@@ -150,8 +168,8 @@ func (p *Policy) observeCapacity(ctx context.Context, profile Profile, limit int
 		retryAfter:   p.retryAfter,
 		release: func() {
 			once.Do(func() {
-				current := int(p.observed.Add(-1))
-				recordAdmissionCapacity(ctx, current, capacityMax)
+				current := int(observed.Add(-1))
+				recordAdmissionCapacity(ctx, profile, current, capacityMax)
 			})
 		},
 	}
@@ -159,12 +177,13 @@ func (p *Policy) observeCapacity(ctx context.Context, profile Profile, limit int
 
 func (p *Policy) instrument(ctx context.Context, admission Admission) Admission {
 	recordAdmissionDecision(ctx, admission.profile, admission.decision, admission.status)
-	recordAdmissionCapacity(ctx, admission.capacityUsed, admission.capacityMax)
+	recordAdmissionCapacity(ctx, admission.profile, admission.capacityUsed, admission.capacityMax)
 	if admission.lease != nil {
+		capacity := admission.lease.gate
 		once := &sync.Once{}
 		admission.release = func() {
 			once.Do(func() {
-				recordAdmissionCapacity(ctx, p.capacity.InUse(), p.capacity.Capacity())
+				recordAdmissionCapacity(ctx, admission.profile, capacity.InUse(), capacity.Capacity())
 			})
 		}
 	}
@@ -173,7 +192,7 @@ func (p *Policy) instrument(ctx context.Context, admission Admission) Admission 
 
 func (p *Policy) result(profile Profile, decision Decision, status int, limit int, lease *CapacityLease) Admission {
 	enforced := p.mode == config.ProtectionModeEnforce
-	return newAdmission(p.mode, profile, decision, status, limit, p.capacity, enforced, p.retryAfter).withLease(lease)
+	return newAdmission(p.mode, profile, decision, status, limit, p.capacityFor(profile), enforced, p.retryAfter).withLease(lease)
 }
 
 func newAdmission(mode config.ProtectionMode, profile Profile, decision Decision, status int, limit int, capacity *CapacityGate, enforced bool, retryAfter time.Duration) Admission {

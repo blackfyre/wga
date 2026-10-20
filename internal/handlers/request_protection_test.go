@@ -78,7 +78,7 @@ func TestProtectedReadMiddlewareRejectsBeforeHandlerWork(t *testing.T) {
 			},
 		},
 		{
-			name:           "global capacity exhausted",
+			name:           "profile capacity exhausted",
 			url:            "https://beta.wga.hu/artists",
 			headers:        trustedProtectionHeaders("198.51.100.8", protectionTestSecret),
 			status:         http.StatusServiceUnavailable,
@@ -671,8 +671,11 @@ func assertProtectionCapacityMetric(t testing.TB, reader *sdkmetric.ManualReader
 				t.Fatalf("capacity metric data type = %T", candidate.Data)
 			}
 			for _, point := range gauge.DataPoints {
-				if point.Attributes.Len() != 0 {
-					t.Errorf("global capacity metric has attributes: %v", point.Attributes.ToSlice())
+				if point.Attributes.Len() != 1 {
+					t.Errorf("capacity metric attributes = %v; want only the route profile", point.Attributes.ToSlice())
+				}
+				if _, found := point.Attributes.Value("wga.request_protection.profile"); !found {
+					t.Errorf("capacity metric lacks the route profile: %v", point.Attributes.ToSlice())
 				}
 				if point.Value == current {
 					return
@@ -680,7 +683,7 @@ func assertProtectionCapacityMetric(t testing.TB, reader *sdkmetric.ManualReader
 			}
 		}
 	}
-	t.Errorf("global capacity metric current=%d is absent", current)
+	t.Errorf("capacity metric current=%d is absent", current)
 }
 
 func trustedProtectionHeaders(identity string, secret string) map[string]string {

@@ -24,8 +24,8 @@ func TestPolicyOffBypassesState(t *testing.T) {
 			t.Fatalf("off admission = allowed %t, decision %q, would reject %t", admission.Allowed(), admission.Decision(), admission.WouldReject())
 		}
 	}
-	if len(policy.rates.clients) != 0 || policy.capacity.InUse() != 0 {
-		t.Fatalf("off mode retained rate/capacity state: clients=%d capacity=%d", len(policy.rates.clients), policy.capacity.InUse())
+	if len(policy.rates.clients) != 0 || capacityInUse(policy) != 0 {
+		t.Fatalf("off mode retained rate/capacity state: clients=%d capacity=%d", len(policy.rates.clients), capacityInUse(policy))
 	}
 }
 
@@ -36,8 +36,8 @@ func TestPolicyObserveRecordsWouldBeRateRejection(t *testing.T) {
 	if !first.Allowed() || first.Decision() != DecisionAllow || first.WouldReject() {
 		t.Fatalf("first observe admission = allowed %t, decision %q, would reject %t", first.Allowed(), first.Decision(), first.WouldReject())
 	}
-	if policy.capacity.InUse() != 0 {
-		t.Fatalf("observe mode retained %d capacity slots", policy.capacity.InUse())
+	if capacityInUse(policy) != 0 {
+		t.Fatalf("observe mode retained %d capacity slots", capacityInUse(policy))
 	}
 	defer first.Release()
 
@@ -45,8 +45,8 @@ func TestPolicyObserveRecordsWouldBeRateRejection(t *testing.T) {
 	if !second.Allowed() || second.Decision() != DecisionClientRate || !second.WouldReject() || second.Status() != http.StatusTooManyRequests {
 		t.Fatalf("second observe admission = allowed %t, decision %q, would reject %t, status %d", second.Allowed(), second.Decision(), second.WouldReject(), second.Status())
 	}
-	if len(policy.rates.clients) != 1 || policy.capacity.InUse() != 0 {
-		t.Fatalf("observe mode state = clients %d, capacity %d; want 1, 0", len(policy.rates.clients), policy.capacity.InUse())
+	if len(policy.rates.clients) != 1 || capacityInUse(policy) != 0 {
+		t.Fatalf("observe mode state = clients %d, capacity %d; want 1, 0", len(policy.rates.clients), capacityInUse(policy))
 	}
 }
 
@@ -58,14 +58,14 @@ func TestPolicyObserveRecordsWouldBeCapacityRejection(t *testing.T) {
 	if !admission.Allowed() || admission.Decision() != DecisionGlobalCapacity || !admission.WouldReject() || admission.Status() != http.StatusServiceUnavailable {
 		t.Fatalf("observe capacity admission = allowed %t, decision %q, would reject %t, status %d", admission.Allowed(), admission.Decision(), admission.WouldReject(), admission.Status())
 	}
-	if policy.capacity.InUse() != 0 {
-		t.Fatalf("observe requests retained scarce capacity: in use %d; want 0", policy.capacity.InUse())
+	if capacityInUse(policy) != 0 {
+		t.Fatalf("observe requests retained scarce capacity: in use %d; want 0", capacityInUse(policy))
 	}
 	first.Release()
 	admission.Release()
 	admission.Release()
-	if policy.observed.Load() != 0 {
-		t.Fatalf("released observe requests retained %d active observations", policy.observed.Load())
+	if active := policy.observed[ProfileDetail].Load(); active != 0 {
+		t.Fatalf("released observe requests retained %d active observations", active)
 	}
 }
 
@@ -95,15 +95,55 @@ func TestPolicyEnforceRejectsAndHoldsSuccessfulCapacity(t *testing.T) {
 	t.Run("allow and release", func(t *testing.T) {
 		policy := testPolicy(t, config.ProtectionModeEnforce, 2, 1)
 		admission := policy.Admit(context.Background(), ProfileFragment, "198.51.100.7", true)
-		if !admission.Allowed() || admission.Decision() != DecisionAllow || policy.capacity.InUse() != 1 {
-			t.Fatalf("enforced allow = allowed %t, decision %q, capacity %d", admission.Allowed(), admission.Decision(), policy.capacity.InUse())
+		if !admission.Allowed() || admission.Decision() != DecisionAllow || capacityInUse(policy) != 1 {
+			t.Fatalf("enforced allow = allowed %t, decision %q, capacity %d", admission.Allowed(), admission.Decision(), capacityInUse(policy))
 		}
 		admission.Release()
 		admission.Release()
-		if policy.capacity.InUse() != 0 {
-			t.Fatalf("released admission retained %d slots", policy.capacity.InUse())
+		if capacityInUse(policy) != 0 {
+			t.Fatalf("released admission retained %d slots", capacityInUse(policy))
 		}
 	})
+}
+
+func TestPolicyIsolatesCapacityPerProfile(t *testing.T) {
+	policy := testPolicy(t, config.ProtectionModeEnforce, 10, 1)
+	held := policy.Admit(context.Background(), ProfileFragment, "198.51.100.7", true)
+	defer held.Release()
+
+	saturated := policy.Admit(context.Background(), ProfileFragment, "198.51.100.8", true)
+	assertEnforcedRejection(t, saturated, DecisionGlobalCapacity, http.StatusServiceUnavailable)
+
+	for _, profile := range []Profile{ProfileSearch, ProfileDetail} {
+		admission := policy.Admit(context.Background(), profile, "198.51.100.9", true)
+		if !admission.Allowed() || admission.Decision() != DecisionAllow {
+			t.Fatalf("%s admission while fragment capacity is exhausted = allowed %t, decision %q", profile, admission.Allowed(), admission.Decision())
+		}
+		admission.Release()
+	}
+}
+
+func TestPolicyObserveIsolatesCapacityPerProfile(t *testing.T) {
+	policy := testPolicy(t, config.ProtectionModeObserve, 10, 1)
+	held := policy.Admit(context.Background(), ProfileFragment, "198.51.100.7", true)
+	saturated := policy.Admit(context.Background(), ProfileFragment, "198.51.100.8", true)
+	if saturated.Decision() != DecisionGlobalCapacity || !saturated.WouldReject() {
+		t.Fatalf("saturated fragment observation = decision %q, would reject %t", saturated.Decision(), saturated.WouldReject())
+	}
+
+	other := policy.Admit(context.Background(), ProfileDetail, "198.51.100.9", true)
+	if other.Decision() != DecisionAllow || other.WouldReject() {
+		t.Fatalf("detail observation while fragment is saturated = decision %q, would reject %t", other.Decision(), other.WouldReject())
+	}
+
+	for _, admission := range []Admission{held, saturated, other} {
+		admission.Release()
+	}
+	for profile, observed := range policy.observed {
+		if active := observed.Load(); active != 0 {
+			t.Errorf("%s retained %d active observations after release", profile, active)
+		}
+	}
 }
 
 func TestPolicyBypassesUnprotectedProfiles(t *testing.T) {
@@ -114,7 +154,7 @@ func TestPolicyBypassesUnprotectedProfiles(t *testing.T) {
 			t.Fatalf("profile %q was not bypassed", profile)
 		}
 	}
-	if len(policy.rates.clients) != 0 || policy.capacity.InUse() != 0 {
+	if len(policy.rates.clients) != 0 || capacityInUse(policy) != 0 {
 		t.Fatal("bypassed profiles retained admission state")
 	}
 }
@@ -289,9 +329,22 @@ func testPolicy(t *testing.T, mode config.ProtectionMode, rateLimit int, capacit
 	limits := RateLimits{Search: rateLimit, Fragment: rateLimit, Detail: rateLimit, EntryCapacity: 8}
 	key := [sha256.Size]byte{1}
 	rates := newRateLimiter(limits, key, time.Now)
-	gate, err := NewCapacityGate(capacity)
-	if err != nil {
-		t.Fatal(err)
+	capacities := map[Profile]*CapacityGate{}
+	for _, profile := range protectedProfiles {
+		gate, err := NewCapacityGate(capacity)
+		if err != nil {
+			t.Fatal(err)
+		}
+		capacities[profile] = gate
 	}
-	return newPolicy(mode, rates, gate, 5*time.Second)
+	return newPolicy(mode, rates, capacities, 5*time.Second)
+}
+
+// capacityInUse returns the slots held across every profile gate.
+func capacityInUse(policy *Policy) int {
+	total := 0
+	for _, gate := range policy.capacities {
+		total += gate.InUse()
+	}
+	return total
 }
