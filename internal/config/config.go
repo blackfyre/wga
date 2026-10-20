@@ -120,7 +120,9 @@ const (
 
 // PublicRequestProtection contains bounded admission settings for public reads.
 type PublicRequestProtection struct {
-	Mode                      ProtectionMode
+	Mode ProtectionMode
+	// MaxConcurrentReads bounds concurrent work for each protected route
+	// profile (search, fragment, and detail) independently.
 	MaxConcurrentReads        int
 	SearchRequestsPerMinute   int
 	FragmentRequestsPerMinute int

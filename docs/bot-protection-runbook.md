@@ -31,6 +31,8 @@ WGA_PUBLIC_READ_LIMITER_CAPACITY=4096
 WGA_PUBLIC_READ_RETRY_AFTER=5s
 ```
 
+`WGA_PUBLIC_READ_MAX_CONCURRENT` applies separately to the search, fragment, and detail route profiles, so the origin admits at most three times that value of protected work at once, and saturating one profile does not reject the others. The `global_capacity` decision value is retained for telemetry continuity and means that the request's own profile is at capacity. The `wga.request_protection.capacity.current` and `.configured` gauges carry a `wga.request_protection.profile` attribute, so compare them per profile rather than as one series.
+
 Generate each origin secret independently with a cryptographically secure generator. It must decode as exactly 32 bytes of unpadded Base64URL. Inject it directly into Railway and Cloudflare; do not commit it or print it during verification.
 
 Railway Under Attack Mode must normally remain disabled while Cloudflare owns the public bot challenge. Check it with:

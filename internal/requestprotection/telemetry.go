@@ -31,10 +31,12 @@ func recordAdmissionDecision(ctx context.Context, profile Profile, decision Deci
 	))
 }
 
-func recordAdmissionCapacity(ctx context.Context, current int, configured int) {
-	if current < 0 || configured <= 0 || current > configured {
+func recordAdmissionCapacity(ctx context.Context, profile Profile, current int, configured int) {
+	profileValue, profileOK := profile.telemetryValue()
+	if !profileOK || current < 0 || configured <= 0 || current > configured {
 		return
 	}
+	attributes := metric.WithAttributes(attribute.String("wga.request_protection.profile", profileValue))
 	meter := otel.Meter(admissionInstrumentationName)
 	currentGauge, err := meter.Int64Gauge(
 		"wga.request_protection.capacity.current",
@@ -42,7 +44,7 @@ func recordAdmissionCapacity(ctx context.Context, current int, configured int) {
 		metric.WithUnit("{request}"),
 	)
 	if err == nil {
-		currentGauge.Record(ctx, int64(current))
+		currentGauge.Record(ctx, int64(current), attributes)
 	}
 	configuredGauge, err := meter.Int64Gauge(
 		"wga.request_protection.capacity.configured",
@@ -50,7 +52,7 @@ func recordAdmissionCapacity(ctx context.Context, current int, configured int) {
 		metric.WithUnit("{request}"),
 	)
 	if err == nil {
-		configuredGauge.Record(ctx, int64(configured))
+		configuredGauge.Record(ctx, int64(configured), attributes)
 	}
 }
 
