@@ -80,7 +80,7 @@ In staging and production, the system SHALL require protected public catalogue r
 
 ### Requirement: Bounded public-read admission
 
-The system SHALL apply separate admission profiles to interactive catalogue search routes and canonical catalogue detail routes. Admission SHALL combine a bounded per-client request rate with a global concurrent-work limit and SHALL not create an unbounded queue or identity store.
+The system SHALL apply separate admission profiles to interactive catalogue search routes and canonical catalogue detail routes. Admission SHALL combine a bounded per-client request rate with a concurrent-work limit held separately by each protected route profile, so that exhausting one profile does not reject work on another, and SHALL not create an unbounded queue or identity store.
 
 #### Scenario: Client exceeds its route-profile rate
 
@@ -89,8 +89,13 @@ The system SHALL apply separate admission profiles to interactive catalogue sear
 
 #### Scenario: Catalogue capacity is exhausted
 
-- **WHEN** the configured concurrent-work capacity for protected catalogue requests is exhausted
-- **THEN** the system rejects new protected work immediately with HTTP 503 and a `Retry-After` header
+- **WHEN** the configured concurrent-work capacity of a protected route profile is exhausted
+- **THEN** the system rejects new work for that profile immediately with HTTP 503 and a `Retry-After` header
+
+#### Scenario: Another profile's capacity is exhausted
+
+- **WHEN** one protected route profile has exhausted its concurrent-work capacity and a request for a different protected profile arrives within its client allowance
+- **THEN** the request is admitted if its own profile has capacity available
 
 #### Scenario: Capacity is available
 
