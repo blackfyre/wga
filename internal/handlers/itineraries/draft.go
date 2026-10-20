@@ -2,6 +2,7 @@ package itineraries
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"errors"
 	"net/http"
@@ -127,16 +128,21 @@ func renderBuilder(app core.App, c *core.RequestEvent, owner string, token strin
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
-	tray, err := loadTrayView(app, owner)
+	// The out-of-band tray carries the token and added IDs that add controls on
+	// stateless catalogue fragments read after later swaps.
+	// The mutation has already been written, so its response is not cancelled.
+	session, err := loadSession(context.Background(), app, token)
 	if err != nil {
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
+	tray := session.Tray
+	ctxb := tmplUtils.WithItineraryProjection(tmplUtils.ContextFromRequest(c.Request), session.CSRF, tray, session.AddedIDs())
 
 	var buf bytes.Buffer
-	if err := pages.ItineraryBuilder(view, false).Render(tmplUtils.ContextFromRequest(c.Request), &buf); err != nil {
+	if err := pages.ItineraryBuilder(view, false).Render(ctxb, &buf); err != nil {
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
-	if err := components.ItineraryTray(tray, true).Render(tmplUtils.ContextFromRequest(c.Request), &buf); err != nil {
+	if err := components.ItineraryTray(tray, true).Render(ctxb, &buf); err != nil {
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
@@ -162,17 +168,13 @@ func respondBuilder(app core.App, c *core.RequestEvent, owner string, token stri
 // tray's clear action working under the same session CSRF contract. The OOB
 // builder embeds its own token through the builder view.
 func renderTrayWithBuilder(app core.App, c *core.RequestEvent, owner string, token string, state builderState) error {
-	tray, err := loadTrayView(app, owner)
+	// The mutation has already been written, so its response is not cancelled.
+	session, err := loadSession(context.Background(), app, token)
 	if err != nil {
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
-
-	ctxb := tmplUtils.WithItineraryProjection(
-		tmplUtils.ContextFromRequest(c.Request),
-		itineraryworkflow.CSRFToken(token),
-		tray,
-		nil,
-	)
+	tray := session.Tray
+	ctxb := tmplUtils.WithItineraryProjection(tmplUtils.ContextFromRequest(c.Request), session.CSRF, tray, session.AddedIDs())
 
 	var buf bytes.Buffer
 	if err := components.ItineraryTray(tray, false).Render(ctxb, &buf); err != nil {
@@ -229,10 +231,18 @@ func (ctx *securityContext) setMeta(app *pocketbase.PocketBase, c *core.RequestE
 }
 
 func (ctx *securityContext) addStop(app *pocketbase.PocketBase, c *core.RequestEvent) error {
-	owner, token, clientID, err := ctx.guardMutation(app, c)
+	guard, err := ctx.guardAdd(app, c)
+	if errors.Is(err, errConfirmAdd) {
+		return confirmAdd(app, c, guard.token)
+	}
+	if errors.Is(err, errRefreshAdd) {
+		utils.SendToastMessage("Your itinerary was still loading. Add the work again.", "info", true, c, "")
+		return ctx.sessionTray(app, c)
+	}
 	if err != nil {
 		return forbidden(c)
 	}
+	owner, token, clientID := guard.owner, guard.token, guard.clientID
 	if !ctx.requireClientID(app, c, clientID) {
 		return forbidden(c)
 	}
@@ -258,6 +268,10 @@ func (ctx *securityContext) addStop(app *pocketbase.PocketBase, c *core.RequestE
 			return utils.NotFoundError(c)
 		}
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
+	}
+
+	if guard.newSession {
+		c.SetCookie(itineraryworkflow.SessionCookie(token, ctx.cookie.Name, ctx.cookie.Secure))
 	}
 
 	utils.SendToastMessage("Added to your itinerary.", "success", true, c, "")

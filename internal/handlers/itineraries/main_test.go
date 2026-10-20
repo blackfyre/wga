@@ -51,7 +51,7 @@ func TestBuilderSetsSessionCookieAndRenders(t *testing.T) {
 func TestMutationRejectsMissingCSRF(t *testing.T) {
 	_, mux := newItineraryMux(t)
 
-	// A session is issued, but no synchroniser token is submitted.
+	// No session and no same-origin assertion: a first addition is refused.
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodPost, "/itineraries/draft/add", strings.NewReader("artwork_id="+testArtworkID))
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")

@@ -16,112 +16,118 @@
 // listener per viewer.
 import logger from "./logger";
 
-type ItinerarySearchState = "available" | "added" | "full";
-let itinerarySearchEventsBound = false;
+// Add controls in shared-cached documents carry no visitor state. The
+// session tray (`#itinerary-tray`, loaded from `/itineraries/session` and
+// refreshed by every add or clear response) carries the synchroniser token,
+// the draft count, and the added artwork IDs; this module copies them onto the
+// add controls after every settle. Listeners are delegated from the body, so
+// the behaviour survives HTMX swaps of the controls themselves.
+type ItineraryControlState = "available" | "added" | "full";
+let itineraryControlEventsBound = false;
 
-const itinerarySearchClasses = [
-	"cursor-not-allowed",
-	"border-control",
-	"hover:border-wga-accent",
-	"hover:bg-wga-accent-tint",
-	"hover:text-wga-accent",
-	"border-wga-ink/20",
-	"bg-wga-ink/6",
-	"border-wga-ink/25",
-	"text-faint-2",
-] as const;
-
-const itinerarySearchStateClasses: Record<
-	ItinerarySearchState,
-	readonly string[]
-> = {
-	available: [
-		"border-control",
-		"hover:border-wga-accent",
-		"hover:bg-wga-accent-tint",
-		"hover:text-wga-accent",
-	],
-	added: [
-		"cursor-not-allowed",
-		"border-wga-ink/20",
-		"bg-wga-ink/6",
-		"text-faint-2",
-	],
-	full: ["cursor-not-allowed", "border-wga-ink/25", "text-faint-2"],
-};
-
-export function itinerarySearchControlState(
-	current: ItinerarySearchState,
+export function itineraryControlState(
+	artworkID: string,
+	added: ReadonlySet<string>,
 	count: number,
 	capacity: number,
-	addedNow: boolean,
-): ItinerarySearchState {
-	if (addedNow || current === "added") return "added";
+): ItineraryControlState {
+	if (added.has(artworkID)) return "added";
 	if (count >= capacity) return "full";
 	return "available";
 }
 
-function applyItinerarySearchControlState(
+export function parseItineraryAdded(raw: string | undefined): Set<string> {
+	return new Set(
+		(raw ?? "")
+			.split(",")
+			.map((id) => id.trim())
+			.filter((id) => id !== ""),
+	);
+}
+
+function itineraryTray(): HTMLElement | null {
+	return typeof document.querySelector === "function"
+		? document.querySelector<HTMLElement>("#itinerary-tray")
+		: null;
+}
+
+function itinerarySessionCSRF(): string {
+	return itineraryTray()?.dataset.itineraryCsrf ?? "";
+}
+
+function applyItineraryControlState(
 	button: HTMLButtonElement,
-	state: ItinerarySearchState,
+	state: ItineraryControlState,
 ): void {
-	const spent = state !== "available";
-	const labels: Record<ItinerarySearchState, string> = {
-		available: button.dataset.itineraryLabelAvailable ?? "",
-		added: button.dataset.itineraryLabelAdded ?? "",
-		full: button.dataset.itineraryLabelFull ?? "",
+	const labels: Record<ItineraryControlState, string | undefined> = {
+		available: button.dataset.itineraryLabelAvailable,
+		added: button.dataset.itineraryLabelAdded,
+		full: button.dataset.itineraryLabelFull,
 	};
+	const classes: Record<ItineraryControlState, string | undefined> = {
+		available: button.dataset.itineraryClassAvailable,
+		added: button.dataset.itineraryClassAdded,
+		full: button.dataset.itineraryClassFull,
+	};
+	const spent = state !== "available";
 	button.dataset.itineraryState = state;
 	button.disabled = spent;
 	button.setAttribute("aria-disabled", String(spent));
-	button.textContent = labels[state];
-	for (const className of itinerarySearchClasses) {
-		button.classList.toggle(
-			className,
-			itinerarySearchStateClasses[state].includes(className),
-		);
-	}
+	if (labels[state] !== undefined) button.textContent = labels[state] ?? "";
+	if (classes[state] !== undefined) button.className = classes[state] ?? "";
 }
 
-function syncItinerarySearchControls(addedID = "", cleared = false): void {
-	const tray =
-		typeof document.querySelector === "function"
-			? document.querySelector<HTMLElement>("#itinerary-tray")
-			: null;
-	const count = Number.parseInt(tray?.dataset.itineraryCount ?? "0", 10);
-	const capacity = Number.parseInt(tray?.dataset.itineraryCapacity ?? "15", 10);
+function syncItineraryControls(): void {
+	const tray = itineraryTray();
+	if (!tray || typeof document.querySelectorAll !== "function") return;
+
+	const csrf = tray.dataset.itineraryCsrf ?? "";
+	if (csrf !== "") {
+		for (const field of document.querySelectorAll<HTMLInputElement>(
+			"input[data-itinerary-csrf-field]",
+		)) {
+			field.value = csrf;
+		}
+	}
+
+	const added = parseItineraryAdded(tray.dataset.itineraryAdded);
+	const count = Number.parseInt(tray.dataset.itineraryCount ?? "0", 10);
+	const capacity = Number.parseInt(tray.dataset.itineraryCapacity ?? "15", 10);
 	for (const button of document.querySelectorAll<HTMLButtonElement>(
-		"[data-itinerary-search-add]",
+		"[data-itinerary-control]",
 	)) {
-		const current = (
-			cleared ? "available" : (button.dataset.itineraryState ?? "available")
-		) as ItinerarySearchState;
-		const state = itinerarySearchControlState(
-			current,
-			count,
-			capacity,
-			button.dataset.itinerarySearchAdd === addedID,
+		applyItineraryControlState(
+			button,
+			itineraryControlState(
+				button.dataset.itineraryControl ?? "",
+				added,
+				count,
+				capacity,
+			),
 		);
-		applyItinerarySearchControlState(button, state);
 	}
 }
 
-function bindItinerarySearchControls(): void {
-	if (itinerarySearchEventsBound || !document.body?.addEventListener) return;
-	itinerarySearchEventsBound = true;
-	document.body.addEventListener("htmx:afterSettle", (event) => {
+function bindItineraryControls(): void {
+	if (itineraryControlEventsBound || !document.body?.addEventListener) return;
+	itineraryControlEventsBound = true;
+	document.body.addEventListener("htmx:configRequest", (event) => {
 		const detail = (
 			event as CustomEvent<{
-				requestConfig?: { elt?: Element };
+				path?: string;
+				parameters?: Record<string, unknown>;
 			}>
 		).detail;
-		const source = detail?.requestConfig?.elt;
-		const form = source?.closest<HTMLFormElement>("form");
-		if (form?.matches('[action="/itineraries/draft/add"]')) {
-			syncItinerarySearchControls(form.dataset.itineraryAddForm ?? "");
-		} else if (form?.matches('[action="/itineraries/draft/clear"]')) {
-			syncItinerarySearchControls("", true);
+		if (detail?.path !== "/itineraries/draft/add" || !detail.parameters) {
+			return;
 		}
+		const csrf = itinerarySessionCSRF();
+		if (csrf !== "" && !detail.parameters._csrf) {
+			detail.parameters._csrf = csrf;
+		}
+	});
+	document.body.addEventListener("htmx:afterSettle", () => {
+		syncItineraryControls();
 	});
 }
 
@@ -386,8 +392,8 @@ export function registerItineraryKeyboard(): void {
 }
 
 export function registerItineraryHelpers(): void {
-	bindItinerarySearchControls();
-	syncItinerarySearchControls();
+	bindItineraryControls();
+	syncItineraryControls();
 	bindCopyLinks();
 	bindBuilderTabs();
 	bindBuilderNarrationStatus();

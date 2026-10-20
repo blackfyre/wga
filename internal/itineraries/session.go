@@ -155,6 +155,22 @@ func SameOrigin(r *http.Request, canonical *url.URL) bool {
 	return true
 }
 
+// AssertedSameOrigin is the stricter check for a request that carries no
+// session and therefore no synchroniser token. The Host must match and the
+// request must positively identify itself as same-origin through a matching
+// Origin or Referer header or Sec-Fetch-Site: same-origin; a request with none
+// of these is rejected rather than trusted.
+func AssertedSameOrigin(r *http.Request, canonical *url.URL) bool {
+	if !SameOrigin(r, canonical) {
+		return false
+	}
+	if r.Header.Get("Origin") != "" || r.Header.Get("Referer") != "" {
+		return true
+	}
+
+	return r.Header.Get("Sec-Fetch-Site") == "same-origin"
+}
+
 func originMatches(scheme string, wantHost string, raw string) bool {
 	parsed, err := url.Parse(raw)
 	if err != nil {

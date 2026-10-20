@@ -42,7 +42,7 @@ func Classify(method string, path string) Profile {
 	switch {
 	case pathSegmentsEqual(segments, "artists"), pathSegmentsEqual(segments, "artworks"), pathSegmentsEqual(segments, "artworks", "results"):
 		return ProfileSearch
-	case pathSegmentsEqual(segments, "dual-mode"), pathSegmentsEqual(segments, "dual-mode", "lookup"):
+	case pathSegmentsEqual(segments, "dual-mode"), pathSegmentsEqual(segments, "dual-mode", "lookup"), pathSegmentsEqual(segments, "itineraries", "session"):
 		return ProfileFragment
 	case pathSegmentsEqual(segments, "health"), pathSegmentsEqual(segments, "robots.txt"), pathSegmentsEqual(segments, "sitemap.xml"), pathSegmentsEqual(segments, "sitemap.xsl"):
 		return ProfileExempt

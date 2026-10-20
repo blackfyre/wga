@@ -105,7 +105,11 @@ templ LayoutMain() {
 		<main id="mc-area" class="wga-enter">
 			{ children... }
 		</main>
-		@components.ItineraryTray(utils.GetItineraryTray(ctx), false)
+		if utils.GetItineraryCSRF(ctx) != "" {
+			@components.ItineraryTray(utils.GetItineraryTray(ctx), false)
+		} else {
+			@components.ItineraryTrayPlaceholder()
+		}
 		@components.StudyBoardShelfMount()
 		@components.Footer()
 	}

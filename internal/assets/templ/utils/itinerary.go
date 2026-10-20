@@ -2,6 +2,8 @@ package utils
 
 import (
 	"context"
+	"sort"
+	"strings"
 
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 )
@@ -58,4 +60,19 @@ func GetItineraryAdded(c context.Context, artworkID string) bool {
 	}
 
 	return projection.added[artworkID]
+}
+
+// GetItineraryAddedList returns the draft's artwork IDs as a sorted,
+// comma-separated list for the tray's client-side state attribute.
+func GetItineraryAddedList(c context.Context) string {
+	added := itineraryProjectionFrom(c).added
+	ids := make([]string, 0, len(added))
+	for id, present := range added {
+		if present {
+			ids = append(ids, id)
+		}
+	}
+	sort.Strings(ids)
+
+	return strings.Join(ids, ",")
 }

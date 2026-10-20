@@ -30,28 +30,6 @@ func hasCompleteItineraryArtistIdentity(author *core.Record) bool {
 	return strings.TrimSpace(author.GetString("filing_name")) != "" && strings.TrimSpace(author.GetString("short_name")) != ""
 }
 
-// loadTrayView maps the workflow tray projection to its templ DTO, resolving
-// tray thumbnails at the 120px profile.
-func loadTrayView(app core.App, owner string) (dto.ItineraryTrayView, error) {
-	view := dto.ItineraryTrayView{BuilderURL: "/itineraries/new"}
-
-	tray, err := itineraryworkflow.LoadTrayView(app, owner)
-	if err != nil {
-		return view, err
-	}
-	view.Count = tray.Count
-
-	for _, artworkID := range tray.ArtworkIDs {
-		artwork, err := app.FindRecordById(constants.CollectionArtworks, artworkID)
-		if err != nil || artwork.GetString("image") == "" {
-			continue
-		}
-		view.Thumbs = append(view.Thumbs, url.GenerateArtworkImageURL(artwork, url.DeliveryProfileItineraryTray, ""))
-	}
-
-	return view, nil
-}
-
 // stopDTO maps a persisted stop to its display projection, reading the artwork
 // through its relation and marking it unavailable when the artwork is gone.
 func stopDTO(app core.App, stop *core.Record) dto.ItineraryStop {
