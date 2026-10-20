@@ -95,14 +95,15 @@ The catalogue cache-rule expression is:
   starts_with(http.request.uri.path, "/tours/")
 )
 and not any(http.request.headers.names[*] eq "hx-request")
-and starts_with(http.request.headers["accept"][0], "text/html")
-and not http.request.headers["accept"][0] contains "text/html;q=0"
-and not http.request.headers["accept"][0] contains "text/html; q=0"
+and (
+  http.request.headers["accept"][0] eq "text/html" or
+  starts_with(http.request.headers["accept"][0], "text/html,")
+)
 and not any(http.request.headers["accept"][*] contains "text/markdown")
 and not http.cookie contains "wga_aw_prefs="
 ```
 
-Save the expression through the Cloudflare rule editor, which validates it, and run the verification below before relying on it. The path families match `publicCataloguePaths` in `internal/handlers/public_cache.go`; change both together. WGA marks a catalogue response shareable only when it is an anonymous, non-HTMX `GET` or `HEAD` 200 without `Set-Cookie`, with `Cache-Control: public, max-age=0, s-maxage=300`; every other response on these paths carries `private, no-store` or no shared-cache permission, and Cloudflare does not store responses that set a cookie. The bypass conditions cover what the edge cannot vary on: HTMX fragments served from document URLs, requests that do not ask for HTML (WGA renders those without operator head markup; the edge admits only `Accept` headers that start with `text/html`, as browser navigations do, and refuses any `text/html;q=0…` quality, which is stricter than the origin's negotiation and also bypasses rare low-but-non-zero qualities), Markdown content negotiation, and remembered artwork-search preferences. Catalogue edits therefore reach anonymous visitors within five minutes. To publish an urgent correction sooner, purge the affected URLs, or purge everything.
+Save the expression through the Cloudflare rule editor, which validates it, and run the verification below before relying on it. The path families match `publicCataloguePaths` in `internal/handlers/public_cache.go`; change both together. WGA marks a catalogue response shareable only when it is an anonymous, non-HTMX `GET` or `HEAD` 200 without `Set-Cookie`, with `Cache-Control: public, max-age=0, s-maxage=300`; every other response on these paths carries `private, no-store` or no shared-cache permission, and Cloudflare does not store responses that set a cookie. The bypass conditions cover what the edge cannot vary on: HTMX fragments served from document URLs, requests that do not ask for HTML (WGA renders those without operator head markup; the edge admits only an `Accept` whose first media range is a bare `text/html`, as browser navigations send, so any parameterised or quality-weighted `text/html` range is bypassed; this is stricter than the origin's negotiation), Markdown content negotiation, and remembered artwork-search preferences. Catalogue edits therefore reach anonymous visitors within five minutes. To publish an urgent correction sooner, purge the affected URLs, or purge everything.
 
 Verify the rule after each change: a repeated anonymous request for `/artists` reports `cf-cache-status: HIT`, while requests carrying `HX-Request: true`, `Accept: */*`, `Accept: text/markdown`, or a `wga_aw_prefs` cookie report `BYPASS` or `DYNAMIC`, and `/itineraries/session` is never cached.
 
