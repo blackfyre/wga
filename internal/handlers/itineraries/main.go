@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 
+	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
 	itineraryworkflow "github.com/blackfyre/wga/internal/itineraries"
 	"github.com/blackfyre/wga/internal/logging"
 	"github.com/blackfyre/wga/internal/utils"
@@ -54,6 +55,7 @@ func RegisterHandlers(app *pocketbase.PocketBase, policy SecurityPolicy) error {
 		// copy cannot outlive moderation or the one-year expiry.
 		group.BindFunc(func(c *core.RequestEvent) error {
 			noStore(c)
+			ctx.projectSessionForPage(app, c)
 			return c.Next()
 		})
 
@@ -70,6 +72,10 @@ func RegisterHandlers(app *pocketbase.PocketBase, policy SecurityPolicy) error {
 		})
 		group.GET("/draft/from-board", func(c *core.RequestEvent) error {
 			return ctx.boardImportPage(app, c)
+		})
+
+		group.GET("/session", func(c *core.RequestEvent) error {
+			return ctx.sessionTray(app, c)
 		})
 
 		group.GET("/published", func(c *core.RequestEvent) error {
@@ -140,6 +146,22 @@ func newSecurityContext(policy SecurityPolicy) (*securityContext, error) {
 	}, nil
 }
 
+// projectSessionForPage carries an existing visitor session into itinerary
+// page rendering, so these private pages render the tray, its CLEAR action,
+// and add-control state on the server, including without JavaScript. It never
+// issues a cookie; mutation handlers resolve their own session.
+func (ctx *securityContext) projectSessionForPage(app core.App, c *core.RequestEvent) {
+	if c.Request.Method != http.MethodGet && c.Request.Method != http.MethodHead {
+		return
+	}
+	token := itineraryworkflow.TokenFromRequest(c.Request, ctx.cookie.Name)
+	if token == "" {
+		return
+	}
+	session := projectFromToken(app, token)
+	c.Request = c.Request.WithContext(tmplUtils.WithItineraryProjection(c.Request.Context(), session.CSRF, session.Tray, session.AddedIDs()))
+}
+
 // noStore marks a response non-cacheable. It is applied as group middleware to
 // every route under /itineraries.
 func noStore(c *core.RequestEvent) {
@@ -207,6 +229,69 @@ func (ctx *securityContext) guardMutation(app core.App, c *core.RequestEvent) (s
 	}
 
 	return itineraryworkflow.OwnerDigest(token), token, clientID, nil
+}
+
+// errConfirmAdd marks a session-holding add without a synchroniser token, which
+// a no-JavaScript visitor sends from a shared-cached page. It is answered with a
+// token-bearing confirmation form rather than a rejection.
+var errConfirmAdd = errors.New("itinerary add needs confirmation")
+
+// errRefreshAdd marks the HTMX form of the same case, typically an add made
+// before the session tray loaded. It is answered with the session tray, which
+// carries the token, so the next attempt succeeds.
+var errRefreshAdd = errors.New("itinerary add needs the session tray")
+
+// addGuard is the validated identity of an add request. newSession reports a
+// first addition whose session cookie is issued only after the addition
+// succeeds, so rejected attempts do not create sessions.
+type addGuard struct {
+	owner      string
+	token      string
+	clientID   string
+	newSession bool
+}
+
+// guardAdd validates an add request. A visitor without a session has no session
+// secret that a forged request could exploit, so a first addition is accepted on
+// an asserted same-origin request alone. A visitor with a session keeps the
+// full guardMutation contract.
+//
+// Two concurrent first additions from one browser each create a session; the
+// later cookie wins and the earlier stop stays in an unreachable draft that the
+// purge job removes. The race needs two adds before the first response returns.
+func (ctx *securityContext) guardAdd(app core.App, c *core.RequestEvent) (addGuard, error) {
+	if existing := itineraryworkflow.TokenFromRequest(c.Request, ctx.cookie.Name); existing != "" {
+		owner, token, clientID, err := ctx.guardMutation(app, c)
+		if errors.Is(err, errForbidden) &&
+			c.Request.FormValue("_csrf") == "" &&
+			itineraryworkflow.SameOrigin(c.Request, ctx.canonical) {
+			if utils.IsHtmxRequest(c) {
+				return addGuard{token: existing}, errRefreshAdd
+			}
+			return addGuard{token: existing}, errConfirmAdd
+		}
+		return addGuard{owner: owner, token: token, clientID: clientID}, err
+	}
+
+	if !itineraryworkflow.AssertedSameOrigin(c.Request, ctx.canonical) {
+		logging.RequestLogger(app, c).Warn("Itinerary mutation rejected",
+			"event", "itineraries.mutation.rejected",
+			"outcome", "cross_origin",
+		)
+		return addGuard{}, errForbidden
+	}
+
+	token, err := itineraryworkflow.NewToken()
+	if err != nil {
+		return addGuard{}, err
+	}
+
+	clientID, ok := ctx.policy.TrustedClientID(c.Request)
+	if !ok {
+		clientID = ""
+	}
+
+	return addGuard{owner: itineraryworkflow.OwnerDigest(token), token: token, clientID: clientID, newSession: true}, nil
 }
 
 // requireClientID fails closed when the trusted client identity is absent or

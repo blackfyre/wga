@@ -49,13 +49,8 @@ func RegisterHandlers(app *pocketbase.PocketBase, environment config.Environment
 		return err
 	}
 	registerMarkdownNegotiationMiddleware(app)
+	registerPublicCatalogueCache(app)
 	registerTrustedHeadMarkupMiddleware(app)
-
-	cookie, err := itineraryhandlers.ActiveCookie(itineraryPolicy)
-	if err != nil {
-		return err
-	}
-	registerItinerarySessionMiddleware(app, cookie)
 
 	feedback.RegisterHandlers(app, environment)
 	glossary.RegisterHandlers(app)

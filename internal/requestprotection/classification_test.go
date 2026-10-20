@@ -19,6 +19,7 @@ func TestClassify(t *testing.T) {
 		{name: "artwork results", method: http.MethodGet, path: "/artworks/results", want: ProfileSearch},
 		{name: "dual fragment", method: http.MethodGet, path: "/dual-mode", want: ProfileFragment},
 		{name: "dual lookup", method: http.MethodGet, path: "/dual-mode/lookup", want: ProfileFragment},
+		{name: "itinerary session fragment", method: http.MethodGet, path: "/itineraries/session", want: ProfileFragment},
 		{name: "artist detail", method: http.MethodGet, path: "/artists/claude-monet", want: ProfileDetail},
 		{name: "artist detail with escaped slash", method: http.MethodGet, path: "/artists/claude%2Fmonet", want: ProfileDetail},
 		{name: "artwork detail", method: http.MethodGet, path: "/artists/claude-monet/water-lilies", want: ProfileDetail},

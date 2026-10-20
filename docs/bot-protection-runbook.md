@@ -55,7 +55,8 @@ For `beta.wga.hu` in staging:
 - make the Request Header Transform Rule match `http.host eq "beta.wga.hu"` and **set**, rather than add, `X-WGA-Edge-Secret` to the current secret;
 - keep one Free rate-limit rule with action `block`, 15 requests per IP per ten seconds, and a ten-second mitigation timeout;
 - keep Bot Fight Mode independently switchable;
-- keep one cache rule limited to `/agents/*` and `/llms.txt`, with cache and browser TTLs respecting origin headers.
+- keep one cache rule limited to `/agents/*` and `/llms.txt`, with cache and browser TTLs respecting origin headers;
+- keep a second cache rule for anonymous catalogue HTML, set to **Eligible for cache**, Edge TTL **Use cache-control header if present, bypass cache if not**, and Browser TTL **Respect origin**.
 
 The rate-limit expression is:
 
@@ -67,6 +68,7 @@ not cf.bot_management.verified_bot and (
   http.request.uri.path eq "/artworks/results" or
   http.request.uri.path eq "/dual-mode" or
   http.request.uri.path eq "/dual-mode/lookup" or
+  http.request.uri.path eq "/itineraries/session" or
   starts_with(http.request.uri.path, "/agents/")
 )
 ```
@@ -78,7 +80,30 @@ starts_with(http.request.uri.path, "/agents/") or
 http.request.uri.path eq "/llms.txt"
 ```
 
-Do not add response status or edge-TTL overrides. Successful generated resources publish `public, no-cache, must-revalidate` with a content-derived `ETag`, while misses publish `private, no-store`. Cloudflare must respect those origin decisions so every cached response is revalidated against the current publication before use and corrected or unpublished records cannot remain stale at the edge.
+The catalogue cache-rule expression is:
+
+```text
+(
+  http.request.uri.path eq "/" or
+  http.request.uri.path in {"/artists" "/artworks" "/dual-mode" "/glossary" "/pages" "/search" "/statistics" "/timeline" "/tours"} or
+  starts_with(http.request.uri.path, "/artists/") or
+  starts_with(http.request.uri.path, "/artworks/") or
+  starts_with(http.request.uri.path, "/dual-mode/") or
+  starts_with(http.request.uri.path, "/glossary/") or
+  starts_with(http.request.uri.path, "/pages/") or
+  starts_with(http.request.uri.path, "/search/") or
+  starts_with(http.request.uri.path, "/tours/")
+)
+and not any(http.request.headers.names[*] eq "hx-request")
+and not any(http.request.headers["accept"][*] contains "text/markdown")
+and not http.cookie contains "wga_aw_prefs="
+```
+
+The path families match `publicCataloguePaths` in `internal/handlers/public_cache.go`; change both together. WGA marks a catalogue response shareable only when it is an anonymous, non-HTMX `GET` or `HEAD` 200 without `Set-Cookie`, with `Cache-Control: public, max-age=0, s-maxage=300`; every other response on these paths carries `private, no-store` or no shared-cache permission, and Cloudflare does not store responses that set a cookie. The bypass conditions cover what the edge cannot vary on: HTMX fragments served from document URLs, Markdown content negotiation, and remembered artwork-search preferences. Catalogue edits therefore reach anonymous visitors within five minutes. To publish an urgent correction sooner, purge the affected URLs, or purge everything.
+
+Verify the rule after each change: a repeated anonymous request for `/artists` reports `cf-cache-status: HIT`, while requests carrying `HX-Request: true`, `Accept: text/markdown`, or a `wga_aw_prefs` cookie report `BYPASS` or `DYNAMIC`, and `/itineraries/session` is never cached.
+
+Do not add response status or edge-TTL overrides to the agent-content rule. Successful generated resources publish `public, no-cache, must-revalidate` with a content-derived `ETag`, while misses publish `private, no-store`. Cloudflare must respect those origin decisions so every cached response is revalidated against the current publication before use and corrected or unpublished records cannot remain stale at the edge.
 
 ## Generated-publication recovery
 

@@ -22,6 +22,10 @@ templ ItineraryTray(tray dto.ItineraryTrayView, oob bool) {
 		id="itinerary-tray"
 		data-itinerary-count={ strconv.Itoa(tray.Count) }
 		data-itinerary-capacity={ strconv.Itoa(itineraryworkflow.MaxStops) }
+		if csrf := utils.GetItineraryCSRF(ctx); csrf != "" {
+			data-itinerary-csrf={ csrf }
+		}
+		data-itinerary-added={ utils.GetItineraryAddedList(ctx) }
 		if oob {
 			hx-swap-oob="true"
 		}
@@ -52,4 +56,26 @@ templ ItineraryTray(tray dto.ItineraryTrayView, oob bool) {
 			</div>
 		}
 	</div>
+}
+
+// ItineraryTrayPlaceholder mounts the empty tray target in documents that carry
+// no visitor session state, so they can be shared-cached. It replaces itself
+// with the visitor's tray, CSRF token, and added state from the uncached
+// session fragment after the document loads. It pins its own target and
+// indicator and opts out of view transitions, so the background request
+// neither inherits the body's main-area swap, shows the page-level progress
+// indicator, nor animates the document while the visitor scrolls or navigates.
+templ ItineraryTrayPlaceholder() {
+	<div
+		id="itinerary-tray"
+		data-itinerary-count="0"
+		data-itinerary-capacity={ strconv.Itoa(itineraryworkflow.MaxStops) }
+		data-itinerary-added=""
+		hx-get="/itineraries/session"
+		hx-trigger="load"
+		hx-target="this"
+		hx-indicator="#itinerary-tray"
+		hx-swap="outerHTML transition:false"
+		hx-select="unset"
+	></div>
 }

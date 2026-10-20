@@ -15,7 +15,7 @@ import (
 templ addToItineraryForm(artworkID string, csrf string, formClass string) {
 	<form method="post" action="/itineraries/draft/add" class={ formClass } hx-post="/itineraries/draft/add" hx-target="#itinerary-tray" hx-swap="outerHTML" hx-select="unset" data-itinerary-add-form={ artworkID }>
 		<input type="hidden" name="artwork_id" value={ artworkID }/>
-		<input type="hidden" name="_csrf" value={ csrf }/>
+		<input type="hidden" name="_csrf" value={ csrf } data-itinerary-csrf-field/>
 		{ children... }
 	</form>
 }
@@ -40,31 +40,35 @@ templ AddToItineraryButton(artworkID string, variant string) {
 // AddToItineraryAction is the typed, validated add control. Call sites opt in
 // deliberately by passing an AddToItineraryVariant; the reference compact,
 // 46px row, and 50px block presentations render here with their short/full
-// labels and shared added/full/anonymous semantics. The synchroniser token,
-// added state, and tray count are read from the request context prepared by
-// the central itinerary session middleware.
+// labels and shared added/full/anonymous semantics.
+//
+// The control always renders, so documents without a visitor session can be
+// shared-cached. When the request context carries no session projection, the
+// form has an empty synchroniser token and the available state; the itinerary
+// script fills the token from the session tray before each add request and
+// applies the added and full state from the per-state labels and classes.
 templ AddToItineraryAction(artworkID string, variant AddToItineraryVariant) {
-	if csrf := utils.GetItineraryCSRF(ctx); csrf != "" {
-		{{ normalized := normalizeAddToItineraryVariant(variant) }}
-		{{ added := utils.GetItineraryAdded(ctx, artworkID) }}
-		{{ full := utils.GetItineraryTray(ctx).Count >= itineraryworkflow.MaxStops }}
-		@addToItineraryForm(artworkID, csrf, addToItineraryFormClass(normalized)) {
+	{{ normalized := normalizeAddToItineraryVariant(variant) }}
+	{{ added := utils.GetItineraryAdded(ctx, artworkID) }}
+	{{ full := utils.GetItineraryTray(ctx).Count >= itineraryworkflow.MaxStops }}
+	@addToItineraryForm(artworkID, utils.GetItineraryCSRF(ctx), addToItineraryFormClass(normalized)) {
+		<button
+			type="submit"
+			disabled?={ added || full }
+			aria-disabled={ fmt.Sprint(added || full) }
+			class={ addToItineraryButtonClass(normalized, added, full) }
 			if normalized == AddToItinerarySearchBlock {
-				<button
-					type="submit"
-					disabled?={ added || full }
-					aria-disabled={ fmt.Sprint(added || full) }
-					class={ addToItineraryButtonClass(normalized, added, full) }
-					data-itinerary-search-add={ artworkID }
-					data-itinerary-state={ addToItineraryState(added, full) }
-					data-itinerary-label-available="ADD TO ITINERARY +"
-					data-itinerary-label-added="IN ITINERARY ✓"
-					data-itinerary-label-full="ITINERARY FULL"
-				>{ addToItineraryButtonLabel(normalized, added, full) }</button>
-			} else {
-				<button type="submit" disabled?={ added || full } class={ addToItineraryButtonClass(normalized, added, full) }>{ addToItineraryButtonLabel(normalized, added, full) }</button>
+				data-itinerary-search-add={ artworkID }
 			}
-		}
+			data-itinerary-control={ artworkID }
+			data-itinerary-state={ addToItineraryState(added, full) }
+			data-itinerary-label-available={ addToItineraryButtonLabel(normalized, false, false) }
+			data-itinerary-label-added={ addToItineraryButtonLabel(normalized, true, false) }
+			data-itinerary-label-full={ addToItineraryButtonLabel(normalized, false, true) }
+			data-itinerary-class-available={ addToItineraryButtonClass(normalized, false, false) }
+			data-itinerary-class-added={ addToItineraryButtonClass(normalized, true, false) }
+			data-itinerary-class-full={ addToItineraryButtonClass(normalized, false, true) }
+		>{ addToItineraryButtonLabel(normalized, added, full) }</button>
 	}
 }
 

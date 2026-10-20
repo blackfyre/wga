@@ -264,16 +264,31 @@ func TestAddToItineraryActionFormContract(t *testing.T) {
 	}
 }
 
-// TestAddToItineraryActionAnonymousRendersNothing proves a cookie-less request
-// with no projected session renders an empty control rather than a broken form.
-func TestAddToItineraryActionAnonymousRendersNothing(t *testing.T) {
+// TestAddToItineraryActionWithoutSessionIsShareable proves a request with no
+// projected session renders an available control that carries no visitor
+// state, so the document can be shared-cached, plus the per-state labels and
+// classes the itinerary script applies after the session tray loads.
+func TestAddToItineraryActionWithoutSessionIsShareable(t *testing.T) {
 	for _, variant := range []AddToItineraryVariant{AddToItineraryCompact, AddToItineraryCard, AddToItineraryRow, AddToItineraryBlock, AddToItinerarySearchBlock} {
 		var output bytes.Buffer
 		if err := AddToItineraryAction(addTestArtworkID, variant).Render(context.Background(), &output); err != nil {
 			t.Fatalf("render anonymous typed add action: %v", err)
 		}
-		if output.String() != "" {
-			t.Errorf("anonymous variant %s must render nothing, got %q", variant, output.String())
+		rendered := output.String()
+		for _, expected := range []string{
+			`action="/itineraries/draft/add"`,
+			`name="_csrf" value=""`,
+			`data-itinerary-control="` + addTestArtworkID + `"`,
+			`data-itinerary-state="available"`,
+			`data-itinerary-label-added="` + addToItineraryButtonLabel(variant, true, false) + `"`,
+			`data-itinerary-class-full="` + addToItineraryButtonClass(variant, false, true) + `"`,
+		} {
+			if !strings.Contains(rendered, expected) {
+				t.Errorf("anonymous variant %s missing %q in %q", variant, expected, rendered)
+			}
+		}
+		if strings.Contains(rendered, " disabled") {
+			t.Errorf("anonymous variant %s must render available, got %q", variant, rendered)
 		}
 	}
 }

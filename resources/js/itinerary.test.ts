@@ -1,15 +1,19 @@
 import { expect, test } from "bun:test";
 import {
-	itinerarySearchControlState,
+	itineraryControlState,
+	parseItineraryAdded,
 	registerItineraryHelpers,
 	registerItineraryKeyboard,
 } from "./itinerary";
 
-test("derives state-aware artwork-search itinerary controls", () => {
-	expect(itinerarySearchControlState("available", 2, 15, true)).toBe("added");
-	expect(itinerarySearchControlState("available", 15, 15, false)).toBe("full");
-	expect(itinerarySearchControlState("full", 14, 15, false)).toBe("available");
-	expect(itinerarySearchControlState("added", 15, 15, false)).toBe("added");
+test("derives itinerary control state from the session tray", () => {
+	const added = parseItineraryAdded("aw1, aw2,,");
+	expect([...added]).toEqual(["aw1", "aw2"]);
+	expect(itineraryControlState("aw1", added, 2, 15)).toBe("added");
+	expect(itineraryControlState("aw3", added, 15, 15)).toBe("full");
+	expect(itineraryControlState("aw1", added, 15, 15)).toBe("added");
+	expect(itineraryControlState("aw3", added, 14, 15)).toBe("available");
+	expect(parseItineraryAdded(undefined).size).toBe(0);
 });
 
 type KeyEvent = {

@@ -115,6 +115,9 @@ func searchWithCheckpoint(app *pocketbase.PocketBase, c *core.RequestEvent, chec
 
 	c.Response.Header().Set("HX-Push-Url", artworkSearchPushURL(c.Request.URL.Path, canonical))
 	c.Response.Header().Add("Vary", "Cookie")
+	if prefs.Present {
+		utils.KeepResponsePrivate(c)
+	}
 
 	var buff bytes.Buffer
 

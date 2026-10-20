@@ -171,7 +171,7 @@ func renderTrayWithBuilder(app core.App, c *core.RequestEvent, owner string, tok
 		tmplUtils.ContextFromRequest(c.Request),
 		itineraryworkflow.CSRFToken(token),
 		tray,
-		nil,
+		projectFromToken(app, token).AddedIDs(),
 	)
 
 	var buf bytes.Buffer
@@ -229,10 +229,18 @@ func (ctx *securityContext) setMeta(app *pocketbase.PocketBase, c *core.RequestE
 }
 
 func (ctx *securityContext) addStop(app *pocketbase.PocketBase, c *core.RequestEvent) error {
-	owner, token, clientID, err := ctx.guardMutation(app, c)
+	guard, err := ctx.guardAdd(app, c)
+	if errors.Is(err, errConfirmAdd) {
+		return confirmAdd(c, guard.token)
+	}
+	if errors.Is(err, errRefreshAdd) {
+		utils.SendToastMessage("Your itinerary was still loading. Add the work again.", "info", true, c, "")
+		return ctx.sessionTray(app, c)
+	}
 	if err != nil {
 		return forbidden(c)
 	}
+	owner, token, clientID := guard.owner, guard.token, guard.clientID
 	if !ctx.requireClientID(app, c, clientID) {
 		return forbidden(c)
 	}
@@ -258,6 +266,10 @@ func (ctx *securityContext) addStop(app *pocketbase.PocketBase, c *core.RequestE
 			return utils.NotFoundError(c)
 		}
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
+	}
+
+	if guard.newSession {
+		c.SetCookie(itineraryworkflow.SessionCookie(token, ctx.cookie.Name, ctx.cookie.Secure))
 	}
 
 	utils.SendToastMessage("Added to your itinerary.", "success", true, c, "")

@@ -158,7 +158,7 @@ test.describe("task 9.2 itinerary tray acceptance", () => {
 test.describe("task 9.2 ordinary form fallback", () => {
 	test.use({ javaScriptEnabled: false });
 
-	test("add redirects 303 to builder, survives reload without duplication, and clear stays empty", async ({
+	test("first add creates the session, a later add confirms, and clear stays empty", async ({
 		page,
 	}) => {
 		await page.emulateMedia({ reducedMotion: "reduce" });
@@ -169,14 +169,13 @@ test.describe("task 9.2 ordinary form fallback", () => {
 			.first();
 		await centre(add);
 		const form = add.locator("..");
-		await expect(form.locator('input[name="_csrf"]')).toHaveValue(/.+/);
-		await expect
-			.poll(async () =>
-				(await page.context().cookies()).some(
-					(cookie) => cookie.name === "wga_itinerary_dev",
-				),
-			)
-			.toBe(true);
+		// Shared-cacheable documents carry no session: no token and no cookie.
+		await expect(form.locator('input[name="_csrf"]')).toHaveValue("");
+		expect(
+			(await page.context().cookies()).some(
+				(cookie) => cookie.name === "wga_itinerary_dev",
+			),
+		).toBe(false);
 		const addResponse = page.waitForResponse((response) =>
 			response.url().endsWith("/itineraries/draft/add"),
 		);
@@ -193,10 +192,27 @@ test.describe("task 9.2 ordinary form fallback", () => {
 			0,
 		);
 
-		await page.goto("/artists");
-		await page.getByRole("button", { name: "CLEAR", exact: true }).click();
-		await expect(page.locator("#itinerary-tray")).toBeEmpty();
+		// With a session but no token on the cached page, the add is confirmed.
 		await page.goto("/inspire");
+		const second = page
+			.getByRole("button", { name: "ADD TO AN ITINERARY +", exact: true })
+			.nth(1);
+		await centre(second);
+		await second.click();
+		await expect(page.locator("#itinerary-add-confirm")).toBeVisible();
+		await page
+			.locator("#itinerary-add-confirm")
+			.getByRole("button", { name: "ADD TO ITINERARY +", exact: true })
+			.click();
+		await expect(page).toHaveURL(/\/itineraries\/new$/);
+		// The builder shows one stop panel at a time.
+		await expect(page.getByText("STOP 02 OF 2", { exact: true })).toHaveCount(
+			1,
+		);
+
+		// Without JavaScript the tray is available on itinerary pages.
+		await page.getByRole("button", { name: "CLEAR", exact: true }).click();
+		await page.goto("/itineraries/new");
 		await expect(page.locator("#itinerary-tray")).toBeEmpty();
 	});
 });
