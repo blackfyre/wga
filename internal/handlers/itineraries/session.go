@@ -14,6 +14,9 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
+// sessionTrayPath serves the visitor's tray to shared-cacheable documents.
+const sessionTrayPath = "/itineraries/session"
+
 // sessionTray renders the visitor's tray, synchroniser token, and added state
 // for documents that carry no session state of their own. It never issues a
 // cookie: a visitor without a session receives an empty tray, so page views
@@ -37,13 +40,17 @@ func (ctx *securityContext) sessionTray(app core.App, c *core.RequestEvent) erro
 // confirmAdd answers a no-JavaScript add from a shared-cached page, which
 // carries the session cookie but no synchroniser token, with a token-bearing
 // form that repeats the addition.
-func confirmAdd(c *core.RequestEvent, token string) error {
+func confirmAdd(app core.App, c *core.RequestEvent, token string) error {
 	artworkID := strings.TrimSpace(c.Request.FormValue("artwork_id"))
 	if artworkID == "" {
 		return utils.BadRequestError(c)
 	}
 
-	ctxb := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, "Add to itinerary")
+	// Render the visitor's tray on the server: without JavaScript the layout's
+	// session placeholder never loads.
+	session := projectFromToken(app, token)
+	ctxb := tmplUtils.WithItineraryProjection(tmplUtils.ContextFromRequest(c.Request), session.CSRF, session.Tray, session.AddedIDs())
+	ctxb = tmplUtils.DecorateContext(ctxb, tmplUtils.TitleKey, "Add to itinerary")
 	ctxb = tmplUtils.DecorateContext(ctxb, tmplUtils.DescriptionKey, "Confirm adding this work to your itinerary.")
 
 	var buf bytes.Buffer

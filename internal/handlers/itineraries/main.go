@@ -154,6 +154,10 @@ func (ctx *securityContext) projectSessionForPage(app core.App, c *core.RequestE
 	if c.Request.Method != http.MethodGet && c.Request.Method != http.MethodHead {
 		return
 	}
+	// The session fragment builds its own projection.
+	if c.Request.URL.Path == sessionTrayPath {
+		return
+	}
 	token := itineraryworkflow.TokenFromRequest(c.Request, ctx.cookie.Name)
 	if token == "" {
 		return

@@ -233,3 +233,39 @@ func TestRejectedFirstAdditionCreatesNoSession(t *testing.T) {
 		t.Errorf("rejected first addition issued a session cookie: %v", cookie)
 	}
 }
+
+func TestBuilderMutationTrayKeepsAddedState(t *testing.T) {
+	_, mux := newItineraryMux(t)
+	cookie, csrf := sessionForMux(t, mux)
+	postForm(t, mux, "/itineraries/draft/add", cookie, csrf, url.Values{"artwork_id": {testArtworkID}})
+
+	request := httptest.NewRequest(http.MethodPost, "/itineraries/draft/meta", strings.NewReader(url.Values{"_csrf": {csrf}, "title": {"A walk"}}.Encode()))
+	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	request.Header.Set("HX-Request", "true")
+	request.AddCookie(cookie)
+	response := httptest.NewRecorder()
+	mux.ServeHTTP(response, request)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", response.Code)
+	}
+	if body := response.Body.String(); !strings.Contains(body, `data-itinerary-added="`+testArtworkID+`"`) {
+		t.Errorf("builder mutation tray lost the added state: %s", body)
+	}
+}
+
+func TestConfirmationPageRendersTheVisitorTray(t *testing.T) {
+	_, mux := newItineraryMux(t)
+	cookie, csrf := sessionForMux(t, mux)
+	postForm(t, mux, "/itineraries/draft/add", cookie, csrf, url.Values{"artwork_id": {testArtworkID}})
+
+	response := postAdd(t, mux, cookie, url.Values{"artwork_id": {testArtworkID}}, map[string]string{"Origin": "http://example.com"})
+
+	body := response.Body.String()
+	if !strings.Contains(body, `id="itinerary-add-confirm"`) {
+		t.Fatalf("expected the confirmation page, got %d", response.Code)
+	}
+	if !strings.Contains(body, `data-itinerary-count="1"`) || strings.Contains(body, `hx-get="/itineraries/session"`) {
+		t.Errorf("confirmation page must render the visitor tray on the server")
+	}
+}

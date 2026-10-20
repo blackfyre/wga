@@ -74,6 +74,14 @@ func storedSearchPrefs(r *http.Request) searchPrefs {
 	return prefs
 }
 
+// hasSearchPrefsCookie reports whether the request carries a remembered
+// preference cookie at all, valid or not. Such responses are never shared, so
+// privacy does not depend on the cookie decoding or on current consent.
+func hasSearchPrefsCookie(r *http.Request) bool {
+	_, err := r.Cookie(searchPrefsCookieName)
+	return err == nil
+}
+
 // preferenceConsentGranted reports whether the CookieConsent record accepts
 // the optional preferences category.
 func preferenceConsentGranted(r *http.Request) bool {

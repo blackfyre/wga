@@ -132,11 +132,20 @@ func renderBuilder(app core.App, c *core.RequestEvent, owner string, token strin
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
+	// The out-of-band tray carries the token and added IDs that add controls on
+	// stateless catalogue fragments read after later swaps.
+	ctxb := tmplUtils.WithItineraryProjection(
+		tmplUtils.ContextFromRequest(c.Request),
+		itineraryworkflow.CSRFToken(token),
+		tray,
+		projectFromToken(app, token).AddedIDs(),
+	)
+
 	var buf bytes.Buffer
-	if err := pages.ItineraryBuilder(view, false).Render(tmplUtils.ContextFromRequest(c.Request), &buf); err != nil {
+	if err := pages.ItineraryBuilder(view, false).Render(ctxb, &buf); err != nil {
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
-	if err := components.ItineraryTray(tray, true).Render(tmplUtils.ContextFromRequest(c.Request), &buf); err != nil {
+	if err := components.ItineraryTray(tray, true).Render(ctxb, &buf); err != nil {
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
@@ -231,7 +240,7 @@ func (ctx *securityContext) setMeta(app *pocketbase.PocketBase, c *core.RequestE
 func (ctx *securityContext) addStop(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 	guard, err := ctx.guardAdd(app, c)
 	if errors.Is(err, errConfirmAdd) {
-		return confirmAdd(c, guard.token)
+		return confirmAdd(app, c, guard.token)
 	}
 	if errors.Is(err, errRefreshAdd) {
 		utils.SendToastMessage("Your itinerary was still loading. Add the work again.", "info", true, c, "")

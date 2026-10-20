@@ -149,6 +149,9 @@ func TestArtworkSearchRendersSearchPrefsFromCookie(t *testing.T) {
 		if got := recorder.Header().Values("Vary"); !containsValue(got, "Cookie") {
 			t.Errorf("Vary = %v, want Cookie", got)
 		}
+		if got := recorder.Header().Get("Cache-Control"); got != "private, no-store" {
+			t.Errorf("Cache-Control = %q, want private, no-store", got)
+		}
 		for _, expected := range []string{
 			`<html lang="en" data-aw-actions="on">`,
 			`data-view="list"`,
@@ -198,6 +201,9 @@ func TestArtworkSearchRendersSearchPrefsFromCookie(t *testing.T) {
 
 	t.Run("invalid cookie is ignored", func(t *testing.T) {
 		recorder := serveArtworkSearch(t, app, searchPrefsRequest("/artworks", neturl.PathEscape(`{"sort":"catalogue"`)))
+		if got := recorder.Header().Get("Cache-Control"); got != "private, no-store" {
+			t.Errorf("invalid cookie Cache-Control = %q, want private, no-store", got)
+		}
 		body := recorder.Body.String()
 		if got := recorder.Header().Get("HX-Push-Url"); got != "/artworks" {
 			t.Errorf("HX-Push-Url = %q, want defaults", got)
