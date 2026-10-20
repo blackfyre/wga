@@ -735,3 +735,32 @@ func protectionTestOriginAuthenticator() requesttrust.OriginAuthenticator {
 		requesttrust.NewCloudflareOriginSecrets(protectionTestSecret, ""),
 	)
 }
+
+func TestProtectionEventSamplerBoundsEventsPerTypeAndProfile(t *testing.T) {
+	now := time.Date(2026, 10, 19, 12, 0, 0, 0, time.UTC)
+	sampler := newProtectionEventSampler(time.Minute, func() time.Time { return now })
+	const capacity = "request_protection.capacity_rejected"
+
+	if suppressed, emit := sampler.admit(capacity, requestprotection.ProfileFragment); !emit || suppressed != 0 {
+		t.Fatalf("first event = (%d, %t); want (0, true)", suppressed, emit)
+	}
+	for range 3 {
+		if _, emit := sampler.admit(capacity, requestprotection.ProfileFragment); emit {
+			t.Fatal("event within the interval was emitted")
+		}
+	}
+	if _, emit := sampler.admit(capacity, requestprotection.ProfileSearch); !emit {
+		t.Error("first event for another profile was suppressed")
+	}
+	if _, emit := sampler.admit("request_protection.client_rate_rejected", requestprotection.ProfileFragment); !emit {
+		t.Error("first event of another type was suppressed")
+	}
+
+	now = now.Add(time.Minute)
+	if suppressed, emit := sampler.admit(capacity, requestprotection.ProfileFragment); !emit || suppressed != 3 {
+		t.Fatalf("event after the interval = (%d, %t); want (3, true)", suppressed, emit)
+	}
+	if suppressed, emit := sampler.admit(capacity, requestprotection.ProfileFragment); emit || suppressed != 0 {
+		t.Fatalf("event after re-emission = (%d, %t); want (0, false)", suppressed, emit)
+	}
+}
