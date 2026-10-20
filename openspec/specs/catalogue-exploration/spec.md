@@ -324,7 +324,7 @@ Within a Dual Mode pane, every link in artist biography HTML and selection comme
 
 ### Requirement: Artwork search remembers presentation choices
 
-The system SHALL remember an artwork search visitor's sort key, sort direction, result view, and result-actions setting on that visitor's device across page loads, using the `wga-aw-prefs` browser storage entry and the `wga_aw_prefs` first-party cookie. These choices are presentation state, not part of the query. Remembering is optional storage: the system SHALL read or write either copy only while the visitor has accepted the optional `preferences` cookie-consent category, SHALL delete both when that consent is absent or withdrawn, and without it SHALL apply the choices to the current page only. A visit to `/artworks` with no query parameters SHALL render with the remembered sort, direction, and view without a redirect. Any explicit query parameter SHALL take precedence over every remembered sort, direction, and view, so a shared or bookmarked search URL renders as addressed. Resetting filters SHALL leave the remembered choices unchanged. A missing, malformed, or invalid remembered value SHALL be ignored in favour of the ordinary defaults. Sort and view controls SHALL remain ordinary links that work without JavaScript.
+The system SHALL remember an artwork search visitor's sort key, sort direction, result view, and result-actions setting on that visitor's device across page loads, using the `wga-aw-prefs` browser storage entry and the `wga_aw_prefs` first-party cookie. These choices are presentation state, not part of the query. Remembering is optional storage: the system SHALL read or write either copy only while the visitor has accepted the optional `preferences` cookie-consent category, SHALL delete both when that consent is absent or withdrawn, and without it SHALL apply the choices to the current page only. A visit to `/artworks` with no query parameters SHALL render with the remembered sort, direction, and view without a redirect. Any explicit query parameter SHALL take precedence over every remembered sort, direction, and view, so a shared or bookmarked search URL renders as addressed. Resetting filters SHALL leave the remembered choices unchanged. A missing, malformed, or invalid remembered value SHALL be ignored in favour of the ordinary defaults. Sort and view controls SHALL remain ordinary links that work without JavaScript. A response rendered with remembered choices applied SHALL be `private, no-store` and SHALL never be served from a shared cache.
 
 #### Scenario: Visitor returns to artwork search
 
@@ -360,6 +360,11 @@ The system SHALL remember an artwork search visitor's sort key, sort direction, 
 
 - **WHEN** a visitor without JavaScript activates a sort or view control
 - **THEN** the browser follows the control's ordinary link to the addressed result state.
+
+#### Scenario: Remembered choices are not shared
+
+- **WHEN** a visitor with a `wga_aw_prefs` cookie requests `/artworks`
+- **THEN** the request bypasses the edge cache and the response is `private, no-store`
 
 ### Requirement: Artwork search explains an empty filtered result
 
