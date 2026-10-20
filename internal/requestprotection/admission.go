@@ -209,6 +209,11 @@ func (a Admission) WouldReject() bool {
 	return !a.enforced && a.status != 0
 }
 
+// Profile returns the route profile the admission was evaluated for.
+func (a Admission) Profile() Profile {
+	return a.profile
+}
+
 // Decision returns the admission outcome.
 func (a Admission) Decision() Decision {
 	return a.decision

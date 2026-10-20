@@ -44,6 +44,7 @@ import (
 func RegisterHandlers(app *pocketbase.PocketBase, environment config.Environment, captcha config.Captcha, postcardKeyring config.PostcardTokenKeyring, contributorReader contributorworkflow.Reader, captchaVerifier antiabuse.Verifier, itineraryPolicy itineraryhandlers.SecurityPolicy, authenticateOrigin requesttrust.OriginAuthenticator, clientIdentity requesttrust.Resolver, publicURL config.PublicURL, publicReadPolicy *requestprotection.Policy, browserTunnel *observability.BrowserTunnel) error {
 
 	app.Logger().Debug("Registering route handlers...")
+	registerFailureOnlyActivityLog(app)
 	if err := registerProtectedReadMiddleware(app, environment, publicURL.String(), authenticateOrigin, clientIdentity, publicReadPolicy); err != nil {
 		return err
 	}
