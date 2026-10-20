@@ -11,10 +11,14 @@ func init() {
 	m.Register(boundLogPersistence, nil)
 }
 
-// boundLogPersistence shortens persisted log retention so that a burst of
-// failed requests or protection events ages out within a week.
+// boundLogPersistence caps persisted log retention so that a burst of failed
+// requests or protection events ages out within a week. A shorter retention,
+// including 0 (persistence disabled), is an operator choice and is kept.
 func boundLogPersistence(app core.App) error {
 	settings := app.Settings()
+	if settings.Logs.MaxDays <= persistedLogMaxDays {
+		return nil
+	}
 	settings.Logs.MaxDays = persistedLogMaxDays
 
 	return app.Save(settings)

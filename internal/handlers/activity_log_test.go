@@ -24,7 +24,8 @@ func TestFailureOnlyActivityLogPersistsOnlyFailedRequests(t *testing.T) {
 		{name: "unmarked 503 is a fault", url: "/rejected", status: http.StatusServiceUnavailable, wantLog: true},
 		{name: "failed request", url: "/missing", status: http.StatusNotFound, wantLog: true},
 		{name: "server fault rendered without an error", url: "/fault", status: http.StatusInternalServerError, wantLog: true},
-		{name: "expected protection rejection", url: "/expected", status: http.StatusServiceUnavailable},
+		{name: "admission rejection", url: "/admission", status: http.StatusServiceUnavailable},
+		{name: "expected non-admission 5xx", url: "/expected", status: http.StatusBadGateway, wantLog: true},
 	}
 
 	for _, test := range cases {
@@ -49,9 +50,11 @@ func TestFailureOnlyActivityLogPersistsOnlyFailedRequests(t *testing.T) {
 								return e.String(http.StatusServiceUnavailable, "Service Unavailable\n")
 							case "/fault":
 								return e.String(http.StatusInternalServerError, "fault")
+							case "/admission":
+								return plainProtectionResponse(e, http.StatusServiceUnavailable, 0)
 							case "/expected":
 								requestfailure.MarkExpectedResponse(e)
-								return e.String(http.StatusServiceUnavailable, "Service Unavailable\n")
+								return e.String(http.StatusBadGateway, "Bad Gateway\n")
 							}
 							return e.Next()
 						})

@@ -98,6 +98,7 @@ func plainProtectionResponse(e *core.RequestEvent, status int, retryAfter time.D
 	err := e.String(status, http.StatusText(status)+"\n")
 	if err == nil {
 		requestfailure.MarkExpectedResponse(e)
+		e.Set(protectionRejectionKey, true)
 	}
 	return err
 }

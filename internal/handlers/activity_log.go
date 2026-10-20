@@ -3,7 +3,6 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/blackfyre/wga/internal/requestfailure"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/hook"
@@ -15,9 +14,19 @@ import (
 // PocketBase upgrade changes it.
 const pocketBaseSkipSuccessActivityLogKey = "__skipSuccessActivityLogger"
 
+// protectionRejectionKey marks a response written by public-read admission.
+// Unlike the general expected-response marker, it is never set for other
+// rendered 5xx failures, which keep their activity row.
+const protectionRejectionKey = "wga.protection_rejection"
+
+func isProtectionRejection(e *core.RequestEvent) bool {
+	rejected, _ := e.Get(protectionRejectionKey).(bool)
+	return rejected
+}
+
 // registerFailureOnlyActivityLog keeps PocketBase's request activity log for
 // failed requests only. A request is skipped when it returns no error and its
-// response is below 500 or an expected protection outcome, so a flood of
+// response is below 500 or an admission rejection, so a flood of
 // successful or admission-rejected requests no longer costs one persisted row
 // each, while server faults rendered without an error are still recorded. The
 // handler wraps the whole chain, including protection middleware that
@@ -29,7 +38,7 @@ func registerFailureOnlyActivityLog(app core.App) {
 			Priority: apis.DefaultActivityLoggerMiddlewarePriority + 1,
 			Func: func(e *core.RequestEvent) error {
 				err := e.Next()
-				if err == nil && (e.Status() < http.StatusInternalServerError || requestfailure.IsExpectedResponse(e)) {
+				if err == nil && (e.Status() < http.StatusInternalServerError || isProtectionRejection(e)) {
 					e.Set(pocketBaseSkipSuccessActivityLogKey, true)
 				}
 				return err
