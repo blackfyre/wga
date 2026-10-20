@@ -10,6 +10,7 @@ import (
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
 	itineraryworkflow "github.com/blackfyre/wga/internal/itineraries"
+	"github.com/blackfyre/wga/internal/requestprotection"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/pocketbase/pocketbase/core"
 )
@@ -24,9 +25,21 @@ const sessionTrayPath = "/itineraries/session"
 func (ctx *securityContext) sessionTray(app core.App, c *core.RequestEvent) error {
 	session := PublicSession{Tray: dto.ItineraryTrayView{BuilderURL: "/itineraries/new"}}
 	if token := itineraryworkflow.TokenFromRequest(c.Request, ctx.cookie.Name); token != "" {
-		session = projectFromToken(app, token)
+		loaded, err := loadSession(c.Request.Context(), app, token)
+		if requestprotection.IsCancellation(err) {
+			return err
+		}
+		if err != nil {
+			// The fragment stays non-blocking: an unreadable draft renders an
+			// empty tray that still carries the session's token.
+			loaded = projectFromToken(app, token)
+		}
+		session = loaded
 	}
 
+	if err := requestprotection.Checkpoint(c.Request.Context(), "itineraries.session.render"); err != nil {
+		return err
+	}
 	ctxb := tmplUtils.WithItineraryProjection(tmplUtils.ContextFromRequest(c.Request), session.CSRF, session.Tray, session.AddedIDs())
 
 	var buf bytes.Buffer

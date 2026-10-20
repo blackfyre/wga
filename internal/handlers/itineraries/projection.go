@@ -1,9 +1,14 @@
 package itineraries
 
 import (
+	"context"
+	"database/sql"
+	"errors"
+
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/constants"
 	itineraryworkflow "github.com/blackfyre/wga/internal/itineraries"
+	"github.com/blackfyre/wga/internal/requestprotection"
 	"github.com/blackfyre/wga/internal/utils/url"
 	"github.com/pocketbase/pocketbase/core"
 )
@@ -37,22 +42,43 @@ func (s PublicSession) AddedIDs() map[string]bool {
 // bearer token. Any draft read failure yields an empty tray and added set
 // rather than an error, so the projection stays safe and non-blocking.
 func projectFromToken(app core.App, token string) PublicSession {
+	session, err := loadSession(context.Background(), app, token)
+	if err != nil {
+		return PublicSession{
+			CSRF: itineraryworkflow.CSRFToken(token),
+			Tray: dto.ItineraryTrayView{BuilderURL: "/itineraries/new"},
+		}
+	}
+	return session
+}
+
+// loadSession reads the session's tray and added state once, for responses
+// that render both. A missing draft is an empty session; other read failures
+// and cancellation are returned. Cancellation is checked before each material
+// read so an abandoned request stops consuming database work.
+func loadSession(ctx context.Context, app core.App, token string) (PublicSession, error) {
 	session := PublicSession{
 		CSRF: itineraryworkflow.CSRFToken(token),
 		Tray: dto.ItineraryTrayView{BuilderURL: "/itineraries/new"},
 	}
 
-	owner := itineraryworkflow.OwnerDigest(token)
-
-	draft, err := itineraryworkflow.FindDraft(app, owner)
+	if err := requestprotection.Checkpoint(ctx, "itineraries.session.draft"); err != nil {
+		return session, err
+	}
+	draft, err := itineraryworkflow.FindDraft(app, itineraryworkflow.OwnerDigest(token))
+	if errors.Is(err, sql.ErrNoRows) {
+		return session, nil
+	}
 	if err != nil {
-		// No draft yet: carry the CSRF but no tray or added state.
-		return session
+		return session, err
 	}
 
+	if err := requestprotection.Checkpoint(ctx, "itineraries.session.stops"); err != nil {
+		return session, err
+	}
 	stops, err := itineraryworkflow.LoadStops(app, draft.Id)
 	if err != nil {
-		return session
+		return session, err
 	}
 
 	session.added = make(map[string]bool, len(stops))
@@ -65,6 +91,9 @@ func projectFromToken(app core.App, token string) PublicSession {
 		if index >= 3 {
 			continue
 		}
+		if err := requestprotection.Checkpoint(ctx, "itineraries.session.thumbs"); err != nil {
+			return session, err
+		}
 
 		artwork, err := app.FindRecordById(constants.CollectionArtworks, artworkID)
 		if err != nil || artwork.GetString("image") == "" {
@@ -73,5 +102,5 @@ func projectFromToken(app core.App, token string) PublicSession {
 		session.Tray.Thumbs = append(session.Tray.Thumbs, url.GenerateArtworkImageURL(artwork, url.DeliveryProfileItineraryTray, ""))
 	}
 
-	return session
+	return session, nil
 }

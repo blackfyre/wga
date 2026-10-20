@@ -1,6 +1,7 @@
 package itineraries
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -267,5 +268,22 @@ func TestConfirmationPageRendersTheVisitorTray(t *testing.T) {
 	}
 	if !strings.Contains(body, `data-itinerary-count="1"`) || strings.Contains(body, `hx-get="/itineraries/session"`) {
 		t.Errorf("confirmation page must render the visitor tray on the server")
+	}
+}
+
+func TestSessionTrayStopsWhenTheRequestIsCancelled(t *testing.T) {
+	_, mux := newItineraryMux(t)
+	cookie, csrf := sessionForMux(t, mux)
+	postForm(t, mux, "/itineraries/draft/add", cookie, csrf, url.Values{"artwork_id": {testArtworkID}})
+
+	requestCtx, cancel := context.WithCancel(context.Background())
+	cancel()
+	request := httptest.NewRequest(http.MethodGet, "/itineraries/session", nil).WithContext(requestCtx)
+	request.AddCookie(cookie)
+	response := httptest.NewRecorder()
+	mux.ServeHTTP(response, request)
+
+	if strings.Contains(response.Body.String(), `id="itinerary-tray"`) {
+		t.Fatalf("cancelled session fragment still rendered the tray (status %d)", response.Code)
 	}
 }

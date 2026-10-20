@@ -224,6 +224,9 @@ func TestPlainProtectionResponsesAreMinimalExpectedOutcomes(t *testing.T) {
 			if got := response.Header().Get("Retry-After"); got != test.wantRetryAfter {
 				t.Fatalf("Retry-After = %q; want %q", got, test.wantRetryAfter)
 			}
+			if got := response.Header().Get("Cache-Control"); got != "private, no-store" {
+				t.Fatalf("Cache-Control = %q; want private, no-store", got)
+			}
 			if !requestfailure.IsExpectedResponse(event) {
 				t.Fatal("protection response was not marked as an expected outcome")
 			}

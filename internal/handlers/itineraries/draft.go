@@ -2,6 +2,7 @@ package itineraries
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"errors"
 	"net/http"
@@ -127,19 +128,15 @@ func renderBuilder(app core.App, c *core.RequestEvent, owner string, token strin
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
-	tray, err := loadTrayView(app, owner)
+	// The out-of-band tray carries the token and added IDs that add controls on
+	// stateless catalogue fragments read after later swaps.
+	// The mutation has already been written, so its response is not cancelled.
+	session, err := loadSession(context.Background(), app, token)
 	if err != nil {
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
-
-	// The out-of-band tray carries the token and added IDs that add controls on
-	// stateless catalogue fragments read after later swaps.
-	ctxb := tmplUtils.WithItineraryProjection(
-		tmplUtils.ContextFromRequest(c.Request),
-		itineraryworkflow.CSRFToken(token),
-		tray,
-		projectFromToken(app, token).AddedIDs(),
-	)
+	tray := session.Tray
+	ctxb := tmplUtils.WithItineraryProjection(tmplUtils.ContextFromRequest(c.Request), session.CSRF, tray, session.AddedIDs())
 
 	var buf bytes.Buffer
 	if err := pages.ItineraryBuilder(view, false).Render(ctxb, &buf); err != nil {
@@ -171,17 +168,13 @@ func respondBuilder(app core.App, c *core.RequestEvent, owner string, token stri
 // tray's clear action working under the same session CSRF contract. The OOB
 // builder embeds its own token through the builder view.
 func renderTrayWithBuilder(app core.App, c *core.RequestEvent, owner string, token string, state builderState) error {
-	tray, err := loadTrayView(app, owner)
+	// The mutation has already been written, so its response is not cancelled.
+	session, err := loadSession(context.Background(), app, token)
 	if err != nil {
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
-
-	ctxb := tmplUtils.WithItineraryProjection(
-		tmplUtils.ContextFromRequest(c.Request),
-		itineraryworkflow.CSRFToken(token),
-		tray,
-		projectFromToken(app, token).AddedIDs(),
-	)
+	tray := session.Tray
+	ctxb := tmplUtils.WithItineraryProjection(tmplUtils.ContextFromRequest(c.Request), session.CSRF, tray, session.AddedIDs())
 
 	var buf bytes.Buffer
 	if err := components.ItineraryTray(tray, false).Render(ctxb, &buf); err != nil {

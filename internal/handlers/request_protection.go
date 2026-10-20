@@ -91,6 +91,8 @@ func protectPublicRead(app core.App, environment config.Environment, canonicalHo
 }
 
 func plainProtectionResponse(e *core.RequestEvent, status int, retryAfter time.Duration) error {
+	// Rejections are per-client outcomes and never shareable.
+	e.Response.Header().Set("Cache-Control", "private, no-store")
 	if retryAfter > 0 {
 		seconds := (retryAfter + time.Second - 1) / time.Second
 		e.Response.Header().Set("Retry-After", strconv.FormatInt(int64(seconds), 10))
