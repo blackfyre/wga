@@ -28,7 +28,7 @@ The system SHALL emit structured telemetry for rejected admission, observe-mode 
 
 ### Requirement: Public request volume does not amplify persistent log writes
 
-The system SHALL NOT persist a request activity log for a request that completes without an error, including a request rejected by admission, and SHALL retain persisted logs for at most 7 days. Requests that fail with an error SHALL continue to be persisted.
+The system SHALL NOT persist a request activity log for a request that completes without an error and with a status below 500, or that admission rejects as an expected outcome, and SHALL retain persisted logs for at most 7 days. Requests that fail with an error or end in any other 5xx response SHALL continue to be persisted.
 
 #### Scenario: Public request succeeds
 
@@ -43,6 +43,11 @@ The system SHALL NOT persist a request activity log for a request that completes
 #### Scenario: Request fails with an error
 
 - **WHEN** a request handler returns an error
+- **THEN** the request activity log record is persisted
+
+#### Scenario: Handler renders a server fault
+
+- **WHEN** a request handler renders a 5xx response without returning an error
 - **THEN** the request activity log record is persisted
 
 #### Scenario: Logs age beyond retention

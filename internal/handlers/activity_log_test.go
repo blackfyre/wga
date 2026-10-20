@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/blackfyre/wga/internal/requestfailure"
 	"github.com/blackfyre/wga/internal/testutils"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tests"
@@ -20,8 +21,10 @@ func TestFailureOnlyActivityLogPersistsOnlyFailedRequests(t *testing.T) {
 	}{
 		{name: "successful request without the middleware", url: "/ok", status: http.StatusOK, unbounded: true, wantLog: true},
 		{name: "successful request", url: "/ok", status: http.StatusOK},
-		{name: "short-circuited rejection", url: "/rejected", status: http.StatusServiceUnavailable},
+		{name: "unmarked 503 is a fault", url: "/rejected", status: http.StatusServiceUnavailable, wantLog: true},
 		{name: "failed request", url: "/missing", status: http.StatusNotFound, wantLog: true},
+		{name: "server fault rendered without an error", url: "/fault", status: http.StatusInternalServerError, wantLog: true},
+		{name: "expected protection rejection", url: "/expected", status: http.StatusServiceUnavailable},
 	}
 
 	for _, test := range cases {
@@ -41,7 +44,13 @@ func TestFailureOnlyActivityLogPersistsOnlyFailedRequests(t *testing.T) {
 					}
 					app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 						se.Router.BindFunc(func(e *core.RequestEvent) error {
-							if e.Request.URL.Path == "/rejected" {
+							switch e.Request.URL.Path {
+							case "/rejected":
+								return e.String(http.StatusServiceUnavailable, "Service Unavailable\n")
+							case "/fault":
+								return e.String(http.StatusInternalServerError, "fault")
+							case "/expected":
+								requestfailure.MarkExpectedResponse(e)
 								return e.String(http.StatusServiceUnavailable, "Service Unavailable\n")
 							}
 							return e.Next()

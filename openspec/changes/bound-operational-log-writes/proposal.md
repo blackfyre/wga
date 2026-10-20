@@ -6,7 +6,7 @@ A distributed client flooded `/dual-mode` from rotating residential addresses at
 
 ## What Changes
 
-- Persist PocketBase request activity logs only for requests that fail with an error; successful and admission-rejected requests no longer write a request log row. Other application logs, such as scheduled-run outcomes, keep their current levels and persistence.
+- Persist PocketBase request activity logs only for failed requests: successful requests and expected admission rejections no longer write a request log row, while errors and other 5xx responses still do. Other application logs, such as scheduled-run outcomes, keep their current levels and persistence.
 - Retain persisted logs for 7 days instead of 30.
 - Emit protection decision and cancellation events at most once per event, route profile, and interval, with the number of suppressed events. Admission metrics remain exact.
 
