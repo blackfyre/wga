@@ -94,8 +94,8 @@ func TestArtistSelectionPreviewCancellationStopsLoopExpansion(t *testing.T) {
 		return requestprotection.Checkpoint(ctx, stage)
 	}
 
-	if _, err := buildSelectionPreviewsContext(ctx, app, artist, 2, checkpoint); !errors.Is(err, context.Canceled) {
-		t.Fatalf("buildSelectionPreviewsContext() error = %v, want cancellation", err)
+	if _, _, err := buildArtistSelectionsContext(ctx, app, artist, 2, checkpoint); !errors.Is(err, context.Canceled) {
+		t.Fatalf("buildArtistSelectionsContext() error = %v, want cancellation", err)
 	}
 	want := []string{
 		"artist.detail.selection_count",

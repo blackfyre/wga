@@ -669,6 +669,118 @@ func TestArtistRecordViewBuildsSelectionPreviewsAboveThreshold(t *testing.T) {
 	}
 }
 
+func TestArtistRecordViewKeepsPreviewsBelowLargeHoldingThreshold(t *testing.T) {
+	app := newArtistRecordApp(t)
+	seedPublishedArtist(t, app)
+	for i := 1; i <= largeHoldingSelectionThreshold-1; i++ {
+		saveSelectionRecord(t, app, fmt.Sprintf("rselect%08d", i), fmt.Sprintf("Drawings (15%02d)", i), "<p>A lede.</p>", []string{"artworkone00001"})
+	}
+
+	artist, err := repositoriesFindPublishedArtist(app, "artistone000001")
+	if err != nil {
+		t.Fatalf("find artist: %v", err)
+	}
+	view, err := buildArtistRecordView(app, artist, app.Logger())
+	if err != nil {
+		t.Fatalf("build view: %v", err)
+	}
+
+	if len(view.Selections) != largeHoldingSelectionThreshold-1 {
+		t.Fatalf("previews = %d, want %d", len(view.Selections), largeHoldingSelectionThreshold-1)
+	}
+	if len(view.SelectionForms) != 0 {
+		t.Fatalf("selection forms = %d, want none below the threshold", len(view.SelectionForms))
+	}
+	if !view.Selections[0].HasCommentary {
+		t.Error("previews below the threshold must keep their commentary")
+	}
+}
+
+func TestArtistRecordViewGroupsLargeHoldingByForm(t *testing.T) {
+	app := newArtistRecordApp(t)
+	seedPublishedArtist(t, app)
+	// Published order is display title then id: three "Drawings" selections
+	// (one in lower case) share a form, "Etchings" holds one selection whose
+	// only work has no image, and the rest parse into forms of their own.
+	saveSelectionRecord(t, app, "rselect00000001", "Drawings (1484-1499)", "<p>A lede.</p>", []string{"artworkone00001", "artworktwo00001"})
+	saveSelectionRecord(t, app, "rselect00000002", "Drawings (1500-1505)", "", []string{"artworkone00001"})
+	saveSelectionRecord(t, app, "rselect00000003", "Etchings", "", []string{"artworktwo00001"})
+	saveSelectionRecord(t, app, "rselect00000004", "Paintings: Early", "", []string{"artworkone00001"})
+	saveSelectionRecord(t, app, "rselect00000005", "Paintings: Late", "", []string{"artworkone00001", "artworktwo00001"})
+	saveSelectionRecord(t, app, "rselect00000006", "Sculpture", "", []string{"artworkone00001"})
+	saveSelectionRecord(t, app, "rselect00000007", "Studies (1)", "", []string{"artworkone00001"})
+	saveSelectionRecord(t, app, "rselect00000008", "Studies (2)", "", []string{"artworkone00001"})
+	saveSelectionRecord(t, app, "rselect00000009", "Woodcuts (1489-1500)", "", []string{"artworkone00001"})
+	saveSelectionRecord(t, app, "rselect00000010", "drawings (1506-1510)", "", []string{"artworkone00001", "artworktwo00001"})
+
+	artist, err := repositoriesFindPublishedArtist(app, "artistone000001")
+	if err != nil {
+		t.Fatalf("find artist: %v", err)
+	}
+	view, err := buildArtistRecordView(app, artist, app.Logger())
+	if err != nil {
+		t.Fatalf("build view: %v", err)
+	}
+
+	if len(view.Selections) != 0 {
+		t.Fatalf("previews = %d, want none for a large holding", len(view.Selections))
+	}
+
+	type formSummary struct {
+		Name       string
+		Selections int
+		Works      int
+	}
+	got := []formSummary{}
+	for _, form := range view.SelectionForms {
+		got = append(got, formSummary{form.Name, form.SelectionCount, form.WorkCount})
+	}
+	want := []formSummary{
+		{"Drawings", 3, 5},
+		{"Etchings", 1, 1},
+		{"Paintings", 2, 3},
+		{"Sculpture", 1, 1},
+		{"Studies", 2, 2},
+		{"Woodcuts", 1, 1},
+	}
+	if fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Fatalf("forms = %v, want %v", got, want)
+	}
+
+	drawings := view.SelectionForms[0]
+	if drawings.AnchorID != "form-rselect00000001" {
+		t.Errorf("drawings anchor = %q, want form-rselect00000001", drawings.AnchorID)
+	}
+	labels := []string{}
+	for _, tile := range drawings.Selections {
+		labels = append(labels, tile.Label)
+	}
+	if want := []string{"1484–1499", "1500–1505", "1506–1510"}; fmt.Sprint(labels) != fmt.Sprint(want) {
+		t.Errorf("drawings labels = %v, want %v", labels, want)
+	}
+	first := drawings.Selections[0]
+	if want := "/artists/synthetic-artist-artistone000001/selections/rselect00000001"; first.URL != want {
+		t.Errorf("tile URL = %q, want %q", first.URL, want)
+	}
+	if first.AnchorID != "selection-rselect00000001" {
+		t.Errorf("tile anchor = %q, want selection-rselect00000001", first.AnchorID)
+	}
+	if first.WorkCount != 2 {
+		t.Errorf("tile work count = %d, want 2", first.WorkCount)
+	}
+	if !strings.Contains(first.Cover, "alpha") {
+		t.Errorf("tile cover = %q, want the first work's image", first.Cover)
+	}
+
+	etchings := view.SelectionForms[1]
+	if etchings.Selections[0].Cover != "" {
+		t.Errorf("etchings cover = %q, want none when the first work has no image", etchings.Selections[0].Cover)
+	}
+	if etchings.Selections[0].Label != "Etchings" {
+		t.Errorf("unparsed tile label = %q, want the full title", etchings.Selections[0].Label)
+	}
+}
+
 func TestArtistRecordViewOmitsPreviewsBelowThreshold(t *testing.T) {
 	for _, selections := range []int{0, 1} {
 		t.Run(string(rune('0'+selections)), func(t *testing.T) {

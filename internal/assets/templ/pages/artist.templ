@@ -2,6 +2,7 @@ package pages
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/blackfyre/wga/internal/assets/templ/components"
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
@@ -27,6 +28,10 @@ type ArtistView struct {
 	WorkCount       int
 	WorksURL        string // wider /artworks?artist_id= catalogue route
 	Selections      []SelectionPreview
+	// SelectionForms is the form-grouped selection index of a large holding.
+	// When it is set, Selections is empty and the record renders the index in
+	// place of previews.
+	SelectionForms  []SelectionIndexForm
 	Music           components.MusicPeriodCard
 	Citation        components.Citation
 	Jsonld          string
@@ -44,6 +49,25 @@ type SelectionPreview struct {
 	Commentary      string // sanitized editorial HTML, or ""
 	HasCommentary   bool
 	Works           []dto.Image // bounded representative works
+}
+
+// SelectionIndexForm is one form block of a large holding's selection index.
+// All URLs and anchors are resolved by the owning handler.
+type SelectionIndexForm struct {
+	Name           string
+	AnchorID       string // stable in-page target of the form block
+	SelectionCount int
+	WorkCount      int // total works held by the form's selections
+	Selections     []SelectionTile
+}
+
+// SelectionTile is one selection's square tile in a form block.
+type SelectionTile struct {
+	URL       string // stable /artists/{slug}-{id}/selections/{id} route
+	AnchorID  string // stable in-page target of the tile
+	Label     string // qualifier, or the full display title when it has none
+	WorkCount int
+	Cover     string // complete cover image URL, or "" when none resolves
 }
 
 templ ArtistRecordPage(view ArtistView) {
@@ -93,7 +117,9 @@ templ ArtistRecordContent(view ArtistView) {
 				if view.Music.PlayerURL != "" {
 					@components.MusicPeriodPlayerCard(view.Music.SongID, view.Music.Piece, view.Music.PlayerURL)
 				}
-				if hasCuratedSelections(view) {
+				if isLargeHolding(view) {
+					@selectionIndexRail(view.SelectionForms)
+				} else if hasCuratedSelections(view) {
 					<nav class="mt-7 border-t border-wga-ink/15 pt-5" aria-label="On this page">
 						<p class="mb-3 font-mono text-(length:--t-11) tracking-[1.5px] text-wga-ink/60">ON THIS PAGE</p>
 						<ul class="space-y-2 text-(length:--t-13) leading-snug">
@@ -113,7 +139,9 @@ templ ArtistRecordContent(view ArtistView) {
 						@templ.Raw(view.Bio)
 					</div>
 				</section>
-				if hasCuratedSelections(view) {
+				if isLargeHolding(view) {
+					@selectionIndexForms(view.SelectionForms)
+				} else if hasCuratedSelections(view) {
 					<section class="mt-11 max-w-[860px]" aria-labelledby="artist-selections">
 						<h2 id="artist-selections" class="mb-6 border-t border-wga-ink/15 pt-[18px] font-mono text-(length:--t-11) tracking-[1.5px]">CURATED SELECTIONS</h2>
 						for _, selection := range view.Selections {
@@ -186,7 +214,94 @@ func artistMetaEntries(view ArtistView) []components.MetaEntry {
 }
 
 func hasCuratedSelections(view ArtistView) bool {
-	return len(view.Selections) > 1
+	return len(view.Selections) > 1 || isLargeHolding(view)
+}
+
+// isLargeHolding reports whether the record renders the form-grouped selection
+// index; the handler sets SelectionForms only from the large-holding threshold.
+func isLargeHolding(view ArtistView) bool {
+	return len(view.SelectionForms) > 0
+}
+
+// selectionIndexRail renders a large holding's ON THIS PAGE rail: Biography,
+// one row per form, then Cite This Record. A form with several selections
+// lists them open, so every entry is reachable without JavaScript; the
+// selection-index module adds the fold controls.
+templ selectionIndexRail(forms []SelectionIndexForm) {
+	<nav class="mt-7 border-t border-wga-ink/15 pt-5" aria-label="On this page" data-selection-index>
+		<p class="mb-3 font-mono text-(length:--t-11) tracking-[1.5px] text-wga-ink/60">ON THIS PAGE</p>
+		<ul class="space-y-2 text-(length:--t-13) leading-snug">
+			<li><a href="#biography" class="hover:text-wga-accent">Biography</a></li>
+			for _, form := range forms {
+				<li class="wga-selection-index-form" data-selection-index-form={ form.AnchorID }>
+					<div class="flex items-baseline justify-between gap-2" data-selection-index-row>
+						<a href={ templ.SafeURL("#" + form.AnchorID) } class="min-w-0 font-mono text-(length:--t-11) tracking-[1px] hover:text-wga-accent aria-[current=location]:text-wga-accent">{ selectionFormRow(form) }</a>
+					</div>
+					if len(form.Selections) > 1 {
+						<ul id={ selectionFormEntriesID(form) } class="mt-2 mb-1 grid grid-cols-2 gap-x-3 gap-y-1 border-l border-wga-ink/15 pl-3 text-(length:--t-12)" data-selection-index-entries>
+							for _, tile := range form.Selections {
+								<li class="min-w-0"><a href={ templ.SafeURL("#" + tile.AnchorID) } class="wrap-anywhere hover:text-wga-accent">{ tile.Label }</a></li>
+							}
+						</ul>
+					}
+				</li>
+			}
+			<li><a href="#cite-this-record" class="hover:text-wga-accent">Cite This Record</a></li>
+		</ul>
+	</nav>
+}
+
+// selectionIndexForms renders a large holding's main-column index: one block
+// per form, each with its totals and a grid of square tiles that open the
+// selection routes.
+templ selectionIndexForms(forms []SelectionIndexForm) {
+	<div class="mt-11 max-w-[860px]" data-selection-index-blocks>
+		for _, form := range forms {
+			<section id={ form.AnchorID } class="mb-10 scroll-mt-6" aria-labelledby={ form.AnchorID + "-heading" } data-selection-index-block>
+				<div class="mb-4 flex items-baseline justify-between gap-4 border-t border-wga-ink/15 pt-[18px]">
+					<h2 id={ form.AnchorID + "-heading" } class="text-(length:--t-22) font-semibold leading-tight">{ form.Name }</h2>
+					<p class="shrink-0 font-mono text-(length:--t-10) tracking-[1px] text-wga-ink/60">{ selectionFormTotals(form) }</p>
+				</div>
+				<ul class="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 md:grid-cols-4">
+					for _, tile := range form.Selections {
+						<li id={ tile.AnchorID } class="min-w-0 scroll-mt-6">
+							<a href={ templ.URL(tile.URL) } hx-get={ tile.URL } class="wga-record-card">
+								@components.Plate(dto.Plate{DisplayURL: tile.Cover, Alt: "", Placeholder: form.Name, Aspect: "aspect-square mb-2.5"})
+								<span class="block wrap-anywhere text-sm font-semibold leading-tight">{ tile.Label }</span>
+								<span class="mt-[3px] block font-mono text-(length:--t-11) leading-relaxed text-wga-ink/60">{ workCountLabel(tile.WorkCount) }</span>
+							</a>
+						</li>
+					}
+				</ul>
+			</section>
+		}
+	</div>
+}
+
+func selectionFormEntriesID(form SelectionIndexForm) string {
+	return form.AnchorID + "-entries"
+}
+
+// selectionFormRow is a form's rail row, for example "DRAWINGS · 7 SEL · 84".
+func selectionFormRow(form SelectionIndexForm) string {
+	return strings.ToUpper(form.Name) + " · " + strconv.Itoa(form.SelectionCount) + " SEL · " + strconv.Itoa(form.WorkCount)
+}
+
+// selectionFormTotals is a form block's header, for example
+// "2 SELECTIONS · 27 WORKS".
+func selectionFormTotals(form SelectionIndexForm) string {
+	return countLabel(form.SelectionCount, "SELECTION", "SELECTIONS") + " · " + countLabel(form.WorkCount, "WORK", "WORKS")
+}
+
+func workCountLabel(count int) string {
+	return countLabel(count, "work", "works")
+}
+
+func countLabel(count int, singular string, plural string) string {
+	if count == 1 {
+		return "1 " + singular
+	}
+	return strconv.Itoa(count) + " " + plural
 }
 
 func artistPeriodSuffix(view ArtistView) string {
