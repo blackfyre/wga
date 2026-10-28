@@ -5,6 +5,7 @@ import {
 } from "./dynamic-module-recovery";
 import { registerItineraryKeyboard } from "./itinerary";
 import { registerSearchPrefs } from "./search-prefs";
+import { registerSelectionIndex } from "./selection-index";
 import {
 	captureTestMessage,
 	initialiseSentry,
@@ -20,6 +21,9 @@ registerItineraryKeyboard();
 // Apply the remembered artwork search actions setting before the bootstrap
 // chunk loads, so a visitor without a cookie sees no late toggle change.
 registerSearchPrefs();
+// Fold a large-holding artist rail and track the form being read. The binder
+// is idempotent and a no-op on pages without that rail.
+registerSelectionIndex();
 if (window.location.pathname === "/sentry-test") {
 	if (sentryReady) {
 		captureTestMessage();

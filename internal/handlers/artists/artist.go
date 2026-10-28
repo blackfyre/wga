@@ -436,7 +436,7 @@ func buildArtistRecordViewContext(ctx context.Context, app *pocketbase.PocketBas
 		return pages.ArtistView{}, err
 	}
 	stepStarted = time.Now()
-	selections, err := buildSelectionPreviewsContext(ctx, app, artist, workCount, checkpoint)
+	selections, selectionForms, err := buildArtistSelectionsContext(ctx, app, artist, workCount, checkpoint)
 	if err != nil {
 		logArtistRecordStepFailure(logger, "build_selection_previews", stepStarted, err)
 		return pages.ArtistView{}, err
@@ -505,6 +505,7 @@ func buildArtistRecordViewContext(ctx context.Context, app *pocketbase.PocketBas
 		WorkCount:       workCount,
 		WorksURL:        buildArtistWorksURL(artist.Id),
 		Selections:      selections,
+		SelectionForms:  selectionForms,
 		Music:           buildRecordMusic(periodSong),
 		Citation:        buildArtistCitation(artist, expectedSlug),
 		Jsonld:          fmt.Sprintf(`<script type="application/ld+json">%s</script>`, marshalled),
@@ -648,45 +649,57 @@ func buildArtistNameWorksURL(filingName string) string {
 // the dedicated selection route.
 const selectionPreviewWorkLimit = 4
 
-// buildSelectionPreviewsContext assembles the artist record's selection
-// previews. It returns previews only when the artist has more than one
-// published source-backed selection, so a single selection never distorts the
-// ordinary works holding. Each preview carries the supplied display title,
-// selected and catalogued counts, sanitised commentary, bounded representative
-// works, and the stable selection route.
-func buildSelectionPreviewsContext(ctx context.Context, app *pocketbase.PocketBase, artist *core.Record, workCount int, checkpoint artistDetailCheckpoint) ([]pages.SelectionPreview, error) {
+// buildArtistSelectionsContext assembles the artist record's selection
+// presentation from its published source-backed selections. An artist with
+// fewer than two selections gets neither presentation, so a single selection
+// never distorts the ordinary works holding. From two selections up to the
+// large-holding threshold it returns previews: each carries the supplied
+// display title, selected and catalogued counts, sanitised commentary, bounded
+// representative works, and the stable selection route. From the threshold it
+// returns the form-grouped selection index instead, without loading preview
+// plates or sanitising commentary.
+func buildArtistSelectionsContext(ctx context.Context, app *pocketbase.PocketBase, artist *core.Record, workCount int, checkpoint artistDetailCheckpoint) ([]pages.SelectionPreview, []pages.SelectionIndexForm, error) {
 	repo := repositories.NewArtistSelectionsRepository(app)
 
 	if err := checkpoint(ctx, "artist.detail.selection_count"); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	count, err := repo.CountPublishedSelections(artist.Id)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if count <= 1 {
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	if err := checkpoint(ctx, "artist.detail.selections"); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	selections, err := repo.ListPublishedSelections(artist.Id, 0)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	slug := utils.GenerateArtistSlug(artist)
-	previews := make([]pages.SelectionPreview, 0, len(selections))
+	selectionWorks := make([][]*core.Record, 0, len(selections))
 	for _, selection := range selections {
 		if err := checkpoint(ctx, "artist.detail.selection_works"); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		works, err := repo.ListSelectionArtworks(artist.Id, selection)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
+		selectionWorks = append(selectionWorks, works)
+	}
 
+	slug := utils.GenerateArtistSlug(artist)
+	if len(selections) >= largeHoldingSelectionThreshold {
+		return nil, buildSelectionIndexForms(artist, slug, selections, selectionWorks), nil
+	}
+
+	previews := make([]pages.SelectionPreview, 0, len(selections))
+	for i, selection := range selections {
+		works := selectionWorks[i]
 		commentary := sanitizeSelectionCommentary(selection.GetString("commentary"))
 		previews = append(previews, pages.SelectionPreview{
 			URL:             buildSelectionURL(slug, selection.Id),
@@ -700,7 +713,53 @@ func buildSelectionPreviewsContext(ctx context.Context, app *pocketbase.PocketBa
 		})
 	}
 
-	return previews, nil
+	return previews, nil, nil
+}
+
+// buildSelectionIndexForms maps a large holding's ordered selections and their
+// works onto the form-grouped index. Each form's anchor derives from its first
+// selection's id, and each tile's cover is its selection's first work when that
+// work has an image.
+func buildSelectionIndexForms(artist *core.Record, slug string, selections []*core.Record, selectionWorks [][]*core.Record) []pages.SelectionIndexForm {
+	titles := make([]selectionTitle, len(selections))
+	for i, selection := range selections {
+		titles[i] = selectionTitle{Title: selection.GetString("display_title"), WorkCount: len(selectionWorks[i])}
+	}
+
+	grouped := groupSelectionsByForm(titles)
+	forms := make([]pages.SelectionIndexForm, 0, len(grouped))
+	for _, form := range grouped {
+		tiles := make([]pages.SelectionTile, 0, len(form.Selections))
+		for _, entry := range form.Selections {
+			selection := selections[entry.Index]
+			tiles = append(tiles, pages.SelectionTile{
+				URL:       buildSelectionURL(slug, selection.Id),
+				AnchorID:  "selection-" + selection.Id,
+				Label:     entry.Label,
+				WorkCount: entry.WorkCount,
+				Cover:     selectionCoverImage(artist, selectionWorks[entry.Index]),
+			})
+		}
+		forms = append(forms, pages.SelectionIndexForm{
+			Name:           form.Name,
+			AnchorID:       "form-" + selections[form.Selections[0].Index].Id,
+			SelectionCount: len(form.Selections),
+			WorkCount:      form.WorkTotal,
+			Selections:     tiles,
+		})
+	}
+
+	return forms
+}
+
+// selectionCoverImage resolves a selection's cover from its first work through
+// the record-card image path, or returns "" when that work has no image.
+func selectionCoverImage(artist *core.Record, works []*core.Record) string {
+	if len(works) == 0 || works[0].GetString("image") == "" {
+		return ""
+	}
+
+	return buildRecordWorkImages(artist, works[:1])[0].Image
 }
 
 // capSelectionPreviewWorks bounds the representative works shown in a preview.
