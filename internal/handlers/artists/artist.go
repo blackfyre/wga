@@ -709,7 +709,7 @@ func buildArtistSelectionsContext(ctx context.Context, app *pocketbase.PocketBas
 			CataloguedCount: workCount,
 			Commentary:      commentary,
 			HasCommentary:   commentary != "",
-			Works:           buildRecordWorkImages(artist, capSelectionPreviewWorks(works)),
+			Works:           buildSelectionWorkImages(app, artist, capSelectionPreviewWorks(works)),
 		})
 	}
 

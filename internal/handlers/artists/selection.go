@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/blackfyre/wga/internal/artworks"
 	"github.com/blackfyre/wga/internal/assets/templ/components"
+	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
 	"github.com/blackfyre/wga/internal/logging"
@@ -144,7 +146,7 @@ func buildSelectionViewContext(ctx context.Context, app *pocketbase.PocketBase, 
 		Context:          selection.GetString("context"),
 		Commentary:       commentary,
 		HasCommentary:    commentary != "",
-		Works:            buildRecordWorkImages(artist, works),
+		Works:            buildSelectionWorkImages(app, artist, works),
 		WorkCount:        len(works),
 		OtherSelections:  otherSelections,
 		HoldingURL:       buildArtistNameWorksURL(artist.GetString("filing_name")),
@@ -152,6 +154,20 @@ func buildSelectionViewContext(ctx context.Context, app *pocketbase.PocketBase, 
 		Citation:         buildSelectionCitation(artist, selection),
 		ShowBreadcrumbs:  true,
 	}, nil
+}
+
+// buildSelectionWorkImages maps selection works onto selection plates: the
+// canonical record-card projection plus each work's stored current holding,
+// resolved in one lookup. Works without a resolvable holding keep an empty
+// location, so the plate omits the line.
+func buildSelectionWorkImages(app core.App, artist *core.Record, works []*core.Record) dto.ImageGrid {
+	images := buildRecordWorkImages(artist, works)
+	locations := artworks.CurrentLocations(app, works)
+	for i := range images {
+		images[i].Location = locations[images[i].Id]
+	}
+
+	return images
 }
 
 // buildSelectionCitation builds the canonical BibTeX citation for a selection.

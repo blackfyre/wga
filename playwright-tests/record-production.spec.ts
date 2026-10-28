@@ -57,9 +57,7 @@ test.describe("curated records without JavaScript", () => {
 		await expect(
 			page.getByRole("link", { name: /VIEW FULL HOLDING/ }),
 		).toHaveAttribute("href", curatedArtist.holdingPath);
-		await expect(
-			page.locator("ul.grid.grid-cols-2.md\\:grid-cols-4"),
-		).toHaveCount(1);
+		await expect(page.locator("ul[data-selection-plate-grid]")).toHaveCount(1);
 
 		await page.goto(unavailableSelectionPath);
 		await expect(
