@@ -60,7 +60,7 @@ func TestParseDualStateDefaults(t *testing.T) {
 	if state.left.renderTo != "right" || state.right.renderTo != "left" {
 		t.Fatalf("default link routing should target the other pane, got %q/%q", state.left.renderTo, state.right.renderTo)
 	}
-	if state.left.index.view != viewList || state.left.index.sort != sortAZ {
+	if state.left.index.view != viewGrid || state.left.index.sort != sortAZ {
 		t.Fatalf("default index state = %+v", state.left.index)
 	}
 }
@@ -126,14 +126,14 @@ func TestParseDualIndexBounds(t *testing.T) {
 		{raw: "l_letter=1", letter: ""},
 		{raw: "l_view=list", view: viewList},
 		{raw: "l_view=grid", view: viewGrid},
-		{raw: "l_view=table", view: viewList},
+		{raw: "l_view=table", view: viewGrid},
 		{raw: "l_sort=za", sort: sortZA},
 		{raw: "l_sort=birth", sort: sortBirth},
 		{raw: "l_sort=weird", sort: sortAZ},
 	}
 
 	for _, test := range tests {
-		idx := parseDualIndex(mustParseQuery(t, test.raw), "l")
+		idx := parseDualIndex(mustParseQuery(t, test.raw), "l", viewGrid)
 		if test.letter != "" && idx.letter != test.letter {
 			t.Errorf("%q letter = %q, want %q", test.raw, idx.letter, test.letter)
 		}
@@ -147,7 +147,7 @@ func TestParseDualIndexBounds(t *testing.T) {
 }
 
 func TestParseDualBornYearReordersInvertedRange(t *testing.T) {
-	idx := parseDualIndex(mustParseQuery(t, "l_born_from=1700&l_born_to=1600"), "l")
+	idx := parseDualIndex(mustParseQuery(t, "l_born_from=1700&l_born_to=1600"), "l", viewGrid)
 	if idx.bornFrom != 1600 || idx.bornTo != 1700 {
 		t.Fatalf("inverted range not reordered: %+v", idx)
 	}
@@ -166,11 +166,11 @@ func TestDualStatePathOmitsDefaults(t *testing.T) {
 		left: dualPaneState{
 			path:     "/artists/aaa-bbb",
 			renderTo: "right",
-			index:    dualIndexState{view: viewList, sort: sortAZ},
+			index:    dualIndexState{view: viewGrid, sort: sortAZ},
 		},
 		right: dualPaneState{
 			renderTo: "left",
-			index:    dualIndexState{view: viewList, sort: sortAZ},
+			index:    dualIndexState{view: viewGrid, sort: sortAZ},
 		},
 	}
 
@@ -182,19 +182,19 @@ func TestDualStatePathIsOrderedAndCanonical(t *testing.T) {
 		left: dualPaneState{
 			path:     "/artists/aaa-bbb",
 			renderTo: "right",
-			index:    dualIndexState{view: viewList, sort: sortAZ},
+			index:    dualIndexState{view: viewGrid, sort: sortAZ},
 		},
 		right: dualPaneState{
 			renderTo: "left",
 			index: dualIndexState{
 				letter: "A",
-				view:   viewGrid,
+				view:   viewList,
 				sort:   sortAZ,
 			},
 		},
 	}
 
-	assertDualPath(t, state.path(), "/dual-mode?left=%2Fartists%2Faaa-bbb&r_letter=A&r_view=grid")
+	assertDualPath(t, state.path(), "/dual-mode?left=%2Fartists%2Faaa-bbb&r_letter=A&r_view=list")
 }
 
 func TestDualStatePathRoundTrip(t *testing.T) {
@@ -289,7 +289,7 @@ func TestDualStateResetReturnsBothToIndex(t *testing.T) {
 	if reset.left.renderTo != "right" || reset.right.renderTo != "left" {
 		t.Fatal("reset should restore default link routing")
 	}
-	if reset.left.index.letter != "" || reset.right.index.view != viewList {
+	if reset.left.index.letter != "" || reset.right.index.view != viewGrid {
 		t.Fatal("reset should restore default index state")
 	}
 	if !reset.wide {
@@ -368,12 +368,12 @@ func TestHiddenFieldsExcludeVisibleFilters(t *testing.T) {
 		left: dualPaneState{
 			path:     "/artists/left-123",
 			renderTo: "right",
-			index:    dualIndexState{school: "dutch", letter: "A", view: viewList, sort: sortAZ},
+			index:    dualIndexState{school: "dutch", letter: "A", view: viewGrid, sort: sortAZ},
 		},
 		right: dualPaneState{
 			path:     "/artists/right-456",
 			renderTo: "right",
-			index:    dualIndexState{period: "p1", view: viewGrid, sort: sortAZ},
+			index:    dualIndexState{period: "p1", view: viewList, sort: sortAZ},
 		},
 		wide: true,
 	}
@@ -1658,11 +1658,11 @@ func TestDualIndexTransitionsProduceCanonicalURLs(t *testing.T) {
 	state := parseDualState(neturl.Values{})
 
 	assertDualPath(t, state.withPaneIndex("left", state.left.index.withLetter("A")).path(), "/dual-mode?l_letter=A")
-	assertDualPath(t, state.withPaneIndex("left", dualIndexState{school: "dutch", view: viewList, sort: sortAZ}).path(), "/dual-mode?l_school=dutch")
-	assertDualPath(t, state.withPaneIndex("left", dualIndexState{period: "p1", view: viewList, sort: sortAZ}).path(), "/dual-mode?l_period=p1")
-	assertDualPath(t, state.withPaneIndex("left", dualIndexState{query: "van gogh", view: viewList, sort: sortAZ}).path(), "/dual-mode?l_q=van+gogh")
-	assertDualPath(t, state.withPaneIndex("left", dualIndexState{bornFrom: 1600, bornTo: 1700, view: viewList, sort: sortAZ}).path(), "/dual-mode?l_born_from=1600&l_born_to=1700")
-	assertDualPath(t, state.withPaneIndex("left", state.left.index.withView(viewGrid)).path(), "/dual-mode?l_view=grid")
+	assertDualPath(t, state.withPaneIndex("left", dualIndexState{school: "dutch", view: viewGrid, sort: sortAZ}).path(), "/dual-mode?l_school=dutch")
+	assertDualPath(t, state.withPaneIndex("left", dualIndexState{period: "p1", view: viewGrid, sort: sortAZ}).path(), "/dual-mode?l_period=p1")
+	assertDualPath(t, state.withPaneIndex("left", dualIndexState{query: "van gogh", view: viewGrid, sort: sortAZ}).path(), "/dual-mode?l_q=van+gogh")
+	assertDualPath(t, state.withPaneIndex("left", dualIndexState{bornFrom: 1600, bornTo: 1700, view: viewGrid, sort: sortAZ}).path(), "/dual-mode?l_born_from=1600&l_born_to=1700")
+	assertDualPath(t, state.withPaneIndex("left", state.left.index.withView(viewList)).path(), "/dual-mode?l_view=list")
 	assertDualPath(t, state.withPaneIndex("left", state.left.index.withSort(sortZA)).path(), "/dual-mode?l_sort=za")
 	assertDualPath(t, state.withPaneRenderTo("left", "left").path(), "/dual-mode?left_render_to=left")
 }
@@ -1671,12 +1671,12 @@ func TestDualIndexTransitionsProduceCanonicalURLs(t *testing.T) {
 // never rewrites the other pane's record state.
 func TestDualIndexTransitionPreservesOtherPane(t *testing.T) {
 	base := dualState{
-		left:  dualPaneState{renderTo: "right", index: dualIndexState{view: viewList, sort: sortAZ}},
-		right: dualPaneState{path: "/artists/right-456", renderTo: "left", index: dualIndexState{view: viewList, sort: sortAZ}},
+		left:  dualPaneState{renderTo: "right", index: dualIndexState{view: viewGrid, sort: sortAZ}},
+		right: dualPaneState{path: "/artists/right-456", renderTo: "left", index: dualIndexState{view: viewGrid, sort: sortAZ}},
 	}
 
-	changed := base.withPaneIndex("left", base.left.index.withView(viewGrid))
-	assertDualPath(t, changed.path(), "/dual-mode?l_view=grid&right=%2Fartists%2Fright-456")
+	changed := base.withPaneIndex("left", base.left.index.withView(viewList))
+	assertDualPath(t, changed.path(), "/dual-mode?l_view=list&right=%2Fartists%2Fright-456")
 }
 
 func TestNextDualSortAndLabel(t *testing.T) {

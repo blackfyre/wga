@@ -11,6 +11,7 @@ import {
 	DEFAULT_PREFS,
 	parsePrefs,
 	prefsFromHref,
+	prefsWithView,
 	registerSearchPrefs,
 	renderedPrefs,
 	STORAGE_KEY,
@@ -49,6 +50,18 @@ test("reads the addressed sort and view from a search link", () => {
 	expect(
 		prefsFromHref("/artworks", { ...current, view: "list" }, base),
 	).toEqual(current);
+});
+
+test("records a listing toggle's view and keeps the other fields", () => {
+	const current = {
+		sort: "date",
+		dir: "desc",
+		view: "grid",
+		actions: true,
+	} as const;
+	expect(prefsWithView(current, "list")).toEqual({ ...current, view: "list" });
+	expect(prefsWithView(current, "table")).toEqual(current);
+	expect(prefsWithView(current, undefined)).toEqual(current);
 });
 
 test("round-trips the cookie value", () => {
@@ -102,6 +115,15 @@ class FakeElement {
 	}
 }
 
+class FakeMouseEvent {
+	target: unknown = null;
+	button = 0;
+	metaKey = false;
+	ctrlKey = false;
+	shiftKey = false;
+	altKey = false;
+}
+
 const fakePage = () => {
 	const jar = new Map<string, string>();
 	const storage = new Map<string, string>();
@@ -111,6 +133,7 @@ const fakePage = () => {
 	const documentElement = new FakeElement();
 	Object.assign(globalThis, {
 		Element: FakeElement,
+		MouseEvent: FakeMouseEvent,
 		window: {
 			location: { protocol: "http:", href: "http://wga.test/artworks" },
 			localStorage: {
@@ -147,9 +170,14 @@ const fakePage = () => {
 			"cc_cookie",
 			encodeURIComponent(JSON.stringify({ categories: ["preferences"] })),
 		);
-	const click = (target: FakeElement) => {
+	const revokeConsent = () => {
+		jar.clear();
+		storage.clear();
+	};
+	const click = (target: FakeElement, init: Partial<FakeMouseEvent> = {}) => {
+		const event = Object.assign(new FakeMouseEvent(), init, { target });
 		for (const listener of listeners.click ?? []) {
-			listener({ target });
+			listener(event);
 		}
 	};
 	const stored = () => ({
@@ -162,6 +190,7 @@ const fakePage = () => {
 		documentElement,
 		storage,
 		grantConsent,
+		revokeConsent,
 		click,
 		stored,
 	};
@@ -203,5 +232,35 @@ describe("on the rendered search page", () => {
 		expect(page.toggle.textContent).toBe("ACTIONS ✓");
 		expect(page.stored().storage?.actions).toBe(true);
 		expect(page.stored().cookie?.actions).toBe(true);
+	});
+
+	test("a listing view toggle records its view and keeps the other fields", () => {
+		const remembered = {
+			sort: "date",
+			dir: "desc",
+			view: "grid",
+			actions: true,
+		};
+		page.grantConsent();
+		page.storage.set(STORAGE_KEY, JSON.stringify(remembered));
+		const listToggle = new FakeElement(["a[data-wga-view-pref][href]"]);
+		listToggle.dataset = { wgaViewPref: "list" };
+		page.click(listToggle);
+		const expected = { ...remembered, view: "list" };
+		expect(page.stored()).toEqual({ storage: expected, cookie: expected });
+
+		// A modified click opens another tab and records nothing.
+		const gridToggle = new FakeElement(["a[data-wga-view-pref][href]"]);
+		gridToggle.dataset = { wgaViewPref: "grid" };
+		page.click(gridToggle, { ctrlKey: true });
+		expect(page.stored()).toEqual({ storage: expected, cookie: expected });
+	});
+
+	test("a listing view toggle records nothing without consent", () => {
+		page.revokeConsent();
+		const listToggle = new FakeElement(["a[data-wga-view-pref][href]"]);
+		listToggle.dataset = { wgaViewPref: "list" };
+		page.click(listToggle);
+		expect(page.stored()).toEqual({ storage: null, cookie: null });
 	});
 });

@@ -416,6 +416,7 @@ templ dualIndexPane(w DualWindow) {
 			<a
 				href={ templ.URL(w.Index.GridHref) }
 				hx-get={ w.Index.GridHref }
+				data-wga-view-pref="grid"
 				hx-target={ w.SelfSel }
 				hx-select={ w.SelfSel }
 				hx-swap="outerHTML"
@@ -425,6 +426,7 @@ templ dualIndexPane(w DualWindow) {
 			<a
 				href={ templ.URL(w.Index.ListHref) }
 				hx-get={ w.Index.ListHref }
+				data-wga-view-pref="list"
 				hx-target={ w.SelfSel }
 				hx-select={ w.SelfSel }
 				hx-swap="outerHTML"

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/blackfyre/wga/internal/visitorprefs"
 	neturl "net/url"
 	"strconv"
 	"strings"
@@ -40,8 +41,11 @@ type indexQuery struct {
 	bornMin  int
 	bornMax  int
 	view     string
-	sort     string
-	page     int
+	// fallbackView is the view a URL without a view parameter renders for
+	// this visitor; grid is written explicitly only when it differs.
+	fallbackView string
+	sort         string
+	page         int
 }
 
 // parseIndexQuery trims, allow-lists, clamps, and re-orders the raw query
@@ -145,7 +149,7 @@ func (q indexQuery) path() string {
 	if q.bornTo > 0 {
 		add("born_to", strconv.Itoa(q.bornTo))
 	}
-	if q.view != "" && q.view != viewGrid {
+	if visitorprefs.EmitView(q.view, q.fallbackView) {
 		add("view", q.view)
 	}
 	if q.sort != "" && q.sort != sortAZ {
@@ -437,6 +441,12 @@ func buildArtistIndexViewContext(ctx context.Context, app *pocketbase.PocketBase
 	}
 
 	query := parseIndexQuery(values, bornMin, bornMax)
+	// A request without a view parameter renders the visitor's fallback: the
+	// remembered listing view, or the grid.
+	query.fallbackView = visitorprefs.FallbackViewFrom(ctx)
+	if !values.Has("view") && query.fallbackView == viewList {
+		query.view = viewList
+	}
 
 	if query.school != "" {
 		if _, ok := schoolSlugToName[query.school]; !ok {
@@ -519,6 +529,7 @@ func buildArtistIndexViewContext(ctx context.Context, app *pocketbase.PocketBase
 		NameQuery:      query.query,
 		SelectedLetter: query.letter,
 		View:           query.view,
+		ExplicitGrid:   query.view == viewGrid && visitorprefs.EmitView(query.view, query.fallbackView),
 		Sort:           query.sort,
 		SortLabel:      sortLabel(query.sort),
 		GridUrl:        query.withView(viewGrid).path(),

@@ -8,9 +8,14 @@
 // artwork search handler reads to render a bare /artworks visit in the
 // remembered state and to set <html data-aw-actions> without a flash.
 //
+// The stored view is also the shared grid/list choice of every listing screen
+// (artist index and Dual Mode index panes): the server renders it whenever a
+// listing URL carries no view parameter.
+//
 // Sort and view controls stay ordinary links: a capture-phase click listener
-// records the state a [data-wga-aw-pref] link addresses before HTMX (or the
-// browser) follows it. The [data-wga-aw-actions] toggle only flips the <html>
+// records the state a [data-wga-aw-pref] link addresses, or the view a
+// [data-wga-view-pref="grid|list"] toggle names, before HTMX (or the browser)
+// follows it. The [data-wga-aw-actions] toggle only flips the <html>
 // attribute, which CSS uses to show or hide every .wga-work-actions block.
 // Listeners are document-level and bound once, so they survive every swap.
 //
@@ -113,6 +118,14 @@ export const prefsFromHref = (
 	);
 	return { ...current, ...parsed, actions: current.actions };
 };
+
+// prefsWithView records the view a listing toggle names, keeping every other
+// field. An unknown value leaves the preferences unchanged.
+export const prefsWithView = (
+	current: SearchPrefs,
+	view: string | undefined,
+): SearchPrefs =>
+	view === "grid" || view === "list" ? { ...current, view } : current;
 
 export const cookieValue = (prefs: SearchPrefs): string =>
 	encodeURIComponent(JSON.stringify(prefs));
@@ -220,7 +233,12 @@ export const registerSearchPrefs = (): void => {
 			const link = event.target.closest<HTMLAnchorElement>(
 				"a[data-wga-aw-pref][href]",
 			);
-			if (!toggle && !link) {
+			const viewLink = link
+				? null
+				: event.target.closest<HTMLAnchorElement>(
+						"a[data-wga-view-pref][href]",
+					);
+			if (!toggle && !link && !viewLink) {
 				return;
 			}
 			// Another tab may have changed the choices since this page loaded.
@@ -245,8 +263,14 @@ export const registerSearchPrefs = (): void => {
 					event.ctrlKey ||
 					event.shiftKey ||
 					event.altKey);
-			if (link && !modified) {
+			if (modified) {
+				return;
+			}
+			if (link) {
 				prefs = prefsFromHref(link.href, prefs, window.location.href);
+				writePrefs(prefs);
+			} else if (viewLink) {
+				prefs = prefsWithView(prefs, viewLink.dataset.wgaViewPref);
 				writePrefs(prefs);
 			}
 		},

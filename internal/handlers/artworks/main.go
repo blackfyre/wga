@@ -22,6 +22,7 @@ import (
 	"github.com/blackfyre/wga/internal/requestprotection"
 	"github.com/blackfyre/wga/internal/utils"
 	"github.com/blackfyre/wga/internal/utils/url"
+	"github.com/blackfyre/wga/internal/visitorprefs"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
@@ -68,6 +69,7 @@ func searchWithCheckpoint(app *pocketbase.PocketBase, c *core.RequestEvent, chec
 
 	prefs := storedSearchPrefs(c.Request)
 	queryParams := searchRequestValues(c.Request.URL, prefs)
+	requestCtx := visitorprefs.WithFallbackView(c.Request.Context(), prefs.fallbackView())
 	if queryParams.Has("page") {
 		parsed, err := strconv.Atoi(queryParams.Get("page"))
 		if err != nil || parsed < 1 {
@@ -83,14 +85,14 @@ func searchWithCheckpoint(app *pocketbase.PocketBase, c *core.RequestEvent, chec
 	var canonical string
 	var err error
 	if responseKind == artworkSearchResultsFragment {
-		resultsContext, resultsErr := buildArtworkSearchResultsViewContext(c.Request.Context(), app, queryParams, page, artworkSearchPageSize, checkpoint)
+		resultsContext, resultsErr := buildArtworkSearchResultsViewContext(requestCtx, app, queryParams, page, artworkSearchPageSize, checkpoint)
 		if resultsErr == nil {
 			results = resultsContext.view
 			canonical = resultsContext.canonical
 		}
 		err = resultsErr
 	} else {
-		view, canonical, err = buildArtworkSearchViewContext(c.Request.Context(), app, queryParams, page, artworkSearchPageSize, checkpoint)
+		view, canonical, err = buildArtworkSearchViewContext(requestCtx, app, queryParams, page, artworkSearchPageSize, checkpoint)
 		results = view.Results
 		view.PreserveTextFields = utils.RequestTriggeredBy(c, pages.ArtworkFiltersFormID)
 	}
@@ -114,10 +116,7 @@ func searchWithCheckpoint(app *pocketbase.PocketBase, c *core.RequestEvent, chec
 	ctx = tmplUtils.WithArtworkActions(ctx, prefs.ActionsAttribute())
 
 	c.Response.Header().Set("HX-Push-Url", artworkSearchPushURL(c.Request.URL.Path, canonical))
-	c.Response.Header().Add("Vary", "Cookie")
-	if hasSearchPrefsCookie(c.Request) {
-		utils.KeepResponsePrivate(c)
-	}
+	visitorprefs.MarkResponse(c)
 
 	var buff bytes.Buffer
 
@@ -178,6 +177,7 @@ func buildArtworkSearchResultsViewContext(ctx context.Context, app *pocketbase.P
 	defer func() { finish(err) }()
 
 	filters := buildFilters(values)
+	filters.viewFallback = visitorprefs.FallbackViewFrom(ctx)
 	dualModeContext := getDualModeSearchContext(values)
 
 	if filters.VenueConflict {
@@ -250,6 +250,7 @@ func buildArtworkSearchResultsViewContext(ctx context.Context, app *pocketbase.P
 	if err != nil {
 		return artworkSearchResultsContext{}, err
 	}
+	view.ExplicitGrid = filters.View == visitorprefs.ViewGrid && visitorprefs.EmitView(filters.View, filters.viewFallback)
 	view.DocumentTitle = artworkSearchTitle(filters, titleLabels, page, (recordsCount+limit-1)/limit)
 
 	return artworkSearchResultsContext{
