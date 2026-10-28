@@ -211,7 +211,7 @@ func TestSelectionRouteRendersShortIdentitySectionGridAndFullHTMXParity(t *testi
 	for _, expected := range []string{
 		"Given",
 		"21 — SELECTION",
-		`grid grid-cols-2 md:grid-cols-4`,
+		`data-selection-plate-grid`,
 		"An editorial lede.",
 		"VIEW FULL HOLDING",
 	} {

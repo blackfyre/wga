@@ -16,6 +16,9 @@ type Image struct {
 	Id        string
 	Jsonld    interface{}
 	HxTarget  string
+	// Location is the work's stored current holding. Only selection plates set
+	// it; an empty value renders nothing.
+	Location string
 	Artist
 }
 

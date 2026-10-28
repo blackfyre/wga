@@ -88,10 +88,10 @@ func TestSelectionContentRendersResponsiveWorkCardGrid(t *testing.T) {
 		},
 	})
 
-	if !strings.Contains(rendered, `class="grid grid-cols-2 md:grid-cols-4 gap-x-4 md:gap-x-6 gap-y-8"`) {
-		t.Error("selection works must render in the reference two-column/four-column work-card grid")
+	if !strings.Contains(rendered, `class="grid grid-cols-2 gap-x-4 gap-y-0 md:grid-cols-[repeat(auto-fill,11.25rem)] md:gap-x-6" data-selection-plate-grid`) {
+		t.Error("selection works must render in the shared selection plate grid")
 	}
-	for _, forbidden := range []string{"grid-cols-1", "sm:grid-cols-2", "md:grid-cols-2", "lg:grid-cols-3", "xl:grid-cols-4"} {
+	for _, forbidden := range []string{"grid-cols-1", "sm:grid-cols-2", "md:grid-cols-2", "md:grid-cols-4", "lg:grid-cols-3", "xl:grid-cols-4"} {
 		if strings.Contains(rendered, forbidden) {
 			t.Errorf("selection work grid must not expose shared-grid breakpoint %q", forbidden)
 		}

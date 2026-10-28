@@ -122,9 +122,7 @@ test.describe("selection journey without JavaScript", () => {
 
 		await expect(page.getByText("OTHER SELECTIONS")).toBeVisible();
 		await expect(page.getByText(missingCommentaryTitle)).toBeVisible();
-		await expect(
-			page.locator("ul.grid.grid-cols-2.md\\:grid-cols-4"),
-		).toHaveCount(1);
+		await expect(page.locator("ul[data-selection-plate-grid]")).toHaveCount(1);
 	});
 
 	test("dedicated selection page states missing commentary honestly", async ({
@@ -186,3 +184,108 @@ for (const width of [390, 834, 1440]) {
 		expect(new URL(page.url()).hash).toBe("#cite-this-record");
 	});
 }
+
+type PlateBox = {
+	left: number;
+	top: number;
+	imageWidth: number;
+	imageHeight: number;
+	viewWorkTop: number;
+	itineraryTop: number;
+};
+
+// Measures the plates of the first selection plate grid on the page.
+async function measureSelectionPlates(page: Page): Promise<PlateBox[]> {
+	const grid = page.locator("ul[data-selection-plate-grid]").first();
+	await expect(grid.locator("article").first()).toBeVisible();
+	return grid.locator("article").evaluateAll((plates) =>
+		plates.map((plate) => {
+			const box = plate.getBoundingClientRect();
+			const image = plate.querySelector("figure")?.getBoundingClientRect();
+			const viewWork = plate
+				.querySelector("[data-plate-view-work]")
+				?.getBoundingClientRect();
+			const itinerary = plate
+				.querySelector("[data-plate-itinerary] button")
+				?.getBoundingClientRect();
+			return {
+				left: Math.round(box.left),
+				top: Math.round(box.top + window.scrollY),
+				imageWidth: Math.round(image?.width ?? -1),
+				imageHeight: Math.round(image?.height ?? -1),
+				viewWorkTop: Math.round((viewWork?.top ?? -1) + window.scrollY),
+				itineraryTop: Math.round((itinerary?.top ?? -1) + window.scrollY),
+			};
+		}),
+	);
+}
+
+for (const width of [390, 834, 1440]) {
+	test(`selection plates match and align at ${width}px`, async ({ page }) => {
+		await page.setViewportSize({ width, height: 900 });
+
+		// Make the first row's plates differ in text height and in itinerary
+		// action height, as a long title or a mixed itinerary state would.
+		const unevenFirstRow = async () => {
+			const plates = page.locator("ul[data-selection-plate-grid] article");
+			await plates
+				.nth(0)
+				.locator("h2")
+				.evaluate((title) => {
+					title.textContent =
+						"A deliberately long synthetic title that wraps over several lines";
+				});
+			await plates
+				.nth(1)
+				.locator("[data-plate-itinerary] button")
+				.first()
+				.evaluate((button) => {
+					button.textContent =
+						"A deliberately long itinerary label that wraps over several lines";
+				});
+		};
+
+		await page.goto(artistRecordPath);
+		const previewPlates = await measureSelectionPlates(page);
+		await page.goto(suppliedCommentaryPath);
+		await unevenFirstRow();
+		const pagePlates = await measureSelectionPlates(page);
+
+		expect(pagePlates.length).toBeGreaterThan(1);
+		for (const plate of [...previewPlates, ...pagePlates]) {
+			expect(plate.imageWidth).toBe(pagePlates[0].imageWidth);
+			expect(plate.imageHeight).toBe(pagePlates[0].imageHeight);
+		}
+
+		const firstRow = pagePlates.filter(
+			(plate) => plate.top === pagePlates[0].top,
+		);
+		expect(firstRow.length).toBeGreaterThan(1);
+		for (const plate of firstRow) {
+			expect(plate.viewWorkTop).toBe(firstRow[0].viewWorkTop);
+			expect(plate.itineraryTop).toBe(firstRow[0].itineraryTop);
+		}
+	});
+}
+
+test("selection plates show the stored holding only in selections", async ({
+	page,
+}) => {
+	await page.goto(suppliedCommentaryPath);
+	const plates = page.locator("ul[data-selection-plate-grid] article");
+	await expect(
+		plates
+			.filter({ hasText: "Synthetic Artwork 02-01" })
+			.locator("[data-plate-location]"),
+	).toHaveText("Synthetic Civic Gallery");
+	await expect(
+		plates
+			.filter({ hasText: "Synthetic Artwork 02-02" })
+			.locator("[data-plate-location]"),
+	).toHaveText("Synthetic Harbour Collection");
+
+	await page.goto(artistRecordPath);
+	await expect(
+		page.locator("ul[data-selection-plate-grid] [data-plate-location]").first(),
+	).toBeVisible();
+});

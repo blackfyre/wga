@@ -39,6 +39,59 @@ func TestLocationAndDimensionsDecodesEntities(t *testing.T) {
 	}
 }
 
+func TestCurrentLocations(t *testing.T) {
+	app := testutils.NewTestApp(t)
+	locations := core.NewBaseCollection(constants.CollectionLocations)
+	locations.Fields.Add(&core.TextField{Name: "name"})
+	if err := app.Save(locations); err != nil {
+		t.Fatalf("create locations: %v", err)
+	}
+	named := core.NewRecord(locations)
+	named.Set("name", " Uffizi, Florence ")
+	blank := core.NewRecord(locations)
+	blank.Set("name", "  ")
+	for _, record := range []*core.Record{named, blank} {
+		if err := app.Save(record); err != nil {
+			t.Fatalf("create location: %v", err)
+		}
+	}
+	artworks := core.NewBaseCollection(constants.CollectionArtworks)
+	artworks.Fields.Add(&core.RelationField{Name: "current_location_id", CollectionId: locations.Id, MaxSelect: 1})
+	if err := app.Save(artworks); err != nil {
+		t.Fatalf("create artworks: %v", err)
+	}
+
+	newArtwork := func(id string, locationID string) *core.Record {
+		record := core.NewRecord(artworks)
+		record.Id = id
+		if locationID != "" {
+			record.Set("current_location_id", locationID)
+		}
+		return record
+	}
+	got := CurrentLocations(app, []*core.Record{
+		newArtwork("heldone00000001", named.Id),
+		newArtwork("heldtwo00000001", named.Id),
+		newArtwork("unheld000000001", ""),
+		newArtwork("dangling0000001", "missingloc00000"),
+		newArtwork("blankname000001", blank.Id),
+		nil,
+	})
+
+	want := map[string]string{"heldone00000001": "Uffizi, Florence", "heldtwo00000001": "Uffizi, Florence"}
+	if len(got) != len(want) {
+		t.Fatalf("CurrentLocations() = %v, want %v", got, want)
+	}
+	for id, name := range want {
+		if got[id] != name {
+			t.Errorf("CurrentLocations()[%q] = %q, want %q", id, got[id], name)
+		}
+	}
+	if empty := CurrentLocations(app, nil); len(empty) != 0 {
+		t.Errorf("CurrentLocations(nil) = %v, want empty", empty)
+	}
+}
+
 func TestCurrentLocation(t *testing.T) {
 	app := testutils.NewTestApp(t)
 	locations := core.NewBaseCollection(constants.CollectionLocations)

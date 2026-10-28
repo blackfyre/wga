@@ -301,6 +301,7 @@ func TestArtistRecordContentRendersSelectionPreviews(t *testing.T) {
 		`href="#biography"`,
 		`href="#selection-rselect00000001"`,
 		`href="#cite-this-record"`,
+		`data-selection-plate-grid`,
 	} {
 		if !strings.Contains(rendered, expected) {
 			t.Errorf("expected selection preview to contain %q", expected)
