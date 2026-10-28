@@ -167,7 +167,7 @@ export const initCookieConsent = async () => {
 					consentModal: {
 						title: "COOKIES",
 						description:
-							'Essential cookies keep this site working. Analytics cookies are not in use. With your permission, optional preference storage remembers your artwork search toolbar, colour scheme, palette, reading aid, and Study Board on this device. DENY, or turning it off under PREFERENCES, deletes them. Read our <a href="/pages/privacy-policy">privacy policy</a>.',
+							'Essential cookies keep this site working. Analytics cookies are not in use. With your permission, optional preference storage remembers your artwork search toolbar, the grid or list view you last chose, colour scheme, palette, reading aid, and Study Board on this device. DENY, or turning it off under PREFERENCES, deletes them. Read our <a href="/pages/privacy-policy">privacy policy</a>.',
 						acceptAllBtn: "ACCEPT ALL",
 						acceptNecessaryBtn: "DENY",
 						showPreferencesBtn: "PREFERENCES",
@@ -193,7 +193,7 @@ export const initCookieConsent = async () => {
 							{
 								title: "Preference storage",
 								description:
-									"Remembers, on this device, your artwork search toolbar (sort, view, and whether result actions are shown), your colour scheme and palette, the bionic reading aid, and your Study Board. They are kept in this browser's local storage and, for the search toolbar, the wga_aw_prefs cookie. Turning it off, or DENY, deletes them all; the settings then apply to the current visit only.",
+									"Remembers, on this device, your artwork search toolbar (sort and whether result actions are shown), the grid or list view you last chose on any listing, your colour scheme and palette, the bionic reading aid, and your Study Board. They are kept in this browser's local storage and, for the search toolbar and listing view, the wga_aw_prefs cookie. Turning it off, or DENY, deletes them all; the settings then apply to the current visit only.",
 								linkedCategory: PREFERENCES_CATEGORY,
 							},
 							{

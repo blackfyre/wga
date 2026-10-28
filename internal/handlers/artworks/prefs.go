@@ -4,25 +4,24 @@ import (
 	"encoding/json"
 	"net/http"
 	neturl "net/url"
-	"slices"
+
+	"github.com/blackfyre/wga/internal/visitorprefs"
 )
 
 // searchPrefsCookieName is the first-party cookie the browser preference
 // module (resources/js/search-prefs.ts) writes. Its value is the URL-encoded
 // JSON object also kept in localStorage["wga-aw-prefs"].
-const searchPrefsCookieName = "wga_aw_prefs"
+const searchPrefsCookieName = visitorprefs.CookieName
 
 // consentCookieName is the CookieConsent record. Remembered preferences are
-// optional storage, honoured only while it accepts preferencesCategory.
-const (
-	consentCookieName   = "cc_cookie"
-	preferencesCategory = "preferences"
-)
+// optional storage, honoured only while it accepts the preferences category.
+const consentCookieName = visitorprefs.ConsentCookieName
 
 // searchPrefs are the visitor's remembered artwork search presentation
-// choices. They are presentation state, never part of the query: they only
-// supply defaults for a bare /artworks visit. Empty fields were absent or
-// invalid in the stored value.
+// choices. They are presentation state, never part of the query: sort and
+// direction only supply defaults for a bare /artworks visit, and the view is
+// the shared listing view used by any request without a view parameter. Empty
+// fields were absent or invalid in the stored value.
 type searchPrefs struct {
 	// Present reports that a decodable preference object was stored, which
 	// also means the browser module has run for this visitor before.
@@ -38,19 +37,8 @@ type searchPrefs struct {
 // absent or undecodable cookie, or one left over without current preference
 // consent, yields the zero value.
 func storedSearchPrefs(r *http.Request) searchPrefs {
-	if !preferenceConsentGranted(r) {
-		return searchPrefs{}
-	}
-	cookie, err := r.Cookie(searchPrefsCookieName)
-	if err != nil {
-		return searchPrefs{}
-	}
-	raw, err := neturl.PathUnescape(cookie.Value)
-	if err != nil {
-		return searchPrefs{}
-	}
-	var fields map[string]json.RawMessage
-	if err := json.Unmarshal([]byte(raw), &fields); err != nil || fields == nil {
+	fields, ok := visitorprefs.Fields(r)
+	if !ok {
 		return searchPrefs{}
 	}
 
@@ -63,9 +51,7 @@ func storedSearchPrefs(r *http.Request) searchPrefs {
 	if dir := jsonString(fields["dir"]); dir == sortAsc || dir == sortDesc {
 		prefs.Dir = dir
 	}
-	if view := jsonString(fields["view"]); view == "grid" || view == "list" {
-		prefs.View = view
-	}
+	prefs.View = visitorprefs.ParseView(fields["view"])
 	var actions bool
 	if err := json.Unmarshal(fields["actions"], &actions); err == nil {
 		prefs.Actions = actions
@@ -74,32 +60,12 @@ func storedSearchPrefs(r *http.Request) searchPrefs {
 	return prefs
 }
 
-// hasSearchPrefsCookie reports whether the request carries a remembered
-// preference cookie at all, valid or not. Such responses are never shared, so
-// privacy does not depend on the cookie decoding or on current consent.
-func hasSearchPrefsCookie(r *http.Request) bool {
-	_, err := r.Cookie(searchPrefsCookieName)
-	return err == nil
-}
-
-// preferenceConsentGranted reports whether the CookieConsent record accepts
-// the optional preferences category.
-func preferenceConsentGranted(r *http.Request) bool {
-	cookie, err := r.Cookie(consentCookieName)
-	if err != nil {
-		return false
+// fallbackView is the view a request without a view parameter renders.
+func (p searchPrefs) fallbackView() string {
+	if p.View != "" {
+		return p.View
 	}
-	raw, err := neturl.PathUnescape(cookie.Value)
-	if err != nil {
-		return false
-	}
-	var record struct {
-		Categories []string `json:"categories"`
-	}
-	if err := json.Unmarshal([]byte(raw), &record); err != nil {
-		return false
-	}
-	return slices.Contains(record.Categories, preferencesCategory)
+	return visitorprefs.ViewGrid
 }
 
 func jsonString(raw json.RawMessage) string {
@@ -123,12 +89,16 @@ func (p searchPrefs) ActionsAttribute() string {
 }
 
 // searchRequestValues returns the query state for an artwork search request.
-// Only a bare GET /artworks takes the remembered sort, direction, and view:
-// any explicit query parameter, and every /artworks/results fragment request,
-// is used exactly as addressed so shared and paginated URLs never change
-// meaning.
+// Only a bare GET /artworks takes the remembered sort and direction: any
+// explicit query parameter, and every /artworks/results fragment request, keeps
+// the sort and direction it addresses so shared and paginated URLs never
+// change meaning. The remembered view is the shared listing view, so it fills
+// in for any page or fragment request that carries no view parameter.
 func searchRequestValues(u *neturl.URL, prefs searchPrefs) neturl.Values {
 	values := u.Query()
+	if prefs.View != "" && !values.Has("view") {
+		values.Set("view", prefs.View)
+	}
 	if u.Path != "/artworks" || u.RawQuery != "" {
 		return values
 	}
@@ -137,9 +107,6 @@ func searchRequestValues(u *neturl.URL, prefs searchPrefs) neturl.Values {
 	}
 	if prefs.Dir != "" {
 		values.Set("dir", prefs.Dir)
-	}
-	if prefs.View != "" {
-		values.Set("view", prefs.View)
 	}
 	return values
 }

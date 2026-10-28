@@ -45,6 +45,9 @@ type ArtistsView struct {
 	NameQuery      string
 	SelectedLetter string
 	View           string
+	// ExplicitGrid reports that a grid index must carry view=grid because a
+	// URL without a view parameter would render this visitor's remembered list.
+	ExplicitGrid   bool
 	Sort           string
 	SortLabel      string
 	GridUrl        string
@@ -115,7 +118,7 @@ templ ArtistsBlock(c ArtistsView) {
 			if c.SelectedLetter != "" {
 				<input type="hidden" name="letter" value={ c.SelectedLetter }/>
 			}
-			if c.View != "" && c.View != "grid" {
+			if (c.View != "" && c.View != "grid") || c.ExplicitGrid {
 				<input type="hidden" name="view" value={ c.View }/>
 			}
 			if c.Sort != "" && c.Sort != "az" {
@@ -130,6 +133,7 @@ templ ArtistsBlock(c ArtistsView) {
 					<a
 						href={ templ.URL(c.GridUrl) }
 						hx-get={ c.GridUrl }
+						data-wga-view-pref="grid"
 						hx-target="#artists"
 						hx-select="#artists"
 						hx-swap="outerHTML"
@@ -139,6 +143,7 @@ templ ArtistsBlock(c ArtistsView) {
 					<a
 						href={ templ.URL(c.ListUrl) }
 						hx-get={ c.ListUrl }
+						data-wga-view-pref="list"
 						hx-target="#artists"
 						hx-select="#artists"
 						hx-swap="outerHTML"

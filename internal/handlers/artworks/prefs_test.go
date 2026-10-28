@@ -91,7 +91,7 @@ func TestSearchPrefsActionsAttribute(t *testing.T) {
 	}
 }
 
-func TestSearchRequestValuesAppliesSearchPrefsOnlyToBareVisit(t *testing.T) {
+func TestSearchRequestValuesAppliesSortOnlyToBareVisitAndViewWhenMissing(t *testing.T) {
 	prefs := searchPrefs{Present: true, Sort: "date", Dir: "desc", View: "list"}
 	for _, test := range []struct {
 		name   string
@@ -99,10 +99,12 @@ func TestSearchRequestValuesAppliesSearchPrefsOnlyToBareVisit(t *testing.T) {
 		want   string
 	}{
 		{name: "bare visit uses remembered state", target: "/artworks", want: "dir=desc&sort=date&view=list"},
-		{name: "explicit filter wins", target: "/artworks?q=mary", want: "q=mary"},
-		{name: "explicit sort wins", target: "/artworks?sort=title", want: "sort=title"},
-		{name: "explicit page wins", target: "/artworks?page=2", want: "page=2"},
-		{name: "fragment requests are used as addressed", target: "/artworks/results", want: ""},
+		{name: "explicit filter keeps default sort but inherits the view", target: "/artworks?q=mary", want: "q=mary&view=list"},
+		{name: "explicit sort wins", target: "/artworks?sort=title", want: "sort=title&view=list"},
+		{name: "explicit page inherits the view", target: "/artworks?page=2", want: "page=2&view=list"},
+		{name: "explicit view wins", target: "/artworks?q=mary&view=grid", want: "q=mary&view=grid"},
+		{name: "fragment requests inherit only the view", target: "/artworks/results?sort=date", want: "sort=date&view=list"},
+		{name: "fragment without parameters inherits only the view", target: "/artworks/results", want: "view=list"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			u, err := neturl.Parse(test.target)
@@ -172,19 +174,44 @@ func TestArtworkSearchRendersSearchPrefsFromCookie(t *testing.T) {
 		}
 	})
 
-	t.Run("explicit query parameters win", func(t *testing.T) {
+	t.Run("explicit query parameters win over remembered sort but inherit the view", func(t *testing.T) {
 		recorder := serveArtworkSearch(t, app, searchPrefsRequest("/artworks?q=a", rememberedDateListCookie))
 		body := recorder.Body.String()
-		if got := recorder.Header().Get("HX-Push-Url"); got != "/artworks?q=a" {
-			t.Errorf("HX-Push-Url = %q, want the addressed state unchanged", got)
+		if got := recorder.Header().Get("HX-Push-Url"); got != "/artworks?q=a&view=list" {
+			t.Errorf("HX-Push-Url = %q, want the addressed sort with the remembered view", got)
 		}
-		for _, expected := range []string{`data-view="grid"`, "VIEW: GRID", "A–Z", "ACTIONS ✓"} {
+		for _, expected := range []string{`data-view="list"`, "VIEW: LIST", "A–Z", "ACTIONS ✓"} {
 			if !strings.Contains(body, expected) {
 				t.Errorf("explicit page missing %q", expected)
 			}
 		}
 		if early, late := strings.Index(body, "Alpha Early"), strings.Index(body, "Bravo Late"); early < 0 || late < 0 || early > late {
 			t.Error("explicit request must keep the default title order")
+		}
+	})
+
+	t.Run("explicit grid wins and stays explicit", func(t *testing.T) {
+		recorder := serveArtworkSearch(t, app, searchPrefsRequest("/artworks?q=a&view=grid", rememberedDateListCookie))
+		body := recorder.Body.String()
+		if got := recorder.Header().Get("HX-Push-Url"); got != "/artworks?q=a&view=grid" {
+			t.Errorf("HX-Push-Url = %q, want grid kept explicit over the remembered list", got)
+		}
+		for _, expected := range []string{`data-view="grid"`, "VIEW: GRID", `type="hidden" name="view" value="grid"`} {
+			if !strings.Contains(body, expected) {
+				t.Errorf("explicit grid page missing %q", expected)
+			}
+		}
+	})
+
+	t.Run("without consent the remembered view is ignored", func(t *testing.T) {
+		request := httptest.NewRequest(http.MethodGet, "/artworks?q=a", nil)
+		request.AddCookie(&http.Cookie{Name: searchPrefsCookieName, Value: rememberedDateListCookie})
+		recorder := serveArtworkSearch(t, app, request)
+		if got := recorder.Header().Get("HX-Push-Url"); got != "/artworks?q=a" {
+			t.Errorf("HX-Push-Url = %q, want the grid default", got)
+		}
+		if !strings.Contains(recorder.Body.String(), `data-view="grid"`) {
+			t.Error("without consent the page must render the grid")
 		}
 	})
 
@@ -218,11 +245,11 @@ func TestArtworkSearchRendersSearchPrefsFromCookie(t *testing.T) {
 		}
 	})
 
-	t.Run("fragment requests read only the actions setting", func(t *testing.T) {
+	t.Run("fragment requests read the actions setting and the view", func(t *testing.T) {
 		request := searchPrefsRequest("/artworks/results", rememberedDateListCookie)
 		request.Header.Set("HX-Request", "true")
 		body := serveArtworkSearch(t, app, request).Body.String()
-		for _, expected := range []string{`data-view="grid"`, "ACTIONS ✓"} {
+		for _, expected := range []string{`data-view="list"`, "ACTIONS ✓", "A–Z"} {
 			if !strings.Contains(body, expected) {
 				t.Errorf("fragment missing %q", expected)
 			}

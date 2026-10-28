@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/blackfyre/wga/internal/visitorprefs"
 	"github.com/pocketbase/dbx"
 )
 
@@ -33,6 +34,9 @@ type filters struct {
 	YearFrom       string
 	YearTo         string
 	View           string
+	// viewFallback is the view a URL without a view parameter renders for
+	// this visitor; grid is written explicitly only when it differs.
+	viewFallback   string
 	Sort           string
 	SortDir        string
 	Page           string
@@ -222,7 +226,7 @@ func (f *filters) queryValues() url.Values {
 		values.Set("year_to", f.YearTo)
 	}
 
-	if f.View == "list" {
+	if visitorprefs.EmitView(f.View, f.viewFallback) {
 		values.Set("view", f.View)
 	}
 

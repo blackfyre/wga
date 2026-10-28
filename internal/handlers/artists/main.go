@@ -3,6 +3,7 @@ package artists
 import (
 	"bytes"
 	"context"
+	"github.com/blackfyre/wga/internal/visitorprefs"
 	"net/http"
 
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
@@ -18,7 +19,8 @@ import (
 // delegates parsing, querying, and read-model assembly to buildArtistIndexView
 // and only maps the result onto the HTTP response.
 func processArtists(app *pocketbase.PocketBase, c *core.RequestEvent) error {
-	view, canonicalURL, err := buildArtistIndexViewContext(c.Request.Context(), app, c.Request.URL.Query(), requestprotection.Checkpoint)
+	requestCtx := visitorprefs.WithFallbackView(c.Request.Context(), visitorprefs.FallbackView(c.Request))
+	view, canonicalURL, err := buildArtistIndexViewContext(requestCtx, app, c.Request.URL.Query(), requestprotection.Checkpoint)
 	if err != nil {
 		if isExpectedCancellation(err) {
 			return err
@@ -29,6 +31,7 @@ func processArtists(app *pocketbase.PocketBase, c *core.RequestEvent) error {
 
 	view.NameField.Preserve = utils.RequestTriggeredBy(c, pages.ArtistFiltersFormID)
 	c.Response.Header().Set("HX-Push-Url", canonicalURL)
+	visitorprefs.MarkResponse(c)
 
 	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, artistIndexTitle(view))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, "Check out the artists in the gallery.")

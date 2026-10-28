@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/blackfyre/wga/internal/visitorprefs"
 	"net/http"
 	neturl "net/url"
 	"sort"
@@ -88,6 +89,9 @@ type dualIndexState struct {
 	bornTo   int
 	view     string
 	sort     string
+	// fallbackView is the view a URL without this pane's view parameter
+	// renders for the visitor; grid is written explicitly only when it differs.
+	fallbackView string
 }
 
 // dualParam is one ordered query parameter of the canonical serialization.
@@ -134,7 +138,10 @@ func renderDualModePageWithCheckpoint(app *pocketbase.PocketBase, c *core.Reques
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
 
-	state := parseDualState(c.Request.URL.Query()).normalize(ref)
+	state := parseDualStateWithFallback(c.Request.URL.Query(), visitorprefs.FallbackView(c.Request)).normalize(ref)
+	// Every response from here on, including the legacy-size redirect, is
+	// built from the remembered view.
+	visitorprefs.MarkResponse(c)
 
 	// Canonicalise each pane path to the generated public record URL before any
 	// link or the push URL is built, so a shared URL never carries a mismatched
@@ -376,18 +383,25 @@ func dualSendLink(side string, pane dualPaneState, state dualState, otherLabel s
 // ---------------------------------------------------------------------------
 
 func parseDualState(values neturl.Values) dualState {
+	return parseDualStateWithFallback(values, viewGrid)
+}
+
+// parseDualStateWithFallback parses the route state for a visitor whose
+// listing fallback view (remembered view, or grid) is fallback. A pane without
+// its _view parameter renders that fallback.
+func parseDualStateWithFallback(values neturl.Values, fallback string) dualState {
 	return dualState{
-		left:  parseDualPane(values, "left", "l"),
-		right: parseDualPane(values, "right", "r"),
+		left:  parseDualPane(values, "left", "l", fallback),
+		right: parseDualPane(values, "right", "r", fallback),
 		wide:  strings.TrimSpace(values.Get("wide")) == "1",
 	}
 }
 
-func parseDualPane(values neturl.Values, side string, prefix string) dualPaneState {
+func parseDualPane(values neturl.Values, side string, prefix string, fallback string) dualPaneState {
 	return dualPaneState{
 		path:     parseDualPath(values.Get(side)),
 		renderTo: resolvePaneTarget(side, values.Get(side+"_render_to")),
-		index:    parseDualIndex(values, prefix),
+		index:    parseDualIndex(values, prefix, fallback),
 	}
 }
 
@@ -410,8 +424,11 @@ func parseDualPath(raw string) string {
 	return parsed.RelPath
 }
 
-func parseDualIndex(values neturl.Values, prefix string) dualIndexState {
-	idx := dualIndexState{view: viewList, sort: sortAZ}
+func parseDualIndex(values neturl.Values, prefix string, fallback string) dualIndexState {
+	if fallback != viewList {
+		fallback = viewGrid
+	}
+	idx := dualIndexState{view: viewGrid, sort: sortAZ, fallbackView: fallback}
 
 	letter := strings.ToUpper(strings.TrimSpace(values.Get(prefix + "_letter")))
 	if len(letter) == 1 && letter[0] >= 'A' && letter[0] <= 'Z' {
@@ -428,8 +445,10 @@ func parseDualIndex(values neturl.Values, prefix string) dualIndexState {
 		idx.bornFrom, idx.bornTo = idx.bornTo, idx.bornFrom
 	}
 
-	if view := strings.TrimSpace(values.Get(prefix + "_view")); view == viewGrid || view == viewList {
-		idx.view = view
+	if values.Has(prefix + "_view") {
+		idx.view = visitorprefs.ExplicitView(strings.TrimSpace(values.Get(prefix + "_view")))
+	} else {
+		idx.view = fallback
 	}
 
 	switch sort := strings.TrimSpace(values.Get(prefix + "_sort")); sort {
@@ -571,7 +590,7 @@ func (i dualIndexState) addParams(prefix string, add func(string, string)) {
 	if i.bornTo > 0 {
 		add(prefix+"_born_to", strconv.Itoa(i.bornTo))
 	}
-	if i.view != viewList {
+	if visitorprefs.EmitView(i.view, i.fallbackView) {
 		add(prefix+"_view", i.view)
 	}
 	if i.sort != sortAZ {
@@ -648,12 +667,21 @@ func (s dualState) swapped() dualState {
 	return dualState{left: s.right, right: s.left, wide: s.wide}
 }
 
+// reset clears both panes to their unfiltered index in the visitor's
+// fallback view, keeping only the wide layout choice.
 func (s dualState) reset() dualState {
 	return dualState{
-		left:  dualPaneState{renderTo: "right", index: dualIndexState{view: viewList, sort: sortAZ}},
-		right: dualPaneState{renderTo: "left", index: dualIndexState{view: viewList, sort: sortAZ}},
+		left:  dualPaneState{renderTo: "right", index: resetDualIndex(s.left.index.fallbackView)},
+		right: dualPaneState{renderTo: "left", index: resetDualIndex(s.right.index.fallbackView)},
 		wide:  s.wide,
 	}
+}
+
+func resetDualIndex(fallback string) dualIndexState {
+	if fallback != viewList {
+		fallback = viewGrid
+	}
+	return dualIndexState{view: fallback, sort: sortAZ, fallbackView: fallback}
 }
 
 func (i dualIndexState) withLetter(letter string) dualIndexState {
@@ -811,7 +839,7 @@ func buildDualIndexViewContext(ctx context.Context, app *pocketbase.PocketBase, 
 		GridHref:    state.withPaneIndex(side, idx.withView(viewGrid)).path(),
 		ListHref:    state.withPaneIndex(side, idx.withView(viewList)).path(),
 		SortHref:    state.withPaneIndex(side, idx.withSort(nextDualSort(idx.sort))).path(),
-		ResetHref:   state.withPaneIndex(side, dualIndexState{view: viewList, sort: sortAZ}).path(),
+		ResetHref:   state.withPaneIndex(side, resetDualIndex(idx.fallbackView)).path(),
 		SortLabel:   dualSortLabel(idx.sort),
 		FilterNote:  dualFilterNote(idx, ref),
 		Total:       total,

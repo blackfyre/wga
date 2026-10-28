@@ -38,6 +38,9 @@ type ArtworkSearchResultsView struct {
 	ResultCount     int
 	Artworks        dto.ImageGrid
 	View            string
+	// ExplicitGrid reports that a grid result must carry view=grid because a
+	// URL without a view parameter would render this visitor's remembered list.
+	ExplicitGrid    bool
 	// Sort and SortDir are the normalised sort key and direction the
 	// results are rendered in.
 	Sort            string
@@ -142,7 +145,7 @@ templ ArtworkSeachFilterBlock(b ArtworkSearchView) {
 		if b.Dir != "asc" {
 			<input type="hidden" name="dir" value={ b.Dir }/>
 		}
-		if b.Results.View != "grid" {
+		if b.Results.View != "grid" || b.Results.ExplicitGrid {
 			<input type="hidden" name="view" value={ b.Results.View }/>
 		}
 		if b.DualModeContext != nil {
