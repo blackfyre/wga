@@ -93,11 +93,11 @@ func TestSavePostcardCaptchaFailuresDoNotPersist(t *testing.T) {
 			wantCode: http.StatusUnprocessableEntity,
 		},
 		{
-			name: "provider failure returns server fault",
+			name: "provider failure re-renders the composer as unavailable",
 			verifier: func(context.Context, string, string) (bool, error) {
 				return false, errors.New("provider unavailable")
 			},
-			wantCode: http.StatusInternalServerError,
+			wantCode: http.StatusServiceUnavailable,
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -132,6 +132,10 @@ func TestSavePostcardCaptchaFailuresDoNotPersist(t *testing.T) {
 			}
 			if len(limiter.windows) != 0 {
 				t.Fatal("CAPTCHA failure consumed the postcard send allowance")
+			}
+			body := recorder.Body.String()
+			if !strings.Contains(body, `id="postcard-error"`) || !strings.Contains(body, `value="sender@example.test"`) {
+				t.Fatalf("CAPTCHA failure did not re-render the composer with entered values: %s", body)
 			}
 			records, err := app.FindRecordsByFilter("postcards", "", "", 0, 0)
 			if err != nil {
@@ -357,5 +361,83 @@ func TestSavePostcardKeysRateLimitByResolvedIdentity(t *testing.T) {
 	}
 	if _, ok := limiter.windows["198.51.100.7"]; ok {
 		t.Error("rate limiter was keyed by the raw remote address")
+	}
+}
+
+func TestSavePostcardUnavailableArtworkRetainsValuesAndAllowance(t *testing.T) {
+	for _, htmx := range []bool{false, true} {
+		t.Run(fmt.Sprintf("htmx=%t", htmx), func(t *testing.T) {
+			app := testutils.NewTestApp(t)
+			form := url.Values{
+				"sender_name":          {"Keyboard Sender"},
+				"sender_email":         {"sender@example.test"},
+				"recipients[]":         {"recipient@example.test"},
+				"message":              {"message"},
+				"image_id":             {"missing-artwork"},
+				"g-recaptcha-response": {"captcha-token"},
+			}
+			recorder := httptest.NewRecorder()
+			event := &core.RequestEvent{
+				App: app,
+				Event: router.Event{
+					Request:  httptest.NewRequest(http.MethodPost, "/postcard", strings.NewReader(form.Encode())),
+					Response: recorder,
+				},
+			}
+			event.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			if htmx {
+				event.Request.Header.Set("HX-Request", "true")
+			}
+			limiter := newSubmissionLimiter(1, 10*time.Minute)
+
+			if err := savePostcard(app, event, config.Captcha{}, config.PostcardTokenKeyring{}, nil, limiter, requesttrust.New(requesttrust.SourceDirect)); err != nil {
+				t.Fatalf("save postcard: %v", err)
+			}
+
+			if recorder.Code != http.StatusUnprocessableEntity {
+				t.Fatalf("status = %d, want %d", recorder.Code, http.StatusUnprocessableEntity)
+			}
+			body := recorder.Body.String()
+			for _, want := range []string{
+				`id="postcard-compose"`,
+				"no longer available",
+				"CHOOSE ANOTHER ARTWORK",
+				`value="Keyboard Sender"`,
+				`value="recipient@example.test"`,
+			} {
+				if !strings.Contains(body, want) {
+					t.Fatalf("response lacks %q: %s", want, body)
+				}
+			}
+			if htmx == strings.Contains(body, "<html") {
+				t.Fatalf("htmx=%t rendered the wrong response shape", htmx)
+			}
+			if !limiter.allow("192.0.2.1", time.Now()) {
+				t.Fatal("a submission that queued nothing consumed the send allowance")
+			}
+		})
+	}
+}
+
+func TestSubmissionLimiterReleaseRestoresOneAdmission(t *testing.T) {
+	limiter := newSubmissionLimiter(1, 10*time.Minute)
+	now := time.Now()
+	if !limiter.allow("visitor", now) {
+		t.Fatal("first admission rejected")
+	}
+	if limiter.allow("visitor", now) {
+		t.Fatal("second admission accepted beyond the limit")
+	}
+	limiter.release("visitor")
+	limiter.release("visitor")
+	if !limiter.allow("visitor", now) {
+		t.Fatal("released admission was not restored")
+	}
+	if limiter.allow("visitor", now) {
+		t.Fatal("repeated release restored more than the consumed admissions")
+	}
+	limiter.release("unknown")
+	if _, ok := limiter.windows["unknown"]; ok {
+		t.Fatal("release created a window for an unknown visitor")
 	}
 }

@@ -48,3 +48,18 @@ func (l *submissionLimiter) allow(visitorKey string, now time.Time) bool {
 	l.windows[visitorKey] = window
 	return true
 }
+
+// release returns one admission to the visitor's current window when the
+// admitted submission did not queue a postcard, so only successful sends
+// consume the allowance.
+func (l *submissionLimiter) release(visitorKey string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	window, ok := l.windows[visitorKey]
+	if !ok || window.count == 0 {
+		return
+	}
+	window.count--
+	l.windows[visitorKey] = window
+}

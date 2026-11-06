@@ -112,7 +112,7 @@ func savePostcard(app core.App, c *core.RequestEvent, captcha config.Captcha, ke
 		verified, err := verifier.Verify(tmplUtils.ContextFromRequest(c.Request), input.RecaptchaToken, clientID)
 		if err != nil {
 			logger.Error("Postcard captcha verification failed", "event", "postcard.captcha.failed", "outcome", "provider_error", "error_type", logging.ErrorType(err), "error", logging.Redact(err))
-			return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
+			return renderForm(input.ImageID, values, "CAPTCHA verification is unavailable right now, so your postcard was not queued. Please try again shortly.", http.StatusServiceUnavailable, app, c, captcha)
 		}
 		if !verified {
 			logger.Warn("Postcard submission rejected", "event", "postcard.submission.rejected", "outcome", "captcha_rejected")
@@ -131,6 +131,9 @@ func savePostcard(app core.App, c *core.RequestEvent, captcha config.Captcha, ke
 		SubmissionKey: input.SubmissionKey,
 	}, types.NowDateTime())
 	if err != nil {
+		// Nothing was queued, so the attempt must not count against the
+		// visitor's successful-send allowance.
+		limiter.release(clientID)
 		outcome := "persistence_error"
 		status := http.StatusInternalServerError
 		message := "The postcard could not be queued. Please try again."
@@ -143,7 +146,11 @@ func savePostcard(app core.App, c *core.RequestEvent, captcha config.Captcha, ke
 			outcome = "validation"
 			status = http.StatusUnprocessableEntity
 			message = "One postcard can have no more than five recipients."
-		} else if errors.Is(err, postcardworkflow.ErrInvalidPostcard) || errors.Is(err, postcardworkflow.ErrArtworkUnavailable) || errors.Is(err, postcardworkflow.ErrNoRecipients) {
+		} else if errors.Is(err, postcardworkflow.ErrArtworkUnavailable) {
+			outcome = "validation"
+			status = http.StatusUnprocessableEntity
+			message = artworkUnavailableMessage
+		} else if errors.Is(err, postcardworkflow.ErrInvalidPostcard) || errors.Is(err, postcardworkflow.ErrNoRecipients) {
 			outcome = "validation"
 			status = http.StatusUnprocessableEntity
 			message = "Check the postcard details and selected artwork."
