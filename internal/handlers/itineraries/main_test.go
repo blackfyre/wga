@@ -367,6 +367,14 @@ func TestImmediatePublicationTokenReadableCookieLess(t *testing.T) {
 	if response.Code != http.StatusOK {
 		t.Fatalf("cookie-less published view status = %d, want 200", response.Code)
 	}
+	if response.Header().Get("Set-Cookie") != "" {
+		t.Error("public viewing must not create a draft session")
+	}
+	for _, private := range []string{cookie.Value, csrf, itineraryworkflow.OwnerDigest(cookie.Value)} {
+		if strings.Contains(response.Body.String(), private) {
+			t.Error("public view exposes the publisher's session data")
+		}
+	}
 }
 
 func TestListedAndLinkOnlyVisibility(t *testing.T) {
