@@ -16,4 +16,20 @@
 
 - [x] 3.1 Run `templ generate` after changing the artist template and confirm only generated ignored files are produced.
 - [x] 3.2 Run focused seed, migration, artist-handler, and JSON-LD tests; run `go test ./...` if the focused checks pass.
-- [ ] 3.3 Manually verify an artist with a separately staged portrait shows the image and matching page metadata, while an artist without one shows the fallback.
+- [x] 3.3 Manually verify an artist with a separately staged portrait shows the image and matching page metadata, while an artist without one shows the fallback.
+
+  Local verification (2026-11-06): `playwright-tests/artist-portraits.spec.ts`
+  passed both scenarios on port 8102. Synthetic Artist 02 had its portrait
+  filename set in an isolated database and JPEG bytes staged separately in
+  PocketBase storage; the browser decoded the image and verified its alternative
+  text and matching Open Graph / `Person.image` URLs. Synthetic Artist 01 retained
+  the labelled fallback, omitted `Person.image`, and used artwork for Open Graph.
+  The staged-image test accepts `WGA_PORTRAIT_ARTIST_PATH` for repeatable checks
+  against independently provisioned assets; the default synthetic fixture skips
+  that scenario because it contains no portrait references.
+
+  Staging verification (2026-11-06): after the coordinator restored the Railway
+  `uat` service, the staged-image browser test passed against
+  `https://beta.wga.hu/artists/aachen-hans-von-r49032850f1b20c`, including decoding
+  the delivered portrait and matching its Open Graph and `Person.image` URLs.
+  This check was read-only; no staging records or files were changed.
