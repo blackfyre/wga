@@ -17,3 +17,9 @@
 - [x] 3.1 Run `templ generate` after changing the artist template and confirm only generated ignored files are produced.
 - [x] 3.2 Run focused seed, migration, artist-handler, and JSON-LD tests; run `go test ./...` if the focused checks pass.
 - [x] 3.3 Manually verify an artist with a separately staged portrait shows the image and matching page metadata, while an artist without one shows the fallback.
+
+  Reverified on 2026-11-06 with `playwright-tests/artist-portraits.spec.ts`:
+  both scenarios passed locally on port 8102 with separately staged JPEG bytes,
+  and the portrait scenario passed read-only on staging for AACHEN, Hans von
+  (`/artists/aachen-hans-von-r49032850f1b20c`), including image decoding and
+  matching Open Graph / `Person.image` URLs.

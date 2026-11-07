@@ -226,7 +226,8 @@ type Sentry struct {
 
 // OpenTelemetry contains the optional OTLP collector configuration.
 type OpenTelemetry struct {
-	endpoint url.URL
+	endpoint        url.URL
+	metricsDisabled bool
 }
 
 // Enabled reports whether an OTLP collector endpoint is configured.
@@ -240,6 +241,11 @@ func (o OpenTelemetry) Endpoint() string {
 		return ""
 	}
 	return o.endpoint.String()
+}
+
+// MetricsEnabled reports whether OTLP metric export is enabled alongside traces.
+func (o OpenTelemetry) MetricsEnabled() bool {
+	return o.Enabled() && !o.metricsDisabled
 }
 
 // DSN returns the configured server Sentry DSN.
@@ -476,7 +482,7 @@ func LoadFrom(lookup Lookup) Config {
 		lookup("WGA_SENTRY_DSN"),
 		lookup("WGA_SENTRY_BROWSER_DSN"),
 	)
-	openTelemetry := parseOpenTelemetry(lookup("OTEL_EXPORTER_OTLP_ENDPOINT"))
+	openTelemetry := parseOpenTelemetry(lookup("OTEL_EXPORTER_OTLP_ENDPOINT"), lookup("OTEL_METRICS_EXPORTER"))
 	captcha := Captcha{
 		secret:  Secret{value: lookup("WGA_RECAPTCHA_SECRET")},
 		siteKey: lookup("WGA_RECAPTCHA_SITE_KEY"),
@@ -570,7 +576,16 @@ func (c Config) Server() (Server, error) {
 	)
 }
 
-func parseOpenTelemetry(value string) parsed[OpenTelemetry] {
+func parseOpenTelemetry(value string, metricsExporter string) parsed[OpenTelemetry] {
+	var metricsDisabled bool
+	switch strings.ToLower(strings.TrimSpace(metricsExporter)) {
+	case "", "otlp":
+	case "none":
+		metricsDisabled = true
+	default:
+		return parsed[OpenTelemetry]{err: fmt.Errorf("OTEL_METRICS_EXPORTER must be otlp or none")}
+	}
+
 	if value == "" {
 		return parsed[OpenTelemetry]{}
 	}
@@ -583,7 +598,7 @@ func parseOpenTelemetry(value string) parsed[OpenTelemetry] {
 		return parsed[OpenTelemetry]{err: fmt.Errorf("OTEL_EXPORTER_OTLP_ENDPOINT must use https outside localhost, loopback, or Railway private networking")}
 	}
 
-	return parsed[OpenTelemetry]{value: OpenTelemetry{endpoint: endpoint}}
+	return parsed[OpenTelemetry]{value: OpenTelemetry{endpoint: endpoint, metricsDisabled: metricsDisabled}}
 }
 
 func isPrivateOpenTelemetryHost(host string) bool {
