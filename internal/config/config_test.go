@@ -72,6 +72,41 @@ func TestServerOpenTelemetryConfiguration(t *testing.T) {
 		{name: "endpoint credentials", endpoint: "https://user:secret@otel.example.com:4317", wantErr: "without credentials"},
 	}
 
+	metricTests := []struct {
+		name        string
+		endpoint    string
+		exporter    string
+		wantMetrics bool
+		wantErr     string
+	}{
+		{name: "metrics default to enabled", endpoint: "http://localhost:4317", wantMetrics: true},
+		{name: "otlp keeps metrics enabled", endpoint: "http://localhost:4317", exporter: "otlp", wantMetrics: true},
+		{name: "none disables metrics", endpoint: "http://localhost:4317", exporter: " None "},
+		{name: "none without endpoint is accepted", exporter: "none"},
+		{name: "unsupported exporter", endpoint: "http://localhost:4317", exporter: "prometheus", wantErr: "OTEL_METRICS_EXPORTER"},
+		{name: "unsupported exporter without endpoint", exporter: "nope", wantErr: "OTEL_METRICS_EXPORTER"},
+	}
+	for _, test := range metricTests {
+		t.Run(test.name, func(t *testing.T) {
+			values := validValues()
+			values["OTEL_EXPORTER_OTLP_ENDPOINT"] = test.endpoint
+			values["OTEL_METRICS_EXPORTER"] = test.exporter
+			server, err := LoadFrom(lookup(values)).Server()
+			if test.wantErr != "" {
+				if err == nil || !strings.Contains(err.Error(), test.wantErr) {
+					t.Fatalf("expected error containing %q, got %v", test.wantErr, err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected server configuration error: %v", err)
+			}
+			if got := server.OpenTelemetry.MetricsEnabled(); got != test.wantMetrics {
+				t.Fatalf("OpenTelemetry metrics enabled = %t, want %t", got, test.wantMetrics)
+			}
+		})
+	}
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			values := validValues()
