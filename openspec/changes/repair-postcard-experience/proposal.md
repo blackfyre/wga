@@ -16,6 +16,7 @@ This change restores a dependable, accessible postcard experience while preservi
 ## Capabilities
 
 ### Modified Capabilities
+
 - `postcard-sharing`: composition, selection, validation, confirmation, delivery communication, and recipient handling requirements for postcard sharing.
 
 ## Impact

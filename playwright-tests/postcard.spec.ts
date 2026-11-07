@@ -462,6 +462,12 @@ test("send postcard", async ({ page, request }) => {
 		"p••••@local.host, p••••@local.host",
 	);
 	await expect(page.locator("#postcard-confirmation-title")).toBeFocused();
+	await expect(page.locator("#postcard-compose")).toContainText(
+		"has not been sent yet",
+	);
+	await expect(
+		page.getByRole("link", { name: "SEND ANOTHER POSTCARD →" }),
+	).toHaveAttribute("href", `/postcard/send?awid=${syntheticArtworkID}`);
 
 	let messageIDs: string[] = [];
 	try {

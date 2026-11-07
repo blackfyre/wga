@@ -139,3 +139,20 @@ func TestPostcardRecipientRendersMusicOnlyWithMatchingPublishedSong(t *testing.T
 		t.Fatal("recipient music must not autoplay")
 	}
 }
+
+func TestPostcardConfirmationNamesWorkAndOffersAnotherPostcard(t *testing.T) {
+	html := renderPostcard(t, PostcardConfirmationBlock(PostcardConfirmationView{MaskedRecipients: "r••••@example.test", ViewURL: "/postcard?token=opaque", Expires: "22 September 2026", Title: "Madonna & Child", ComposeURL: "/postcard/send?awid=artwork-id"}))
+	for _, want := range []string{"Madonna &amp; Child", "queued for delivery", "has not been sent yet", `href="/postcard/send?awid=artwork-id"`, "SEND ANOTHER POSTCARD"} {
+		if !strings.Contains(html, want) {
+			t.Fatalf("confirmation lacks %q: %s", want, html)
+		}
+	}
+
+	bare := renderPostcard(t, PostcardConfirmationBlock(PostcardConfirmationView{MaskedRecipients: "r••••@example.test", ViewURL: "/postcard?token=opaque", Expires: "22 September 2026"}))
+	if strings.Contains(bare, "data-postcard-confirmation-work") || strings.Contains(bare, "SEND ANOTHER POSTCARD") {
+		t.Fatalf("confirmation rendered work details it does not have: %s", bare)
+	}
+	if !strings.Contains(bare, "has not been sent yet") {
+		t.Fatalf("confirmation does not distinguish queued from sent: %s", bare)
+	}
+}

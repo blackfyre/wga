@@ -15,10 +15,12 @@ import (
 
 	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/logging"
+	postcardworkflow "github.com/blackfyre/wga/internal/postcards"
 	"github.com/blackfyre/wga/internal/requesttrust"
 	"github.com/blackfyre/wga/internal/testutils"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/router"
+	"github.com/pocketbase/pocketbase/tools/types"
 )
 
 type verifierFunc func(context.Context, string, string) (bool, error)
@@ -439,5 +441,39 @@ func TestSubmissionLimiterReleaseRestoresOneAdmission(t *testing.T) {
 	limiter.release("unknown")
 	if _, ok := limiter.windows["unknown"]; ok {
 		t.Fatal("release created a window for an unknown visitor")
+	}
+}
+
+func TestRenderQueuedPostcardNamesWorkAndKeepsTheLinkPrivate(t *testing.T) {
+	app := testutils.NewTestApp(t)
+	artworkID := installComposeArtwork(t, app, "Queued Work")
+	postcard := core.NewRecord(core.NewBaseCollection("postcards"))
+	postcard.Set("image_id", artworkID)
+	result := &postcardworkflow.QueueResult{
+		Postcard:         postcard,
+		Access:           []postcardworkflow.RecipientAccess{{Token: "opaque-token", ExpiresAt: types.NowDateTime().Add(time.Hour)}},
+		MaskedRecipients: []string{"r••••@example.test"},
+	}
+	recorder := httptest.NewRecorder()
+	event := &core.RequestEvent{App: app, Event: router.Event{Request: httptest.NewRequest(http.MethodPost, "/postcard", nil), Response: recorder}}
+
+	if err := renderQueuedPostcard(result, app, event); err != nil {
+		t.Fatalf("render queued postcard: %v", err)
+	}
+
+	if recorder.Code != http.StatusAccepted {
+		t.Fatalf("status = %d, want %d", recorder.Code, http.StatusAccepted)
+	}
+	if got := recorder.Header().Get("Cache-Control"); got != "no-store" {
+		t.Fatalf("Cache-Control = %q, want no-store", got)
+	}
+	if got := recorder.Header().Get("Referrer-Policy"); got != "no-referrer" {
+		t.Fatalf("Referrer-Policy = %q, want no-referrer", got)
+	}
+	body := recorder.Body.String()
+	for _, want := range []string{"Queued Work", "has not been sent yet", `href="/postcard/send?awid=` + artworkID + `"`, "token=opaque-token"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("confirmation lacks %q: %s", want, body)
+		}
 	}
 }

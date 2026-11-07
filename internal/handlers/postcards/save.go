@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -12,6 +13,7 @@ import (
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
 	"github.com/blackfyre/wga/internal/config"
+	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/errs"
 	"github.com/blackfyre/wga/internal/logging"
 	postcardworkflow "github.com/blackfyre/wga/internal/postcards"
@@ -168,6 +170,7 @@ func renderQueuedPostcard(result *postcardworkflow.QueueResult, app core.App, c 
 		ViewURL:          "/postcard?token=" + access.Token,
 		Expires:          access.ExpiresAt.Time().UTC().Format("2 January 2006"),
 	}
+	confirmation.Title, confirmation.ComposeURL = confirmationWork(app, result.Postcard)
 	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, "Postcard queued")
 	var buf bytes.Buffer
 	var err error
@@ -179,8 +182,30 @@ func renderQueuedPostcard(result *postcardworkflow.QueueResult, app core.App, c 
 	if err != nil {
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
+	// The confirmation carries the shared bearer link, so, like the recipient
+	// view, it must not be stored or leak through a referrer.
+	c.Response.Header().Set("Cache-Control", "no-store")
+	c.Response.Header().Set("Referrer-Policy", "no-referrer")
 	logging.RequestLogger(app, c).Info("Postcard submission queued", "event", "postcard.submission.queued", "outcome", "queued", "correlation_id", result.Postcard.GetString("correlation_id"))
 	return c.HTML(http.StatusAccepted, buf.String())
+}
+
+// confirmationWork names the postcard's selected work and the route to
+// compose another postcard for it, or returns empty values when the work is
+// no longer published.
+func confirmationWork(app core.App, postcard *core.Record) (string, string) {
+	artworkID := postcard.GetString("image_id")
+	if ids := postcard.GetStringSlice("image_id"); len(ids) > 0 {
+		artworkID = ids[0]
+	}
+	if artworkID == "" {
+		return "", ""
+	}
+	artwork, err := app.FindFirstRecordByFilter(constants.CollectionArtworks, "id = {:id} && published = true", map[string]any{"id": artworkID})
+	if err != nil {
+		return "", ""
+	}
+	return artwork.GetString("title"), "/postcard/send?awid=" + url.QueryEscape(artwork.Id)
 }
 
 func recipientRows(recipients []string) []string {
