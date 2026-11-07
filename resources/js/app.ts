@@ -1,6 +1,7 @@
 import {
 	clearDynamicModuleRecovery,
 	recoverDynamicModule,
+	refreshEntryModule,
 	renderDynamicModuleRetry,
 } from "./dynamic-module-recovery";
 import { registerItineraryKeyboard } from "./itinerary";
@@ -33,8 +34,15 @@ if (window.location.pathname === "/sentry-test") {
 		.then(() => clearDynamicModuleRecovery(window.sessionStorage))
 		.catch(() => {
 			if (
-				!recoverDynamicModule(window.sessionStorage, window.location.href, () =>
-					window.location.reload(),
+				!recoverDynamicModule(
+					window.sessionStorage,
+					window.location.href,
+					() => {
+						void refreshEntryModule(
+							document,
+							window.fetch.bind(window),
+						).finally(() => window.location.reload());
+					},
 				)
 			) {
 				renderDynamicModuleRetry(document);

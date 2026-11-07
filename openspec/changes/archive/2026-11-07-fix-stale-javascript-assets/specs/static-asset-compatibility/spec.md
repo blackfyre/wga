@@ -30,12 +30,17 @@ The application SHALL reference the browser JavaScript entry module through a UR
 
 ### Requirement: Dynamic module recovery
 
-The browser SHALL recover once from a dynamic-module load failure by reloading the page, and SHALL present an actionable failure state if the failure persists.
+The browser SHALL recover once from a dynamic-module load failure by re-requesting the page's entry module past the browser cache and then reloading the page, and SHALL present an actionable failure state if the failure persists.
 
 #### Scenario: First dynamic-module failure
 
 - **WHEN** a dynamic JavaScript module fails to load
 - **THEN** the browser reloads the page once without discarding the current URL
+
+#### Scenario: Recovery from a previous release's cached page and entry
+
+- **WHEN** an edge-cached document from the previous release references an entry module that the browser still caches, and that entry imports a chunk the current release no longer serves
+- **THEN** recovery replaces the cached entry module with the current one before reloading, so the reloaded page loads the current release's chunks
 
 #### Scenario: Persistent dynamic-module failure
 

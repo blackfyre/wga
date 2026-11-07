@@ -1,3 +1,5 @@
+import { createServer } from "node:http";
+import type { AddressInfo } from "node:net";
 import { expect, type Page, test } from "@playwright/test";
 
 // A browser holding an entry module from an earlier release can request a
@@ -100,4 +102,110 @@ test("a persistent dynamic-module failure offers a reload action instead of loop
 	await alert.getByRole("button", { name: "Reload page" }).click();
 	await reload;
 	expect(documentLoads()).toBe(3);
+});
+
+// Release A's catalogue HTML stays in the edge cache while the browser keeps
+// release A's entry module for the edge's four-hour browser TTL. Release B no
+// longer serves a chunk that entry imports. A proxy plays the edge and both
+// origins; page.route is avoided because it disables the HTTP cache.
+test("recovery after a release loads the current entry despite cached HTML and entry", async ({
+	page,
+	baseURL,
+}) => {
+	const origin = baseURL ?? "";
+	const currentEntry = await (await fetch(`${origin}/assets/js/app.js`)).text();
+	const currentChunk = currentEntry.match(/bootstrap-[^"]+\.js/)?.[0];
+	expect(currentChunk).toBeTruthy();
+	const removedChunk = "bootstrap-removed0.js";
+	const releaseAEntry = currentEntry.replaceAll(
+		currentChunk as string,
+		removedChunk,
+	);
+	const cachedHTML = await (
+		await fetch(`${origin}/artists`, { headers: { Accept: "text/html" } })
+	).text();
+	expect(cachedHTML).toMatch(/src="\/assets\/js\/app\.js\?v=[0-9a-f]{12}"/);
+
+	let release: "A" | "B" = "A";
+	const entryRequests: string[] = [];
+	const currentChunkRequests: string[] = [];
+	const edge = createServer(async (request, response) => {
+		const url = new URL(request.url ?? "/", "http://edge.test");
+		if (url.pathname === "/artists") {
+			response.writeHead(200, {
+				"content-type": "text/html; charset=utf-8",
+				"cache-control": "no-cache",
+			});
+			response.end(cachedHTML);
+			return;
+		}
+		if (url.pathname === "/assets/js/app.js") {
+			entryRequests.push(release);
+			response.writeHead(200, {
+				"content-type": "text/javascript; charset=utf-8",
+				"cache-control": "max-age=14400",
+			});
+			response.end(release === "A" ? releaseAEntry : currentEntry);
+			return;
+		}
+		if (url.pathname === `/assets/js/${removedChunk}`) {
+			if (release === "B") {
+				response.writeHead(404, { "content-type": "text/plain" });
+				response.end("not found");
+				return;
+			}
+			url.pathname = `/assets/js/${currentChunk}`;
+			const chunk = await fetch(`${origin}${url.pathname}`);
+			response.writeHead(200, {
+				"content-type": "text/javascript; charset=utf-8",
+				"cache-control": "no-store",
+			});
+			response.end(await chunk.text());
+			return;
+		}
+		if (url.pathname === `/assets/js/${currentChunk}`) {
+			currentChunkRequests.push(release);
+		}
+		const upstream = await fetch(`${origin}${url.pathname}${url.search}`, {
+			method: request.method,
+			headers: { accept: request.headers.accept ?? "*/*" },
+		});
+		const headers: Record<string, string> = {};
+		for (const name of ["content-type", "cache-control"]) {
+			const value = upstream.headers.get(name);
+			if (value) {
+				headers[name] = value;
+			}
+		}
+		response.writeHead(upstream.status, headers);
+		response.end(Buffer.from(await upstream.arrayBuffer()));
+	});
+	await new Promise<void>((resolve) => edge.listen(0, "127.0.0.1", resolve));
+	const { port } = edge.address() as AddressInfo;
+	const pageURL = `http://127.0.0.1:${port}/artists`;
+
+	try {
+		await page.goto(pageURL);
+		await expect
+			.poll(() => page.evaluate(() => typeof (window as { wga?: unknown }).wga))
+			.toBe("object");
+		expect(entryRequests).toEqual(["A"]);
+
+		release = "B";
+		const documentLoads = countDocumentLoads(page, "/artists");
+		await page.goto(pageURL);
+
+		await expect.poll(() => currentChunkRequests).toContain("B");
+		await expect
+			.poll(() => page.evaluate(() => typeof (window as { wga?: unknown }).wga))
+			.toBe("object");
+		expect(documentLoads()).toBe(2);
+		expect(entryRequests).toEqual(["A", "B"]);
+		await expect(page).toHaveURL(pageURL);
+		await expect(page.getByRole("button", { name: "Reload page" })).toHaveCount(
+			0,
+		);
+	} finally {
+		await new Promise((resolve) => edge.close(resolve));
+	}
 });
