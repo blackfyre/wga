@@ -43,6 +43,11 @@ func assetCacheControl(path string) string {
 	return ""
 }
 
+func assetExists(fsys fs.FS, path string) bool {
+	info, err := fs.Stat(fsys, path)
+	return err == nil && !info.IsDir()
+}
+
 const (
 	agentContentCacheControl = "public, no-cache, must-revalidate"
 	agentContentNoStore      = "private, no-store"
@@ -134,11 +139,15 @@ func RegisterHandlers(app core.App) {
 		if app.IsDev() {
 			assetFiles = os.DirFS("../internal/assets/public")
 		}
+		tmplUtils.ConfigureEntryScript(assetFiles)
 		se.Router.GET("/assets/{path...}", func(c *core.RequestEvent) error {
-			if cacheControl := assetCacheControl(c.Request.PathValue("path")); cacheControl != "" {
+			path := c.Request.PathValue("path")
+			// Only an existing asset gets a cache policy: a missing chunk must
+			// not be pinned as an immutable 404 by browsers or the edge.
+			if cacheControl := assetCacheControl(path); cacheControl != "" && assetExists(assetFiles, path) {
 				c.Response.Header().Set("Cache-Control", cacheControl)
 			}
-			return c.FileFS(assetFiles, c.Request.PathValue("path"))
+			return c.FileFS(assetFiles, path)
 		})
 
 		// Sitemap

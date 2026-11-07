@@ -107,6 +107,8 @@ Save the expression through the Cloudflare rule editor, which validates it, and 
 
 Verify the rule after each change: a repeated anonymous request for `/artists` reports `cf-cache-status: HIT`, while requests carrying `HX-Request: true`, `Accept: */*`, `Accept: text/markdown`, or a `wga_aw_prefs` cookie report `BYPASS` or `DYNAMIC`, and `/itineraries/session` is never cached.
 
+Browser JavaScript does not depend on a Cloudflare rule. The zone's default Browser Cache TTL (observed as `max-age=14400` on `beta.wga.hu`) replaces the origin's shorter policy on `.js` and `.css`, so `/assets/js/app.js` reaches browsers cacheable for four hours despite its origin `Cache-Control: no-cache`. The layout therefore references the entry module as `/assets/js/app.js?v=<content digest>`, and each release that changes the entry module changes that URL; content-hashed chunks keep `public, max-age=31536000, immutable`, and a missing asset never carries that header. As optional hardening, set the zone's Browser Cache TTL to **Respect Existing Headers**, or add a cache rule matching `http.request.uri.path eq "/assets/js/app.js"` with Browser TTL **Respect origin**, then confirm that the entry module reports `cache-control: no-cache`. The zone setting also affects every other proxied hostname in the zone.
+
 Do not add response status or edge-TTL overrides to the agent-content rule. Successful generated resources publish `public, no-cache, must-revalidate` with a content-derived `ETag`, while misses publish `private, no-store`. Cloudflare must respect those origin decisions so every cached response is revalidated against the current publication before use and corrected or unpublished records cannot remain stale at the edge.
 
 ## Generated-publication recovery
