@@ -296,6 +296,8 @@ func createCollectionDataAppCollections(t *testing.T, app core.App) {
 	saveCollection("Artworks", constants.CollectionArtworks,
 		&core.TextField{Name: "title"},
 		&core.RelationField{Name: "author", CollectionId: "artists", MinSelect: 1, MaxSelect: 10},
+		&core.RelationField{Name: "primary_author", CollectionId: "artists", MaxSelect: 1},
+		&core.RelationField{Name: "co_authors", CollectionId: "artists", MaxSelect: 10},
 		&core.RelationField{Name: "form", CollectionId: "art_forms", MinSelect: 1, MaxSelect: 20},
 		&core.RelationField{Name: "type", CollectionId: "art_types", MinSelect: 0, MaxSelect: 20},
 		&core.RelationField{Name: "school", CollectionId: "schools", MinSelect: 0, MaxSelect: 10},

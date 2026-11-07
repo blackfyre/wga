@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"github.com/blackfyre/wga/internal/artworks"
 	"github.com/blackfyre/wga/internal/constants"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
@@ -116,12 +117,12 @@ func selectionArtistFilter(artistID string) dbx.Expression {
 	return dbx.NewExp("Art_selections.artist = {:artist_id}", dbx.Params{"artist_id": artistID})
 }
 
-// artworkAuthorFilter scopes an artwork query to records whose author relation
-// includes the given artist. The artworks.author relation is stored as a JSON
-// array, so it is matched through json_each like the artwork record read-model.
+// artworkAuthorFilter scopes an artwork query to records whose primary author
+// or co-authors include the given artist, matched through the shared author-id
+// JSON array like the artwork record read-model.
 func artworkAuthorFilter(artistID string) dbx.Expression {
 	return dbx.NewExp(
-		"EXISTS (SELECT 1 FROM json_each(Artworks.author) je WHERE je.value = {:artist_id})",
+		"EXISTS (SELECT 1 FROM json_each("+artworks.AuthorIDsSQL("Artworks")+") je WHERE je.value = {:artist_id})",
 		dbx.Params{"artist_id": artistID},
 	)
 }

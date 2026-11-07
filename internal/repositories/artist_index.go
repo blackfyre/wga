@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"github.com/blackfyre/wga/internal/artworks"
 	"sort"
 	"strings"
 
@@ -377,7 +378,7 @@ func loadPublishedArtworkAuthorIDs(app core.App) (artistAvailabilitySet, error) 
 	if err := app.DB().NewQuery(`
 		SELECT DISTINCT je.value AS author_id
 		FROM Artworks
-		CROSS JOIN json_each(Artworks.author) je
+		CROSS JOIN json_each(` + artworks.AuthorIDsSQL("Artworks") + `) je
 		WHERE Artworks.published IS true AND je.value != ''
 	`).All(&rows); err != nil {
 		return nil, err

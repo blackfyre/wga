@@ -1,6 +1,9 @@
 package repositories
 
-import "github.com/pocketbase/pocketbase/core"
+import (
+	"github.com/blackfyre/wga/internal/artworks"
+	"github.com/pocketbase/pocketbase/core"
+)
 
 type StatisticsRepository struct {
 	app core.App
@@ -56,7 +59,7 @@ func (r *StatisticsRepository) GetArtworksBySchoolAndPeriod() ([]SchoolPeriodRow
 			     THEN s.name ELSE 'Other' END AS school_label,
 			COUNT(DISTINCT aw.id) AS count
 		FROM Artworks aw
-		CROSS JOIN json_each(aw.author) je_a
+		CROSS JOIN json_each(` + artworks.AuthorIDsSQL("aw") + `) je_a
 		JOIN Artists ar ON je_a.value = ar.id
 		CROSS JOIN json_each(aw.school) je_s
 		JOIN Schools s ON je_s.value = s.id

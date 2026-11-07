@@ -417,7 +417,7 @@ func TestResolveWorkArtistChoosesPublishedAuthor(t *testing.T) {
 	})
 
 	works := core.NewBaseCollection("Artworks")
-	works.Fields.Add(&core.RelationField{Name: "author", CollectionId: "artists", MinSelect: 1, MaxSelect: 10})
+	works.Fields.Add(&core.RelationField{Name: "author", CollectionId: "artists", MinSelect: 1, MaxSelect: 10}, &core.RelationField{Name: "primary_author", CollectionId: "artists", MaxSelect: 1}, &core.RelationField{Name: "co_authors", CollectionId: "artists", MaxSelect: 10})
 	work := core.NewRecord(works)
 	work.Set("author", []string{"artistunpub0001", "artistpub000001"})
 

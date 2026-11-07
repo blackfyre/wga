@@ -83,7 +83,7 @@ func installComposeArtwork(t *testing.T, app core.App, title string) string {
 	artworks, err := app.FindCollectionByNameOrId("artworks")
 	if err != nil {
 		artworks = core.NewBaseCollection("artworks")
-		artworks.Fields.Add(&core.BoolField{Name: "published"}, &core.TextField{Name: "title"}, &core.TextField{Name: "technique"}, &core.TextField{Name: "image"}, &core.RelationField{Name: "author", CollectionId: artists.Id, MaxSelect: 1})
+		artworks.Fields.Add(&core.BoolField{Name: "published"}, &core.TextField{Name: "title"}, &core.TextField{Name: "technique"}, &core.TextField{Name: "image"}, &core.RelationField{Name: "author", CollectionId: artists.Id, MaxSelect: 1}, &core.RelationField{Name: "primary_author", CollectionId: artists.Id, MaxSelect: 1}, &core.RelationField{Name: "co_authors", CollectionId: artists.Id, MaxSelect: 10})
 		if err := app.Save(artworks); err != nil {
 			t.Fatal(err)
 		}
@@ -124,7 +124,7 @@ func TestSendPostcardAttributesThePublishedAuthor(t *testing.T) {
 		authorIDs = append(authorIDs, artist.Id)
 	}
 	artworks := core.NewBaseCollection("artworks")
-	artworks.Fields.Add(&core.BoolField{Name: "published"}, &core.TextField{Name: "title"}, &core.TextField{Name: "technique"}, &core.TextField{Name: "image"}, &core.RelationField{Name: "author", CollectionId: artists.Id, MaxSelect: 2})
+	artworks.Fields.Add(&core.BoolField{Name: "published"}, &core.TextField{Name: "title"}, &core.TextField{Name: "technique"}, &core.TextField{Name: "image"}, &core.RelationField{Name: "author", CollectionId: artists.Id, MaxSelect: 2}, &core.RelationField{Name: "primary_author", CollectionId: artists.Id, MaxSelect: 1}, &core.RelationField{Name: "co_authors", CollectionId: artists.Id, MaxSelect: 10})
 	if err := app.Save(artworks); err != nil {
 		t.Fatal(err)
 	}

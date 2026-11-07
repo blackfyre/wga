@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"errors"
+	"github.com/blackfyre/wga/internal/artworks"
 	"net/http"
 	"strconv"
 	"strings"
@@ -147,12 +148,8 @@ func loadViewer(app core.App, record *core.Record, stops []*core.Record, index i
 		if year := artwork.GetInt("date_start"); year > 0 {
 			view.StopDate = strconv.Itoa(year)
 		}
-		if errs := app.ExpandRecord(artwork, []string{"author"}, nil); len(errs) == 0 {
-			if author := artwork.ExpandedOne("author"); author != nil {
-				if hasCompleteItineraryArtistIdentity(author) {
-					view.StopArtist = author.GetString("filing_name")
-				}
-			}
+		if author := artworks.FindAttributedAuthor(app, artwork); hasCompleteItineraryArtistIdentity(author) {
+			view.StopArtist = author.GetString("filing_name")
 		}
 	}
 
@@ -165,14 +162,10 @@ func viewerPlate(app core.App, artwork *core.Record) dto.Plate {
 	alt := artwork.GetString("title")
 	label := artwork.GetString("title")
 
-	if errs := app.ExpandRecord(artwork, []string{"author"}, nil); len(errs) == 0 {
-		if author := artwork.ExpandedOne("author"); author != nil {
-			if hasCompleteItineraryArtistIdentity(author) {
-				shortName := author.GetString("short_name")
-				alt = artwork.GetString("title") + " by " + shortName
-				label = alt
-			}
-		}
+	if author := artworks.FindAttributedAuthor(app, artwork); hasCompleteItineraryArtistIdentity(author) {
+		shortName := author.GetString("short_name")
+		alt = artwork.GetString("title") + " by " + shortName
+		label = alt
 	}
 
 	if artwork.GetString("image") == "" {

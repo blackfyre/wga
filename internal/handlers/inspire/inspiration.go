@@ -2,6 +2,7 @@ package inspire
 
 import (
 	"fmt"
+	"github.com/blackfyre/wga/internal/artworks"
 	"github.com/blackfyre/wga/internal/assets/templ/dto"
 	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/utils"
@@ -23,7 +24,7 @@ func inspirationWorks(app *pocketbase.PocketBase) (dto.ImageGrid, error) {
 		SELECT artworks.id, artworks.title, artworks.image, artworks.image_width,
 			artworks.comment, artworks.technique, artists.id, artists.name
 		FROM artworks
-		INNER JOIN artists ON json_extract(artworks.author, '$[0]') = artists.id
+		INNER JOIN artists ON ` + artworks.FirstAuthorIDSQL("artworks") + ` = artists.id
 		WHERE artworks.published = TRUE AND artists.published = TRUE
 		ORDER BY RANDOM()
 		LIMIT 10`).Rows()

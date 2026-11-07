@@ -1070,7 +1070,7 @@ func resolvePaneCanonicalPathContext(ctx context.Context, app core.App, pane dua
 			return "", err
 		}
 
-		authorIDs := work.GetStringSlice("author")
+		authorIDs := artworks.AuthorIDs(work)
 		if len(authorIDs) == 0 {
 			return "", nil
 		}
@@ -1291,7 +1291,7 @@ func buildDualWorkRecordContext(ctx context.Context, app *pocketbase.PocketBase,
 }
 
 func dualWorkAuthor(app core.App, work *core.Record) (*core.Record, string, error) {
-	authorIDs := work.GetStringSlice("author")
+	authorIDs := artworks.AuthorIDs(work)
 	if len(authorIDs) == 0 {
 		return nil, "", sql.ErrNoRows
 	}
@@ -2009,7 +2009,7 @@ func getArtistLookupResults(app core.App, query string) ([]pages.DualLookupResul
 func getArtworkLookupResults(app core.App, query string) ([]pages.DualLookupResult, error) {
 	records, err := app.FindRecordsByFilter(
 		constants.CollectionArtworks,
-		"published = true && author:length > 0 && title ~ {:query}",
+		"published = true && "+artworks.HasAuthorFilter+" && title ~ {:query}",
 		"+title,+id",
 		dualLookupLimit,
 		0,
@@ -2026,7 +2026,7 @@ func getArtworkLookupResults(app core.App, query string) ([]pages.DualLookupResu
 
 	results := make([]pages.DualLookupResult, 0, len(records))
 	for _, record := range records {
-		authorIDs := record.GetStringSlice("author")
+		authorIDs := artworks.AuthorIDs(record)
 		if len(authorIDs) == 0 {
 			continue
 		}
@@ -2056,7 +2056,7 @@ func uniqueLookupArtistIDs(records []*core.Record) []string {
 	artistIDs := make([]string, 0, len(records))
 
 	for _, record := range records {
-		for _, artistID := range record.GetStringSlice("author") {
+		for _, artistID := range artworks.AuthorIDs(record) {
 			if artistID == "" {
 				continue
 			}

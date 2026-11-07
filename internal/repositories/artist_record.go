@@ -3,6 +3,7 @@ package repositories
 import (
 	"database/sql"
 	"errors"
+	"github.com/blackfyre/wga/internal/artworks"
 	"strconv"
 
 	"github.com/blackfyre/wga/internal/constants"
@@ -69,13 +70,13 @@ func (r *ArtistRecordRepository) ListPublishedArtists() ([]*core.Record, error) 
 	return records, nil
 }
 
-// CountPublishedWorks returns the number of published artworks whose author
-// relation includes the given artist.
+// CountPublishedWorks returns the number of published artworks whose primary
+// author or co-authors include the given artist.
 func (r *ArtistRecordRepository) CountPublishedWorks(artistID string) (int, error) {
 	query := r.app.RecordQuery(constants.CollectionArtworks)
 	query.AndWhere(dbx.NewExp("published = true"))
 	query.AndWhere(dbx.NewExp(
-		"EXISTS (SELECT 1 FROM json_each(Artworks.author) je WHERE je.value = {:artist_id})",
+		"EXISTS (SELECT 1 FROM json_each("+artworks.AuthorIDsSQL("Artworks")+") je WHERE je.value = {:artist_id})",
 		dbx.Params{"artist_id": artistID},
 	))
 	query.Select("COUNT(DISTINCT id)")
@@ -98,7 +99,7 @@ func (r *ArtistRecordRepository) ListPublishedWorks(artistID string, limit int) 
 	query := r.app.RecordQuery(constants.CollectionArtworks)
 	query.AndWhere(dbx.NewExp("published = true"))
 	query.AndWhere(dbx.NewExp(
-		"EXISTS (SELECT 1 FROM json_each(Artworks.author) je WHERE je.value = {:artist_id})",
+		"EXISTS (SELECT 1 FROM json_each("+artworks.AuthorIDsSQL("Artworks")+") je WHERE je.value = {:artist_id})",
 		dbx.Params{"artist_id": artistID},
 	))
 	query.OrderBy("title ASC", "id ASC")

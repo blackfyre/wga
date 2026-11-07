@@ -126,6 +126,8 @@ func newArtworkSearchApp(t *testing.T) *pocketbase.PocketBase {
 	artworks.Fields.Add(
 		&core.TextField{Id: "artwork_title", Name: "title", Required: true},
 		&core.RelationField{Id: "artwork_author", Name: "author", CollectionId: artists.Id, MinSelect: 1, MaxSelect: 10},
+		&core.RelationField{Name: "primary_author", CollectionId: artists.Id, MaxSelect: 1},
+		&core.RelationField{Name: "co_authors", CollectionId: artists.Id, MaxSelect: 10},
 		&core.RelationField{Id: "artwork_form", Name: "form", CollectionId: forms.Id, MinSelect: 1, MaxSelect: 20},
 		&core.RelationField{Id: "artwork_type", Name: "type", CollectionId: types.Id, MinSelect: 1, MaxSelect: 20},
 		&core.RelationField{Id: "artwork_school", Name: "school", CollectionId: schools.Id, MinSelect: 1, MaxSelect: 10},
@@ -149,6 +151,8 @@ type searchArtworkSeed struct {
 	id        string
 	title     string
 	authors   []string
+	primary   string
+	coAuthors []string
 	form      string
 	typeSlug  string
 	school    string
@@ -379,6 +383,12 @@ func saveSearchArtwork(t *testing.T, app *pocketbase.PocketBase, seed searchArtw
 	record.Id = seed.id
 	record.Set("title", seed.title)
 	record.Set("author", seed.authors)
+	if seed.primary != "" {
+		record.Set("primary_author", seed.primary)
+	}
+	if len(seed.coAuthors) > 0 {
+		record.Set("co_authors", seed.coAuthors)
+	}
 	if seed.form != "" {
 		record.Set("form", []string{seed.form})
 	}
@@ -531,6 +541,51 @@ func TestBuildArtworkSearchViewFiltersByExactArtistID(t *testing.T) {
 	}
 	if empty.Results.ResultCount != 0 || empty.ArtistScopeFilingName != "Aachen, Hans von" {
 		t.Errorf("empty refined artist view = count %d, scope %q", empty.Results.ResultCount, empty.ArtistScopeFilingName)
+	}
+}
+
+// TestBuildArtworkSearchViewUsesPrimaryCoAuthorAndLegacyFallback proves the
+// artist filters and artist sort read the primary author and co-authors, fall
+// back to the legacy author only while no primary author is assigned, and
+// ignore a stale legacy author once a primary author is curated.
+func TestBuildArtworkSearchViewUsesPrimaryCoAuthorAndLegacyFallback(t *testing.T) {
+	app := newArtworkSearchApp(t)
+	saveSearchArtist(t, app, "artistone000001", "Artist One")
+	saveSearchArtist(t, app, "artisttwo000001", "Artist Two")
+	saveSearchArtist(t, app, "artistzed000001", "Zed Artist")
+
+	saveSearchArtwork(t, app, searchArtworkSeed{id: "workprimary0001", title: "Primary", primary: "artistone000001", published: true})
+	saveSearchArtwork(t, app, searchArtworkSeed{id: "workcoauthor001", title: "Co-authored", primary: "artistzed000001", coAuthors: []string{"artistone000001"}, published: true})
+	saveSearchArtwork(t, app, searchArtworkSeed{id: "worklegacy00001", title: "Legacy", authors: []string{"artisttwo000001", "artistone000001"}, published: true})
+	saveSearchArtwork(t, app, searchArtworkSeed{id: "workcurated0001", title: "Curated", authors: []string{"artistone000001"}, primary: "artisttwo000001", published: true})
+	saveSearchArtwork(t, app, searchArtworkSeed{id: "worknoauthor001", title: "No author", published: true})
+
+	titles := func(values neturl.Values) []string {
+		t.Helper()
+		view, _, err := buildArtworkSearchView(app, values, 1, 16)
+		if err != nil {
+			t.Fatalf("build view %v: %v", values, err)
+		}
+		got := []string{}
+		for _, artwork := range view.Results.Artworks {
+			got = append(got, artwork.Title)
+		}
+		return got
+	}
+
+	if got, want := titles(neturl.Values{"artist_id": {"artistone000001"}, "sort": {"title"}}), []string{"Co-authored", "Legacy", "Primary"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("artist_id results = %v, want %v", got, want)
+	}
+	if got, want := titles(neturl.Values{"q": {"Artist One"}, "sort": {"title"}}), []string{"Co-authored", "Legacy", "Primary"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("query results = %v, want %v", got, want)
+	}
+	// Sorting by artist uses the attributed author: One (Primary), Two
+	// (Curated, and Legacy through its first legacy author), Zed (Co-authored).
+	if got, want := titles(neturl.Values{"sort": {"artist"}}), []string{"Primary", "Curated", "Legacy", "Co-authored"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("artist sort = %v, want %v", got, want)
+	}
+	if got, want := titles(neturl.Values{"sort": {"artist"}, "dir": {"desc"}}), []string{"Co-authored", "Curated", "Legacy", "Primary"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("artist sort desc = %v, want %v", got, want)
 	}
 }
 
