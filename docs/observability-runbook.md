@@ -33,7 +33,11 @@ OTEL_EXPORTER_OTLP_ENDPOINT=http://${{otel-collector.RAILWAY_PRIVATE_DOMAIN}}:43
 
 This Railway reference variable follows the collector's private domain without hard-coding it. Private-network traffic is encrypted by Railway, so the validated WGA endpoint may use `http` for the `railway.internal` address. Do not create or reference a public collector domain.
 
-Endpoint presence is the only application-side enablement control. WGA has no telemetry enable flag and must not receive final-backend credentials.
+Endpoint presence is the only application-side enablement control. WGA has no telemetry enable flag and must not receive final-backend credentials. Leave `OTEL_METRICS_EXPORTER` unset when WGA exports to the collector, so that metrics reach the backend.
+
+### Trace-only receivers
+
+When an environment points WGA directly at a receiver that accepts only OTLP traces, such as a Jaeger service, also set `OTEL_METRICS_EXPORTER=none` on WGA and redeploy. WGA then exports traces only, and its `observability.otel.enabled` startup event reports `metrics_enabled=false`. Without the setting, the receiver rejects every metric export and WGA logs `failed to upload metrics: … unknown service opentelemetry.proto.collector.metrics.v1.MetricsService`. Remove the variable and redeploy to restore metric export.
 
 ## Rollout and verification
 
