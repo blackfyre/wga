@@ -1,17 +1,21 @@
 package observability
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"io"
 	"log/slog"
 	"net"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/blackfyre/wga/internal/config"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/metric/noop"
 	"go.opentelemetry.io/otel/propagation"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -117,7 +121,7 @@ func TestOTLPExportersIgnoreAmbientCredentials(t *testing.T) {
 		_ = listener.Close()
 	})
 
-	traceExporter, metricExporter, err := newOTLPExporters(t.Context(), "http://"+listener.Addr().String())
+	traceExporter, metricExporter, err := newOTLPExporters(t.Context(), "http://"+listener.Addr().String(), true)
 	if err != nil {
 		t.Fatalf("initialise exporters with ambient credentials: %v", err)
 	}
@@ -136,6 +140,36 @@ func TestOTLPExportersIgnoreAmbientCredentials(t *testing.T) {
 	}
 	if got := (<-receiver.metadata).Get("authorization"); len(got) != 0 {
 		t.Fatalf("exported ambient authorization header: %q", got)
+	}
+}
+
+func TestDisabledMetricsUseNoopMeterProvider(t *testing.T) {
+	previousTracerProvider, previousMeterProvider, previousPropagator := otel.GetTracerProvider(), otel.GetMeterProvider(), otel.GetTextMapPropagator()
+	t.Cleanup(func() {
+		otel.SetTracerProvider(previousTracerProvider)
+		otel.SetMeterProvider(previousMeterProvider)
+		otel.SetTextMapPropagator(previousPropagator)
+	})
+
+	var logs bytes.Buffer
+	tracer, err := configureOTLP("http://127.0.0.1:4317", false, config.EnvironmentProduction, slog.New(slog.NewTextHandler(&logs, nil)))
+	if err != nil {
+		t.Fatalf("configure tracing without metrics: %v", err)
+	}
+	if !tracer.enabled {
+		t.Fatal("trace export must stay enabled when metric export is disabled")
+	}
+	if _, ok := tracer.meterProvider.(noop.MeterProvider); !ok {
+		t.Fatalf("meter provider = %T, want noop.MeterProvider", tracer.meterProvider)
+	}
+	if _, ok := otel.GetMeterProvider().(noop.MeterProvider); !ok {
+		t.Fatalf("global meter provider = %T, want noop.MeterProvider", otel.GetMeterProvider())
+	}
+	if !strings.Contains(logs.String(), "metrics_enabled=false") {
+		t.Fatalf("startup event does not report disabled metrics: %s", logs.String())
+	}
+	if err := tracer.Shutdown(); err != nil {
+		t.Fatalf("shutdown tracing without metrics: %v", err)
 	}
 }
 

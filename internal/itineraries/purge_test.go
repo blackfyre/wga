@@ -1,11 +1,56 @@
 package itineraries
 
 import (
+	"errors"
 	"testing"
 	"time"
 
+	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/types"
 )
+
+func TestPurgeRollsBackAndCanRetryAfterDeletionFailure(t *testing.T) {
+	app := installItinerarySchema(t)
+	expired := newPublishedRecord(t, app, "owner-recovery")
+	expired.Set("expires_at", types.NowDateTime().Add(-time.Hour))
+	if err := app.Save(expired); err != nil {
+		t.Fatal(err)
+	}
+	addStops(t, app, "owner-abandoned-recovery", 1)
+	abandonedID := mustDraftID(t, app, "owner-abandoned-recovery")
+	if _, err := app.DB().NewQuery("UPDATE itineraries SET updated = {:updated} WHERE id = {:id}").Bind(map[string]any{
+		"updated": types.NowDateTime().Add(-PublicationLifetime - time.Hour),
+		"id":      abandonedID,
+	}).Execute(); err != nil {
+		t.Fatal(err)
+	}
+
+	failure := errors.New("injected deletion failure")
+	hookID := app.OnRecordDelete(CollectionItineraries).BindFunc(func(e *core.RecordEvent) error {
+		if e.Record.Id == abandonedID {
+			return failure
+		}
+		return e.Next()
+	})
+	result, err := Purge(app)
+	if !errors.Is(err, failure) || result != (PurgeResult{}) {
+		t.Fatalf("failed purge = %+v, %v; want no committed removals and injected failure", result, err)
+	}
+	for _, id := range []string{expired.Id, abandonedID} {
+		if _, err := app.FindRecordById(CollectionItineraries, id); err != nil {
+			t.Fatalf("rollback must retain %s: %v", id, err)
+		}
+		stops, err := LoadStops(app, id)
+		if err != nil || len(stops) != 1 {
+			t.Fatalf("rollback must retain stops for %s: %d, %v", id, len(stops), err)
+		}
+	}
+	app.OnRecordDelete(CollectionItineraries).Unbind(hookID)
+	result, err = Purge(app)
+	if err != nil || result != (PurgeResult{ExpiredPublished: 1, AbandonedDrafts: 1}) {
+		t.Fatalf("retry purge = %+v, %v; want both records removed", result, err)
+	}
+}
 
 func TestPurgeRemovesExpiredAndAbandoned(t *testing.T) {
 	app := installItinerarySchema(t)
@@ -157,4 +202,28 @@ func TestPurgeIsIdempotent(t *testing.T) {
 	if second.ExpiredPublished != 0 || second.AbandonedDrafts != 0 {
 		t.Errorf("second purge = %+v, want zero removals (idempotent)", second)
 	}
+}
+
+func TestRegisteredPurgeJobRemovesExpiredItineraries(t *testing.T) {
+	app := installItinerarySchema(t)
+	expired := newPublishedRecord(t, app, "owner-scheduled-purge")
+	expired.Set("expires_at", types.NowDateTime().Add(-time.Hour))
+	if err := app.Save(expired); err != nil {
+		t.Fatal(err)
+	}
+	RegisterPurgeJob(app)
+	for _, job := range app.Cron().Jobs() {
+		if job.Id() != "itineraries-purge" {
+			continue
+		}
+		if job.Expression() != "0 3 * * *" {
+			t.Fatalf("purge schedule = %q", job.Expression())
+		}
+		job.Run()
+		if _, err := app.FindRecordById(CollectionItineraries, expired.Id); err == nil {
+			t.Fatal("scheduled purge retained expired itinerary")
+		}
+		return
+	}
+	t.Fatal("purge job was not registered")
 }

@@ -15,7 +15,7 @@ The reference defines itineraries as session-owned drafts that can be ordered, n
 
 ## Decisions
 
-- Persist drafts and published itineraries in PocketBase collections, with a signed anonymous session cookie identifying one draft. This survives page navigation without introducing accounts.
+- Persist drafts and published itineraries in PocketBase collections. A host-only, HttpOnly anonymous cookie holds a cryptographically random 32-byte opaque bearer capability; only its SHA-256 owner digest is persisted. This identifies one draft across page navigation without introducing accounts. Mutations require a session-bound HMAC synchroniser token and canonical-origin validation.
 - Persist an ordered stop list with title, artwork relation, and sanitised narration. Mutations use POST routes with CSRF/session validation and return feature-owned HTMX fragments.
 - Publish creates an immutable share token and expiry; a scheduled owner job purges expired records and associated drafts.
 - Render public views server-side and use a small feature-local browser helper only for slideshow navigation and prefetch.
