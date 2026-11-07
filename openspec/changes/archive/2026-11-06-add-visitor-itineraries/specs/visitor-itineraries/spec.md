@@ -1,35 +1,27 @@
-## ADDED Requirements
+## MODIFIED Requirements
 
-### Requirement: Visitor itinerary drafts
+### Requirement: Visitors can arrange and narrate a draft
 
-The system SHALL maintain one session-owned itinerary draft of at most fifteen stops and SHALL let a visitor add, remove, order, and narrate published artwork stops from supported cards, records, and Dual Mode panes.
+The system SHALL provide a server-persisted builder that permits stop ordering, bounded and sanitised narration, removal, and clear actions through validated POST mutations.
 
-#### Scenario: Visitor adds an artwork
+#### Scenario: Visitor reloads a draft builder
 
-- **WHEN** a visitor adds a published artwork from a supported public surface
-- **THEN** the system persists it in that visitor's draft and updates the itinerary tray.
+- **WHEN** a visitor reloads after arranging or narrating a draft
+- **THEN** the saved stop order and permitted narration are restored.
 
-### Requirement: Published itinerary sharing
+### Requirement: Published itineraries are expiring public slideshows
 
-The system SHALL publish a valid draft to an immutable, unguessable public URL with a stated one-year expiry.
+The system SHALL publish a validated draft containing at least one stop to an immutable, unguessable public URL with a stated one-year expiry. The system SHALL render only published, unexpired, moderated itineraries as a fixed slideshow that loads one stop at a time, presents the ordered stops and narration, and provides server-rendered fallback navigation without exposing draft-session data. An owned lifecycle job SHALL purge expired itineraries and abandoned drafts.
 
 #### Scenario: Visitor publishes a draft
 
-- **WHEN** a visitor publishes a draft with at least one stop
+- **WHEN** a visitor publishes a valid draft with at least one stop
 - **THEN** the system returns a share URL and expiry for the published itinerary.
 
-### Requirement: Safe public itinerary viewing
+#### Scenario: Recipient opens a published itinerary
 
-The system SHALL render published, unexpired, moderated itineraries without exposing draft-session data and SHALL provide a fixed slideshow that loads one stop at a time with server-rendered fallback navigation.
-
-#### Scenario: Visitor opens a shared itinerary
-
-- **WHEN** a visitor opens a valid published itinerary URL
-- **THEN** the system renders its ordered stops and narration through the public slideshow without exposing the draft session.
-
-### Requirement: Expiry and abuse controls
-
-The system SHALL rate-limit publishing, sanitise narration, and purge expired itineraries and abandoned drafts.
+- **WHEN** a recipient follows a valid public itinerary URL
+- **THEN** they can read the ordered stops and narration with arrow-key, Escape, and ordinary link navigation and can inspect each deliberate artwork plate without exposing the draft session.
 
 #### Scenario: Itinerary expires
 
