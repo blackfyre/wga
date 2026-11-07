@@ -498,6 +498,32 @@ test.describe("publication and slideshow", () => {
 		await page.waitForURL(/\/itineraries$/);
 	});
 
+	test("a recipient without JavaScript follows ordinary slideshow links without a session", async ({
+		browser,
+	}) => {
+		const context = await browser.newContext({ javaScriptEnabled: false });
+		try {
+			const page = await context.newPage();
+			await page.goto(listedShareURL);
+			await expect(page.getByText(/STOP 01 OF 02/)).toBeVisible();
+			await expect(page.getByText("A narrated first stop.")).toBeVisible();
+			await page.locator('a[data-itinerary-nav="next"]').click();
+			await expect(page).toHaveURL(/stop=1$/);
+			await expect(page.getByText(/STOP 02 OF 02/)).toBeVisible();
+			await page.reload();
+			await expect(page.getByText(/STOP 02 OF 02/)).toBeVisible();
+			await page.locator('a[data-itinerary-nav="prev"]').click();
+			await expect(page.getByText(/STOP 01 OF 02/)).toBeVisible();
+			expect(
+				(await context.cookies()).some((cookie) =>
+					cookie.name.includes("itinerary"),
+				),
+			).toBe(false);
+		} finally {
+			await context.close();
+		}
+	});
+
 	test("viewer stays fixed-dark and overflow-free across viewports and 200 percent text", async ({
 		page,
 	}) => {
