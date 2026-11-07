@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	artworkrecords "github.com/blackfyre/wga/internal/artworks"
 	"io/fs"
 	"net/url"
 	"os"
@@ -262,7 +263,7 @@ func generateArtworksMap(app core.App, sitemap *smg.Sitemap) (int, int, error) {
 	count := 0
 	excluded := 0
 	for _, record := range records {
-		authorIDs := record.GetStringSlice("author")
+		authorIDs := artworkrecords.AuthorIDs(record)
 		if record.Id == "" || strings.TrimSpace(record.GetString("title")) == "" || len(authorIDs) == 0 {
 			excluded++
 			continue
@@ -296,7 +297,7 @@ func generateArtworksMap(app core.App, sitemap *smg.Sitemap) (int, int, error) {
 func fetchArtworkAuthors(app core.App, artworks []*core.Record) (map[string]*core.Record, error) {
 	uniqueIDs := map[string]struct{}{}
 	for _, artwork := range artworks {
-		for _, authorID := range artwork.GetStringSlice("author") {
+		for _, authorID := range artworkrecords.AuthorIDs(artwork) {
 			uniqueIDs[authorID] = struct{}{}
 		}
 	}

@@ -3,6 +3,7 @@ package search
 import (
 	"bytes"
 	"context"
+	"github.com/blackfyre/wga/internal/artworks"
 	"net/http"
 	"strings"
 
@@ -32,13 +33,13 @@ func searchView(ctx context.Context, app *pocketbase.PocketBase, term string) (v
 	}()
 
 	artistFilter := "published = true && filing_name != '' && short_name != ''"
-	artworkFilter := "published = true && author:length > 0 && author.filing_name != '' && author.short_name != ''"
+	artworkFilter := "published = true && " + artworks.AttributedAuthorFilter("filing_name != ''", "short_name != ''")
 	params := dbx.Params{}
 	if term != "" {
 		params["query"] = term
 		params["query_upper"] = strings.ToUpper(term)
 		artistFilter += " && (filing_name ~ {:query} || filing_name ~ {:query_upper} || profession ~ {:query} || school.name ~ {:query})"
-		artworkFilter += " && (title ~ {:query} || author.filing_name ~ {:query} || school.name ~ {:query})"
+		artworkFilter += " && (title ~ {:query} || " + artworks.AuthorFieldFilter("filing_name", "~", "{:query}") + " || school.name ~ {:query})"
 	}
 
 	_, artistSpan := tracer.Start(ctx, "search.artists")
@@ -76,7 +77,7 @@ func searchView(ctx context.Context, app *pocketbase.PocketBase, term string) (v
 	}
 	_, authorSpan := tracer.Start(ctx, "search.artwork_authors")
 	for _, work := range works {
-		authorIDs := work.GetStringSlice("author")
+		authorIDs := artworks.AuthorIDs(work)
 		author, err := app.FindRecordById(constants.CollectionArtists, authorIDs[0])
 		if err != nil {
 			finishSearchSpan(authorSpan, err)

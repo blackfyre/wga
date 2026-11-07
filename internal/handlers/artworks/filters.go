@@ -3,6 +3,7 @@ package artworks
 import (
 	"cmp"
 	"fmt"
+	artworkrecords "github.com/blackfyre/wga/internal/artworks"
 	"net/url"
 	"strconv"
 	"strings"
@@ -87,11 +88,11 @@ func (f *filters) FingerPrint() string {
 // BuildFilter builds the PocketBase filter string and parameters for the
 // relation and scalar filters.
 func (f *filters) BuildFilter() (string, dbx.Params) {
-	filterString := "published = true && author:length > 0"
+	filterString := "published = true && " + artworkrecords.HasAuthorFilter
 	params := dbx.Params{}
 
 	if f.Query != "" {
-		filterString = filterString + " && (title ~ {:query} || author.filing_name ~ {:query})"
+		filterString = filterString + " && (title ~ {:query} || " + artworkrecords.AuthorFieldFilter("filing_name", "~", "{:query}") + ")"
 		params["query"] = f.Query
 	}
 
@@ -114,10 +115,10 @@ func (f *filters) BuildFilter() (string, dbx.Params) {
 	}
 
 	if f.ArtistID != "" {
-		filterString = filterString + " && author.id ?= {:artist_id}"
+		filterString = filterString + " && " + artworkrecords.AuthorFieldFilter("id", "=", "{:artist_id}")
 		params["artist_id"] = f.ArtistID
 	} else if f.ArtistString != "" {
-		filterString = filterString + " && author.filing_name ~ {:artist}"
+		filterString = filterString + " && " + artworkrecords.AuthorFieldFilter("filing_name", "~", "{:artist}")
 		params["artist"] = f.ArtistString
 	}
 

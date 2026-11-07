@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	artworkrecords "github.com/blackfyre/wga/internal/artworks"
 	"html"
 	"io/fs"
 	"net/url"
@@ -235,7 +236,7 @@ func generatePublication(app core.App, publicURL config.PublicURL, staging strin
 	artworks := make([]artworkProjection, 0, len(artworkRecords))
 	linksByArtist := make(map[string][]Link)
 	for _, record := range artworkRecords {
-		authorIDs := record.GetStringSlice("author")
+		authorIDs := artworkrecords.AuthorIDs(record)
 		if !validRecord(record, "title") || len(authorIDs) == 0 {
 			result.ExcludedCount++
 			continue

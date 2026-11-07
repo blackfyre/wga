@@ -358,6 +358,9 @@ func TestSyntheticSeedImportExternalSQLite(t *testing.T) {
 	if err := addArtworkFileByteSize(app); err != nil {
 		t.Fatalf("create artwork file byte size field: %v", err)
 	}
+	if err := addRelationshipPaths(app); err != nil {
+		t.Fatalf("create relationship path collections/fields: %v", err)
+	}
 	if err := seed.Import(app, sourcePath); err != nil {
 		t.Fatalf("import external SQLite source: %v", err)
 	}

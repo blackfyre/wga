@@ -215,8 +215,8 @@ func TestSortStringResolvesDeterministicOrder(t *testing.T) {
 	}{
 		{sort: "date", dir: "asc", want: "+date_start,+id"},
 		{sort: "date", dir: "desc", want: "-date_start,+id"},
-		{sort: "artist", dir: "asc", want: "+author.filing_name,+id"},
-		{sort: "artist", dir: "desc", want: "-author.filing_name,+id"},
+		{sort: "artist", dir: "asc", want: "+id"},
+		{sort: "artist", dir: "desc", want: "+id"},
 		{sort: "title", dir: "asc", want: "+title,+id"},
 		{sort: "title", dir: "desc", want: "-title,+id"},
 	} {
@@ -236,7 +236,7 @@ func TestSortPrefixOrderBy(t *testing.T) {
 	}{
 		{sort: "date", want: "(date_start = 0) ASC"},
 		{sort: "title", want: ""},
-		{sort: "artist", want: ""},
+		{sort: "artist", want: artistSortExpression() + " ASC"},
 	} {
 		t.Run(test.sort, func(t *testing.T) {
 			f := buildFilters(url.Values{"sort": {test.sort}})

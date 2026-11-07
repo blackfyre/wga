@@ -96,7 +96,7 @@ func processArtworkWithCheckpoint(c *core.RequestEvent, app *pocketbase.PocketBa
 	}
 
 	belongsToArtist := false
-	for _, authorID := range aw.GetStringSlice("author") {
+	for _, authorID := range artworks.AuthorIDs(aw) {
 		if authorID == artistId {
 			belongsToArtist = true
 			break
@@ -268,7 +268,7 @@ func populateArtworkSchoolsContext(ctx context.Context, app *pocketbase.PocketBa
 
 func RenderArtworkContent(app *pocketbase.PocketBase, c *core.RequestEvent, artwork *core.Record, hxTarget string, showBreadcrumbs bool) (dto.Artwork, error) {
 
-	authorIDs := artwork.GetStringSlice("author")
+	authorIDs := artworks.AuthorIDs(artwork)
 	artistId := ""
 	if len(authorIDs) > 0 {
 		artistId = authorIDs[0]
@@ -542,7 +542,7 @@ func resolveWorkArtist(app *pocketbase.PocketBase, work *core.Record) (string, s
 }
 
 func resolveWorkArtistContext(ctx context.Context, app *pocketbase.PocketBase, work *core.Record, checkpoint artworkDetailCheckpoint) (string, string, string, string, error) {
-	authorIDs := work.GetStringSlice("author")
+	authorIDs := artworks.AuthorIDs(work)
 	repo := repositories.NewArtistRecordRepository(app)
 	for _, authorID := range authorIDs {
 		if err := checkpoint(ctx, "artwork.detail.related.work_author"); err != nil {

@@ -3,6 +3,7 @@ package itineraries
 import (
 	"database/sql"
 	"errors"
+	"github.com/blackfyre/wga/internal/artworks"
 	"strconv"
 	"strings"
 
@@ -60,8 +61,7 @@ func stopDTO(app core.App, stop *core.Record) dto.ItineraryStop {
 	}
 	out.School = stopSchool(app, artwork)
 
-	if errs := app.ExpandRecord(artwork, []string{"author"}, nil); len(errs) == 0 {
-		author := artwork.ExpandedOne("author")
+	if author := artworks.FindAttributedAuthor(app, artwork); author != nil {
 		if hasCompleteItineraryArtistIdentity(author) {
 			out.Artist = author.GetString("filing_name")
 			out.URL = url.GenerateFullArtworkUrl(url.ArtworkUrlDTO{
@@ -176,7 +176,7 @@ func pickerWorks(app core.App, owner string, query string) ([]dto.ItineraryPicke
 	filter := "published = true"
 	params := map[string]any{}
 	if query != "" {
-		filter = "published = true && (title ~ {:query} || author.filing_name ~ {:query})"
+		filter = "published = true && (title ~ {:query} || " + artworks.AuthorFieldFilter("filing_name", "~", "{:query}") + ")"
 		params["query"] = query
 	}
 
@@ -196,8 +196,7 @@ func pickerWorks(app core.App, owner string, query string) ([]dto.ItineraryPicke
 		if year := artwork.GetInt("date_start"); year > 0 {
 			work.Date = strconv.Itoa(year)
 		}
-		if errs := app.ExpandRecord(artwork, []string{"author"}, nil); len(errs) == 0 {
-			author := artwork.ExpandedOne("author")
+		if author := artworks.FindAttributedAuthor(app, artwork); author != nil {
 			if !hasCompleteItineraryArtistIdentity(author) {
 				continue
 			}

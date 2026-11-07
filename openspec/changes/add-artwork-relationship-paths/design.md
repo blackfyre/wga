@@ -26,7 +26,7 @@ Curators need an admin-friendly way to maintain a bounded set of meaningful artw
 
 ### Use fixed artwork relation fields instead of a generic edge collection
 
-`artworks` will hold a required-or-optional single `primary_author` relation and a multi-value `co_authors` relation. The shared-connection fields will be direct relations: school/workshop (existing school taxonomy), subjects, series/altarpieces, original locations, current museums, techniques, and art periods.
+`artworks` will hold an optional single `primary_author` relation and a multi-value `co_authors` relation. `primary_author` is optional at schema level because a legacy record with several authors cannot be assigned one without curator review. The shared-connection fields will be direct relations: school/workshop (existing `school`), subjects, series/altarpieces, original locations (`original_locations`), current museums (existing `current_location_id`), techniques, and art periods (existing `art_period_id`).
 
 This makes all common curation actions available directly in the PocketBase artwork form. A generic relationship collection would permit arbitrary tags, but PocketBase's dashboard does not provide an equivalent concise inline editing experience and a polymorphic edge would weaken relation validation.
 
@@ -34,11 +34,11 @@ The initial fixed authorship qualities are primary author and co-author. Further
 
 ### Canonical records represent shared concepts
 
-New collection records will be created for subjects, series, locations, museums, and techniques. Existing `schools` and `art_periods` records will be reused where their vocabulary is appropriate. Multiple artworks become related because they reference the same canonical record; no pairwise "same as" records are stored.
+New collections will be created for subjects, series, and techniques, plus `location_aliases` for the reviewed alias mapping. Current museums and original locations reuse the existing producer-owned `locations` collection, whose `museum` and `is_public` flags distinguish institutions, other public places, and private collections; no separate museums collection is created. Existing `schools` and `art_periods` records will be reused where their vocabulary is appropriate. The source provides no subjects or series, so those collections start empty and are curator-managed. Multiple artworks become related because they reference the same canonical record; no pairwise "same as" records are stored.
 
 `series` records will include a small type distinction for series and altarpieces. This supports the required related-work label without prematurely introducing panel ordering or whole-to-part semantics.
 
-Original locations and current museums are separate relations. A museum is an institution and a current holding, whereas an original location can be a building or historical site. Conflating them would produce incorrect connection labels.
+Original locations and current museums are separate relations, even though both target `locations`. A museum is an institution and a current holding, whereas an original location can be a building or historical site. Conflating the relations would produce incorrect connection labels.
 
 ### Derive connection paths at read time
 
@@ -48,15 +48,17 @@ The result set will be deduplicated by artwork ID after collecting paths. This a
 
 ### Preserve raw locations and match museums through reviewed aliases
 
+The `wga-src` producer owns location normalisation, private-collection classification, alias review, and the unresolved-location report (its `location-normalization` specification). WGA imports the producer's results: the raw text into `artworks.source_location`, the resolved `current_location_id`, the canonical `locations` with their flags, and the reviewed `location_aliases`. WGA does not duplicate the normaliser or the report. The rules below describe the producer behaviour that WGA relies on.
+
 The import representation will retain raw location text independently of structured fields. Parsing creates a comparison key using safe normalisation such as case folding, whitespace collapse, punctuation handling, and diacritic handling; it does not overwrite the source text.
 
-Private-collection variants are matched by a configured classifier and stored as an internal category with no public relation. Museum resolution first uses exact comparison-key matches against curator-maintained canonical names and aliases. Edit-distance comparisons produce scored report candidates only. Curators confirm a candidate by adding an alias; the next import then resolves it exactly.
+Private-collection variants are matched by a configured classifier and resolved to a canonical `locations` record with `is_public = false` and `museum = false`; that classification never produces a public related-artwork path. Museum resolution first uses exact comparison-key matches against curator-maintained canonical names and aliases. Edit-distance comparisons produce scored report candidates only. Curators confirm a candidate by adding an alias; the next import then resolves it exactly.
 
 ### Migrate author data in stages
 
 The migration will add the replacement fields and collections before changing application reads. Single legacy `author` values copy to `primary_author`. Artworks with multiple legacy authors are reported for manual curation and retain their legacy data until resolved; the migration must not silently choose or discard an artist.
 
-Once migration reporting is clean, import, handlers, queries, URLs, and JSON-LD will use the new fields. The legacy relation is removed only in a later, verified migration step.
+Import, handlers, queries, URLs, and JSON-LD read `primary_author` and `co_authors`. While an artwork has no `primary_author`, every read falls back to the legacy `author` relation, so artworks awaiting multi-author review stay attributed and public. The fallback and the legacy relation are removed only in a later, verified migration step once the review report is clear.
 
 ## Risks / Trade-offs
 

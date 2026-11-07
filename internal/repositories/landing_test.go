@@ -139,6 +139,8 @@ func newLandingRepositoryTestApp(t *testing.T) *pocketbase.PocketBase {
 		&core.DateField{Id: "artwork_created", Name: "created"},
 		&core.BoolField{Id: "artwork_published", Name: "published"},
 		&core.RelationField{Id: "artwork_author", Name: "author", CollectionId: artists.Id, MinSelect: 1, MaxSelect: 10},
+		&core.RelationField{Name: "primary_author", CollectionId: artists.Id, MaxSelect: 1},
+		&core.RelationField{Name: "co_authors", CollectionId: artists.Id, MaxSelect: 10},
 	)
 	if err := app.Save(artworks); err != nil {
 		t.Fatalf("save artworks collection: %v", err)

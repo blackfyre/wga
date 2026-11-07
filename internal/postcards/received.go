@@ -86,7 +86,7 @@ func ResolveReceivedCard(app core.App, postcard *core.Record) (*ReceivedCard, er
 // record link a 404.
 func PublishedAuthor(app core.App, artwork *core.Record) (*core.Record, error) {
 	repository := repositories.NewArtistRecordRepository(app)
-	for _, authorID := range artwork.GetStringSlice("author") {
+	for _, authorID := range artworks.AuthorIDs(artwork) {
 		author, err := repository.FindPublishedArtist(authorID)
 		if errors.Is(err, sql.ErrNoRows) {
 			continue

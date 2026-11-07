@@ -41,6 +41,8 @@ func newReceivedFixture(t *testing.T) *receivedFixture {
 		&core.TextField{Name: "comment"},
 		&core.TextField{Name: "technique"},
 		&core.RelationField{Name: "author", CollectionId: f.artists.Id, MaxSelect: 2},
+		&core.RelationField{Name: "primary_author", CollectionId: f.artists.Id, MaxSelect: 1},
+		&core.RelationField{Name: "co_authors", CollectionId: f.artists.Id, MaxSelect: 10},
 		&core.RelationField{Name: "current_location_id", CollectionId: f.locations.Id, MaxSelect: 1},
 	)
 	f.postcards = core.NewBaseCollection("received_postcards_fixture")
