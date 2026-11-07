@@ -11,6 +11,7 @@ Sentry recorded `WGA-BROWSER-5`: an `InvalidStateError` reporting that a transit
 ## Capabilities
 
 ### New Capabilities
+
 - `browser-transition-resilience`: safe recovery from aborted browser transitions.
 
 ### Modified Capabilities
