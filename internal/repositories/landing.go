@@ -3,6 +3,7 @@ package repositories
 import (
 	"database/sql"
 	"errors"
+	"github.com/blackfyre/wga/internal/artworks"
 
 	"github.com/blackfyre/wga/internal/constants"
 	"github.com/pocketbase/dbx"
@@ -107,7 +108,7 @@ func (r *LandingRepository) CountEligibleArtworks() (int, error) {
 	err = r.app.DB().NewQuery(`
 		SELECT COUNT(*) AS c
 		FROM Artworks AS artwork
-		INNER JOIN Artists AS artist ON artist.id = json_extract(artwork.author, '$[0]')
+		INNER JOIN Artists AS artist ON artist.id = ` + artworks.FirstAuthorIDSQL("artwork") + `
 		WHERE artwork.published IS true AND artist.published IS true AND ` + landingArtistIdentity + `
 	`).One(&row)
 	if err != nil {
@@ -145,7 +146,7 @@ func (r *LandingRepository) FindEligibleArtworkByOffset(offset int) (*LandingArt
 			artist.name AS artist_name,
 			artist.filing_name AS artist_filing_name
 		FROM Artworks AS artwork
-		INNER JOIN Artists AS artist ON artist.id = json_extract(artwork.author, '$[0]')
+		INNER JOIN Artists AS artist ON artist.id = ` + artworks.FirstAuthorIDSQL("artwork") + `
 		WHERE artwork.published IS true AND artist.published IS true AND ` + landingArtistIdentity + `
 		ORDER BY artwork.id ASC
 		LIMIT 1 OFFSET {:offset}
@@ -188,7 +189,7 @@ func (r *LandingRepository) ListRecentEligibleArtworks() ([]LandingArtwork, erro
 			artist.name AS artist_name,
 			artist.filing_name AS artist_filing_name
 		FROM Artworks AS artwork
-		INNER JOIN Artists AS artist ON artist.id = json_extract(artwork.author, '$[0]')
+		INNER JOIN Artists AS artist ON artist.id = ` + artworks.FirstAuthorIDSQL("artwork") + `
 		WHERE artwork.published IS true AND artist.published IS true AND ` + landingArtistIdentity + `
 		ORDER BY artwork.created DESC, artwork.id ASC
 		LIMIT 4

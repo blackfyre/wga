@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"github.com/blackfyre/wga/internal/artworks"
 
 	"github.com/blackfyre/wga/internal/observability"
 	"github.com/blackfyre/wga/internal/utils"
@@ -39,10 +40,9 @@ func LoadCollectionHoldingsContext(ctx context.Context, app core.App) ([]Collect
 			LEFT JOIN artworks
 				ON artworks.current_location_id = locations.id
 				AND artworks.published = TRUE
-				AND json_array_length(artworks.author) > 0
 				AND EXISTS (
 					SELECT 1 FROM artists
-					WHERE artists.id = json_extract(artworks.author, '$[0]')
+					WHERE artists.id = ` + artworks.FirstAuthorIDSQL("artworks") + `
 				)
 			GROUP BY locations.id, locations.name`).All(&rows)
 		return rows, err

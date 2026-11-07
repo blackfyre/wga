@@ -54,6 +54,8 @@ func newSearchTestApp(t *testing.T) *pocketbase.PocketBase {
 	artworks.Fields.Add(
 		&core.TextField{Name: "title", Required: true},
 		&core.RelationField{Name: "author", CollectionId: "artists", MinSelect: 1, MaxSelect: 10},
+		&core.RelationField{Name: "primary_author", CollectionId: "artists", MaxSelect: 1},
+		&core.RelationField{Name: "co_authors", CollectionId: "artists", MaxSelect: 10},
 		&core.RelationField{Name: "school", CollectionId: "schools", MinSelect: 0, MaxSelect: 10},
 		&core.BoolField{Name: "published"},
 	)

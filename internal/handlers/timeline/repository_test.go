@@ -61,6 +61,8 @@ func createTimelineCollections(t *testing.T, app *pocketbase.PocketBase) {
 	artworks.Fields.Add(
 		&core.TextField{Name: "title", Required: true},
 		&core.RelationField{Name: "author", CollectionId: artists.Id, MinSelect: 1, MaxSelect: 10},
+		&core.RelationField{Name: "primary_author", CollectionId: artists.Id, MaxSelect: 1},
+		&core.RelationField{Name: "co_authors", CollectionId: artists.Id, MaxSelect: 10},
 		&core.BoolField{Name: "published"},
 		&core.NumberField{Name: "date_start"},
 		&core.NumberField{Name: "date_end"},

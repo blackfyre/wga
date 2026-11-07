@@ -52,7 +52,10 @@ func NormalizedBioExcerpt(d BioExcerptDTO) string {
 }
 
 func FindArtworksByAuthorID(app *pocketbase.PocketBase, authorID string) ([]*core.Record, error) {
-	return app.FindRecordsByFilter(constants.CollectionArtworks, "author ?~ {:authorId}", "+title", 0, 0, dbx.Params{
+	// The filter mirrors artworks.AuthorFieldFilter("id", "=", ...), which this
+	// package cannot import: the primary author or co-authors, or the legacy
+	// author relation while no primary author is assigned.
+	return app.FindRecordsByFilter(constants.CollectionArtworks, "((primary_author != '' && (primary_author = {:authorId} || co_authors ?= {:authorId})) || (primary_author = '' && author ?= {:authorId}))", "+title", 0, 0, dbx.Params{
 		"authorId": authorID,
 	})
 }

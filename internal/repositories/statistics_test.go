@@ -102,6 +102,8 @@ func TestGetArtworksBySchoolAndPeriodExcludesUnpublishedArtists(t *testing.T) {
 	artworks.Fields.Add(
 		&core.BoolField{Id: "test_artwork_published", Name: "published"},
 		&core.RelationField{Id: "test_artwork_author", Name: "author", CollectionId: artists.Id, MinSelect: 1, MaxSelect: 10},
+		&core.RelationField{Name: "primary_author", CollectionId: artists.Id, MaxSelect: 1},
+		&core.RelationField{Name: "co_authors", CollectionId: artists.Id, MaxSelect: 10},
 		&core.RelationField{Id: "test_artwork_school", Name: "school", CollectionId: schools.Id, MinSelect: 1, MaxSelect: 10},
 	)
 	if err := app.Save(artworks); err != nil {

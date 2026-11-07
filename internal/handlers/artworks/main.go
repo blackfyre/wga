@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	artworkrecords "github.com/blackfyre/wga/internal/artworks"
 	"math"
 	"net/http"
 	neturl "net/url"
@@ -442,7 +443,7 @@ func buildArtworkSearchResults(app *pocketbase.PocketBase, filters *filters, dua
 	}
 
 	for _, v := range records {
-		artistIds := v.GetStringSlice("author")
+		artistIds := artworkrecords.AuthorIDs(v)
 
 		if len(artistIds) == 0 {
 			continue
@@ -709,7 +710,7 @@ func uniqueArtistIDs(artworks []*core.Record) []string {
 	artistIDs := make([]string, 0, len(artworks))
 
 	for _, artwork := range artworks {
-		for _, artistID := range artwork.GetStringSlice("author") {
+		for _, artistID := range artworkrecords.AuthorIDs(artwork) {
 			if _, exists := seen[artistID]; exists {
 				continue
 			}

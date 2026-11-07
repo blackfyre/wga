@@ -40,6 +40,9 @@ type sourceData struct {
 	types             []sourceTaxonomy
 	artPeriods        []sourceArtPeriod
 	locations         []sourceLocation
+	locationAliases   []sourceLocationAlias
+	techniques        []sourceTechnique
+	artworkTechniques map[string][]string
 	professions       []sourceTaxonomy
 	artists           []sourceArtist
 	artistSchools     map[string][]string
@@ -81,6 +84,22 @@ type sourceLocation struct {
 	IsPublic bool
 }
 
+// sourceLocationAlias is one producer location_aliases record: a reviewed
+// comparison-normalised location value and the canonical location it resolves
+// to. The producer owns normalisation and review; the importer only retains
+// the reviewed mapping so curators can inspect it.
+type sourceLocationAlias struct {
+	ComparisonKey string
+	LocationID    string
+}
+
+// sourceTechnique is one producer canonical technique record.
+type sourceTechnique struct {
+	ID            string
+	Name          string
+	ComparisonKey string
+}
+
 // sourceArtist is one producer artists record. DisplayName carries the
 // encyclopaedic filing form from source_display_name, while ShortName carries
 // the supplied short form from display_name. Both are preserved verbatim; the
@@ -106,6 +125,7 @@ type sourceBiography struct {
 type sourceArtwork struct {
 	ID                   string
 	AuthorID             string
+	PrimaryAuthorID      string
 	Title                string
 	DateText             string
 	Technique            string
@@ -337,6 +357,15 @@ func loadSourceData(paths sourcePaths) (sourceData, error) {
 	if data.locations, err = loadLocations(db); err != nil {
 		return sourceData{}, err
 	}
+	if data.locationAliases, err = loadLocationAliases(db); err != nil {
+		return sourceData{}, err
+	}
+	if data.techniques, err = loadTechniques(db); err != nil {
+		return sourceData{}, err
+	}
+	if data.artworkTechniques, err = loadArtworkTechniques(db); err != nil {
+		return sourceData{}, err
+	}
 	if data.professions, err = loadTaxonomy(db, "professions"); err != nil {
 		return sourceData{}, err
 	}
@@ -463,6 +492,85 @@ func loadLocations(db *sql.DB) ([]sourceLocation, error) {
 	}
 
 	return items, rows.Err()
+}
+
+// loadLocationAliases reads the producer's reviewed location aliases. Older
+// exports predate the table, so a missing table yields an empty set.
+func loadLocationAliases(db *sql.DB) ([]sourceLocationAlias, error) {
+	hasAliases, err := hasTable(db, "location_aliases")
+	if err != nil || !hasAliases {
+		return nil, err
+	}
+
+	rows, err := db.Query("SELECT comparison_key, location_id FROM location_aliases ORDER BY comparison_key")
+	if err != nil {
+		return nil, fmt.Errorf("read location aliases: %w", err)
+	}
+	defer closeRows(rows)
+
+	items := []sourceLocationAlias{}
+	for rows.Next() {
+		item := sourceLocationAlias{}
+		if err := rows.Scan(&item.ComparisonKey, &item.LocationID); err != nil {
+			return nil, fmt.Errorf("scan location aliases: %w", err)
+		}
+		items = append(items, item)
+	}
+
+	return items, rows.Err()
+}
+
+// loadTechniques reads the producer's canonical techniques. Older exports
+// predate the table, so a missing table yields an empty set.
+func loadTechniques(db *sql.DB) ([]sourceTechnique, error) {
+	hasTechniques, err := hasTable(db, "techniques")
+	if err != nil || !hasTechniques {
+		return nil, err
+	}
+
+	rows, err := db.Query("SELECT id, name, comparison_key FROM techniques ORDER BY id")
+	if err != nil {
+		return nil, fmt.Errorf("read techniques: %w", err)
+	}
+	defer closeRows(rows)
+
+	items := []sourceTechnique{}
+	for rows.Next() {
+		item := sourceTechnique{}
+		if err := rows.Scan(&item.ID, &item.Name, &item.ComparisonKey); err != nil {
+			return nil, fmt.Errorf("scan techniques: %w", err)
+		}
+		items = append(items, item)
+	}
+
+	return items, rows.Err()
+}
+
+// loadArtworkTechniques reads the producer's artwork-to-technique assignments
+// keyed by artwork id. Older exports predate the table, so a missing table
+// yields no assignments.
+func loadArtworkTechniques(db *sql.DB) (map[string][]string, error) {
+	assignments := map[string][]string{}
+	hasAssignments, err := hasTable(db, "artwork_techniques")
+	if err != nil || !hasAssignments {
+		return assignments, err
+	}
+
+	rows, err := db.Query("SELECT artwork_id, technique_id FROM artwork_techniques ORDER BY artwork_id, technique_id")
+	if err != nil {
+		return nil, fmt.Errorf("read artwork techniques: %w", err)
+	}
+	defer closeRows(rows)
+
+	for rows.Next() {
+		var artworkID, techniqueID string
+		if err := rows.Scan(&artworkID, &techniqueID); err != nil {
+			return nil, fmt.Errorf("scan artwork techniques: %w", err)
+		}
+		assignments[artworkID] = append(assignments[artworkID], techniqueID)
+	}
+
+	return assignments, rows.Err()
 }
 
 // loadArtists reads the producer artists records, carrying both the
@@ -652,7 +760,7 @@ func loadArtworks(db *sql.DB, paletteNames ...map[string]string) ([]sourceArtwor
 		"source_row", "date_start", "date_end", "is_circa", "date_qualifier",
 		"timeframe_text", "url", "image_path", "current_location_id", "art_period_id",
 		"colour_palette", "colour_signature", "colour_profile_version", "colour_image_hash",
-		"source_comment", "comment",
+		"source_comment", "comment", "primary_author_id",
 	)
 	if err != nil {
 		return nil, err
@@ -711,6 +819,9 @@ func loadArtworks(db *sql.DB, paletteNames ...map[string]string) ([]sourceArtwor
 	}
 	if present["comment"] {
 		selects = append(selects, "COALESCE(comment, '')")
+	}
+	if present["primary_author_id"] {
+		selects = append(selects, "COALESCE(primary_author_id, '')")
 	}
 
 	rows, err := db.Query("SELECT " + strings.Join(selects, ", ") + " FROM artworks ORDER BY id")
@@ -788,11 +899,19 @@ func loadArtworks(db *sql.DB, paletteNames ...map[string]string) ([]sourceArtwor
 		if present["comment"] {
 			dest = append(dest, &item.Comment)
 		}
+		if present["primary_author_id"] {
+			dest = append(dest, &item.PrimaryAuthorID)
+		}
 
 		if err := rows.Scan(dest...); err != nil {
 			return nil, fmt.Errorf("scan artworks: %w", err)
 		}
 		item.IsCirca = isCirca != 0
+		// Exports that predate primary_author_id supply one author, which is the
+		// primary author by the legacy single-author contract.
+		if item.PrimaryAuthorID == "" {
+			item.PrimaryAuthorID = item.AuthorID
+		}
 		if present["colour_palette"] && colourPalette.Valid && colourPalette.String != "" {
 			if err := json.Unmarshal([]byte(colourPalette.String), &item.ColourPalette); err != nil {
 				return nil, fmt.Errorf("decode artwork %q colour palette: %w", item.ID, err)
@@ -1021,6 +1140,25 @@ func validateSourceRelations(data sourceData) error {
 	artPeriodIDs := makeIDSet(data.artPeriods, func(item sourceArtPeriod) string { return item.ID })
 	professionIDs := makeIDSet(data.professions, func(item sourceTaxonomy) string { return item.ID })
 	locationIDs := makeIDSet(data.locations, func(item sourceLocation) string { return item.ID })
+	techniqueIDs := makeIDSet(data.techniques, func(item sourceTechnique) string { return item.ID })
+	artworkIDs := makeIDSet(data.artworks, func(item sourceArtwork) string { return item.ID })
+
+	for _, alias := range data.locationAliases {
+		if _, ok := locationIDs[alias.LocationID]; !ok {
+			return fmt.Errorf("location alias %q references unknown location %q", alias.ComparisonKey, alias.LocationID)
+		}
+	}
+
+	for artworkID, techniques := range data.artworkTechniques {
+		if _, ok := artworkIDs[artworkID]; !ok {
+			return fmt.Errorf("artwork technique references unknown artwork %q", artworkID)
+		}
+		for _, techniqueID := range techniques {
+			if _, ok := techniqueIDs[techniqueID]; !ok {
+				return fmt.Errorf("artwork %q references unknown technique %q", artworkID, techniqueID)
+			}
+		}
+	}
 
 	for artistID, schools := range data.artistSchools {
 		if _, ok := artistIDs[artistID]; !ok {
@@ -1053,6 +1191,11 @@ func validateSourceRelations(data sourceData) error {
 	for _, artwork := range data.artworks {
 		if _, ok := artistIDs[artwork.AuthorID]; !ok {
 			return fmt.Errorf("artwork %q references unknown artist %q", artwork.ID, artwork.AuthorID)
+		}
+		if artwork.PrimaryAuthorID != "" {
+			if _, ok := artistIDs[artwork.PrimaryAuthorID]; !ok {
+				return fmt.Errorf("artwork %q references unknown primary author %q", artwork.ID, artwork.PrimaryAuthorID)
+			}
 		}
 		if artwork.SchoolID != "" {
 			if _, ok := schoolIDs[artwork.SchoolID]; !ok {
