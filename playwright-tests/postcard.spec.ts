@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 
 type MailpitAddress = {
 	Address: string;
@@ -21,6 +21,25 @@ type MailpitMessage = {
 };
 
 const syntheticArtworkID = "2225c982be1af02";
+const syntheticArtworkPath =
+	"/artists/synthetic-artist-01-ad32608c6e36b2e/synthetic-artwork-01-01-2225c982be1af02";
+
+async function fillValidComposer(page: Page, recipient: string) {
+	await page.getByLabel("YOUR NAME").fill("Playwright Sender");
+	await page.getByLabel("YOUR EMAIL").fill("sender@example.test");
+	await page
+		.getByRole("textbox", { name: "Recipient email 1" })
+		.fill(recipient);
+	await page.locator("[data-rte-surface]").fill("A message worth keeping.");
+	// The CI handler skips remote verification but still requires a token.
+	await page.locator("#postcard_create").evaluate((form) => {
+		const token = document.createElement("input");
+		token.name = "g-recaptcha-response";
+		token.type = "hidden";
+		token.value = "playwright-test-token";
+		form.append(token);
+	});
+}
 
 test.describe("without JavaScript", () => {
 	test.use({ javaScriptEnabled: false });
@@ -62,6 +81,32 @@ test.describe("without JavaScript", () => {
 		expect(reachedSenderName).toBeTruthy();
 		await page.keyboard.type("Keyboard Sender");
 		await expect(page.getByLabel("YOUR NAME")).toHaveValue("Keyboard Sender");
+	});
+
+	test("public entry leads through artwork selection to the composer", async ({
+		page,
+	}) => {
+		await page.goto("/postcard");
+		await page
+			.locator("#postcard-landing")
+			.getByRole("link", { name: "BROWSE ARTWORKS →" })
+			.click();
+		await expect(page).toHaveURL(/\/artworks(?:\?|$)/);
+
+		await page.goto(syntheticArtworkPath);
+		await page.getByRole("link", { name: "SEND AS POSTCARD →" }).click();
+		await expect(page).toHaveURL(
+			new RegExp(`/postcard/send\\?awid=${syntheticArtworkID}$`),
+		);
+		await expect(page.locator("#postcard-compose")).toContainText(
+			"Send a postcard",
+		);
+		await expect(
+			page.locator("#postcard_create input[name='image_id']"),
+		).toHaveValue(syntheticArtworkID);
+
+		await page.getByRole("link", { name: "CHANGE ARTWORK →" }).click();
+		await expect(page).toHaveURL(/\/artworks(?:\?|$)/);
 	});
 
 	test("postcard correction retains entered fields", async ({ page }) => {
@@ -121,6 +166,165 @@ test("CAPTCHA rejection swaps an actionable composer error", async ({
 	await expect(page.getByLabel("YOUR NAME")).toHaveValue("Playwright Sender");
 	await expect(page.locator("[data-rte-surface]")).toContainText("Hello world");
 	await expect(page.locator("[data-rte-surface] b")).toHaveText("world");
+});
+
+test("unavailable artwork swaps an actionable composer error", async ({
+	page,
+}) => {
+	await page.goto(`/postcard/send?awid=${syntheticArtworkID}`);
+	await fillValidComposer(page, "unavailable@example.test");
+	await page
+		.locator("#postcard_create input[name='image_id']")
+		.evaluate((input) => {
+			(input as HTMLInputElement).value = "unavailable0000";
+		});
+	await page.getByRole("button", { name: "SEND POSTCARD →" }).click();
+
+	const alert = page.getByRole("alert");
+	await expect(alert).toContainText("no longer available");
+	await expect(alert).toBeFocused();
+	await expect(page.locator("#postcard_create")).toHaveAttribute(
+		"aria-describedby",
+		"postcard-error",
+	);
+	await expect(page.getByLabel("YOUR NAME")).toHaveValue("Playwright Sender");
+	await expect(
+		page.getByRole("textbox", { name: "Recipient email 1" }),
+	).toHaveValue("unavailable@example.test");
+	await expect(page.locator("[data-rte-surface]")).toContainText(
+		"A message worth keeping.",
+	);
+	await expect(
+		page.getByRole("link", { name: "CHOOSE ANOTHER ARTWORK ↓" }),
+	).toHaveAttribute("href", "#postcard-replacement");
+
+	// Choosing a replacement in place keeps the whole draft.
+	await page.getByLabel("ARTWORK TITLE").fill("Synthetic Artwork 01-01");
+	await page.getByRole("button", { name: "FIND" }).click();
+	const results = page.locator("#postcard-replacement-results");
+	await expect(results).toBeFocused();
+	await results
+		.getByRole("button", { name: /Synthetic Artwork 01-01/ })
+		.click();
+	await expect(
+		page.locator("#postcard_create input[name='image_id']"),
+	).toHaveValue(syntheticArtworkID);
+	await expect(page.locator("[data-postcard-replacement]")).toHaveCount(0);
+	await expect(page.getByLabel("YOUR NAME")).toHaveValue("Playwright Sender");
+	await expect(
+		page.getByRole("textbox", { name: "Recipient email 1" }),
+	).toHaveValue("unavailable@example.test");
+	await expect(page.locator("[data-rte-surface]")).toContainText(
+		"A message worth keeping.",
+	);
+});
+
+test.describe("without JavaScript replacement", () => {
+	test.use({ javaScriptEnabled: false });
+
+	test("unavailable artwork is replaced without losing the draft", async ({
+		page,
+	}) => {
+		// Without JavaScript the hidden artwork field cannot be edited in the
+		// page, so the first submission is rewritten on the network instead.
+		let rewritten = false;
+		await page.route("**/postcard", async (route) => {
+			const sent = route.request();
+			if (sent.method() !== "POST" || rewritten) return route.continue();
+			rewritten = true;
+			const form = new URLSearchParams(sent.postData() ?? "");
+			form.set("image_id", "unavailable0000");
+			form.set("g-recaptcha-response", "playwright-test-token");
+			await route.continue({ postData: form.toString() });
+		});
+		await page.goto(`/postcard/send?awid=${syntheticArtworkID}`);
+		await page.getByLabel("YOUR NAME").fill("No Script Sender");
+		await page.getByLabel("YOUR EMAIL").fill("sender@example.test");
+		await page
+			.getByRole("textbox", { name: "Recipient email 1" })
+			.fill("noscript@example.test");
+		await page
+			.locator("textarea[name='message']")
+			.fill("Kept without scripts.");
+		await page.getByRole("button", { name: "SEND POSTCARD →" }).click();
+		await expect(page.getByRole("alert")).toContainText("no longer available");
+
+		await page.getByLabel("ARTWORK TITLE").fill("Synthetic Artwork 01-01");
+		// Keyboard activation, as in the other no-JavaScript journeys: without
+		// scripts the fixed keyboard bar can overlap the lowest controls.
+		await page.getByRole("button", { name: "FIND" }).focus();
+		await page.keyboard.press("Enter");
+		await page
+			.locator("#postcard-replacement-results")
+			.getByRole("button", { name: /Synthetic Artwork 01-01/ })
+			.focus();
+		await page.keyboard.press("Enter");
+		await expect(
+			page.locator("#postcard_create input[name='image_id']"),
+		).toHaveValue(syntheticArtworkID);
+		await expect(page.getByLabel("YOUR NAME")).toHaveValue("No Script Sender");
+		await expect(
+			page.getByRole("textbox", { name: "Recipient email 1" }),
+		).toHaveValue("noscript@example.test");
+		await expect(page.locator("textarea[name='message']")).toHaveValue(
+			/Kept without scripts\./,
+		);
+	});
+});
+
+// Throttling and CAPTCHA-provider outages cannot be produced on demand against
+// a shared test server, so these cases fulfil the server's response shape to
+// verify the HTMX swap contract; handler tests cover the server responses.
+for (const { status, error } of [
+	{
+		status: 429,
+		error: "Too many postcard submissions. Please try again later.",
+	},
+	{
+		status: 503,
+		error:
+			"CAPTCHA verification is unavailable right now, so your postcard was not queued. Please try again shortly.",
+	},
+]) {
+	test(`HTMX ${status} composer response replaces the form with its error`, async ({
+		page,
+	}) => {
+		await page.goto(`/postcard/send?awid=${syntheticArtworkID}`);
+		await fillValidComposer(page, "swap@example.test");
+		await page.route("**/postcard", async (route) => {
+			if (route.request().method() !== "POST") return route.continue();
+			await route.fulfill({
+				status,
+				contentType: "text/html",
+				body: `<section id="postcard-compose"><form id="postcard_create" aria-describedby="postcard-error"><p id="postcard-error" role="alert" tabindex="-1">${error}</p><input name="sender_name" aria-label="YOUR NAME" value="Playwright Sender"/></form></section>`,
+			});
+		});
+		await page.getByRole("button", { name: "SEND POSTCARD →" }).click();
+		await expect(page.getByRole("alert")).toHaveText(error);
+		await expect(page.getByRole("alert")).toBeFocused();
+		await expect(page.getByLabel("YOUR NAME")).toHaveValue("Playwright Sender");
+	});
+}
+
+test("HTMX error page without a composer leaves the form in place", async ({
+	page,
+}) => {
+	await page.goto(`/postcard/send?awid=${syntheticArtworkID}`);
+	await fillValidComposer(page, "fault@example.test");
+	await page.route("**/postcard", async (route) => {
+		if (route.request().method() !== "POST") return route.continue();
+		await route.fulfill({
+			status: 500,
+			contentType: "text/html",
+			body: "<main><h1>Something went wrong</h1></main>",
+		});
+	});
+	await page.getByRole("button", { name: "SEND POSTCARD →" }).click();
+	await expect(page.getByLabel("YOUR NAME")).toHaveValue("Playwright Sender");
+	await expect(page.locator("#postcard_create")).toBeVisible();
+	await expect(
+		page.getByRole("button", { name: "SEND POSTCARD →" }),
+	).toBeEnabled();
 });
 
 test("toolbar formats an empty caret and starts a list", async ({ page }) => {
@@ -193,6 +397,41 @@ for (const viewport of [
 		await expect(page.locator("#postcard-compose")).toBeVisible();
 		await expect(page.locator("#postcard_create")).toBeVisible();
 		await expect(page.locator(".wga-dialog-panel")).toHaveCount(0);
+		expect(
+			await page.evaluate(
+				() =>
+					document.documentElement.scrollWidth <=
+					document.documentElement.clientWidth,
+			),
+		).toBeTruthy();
+
+		const sender = page.getByLabel("YOUR NAME");
+		let reachedSender = false;
+		for (let index = 0; index < 40 && !reachedSender; index += 1) {
+			await page.keyboard.press("Tab");
+			reachedSender = await sender.evaluate(
+				(field) => field === document.activeElement,
+			);
+		}
+		expect(reachedSender).toBeTruthy();
+		await page.keyboard.type("Keyboard Sender");
+		await expect(sender).toHaveValue("Keyboard Sender");
+
+		const send = page.getByRole("button", { name: "SEND POSTCARD →" });
+		await send.focus();
+		await expect(send).toBeFocused();
+		await expect(send).toBeInViewport();
+		for (const field of [
+			sender,
+			page.getByLabel("YOUR EMAIL"),
+			page.getByRole("textbox", { name: "Recipient email 1" }),
+			send,
+		]) {
+			const box = await field.boundingBox();
+			expect(box).not.toBeNull();
+			expect((box?.x ?? -1) >= 0).toBeTruthy();
+			expect((box?.x ?? 0) + (box?.width ?? 0) <= viewport.width).toBeTruthy();
+		}
 	});
 }
 
@@ -266,15 +505,42 @@ test("send postcard", async ({ page, request }) => {
 		form.append(token);
 	});
 
-	await page.getByRole("button", { name: "SEND POSTCARD →" }).click();
+	const submissions: string[] = [];
+	page.on("request", (sent) => {
+		if (
+			sent.method() === "POST" &&
+			new URL(sent.url()).pathname === "/postcard"
+		) {
+			submissions.push(sent.postData() ?? "");
+		}
+	});
+	// A double activation is one send intent: the in-flight form drops the
+	// repeat and disables its submit controls.
+	await page.getByRole("button", { name: "SEND POSTCARD →" }).dblclick();
 
 	await expect(page.locator("#postcard-compose")).toContainText(
 		"Postcard queued",
 	);
+	expect(submissions).toHaveLength(1);
+
+	// Retrying the same send intent after an interrupted response returns the
+	// existing outcome instead of queueing duplicate delivery work.
+	const retry = await request.post("/postcard", {
+		headers: { "Content-Type": "application/x-www-form-urlencoded" },
+		data: submissions[0],
+	});
+	expect(retry.status()).toBe(202);
+	expect(await retry.text()).toContain("Postcard queued");
 	await expect(page.locator("#postcard-compose")).toContainText(
 		"p••••@local.host, p••••@local.host",
 	);
 	await expect(page.locator("#postcard-confirmation-title")).toBeFocused();
+	await expect(page.locator("#postcard-compose")).toContainText(
+		"accepted and queued for delivery",
+	);
+	await expect(
+		page.getByRole("link", { name: "SEND ANOTHER POSTCARD →" }),
+	).toHaveAttribute("href", `/postcard/send?awid=${syntheticArtworkID}`);
 
 	let messageIDs: string[] = [];
 	try {
@@ -286,16 +552,18 @@ test("send postcard", async ({ page, request }) => {
 						const response = await request.get(searchUrl);
 						if (!response.ok()) return 0;
 						const messages = (await response.json()) as MailpitSearchResponse;
-						const id = messages.messages.find(
+						const matching = messages.messages.filter(
 							(message) => message.Subject === subject,
-						)?.ID;
-						if (id) found.push(id);
+						);
+						if (matching.length === 0) return -1;
+						found.push(...matching.map((message) => message.ID));
 					}
 					messageIDs = found;
 					return found.length;
 				},
 				{ intervals: [1000, 2000, 5000], timeout: 120000 },
 			)
+			// Exactly one delivery per recipient despite the repeated intent.
 			.toBe(recipients.length);
 
 		const postcardLinks: string[] = [];

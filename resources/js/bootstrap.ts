@@ -795,6 +795,9 @@ const wgaInternal: wgaInternals = {
 				initialiseStudyBoard();
 				void maybeInitStatisticsCharts();
 			});
+			// Set by htmx:beforeSwap so htmx:afterSwap moves focus only when the
+			// postcard composer itself was swapped.
+			let postcardComposerSwapped = false;
 			document.body.addEventListener("htmx:beforeSwap", (evt) => {
 				glossaryClosePopup();
 				statisticsModule?.destroyStatisticsCharts();
@@ -804,9 +807,14 @@ const wgaInternal: wgaInternals = {
 					shouldSwap: boolean;
 					isError: boolean;
 				}>;
+				postcardComposerSwapped = event.detail.target.id === "postcard-compose";
+				// Expected postcard rejections re-render the composer with an
+				// actionable error; swap them in place of the generic error toast.
+				// Other error pages carry no composer and must not replace it.
 				if (
 					event.detail.target.id === "postcard-compose" &&
-					[422, 429].includes(event.detail.xhr.status)
+					[422, 429, 500, 503].includes(event.detail.xhr.status) &&
+					event.detail.xhr.responseText.includes('id="postcard-compose"')
 				) {
 					event.detail.shouldSwap = true;
 					event.detail.isError = false;
@@ -818,6 +826,15 @@ const wgaInternal: wgaInternals = {
 				);
 				if (confirmation instanceof HTMLElement) {
 					confirmation.focus();
+					return;
+				}
+				if (!postcardComposerSwapped) return;
+				postcardComposerSwapped = false;
+				const postcardFocus =
+					document.getElementById("postcard-replacement-results") ??
+					document.getElementById("postcard-error");
+				if (postcardFocus instanceof HTMLElement) {
+					postcardFocus.focus();
 				}
 			});
 

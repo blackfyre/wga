@@ -35,14 +35,14 @@ func renderForm(artworkID string, values pages.PostcardComposeView, formError st
 	record, err := app.FindFirstRecordByFilter(constants.CollectionArtworks, "id = {:id} && published = true", map[string]any{"id": artworkID})
 	if err != nil {
 		logger.Warn("Postcard form artwork unavailable", "event", "postcard.form.rejected", "outcome", "artwork_unavailable")
-		return utils.NotFoundError(c)
+		return renderUnavailableArtwork(artworkID, values, app, c, captcha)
 	}
 	// The composer attributes the work to the same published author as the
 	// received card, so SEND YOUR OWN opens for every card that renders.
 	author, err := postcardworkflow.PublishedAuthor(app, record)
 	if errors.Is(err, postcardworkflow.ErrArtistIdentityUnavailable) {
 		logger.Warn("Postcard form artwork author unavailable", "event", "postcard.form.rejected", "outcome", "artist_identity_unavailable")
-		return utils.NotFoundError(c)
+		return renderUnavailableArtwork(artworkID, values, app, c, captcha)
 	}
 	if err != nil {
 		logger.Error("Postcard form author lookup failed", "event", "postcard.form.failed", "outcome", "lookup_error", "error", logging.Redact(err))
@@ -62,7 +62,33 @@ func renderForm(artworkID string, values pages.PostcardComposeView, formError st
 		values.Image = utils.AssetUrl("/assets/images/no-image.png")
 	}
 
+	return renderComposer(values, status, app, c)
+}
+
+// artworkUnavailableMessage explains a submission whose selected work is no
+// longer published, so the visitor can choose another work.
+const artworkUnavailableMessage = "The selected artwork is no longer available, so your postcard was not queued. Choose another artwork to send."
+
+// renderUnavailableArtwork answers a missing or unpublished selection. A new
+// composition (GET) has nothing to preserve and is not found. A submission
+// re-renders the composer with the entered values and an actionable error.
+func renderUnavailableArtwork(artworkID string, values pages.PostcardComposeView, app core.App, c *core.RequestEvent, captcha config.Captcha) error {
+	if c.Request.Method != http.MethodPost {
+		return utils.NotFoundError(c)
+	}
+	values.ImageID = artworkID
+	values.ArtworkUnavailable = true
+	values.Recipients = recipientRows(values.Recipients)
+	values.SiteKey = captcha.SiteKey()
+	values.Error = artworkUnavailableMessage
+	values.MessageLength = postcardworkflow.SanitiseMessage(values.Message).RuneCount()
+	return renderComposer(values, http.StatusUnprocessableEntity, app, c)
+}
+
+func renderComposer(values pages.PostcardComposeView, status int, app core.App, c *core.RequestEvent) error {
+	logger := logging.RequestLogger(app, c)
 	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, "Send a postcard")
+	var err error
 	var buf bytes.Buffer
 	c.Response.Header().Add("Vary", "HX-Request")
 	if utils.IsHtmxRequest(c) {

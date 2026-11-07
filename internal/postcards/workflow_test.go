@@ -1298,7 +1298,7 @@ func installPostcardSchema(t *testing.T, app core.App) string {
 	songs := core.NewBaseCollection("Music_song")
 	songs.Id = "music_song"
 	songs.MarkAsNew()
-	songs.Fields.Add(&core.BoolField{Name: "published"}, &core.TextField{Name: "title"}, &core.TextField{Name: "source"}, &core.RelationField{Name: "composer", CollectionId: composers.Id, MaxSelect: 1})
+	songs.Fields.Add(&core.BoolField{Name: "published"}, &core.TextField{Name: "title"}, &core.TextField{Name: "source"}, &core.RelationField{Name: "composer", CollectionId: composers.Id, MaxSelect: 20})
 	if err := app.Save(songs); err != nil {
 		t.Fatalf("create song collection: %v", err)
 	}
@@ -1541,4 +1541,67 @@ func tamperEnvelope(envelope string) string {
 	}
 
 	return envelope[:len(envelope)-1] + string(replacement)
+}
+
+// TestNotificationEmailShowsWorkDerivedMusicAndHidesAddresses verifies the
+// recipient email's music panel follows the selected work, escapes sender
+// content, and discloses no addresses.
+func TestNotificationEmailShowsWorkDerivedMusicAndHidesAddresses(t *testing.T) {
+	for _, test := range []struct {
+		name      string
+		songShown bool
+	}{
+		{name: "matching published song", songShown: true},
+		{name: "no published song", songShown: false},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			app := testutils.NewTestApp(t)
+			artworkID := installPostcardSchema(t, app)
+			if !test.songShown {
+				if _, err := app.DB().NewQuery("UPDATE Music_song SET published = false").Execute(); err != nil {
+					t.Fatalf("unpublish song: %v", err)
+				}
+			}
+			recipients := []string{"first@example.test", "second@example.test"}
+			result, err := QueueWithAccess(app, postcardTestKeyring(t), QueueInput{
+				SenderName: `Sender <script>alert(1)</script> & Co`, SenderEmail: "sender@example.test",
+				Recipients: recipients, Message: "<p>Hello &amp; welcome</p>", ImageID: artworkID,
+			}, types.NowDateTime())
+			if err != nil {
+				t.Fatal(err)
+			}
+			transport := &recordingMailer{}
+			for run := range 3 {
+				if err := ProcessDue(app, transport, postcardTestConfig(t), fmt.Sprintf("run-%d", run)); err != nil {
+					t.Fatalf("process due: %v", err)
+				}
+			}
+			if len(transport.messages) != len(recipients) {
+				t.Fatalf("provider calls = %d, want %d", len(transport.messages), len(recipients))
+			}
+			for _, message := range transport.messages {
+				html := message.HTML
+				if strings.Contains(html, "<script>alert(1)</script>") || !strings.Contains(html, "&lt;SCRIPT&gt;") {
+					t.Fatalf("sender name was not escaped: %s", html)
+				}
+				if !strings.Contains(html, "<p>Hello &amp; welcome</p>") {
+					t.Fatalf("sanitised message missing: %s", html)
+				}
+				if !strings.Contains(html, "token="+result.Access[0].Token) || !strings.Contains(html, "test-work.jpg") || !strings.Contains(html, "30 days") {
+					t.Fatalf("email lacks link, artwork image or expiry: %s", html)
+				}
+				for _, address := range append([]string{"sender@example.test"}, recipients...) {
+					if strings.Contains(html, address) {
+						t.Fatalf("email body discloses %q", address)
+					}
+				}
+				if got := strings.Contains(html, "SENT WITH MUSIC") && strings.Contains(html, "Test Piece") && strings.Contains(html, "Test Composer"); got != test.songShown {
+					t.Fatalf("music panel shown = %t, want %t: %s", got, test.songShown, html)
+				}
+				if !test.songShown && strings.Contains(html, "SENT WITH MUSIC") {
+					t.Fatalf("email rendered an unavailable music panel: %s", html)
+				}
+			}
+		})
+	}
 }

@@ -13,12 +13,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/blackfyre/wga/internal/antiabuse"
 	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/logging"
+	postcardworkflow "github.com/blackfyre/wga/internal/postcards"
 	"github.com/blackfyre/wga/internal/requesttrust"
 	"github.com/blackfyre/wga/internal/testutils"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/router"
+	"github.com/pocketbase/pocketbase/tools/types"
 )
 
 type verifierFunc func(context.Context, string, string) (bool, error)
@@ -50,7 +53,7 @@ func TestSavePostcardDoesNotLogSubmittedForm(t *testing.T) {
 	}
 	logging.SetRequestID(event, "request-123")
 
-	_ = savePostcard(app, event, config.Captcha{}, config.PostcardTokenKeyring{}, nil, newSubmissionLimiter(3, 10*time.Minute), requesttrust.New(requesttrust.SourceDirect))
+	_ = savePostcard(app, event, config.Captcha{}, config.PostcardTokenKeyring{}, nil, newSubmissionLimiter(3, 10*time.Minute), nil, requesttrust.New(requesttrust.SourceDirect))
 
 	testutils.FlushLogs(t, app)
 	entry := testutils.LogWithEvent(captured(), "postcard.submission.rejected")
@@ -93,11 +96,11 @@ func TestSavePostcardCaptchaFailuresDoNotPersist(t *testing.T) {
 			wantCode: http.StatusUnprocessableEntity,
 		},
 		{
-			name: "provider failure returns server fault",
+			name: "provider failure re-renders the composer as unavailable",
 			verifier: func(context.Context, string, string) (bool, error) {
 				return false, errors.New("provider unavailable")
 			},
-			wantCode: http.StatusInternalServerError,
+			wantCode: http.StatusServiceUnavailable,
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -126,12 +129,16 @@ func TestSavePostcardCaptchaFailuresDoNotPersist(t *testing.T) {
 			event.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 			limiter := newSubmissionLimiter(3, 10*time.Minute)
-			_ = savePostcard(app, event, protectedCaptcha(t), config.PostcardTokenKeyring{}, test.verifier, limiter, requesttrust.New(requesttrust.SourceDirect))
+			_ = savePostcard(app, event, protectedCaptcha(t), config.PostcardTokenKeyring{}, test.verifier, limiter, nil, requesttrust.New(requesttrust.SourceDirect))
 			if recorder.Code != test.wantCode {
 				t.Fatalf("status = %d, want %d", recorder.Code, test.wantCode)
 			}
 			if len(limiter.windows) != 0 {
 				t.Fatal("CAPTCHA failure consumed the postcard send allowance")
+			}
+			body := recorder.Body.String()
+			if !strings.Contains(body, `id="postcard-error"`) || !strings.Contains(body, `value="sender@example.test"`) {
+				t.Fatalf("CAPTCHA failure did not re-render the composer with entered values: %s", body)
 			}
 			records, err := app.FindRecordsByFilter("postcards", "", "", 0, 0)
 			if err != nil {
@@ -198,7 +205,7 @@ func TestSavePostcardFailsClosedWithoutTrustedIdentity(t *testing.T) {
 	}
 	event.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	_ = savePostcard(app, event, protectedCaptcha(t), config.PostcardTokenKeyring{}, verifier, newSubmissionLimiter(3, 10*time.Minute), resolver)
+	_ = savePostcard(app, event, protectedCaptcha(t), config.PostcardTokenKeyring{}, verifier, newSubmissionLimiter(3, 10*time.Minute), nil, resolver)
 	if recorder.Code != http.StatusBadRequest {
 		t.Fatalf("status = %d, want 400 (fail closed)", recorder.Code)
 	}
@@ -245,7 +252,7 @@ func TestSavePostcardUsesResolvedIdentityForCaptcha(t *testing.T) {
 	event.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	event.Request.RemoteAddr = "198.51.100.7:54321"
 
-	_ = savePostcard(app, event, protectedCaptcha(t), config.PostcardTokenKeyring{}, verifier, newSubmissionLimiter(3, 10*time.Minute), resolver)
+	_ = savePostcard(app, event, protectedCaptcha(t), config.PostcardTokenKeyring{}, verifier, newSubmissionLimiter(3, 10*time.Minute), nil, resolver)
 	if capturedIP != "203.0.113.99" {
 		t.Errorf("captcha received %q, want resolved identity 203.0.113.99", capturedIP)
 	}
@@ -275,7 +282,7 @@ func TestSavePostcardRecipientRowActionsUseExistingEndpoint(t *testing.T) {
 			}
 			recorder := httptest.NewRecorder()
 			event := &core.RequestEvent{App: app, Event: router.Event{Request: request, Response: recorder}}
-			if err := savePostcard(app, event, config.Captcha{}, config.PostcardTokenKeyring{}, nil, newSubmissionLimiter(3, 10*time.Minute), resolver); err != nil {
+			if err := savePostcard(app, event, config.Captcha{}, config.PostcardTokenKeyring{}, nil, newSubmissionLimiter(3, 10*time.Minute), nil, resolver); err != nil {
 				t.Fatal(err)
 			}
 			if recorder.Code != http.StatusOK || strings.Count(recorder.Body.String(), `name="recipients[]"`) != test.wantRows {
@@ -309,7 +316,7 @@ func TestSavePostcardSanitisesMessageBeforeValidationRedisplay(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	event := &core.RequestEvent{App: app, Event: router.Event{Request: request, Response: recorder}}
 
-	if err := savePostcard(app, event, config.Captcha{}, config.PostcardTokenKeyring{}, nil, newSubmissionLimiter(3, 10*time.Minute), requesttrust.New(requesttrust.SourceDirect)); err != nil {
+	if err := savePostcard(app, event, config.Captcha{}, config.PostcardTokenKeyring{}, nil, newSubmissionLimiter(3, 10*time.Minute), nil, requesttrust.New(requesttrust.SourceDirect)); err != nil {
 		t.Fatal(err)
 	}
 	if recorder.Code != http.StatusUnprocessableEntity {
@@ -350,12 +357,377 @@ func TestSavePostcardKeysRateLimitByResolvedIdentity(t *testing.T) {
 	event.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	event.Request.RemoteAddr = "198.51.100.7:54321"
 
-	_ = savePostcard(app, event, config.Captcha{}, config.PostcardTokenKeyring{}, nil, limiter, resolver)
+	_ = savePostcard(app, event, config.Captcha{}, config.PostcardTokenKeyring{}, nil, limiter, nil, resolver)
 
 	if _, ok := limiter.windows["203.0.113.99"]; !ok {
 		t.Error("rate limiter was not keyed by the resolved identity")
 	}
 	if _, ok := limiter.windows["198.51.100.7"]; ok {
 		t.Error("rate limiter was keyed by the raw remote address")
+	}
+}
+
+func TestSavePostcardUnavailableArtworkRetainsValuesAndAllowance(t *testing.T) {
+	for _, htmx := range []bool{false, true} {
+		t.Run(fmt.Sprintf("htmx=%t", htmx), func(t *testing.T) {
+			app := testutils.NewTestApp(t)
+			form := url.Values{
+				"sender_name":          {"Keyboard Sender"},
+				"sender_email":         {"sender@example.test"},
+				"recipients[]":         {"recipient@example.test"},
+				"message":              {"message"},
+				"image_id":             {"missing-artwork"},
+				"g-recaptcha-response": {"captcha-token"},
+			}
+			recorder := httptest.NewRecorder()
+			event := &core.RequestEvent{
+				App: app,
+				Event: router.Event{
+					Request:  httptest.NewRequest(http.MethodPost, "/postcard", strings.NewReader(form.Encode())),
+					Response: recorder,
+				},
+			}
+			event.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			if htmx {
+				event.Request.Header.Set("HX-Request", "true")
+			}
+			limiter := newSubmissionLimiter(1, 10*time.Minute)
+
+			if err := savePostcard(app, event, config.Captcha{}, config.PostcardTokenKeyring{}, nil, limiter, nil, requesttrust.New(requesttrust.SourceDirect)); err != nil {
+				t.Fatalf("save postcard: %v", err)
+			}
+
+			if recorder.Code != http.StatusUnprocessableEntity {
+				t.Fatalf("status = %d, want %d", recorder.Code, http.StatusUnprocessableEntity)
+			}
+			body := recorder.Body.String()
+			for _, want := range []string{
+				`id="postcard-compose"`,
+				"no longer available",
+				"CHOOSE ANOTHER ARTWORK",
+				`value="Keyboard Sender"`,
+				`value="recipient@example.test"`,
+			} {
+				if !strings.Contains(body, want) {
+					t.Fatalf("response lacks %q: %s", want, body)
+				}
+			}
+			if htmx == strings.Contains(body, "<html") {
+				t.Fatalf("htmx=%t rendered the wrong response shape", htmx)
+			}
+			if !limiter.allow("192.0.2.1", time.Now()) {
+				t.Fatal("a submission that queued nothing consumed the send allowance")
+			}
+		})
+	}
+}
+
+func TestSubmissionLimiterReleaseRestoresOneAdmission(t *testing.T) {
+	limiter := newSubmissionLimiter(1, 10*time.Minute)
+	now := time.Now()
+	admission, ok := limiter.admit("visitor", now)
+	if !ok {
+		t.Fatal("first admission rejected")
+	}
+	if limiter.allow("visitor", now) {
+		t.Fatal("second admission accepted beyond the limit")
+	}
+	limiter.release(admission)
+	limiter.release(admission)
+	if !limiter.allow("visitor", now) {
+		t.Fatal("released admission was not restored")
+	}
+	if limiter.allow("visitor", now) {
+		t.Fatal("repeated release restored more than the consumed admissions")
+	}
+	limiter.release(submissionAdmission{visitorKey: "unknown", started: now})
+	limiter.release(submissionAdmission{})
+	if _, ok := limiter.windows["unknown"]; ok {
+		t.Fatal("release created a window for an unknown visitor")
+	}
+}
+
+// TestSubmissionLimiterReleaseIgnoresRolledOverWindow verifies that a
+// submission admitted before a window rollover, and failing after it, cannot
+// refund an admission in the new window.
+func TestSubmissionLimiterReleaseIgnoresRolledOverWindow(t *testing.T) {
+	limiter := newSubmissionLimiter(3, 10*time.Minute)
+	start := time.Now()
+	// Admitted in the old window; its database result arrives after rollover.
+	inFlight, ok := limiter.admit("visitor", start)
+	if !ok {
+		t.Fatal("in-flight submission rejected")
+	}
+	rolledOver := start.Add(10 * time.Minute)
+	for index := range 3 {
+		if !limiter.allow("visitor", rolledOver.Add(time.Duration(index)*time.Second)) {
+			t.Fatalf("new-window submission %d rejected", index+1)
+		}
+	}
+	limiter.release(inFlight)
+	if limiter.allow("visitor", rolledOver.Add(5*time.Second)) {
+		t.Fatal("a stale refund allowed a fourth submission in the new window")
+	}
+}
+
+func TestRenderQueuedPostcardNamesWorkAndKeepsTheLinkPrivate(t *testing.T) {
+	app := testutils.NewTestApp(t)
+	artworkID := installComposeArtwork(t, app, "Queued Work")
+	postcard := core.NewRecord(core.NewBaseCollection("postcards"))
+	postcard.Set("image_id", artworkID)
+	result := &postcardworkflow.QueueResult{
+		Postcard:         postcard,
+		Access:           []postcardworkflow.RecipientAccess{{Token: "opaque-token", ExpiresAt: types.NowDateTime().Add(time.Hour)}},
+		MaskedRecipients: []string{"r••••@example.test"},
+	}
+	recorder := httptest.NewRecorder()
+	event := &core.RequestEvent{App: app, Event: router.Event{Request: httptest.NewRequest(http.MethodPost, "/postcard", nil), Response: recorder}}
+
+	if err := renderQueuedPostcard(result, app, event); err != nil {
+		t.Fatalf("render queued postcard: %v", err)
+	}
+
+	if recorder.Code != http.StatusAccepted {
+		t.Fatalf("status = %d, want %d", recorder.Code, http.StatusAccepted)
+	}
+	if got := recorder.Header().Get("Cache-Control"); got != "no-store" {
+		t.Fatalf("Cache-Control = %q, want no-store", got)
+	}
+	if got := recorder.Header().Get("Referrer-Policy"); got != "no-referrer" {
+		t.Fatalf("Referrer-Policy = %q, want no-referrer", got)
+	}
+	body := recorder.Body.String()
+	for _, want := range []string{"Queued Work", "accepted and queued for delivery", `href="/postcard/send?awid=` + artworkID + `"`, "token=opaque-token"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("confirmation lacks %q: %s", want, body)
+		}
+	}
+}
+
+func postReplacementForm(t *testing.T, app core.App, form url.Values, htmx bool) *httptest.ResponseRecorder {
+	t.Helper()
+	guard, err := newReplacementSearchGuard(100, time.Minute, 4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return postReplacementFormWith(t, app, form, htmx, config.Captcha{}, nil, newSubmissionLimiter(3, 10*time.Minute), guard)
+}
+
+func postReplacementFormWith(t *testing.T, app core.App, form url.Values, htmx bool, captcha config.Captcha, verifier verifierFunc, limiter *submissionLimiter, guard *replacementSearchGuard) *httptest.ResponseRecorder {
+	t.Helper()
+	recorder := httptest.NewRecorder()
+	event := &core.RequestEvent{App: app, Event: router.Event{Request: httptest.NewRequest(http.MethodPost, "/postcard", strings.NewReader(form.Encode())), Response: recorder}}
+	event.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	if htmx {
+		event.Request.Header.Set("HX-Request", "true")
+	}
+	var antiAbuse antiabuse.Verifier
+	if verifier != nil {
+		antiAbuse = verifier
+	}
+	if err := savePostcard(app, event, captcha, config.PostcardTokenKeyring{}, antiAbuse, limiter, guard, requesttrust.New(requesttrust.SourceDirect)); err != nil {
+		t.Fatalf("save postcard: %v", err)
+	}
+	return recorder
+}
+
+func TestSavePostcardReplacesUnavailableArtworkWithoutLosingTheDraft(t *testing.T) {
+	for _, htmx := range []bool{false, true} {
+		t.Run(fmt.Sprintf("htmx=%t", htmx), func(t *testing.T) {
+			app := testutils.NewTestApp(t)
+			replacementID := installComposeArtwork(t, app, "Madonna of the Meadow")
+			installComposeArtwork(t, app, "Still Life")
+			hiddenID := installComposeArtwork(t, app, "Madonna Withdrawn")
+			hidden, err := app.FindRecordById("artworks", hiddenID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			hidden.Set("published", false)
+			if err := app.Save(hidden); err != nil {
+				t.Fatal(err)
+			}
+			draft := url.Values{
+				"sender_name":    {"Keyboard Sender"},
+				"sender_email":   {"sender@example.test"},
+				"recipients[]":   {"first@example.test", "second@example.test"},
+				"message":        {"<p>Kept message</p>"},
+				"image_id":       {hiddenID},
+				"submission_key": {"draft-key"},
+			}
+			withAction := func(extra url.Values) url.Values {
+				form := url.Values{}
+				for key, value := range draft {
+					form[key] = value
+				}
+				for key, value := range extra {
+					form[key] = value
+				}
+				return form
+			}
+			assertDraft := func(body string) {
+				t.Helper()
+				for _, want := range []string{`value="Keyboard Sender"`, `value="sender@example.test"`, `value="first@example.test"`, `value="second@example.test"`, "Kept message", `value="draft-key"`} {
+					if !strings.Contains(body, want) {
+						t.Fatalf("draft lost %q: %s", want, body)
+					}
+				}
+				if htmx == strings.Contains(body, "<html") {
+					t.Fatalf("htmx=%t rendered the wrong response shape", htmx)
+				}
+			}
+
+			short := postReplacementForm(t, app, withAction(url.Values{"find_artwork": {"1"}, "artwork_query": {"M"}}), htmx)
+			if !strings.Contains(short.Body.String(), "Enter between 2 and 100 characters") {
+				t.Fatalf("short query was not explained: %s", short.Body.String())
+			}
+
+			found := postReplacementForm(t, app, withAction(url.Values{"find_artwork": {"1"}, "artwork_query": {"Madonna"}}), htmx)
+			body := found.Body.String()
+			assertDraft(body)
+			if !strings.Contains(body, `name="replace_artwork" value="`+replacementID+`"`) {
+				t.Fatalf("matching published artwork not offered: %s", body)
+			}
+			if strings.Contains(body, `value="`+hiddenID+`" formnovalidate`) || strings.Contains(body, "Still Life") {
+				t.Fatalf("unpublished or non-matching artwork offered: %s", body)
+			}
+
+			replaced := postReplacementForm(t, app, withAction(url.Values{"replace_artwork": {replacementID}, "artwork_query": {"Madonna"}}), htmx)
+			body = replaced.Body.String()
+			if replaced.Code != http.StatusOK {
+				t.Fatalf("status = %d, want %d", replaced.Code, http.StatusOK)
+			}
+			assertDraft(body)
+			if !strings.Contains(body, `name="image_id" value="`+replacementID+`"`) || !strings.Contains(body, "Madonna of the Meadow") {
+				t.Fatalf("composer did not switch to the replacement: %s", body)
+			}
+			if strings.Contains(body, "data-postcard-replacement") || strings.Contains(body, `id="postcard-error"`) {
+				t.Fatalf("replacement composer still shows the unavailable state: %s", body)
+			}
+		})
+	}
+}
+
+func replacementSearchForm(query string) url.Values {
+	return url.Values{
+		"sender_name":          {"Keyboard Sender"},
+		"sender_email":         {"sender@example.test"},
+		"recipients[]":         {"first@example.test"},
+		"message":              {"<p>Kept message</p>"},
+		"image_id":             {"missing-artwork"},
+		"g-recaptcha-response": {"captcha-token"},
+		"find_artwork":         {"1"},
+		"artwork_query":        {query},
+	}
+}
+
+func TestReplacementSearchIsBoundedSeparatelyFromSending(t *testing.T) {
+	app := testutils.NewTestApp(t)
+	replacementID := installComposeArtwork(t, app, "Madonna of the Meadow")
+	guard, err := newReplacementSearchGuard(2, 10*time.Minute, 4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sendLimiter := newSubmissionLimiter(3, 10*time.Minute)
+	verifier := verifierFunc(func(context.Context, string, string) (bool, error) {
+		t.Fatal("a replacement search verified the CAPTCHA")
+		return false, nil
+	})
+
+	for attempt := 1; attempt <= 3; attempt++ {
+		body := postReplacementFormWith(t, app, replacementSearchForm("Madonna"), attempt%2 == 0, protectedCaptcha(t), verifier, sendLimiter, guard).Body.String()
+		offered := strings.Contains(body, `name="replace_artwork" value="`+replacementID+`"`)
+		limited := strings.Contains(body, "Too many artwork searches")
+		if attempt <= 2 && (!offered || limited) {
+			t.Fatalf("search %d was not admitted: %s", attempt, body)
+		}
+		if attempt == 3 {
+			if offered || !limited {
+				t.Fatalf("search beyond the visitor bound was not rejected: %s", body)
+			}
+			if !strings.Contains(body, `value="Keyboard Sender"`) || !strings.Contains(body, `value="first@example.test"`) || !strings.Contains(body, "Kept message") {
+				t.Fatalf("rejected search lost the draft: %s", body)
+			}
+		}
+	}
+	if len(sendLimiter.windows) != 0 {
+		t.Fatal("replacement searches consumed the send allowance")
+	}
+
+	// Queries outside the length bounds are refused before admission and do
+	// not consume the search allowance.
+	fresh, err := newReplacementSearchGuard(1, 10*time.Minute, 4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tooLong := postReplacementFormWith(t, app, replacementSearchForm(strings.Repeat("é", postcardworkflow.ReplacementQueryMaxRunes+1)), false, config.Captcha{}, nil, sendLimiter, fresh).Body.String()
+	if !strings.Contains(tooLong, "Enter between 2 and 100 characters") {
+		t.Fatalf("over-long query was not explained: %s", tooLong)
+	}
+	if len(fresh.perVisitor.windows) != 0 {
+		t.Fatal("an invalid query consumed the search allowance")
+	}
+}
+
+func TestReplacementSearchRejectsWhenCapacityIsExhausted(t *testing.T) {
+	app := testutils.NewTestApp(t)
+	installComposeArtwork(t, app, "Madonna of the Meadow")
+	guard, err := newReplacementSearchGuard(10, 10*time.Minute, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lease, ok := guard.capacity.TryAcquire(context.Background())
+	if !ok {
+		t.Fatal("could not hold the only search slot")
+	}
+	defer lease.Release()
+
+	body := postReplacementFormWith(t, app, replacementSearchForm("Madonna"), true, config.Captcha{}, nil, newSubmissionLimiter(3, 10*time.Minute), guard).Body.String()
+	if !strings.Contains(body, "Too many artwork searches") {
+		t.Fatalf("search at full capacity was not rejected: %s", body)
+	}
+	if window, ok := guard.perVisitor.windows["192.0.2.1"]; !ok || window.count != 0 {
+		t.Fatalf("capacity rejection kept the visitor charge: present=%t count=%d", ok, window.count)
+	}
+	if postReplacementFormWith(t, app, replacementSearchForm("Madonna"), true, config.Captcha{}, nil, newSubmissionLimiter(3, 10*time.Minute), nil).Body.String() == "" {
+		t.Fatal("nil guard produced no response")
+	}
+}
+
+func TestReplacementSearchBoundsResultsAndExcludesUnpublishedAuthors(t *testing.T) {
+	app := testutils.NewTestApp(t)
+	for index := range 8 {
+		installComposeArtwork(t, app, fmt.Sprintf("Madonna %d", index))
+	}
+	hiddenAuthorWork := installComposeArtwork(t, app, "Madonna 0 Hidden Author")
+	artwork, err := app.FindRecordById("artworks", hiddenAuthorWork)
+	if err != nil {
+		t.Fatal(err)
+	}
+	author, err := app.FindRecordById("artists", artwork.GetStringSlice("author")[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	author.Set("published", false)
+	if err := app.Save(author); err != nil {
+		t.Fatal(err)
+	}
+
+	candidates, err := postcardworkflow.FindReplacementArtworks(app, "Madonna")
+	if err != nil {
+		t.Fatalf("find replacements: %v", err)
+	}
+	if len(candidates) != 6 {
+		t.Fatalf("candidates = %d, want the six-result bound", len(candidates))
+	}
+	for _, candidate := range candidates {
+		if candidate.ID == hiddenAuthorWork {
+			t.Fatal("a work whose only author is unpublished was offered")
+		}
+	}
+	if _, err := postcardworkflow.FindReplacementArtworks(app, strings.Repeat("a", postcardworkflow.ReplacementQueryMaxRunes)); err != nil {
+		t.Fatalf("maximum-length query rejected: %v", err)
+	}
+	if _, err := postcardworkflow.FindReplacementArtworks(app, strings.Repeat("a", postcardworkflow.ReplacementQueryMaxRunes+1)); !errors.Is(err, postcardworkflow.ErrReplacementQueryInvalid) {
+		t.Fatalf("over-long query error = %v, want ErrReplacementQueryInvalid", err)
 	}
 }

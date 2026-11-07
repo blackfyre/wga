@@ -2,7 +2,7 @@
 
 ## Context
 
-The postcard flow must remain a public, account-free experience. Recipient access is represented by an encrypted, recipient-specific bearer token and delivery is queued before any SMTP attempt. The change improves composition, expected-error recovery, delivery truthfulness, and recipient communication without exposing addresses or recipient tokens.
+The postcard flow must remain a public, account-free experience. Recipient access is represented by one shared bearer token per postcard, encrypted at rest, and delivery is queued before any SMTP attempt. The change improves composition, expected-error recovery, delivery truthfulness, and recipient communication without exposing addresses or recipient tokens.
 
 ## Decisions
 
@@ -12,17 +12,17 @@ The postcard workflow persists recipient delivery work before SMTP. Submission i
 
 ### Use a page-first, progressively enhanced composer
 
-The selected-artwork postcard route renders the full composer for ordinary navigation and the `#mc-area` fragment for HTMX navigation. It has one required recipient and up to four optional recipient controls. The server remains the validation authority. Expected validation, CAPTCHA, and throttling responses re-render the composer; JavaScript only enhances the recipient rows, in-flight state, and expected HTMX error swaps.
+The selected-artwork postcard route renders the full composer for ordinary navigation and the `#mc-area` fragment for HTMX navigation. It has one required recipient and up to four optional recipient controls, added and removed through the existing submission endpoint, and no sender music setting. The server remains the validation authority. Expected validation, artwork-unavailable, CAPTCHA (rejected or unavailable), throttling and persistence-unavailable responses re-render the composer with the entered values, and a submission that queues nothing does not consume the successful-send allowance; JavaScript only enhances the recipient rows, in-flight state, and expected HTMX error swaps.
 
 ### Make recipient emails truthful and data-backed
 
-`resources/mjml/postcard_notification.mjml`, ported from the postcard email design (`postcard-email.html`) in the Claude Design project "WGA" (see `docs/design-sync.md`), is the approved presentation source for the recipient notification. Its compiled, embedded HTML template must use only data authorised for the recipient: selected artwork image and details, the sender name, escaped message, music availability, expiry, and the recipient’s private link. The selected artwork image uses the established hosted delivery profile when available; the template retains a text plate only as its unavailable-image fallback.
+`resources/mjml/postcard_notification.mjml`, ported from the postcard email design (`postcard-email.html`) in the Claude Design project "WGA" (see `docs/design-sync.md`), is the approved presentation source for the recipient notification. Its compiled, embedded HTML template must use only data authorised for the recipient: selected artwork image and details, the sender name, escaped message, work-derived music availability, expiry, and the postcard's shared link. The selected artwork image uses the established hosted delivery profile when available; the template retains a text plate only as its unavailable-image fallback.
 
-The email must omit unavailable artwork or music fields rather than using the MJML sample content. Its music panel requires both the sender’s music opt-in and a matching published work. It must not include recipient addresses, sender-control material, or another recipient’s bearer link.
+The email must omit unavailable artwork or music fields rather than using the MJML sample content. Its music panel appears only when a published period-music work matches the selected work; there is no sender music opt-in. It must not include recipient addresses or sender-control material.
 
 ### Retain the recipient privacy boundary
 
-Recipient tokens remain the only public capability for viewing a postcard. They are encrypted at rest and purged according to the existing delivery lifecycle. Request and run logs redact sensitive values. No sender status or cancellation route is part of this change.
+The shared postcard token remains the only public capability for viewing a postcard. They are encrypted at rest and purged according to the existing delivery lifecycle. Request and run logs redact sensitive values. No sender status or cancellation route is part of this change.
 
 ## Component boundaries
 

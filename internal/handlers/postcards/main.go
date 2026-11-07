@@ -12,6 +12,12 @@ import (
 
 func RegisterPostcardHandlers(app *pocketbase.PocketBase, captcha config.Captcha, keyring config.PostcardTokenKeyring, verifier antiabuse.Verifier, resolver requesttrust.Resolver) {
 	limiter := newSubmissionLimiter(3, 10*time.Minute)
+	search, err := newReplacementSearchGuard(replacementSearchesPerVisitor, replacementSearchWindow, replacementSearchConcurrency)
+	if err != nil {
+		// The bounds are compile-time constants, so this is unreachable;
+		// a nil guard fails closed by refusing every search.
+		app.Logger().Error("Postcard replacement search guard unavailable", "error", err)
+	}
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
 
 		ag := se.Router.Group("/postcard")
@@ -26,7 +32,7 @@ func RegisterPostcardHandlers(app *pocketbase.PocketBase, captcha config.Captcha
 		})
 
 		ag.POST("", func(c *core.RequestEvent) error {
-			return savePostcard(app, c, captcha, keyring, verifier, limiter, resolver)
+			return savePostcard(app, c, captcha, keyring, verifier, limiter, search, resolver)
 		})
 		return se.Next()
 	})

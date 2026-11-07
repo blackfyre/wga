@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -12,6 +13,7 @@ import (
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
 	"github.com/blackfyre/wga/internal/config"
+	"github.com/blackfyre/wga/internal/constants"
 	"github.com/blackfyre/wga/internal/errs"
 	"github.com/blackfyre/wga/internal/logging"
 	postcardworkflow "github.com/blackfyre/wga/internal/postcards"
@@ -22,6 +24,10 @@ import (
 	"github.com/pocketbase/pocketbase/tools/types"
 )
 
+// errReplacementSearchLimited marks a replacement search refused by the
+// per-visitor or concurrency bound.
+var errReplacementSearchLimited = errors.New("postcard replacement search limited")
+
 type postcardSubmission struct {
 	SenderName      string   `json:"sender_name" form:"sender_name"`
 	SenderEmail     string   `json:"sender_email" form:"sender_email"`
@@ -31,13 +37,16 @@ type postcardSubmission struct {
 	ImageID         string   `json:"image_id" form:"image_id"`
 	AddRecipient    string   `json:"add_recipient" form:"add_recipient"`
 	RemoveRecipient string   `json:"remove_recipient" form:"remove_recipient"`
+	ArtworkQuery    string   `json:"artwork_query" form:"artwork_query"`
+	FindArtwork     string   `json:"find_artwork" form:"find_artwork"`
+	ReplaceArtwork  string   `json:"replace_artwork" form:"replace_artwork"`
 	RecaptchaToken  string   `json:"recaptcha_token" form:"g-recaptcha-response"`
 	HoneyPotName    string   `json:"honey_pot_name" form:"name"`
 	HoneyPotEmail   string   `json:"honey_pot_email" form:"email"`
 	SubmissionKey   string   `json:"submission_key" form:"submission_key"`
 }
 
-func savePostcard(app core.App, c *core.RequestEvent, captcha config.Captcha, keyring config.PostcardTokenKeyring, verifier antiabuse.Verifier, limiter *submissionLimiter, resolver requesttrust.Resolver) error {
+func savePostcard(app core.App, c *core.RequestEvent, captcha config.Captcha, keyring config.PostcardTokenKeyring, verifier antiabuse.Verifier, limiter *submissionLimiter, search *replacementSearchGuard, resolver requesttrust.Resolver) error {
 	logger := logging.RequestLogger(app, c)
 
 	clientID, ok := "", false
@@ -61,6 +70,42 @@ func savePostcard(app core.App, c *core.RequestEvent, captcha config.Captcha, ke
 		recipients = append([]string{input.Recipient}, recipients...)
 	}
 	values := pages.PostcardComposeView{SenderName: input.SenderName, SenderEmail: input.SenderEmail, Recipients: recipientRows(recipients), Message: input.Message, SubmissionKey: input.SubmissionKey}
+	values.ArtworkQuery = strings.TrimSpace(input.ArtworkQuery)
+	// Replacing an unavailable artwork keeps the draft: the composer is
+	// re-rendered for the chosen work with every entered value.
+	if input.ReplaceArtwork != "" {
+		values.ArtworkQuery = ""
+		return renderForm(input.ReplaceArtwork, values, "", http.StatusOK, app, c, captcha)
+	}
+	if input.FindArtwork != "" {
+		var candidates []postcardworkflow.ReplacementArtwork
+		var err error
+		if !postcardworkflow.ValidReplacementQuery(values.ArtworkQuery) {
+			err = postcardworkflow.ErrReplacementQueryInvalid
+		} else if release, admitted := search.admit(c.Request.Context(), clientID, time.Now()); !admitted {
+			logger.Warn("Postcard replacement search rejected", "event", "postcard.form.rejected", "outcome", "replacement_search_rate_limited")
+			err = errReplacementSearchLimited
+		} else {
+			candidates, err = postcardworkflow.FindReplacementArtworks(app, values.ArtworkQuery)
+			release()
+		}
+		switch {
+		case errors.Is(err, errReplacementSearchLimited):
+			values.ArtworkSearchError = "Too many artwork searches right now. Wait a few minutes, then search again; your postcard draft is kept."
+		case errors.Is(err, postcardworkflow.ErrReplacementQueryInvalid):
+			values.ArtworkSearchError = "Enter between " + strconv.Itoa(postcardworkflow.ReplacementQueryMinRunes) + " and " + strconv.Itoa(postcardworkflow.ReplacementQueryMaxRunes) + " characters of an artwork title."
+		case err != nil:
+			logger.Error("Postcard replacement search failed", "event", "postcard.form.failed", "outcome", "replacement_search_error", "error_type", logging.ErrorType(err), "error", logging.Redact(err))
+			values.ArtworkSearchError = "The artwork search is unavailable right now. Please try again."
+		default:
+			values.ArtworkSearched = true
+			values.ArtworkCandidates = make([]pages.PostcardArtworkCandidate, 0, len(candidates))
+			for _, candidate := range candidates {
+				values.ArtworkCandidates = append(values.ArtworkCandidates, pages.PostcardArtworkCandidate{ID: candidate.ID, Title: candidate.Title, ArtistFilingName: candidate.ArtistFilingName})
+			}
+		}
+		return renderForm(input.ImageID, values, "", http.StatusOK, app, c, captcha)
+	}
 	if input.AddRecipient != "" {
 		if len(values.Recipients) < pages.PostcardMaxRecipients {
 			values.Recipients = append(values.Recipients, "")
@@ -112,14 +157,19 @@ func savePostcard(app core.App, c *core.RequestEvent, captcha config.Captcha, ke
 		verified, err := verifier.Verify(tmplUtils.ContextFromRequest(c.Request), input.RecaptchaToken, clientID)
 		if err != nil {
 			logger.Error("Postcard captcha verification failed", "event", "postcard.captcha.failed", "outcome", "provider_error", "error_type", logging.ErrorType(err), "error", logging.Redact(err))
-			return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
+			return renderForm(input.ImageID, values, "CAPTCHA verification is unavailable right now, so your postcard was not queued. Please try again shortly.", http.StatusServiceUnavailable, app, c, captcha)
 		}
 		if !verified {
 			logger.Warn("Postcard submission rejected", "event", "postcard.submission.rejected", "outcome", "captcha_rejected")
 			return renderForm(input.ImageID, values, "The CAPTCHA could not be verified. Please try again.", http.StatusUnprocessableEntity, app, c, captcha)
 		}
 	}
-	if limiter == nil || !limiter.allow(clientID, time.Now()) {
+	if limiter == nil {
+		logger.Warn("Postcard submission rejected", "event", "postcard.submission.rejected", "outcome", "rate_limited")
+		return renderForm(input.ImageID, values, "Too many postcard submissions. Please try again later.", http.StatusTooManyRequests, app, c, captcha)
+	}
+	admission, admitted := limiter.admit(clientID, time.Now())
+	if !admitted {
 		logger.Warn("Postcard submission rejected", "event", "postcard.submission.rejected", "outcome", "rate_limited")
 		return renderForm(input.ImageID, values, "Too many postcard submissions. Please try again later.", http.StatusTooManyRequests, app, c, captcha)
 	}
@@ -131,6 +181,9 @@ func savePostcard(app core.App, c *core.RequestEvent, captcha config.Captcha, ke
 		SubmissionKey: input.SubmissionKey,
 	}, types.NowDateTime())
 	if err != nil {
+		// Nothing was queued, so the attempt must not count against the
+		// visitor's successful-send allowance.
+		limiter.release(admission)
 		outcome := "persistence_error"
 		status := http.StatusInternalServerError
 		message := "The postcard could not be queued. Please try again."
@@ -143,7 +196,11 @@ func savePostcard(app core.App, c *core.RequestEvent, captcha config.Captcha, ke
 			outcome = "validation"
 			status = http.StatusUnprocessableEntity
 			message = "One postcard can have no more than five recipients."
-		} else if errors.Is(err, postcardworkflow.ErrInvalidPostcard) || errors.Is(err, postcardworkflow.ErrArtworkUnavailable) || errors.Is(err, postcardworkflow.ErrNoRecipients) {
+		} else if errors.Is(err, postcardworkflow.ErrArtworkUnavailable) {
+			outcome = "validation"
+			status = http.StatusUnprocessableEntity
+			message = artworkUnavailableMessage
+		} else if errors.Is(err, postcardworkflow.ErrInvalidPostcard) || errors.Is(err, postcardworkflow.ErrNoRecipients) {
 			outcome = "validation"
 			status = http.StatusUnprocessableEntity
 			message = "Check the postcard details and selected artwork."
@@ -161,6 +218,7 @@ func renderQueuedPostcard(result *postcardworkflow.QueueResult, app core.App, c 
 		ViewURL:          "/postcard?token=" + access.Token,
 		Expires:          access.ExpiresAt.Time().UTC().Format("2 January 2006"),
 	}
+	confirmation.Title, confirmation.ComposeURL = confirmationWork(app, result.Postcard)
 	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, "Postcard queued")
 	var buf bytes.Buffer
 	var err error
@@ -172,8 +230,30 @@ func renderQueuedPostcard(result *postcardworkflow.QueueResult, app core.App, c 
 	if err != nil {
 		return utils.ServerFaultError(c, utils.ServerFailure{Category: "server_fault", Cause: err})
 	}
+	// The confirmation carries the shared bearer link, so, like the recipient
+	// view, it must not be stored or leak through a referrer.
+	c.Response.Header().Set("Cache-Control", "no-store")
+	c.Response.Header().Set("Referrer-Policy", "no-referrer")
 	logging.RequestLogger(app, c).Info("Postcard submission queued", "event", "postcard.submission.queued", "outcome", "queued", "correlation_id", result.Postcard.GetString("correlation_id"))
 	return c.HTML(http.StatusAccepted, buf.String())
+}
+
+// confirmationWork names the postcard's selected work and the route to
+// compose another postcard for it, or returns empty values when the work is
+// no longer published.
+func confirmationWork(app core.App, postcard *core.Record) (string, string) {
+	artworkID := postcard.GetString("image_id")
+	if ids := postcard.GetStringSlice("image_id"); len(ids) > 0 {
+		artworkID = ids[0]
+	}
+	if artworkID == "" {
+		return "", ""
+	}
+	artwork, err := app.FindFirstRecordByFilter(constants.CollectionArtworks, "id = {:id} && published = true", map[string]any{"id": artworkID})
+	if err != nil {
+		return "", ""
+	}
+	return artwork.GetString("title"), "/postcard/send?awid=" + url.QueryEscape(artwork.Id)
 }
 
 func recipientRows(recipients []string) []string {
