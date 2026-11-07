@@ -14,4 +14,5 @@ if [ -n "${WGA_SENTRY_BROWSER_DSN:-}" ]; then
 		/usr/local/share/wga/sourcemaps
 fi
 
+unset SENTRY_AUTH_TOKEN
 exec "$@"

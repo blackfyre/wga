@@ -32,12 +32,12 @@ The application SHALL load `WGA_SENTRY_DSN` as the optional server Sentry DSN an
 
 ### Requirement: Browser configuration excludes the server DSN
 
-The application SHALL expose only the public browser Sentry DSN and deployment environment to rendered browser pages. It SHALL NOT expose the server Sentry DSN through page markup, static assets, or browser monitoring events, and the browser event relay SHALL NOT forward any envelope to the server Sentry project.
+The application SHALL expose only the public browser Sentry DSN, deployment environment, and deployed release to rendered browser pages. It SHALL NOT expose the server Sentry DSN through page markup, static assets, or browser monitoring events, and the browser event relay SHALL NOT forward any envelope to the server Sentry project.
 
 #### Scenario: Separate DSNs are configured
 
 - **WHEN** a full page is rendered with distinct server and browser Sentry DSNs
-- **THEN** the browser-visible monitoring configuration contains the browser DSN and environment but not the server DSN
+- **THEN** the browser-visible monitoring configuration contains the browser DSN, environment, and release but not the server DSN
 
 #### Scenario: Browser monitoring is disabled
 
