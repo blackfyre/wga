@@ -43,6 +43,8 @@ func TestCollectionHoldingsCacheHooksInvalidateAfterMutations(t *testing.T) {
 	artworks.Fields.Add(
 		&core.TextField{Id: "holding_artwork_title", Name: "title", Required: true},
 		&core.RelationField{Id: "holding_artwork_author", Name: "author", CollectionId: artists.Id, MinSelect: 1, MaxSelect: 10},
+		&core.RelationField{Name: "primary_author", CollectionId: artists.Id, MaxSelect: 1},
+		&core.RelationField{Name: "co_authors", CollectionId: artists.Id, MaxSelect: 10},
 		&core.RelationField{Id: "holding_artwork_location", Name: "current_location_id", CollectionId: locations.Id, MaxSelect: 1},
 		&core.BoolField{Id: "holding_artwork_published", Name: "published"},
 	)

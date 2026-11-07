@@ -1,6 +1,7 @@
 package timeline
 
 import (
+	"github.com/blackfyre/wga/internal/artworks"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
 )
@@ -74,12 +75,12 @@ type dateSpan struct {
 	End   int `db:"date_end"`
 }
 
-const (
-	publishedWorksJoin = `
+// publishedWorksJoin joins each published artwork to its published attributed
+// author: the primary author, or the first legacy author while unassigned.
+var publishedWorksJoin = `
 		FROM Artworks AS aw
-		INNER JOIN Artists AS ar ON ar.id = json_extract(aw.author, '$[0]')
+		INNER JOIN Artists AS ar ON ar.id = ` + artworks.FirstAuthorIDSQL("aw") + `
 		WHERE aw.published = true AND ar.published = true`
-)
 
 // artworkBounds returns the inclusive published-artwork year range [min, max],
 // or (0, 0) when no published artwork has a known date.

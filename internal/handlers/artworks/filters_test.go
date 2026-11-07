@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	artworkrecords "github.com/blackfyre/wga/internal/artworks"
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 )
 
@@ -43,7 +44,7 @@ func TestFiltersBuildFilterMatchesTitleOrArtistQuery(t *testing.T) {
 
 	filterString, params := filters.BuildFilter()
 
-	if !strings.Contains(filterString, "(title ~ {:query} || author.filing_name ~ {:query})") {
+	if !strings.Contains(filterString, "(title ~ {:query} || "+artworkrecords.AuthorFieldFilter("filing_name", "~", "{:query}")+")") {
 		t.Errorf("filter %q does not match title or artist", filterString)
 	}
 
@@ -57,10 +58,10 @@ func TestFiltersBuildFilterUsesExactArtistID(t *testing.T) {
 
 	filterString, params := filters.BuildFilter()
 
-	if !strings.Contains(filterString, "author.id ?= {:artist_id}") {
+	if !strings.Contains(filterString, artworkrecords.AuthorFieldFilter("id", "=", "{:artist_id}")) {
 		t.Errorf("filter %q does not contain exact artist condition", filterString)
 	}
-	if strings.Contains(filterString, "author.filing_name ~ {:artist}") {
+	if strings.Contains(filterString, "{:artist}") {
 		t.Errorf("filter %q must not contain the legacy artist condition", filterString)
 	}
 	if got := params["artist_id"]; got != "artistone000001" {

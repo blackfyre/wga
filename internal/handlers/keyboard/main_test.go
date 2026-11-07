@@ -283,6 +283,8 @@ func newKeyboardTestApp(t *testing.T) *pocketbase.PocketBase {
 		&core.TextField{Name: "title"},
 		&core.BoolField{Name: "published"},
 		&core.RelationField{Name: "author", CollectionId: artists.Id, MaxSelect: 1},
+		&core.RelationField{Name: "primary_author", CollectionId: artists.Id, MaxSelect: 1},
+		&core.RelationField{Name: "co_authors", CollectionId: artists.Id, MaxSelect: 10},
 	)
 	if err := app.Save(artworks); err != nil {
 		t.Fatalf("create artworks collection: %v", err)

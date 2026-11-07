@@ -2,6 +2,7 @@
 package studyboard
 
 import (
+	"github.com/blackfyre/wga/internal/artworks"
 	"html"
 	"regexp"
 	"strconv"
@@ -123,7 +124,7 @@ func projectArtwork(app core.App, record *core.Record) (Artwork, error) {
 	title := record.GetString("title")
 	workURL := urlutils.GenerateArtworkUrl(urlutils.ArtworkUrlDTO{ArtworkId: record.Id, ArtworkTitle: title})
 	artist := ""
-	authorIDs := record.GetStringSlice("author")
+	authorIDs := artworks.AuthorIDs(record)
 	if len(authorIDs) > 0 {
 		authorRecord, findErr := app.FindRecordById(constants.CollectionArtists, authorIDs[0])
 		if findErr == nil && authorRecord.GetBool("published") {

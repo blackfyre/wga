@@ -1320,6 +1320,8 @@ func installPostcardSchema(t *testing.T, app core.App) string {
 		&core.TextField{Name: "image"},
 		&core.NumberField{Name: "image_width"},
 		&core.RelationField{Name: "author", CollectionId: artists.Id, MaxSelect: 1},
+		&core.RelationField{Name: "primary_author", CollectionId: artists.Id, MaxSelect: 1},
+		&core.RelationField{Name: "co_authors", CollectionId: artists.Id, MaxSelect: 10},
 	)
 	artworks.Id = "artworks"
 	artworks.MarkAsNew()

@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
 	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/generatedpublication"
 	"github.com/blackfyre/wga/internal/handlers/landing"
@@ -57,6 +58,48 @@ func TestAssetCacheControl(t *testing.T) {
 		if got := assetCacheControl(path); got != want {
 			t.Errorf("assetCacheControl(%q) = %q, want %q", path, got, want)
 		}
+	}
+}
+
+func TestAssetRouteCachePolicyAppliesOnlyToExistingScripts(t *testing.T) {
+	app := newStaticTestApp(t)
+	RegisterHandlers(app)
+
+	router, err := apis.NewRouter(app)
+	if err != nil {
+		t.Fatal(err)
+	}
+	serveEvent := &core.ServeEvent{App: app, Router: router}
+	if err := app.OnServe().Trigger(serveEvent, func(se *core.ServeEvent) error {
+		mux, err := se.Router.BuildMux()
+		if err != nil {
+			return err
+		}
+		cases := []struct {
+			path   string
+			status int
+			cache  string
+		}{
+			{"/assets/js/app.js", http.StatusOK, "no-cache"},
+			{"/assets/js/bootstrap-removedchunk.js", http.StatusNotFound, ""},
+			{"/assets/js/app-removed.js", http.StatusNotFound, ""},
+		}
+		if entry := tmplUtils.EntryScriptURL(); !strings.HasPrefix(entry, "/assets/js/app.js?v=") {
+			t.Errorf("EntryScriptURL() = %q, want a content-versioned entry URL", entry)
+		}
+		for _, test := range cases {
+			recorder := httptest.NewRecorder()
+			mux.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, test.path, nil))
+			if recorder.Code != test.status {
+				t.Errorf("%s status = %d, want %d", test.path, recorder.Code, test.status)
+			}
+			if got := recorder.Header().Get("Cache-Control"); strings.Contains(got, "immutable") || (test.cache != "" && got != test.cache) {
+				t.Errorf("%s Cache-Control = %q, want %q", test.path, got, test.cache)
+			}
+		}
+		return nil
+	}); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -333,6 +376,8 @@ func newFullAppTestApp(t testing.TB) *pocketbase.PocketBase {
 		&core.DateField{Id: "artwork_created", Name: "created"},
 		&core.BoolField{Id: "artwork_published", Name: "published"},
 		&core.RelationField{Id: "artwork_author", Name: "author", CollectionId: artists.Id, MinSelect: 1, MaxSelect: 10},
+		&core.RelationField{Name: "primary_author", CollectionId: artists.Id, MaxSelect: 1},
+		&core.RelationField{Name: "co_authors", CollectionId: artists.Id, MaxSelect: 10},
 	)
 	if err := app.Save(artworks); err != nil {
 		t.Fatalf("save artworks collection: %v", err)

@@ -1091,6 +1091,8 @@ func installSchema(t *testing.T, app *pocketbase.PocketBase) {
 		&core.TextField{Name: "image"},
 		&core.NumberField{Name: "image_width"},
 		&core.RelationField{Name: "author", CollectionId: "artists", MaxSelect: 10},
+		&core.RelationField{Name: "primary_author", CollectionId: "artists", MaxSelect: 1},
+		&core.RelationField{Name: "co_authors", CollectionId: "artists", MaxSelect: 10},
 		&core.AutodateField{Name: "created", OnCreate: true},
 		&core.AutodateField{Name: "updated", OnCreate: true, OnUpdate: true},
 	)

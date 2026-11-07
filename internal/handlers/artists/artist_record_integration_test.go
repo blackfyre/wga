@@ -76,6 +76,8 @@ func newArtistRecordApp(t *testing.T) *pocketbase.PocketBase {
 	saveRecordCollection(t, app, core.NewBaseCollection("Artworks"), "artworks",
 		&core.TextField{Name: "title", Required: true},
 		&core.RelationField{Name: "author", CollectionId: "artists", MinSelect: 1, MaxSelect: 10},
+		&core.RelationField{Name: "primary_author", CollectionId: "artists", MaxSelect: 1},
+		&core.RelationField{Name: "co_authors", CollectionId: "artists", MaxSelect: 10},
 		&core.TextField{Name: "technique"},
 		&core.EditorField{Name: "comment"},
 		&core.BoolField{Name: "published"},

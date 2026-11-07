@@ -88,6 +88,8 @@ func newArtworkRouteAppWithEnvironment(t *testing.T, environment config.Environm
 	saveRecordCollection(t, app, core.NewBaseCollection("Artworks"), constants.CollectionArtworks,
 		&core.TextField{Name: "title", Required: true},
 		&core.RelationField{Name: "author", CollectionId: constants.CollectionArtists, MinSelect: 1, MaxSelect: 10},
+		&core.RelationField{Name: "primary_author", CollectionId: constants.CollectionArtists, MaxSelect: 1},
+		&core.RelationField{Name: "co_authors", CollectionId: constants.CollectionArtists, MaxSelect: 10},
 		&core.RelationField{Name: "form", CollectionId: constants.CollectionArtForms, MinSelect: 1, MaxSelect: 20},
 		&core.RelationField{Name: "type", CollectionId: constants.CollectionArtTypes, MinSelect: 0, MaxSelect: 20},
 		&core.RelationField{Name: "school", CollectionId: constants.CollectionSchools, MinSelect: 0, MaxSelect: 10},

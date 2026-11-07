@@ -1,6 +1,9 @@
 package artworks
 
-import "github.com/blackfyre/wga/internal/assets/templ/pages"
+import (
+	artworkrecords "github.com/blackfyre/wga/internal/artworks"
+	"github.com/blackfyre/wga/internal/assets/templ/pages"
+)
 
 // Artwork sort state. Each criterion carries the explicit direction labels a
 // scholar sees (rather than an ambiguous "ascending") and the deterministic
@@ -25,7 +28,10 @@ type artworkSortCriterion struct {
 
 var artworkSortCriteria = []artworkSortCriterion{
 	{key: sortTitle, label: "TITLE", ascLabel: "A–Z", descLabel: "Z–A", field: "title"},
-	{key: sortArtist, label: "ARTIST", ascLabel: "A–Z", descLabel: "Z–A", field: "author.filing_name"},
+	// The artist criterion orders by the attributed author's filing name, which
+	// the resolver sort string cannot express while the legacy author relation
+	// remains the fallback; sortPrefixOrderBy supplies it as a raw expression.
+	{key: sortArtist, label: "ARTIST", ascLabel: "A–Z", descLabel: "Z–A"},
 	{key: sortDate, label: "DATE", ascLabel: "EARLIEST", descLabel: "LATEST", field: "date_start"},
 }
 
@@ -53,18 +59,34 @@ func (f *filters) sortString() string {
 		direction = "-"
 	}
 
+	if criterion.field == "" {
+		return "+id"
+	}
+
 	return direction + criterion.field + ",+id"
+}
+
+// artistSortExpression orders by the filing name of the artwork's attributed
+// author: the primary author, or the first legacy author while unassigned.
+func artistSortExpression() string {
+	return "(SELECT sort_artist.filing_name FROM Artists AS sort_artist WHERE sort_artist.id = " + artworkrecords.FirstAuthorIDSQL("Artworks") + ")"
 }
 
 // sortPrefixOrderBy returns the raw order-by prefix that keeps records with an
 // unknown or missing value (0) after all authoritative values, regardless of
-// direction. The date criterion uses date_start. It is applied before the
+// direction. The date criterion uses date_start. The artist criterion is the
+// whole attributed-author order rather than a prefix. It is applied before the
 // resolver sort string because the PocketBase sort string cannot express a
 // computed "unknown last" expression.
 func (f *filters) sortPrefixOrderBy() string {
 	switch f.Sort {
 	case sortDate:
 		return "(date_start = 0) ASC"
+	case sortArtist:
+		if f.SortDir == sortDesc {
+			return artistSortExpression() + " DESC"
+		}
+		return artistSortExpression() + " ASC"
 	default:
 		return ""
 	}

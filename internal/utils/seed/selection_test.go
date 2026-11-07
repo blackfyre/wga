@@ -361,6 +361,8 @@ func createSelectionAppCollections(t *testing.T, app core.App) {
 	artworks.Fields.Add(
 		&core.TextField{Name: "title"},
 		&core.RelationField{Name: "author", CollectionId: "artists", MinSelect: 1, MaxSelect: 10},
+		&core.RelationField{Name: "primary_author", CollectionId: "artists", MaxSelect: 1},
+		&core.RelationField{Name: "co_authors", CollectionId: "artists", MaxSelect: 10},
 		&core.TextField{Name: "image"},
 		&core.NumberField{Name: "image_width"},
 		&core.BoolField{Name: "published"},

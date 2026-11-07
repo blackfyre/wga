@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/blackfyre/wga/internal/artworks"
 	"net"
 	"net/mail"
 	"net/textproto"
@@ -237,7 +238,7 @@ func renderMessage(app core.App, postcard *core.Record, delivery *core.Record, m
 			data["ArtworkTitleUpper"] = strings.ToUpper(title)
 			data["ArtworkDetails"] = artwork.GetString("date_text")
 			data["ArtworkImageURL"] = postcards.PublicURL.Resolve(urlutils.GenerateArtworkImageURL(artwork, urlutils.DeliveryProfilePostcardSmallDualPlate, ""))
-			if authors := artwork.GetStringSlice("author"); len(authors) > 0 {
+			if authors := artworks.AuthorIDs(artwork); len(authors) > 0 {
 				repository := repositories.NewArtistRecordRepository(app)
 				if artist, artistErr := repository.FindPublishedArtist(authors[0]); artistErr == nil {
 					data["ArtworkDetails"] = strings.TrimSpace(artist.GetString("filing_name") + " · " + artwork.GetString("date_text"))

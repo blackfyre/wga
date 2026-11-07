@@ -37,6 +37,8 @@ func newArtistSelectionsTestApp(t *testing.T) *tests.TestApp {
 	artworks.Fields.Add(
 		&core.TextField{Name: "title", Required: true},
 		&core.RelationField{Name: "author", CollectionId: artists.Id, MinSelect: 1, MaxSelect: 10},
+		&core.RelationField{Name: "primary_author", CollectionId: artists.Id, MaxSelect: 1},
+		&core.RelationField{Name: "co_authors", CollectionId: artists.Id, MaxSelect: 10},
 		&core.BoolField{Name: "published"},
 	)
 	if err := app.Save(artworks); err != nil {

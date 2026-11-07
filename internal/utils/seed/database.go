@@ -28,6 +28,8 @@ var syntheticTargetCollections = []targetCollection{
 	{name: "art_types", fields: []string{"name", "slug"}},
 	{name: "art_periods", fields: []string{"name", "slug", "start", "end", "description"}},
 	{name: constants.CollectionLocations, fields: []string{"name", "city", "country", "museum", "is_public"}},
+	{name: constants.CollectionLocationAliases, fields: []string{"comparison_key", "location"}},
+	{name: constants.CollectionTechniques, fields: []string{"name", "comparison_key"}},
 	{name: constants.CollectionArtists, fields: []string{
 		"name", "slug", "bio", "year_of_birth", "year_of_death", "place_of_birth", "place_of_death",
 		"exact_year_of_birth", "exact_year_of_death", "profession", "known_place_of_birth",
@@ -37,7 +39,7 @@ var syntheticTargetCollections = []targetCollection{
 	{name: constants.CollectionArtworks, fields: []string{
 		"title", "author", "form", "type", "technique", "school", "comment", "published", "image", "image_width", "image_height",
 		"source_row", "date_start", "date_end", "is_circa", "date_qualifier", "timeframe_text",
-		"current_location_id", "art_period_id",
+		"current_location_id", "art_period_id", "primary_author", "techniques", "source_location",
 		"source_url", "source_path", "source_comment", "colour_palette", "colour_signature", "colour_profile_version", "colour_image_hash",
 		"image_size_bytes",
 	}},
@@ -87,6 +89,12 @@ func Import(app core.App, sqlitePath string) error {
 		return err
 	}
 	if err := importSyntheticLocations(app, data.locations); err != nil {
+		return err
+	}
+	if err := importSyntheticLocationAliases(app, data.locationAliases); err != nil {
+		return err
+	}
+	if err := importSyntheticTechniques(app, data.techniques); err != nil {
 		return err
 	}
 	if err := importSyntheticArtists(app, data, paths.preseededAssets); err != nil {
@@ -166,6 +174,7 @@ func validateSourceFieldContracts(artworks *core.Collection, selections *core.Co
 		{"colour_profile_version", core.FieldTypeText},
 		{"colour_image_hash", core.FieldTypeText},
 		{"image_size_bytes", core.FieldTypeNumber},
+		{"source_location", core.FieldTypeText},
 	} {
 		field := artworks.Fields.GetByName(check.name)
 		if field == nil {
@@ -180,6 +189,14 @@ func validateSourceFieldContracts(artworks *core.Collection, selections *core.Co
 		return err
 	}
 	if err := validateRelationContract(artworks, "art_period_id", "art_periods", 0, 1); err != nil {
+		return err
+	}
+	if err := validateRelationContract(artworks, "primary_author", constants.CollectionArtists, 0, 1); err != nil {
+		return err
+	}
+	// techniques must be multi-valued (MaxSelect > 1): a zero or one limit makes
+	// PocketBase keep only the last assigned technique.
+	if err := validateRelationContract(artworks, "techniques", constants.CollectionTechniques, 0, 10); err != nil {
 		return err
 	}
 	if err := validateRelationContract(selections, "artist", "artists", 1, 1); err != nil {
@@ -319,6 +336,45 @@ func importSyntheticLocations(app core.App, items []sourceLocation) error {
 	return nil
 }
 
+// importSyntheticLocationAliases records the producer's reviewed location
+// aliases. Normalisation, private-collection classification, and alias review
+// are producer-owned; the application keeps the reviewed mapping beside the
+// canonical locations so curators can see why an artwork resolved.
+func importSyntheticLocationAliases(app core.App, items []sourceLocationAlias) error {
+	for _, item := range items {
+		record, err := newRecord(app, constants.CollectionLocationAliases, syntheticID("location-alias:"+item.ComparisonKey))
+		if err != nil {
+			return err
+		}
+
+		record.Set("comparison_key", item.ComparisonKey)
+		record.Set("location", item.LocationID)
+		if err := app.Save(record); err != nil {
+			return fmt.Errorf("save location alias %q: %w", item.ComparisonKey, err)
+		}
+	}
+
+	return nil
+}
+
+// importSyntheticTechniques records the producer's canonical techniques.
+func importSyntheticTechniques(app core.App, items []sourceTechnique) error {
+	for _, item := range items {
+		record, err := newRecord(app, constants.CollectionTechniques, item.ID)
+		if err != nil {
+			return err
+		}
+
+		record.Set("name", item.Name)
+		record.Set("comparison_key", item.ComparisonKey)
+		if err := app.Save(record); err != nil {
+			return fmt.Errorf("save technique %q: %w", item.ID, err)
+		}
+	}
+
+	return nil
+}
+
 func importSyntheticArtists(app core.App, data sourceData, preseededAssets bool) error {
 	professionNames := make(map[string]string, len(data.professions))
 	for _, profession := range data.professions {
@@ -389,7 +445,16 @@ func importSyntheticArtworks(app core.App, data sourceData, preseededAssets bool
 		}
 
 		record.Set("title", item.Title)
+		// The legacy author relation is retained until the curated migration
+		// completes; primary_author is the relation application reads use.
 		record.Set("author", []string{item.AuthorID})
+		record.Set("primary_author", item.PrimaryAuthorID)
+		if techniques := data.artworkTechniques[item.ID]; len(techniques) > 0 {
+			record.Set("techniques", techniques)
+		}
+		// The raw source location is preserved verbatim, independent of the
+		// producer's canonical current_location_id resolution.
+		record.Set("source_location", item.Location)
 		record.Set("form", []string{item.FormID})
 		if item.TypeID != "" {
 			record.Set("type", []string{item.TypeID})

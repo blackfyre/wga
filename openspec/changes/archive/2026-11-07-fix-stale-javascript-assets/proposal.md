@@ -11,6 +11,7 @@ After a deployment, a browser with a cached `app.js` can request a removed conte
 ## Capabilities
 
 ### New Capabilities
+
 - `static-asset-compatibility`: deployment-safe browser asset loading and recovery behaviour.
 
 ### Modified Capabilities

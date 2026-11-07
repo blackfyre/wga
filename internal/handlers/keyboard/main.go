@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	artworkrecords "github.com/blackfyre/wga/internal/artworks"
 	"net/http"
 	"strconv"
 	"strings"
@@ -98,12 +99,12 @@ func suggestions(app *pocketbase.PocketBase, query string, limit int) ([]compone
 		return rows, nil
 	}
 
-	artworks, err := app.FindRecordsByFilter(constants.CollectionArtworks, "published = true && author:length > 0 && title ~ {:query}", "+title,+id", limit-len(rows), 0, params)
+	artworks, err := app.FindRecordsByFilter(constants.CollectionArtworks, "published = true && "+artworkrecords.HasAuthorFilter+" && title ~ {:query}", "+title,+id", limit-len(rows), 0, params)
 	if err != nil {
 		return nil, err
 	}
 	for _, artwork := range artworks {
-		authorIDs := artwork.GetStringSlice("author")
+		authorIDs := artworkrecords.AuthorIDs(artwork)
 		artist, err := app.FindRecordById(constants.CollectionArtists, authorIDs[0])
 		if err != nil {
 			return nil, err

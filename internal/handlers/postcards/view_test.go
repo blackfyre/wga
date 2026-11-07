@@ -53,6 +53,8 @@ func TestViewPostcardSetsRecipientResponseHeaders(t *testing.T) {
 		&core.TextField{Name: "comment"},
 		&core.TextField{Name: "technique"},
 		&core.RelationField{Name: "author", CollectionId: artists.Id, MaxSelect: 1},
+		&core.RelationField{Name: "primary_author", CollectionId: artists.Id, MaxSelect: 1},
+		&core.RelationField{Name: "co_authors", CollectionId: artists.Id, MaxSelect: 10},
 	)
 	if err := app.Save(artworks); err != nil {
 		t.Fatalf("create artworks collection: %v", err)

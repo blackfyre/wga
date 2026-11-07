@@ -57,6 +57,8 @@ func newPublicationTestApp(t *testing.T) *tests.TestApp {
 		&core.TextField{Name: "title"},
 		&core.BoolField{Name: "published"},
 		&core.RelationField{Name: "author", CollectionId: artists.Id, MaxSelect: 10},
+		&core.RelationField{Name: "primary_author", CollectionId: artists.Id, MaxSelect: 1},
+		&core.RelationField{Name: "co_authors", CollectionId: artists.Id, MaxSelect: 10},
 		&core.NumberField{Name: "date_start"},
 		&core.NumberField{Name: "date_end"},
 		&core.BoolField{Name: "is_circa"},

@@ -54,6 +54,8 @@ func newArtworkRelatedTestApp(t *testing.T) *tests.TestApp {
 	artworks.Fields.Add(
 		&core.TextField{Name: "title", Required: true},
 		&core.RelationField{Name: "author", CollectionId: constants.CollectionArtists, MinSelect: 1, MaxSelect: 10},
+		&core.RelationField{Name: "primary_author", CollectionId: constants.CollectionArtists, MaxSelect: 1},
+		&core.RelationField{Name: "co_authors", CollectionId: constants.CollectionArtists, MaxSelect: 10},
 		&core.RelationField{Name: "current_location_id", CollectionId: constants.CollectionLocations, MinSelect: 0, MaxSelect: 1},
 		&core.TextField{Name: "art_period_id"},
 		&core.BoolField{Name: "published"},
@@ -861,4 +863,72 @@ func assertRelatedTitles(t *testing.T, works []*core.Record, want []string) {
 			t.Errorf("work[%d] = %q, want %q", i, got, want[i])
 		}
 	}
+}
+
+// TestRelatedBasesUsePrimaryAndCoAuthors proves the artist basis matches works
+// through the primary-author and co-author relations, keeps the legacy author
+// as a fallback only while no primary author is assigned, and that the period
+// basis excludes the same shared artists.
+func TestRelatedBasesUsePrimaryAndCoAuthors(t *testing.T) {
+	app := newArtworkRelatedTestApp(t)
+	artistX := relatedID("artx", 1)
+	artistY := relatedID("arty", 1)
+	artistZ := relatedID("artz", 1)
+	for _, id := range []string{artistX, artistY, artistZ} {
+		saveRelatedRecord(t, app, constants.CollectionArtists, id, map[string]any{"name": id, "filing_name": id, "published": true})
+	}
+
+	current := relatedID("cur", 1)
+	coAuthored := relatedID("coa", 1)
+	legacyOnly := relatedID("leg", 1)
+	reassigned := relatedID("rea", 1)
+	unrelated := relatedID("unr", 1)
+	saveRelatedRecord(t, app, constants.CollectionArtworks, current, map[string]any{
+		"title": "Current", "author": []string{artistX}, "primary_author": artistX, "published": true, "date_start": 1500,
+	})
+	// Shares artist X only as a co-author.
+	saveRelatedRecord(t, app, constants.CollectionArtworks, coAuthored, map[string]any{
+		"title": "Co-authored", "primary_author": artistY, "co_authors": []string{artistX}, "published": true, "date_start": 1505,
+	})
+	// Awaiting curator review: no primary author, legacy author X.
+	saveRelatedRecord(t, app, constants.CollectionArtworks, legacyOnly, map[string]any{
+		"title": "Legacy only", "author": []string{artistX, artistY}, "published": true, "date_start": 1510,
+	})
+	// The curated primary author supersedes a stale legacy author X.
+	saveRelatedRecord(t, app, constants.CollectionArtworks, reassigned, map[string]any{
+		"title": "Reassigned", "author": []string{artistX}, "primary_author": artistZ, "published": true, "date_start": 1502,
+	})
+	saveRelatedRecord(t, app, constants.CollectionArtworks, unrelated, map[string]any{
+		"title": "Unrelated", "primary_author": artistZ, "published": true, "date_start": 1501,
+	})
+
+	record, err := app.FindRecordById(constants.CollectionArtworks, current)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resolver := NewRelatedWorkResolver(app)
+
+	byArtist, err := resolver.Resolve(record, RelatedByArtist)
+	if err != nil {
+		t.Fatalf("resolve artist basis: %v", err)
+	}
+	if got, want := relatedIDs(byArtist.Works), []string{coAuthored, legacyOnly}; fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Fatalf("artist basis = %v, want %v", got, want)
+	}
+
+	byPeriod, err := resolver.Resolve(record, RelatedByPeriod)
+	if err != nil {
+		t.Fatalf("resolve period basis: %v", err)
+	}
+	if got, want := relatedIDs(byPeriod.Works), []string{unrelated, reassigned}; fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Fatalf("period basis = %v, want %v (no shared primary/co-author)", got, want)
+	}
+}
+
+func relatedIDs(records []*core.Record) []string {
+	ids := make([]string, 0, len(records))
+	for _, record := range records {
+		ids = append(ids, record.Id)
+	}
+	return ids
 }

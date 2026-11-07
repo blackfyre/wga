@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/blackfyre/wga/internal/artworks"
 	"github.com/blackfyre/wga/internal/constants"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
@@ -158,12 +159,12 @@ func (r *RelatedWorkResolver) candidates(artwork *core.Record, basis RelatedWork
 	}
 }
 
-// relatedByArtist returns published works whose author relation includes any of
-// the current artwork's authors, excluding the current artwork, ordered by title
+// relatedByArtist returns published works whose primary author or co-authors
+// include any of the current artwork's primary author or co-authors, excluding the current artwork, ordered by title
 // then id for determinism. It returns at most relatedCandidatesLimit candidates;
 // the common closest-date selector narrows them to the presented sample.
 func (r *RelatedWorkResolver) relatedByArtist(artwork *core.Record) ([]*core.Record, error) {
-	authorIDs := artwork.GetStringSlice("author")
+	authorIDs := artworks.AuthorIDs(artwork)
 	if len(authorIDs) == 0 {
 		return nil, nil
 	}
@@ -251,7 +252,7 @@ func (r *RelatedWorkResolver) relatedByPeriod(artwork *core.Record) ([]*core.Rec
 	if currentDate <= 0 {
 		return nil, nil
 	}
-	authorIDs := artwork.GetStringSlice("author")
+	authorIDs := artworks.AuthorIDs(artwork)
 
 	query := r.app.RecordQuery(constants.CollectionArtworks)
 	query.AndWhere(dbx.NewExp("published = true"))
@@ -349,7 +350,7 @@ func authorMembershipExp(authorIDs []string) dbx.Expression {
 	}
 
 	return dbx.NewExp(
-		"EXISTS (SELECT 1 FROM json_each(Artworks.author) je WHERE je.value IN ("+strings.Join(placeholders, ", ")+"))",
+		"EXISTS (SELECT 1 FROM json_each("+artworks.AuthorIDsSQL("Artworks")+") je WHERE je.value IN ("+strings.Join(placeholders, ", ")+"))",
 		params,
 	)
 }
@@ -368,7 +369,7 @@ func noAuthorOverlapExp(authorIDs []string) dbx.Expression {
 	}
 
 	return dbx.NewExp(
-		"NOT EXISTS (SELECT 1 FROM json_each(Artworks.author) je WHERE je.value IN ("+strings.Join(placeholders, ", ")+"))",
+		"NOT EXISTS (SELECT 1 FROM json_each("+artworks.AuthorIDsSQL("Artworks")+") je WHERE je.value IN ("+strings.Join(placeholders, ", ")+"))",
 		params,
 	)
 }
@@ -379,7 +380,7 @@ func noAuthorOverlapExp(authorIDs []string) dbx.Expression {
 // with one published and one unpublished author still passes.
 func publishedAuthorFilter() dbx.Expression {
 	return dbx.NewExp(
-		"EXISTS (SELECT 1 FROM json_each(Artworks.author) je JOIN Artists a ON a.id = je.value WHERE a.published = true)",
+		"EXISTS (SELECT 1 FROM json_each(" + artworks.AuthorIDsSQL("Artworks") + ") je JOIN Artists a ON a.id = je.value WHERE a.published = true)",
 	)
 }
 
@@ -403,7 +404,7 @@ func (r *RelatedWorkResolver) holding(artwork *core.Record, basis RelatedWorkBas
 // filing name) and includes the current artwork. A missing author or an empty
 // filing name yields a nil holding because the filter link would be unusable.
 func (r *RelatedWorkResolver) artistHolding(artwork *core.Record) (*RelatedWorkHolding, error) {
-	authorIDs := artwork.GetStringSlice("author")
+	authorIDs := artworks.AuthorIDs(artwork)
 	if len(authorIDs) == 0 {
 		return nil, nil
 	}
@@ -486,7 +487,7 @@ func (r *RelatedWorkResolver) countArtworkHolding(facetExp dbx.Expression) (int,
 	total, err := r.app.CountRecords(
 		constants.CollectionArtworks,
 		dbx.NewExp("published = true"),
-		dbx.NewExp("json_array_length(Artworks.author) > 0"),
+		dbx.NewExp("json_array_length("+artworks.AuthorIDsSQL("Artworks")+") > 0"),
 		facetExp,
 	)
 	if err != nil {
@@ -501,7 +502,7 @@ func (r *RelatedWorkResolver) countArtworkHolding(facetExp dbx.Expression) (int,
 // artist filter (author.filing_name ~ value).
 func artistFilingNameExp(filingName string) dbx.Expression {
 	return dbx.NewExp(
-		"EXISTS (SELECT 1 FROM json_each(Artworks.author) je JOIN Artists a ON a.id = je.value WHERE a.filing_name LIKE {:artist_like} ESCAPE '\\')",
+		"EXISTS (SELECT 1 FROM json_each("+artworks.AuthorIDsSQL("Artworks")+") je JOIN Artists a ON a.id = je.value WHERE a.filing_name LIKE {:artist_like} ESCAPE '\\')",
 		dbx.Params{"artist_like": likeContains(filingName)},
 	)
 }
