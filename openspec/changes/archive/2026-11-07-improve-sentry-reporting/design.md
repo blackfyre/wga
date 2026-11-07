@@ -5,12 +5,14 @@ See proposal.md for motivation. The request-ID middleware is registered before S
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Correlate every captured unexpected server failure with an allowlisted request diagnosis and one structured log event.
 - Preserve a sanitised causal diagnosis for server-fault responses where the source has one.
 - Give the server and browser a shared, immutable release value and make matching browser source maps available only to Sentry.
 - Prove the privacy boundary and release artefact behaviour automatically.
 
 **Non-Goals:**
+
 - Adding performance tracing, session replay, profiling, or metrics.
 - Changing routes, response bodies, status codes, authentication, or normal request logging.
 - Fixing the stale browser-asset failure or adding broad browser-noise suppression.
@@ -61,12 +63,12 @@ The entrypoint must fail before WGA starts if an enabled browser-monitoring rele
 
 ## Operational Decomposition
 
-| Workstream | Area of operations | Coordination and sequencing |
-|---|---|---|
-| Request-failure diagnosis | `internal/observability`, `internal/utils`, request logging tests | Owns the request-scoped failure-record contract. Must complete before release verification because it defines the server event shape. |
-| Shared release configuration | `internal/config`, layout metadata, `resources/js/sentry.ts` | Depends on the release-value contract above only for verification naming; preserves the public-config boundary. |
-| Browser release assembly | frontend build scripts, container/CI release steps | Depends on the shared release value. Owns Sentry upload credentials and source-map exclusion. |
-| Verification | focused Go/JS/build checks and staging Sentry observation | Runs after the preceding workstreams; proves correlation, sanitisation, release equality, map exclusion, and uploaded source resolution. |
+| Workstream                   | Area of operations                                                | Coordination and sequencing                                                                                                              |
+| ---------------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Request-failure diagnosis    | `internal/observability`, `internal/utils`, request logging tests | Owns the request-scoped failure-record contract. Must complete before release verification because it defines the server event shape.    |
+| Shared release configuration | `internal/config`, layout metadata, `resources/js/sentry.ts`      | Depends on the release-value contract above only for verification naming; preserves the public-config boundary.                          |
+| Browser release assembly     | frontend build scripts, container/CI release steps                | Depends on the shared release value. Owns Sentry upload credentials and source-map exclusion.                                            |
+| Verification                 | focused Go/JS/build checks and staging Sentry observation         | Runs after the preceding workstreams; proves correlation, sanitisation, release equality, map exclusion, and uploaded source resolution. |
 
 The shared failure-record and release-configuration contracts each have one owner during implementation. The browser build/upload work may proceed after the release-value contract is fixed, but deployment changes must be serialised after application changes so the first published release has matching runtime metadata and maps.
 
