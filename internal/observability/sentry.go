@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 
+	templutils "github.com/blackfyre/wga/internal/assets/templ/utils"
 	"github.com/blackfyre/wga/internal/buildinfo"
 	"github.com/blackfyre/wga/internal/config"
 	"github.com/blackfyre/wga/internal/logging"
@@ -201,9 +202,9 @@ func sentryTestPage(message string) string {
 </head>
 <body>
 <p>%s</p>
-<script type="module" src="/assets/js/app.js"></script>
+<script type="module" src="%s"></script>
 </body>
-</html>`, html.EscapeString(settings.DSN), html.EscapeString(settings.Environment), html.EscapeString(settings.Release), html.EscapeString(message))
+</html>`, html.EscapeString(settings.DSN), html.EscapeString(settings.Environment), html.EscapeString(settings.Release), html.EscapeString(message), html.EscapeString(templutils.EntryScriptURL()))
 }
 
 func (m Monitor) intercept(e *core.RequestEvent, next func() error, responseStatus func() int) (err error) {

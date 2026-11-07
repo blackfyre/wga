@@ -1,5 +1,7 @@
 package pages
 
+import "github.com/blackfyre/wga/internal/assets/templ/utils"
+
 type MusicPeriodPlayerView struct {
 	SongID     string
 	Composer   string
@@ -40,7 +42,7 @@ templ MusicPeriodPlayerPage(view MusicPeriodPlayerView) {
 				<p class="mt-4 text-(length:--t-15) leading-relaxed text-wga-ink/65">Playback starts only when you use the audio controls.</p>
 				<button type="button" class="mt-6 border border-wga-ink/30 px-4 py-2 font-mono text-(length:--t-10) tracking-[1px]" data-wga-music-close>CLOSE PLAYER</button>
 			</main>
-			<script type="module" src="/assets/js/app.js"></script>
+			<script type="module" src={ utils.EntryScriptURL() }></script>
 		</body>
 	</html>
 }

@@ -1,4 +1,5 @@
 const recoveryKey = "wga.dynamic-module-recovery";
+const entryPath = "/assets/js/app.js";
 
 export const recoverDynamicModule = (
 	storage: Storage,
@@ -16,6 +17,31 @@ export const recoverDynamicModule = (
 
 export const clearDynamicModuleRecovery = (storage: Storage): void => {
 	storage.removeItem(recoveryKey);
+};
+
+// The page that failed can be an edge-cached document from the previous
+// release whose entry URL the browser still holds for hours. Reloading alone
+// would reuse that cached entry, so re-request it past the browser cache
+// first: the origin serves the current entry under any version query.
+export const refreshEntryModule = async (
+	document: Document,
+	fetcher: typeof fetch,
+): Promise<void> => {
+	const entry = Array.from(
+		document.querySelectorAll<HTMLScriptElement>('script[type="module"][src]'),
+	).find((script) => new URL(script.src).pathname === entryPath);
+	if (!entry) {
+		return;
+	}
+	try {
+		const response = await fetcher(entry.src, {
+			cache: "reload",
+			credentials: "same-origin",
+		});
+		await response.arrayBuffer();
+	} catch {
+		// Reload regardless: the bounded retry state covers a failed refresh.
+	}
 };
 
 export const renderDynamicModuleRetry = (document: Document): void => {

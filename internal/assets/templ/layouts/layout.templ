@@ -84,7 +84,7 @@ templ LayoutBase(bodyClasses string, HtmxTargetArea string) {
 				class="wga-feedback-anchor fixed right-4 z-50 bg-wga-inv-bg px-4.5 py-[13px] font-mono text-(length:--t-11) tracking-[1.5px] text-wga-inv-fg transition-colors hover:bg-wga-accent-bg md:right-8"
 			>FEEDBACK</a>
 			<div class="wga-toast-stack" id="toast-container"></div>
-			<script type="module" src="/assets/js/app.js"></script>
+			<script type="module" src={ utils.EntryScriptURL() }></script>
 		</body>
 	</html>
 }
