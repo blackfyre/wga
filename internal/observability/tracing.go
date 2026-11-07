@@ -19,6 +19,7 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/metric/noop"
 	"go.opentelemetry.io/otel/propagation"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -55,9 +56,12 @@ func ConfigureTracing(settings config.OpenTelemetry, environment config.Environm
 		)
 		return Tracer{}, nil
 	}
+	return configureOTLP(settings.Endpoint(), settings.MetricsEnabled(), environment, logger)
+}
 
+func configureOTLP(endpoint string, metricsEnabled bool, environment config.Environment, logger *slog.Logger) (Tracer, error) {
 	ctx := context.Background()
-	traceExporter, metricExporter, err := newOTLPExporters(ctx, settings.Endpoint())
+	traceExporter, metricExporter, err := newOTLPExporters(ctx, endpoint, metricsEnabled)
 	if err != nil {
 		return Tracer{}, err
 	}
@@ -76,17 +80,10 @@ func ConfigureTracing(settings config.OpenTelemetry, environment config.Environm
 		),
 		sdktrace.WithResource(res),
 	)
-	metricReader := sdkmetric.NewPeriodicReader(metricExporter,
-		sdkmetric.WithInterval(telemetryMetricPeriod),
-		sdkmetric.WithTimeout(telemetryExportTimeout),
-	)
-	meterProvider := sdkmetric.NewMeterProvider(
-		sdkmetric.WithReader(metricReader),
-		sdkmetric.WithResource(res),
-	)
+	meterProvider, meterShutdown := newMeterProvider(metricExporter, res)
 
 	runtime := newTracer(traceProvider, meterProvider, func(ctx context.Context) error {
-		return shutdownConcurrently(ctx, traceProvider.Shutdown, meterProvider.Shutdown)
+		return shutdownConcurrently(ctx, traceProvider.Shutdown, meterShutdown)
 	})
 	otel.SetTextMapPropagator(runtime.propagator)
 	otel.SetTracerProvider(traceProvider)
@@ -94,7 +91,8 @@ func ConfigureTracing(settings config.OpenTelemetry, environment config.Environm
 
 	logger.Info("OpenTelemetry enabled",
 		"event", "observability.otel.enabled",
-		"endpoint", settings.Endpoint(),
+		"endpoint", endpoint,
+		"metrics_enabled", metricsEnabled,
 		"environment", environment,
 	)
 	return runtime, nil
@@ -104,7 +102,25 @@ func tailSamplingHeadSampler() sdktrace.Sampler {
 	return sdktrace.AlwaysSample()
 }
 
-func newOTLPExporters(ctx context.Context, endpoint string) (sdktrace.SpanExporter, sdkmetric.Exporter, error) {
+// newMeterProvider exports through metricExporter, or records nothing when metric
+// export is disabled and metricExporter is nil.
+func newMeterProvider(metricExporter sdkmetric.Exporter, res *resource.Resource) (metric.MeterProvider, func(context.Context) error) {
+	if metricExporter == nil {
+		return noop.NewMeterProvider(), func(context.Context) error { return nil }
+	}
+	metricReader := sdkmetric.NewPeriodicReader(metricExporter,
+		sdkmetric.WithInterval(telemetryMetricPeriod),
+		sdkmetric.WithTimeout(telemetryExportTimeout),
+	)
+	meterProvider := sdkmetric.NewMeterProvider(
+		sdkmetric.WithReader(metricReader),
+		sdkmetric.WithResource(res),
+	)
+	return meterProvider, meterProvider.Shutdown
+}
+
+// newOTLPExporters returns a nil metric exporter when metric export is disabled.
+func newOTLPExporters(ctx context.Context, endpoint string, metricsEnabled bool) (sdktrace.SpanExporter, sdkmetric.Exporter, error) {
 	parsedEndpoint, err := url.Parse(endpoint)
 	if err != nil {
 		return nil, nil, fmt.Errorf("parse OpenTelemetry collector endpoint: %w", err)
@@ -132,6 +148,9 @@ func newOTLPExporters(ctx context.Context, endpoint string) (sdktrace.SpanExport
 	traceExporter, err := otlptracegrpc.New(ctx, traceOptions...)
 	if err != nil {
 		return nil, nil, fmt.Errorf("initialise OpenTelemetry trace exporter: %w", err)
+	}
+	if !metricsEnabled {
+		return traceExporter, nil, nil
 	}
 
 	metricExporter, err := otlpmetricgrpc.New(ctx, metricOptions...)
