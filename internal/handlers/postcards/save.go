@@ -121,7 +121,12 @@ func savePostcard(app core.App, c *core.RequestEvent, captcha config.Captcha, ke
 			return renderForm(input.ImageID, values, "The CAPTCHA could not be verified. Please try again.", http.StatusUnprocessableEntity, app, c, captcha)
 		}
 	}
-	if limiter == nil || !limiter.allow(clientID, time.Now()) {
+	if limiter == nil {
+		logger.Warn("Postcard submission rejected", "event", "postcard.submission.rejected", "outcome", "rate_limited")
+		return renderForm(input.ImageID, values, "Too many postcard submissions. Please try again later.", http.StatusTooManyRequests, app, c, captcha)
+	}
+	admission, admitted := limiter.admit(clientID, time.Now())
+	if !admitted {
 		logger.Warn("Postcard submission rejected", "event", "postcard.submission.rejected", "outcome", "rate_limited")
 		return renderForm(input.ImageID, values, "Too many postcard submissions. Please try again later.", http.StatusTooManyRequests, app, c, captcha)
 	}
@@ -135,7 +140,7 @@ func savePostcard(app core.App, c *core.RequestEvent, captcha config.Captcha, ke
 	if err != nil {
 		// Nothing was queued, so the attempt must not count against the
 		// visitor's successful-send allowance.
-		limiter.release(clientID)
+		limiter.release(admission)
 		outcome := "persistence_error"
 		status := http.StatusInternalServerError
 		message := "The postcard could not be queued. Please try again."

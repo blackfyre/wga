@@ -424,23 +424,48 @@ func TestSavePostcardUnavailableArtworkRetainsValuesAndAllowance(t *testing.T) {
 func TestSubmissionLimiterReleaseRestoresOneAdmission(t *testing.T) {
 	limiter := newSubmissionLimiter(1, 10*time.Minute)
 	now := time.Now()
-	if !limiter.allow("visitor", now) {
+	admission, ok := limiter.admit("visitor", now)
+	if !ok {
 		t.Fatal("first admission rejected")
 	}
 	if limiter.allow("visitor", now) {
 		t.Fatal("second admission accepted beyond the limit")
 	}
-	limiter.release("visitor")
-	limiter.release("visitor")
+	limiter.release(admission)
+	limiter.release(admission)
 	if !limiter.allow("visitor", now) {
 		t.Fatal("released admission was not restored")
 	}
 	if limiter.allow("visitor", now) {
 		t.Fatal("repeated release restored more than the consumed admissions")
 	}
-	limiter.release("unknown")
+	limiter.release(submissionAdmission{visitorKey: "unknown", started: now})
+	limiter.release(submissionAdmission{})
 	if _, ok := limiter.windows["unknown"]; ok {
 		t.Fatal("release created a window for an unknown visitor")
+	}
+}
+
+// TestSubmissionLimiterReleaseIgnoresRolledOverWindow verifies that a
+// submission admitted before a window rollover, and failing after it, cannot
+// refund an admission in the new window.
+func TestSubmissionLimiterReleaseIgnoresRolledOverWindow(t *testing.T) {
+	limiter := newSubmissionLimiter(3, 10*time.Minute)
+	start := time.Now()
+	// Admitted in the old window; its database result arrives after rollover.
+	inFlight, ok := limiter.admit("visitor", start)
+	if !ok {
+		t.Fatal("in-flight submission rejected")
+	}
+	rolledOver := start.Add(10 * time.Minute)
+	for index := range 3 {
+		if !limiter.allow("visitor", rolledOver.Add(time.Duration(index)*time.Second)) {
+			t.Fatalf("new-window submission %d rejected", index+1)
+		}
+	}
+	limiter.release(inFlight)
+	if limiter.allow("visitor", rolledOver.Add(5*time.Second)) {
+		t.Fatal("a stale refund allowed a fourth submission in the new window")
 	}
 }
 
