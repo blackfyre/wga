@@ -36,6 +36,7 @@ func TestRelationshipPathsImportContract(t *testing.T) {
 		museumAliasKey    = "synthetic museum of fine arts test city"
 		privateAliasKey   = "private collection"
 		secondTechniqueID = "tempera0000000a"
+		thirdTechniqueID  = "gilding0000000b"
 	)
 	source, err := sql.Open("sqlite", sourcePath)
 	if err != nil {
@@ -49,7 +50,9 @@ func TestRelationshipPathsImportContract(t *testing.T) {
 		{"UPDATE artworks SET location = ?, current_location_id = ? WHERE id = ?", []any{privateRaw, privateLocationID, privateArtworkID}},
 		{"INSERT INTO location_aliases (comparison_key, location_id) VALUES (?, ?), (?, ?)", []any{museumAliasKey, museumLocationID, privateAliasKey, privateLocationID}},
 		{"INSERT INTO techniques (id, name, comparison_key) VALUES (?, 'Tempera on panel', 'tempera on panel')", []any{secondTechniqueID}},
-		{"INSERT INTO artwork_techniques (artwork_id, technique_id) VALUES (?, ?)", []any{privateArtworkID, secondTechniqueID}},
+		{"INSERT INTO techniques (id, name, comparison_key) VALUES (?, 'Gilding', 'gilding')", []any{thirdTechniqueID}},
+		{"DELETE FROM artwork_techniques WHERE artwork_id = ?", []any{privateArtworkID}},
+		{"INSERT INTO artwork_techniques (artwork_id, technique_id) VALUES (?, ?), (?, ?)", []any{privateArtworkID, secondTechniqueID, privateArtworkID, thirdTechniqueID}},
 	} {
 		if _, err := source.Exec(statement.sql, statement.args...); err != nil {
 			t.Fatalf("add relationship-path source data %q: %v", statement.sql, err)
@@ -115,8 +118,9 @@ func TestRelationshipPathsImportContract(t *testing.T) {
 	if location.GetBool("is_public") || location.GetBool("museum") {
 		t.Fatalf("private collection location is_public=%v museum=%v, want both false", location.GetBool("is_public"), location.GetBool("museum"))
 	}
-	if techniques := private.GetStringSlice("techniques"); !slices.Contains(techniques, secondTechniqueID) {
-		t.Fatalf("private artwork techniques = %v, want it to include %s", techniques, secondTechniqueID)
+	// Both producer assignments survive the save: techniques is multi-valued.
+	if techniques := private.GetStringSlice("techniques"); !slices.Equal(techniques, []string{thirdTechniqueID, secondTechniqueID}) {
+		t.Fatalf("private artwork techniques = %v, want both %s and %s", techniques, thirdTechniqueID, secondTechniqueID)
 	}
 
 	aliases, err := app.FindAllRecords("location_aliases")

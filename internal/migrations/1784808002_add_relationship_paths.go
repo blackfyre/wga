@@ -19,6 +19,15 @@ const (
 	relationshipPathsSeriesKindAltarpiece = "altarpiece"
 )
 
+// Upper bounds for the plural artwork relations.
+const (
+	relationshipPathsMaxCoAuthors         = 10
+	relationshipPathsMaxSubjects          = 20
+	relationshipPathsMaxSeries            = 10
+	relationshipPathsMaxOriginalLocations = 10
+	relationshipPathsMaxTechniques        = 10
+)
+
 func init() {
 	m.Register(addRelationshipPaths, removeRelationshipPaths)
 }
@@ -85,12 +94,15 @@ func addRelationshipPaths(app core.App) error {
 	if err != nil {
 		return err
 	}
+	// PocketBase treats a relation as multi-valued only when MaxSelect > 1; a
+	// zero limit stores a single id. Every plural relation therefore carries an
+	// explicit limit.
 	addFieldIfMissing(artworks, relationField("primary_author", "artists", 0, 1, false, false))
-	addFieldIfMissing(artworks, relationField("co_authors", "artists", 0, 10, false, false))
-	addFieldIfMissing(artworks, relationField("subjects", "subjects", 0, 0, false, false))
-	addFieldIfMissing(artworks, relationField("series", "series", 0, 0, false, false))
-	addFieldIfMissing(artworks, relationField("original_locations", "locations", 0, 0, false, false))
-	addFieldIfMissing(artworks, relationField("techniques", "techniques", 0, 0, false, false))
+	addFieldIfMissing(artworks, relationField("co_authors", "artists", 0, relationshipPathsMaxCoAuthors, false, false))
+	addFieldIfMissing(artworks, relationField("subjects", "subjects", 0, relationshipPathsMaxSubjects, false, false))
+	addFieldIfMissing(artworks, relationField("series", "series", 0, relationshipPathsMaxSeries, false, false))
+	addFieldIfMissing(artworks, relationField("original_locations", "locations", 0, relationshipPathsMaxOriginalLocations, false, false))
+	addFieldIfMissing(artworks, relationField("techniques", "techniques", 0, relationshipPathsMaxTechniques, false, false))
 	addFieldIfMissing(artworks, textField("source_location", false, false))
 	artworks.Indexes = appendIndex(artworks.Indexes,
 		"CREATE INDEX `"+relationshipPathsIndexPrimaryAuthor+"` ON `Artworks` (`published`, `primary_author`)",

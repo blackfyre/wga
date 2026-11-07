@@ -194,7 +194,9 @@ func validateSourceFieldContracts(artworks *core.Collection, selections *core.Co
 	if err := validateRelationContract(artworks, "primary_author", constants.CollectionArtists, 0, 1); err != nil {
 		return err
 	}
-	if err := validateRelationContract(artworks, "techniques", constants.CollectionTechniques, 0, 0); err != nil {
+	// techniques must be multi-valued (MaxSelect > 1): a zero or one limit makes
+	// PocketBase keep only the last assigned technique.
+	if err := validateRelationContract(artworks, "techniques", constants.CollectionTechniques, 0, 10); err != nil {
 		return err
 	}
 	if err := validateRelationContract(selections, "artist", "artists", 1, 1); err != nil {

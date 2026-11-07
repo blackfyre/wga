@@ -91,11 +91,11 @@ func TestRelationshipPathsMigrationDefinesCollectionsAndArtworkRelations(t *test
 		maxSelect int
 	}{
 		{"primary_author", "artists", 1},
-		{"co_authors", "artists", 10},
-		{"subjects", "subjects", 0},
-		{"series", "series", 0},
-		{"original_locations", "locations", 0},
-		{"techniques", "techniques", 0},
+		{"co_authors", "artists", relationshipPathsMaxCoAuthors},
+		{"subjects", "subjects", relationshipPathsMaxSubjects},
+		{"series", "series", relationshipPathsMaxSeries},
+		{"original_locations", "locations", relationshipPathsMaxOriginalLocations},
+		{"techniques", "techniques", relationshipPathsMaxTechniques},
 		{"current_location_id", "locations", 1},
 		{"art_period_id", "art_periods", 1},
 		{"school", "schools", 10},
@@ -216,5 +216,64 @@ func TestLegacyAuthorMigrationCopiesSingleAndReportsMultipleAuthors(t *testing.T
 	}
 	if err := copyLegacyArtworkAuthors(app); err != nil {
 		t.Fatalf("registered migration: %v", err)
+	}
+}
+
+func TestRelationshipPathsPluralRelationsKeepSeveralIDs(t *testing.T) {
+	app := newRelationshipPathsTestApp(t)
+
+	newRecord := func(collection string, fields map[string]any) string {
+		t.Helper()
+		model, err := app.FindCollectionByNameOrId(collection)
+		if err != nil {
+			t.Fatal(err)
+		}
+		record := core.NewRecord(model)
+		for key, value := range fields {
+			record.Set(key, value)
+		}
+		if err := app.SaveNoValidate(record); err != nil {
+			t.Fatalf("save %s: %v", collection, err)
+		}
+		return record.Id
+	}
+	// pair saves two records; uniqueKey names a uniquely indexed field that
+	// receives a distinct value per record.
+	pair := func(collection string, uniqueKey string, fields map[string]any) []string {
+		ids := make([]string, 0, 2)
+		for _, suffix := range []string{"-a", "-b"} {
+			values := map[string]any{}
+			for key, value := range fields {
+				values[key] = value
+			}
+			if uniqueKey != "" {
+				values[uniqueKey] = collection + suffix
+			}
+			ids = append(ids, newRecord(collection, values))
+		}
+		return ids
+	}
+
+	plural := map[string][]string{
+		"co_authors":         pair("artists", "slug", map[string]any{"name": "Artist"}),
+		"subjects":           pair("subjects", "", map[string]any{"name": "Subject"}),
+		"series":             pair("series", "", map[string]any{"name": "Series", "kind": "series"}),
+		"original_locations": pair("locations", "", map[string]any{"name": "Place"}),
+		"techniques":         pair("techniques", "comparison_key", map[string]any{"name": "Technique"}),
+	}
+	fields := map[string]any{"title": "Plural"}
+	for name, ids := range plural {
+		fields[name] = ids
+	}
+	artworkID := newRecord("artworks", fields)
+
+	reloaded, err := app.FindRecordById("artworks", artworkID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for name, want := range plural {
+		if got := reloaded.GetStringSlice(name); !slices.Equal(got, want) {
+			t.Errorf("artworks %s after reload = %v, want both %v", name, got, want)
+		}
 	}
 }

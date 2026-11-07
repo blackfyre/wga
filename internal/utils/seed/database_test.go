@@ -31,7 +31,7 @@ func validArtworksContractCollection() *core.Collection {
 		&core.NumberField{Name: "image_size_bytes"},
 		&core.TextField{Name: "source_location"},
 		&core.RelationField{Name: "primary_author", CollectionId: "artists", MinSelect: 0, MaxSelect: 1},
-		&core.RelationField{Name: "techniques", CollectionId: "techniques", MinSelect: 0, MaxSelect: 0},
+		&core.RelationField{Name: "techniques", CollectionId: "techniques", MinSelect: 0, MaxSelect: 10},
 	)
 	return collection
 }
