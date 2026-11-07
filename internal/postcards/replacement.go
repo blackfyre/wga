@@ -37,7 +37,7 @@ type ReplacementArtwork struct {
 // so every result can open the composer.
 func FindReplacementArtworks(app core.App, query string) ([]ReplacementArtwork, error) {
 	query = strings.TrimSpace(query)
-	if count := utf8.RuneCountInString(query); count < ReplacementQueryMinRunes || count > ReplacementQueryMaxRunes {
+	if !ValidReplacementQuery(query) {
 		return nil, ErrReplacementQueryInvalid
 	}
 	records, err := app.FindRecordsByFilter(constants.CollectionArtworks, "published = true && title ~ {:query}", "title", replacementScanLimit, 0, dbx.Params{"query": query})
@@ -59,4 +59,11 @@ func FindReplacementArtworks(app core.App, query string) ([]ReplacementArtwork, 
 		}
 	}
 	return results, nil
+}
+
+// ValidReplacementQuery reports whether a trimmed replacement search is within
+// the accepted length bounds, so callers can reject it before admission.
+func ValidReplacementQuery(query string) bool {
+	count := utf8.RuneCountInString(strings.TrimSpace(query))
+	return count >= ReplacementQueryMinRunes && count <= ReplacementQueryMaxRunes
 }

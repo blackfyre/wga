@@ -24,6 +24,10 @@ import (
 	"github.com/pocketbase/pocketbase/tools/types"
 )
 
+// errReplacementSearchLimited marks a replacement search refused by the
+// per-visitor or concurrency bound.
+var errReplacementSearchLimited = errors.New("postcard replacement search limited")
+
 type postcardSubmission struct {
 	SenderName      string   `json:"sender_name" form:"sender_name"`
 	SenderEmail     string   `json:"sender_email" form:"sender_email"`
@@ -42,7 +46,7 @@ type postcardSubmission struct {
 	SubmissionKey   string   `json:"submission_key" form:"submission_key"`
 }
 
-func savePostcard(app core.App, c *core.RequestEvent, captcha config.Captcha, keyring config.PostcardTokenKeyring, verifier antiabuse.Verifier, limiter *submissionLimiter, resolver requesttrust.Resolver) error {
+func savePostcard(app core.App, c *core.RequestEvent, captcha config.Captcha, keyring config.PostcardTokenKeyring, verifier antiabuse.Verifier, limiter *submissionLimiter, search *replacementSearchGuard, resolver requesttrust.Resolver) error {
 	logger := logging.RequestLogger(app, c)
 
 	clientID, ok := "", false
@@ -74,8 +78,20 @@ func savePostcard(app core.App, c *core.RequestEvent, captcha config.Captcha, ke
 		return renderForm(input.ReplaceArtwork, values, "", http.StatusOK, app, c, captcha)
 	}
 	if input.FindArtwork != "" {
-		candidates, err := postcardworkflow.FindReplacementArtworks(app, values.ArtworkQuery)
+		var candidates []postcardworkflow.ReplacementArtwork
+		var err error
+		if !postcardworkflow.ValidReplacementQuery(values.ArtworkQuery) {
+			err = postcardworkflow.ErrReplacementQueryInvalid
+		} else if release, admitted := search.admit(c.Request.Context(), clientID, time.Now()); !admitted {
+			logger.Warn("Postcard replacement search rejected", "event", "postcard.form.rejected", "outcome", "replacement_search_rate_limited")
+			err = errReplacementSearchLimited
+		} else {
+			candidates, err = postcardworkflow.FindReplacementArtworks(app, values.ArtworkQuery)
+			release()
+		}
 		switch {
+		case errors.Is(err, errReplacementSearchLimited):
+			values.ArtworkSearchError = "Too many artwork searches right now. Wait a few minutes, then search again; your postcard draft is kept."
 		case errors.Is(err, postcardworkflow.ErrReplacementQueryInvalid):
 			values.ArtworkSearchError = "Enter between " + strconv.Itoa(postcardworkflow.ReplacementQueryMinRunes) + " and " + strconv.Itoa(postcardworkflow.ReplacementQueryMaxRunes) + " characters of an artwork title."
 		case err != nil:
