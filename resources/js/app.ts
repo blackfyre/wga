@@ -1,18 +1,20 @@
 import {
-	clearDynamicModuleRecovery,
-	recoverDynamicModule,
-	refreshEntryModule,
-	renderDynamicModuleRetry,
+  clearDynamicModuleRecovery,
+  recoverDynamicModule,
+  refreshEntryModule,
+  renderDynamicModuleRetry,
 } from "./dynamic-module-recovery";
 import { registerItineraryKeyboard } from "./itinerary";
 import { registerSearchPrefs } from "./search-prefs";
 import { registerSelectionIndex } from "./selection-index";
+import { guardViewTransitions } from "./view-transitions";
 import {
-	captureTestMessage,
-	initialiseSentry,
-	loadSentryConfiguration,
+  captureTestMessage,
+  initialiseSentry,
+  loadSentryConfiguration,
 } from "./sentry";
 
+guardViewTransitions();
 const sentryReady = initialiseSentry(loadSentryConfiguration(document));
 // Bind itinerary keyboard navigation synchronously so Arrow keys respond the
 // instant a directly-loaded viewer appears, without waiting for the async
@@ -26,26 +28,26 @@ registerSearchPrefs();
 // is idempotent and a no-op on pages without that rail.
 registerSelectionIndex();
 if (window.location.pathname === "/sentry-test") {
-	if (sentryReady) {
-		captureTestMessage();
-	}
+  if (sentryReady) {
+    captureTestMessage();
+  }
 } else {
-	void import("./bootstrap")
-		.then(() => clearDynamicModuleRecovery(window.sessionStorage))
-		.catch(() => {
-			if (
-				!recoverDynamicModule(
-					window.sessionStorage,
-					window.location.href,
-					() => {
-						void refreshEntryModule(
-							document,
-							window.fetch.bind(window),
-						).finally(() => window.location.reload());
-					},
-				)
-			) {
-				renderDynamicModuleRetry(document);
-			}
-		});
+  void import("./bootstrap")
+    .then(() => clearDynamicModuleRecovery(window.sessionStorage))
+    .catch(() => {
+      if (
+        !recoverDynamicModule(
+          window.sessionStorage,
+          window.location.href,
+          () => {
+            void refreshEntryModule(
+              document,
+              window.fetch.bind(window),
+            ).finally(() => window.location.reload());
+          },
+        )
+      ) {
+        renderDynamicModuleRetry(document);
+      }
+    });
 }
