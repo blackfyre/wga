@@ -10,5 +10,5 @@
 
 ## 3. Deliver
 
-- [ ] Archive the change, format synced specs, and pass openspec validate --specs.
-- [ ] Push and open the PR with attribution limit and sequence diagram; CI ci-gate passes. Independent cross-family review is owned by the coordinator.
+- [x] Archive the change as 2026-11-07-investigate-browser-transition-error, format synced specs, and pass openspec validate --specs (33 passed, 0 failed).
+- [x] Push and open the PR with attribution limit and sequence diagram; CI ci-gate passes on implementation commit 8ca4836 (all four browser shards passed). Independent cross-family review is owned by the coordinator.
