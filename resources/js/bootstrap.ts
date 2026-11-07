@@ -830,9 +830,11 @@ const wgaInternal: wgaInternals = {
 				}
 				if (!postcardComposerSwapped) return;
 				postcardComposerSwapped = false;
-				const postcardError = document.getElementById("postcard-error");
-				if (postcardError instanceof HTMLElement) {
-					postcardError.focus();
+				const postcardFocus =
+					document.getElementById("postcard-replacement-results") ??
+					document.getElementById("postcard-error");
+				if (postcardFocus instanceof HTMLElement) {
+					postcardFocus.focus();
 				}
 			});
 

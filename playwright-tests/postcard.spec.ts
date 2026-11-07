@@ -195,8 +195,81 @@ test("unavailable artwork swaps an actionable composer error", async ({
 		"A message worth keeping.",
 	);
 	await expect(
-		page.getByRole("link", { name: "CHOOSE ANOTHER ARTWORK →" }),
-	).toHaveAttribute("href", "/artworks");
+		page.getByRole("link", { name: "CHOOSE ANOTHER ARTWORK ↓" }),
+	).toHaveAttribute("href", "#postcard-replacement");
+
+	// Choosing a replacement in place keeps the whole draft.
+	await page.getByLabel("ARTWORK TITLE").fill("Synthetic Artwork 01-01");
+	await page.getByRole("button", { name: "FIND" }).click();
+	const results = page.locator("#postcard-replacement-results");
+	await expect(results).toBeFocused();
+	await results
+		.getByRole("button", { name: /Synthetic Artwork 01-01/ })
+		.click();
+	await expect(
+		page.locator("#postcard_create input[name='image_id']"),
+	).toHaveValue(syntheticArtworkID);
+	await expect(page.locator("[data-postcard-replacement]")).toHaveCount(0);
+	await expect(page.getByLabel("YOUR NAME")).toHaveValue("Playwright Sender");
+	await expect(
+		page.getByRole("textbox", { name: "Recipient email 1" }),
+	).toHaveValue("unavailable@example.test");
+	await expect(page.locator("[data-rte-surface]")).toContainText(
+		"A message worth keeping.",
+	);
+});
+
+test.describe("without JavaScript replacement", () => {
+	test.use({ javaScriptEnabled: false });
+
+	test("unavailable artwork is replaced without losing the draft", async ({
+		page,
+	}) => {
+		// Without JavaScript the hidden artwork field cannot be edited in the
+		// page, so the first submission is rewritten on the network instead.
+		let rewritten = false;
+		await page.route("**/postcard", async (route) => {
+			const sent = route.request();
+			if (sent.method() !== "POST" || rewritten) return route.continue();
+			rewritten = true;
+			const form = new URLSearchParams(sent.postData() ?? "");
+			form.set("image_id", "unavailable0000");
+			form.set("g-recaptcha-response", "playwright-test-token");
+			await route.continue({ postData: form.toString() });
+		});
+		await page.goto(`/postcard/send?awid=${syntheticArtworkID}`);
+		await page.getByLabel("YOUR NAME").fill("No Script Sender");
+		await page.getByLabel("YOUR EMAIL").fill("sender@example.test");
+		await page
+			.getByRole("textbox", { name: "Recipient email 1" })
+			.fill("noscript@example.test");
+		await page
+			.locator("textarea[name='message']")
+			.fill("Kept without scripts.");
+		await page.getByRole("button", { name: "SEND POSTCARD →" }).click();
+		await expect(page.getByRole("alert")).toContainText("no longer available");
+
+		await page.getByLabel("ARTWORK TITLE").fill("Synthetic Artwork 01-01");
+		// Keyboard activation, as in the other no-JavaScript journeys: without
+		// scripts the fixed keyboard bar can overlap the lowest controls.
+		await page.getByRole("button", { name: "FIND" }).focus();
+		await page.keyboard.press("Enter");
+		await page
+			.locator("#postcard-replacement-results")
+			.getByRole("button", { name: /Synthetic Artwork 01-01/ })
+			.focus();
+		await page.keyboard.press("Enter");
+		await expect(
+			page.locator("#postcard_create input[name='image_id']"),
+		).toHaveValue(syntheticArtworkID);
+		await expect(page.getByLabel("YOUR NAME")).toHaveValue("No Script Sender");
+		await expect(
+			page.getByRole("textbox", { name: "Recipient email 1" }),
+		).toHaveValue("noscript@example.test");
+		await expect(page.locator("textarea[name='message']")).toHaveValue(
+			/Kept without scripts\./,
+		);
+	});
 });
 
 // Throttling and CAPTCHA-provider outages cannot be produced on demand against
@@ -463,7 +536,7 @@ test("send postcard", async ({ page, request }) => {
 	);
 	await expect(page.locator("#postcard-confirmation-title")).toBeFocused();
 	await expect(page.locator("#postcard-compose")).toContainText(
-		"has not been sent yet",
+		"accepted and queued for delivery",
 	);
 	await expect(
 		page.getByRole("link", { name: "SEND ANOTHER POSTCARD →" }),

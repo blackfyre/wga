@@ -496,9 +496,99 @@ func TestRenderQueuedPostcardNamesWorkAndKeepsTheLinkPrivate(t *testing.T) {
 		t.Fatalf("Referrer-Policy = %q, want no-referrer", got)
 	}
 	body := recorder.Body.String()
-	for _, want := range []string{"Queued Work", "has not been sent yet", `href="/postcard/send?awid=` + artworkID + `"`, "token=opaque-token"} {
+	for _, want := range []string{"Queued Work", "accepted and queued for delivery", `href="/postcard/send?awid=` + artworkID + `"`, "token=opaque-token"} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("confirmation lacks %q: %s", want, body)
 		}
+	}
+}
+
+func postReplacementForm(t *testing.T, app core.App, form url.Values, htmx bool) *httptest.ResponseRecorder {
+	t.Helper()
+	recorder := httptest.NewRecorder()
+	event := &core.RequestEvent{App: app, Event: router.Event{Request: httptest.NewRequest(http.MethodPost, "/postcard", strings.NewReader(form.Encode())), Response: recorder}}
+	event.Request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	if htmx {
+		event.Request.Header.Set("HX-Request", "true")
+	}
+	if err := savePostcard(app, event, config.Captcha{}, config.PostcardTokenKeyring{}, nil, newSubmissionLimiter(3, 10*time.Minute), requesttrust.New(requesttrust.SourceDirect)); err != nil {
+		t.Fatalf("save postcard: %v", err)
+	}
+	return recorder
+}
+
+func TestSavePostcardReplacesUnavailableArtworkWithoutLosingTheDraft(t *testing.T) {
+	for _, htmx := range []bool{false, true} {
+		t.Run(fmt.Sprintf("htmx=%t", htmx), func(t *testing.T) {
+			app := testutils.NewTestApp(t)
+			replacementID := installComposeArtwork(t, app, "Madonna of the Meadow")
+			installComposeArtwork(t, app, "Still Life")
+			hiddenID := installComposeArtwork(t, app, "Madonna Withdrawn")
+			hidden, err := app.FindRecordById("artworks", hiddenID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			hidden.Set("published", false)
+			if err := app.Save(hidden); err != nil {
+				t.Fatal(err)
+			}
+			draft := url.Values{
+				"sender_name":    {"Keyboard Sender"},
+				"sender_email":   {"sender@example.test"},
+				"recipients[]":   {"first@example.test", "second@example.test"},
+				"message":        {"<p>Kept message</p>"},
+				"image_id":       {hiddenID},
+				"submission_key": {"draft-key"},
+			}
+			withAction := func(extra url.Values) url.Values {
+				form := url.Values{}
+				for key, value := range draft {
+					form[key] = value
+				}
+				for key, value := range extra {
+					form[key] = value
+				}
+				return form
+			}
+			assertDraft := func(body string) {
+				t.Helper()
+				for _, want := range []string{`value="Keyboard Sender"`, `value="sender@example.test"`, `value="first@example.test"`, `value="second@example.test"`, "Kept message", `value="draft-key"`} {
+					if !strings.Contains(body, want) {
+						t.Fatalf("draft lost %q: %s", want, body)
+					}
+				}
+				if htmx == strings.Contains(body, "<html") {
+					t.Fatalf("htmx=%t rendered the wrong response shape", htmx)
+				}
+			}
+
+			short := postReplacementForm(t, app, withAction(url.Values{"find_artwork": {"1"}, "artwork_query": {"M"}}), htmx)
+			if !strings.Contains(short.Body.String(), "Enter between 2 and 100 characters") {
+				t.Fatalf("short query was not explained: %s", short.Body.String())
+			}
+
+			found := postReplacementForm(t, app, withAction(url.Values{"find_artwork": {"1"}, "artwork_query": {"Madonna"}}), htmx)
+			body := found.Body.String()
+			assertDraft(body)
+			if !strings.Contains(body, `name="replace_artwork" value="`+replacementID+`"`) {
+				t.Fatalf("matching published artwork not offered: %s", body)
+			}
+			if strings.Contains(body, `value="`+hiddenID+`" formnovalidate`) || strings.Contains(body, "Still Life") {
+				t.Fatalf("unpublished or non-matching artwork offered: %s", body)
+			}
+
+			replaced := postReplacementForm(t, app, withAction(url.Values{"replace_artwork": {replacementID}, "artwork_query": {"Madonna"}}), htmx)
+			body = replaced.Body.String()
+			if replaced.Code != http.StatusOK {
+				t.Fatalf("status = %d, want %d", replaced.Code, http.StatusOK)
+			}
+			assertDraft(body)
+			if !strings.Contains(body, `name="image_id" value="`+replacementID+`"`) || !strings.Contains(body, "Madonna of the Meadow") {
+				t.Fatalf("composer did not switch to the replacement: %s", body)
+			}
+			if strings.Contains(body, "data-postcard-replacement") || strings.Contains(body, `id="postcard-error"`) {
+				t.Fatalf("replacement composer still shows the unavailable state: %s", body)
+			}
+		})
 	}
 }

@@ -33,6 +33,9 @@ type postcardSubmission struct {
 	ImageID         string   `json:"image_id" form:"image_id"`
 	AddRecipient    string   `json:"add_recipient" form:"add_recipient"`
 	RemoveRecipient string   `json:"remove_recipient" form:"remove_recipient"`
+	ArtworkQuery    string   `json:"artwork_query" form:"artwork_query"`
+	FindArtwork     string   `json:"find_artwork" form:"find_artwork"`
+	ReplaceArtwork  string   `json:"replace_artwork" form:"replace_artwork"`
 	RecaptchaToken  string   `json:"recaptcha_token" form:"g-recaptcha-response"`
 	HoneyPotName    string   `json:"honey_pot_name" form:"name"`
 	HoneyPotEmail   string   `json:"honey_pot_email" form:"email"`
@@ -63,6 +66,30 @@ func savePostcard(app core.App, c *core.RequestEvent, captcha config.Captcha, ke
 		recipients = append([]string{input.Recipient}, recipients...)
 	}
 	values := pages.PostcardComposeView{SenderName: input.SenderName, SenderEmail: input.SenderEmail, Recipients: recipientRows(recipients), Message: input.Message, SubmissionKey: input.SubmissionKey}
+	values.ArtworkQuery = strings.TrimSpace(input.ArtworkQuery)
+	// Replacing an unavailable artwork keeps the draft: the composer is
+	// re-rendered for the chosen work with every entered value.
+	if input.ReplaceArtwork != "" {
+		values.ArtworkQuery = ""
+		return renderForm(input.ReplaceArtwork, values, "", http.StatusOK, app, c, captcha)
+	}
+	if input.FindArtwork != "" {
+		candidates, err := postcardworkflow.FindReplacementArtworks(app, values.ArtworkQuery)
+		switch {
+		case errors.Is(err, postcardworkflow.ErrReplacementQueryInvalid):
+			values.ArtworkSearchError = "Enter between " + strconv.Itoa(postcardworkflow.ReplacementQueryMinRunes) + " and " + strconv.Itoa(postcardworkflow.ReplacementQueryMaxRunes) + " characters of an artwork title."
+		case err != nil:
+			logger.Error("Postcard replacement search failed", "event", "postcard.form.failed", "outcome", "replacement_search_error", "error_type", logging.ErrorType(err), "error", logging.Redact(err))
+			values.ArtworkSearchError = "The artwork search is unavailable right now. Please try again."
+		default:
+			values.ArtworkSearched = true
+			values.ArtworkCandidates = make([]pages.PostcardArtworkCandidate, 0, len(candidates))
+			for _, candidate := range candidates {
+				values.ArtworkCandidates = append(values.ArtworkCandidates, pages.PostcardArtworkCandidate{ID: candidate.ID, Title: candidate.Title, ArtistFilingName: candidate.ArtistFilingName})
+			}
+		}
+		return renderForm(input.ImageID, values, "", http.StatusOK, app, c, captcha)
+	}
 	if input.AddRecipient != "" {
 		if len(values.Recipients) < pages.PostcardMaxRecipients {
 			values.Recipients = append(values.Recipients, "")
