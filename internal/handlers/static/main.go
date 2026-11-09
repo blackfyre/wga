@@ -77,7 +77,10 @@ func serveAgentContent(app core.App, c *core.RequestEvent, relative string) erro
 	etag := agentContentETag(resource.Content)
 	c.Response.Header().Set("ETag", etag)
 	c.Response.Header().Del("Set-Cookie")
-	if matchesETag(c.Request.Header.Get("If-None-Match"), etag) {
+	if matched, ok := matchingETag(c.Request.Header.Get("If-None-Match"), etag); ok {
+		// A 304 carries the validator of the representation the client holds,
+		// so a cache that stored a compressed copy keeps its suffixed tag.
+		c.Response.Header().Set("ETag", matched)
 		return c.NoContent(http.StatusNotModified)
 	}
 	return c.Blob(http.StatusOK, "text/markdown; charset=utf-8", resource.Content)
@@ -88,14 +91,39 @@ func agentContentETag(content []byte) string {
 	return `"` + hex.EncodeToString(digest[:]) + `"`
 }
 
-func matchesETag(ifNoneMatch string, etag string) bool {
+// matchingETag reports whether If-None-Match names the current content and
+// returns the validator to send on 304: the encoding-suffixed tag when the
+// client revalidated a compressed representation, otherwise etag.
+func matchingETag(ifNoneMatch string, etag string) (string, bool) {
 	for _, candidate := range strings.Split(ifNoneMatch, ",") {
 		candidate = strings.TrimSpace(candidate)
-		if candidate == "*" || candidate == etag || strings.TrimPrefix(candidate, "W/") == etag {
-			return true
+		if candidate == "*" {
+			return etag, true
+		}
+		tag := strings.TrimPrefix(candidate, "W/")
+		if tag == etag {
+			return etag, true
+		}
+		if withoutEncodingSuffix(tag) == etag {
+			return tag, true
 		}
 	}
-	return false
+	return "", false
+}
+
+// encodingETagSuffixes are the suffixes the response-compression wrapper adds
+// to the tag of a compressed representation.
+var encodingETagSuffixes = []string{"-gzip", "-zstd"}
+
+// withoutEncodingSuffix returns the uncompressed representation's tag for a
+// tag the compression wrapper suffixed, so revalidation succeeds in either form.
+func withoutEncodingSuffix(tag string) string {
+	for _, suffix := range encodingETagSuffixes {
+		if trimmed, ok := strings.CutSuffix(tag, suffix+`"`); ok {
+			return trimmed + `"`
+		}
+	}
+	return tag
 }
 
 func serveSitemap(app core.App, c *core.RequestEvent, relative string) error {

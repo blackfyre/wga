@@ -978,3 +978,28 @@ func TestStaticPageHandlerRenderFailureStaysSafe(t *testing.T) {
 		t.Errorf("render failure must not leak managed content: %s", body)
 	}
 }
+
+func TestMatchingETagReturnsTheRevalidatedRepresentationTag(t *testing.T) {
+	const etag = `"0123abcd"`
+	cases := []struct {
+		ifNoneMatch string
+		want        string
+		ok          bool
+	}{
+		{`"0123abcd"`, etag, true},
+		{`W/"0123abcd"`, etag, true},
+		{`*`, etag, true},
+		{`"0123abcd-gzip"`, `"0123abcd-gzip"`, true},
+		{`W/"0123abcd-zstd"`, `"0123abcd-zstd"`, true},
+		{`"other", "0123abcd-gzip"`, `"0123abcd-gzip"`, true},
+		{`"0123abcd-br"`, "", false},
+		{`"0123abcdx-gzip"`, "", false},
+		{`"other-gzip"`, "", false},
+	}
+	for _, tc := range cases {
+		got, ok := matchingETag(tc.ifNoneMatch, etag)
+		if ok != tc.ok || got != tc.want {
+			t.Errorf("matchingETag(%q) = (%q, %v), want (%q, %v)", tc.ifNoneMatch, got, ok, tc.want, tc.ok)
+		}
+	}
+}
