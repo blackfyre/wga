@@ -38,10 +38,12 @@ func newCompressionWrapper() (func(http.Handler) http.HandlerFunc, error) {
 		}))
 		return func(w http.ResponseWriter, r *http.Request) {
 			if values := r.Header.Values("Accept-Encoding"); len(values) > 0 {
-				if implied := wildcardCodings(values); len(implied) > 0 {
-					// gzhttp selects only explicitly named codings and reads
-					// one header line, so spell out what the wildcard allows.
-					r.Header.Set("Accept-Encoding", strings.Join(append(values, implied...), ", "))
+				// gzhttp reads one header line and selects only explicitly
+				// named codings, so merge every line and spell out what a
+				// wildcard allows.
+				combined := append(values, wildcardCodings(values)...)
+				if len(combined) > 1 {
+					r.Header.Set("Accept-Encoding", strings.Join(combined, ", "))
 				}
 			}
 			compressed(w, r)

@@ -222,3 +222,17 @@ func TestCompressionHonoursWildcardAcceptEncoding(t *testing.T) {
 		}
 	}
 }
+
+func TestCompressionReadsEveryAcceptEncodingLine(t *testing.T) {
+	body := []byte(strings.Repeat("<p>Web Gallery of Art</p>", 200))
+	handler := compressionTestHandler(t, "text/html", body, "")
+	request := httptest.NewRequest(http.MethodGet, "/", nil)
+	request.Header.Add("Accept-Encoding", "br")
+	request.Header.Add("Accept-Encoding", "gzip")
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+
+	if got := response.Header().Get("Content-Encoding"); got != "gzip" {
+		t.Fatalf("Content-Encoding = %q, want gzip from the second header line", got)
+	}
+}
