@@ -202,3 +202,21 @@ func TestRegisteredCompressionWrapsTheServedHandler(t *testing.T) {
 		t.Errorf("GET /health body = %q, want ok", got)
 	}
 }
+
+func TestCompressionHonoursWildcardAcceptEncoding(t *testing.T) {
+	body := []byte(strings.Repeat("<p>Web Gallery of Art</p>", 200))
+	cases := map[string]string{
+		"*":           "gzip",
+		"br, *;q=0.5": "gzip",
+		"*;q=0":       "",
+		"gzip;q=0, *": "",
+		"identity":    "",
+		"zstd, *":     "zstd",
+	}
+	for acceptEncoding, want := range cases {
+		response := compressionRequest(compressionTestHandler(t, "text/html", body, ""), acceptEncoding, nil)
+		if got := response.Header().Get("Content-Encoding"); got != want {
+			t.Errorf("Accept-Encoding %q: Content-Encoding = %q, want %q", acceptEncoding, got, want)
+		}
+	}
+}

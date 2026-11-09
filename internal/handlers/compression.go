@@ -4,6 +4,7 @@ import (
 	"io"
 	"mime"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/klauspost/compress/gzhttp"
@@ -16,7 +17,7 @@ const compressionMinSize = 1024
 
 // compressionETagSuffix marks the tag of a compressed representation so it
 // differs from the uncompressed one. gzhttp writes "-gzip" for gzip and
-// rewrites it to "-zstd" for zstd; static.matchesETag accepts both forms.
+// rewrites it to "-zstd" for zstd; static.matchingETag accepts both forms.
 const compressionETagSuffix = "-gzip"
 
 // newCompressionWrapper returns the handler wrapper that compresses text
@@ -32,9 +33,17 @@ func newCompressionWrapper() (func(http.Handler) http.HandlerFunc, error) {
 		return nil, err
 	}
 	return func(next http.Handler) http.HandlerFunc {
-		return compress(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		compressed := compress(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			next.ServeHTTP(compressingWriter{ResponseWriter: w}, r)
 		}))
+		return func(w http.ResponseWriter, r *http.Request) {
+			if values := r.Header.Values("Accept-Encoding"); acceptsAnyEncoding(values) {
+				// gzhttp selects only explicitly named codings and reads one
+				// header line; a wildcard naming neither gzip nor zstd allows both.
+				r.Header.Set("Accept-Encoding", strings.Join(append(values, "gzip"), ", "))
+			}
+			compressed(w, r)
+		}
 	}, nil
 }
 
@@ -101,6 +110,38 @@ func isCompressibleContentType(contentType string) bool {
 	switch mediaType {
 	case "application/json", "application/javascript", "application/xml", "image/svg+xml":
 		return true
+	}
+	return false
+}
+
+// acceptsAnyEncoding reports whether Accept-Encoding allows any coding through
+// a "*" entry with a non-zero quality while naming neither gzip nor zstd, which
+// keep their own explicit preference.
+func acceptsAnyEncoding(values []string) bool {
+	wildcard := false
+	for _, value := range values {
+		for _, entry := range strings.Split(value, ",") {
+			coding, params, _ := strings.Cut(strings.TrimSpace(entry), ";")
+			coding = strings.ToLower(strings.TrimSpace(coding))
+			switch coding {
+			case "gzip", "x-gzip", "zstd":
+				return false
+			case "*":
+				wildcard = !zeroQuality(params)
+			}
+		}
+	}
+	return wildcard
+}
+
+// zeroQuality reports whether Accept-Encoding parameters carry q=0.
+func zeroQuality(params string) bool {
+	for _, param := range strings.Split(params, ";") {
+		name, value, ok := strings.Cut(strings.TrimSpace(param), "=")
+		if ok && strings.EqualFold(strings.TrimSpace(name), "q") {
+			q, err := strconv.ParseFloat(strings.TrimSpace(value), 64)
+			return err == nil && q == 0
+		}
 	}
 	return false
 }
