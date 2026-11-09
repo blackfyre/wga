@@ -91,11 +91,30 @@ func agentContentETag(content []byte) string {
 func matchesETag(ifNoneMatch string, etag string) bool {
 	for _, candidate := range strings.Split(ifNoneMatch, ",") {
 		candidate = strings.TrimSpace(candidate)
-		if candidate == "*" || candidate == etag || strings.TrimPrefix(candidate, "W/") == etag {
+		if candidate == "*" {
+			return true
+		}
+		candidate = withoutEncodingSuffix(strings.TrimPrefix(candidate, "W/"))
+		if candidate == etag {
 			return true
 		}
 	}
 	return false
+}
+
+// encodingETagSuffixes are the suffixes the response-compression wrapper adds
+// to the tag of a compressed representation.
+var encodingETagSuffixes = []string{"-gzip", "-zstd"}
+
+// withoutEncodingSuffix returns the uncompressed representation's tag for a
+// tag the compression wrapper suffixed, so revalidation succeeds in either form.
+func withoutEncodingSuffix(tag string) string {
+	for _, suffix := range encodingETagSuffixes {
+		if trimmed, ok := strings.CutSuffix(tag, suffix+`"`); ok {
+			return trimmed + `"`
+		}
+	}
+	return tag
 }
 
 func serveSitemap(app core.App, c *core.RequestEvent, relative string) error {

@@ -978,3 +978,24 @@ func TestStaticPageHandlerRenderFailureStaysSafe(t *testing.T) {
 		t.Errorf("render failure must not leak managed content: %s", body)
 	}
 }
+
+func TestMatchesETagAcceptsEncodingSuffixedTags(t *testing.T) {
+	const etag = `"0123abcd"`
+	cases := map[string]bool{
+		`"0123abcd"`:               true,
+		`W/"0123abcd"`:             true,
+		`"0123abcd-gzip"`:          true,
+		`"0123abcd-zstd"`:          true,
+		`W/"0123abcd-gzip"`:        true,
+		`"other", "0123abcd-gzip"`: true,
+		`*`:                        true,
+		`"0123abcd-br"`:            false,
+		`"0123abcdx-gzip"`:         false,
+		`"other-gzip"`:             false,
+	}
+	for ifNoneMatch, want := range cases {
+		if got := matchesETag(ifNoneMatch, etag); got != want {
+			t.Errorf("matchesETag(%q) = %v, want %v", ifNoneMatch, got, want)
+		}
+	}
+}
