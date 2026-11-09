@@ -37,10 +37,12 @@ func newCompressionWrapper() (func(http.Handler) http.HandlerFunc, error) {
 			next.ServeHTTP(compressingWriter{ResponseWriter: w}, r)
 		}))
 		return func(w http.ResponseWriter, r *http.Request) {
-			if values := r.Header.Values("Accept-Encoding"); acceptsAnyEncoding(values) {
-				// gzhttp selects only explicitly named codings and reads one
-				// header line; a wildcard naming neither gzip nor zstd allows both.
-				r.Header.Set("Accept-Encoding", strings.Join(append(values, "gzip"), ", "))
+			if values := r.Header.Values("Accept-Encoding"); len(values) > 0 {
+				if implied := wildcardCodings(values); len(implied) > 0 {
+					// gzhttp selects only explicitly named codings and reads
+					// one header line, so spell out what the wildcard allows.
+					r.Header.Set("Accept-Encoding", strings.Join(append(values, implied...), ", "))
+				}
 			}
 			compressed(w, r)
 		}
@@ -114,24 +116,36 @@ func isCompressibleContentType(contentType string) bool {
 	return false
 }
 
-// acceptsAnyEncoding reports whether Accept-Encoding allows any coding through
-// a "*" entry with a non-zero quality while naming neither gzip nor zstd, which
-// keep their own explicit preference.
-func acceptsAnyEncoding(values []string) bool {
+// wildcardCodings returns the supported coding to add when Accept-Encoding
+// allows it only through a "*" entry with a non-zero quality. A coding the
+// header names keeps its own explicit preference, including q=0.
+func wildcardCodings(values []string) []string {
 	wildcard := false
+	named := map[string]bool{}
 	for _, value := range values {
 		for _, entry := range strings.Split(value, ",") {
 			coding, params, _ := strings.Cut(strings.TrimSpace(entry), ";")
-			coding = strings.ToLower(strings.TrimSpace(coding))
-			switch coding {
-			case "gzip", "x-gzip", "zstd":
-				return false
+			switch coding = strings.ToLower(strings.TrimSpace(coding)); coding {
+			case "x-gzip":
+				named["gzip"] = true
 			case "*":
 				wildcard = !zeroQuality(params)
+			default:
+				named[coding] = true
 			}
 		}
 	}
-	return wildcard
+	if !wildcard {
+		return nil
+	}
+	// Prefer gzip, which every client that sends a wildcard can decode;
+	// fall back to zstd only when gzip carries its own preference.
+	for _, coding := range []string{"gzip", "zstd"} {
+		if !named[coding] {
+			return []string{coding}
+		}
+	}
+	return nil
 }
 
 // zeroQuality reports whether Accept-Encoding parameters carry q=0.

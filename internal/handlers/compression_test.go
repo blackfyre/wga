@@ -206,12 +206,14 @@ func TestRegisteredCompressionWrapsTheServedHandler(t *testing.T) {
 func TestCompressionHonoursWildcardAcceptEncoding(t *testing.T) {
 	body := []byte(strings.Repeat("<p>Web Gallery of Art</p>", 200))
 	cases := map[string]string{
-		"*":           "gzip",
-		"br, *;q=0.5": "gzip",
-		"*;q=0":       "",
-		"gzip;q=0, *": "",
-		"identity":    "",
-		"zstd, *":     "zstd",
+		"*":                     "gzip",
+		"br, *;q=0.5":           "gzip",
+		"*;q=0":                 "",
+		"gzip;q=0, *":           "zstd",
+		"gzip;q=0, zstd;q=0, *": "",
+		"x-gzip;q=0, *":         "zstd",
+		"identity":              "",
+		"zstd, *":               "zstd",
 	}
 	for acceptEncoding, want := range cases {
 		response := compressionRequest(compressionTestHandler(t, "text/html", body, ""), acceptEncoding, nil)
