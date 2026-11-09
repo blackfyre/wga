@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change compress-text-responses. Update Purpose after archive.
+Defines when the application compresses response bodies at the origin, which media and responses it leaves untouched, and how validators distinguish compressed representations.
 
 ## Requirements
 
