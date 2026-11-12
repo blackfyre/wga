@@ -378,14 +378,19 @@ func DecorateContext(c context.Context, k ContextKey, v string) context.Context 
 }
 
 var (
+	// nonRenderedPattern matches elements whose content a browser never shows
+	// as page text, such as inert glossary definition templates.
+	nonRenderedPattern   = regexp.MustCompile(`(?is)<template\b[^>]*>.*?</template\s*>|<script\b[^>]*>.*?</script\s*>|<style\b[^>]*>.*?</style\s*>`)
 	blockBoundaryPattern = regexp.MustCompile(`(?i)<br\s*/?>|</(p|div|li|h[1-6]|blockquote|tr)>`)
 	htmlTagPattern       = regexp.MustCompile(`<[^>]*>`)
 )
 
-// PlainText reduces record HTML to single-spaced plain text with entities
-// decoded, keeping a space at block boundaries so adjacent paragraphs do not
-// run together.
+// PlainText reduces record HTML to the single-spaced plain text a reader sees:
+// non-rendered template, script and style content is dropped, entities are
+// decoded, and a space is kept at block boundaries so adjacent paragraphs do
+// not run together.
 func PlainText(value string) string {
+	value = nonRenderedPattern.ReplaceAllString(value, " ")
 	value = blockBoundaryPattern.ReplaceAllString(value, " ")
 	value = htmlTagPattern.ReplaceAllString(value, "")
 	return strings.Join(strings.Fields(html.UnescapeString(value)), " ")

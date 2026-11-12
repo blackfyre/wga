@@ -1,6 +1,7 @@
 package artists
 
 import (
+	"github.com/blackfyre/wga/internal/utils/glossary"
 	"strings"
 	"testing"
 
@@ -451,6 +452,15 @@ func TestArtworkRecordJsonLdDescribesDisplayedCommentary(t *testing.T) {
 	shown := artworkRecordJsonLd(nil, artwork, artist, dto.Artwork{Title: "Lamentation", SourceComment: "<p>Raw source.</p><p>Second.</p>"}, canonical)
 	if !strings.Contains(shown, `"description":"Raw source. Second."`) || strings.Contains(shown, "Divergent enriched.") {
 		t.Fatalf("JSON-LD must describe the displayed source commentary: %s", shown)
+	}
+
+	annotated := glossary.AnnotateHTML("<p>A fresco on the wall.</p>", []glossary.GlossaryEntry{{Expression: "fresco", MatchTerm: "fresco", Definition: "<p>Painting on wet plaster.</p>"}})
+	if !strings.Contains(annotated, "Painting on wet plaster.") {
+		t.Fatalf("fixture must contain a hidden glossary definition: %s", annotated)
+	}
+	glossed := artworkRecordJsonLd(nil, artwork, artist, dto.Artwork{Title: "Lamentation", SourceComment: annotated}, canonical)
+	if !strings.Contains(glossed, `"description":"A fresco on the wall."`) || strings.Contains(glossed, "wet plaster") {
+		t.Fatalf("JSON-LD must exclude hidden glossary definitions: %s", glossed)
 	}
 
 	hidden := artworkRecordJsonLd(nil, artwork, artist, dto.Artwork{Title: "Lamentation"}, canonical)

@@ -102,3 +102,10 @@ func TestDescriptionTruncationKeepsWholeCharacters(t *testing.T) {
 		t.Fatalf("description = %q (%d runes), want 157 runes and an ellipsis", got, utf8.RuneCountInString(got))
 	}
 }
+
+func TestPlainTextDropsNonRenderedContent(t *testing.T) {
+	got := templutils.PlainText(`<p>A <span>fresco</span><template class="glossary-definition"><p>Wall painting.</p></template> survives.</p><script>alert(1)</script><style>p{}</style>`)
+	if want := "A fresco survives."; got != want {
+		t.Fatalf("PlainText = %q, want %q", got, want)
+	}
+}
