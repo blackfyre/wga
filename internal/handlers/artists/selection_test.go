@@ -32,8 +32,8 @@ func TestSanitizeSelectionCommentaryStripsScripts(t *testing.T) {
 }
 
 func TestSelectionDescriptionPrefersCommentary(t *testing.T) {
-	view := pages.SelectionView{Commentary: "<p>An editorial lede.</p>", ArtistShortName: "Dürer"}
-	if got := selectionDescription(view); got != "An editorial lede." {
+	view := pages.SelectionView{Commentary: "<p>An editorial lede.</p><p>Second &amp; last.</p>", ArtistShortName: "Dürer"}
+	if got := selectionDescription(view); got != "An editorial lede. Second & last." {
 		t.Fatalf("description = %q, want stripped commentary", got)
 	}
 

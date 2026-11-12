@@ -2,6 +2,7 @@ package artists
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -170,6 +171,54 @@ func TestArtworkRouteRendersFullPageWithDefaultBasis(t *testing.T) {
 	}
 	if got := recorder.Header().Get("HX-Push-Url"); got != "/artists/synthetic-artist-artistone000001/a-painting-workone00000001" {
 		t.Errorf("HX-Push-Url = %q, want canonical URL without basis", got)
+	}
+}
+
+func TestArtworkRouteDescribesRecordWithCanonicalJSONLD(t *testing.T) {
+	_, request := newArtworkRouteApp(t)
+
+	const canonicalPath = "/artists/synthetic-artist-artistone000001/a-painting-workone00000001"
+	recorder := request(canonicalPath)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", recorder.Code)
+	}
+
+	var record map[string]any
+	var breadcrumbs map[string]any
+	for _, block := range strings.Split(recorder.Body.String(), `<script type="application/ld+json">`)[1:] {
+		body := block[:strings.Index(block, "</script>")]
+		var document struct {
+			Graph []map[string]any `json:"@graph"`
+		}
+		if err := json.Unmarshal([]byte(body), &document); err != nil {
+			t.Fatalf("JSON-LD block is not JSON: %v\n%s", err, body)
+		}
+		for _, node := range document.Graph {
+			switch node["@type"] {
+			case "VisualArtwork":
+				record = node
+			case "BreadcrumbList":
+				breadcrumbs = node
+			}
+		}
+	}
+
+	if record == nil {
+		t.Fatal("artwork page must describe its record as VisualArtwork JSON-LD")
+	}
+	canonical := utils.AssetUrl(canonicalPath)
+	if record["url"] != canonical || record["@id"] != canonical+"#primary" || record["name"] != "A Painting" {
+		t.Errorf("VisualArtwork identity = %v %v %v, want canonical %q named A Painting", record["@id"], record["url"], record["name"], canonical)
+	}
+	creator, _ := record["creator"].(map[string]any)
+	if creator["@id"] != utils.AssetUrl("/artists/synthetic-artist-artistone000001")+"#primary" {
+		t.Errorf("creator = %v, want reference to the artist record", record["creator"])
+	}
+	if _, legacy := record["artist"]; legacy {
+		t.Error("VisualArtwork must use creator, not the comics-specific artist property")
+	}
+	if breadcrumbs == nil || len(breadcrumbs["itemListElement"].([]any)) != 3 {
+		t.Errorf("breadcrumbs = %v, want Artists, artist and artwork steps", breadcrumbs)
 	}
 }
 

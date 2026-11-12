@@ -17,6 +17,7 @@ import (
 	"github.com/blackfyre/wga/internal/repositories"
 	"github.com/blackfyre/wga/internal/requestprotection"
 	"github.com/blackfyre/wga/internal/utils"
+	"github.com/blackfyre/wga/internal/utils/jsonld"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 )
@@ -153,6 +154,7 @@ func buildSelectionViewContext(ctx context.Context, app *pocketbase.PocketBase, 
 		Url:              buildSelectionURL(utils.GenerateArtistSlug(artist), selection.Id),
 		Citation:         buildSelectionCitation(artist, selection),
 		ShowBreadcrumbs:  true,
+		Jsonld:           selectionJsonLd(artist, selection, works),
 	}, nil
 }
 
@@ -191,9 +193,32 @@ func sanitizeSelectionCommentary(commentary string) string {
 // selectionDescription returns a plain-text description for the page head,
 // preferring the sanitised commentary and never rendering raw HTML there.
 func selectionDescription(view pages.SelectionView) string {
-	if view.Commentary != "" {
-		return tmplUtils.StripHtmlTags(view.Commentary)
+	if description := tmplUtils.PlainText(view.Commentary); description != "" {
+		return description
 	}
 
 	return fmt.Sprintf("Curated selection of works by %s", view.ArtistShortName)
+}
+
+// selectionJsonLd describes the selection as the ordered list of works it
+// shows, with its visible breadcrumb trail. A serialisation failure omits the
+// block rather than failing the page.
+func selectionJsonLd(artist *core.Record, selection *core.Record, works []*core.Record) string {
+	canonical := utils.AssetUrl(buildSelectionURL(utils.GenerateArtistSlug(artist), selection.Id))
+	items := make([]jsonld.SelectionItem, 0, len(works))
+	for _, work := range works {
+		items = append(items, jsonld.SelectionItem{
+			Name: work.GetString("title"),
+			URL:  utils.AssetUrl(artworks.RecordPath(artist, work)),
+		})
+	}
+	tag, err := jsonld.ScriptTag(jsonld.SelectionJsonLd(canonical, selection.GetString("display_title"), items), jsonld.Breadcrumbs(canonical, []jsonld.Crumb{
+		{Name: "Artists", URL: utils.AssetUrl("/artists")},
+		{Name: artist.GetString("short_name"), URL: jsonld.ArtistURL(artist)},
+		{Name: selection.GetString("display_title"), URL: canonical},
+	}))
+	if err != nil {
+		return ""
+	}
+	return tag
 }

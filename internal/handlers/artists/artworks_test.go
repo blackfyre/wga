@@ -1,6 +1,7 @@
 package artists
 
 import (
+	"github.com/blackfyre/wga/internal/utils/glossary"
 	"strings"
 	"testing"
 
@@ -431,5 +432,39 @@ func TestResolveWorkArtistChoosesPublishedAuthor(t *testing.T) {
 	workOnlyUnpublished.Set("author", []string{"artistunpub0001"})
 	if routeName, filingName, shortName, id := resolveWorkArtist(app, workOnlyUnpublished); routeName != "" || filingName != "" || shortName != "" || id != "" {
 		t.Errorf("resolveWorkArtist(only unpublished) = %q/%q/%q/%q, want empty", routeName, filingName, shortName, id)
+	}
+}
+
+func TestArtworkRecordJsonLdDescribesDisplayedCommentary(t *testing.T) {
+	artists := core.NewBaseCollection("Artists")
+	artists.Fields.Add(&core.TextField{Name: "slug"}, &core.TextField{Name: "filing_name"}, &core.TextField{Name: "short_name"})
+	artist := core.NewRecord(artists)
+	artist.Id = "artist0000001"
+	artist.Set("slug", "giotto")
+
+	artworks := core.NewBaseCollection("Artworks")
+	artworks.Fields.Add(&core.TextField{Name: "image"}, &core.TextField{Name: "comment"})
+	artwork := core.NewRecord(artworks)
+	artwork.Id = "work000000001"
+	artwork.Set("comment", "Divergent enriched.")
+
+	canonical := "https://gallery.example/artists/giotto-artist0000001/lamentation-work000000001"
+	shown := artworkRecordJsonLd(nil, artwork, artist, dto.Artwork{Title: "Lamentation", SourceComment: "<p>Raw source.</p><p>Second.</p>"}, canonical)
+	if !strings.Contains(shown, `"description":"Raw source. Second."`) || strings.Contains(shown, "Divergent enriched.") {
+		t.Fatalf("JSON-LD must describe the displayed source commentary: %s", shown)
+	}
+
+	annotated := glossary.AnnotateHTML("<p>A fresco on the wall.</p>", []glossary.GlossaryEntry{{Expression: "fresco", MatchTerm: "fresco", Definition: "<p>Painting on wet plaster.</p>"}})
+	if !strings.Contains(annotated, "Painting on wet plaster.") {
+		t.Fatalf("fixture must contain a hidden glossary definition: %s", annotated)
+	}
+	glossed := artworkRecordJsonLd(nil, artwork, artist, dto.Artwork{Title: "Lamentation", SourceComment: annotated}, canonical)
+	if !strings.Contains(glossed, `"description":"A fresco on the wall."`) || strings.Contains(glossed, "wet plaster") {
+		t.Fatalf("JSON-LD must exclude hidden glossary definitions: %s", glossed)
+	}
+
+	hidden := artworkRecordJsonLd(nil, artwork, artist, dto.Artwork{Title: "Lamentation"}, canonical)
+	if strings.Contains(hidden, `"description"`) {
+		t.Fatalf("JSON-LD must omit a description when no commentary is shown: %s", hidden)
 	}
 }

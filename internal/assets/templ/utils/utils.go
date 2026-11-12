@@ -2,6 +2,8 @@ package utils
 
 import (
 	"context"
+	"encoding/json"
+	"html"
 	"net/http"
 	"regexp"
 	"strings"
@@ -20,6 +22,15 @@ type trustedHeadMarkupContextKey struct{}
 type requestPathContextKey struct{}
 type htmxRequestContextKey struct{}
 type artworkActionsContextKey struct{}
+
+const (
+	// SiteName is the publisher and site name used in sharing and structured metadata.
+	SiteName = "Web Gallery of Art"
+	// OpenGraphLocale is the language and territory of the site's English copy.
+	OpenGraphLocale = "en_GB"
+	// LogoPath is the publisher's brand logo, also used in postcard emails.
+	LogoPath = "/assets/images/logo.png"
+)
 
 const defaultDescription = "Explore European artists and artworks from the 3rd century to the early 20th in the Web Gallery of Art."
 
@@ -206,7 +217,8 @@ func GetOpenGraphTags(c context.Context) map[string]string {
 		"og:title":       GetTitle(c),
 		"og:description": GetDescription(c),
 		"og:type":        "website",
-		"og:site_name":   "Web Gallery of Art",
+		"og:site_name":   SiteName,
+		"og:locale":      OpenGraphLocale,
 	}
 
 	if v, ok := c.Value(OgTitleKey).(string); ok && strings.TrimSpace(v) != "" {
@@ -247,6 +259,40 @@ func GetOpenGraphTags(c context.Context) map[string]string {
 	}
 
 	return ogTags
+}
+
+// SiteJSONLD returns the site-level schema.org graph that identifies the
+// website and its publisher. encoding/json escapes "<", ">" and "&", so record
+// text can never close the surrounding script element.
+func SiteJSONLD() string {
+	root := AssetUrl("/")
+	websiteID := root + "#website"
+	organizationID := root + "#organization"
+	graph := map[string]any{
+		"@context": "https://schema.org",
+		"@graph": []map[string]any{
+			{
+				"@type":      "WebSite",
+				"@id":        websiteID,
+				"name":       SiteName,
+				"url":        root,
+				"inLanguage": "en",
+				"publisher":  map[string]string{"@id": organizationID},
+			},
+			{
+				"@type": "Organization",
+				"@id":   organizationID,
+				"name":  SiteName,
+				"url":   root,
+				"logo":  AssetUrl(LogoPath),
+			},
+		},
+	}
+	encoded, err := json.Marshal(graph)
+	if err != nil {
+		return ""
+	}
+	return string(encoded)
 }
 
 func GetTwitterTags(c context.Context) map[string]string {
@@ -304,10 +350,10 @@ func DecorateContext(c context.Context, k ContextKey, v string) context.Context 
 
 	if k == DescriptionKey || k == OgDescriptionKey || k == TwitterDescriptionKey {
 
-		v = StripHtmlTags(v)
+		v = PlainText(v)
 
-		if len(v) > 160 {
-			v = v[:157] + "..."
+		if runes := []rune(v); len(runes) > 160 {
+			v = strings.TrimSpace(string(runes[:157])) + "..."
 		}
 
 		cwv := context.WithValue(c, DescriptionKey, v)
@@ -329,6 +375,25 @@ func DecorateContext(c context.Context, k ContextKey, v string) context.Context 
 	}
 
 	return context.WithValue(c, k, v)
+}
+
+var (
+	// nonRenderedPattern matches elements whose content a browser never shows
+	// as page text, such as inert glossary definition templates.
+	nonRenderedPattern   = regexp.MustCompile(`(?is)<template\b[^>]*>.*?</template\s*>|<script\b[^>]*>.*?</script\s*>|<style\b[^>]*>.*?</style\s*>`)
+	blockBoundaryPattern = regexp.MustCompile(`(?i)<br\s*/?>|</(p|div|li|h[1-6]|blockquote|tr)>`)
+	htmlTagPattern       = regexp.MustCompile(`<[^>]*>`)
+)
+
+// PlainText reduces record HTML to the single-spaced plain text a reader sees:
+// non-rendered template, script and style content is dropped, entities are
+// decoded, and a space is kept at block boundaries so adjacent paragraphs do
+// not run together.
+func PlainText(value string) string {
+	value = nonRenderedPattern.ReplaceAllString(value, " ")
+	value = blockBoundaryPattern.ReplaceAllString(value, " ")
+	value = htmlTagPattern.ReplaceAllString(value, "")
+	return strings.Join(strings.Fields(html.UnescapeString(value)), " ")
 }
 
 func StripHtmlTags(s string) string {
