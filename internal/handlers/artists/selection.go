@@ -193,8 +193,8 @@ func sanitizeSelectionCommentary(commentary string) string {
 // selectionDescription returns a plain-text description for the page head,
 // preferring the sanitised commentary and never rendering raw HTML there.
 func selectionDescription(view pages.SelectionView) string {
-	if view.Commentary != "" {
-		return tmplUtils.StripHtmlTags(view.Commentary)
+	if description := tmplUtils.PlainText(view.Commentary); description != "" {
+		return description
 	}
 
 	return fmt.Sprintf("Curated selection of works by %s", view.ArtistShortName)

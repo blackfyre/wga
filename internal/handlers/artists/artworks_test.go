@@ -433,3 +433,28 @@ func TestResolveWorkArtistChoosesPublishedAuthor(t *testing.T) {
 		t.Errorf("resolveWorkArtist(only unpublished) = %q/%q/%q/%q, want empty", routeName, filingName, shortName, id)
 	}
 }
+
+func TestArtworkRecordJsonLdDescribesDisplayedCommentary(t *testing.T) {
+	artists := core.NewBaseCollection("Artists")
+	artists.Fields.Add(&core.TextField{Name: "slug"}, &core.TextField{Name: "filing_name"}, &core.TextField{Name: "short_name"})
+	artist := core.NewRecord(artists)
+	artist.Id = "artist0000001"
+	artist.Set("slug", "giotto")
+
+	artworks := core.NewBaseCollection("Artworks")
+	artworks.Fields.Add(&core.TextField{Name: "image"}, &core.TextField{Name: "comment"})
+	artwork := core.NewRecord(artworks)
+	artwork.Id = "work000000001"
+	artwork.Set("comment", "Divergent enriched.")
+
+	canonical := "https://gallery.example/artists/giotto-artist0000001/lamentation-work000000001"
+	shown := artworkRecordJsonLd(nil, artwork, artist, dto.Artwork{Title: "Lamentation", SourceComment: "<p>Raw source.</p><p>Second.</p>"}, canonical)
+	if !strings.Contains(shown, `"description":"Raw source. Second."`) || strings.Contains(shown, "Divergent enriched.") {
+		t.Fatalf("JSON-LD must describe the displayed source commentary: %s", shown)
+	}
+
+	hidden := artworkRecordJsonLd(nil, artwork, artist, dto.Artwork{Title: "Lamentation"}, canonical)
+	if strings.Contains(hidden, `"description"`) {
+		t.Fatalf("JSON-LD must omit a description when no commentary is shown: %s", hidden)
+	}
+}

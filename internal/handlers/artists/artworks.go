@@ -707,7 +707,8 @@ func relatedAlternative(basis repositories.RelatedWorkBasis, baseURL string) (st
 }
 
 // artworkRecordJsonLd describes the visible artwork record and its breadcrumb
-// trail. A serialisation failure omits the block rather than failing the page.
+// trail. Its description is the displayed source commentary, so it is omitted
+// when the page shows none. A serialisation failure omits the block rather than failing the page.
 func artworkRecordJsonLd(app core.App, aw *core.Record, artist *core.Record, content dto.Artwork, canonical string) string {
 	imageURL := ""
 	if aw.GetString("image") != "" {
@@ -716,7 +717,7 @@ func artworkRecordJsonLd(app core.App, aw *core.Record, artist *core.Record, con
 	artwork := jsonld.ArtworkJsonLd(jsonld.ArtworkInput{
 		CanonicalURL: canonical,
 		Title:        content.Title,
-		Commentary:   aw.GetString("comment"),
+		Commentary:   content.SourceComment,
 		ImageURL:     imageURL,
 		Technique:    content.Technique,
 		ArtType:      content.ArtType,
