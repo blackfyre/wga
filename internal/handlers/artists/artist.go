@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -20,7 +19,6 @@ import (
 	"github.com/blackfyre/wga/internal/assets/templ/pages"
 	tmplUtils "github.com/blackfyre/wga/internal/assets/templ/utils"
 	"github.com/blackfyre/wga/internal/constants"
-	"github.com/blackfyre/wga/internal/errs"
 	"github.com/blackfyre/wga/internal/logging"
 	"github.com/blackfyre/wga/internal/repositories"
 	"github.com/blackfyre/wga/internal/requestprotection"
@@ -210,104 +208,6 @@ func buildWgaTermNode(term string, definition string) *html.Node {
 	return dfn
 }
 
-// RenderArtistContent renders the content of an artist by generating a DTO (Data Transfer Object) that contains
-// information about the artist, their works, and JSON-LD metadata. It takes the PocketBase application instance,
-// the Echo context, and the artist record as input parameters. It returns the DTO representing the artist content
-// and an error if any occurred during the process.
-func RenderArtistContent(app *pocketbase.PocketBase, c *core.RequestEvent, artist *core.Record, hxTarget string, showBreadcrumbs bool) (dto.Artist, error) {
-	id := artist.GetString("id")
-	expectedSlug := utils.GenerateArtistSlug(artist)
-
-	works, err := utils.FindArtworksByAuthorID(app, id)
-
-	if err != nil {
-		app.Logger().Error("Error finding artworks: ", "error", err.Error())
-		return dto.Artist{}, errs.ErrArtistNotFound
-	}
-
-	schools := utils.RenderSchoolNames(app, artist.GetStringSlice("school"))
-
-	content := dto.Artist{
-		FilingName: artist.GetString("filing_name"),
-		ShortName:  artist.GetString("short_name"),
-		Name:       artist.GetString("filing_name"),
-		Bio:        artist.GetString("bio"),
-		BioExcerpt: utils.NormalizedBioExcerpt(utils.BioExcerptDTO{
-			YearOfBirth:       artist.GetInt("year_of_birth"),
-			ExactYearOfBirth:  artist.GetString("exact_year_of_birth"),
-			PlaceOfBirth:      artist.GetString("place_of_birth"),
-			KnownPlaceOfBirth: artist.GetString("known_place_of_birth"),
-			YearOfDeath:       artist.GetInt("year_of_death"),
-			ExactYearOfDeath:  artist.GetString("exact_year_of_death"),
-			PlaceOfDeath:      artist.GetString("place_of_death"),
-			KnownPlaceOfDeath: artist.GetString("known_place_of_death"),
-		}),
-		Schools:         schools,
-		Profession:      artist.GetString("profession"),
-		Portrait:        url.GenerateArtistPortraitImageURL(artist, url.DeliveryProfilePortraitRecordAndWorkFallback, ""),
-		Works:           dto.ImageGrid{},
-		Url:             "/artists/" + expectedSlug,
-		HxTarget:        hxTarget,
-		ShowBreadcrumbs: showBreadcrumbs,
-	}
-
-	JsonLd := jsonld.ArtistJsonLd(artist)
-
-	marshalled, err := json.Marshal(JsonLd)
-
-	if err != nil {
-		app.Logger().Error("Error marshalling artist jsonld for"+id, "error", err.Error())
-	}
-
-	content.Jsonld = fmt.Sprintf(`<script type="application/ld+json">%s</script>`, marshalled)
-
-	app.Logger().Debug("Rendering artist content", "artistId", id, "artistName", artist.GetString("name"), "worksCount", len(works))
-
-	for _, w := range works {
-
-		artJsonLd := jsonld.ArtworkJsonLd(w, artist)
-
-		marshalled, err := json.Marshal(artJsonLd)
-
-		if err != nil {
-			app.Logger().Error("Error marshalling artwork jsonld for"+w.GetString("id"), "error", err.Error())
-		}
-
-		var img dto.Image
-
-		img.Id = w.GetString("id")
-		img.Title = w.GetString("title")
-		img.Comment = w.GetString("comment")
-		img.Technique = w.GetString("technique")
-
-		if w.GetString("image") != "" {
-			img.Image = url.GenerateArtworkImageURL(w, url.DeliveryProfileCardAndArtistIndex, "")
-			img.Thumb = img.Image
-		} else {
-			img.Image = utils.AssetUrl("/assets/images/no-image.png")
-			img.Thumb = utils.AssetUrl("/assets/images/no-image.png")
-		}
-
-		img.Url = "/artists/" + expectedSlug + "/" + utils.Slugify(w.GetString("title")) + "-" + w.GetString("id")
-		img.Jsonld = fmt.Sprintf(`<script type="application/ld+json">%s</script>`, marshalled)
-		img.HxTarget = hxTarget
-
-		content.Works = append(content.Works, img)
-	}
-
-	// Annotate bio with glossary terms (after content is fully built,
-	// so callers can use the raw Bio for meta descriptions first). The
-	// biography is sanitised regardless of glossary availability so unsafe
-	// persisted markup never reaches templ.Raw.
-	glossaryEntries, glossaryErr := glossary.GetGlossaryEntries(app)
-	if glossaryErr != nil {
-		app.Logger().Warn("Failed to load glossary entries", "error", glossaryErr)
-	}
-	content.Bio = annotateBiography(content.Bio, glossaryEntries)
-
-	return content, nil
-}
-
 // processArtist is the public artist record adapter. It resolves the record
 // through the bounded read-model, renders the full page or the HTMX block, and
 // pushes the canonical record URL.
@@ -484,8 +384,14 @@ func buildArtistRecordViewContext(ctx context.Context, app *pocketbase.PocketBas
 	if err := checkpoint(ctx, "artist.detail.projection"); err != nil {
 		return pages.ArtistView{}, err
 	}
-	personJsonLd := jsonld.ArtistJsonLd(artist)
-	marshalled, err := json.Marshal(personJsonLd)
+	canonical := jsonld.ArtistURL(artist)
+	personJsonLd, err := jsonld.ScriptTag(
+		jsonld.ArtistJsonLd(artist),
+		jsonld.Breadcrumbs(canonical, []jsonld.Crumb{
+			{Name: "Artists", URL: utils.AssetUrl("/artists")},
+			{Name: artist.GetString("short_name"), URL: canonical},
+		}),
+	)
 	if err != nil {
 		app.Logger().Error("Error marshalling artist jsonld", "artistId", artist.Id, "error", err.Error())
 	}
@@ -508,7 +414,7 @@ func buildArtistRecordViewContext(ctx context.Context, app *pocketbase.PocketBas
 		SelectionForms:  selectionForms,
 		Music:           buildRecordMusic(periodSong),
 		Citation:        buildArtistCitation(artist, expectedSlug),
-		Jsonld:          fmt.Sprintf(`<script type="application/ld+json">%s</script>`, marshalled),
+		Jsonld:          personJsonLd,
 		ShowBreadcrumbs: true,
 	}
 

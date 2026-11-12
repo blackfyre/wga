@@ -1,6 +1,7 @@
 package artists
 
 import (
+	"github.com/blackfyre/wga/internal/utils"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -189,6 +190,17 @@ func TestSelectionRouteRendersFullPage(t *testing.T) {
 	}
 	if strings.Contains(body, "Other: Foreign") {
 		t.Error("foreign-artist selection must not appear among other selections")
+	}
+	for _, expected := range []string{
+		`"@type":"BreadcrumbList"`,
+		`"@type":"ItemList","@id":"` + utils.AssetUrl("/artists/synthetic-artist-artistone000001/selections/rselect00000001") + `#primary","name":"Dürer: Paintings"`,
+		`"name":"A Painting","item":"` + utils.AssetUrl("/artists/synthetic-artist-artistone000001/a-painting-"),
+		`"item":"` + utils.AssetUrl("/artists/synthetic-artist-artistone000001") + `"`,
+		`"name":"Dürer: Paintings","item":"` + utils.AssetUrl("/artists/synthetic-artist-artistone000001/selections/rselect00000001") + `"`,
+	} {
+		if !strings.Contains(body, expected) {
+			t.Errorf("expected selection breadcrumb JSON-LD to contain %s", expected)
+		}
 	}
 }
 

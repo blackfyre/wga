@@ -258,6 +258,7 @@ func TestLayoutBaseRendersCompleteDocumentMetadata(t *testing.T) {
 		`<meta property="og:title" content="Web Gallery of Art">`,
 		`<meta property="og:type" content="website">`,
 		`<meta property="og:site_name" content="Web Gallery of Art">`,
+		`<meta property="og:locale" content="en_GB">`,
 		`<meta name="twitter:title" content="Web Gallery of Art">`,
 		`<meta name="theme-color" content="#f4f2ed" media="(prefers-color-scheme: light)" data-wga-theme-color>`,
 		`<meta name="theme-color" content="#1a1814" media="(prefers-color-scheme: dark)" data-wga-theme-color-fallback>`,
@@ -268,6 +269,9 @@ func TestLayoutBaseRendersCompleteDocumentMetadata(t *testing.T) {
 	}
 	if strings.Contains(rendered, `<meta name="og:`) {
 		t.Error("Open Graph metadata must use the property attribute")
+	}
+	if got := strings.Count(rendered, `<script type="application/ld+json">`+utils.SiteJSONLD()+`</script>`); got != 1 {
+		t.Errorf("site-level JSON-LD blocks = %d, want 1", got)
 	}
 }
 

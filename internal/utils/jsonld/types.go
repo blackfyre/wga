@@ -1,74 +1,81 @@
 package jsonld
 
-// Person represents a person entity in JSON-LD format.
+// Context is the schema.org vocabulary every top-level JSON-LD document uses.
+// Nested nodes inherit it and carry no @context of their own.
+const Context = "https://schema.org"
+
+// PrimarySuffix identifies a page's main entity: {canonical URL}#primary.
+const PrimarySuffix = "#primary"
+
+// Document is one JSON-LD script body holding a page's linked nodes.
+type Document struct {
+	Context string `json:"@context"`
+	Graph   []any  `json:"@graph"`
+}
+
+// Person represents a schema.org Person. Pointer fields are omitted when nil,
+// so a missing value never serialises as an empty object.
 type Person struct {
-	Context       string     `json:"@context,omitempty"`
-	Type          string     `json:"@type,omitempty"`
-	Name          string     `json:"name,omitempty"`
-	Url           string     `json:"url,omitempty"`
-	BirthDate     string     `json:"birthDate,omitempty"`
-	DeathDate     string     `json:"deathDate,omitempty"`
-	PlaceOfBirth  Place      `json:"birthPlace,omitempty"`
-	PlaceOfDeath  Place      `json:"deathPlace,omitempty"`
-	Description   string     `json:"description,omitempty"`
-	Image         string     `json:"image,omitempty"`
-	HasOccupation Occupation `json:"hasOccupation,omitempty"`
+	Type          string      `json:"@type"`
+	ID            string      `json:"@id,omitempty"`
+	Name          string      `json:"name,omitempty"`
+	Url           string      `json:"url,omitempty"`
+	BirthDate     string      `json:"birthDate,omitempty"`
+	DeathDate     string      `json:"deathDate,omitempty"`
+	BirthPlace    *Place      `json:"birthPlace,omitempty"`
+	DeathPlace    *Place      `json:"deathPlace,omitempty"`
+	Description   string      `json:"description,omitempty"`
+	Image         string      `json:"image,omitempty"`
+	HasOccupation *Occupation `json:"hasOccupation,omitempty"`
 }
 
-// Place represents a place entity in JSON-LD format.
+// Place represents a schema.org Place.
 type Place struct {
-	Context string `json:"@context,omitempty"`
-	Type    string `json:"@type,omitempty"`
-	Name    string `json:"name,omitempty"`
+	Type string `json:"@type"`
+	Name string `json:"name"`
 }
 
-// Occupation represents an occupation entity in JSON-LD format.
+// Occupation represents a schema.org Occupation.
 type Occupation struct {
-	Context string `json:"@context,omitempty"`
-	Type    string `json:"@type,omitempty"`
-	Name    string `json:"name,omitempty"`
+	Type string `json:"@type"`
+	Name string `json:"name"`
 }
 
-// VisualArtwork represents a visual artwork entity in JSON-LD format.
+// VisualArtwork represents a schema.org VisualArtwork.
 type VisualArtwork struct {
-	Context     string      `json:"@context,omitempty"`
-	Type        string      `json:"@type,omitempty"`
-	Name        string      `json:"name,omitempty"`
-	Description string      `json:"description,omitempty"`
-	Url         string      `json:"url,omitempty"`
-	Artform     string      `json:"artform,omitempty"`
-	Artist      Person      `json:"artist,omitempty"`
-	ArtMedium   string      `json:"artMedium,omitempty"`
-	Image       ImageObject `json:"image,omitempty"`
+	Type        string  `json:"@type"`
+	ID          string  `json:"@id,omitempty"`
+	Name        string  `json:"name,omitempty"`
+	Url         string  `json:"url,omitempty"`
+	Description string  `json:"description,omitempty"`
+	Image       string  `json:"image,omitempty"`
+	Artform     string  `json:"artform,omitempty"`
+	ArtMedium   string  `json:"artMedium,omitempty"`
+	DateCreated string  `json:"dateCreated,omitempty"`
+	Creator     *Person `json:"creator,omitempty"`
 }
 
-// ImageObject represents an image object entity in JSON-LD format.
-type ImageObject struct {
-	Context      string `json:"@context,omitempty"`
-	Type         string `json:"@type,omitempty"`
-	Name         string `json:"name,omitempty"`
-	Caption      string `json:"caption,omitempty"`
-	Image        string `json:"image,omitempty"`
-	ThumbnailUrl string `json:"thumbnailUrl,omitempty"`
+// BreadcrumbList represents a schema.org BreadcrumbList.
+type BreadcrumbList struct {
+	Type            string     `json:"@type"`
+	ID              string     `json:"@id,omitempty"`
+	ItemListElement []ListItem `json:"itemListElement"`
 }
 
-// newPerson returns a new Person object with the given Person object.
-func newPerson(p Person) Person {
-	p.Context = "https://schema.org"
-	p.Type = "Person"
-	return p
+// ListItem is one position in a BreadcrumbList.
+type ListItem struct {
+	Type     string `json:"@type"`
+	Position int    `json:"position"`
+	Name     string `json:"name"`
+	Item     string `json:"item,omitempty"`
 }
 
-// newPlace returns a new Place object with the given Place object.
-func newPlace(p Place) Place {
-	p.Context = "https://schema.org"
-	p.Type = "Place"
-	return p
-}
-
-// newOccupation returns a new Occupation object with the given Occupation object.
-func newOccupation(o Occupation) Occupation {
-	o.Context = "https://schema.org"
-	o.Type = "Occupation"
-	return o
+// ItemList represents a schema.org ItemList, such as a curated selection.
+type ItemList struct {
+	Type            string     `json:"@type"`
+	ID              string     `json:"@id,omitempty"`
+	Name            string     `json:"name,omitempty"`
+	Url             string     `json:"url,omitempty"`
+	NumberOfItems   int        `json:"numberOfItems"`
+	ItemListElement []ListItem `json:"itemListElement"`
 }

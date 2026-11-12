@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -202,15 +201,7 @@ func processArtworkWithCheckpoint(c *core.RequestEvent, app *pocketbase.PocketBa
 		content.SourceComment = glossary.AnnotateHTML(content.SourceComment, glossaryEntries)
 	}
 
-	jsonLd := jsonld.ArtworkJsonLd(aw, artist)
-
-	marshalled, err := json.Marshal(jsonLd)
-
-	if err != nil {
-		app.Logger().Error("Error marshalling artwork jsonld for"+aw.GetString("id"), "error", err.Error())
-	}
-
-	content.Jsonld = fmt.Sprintf(`<script type="application/ld+json">%s</script>`, marshalled)
+	content.Jsonld = artworkRecordJsonLd(app, aw, artist, content, utils.AssetUrl(canonicalURL))
 
 	ctx := tmplUtils.DecorateContext(tmplUtils.ContextFromRequest(c.Request), tmplUtils.TitleKey, fmt.Sprintf("%s - %s", content.Title, content.FilingName))
 	ctx = tmplUtils.DecorateContext(ctx, tmplUtils.DescriptionKey, aw.GetString("comment"))
@@ -713,4 +704,34 @@ func relatedAlternative(basis repositories.RelatedWorkBasis, baseURL string) (st
 	}
 
 	return "BY ARTIST", relatedWorkURL(baseURL, repositories.RelatedByArtist)
+}
+
+// artworkRecordJsonLd describes the visible artwork record and its breadcrumb
+// trail. A serialisation failure omits the block rather than failing the page.
+func artworkRecordJsonLd(app core.App, aw *core.Record, artist *core.Record, content dto.Artwork, canonical string) string {
+	imageURL := ""
+	if aw.GetString("image") != "" {
+		imageURL = utils.AssetUrl(content.Image.Image)
+	}
+	artwork := jsonld.ArtworkJsonLd(jsonld.ArtworkInput{
+		CanonicalURL: canonical,
+		Title:        content.Title,
+		Commentary:   aw.GetString("comment"),
+		ImageURL:     imageURL,
+		Technique:    content.Technique,
+		ArtType:      content.ArtType,
+		Year:         content.Year,
+		Artist:       artist,
+	})
+	breadcrumbs := jsonld.Breadcrumbs(canonical, []jsonld.Crumb{
+		{Name: "Artists", URL: utils.AssetUrl("/artists")},
+		{Name: artist.GetString("short_name"), URL: jsonld.ArtistURL(artist)},
+		{Name: content.Title, URL: canonical},
+	})
+	tag, err := jsonld.ScriptTag(artwork, breadcrumbs)
+	if err != nil {
+		app.Logger().Error("Error marshalling artwork jsonld", "artworkId", aw.Id, "error", err.Error())
+		return ""
+	}
+	return tag
 }

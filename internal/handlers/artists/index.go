@@ -2,8 +2,6 @@ package artists
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"github.com/blackfyre/wga/internal/visitorprefs"
 	neturl "net/url"
 	"strconv"
@@ -383,16 +381,15 @@ func filterNote(query indexQuery, schoolName string, periodName string) string {
 }
 
 func buildArtistsJsonLd(records []*core.Record) string {
-	collector := make([]jsonld.Person, 0, len(records))
+	nodes := make([]any, 0, len(records))
 	for _, record := range records {
-		collector = append(collector, jsonld.ArtistJsonLd(record))
+		nodes = append(nodes, jsonld.ArtistSummaryJsonLd(record))
 	}
-	marshalled, err := json.Marshal(collector)
+	tag, err := jsonld.ScriptTag(nodes...)
 	if err != nil {
 		return ""
 	}
-
-	return fmt.Sprintf(`<script type="application/ld+json">%s</script>`, marshalled)
+	return tag
 }
 
 // buildArtistIndexView parses the request, loads the filtered page, and

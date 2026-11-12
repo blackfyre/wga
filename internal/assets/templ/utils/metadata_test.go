@@ -20,6 +20,7 @@ func TestMetadataDefaultsAreComplete(t *testing.T) {
 		"og:description":  templutils.GetDescription(ctx),
 		"og:type":         "website",
 		"og:site_name":    "Web Gallery of Art",
+		"og:locale":       "en_GB",
 		"og:image:alt":    "Web Gallery of Art",
 		"og:image:width":  "1080",
 		"og:image:height": "1080",

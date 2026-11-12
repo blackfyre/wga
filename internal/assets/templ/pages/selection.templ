@@ -27,6 +27,7 @@ type SelectionView struct {
 	Url              string // canonical /artists/{slug}-{id}/selections/{id} URL
 	Citation         components.Citation
 	ShowBreadcrumbs  bool
+	Jsonld           string // BreadcrumbList JSON-LD script element
 }
 
 // SelectionLink is a same-artist selection entry in the reading sidebar.
@@ -47,6 +48,7 @@ templ SelectionContent(view SelectionView) {
 	}
 	<section class="container mx-auto px-4 pb-20 pt-10 md:px-0">
 		if view.ShowBreadcrumbs {
+			@templ.Raw(view.Jsonld)
 			<nav class="mb-8 font-mono text-(length:--t-10) tracking-[1.5px] text-wga-ink/60" aria-label="Breadcrumb">
 				<a href="/artists" class="hover:text-wga-ink">ARTISTS</a>
 				<span class="mx-2" aria-hidden="true">/</span>
