@@ -1,4 +1,20 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
+
+// findPerson returns the page's Person node, searching each JSON-LD block's
+// @graph as well as top-level nodes.
+async function findPerson(
+  page: Page,
+): Promise<Record<string, unknown> | undefined> {
+  const scripts = await page
+    .locator('script[type="application/ld+json"]')
+    .allTextContents();
+  return scripts
+    .flatMap((text) => {
+      const data = JSON.parse(text);
+      return Array.isArray(data["@graph"]) ? data["@graph"] : [data];
+    })
+    .find((node) => node["@type"] === "Person");
+}
 
 test("artist without a portrait retains the labelled fallback and artwork metadata", async ({
   page,
@@ -7,14 +23,9 @@ test("artist without a portrait retains the labelled fallback and artwork metada
   const portrait = page.locator("article > figure").first();
   await expect(portrait).toHaveText("PORTRAIT — SYNTHETIC ARTIST 01");
   await expect(portrait.locator("img")).toHaveCount(0);
-  const person = await page
-    .locator('script[type="application/ld+json"]')
-    .allTextContents();
-  expect(
-    person
-      .map((text) => JSON.parse(text))
-      .find((data) => data["@type"] === "Person"),
-  ).not.toHaveProperty("image");
+  const person = await findPerson(page);
+  expect(person).toBeDefined();
+  expect(person).not.toHaveProperty("image");
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
     "content",
     /\/api\/files\/artworks\//,
@@ -48,11 +59,6 @@ test("staged artist portrait loads and matches identity metadata", async ({
     "content",
     source,
   );
-  const scripts = await page
-    .locator('script[type="application/ld+json"]')
-    .allTextContents();
-  const person = scripts
-    .map((text) => JSON.parse(text))
-    .find((data) => data["@type"] === "Person");
-  expect(person.image).toBe(source);
+  const person = await findPerson(page);
+  expect(person?.image).toBe(source);
 });
